@@ -44,10 +44,8 @@ from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
 from scipy.sparse.linalg import gmres, splu
-from scipy._lib._util import _aligned_zeros
-from scipy._lib._threadsafety import ReentrancyLock
-from . import _arpack
-arpack_int = _arpack.timing.nbx.dtype
+
+from . import _arpacklib
 
 __docformat__ = "restructuredtext en"
 
@@ -270,6 +268,13 @@ _SEUPD_WHICH = ['LM', 'SM', 'LA', 'SA', 'BE']
 # accepted values of parameter WHICH in _NAUPD
 _NEUPD_WHICH = ['LM', 'SM', 'LR', 'SR', 'LI', 'SI']
 
+# The enum values for the parameter WHICH in _NAUPD and _SEUPD
+WHICH_DICT = {
+    'LM': 0, 'SM': 1, 'LR': 2, 'SR': 3, 'LI': 4, 'SI': 5, 'LA': 6, 'SA': 7, 'BE': 8
+}
+
+# The enum values for the parameter HOWMNY in _NEUPD and _SEUPD
+HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
 
 class ArpackError(RuntimeError):
     """
@@ -313,8 +318,8 @@ def choose_ncv(k):
 
 
 class _ArpackParams:
-    def __init__(self, n, k, tp, mode=1, sigma=None,
-                 ncv=None, v0=None, maxiter=None, which="LM", tol=0):
+    def __init__(self, n, k, tp, rng, mode=1, sigma=None, ncv=None, v0=None,
+                 maxiter=None, which="LM", tol=0):
         if k <= 0:
             raise ValueError(f"k must be positive, k={k}")
 
@@ -332,11 +337,11 @@ class _ArpackParams:
 
         if v0 is not None:
             # ARPACK overwrites its initial resid,  make a copy
-            self.resid = np.array(v0, copy=True)
+            self.resid = np.array(v0, copy=True, dtype=tp)
             info = 1
         else:
             # ARPACK will use a random initial vector.
-            self.resid = np.zeros(n, tp)
+            self.resid = rng.uniform(low=-1.0, high=1.0, size=[n]).astype(tp)
             info = 0
 
         if sigma is None:
@@ -347,35 +352,65 @@ class _ArpackParams:
 
         if ncv is None:
             ncv = choose_ncv(k)
-        ncv = min(ncv, n)
-
+        self.ncv = min(ncv, n)
+        self.n = n
         self.v = np.zeros((n, ncv), tp)  # holds Ritz vectors
-        self.iparam = np.zeros(11, arpack_int)
+        self.which = which
 
         # set solver mode and parameters
-        ishfts = 1
         self.mode = mode
-        self.iparam[0] = ishfts
-        self.iparam[2] = maxiter
-        self.iparam[3] = 1
-        self.iparam[6] = mode
+        self.arpack_dict = {
+            'tol': tol,
+            'getv0_rnorm0': 0.0,
+            'aitr_betaj': 0.0,
+            'aitr_rnorm1': 0.0,
+            'aitr_wnorm': 0.0,
+            'aup2_rnorm': 0.0,
+            'ido': 0,
+            'which': WHICH_DICT[which],
+            'bmat': 0,
+            'info': info,
+            'iter': 0,
+            'maxiter': int(maxiter),
+            'mode': mode,
+            'n': n,
+            'nconv': 0,
+            'ncv': self.ncv,
+            'nev': k,
+            'np': 0,
+            'shift': 1,
+            'getv0_first': 0,
+            'getv0_iter': 0,
+            'getv0_itry': 0,
+            'getv0_orth': 0,
+            'aitr_iter': 0,
+            'aitr_j': 0,
+            'aitr_orth1': 0,
+            'aitr_orth2': 0,
+            'aitr_restart': 0,
+            'aitr_step3': 0,
+            'aitr_step4': 0,
+            'aitr_ierr': 0,
+            'aup2_initv': 0,
+            'aup2_iter': 0,
+            'aup2_getv0': 0,
+            'aup2_cnorm': 0,
+            'aup2_kplusp': 0,
+            'aup2_nev0': 0,
+            'aup2_np0': 0,
+            'aup2_numcnv': 0,
+            'aup2_update': 0,
+            'aup2_ushift': 0,
+        }
 
-        self.n = n
-        self.tol = tol
         self.k = k
-        self.maxiter = maxiter
-        self.ncv = ncv
-        self.which = which
         self.tp = tp
-        self.info = info
-
         self.converged = False
-        self.ido = 0
 
     def _raise_no_convergence(self):
         msg = "No convergence (%d iterations, %d/%d eigenvectors converged)"
-        k_ok = self.iparam[4]
-        num_iter = self.iparam[2]
+        k_ok = self.arpack_dict['nconv']
+        num_iter = self.arpack_dict['iter']
         try:
             ev, vec = self.extract(True)
         except ArpackError as err:
@@ -383,13 +418,15 @@ class _ArpackParams:
             ev = np.zeros((0,))
             vec = np.zeros((self.n, 0))
             k_ok = 0
-        raise ArpackNoConvergence(msg % (num_iter, k_ok, self.k), ev, vec)
+        raise ArpackNoConvergence(f"No convergence ({num_iter} iterations, "
+                                  f"{k_ok}/{self.k} eigenvectors converged)",
+                                  ev, vec)
 
 
 class _SymmetricArpackParams(_ArpackParams):
-    def __init__(self, n, k, tp, matvec, mode=1, M_matvec=None,
-                 Minv_matvec=None, sigma=None,
-                 ncv=None, v0=None, maxiter=None, which="LM", tol=0):
+    def __init__(self, n, k, tp, matvec, mode=1, M_matvec=None, Minv_matvec=None,
+                 sigma=None, ncv=None, v0=None, maxiter=None, which="LM", tol=0,
+                 rng=None):
         # The following modes are supported:
         #  mode = 1:
         #    Solve the standard eigenvalue problem:
@@ -518,40 +555,37 @@ class _SymmetricArpackParams(_ArpackParams):
         if k >= n:
             raise ValueError(f"k must be less than ndim(A), k={k}")
 
-        _ArpackParams.__init__(self, n, k, tp, mode, sigma,
-                               ncv, v0, maxiter, which, tol)
+        self.rng = np.random.default_rng(rng)
+        _ArpackParams.__init__(self, n, k, tp, self.rng, mode, sigma, ncv, v0,
+                               maxiter, which, tol)
+
+        self.arpack_dict['bmat'] = 0 if self.bmat == 'I' else 1
 
         if self.ncv > n or self.ncv <= k:
             raise ValueError(f"ncv must be k<ncv<=n, ncv={self.ncv}")
 
-        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-        self.workd = _aligned_zeros(3 * n, self.tp)
-        self.workl = _aligned_zeros(self.ncv * (self.ncv + 8), self.tp)
+        self.workd = np.zeros(3 * n, dtype=self.tp)
+        self.workl = np.zeros(self.ncv * (self.ncv + 8), dtype=self.tp)
 
         ltr = _type_conv[self.tp]
         if ltr not in ["s", "d"]:
             raise ValueError("Input matrix is not real-valued.")
 
-        self._arpack_solver = _arpack.__dict__[ltr + 'saupd']
-        self._arpack_extract = _arpack.__dict__[ltr + 'seupd']
+        self._arpack_solver = _arpacklib.__dict__[ltr + 'saupd_wrap']
+        self._arpack_extract = _arpacklib.__dict__[ltr + 'seupd_wrap']
 
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(11, arpack_int)
+        self.ipntr = np.zeros(11, dtype=np.int32)
 
     def iterate(self):
-        self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info = \
-            self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                self.tol, self.resid, self.v, self.iparam,
-                                self.ipntr, self.workd, self.workl, self.info)
+        self._arpack_solver(self.arpack_dict, self.resid, self.v, self.ipntr,
+                            self.workd, self.workl)
 
-        xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
-        yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
-        if self.ido == -1:
-            # initialization
-            self.workd[yslice] = self.OP(self.workd[xslice])
-        elif self.ido == 1:
+        xslice = slice(self.ipntr[0], self.ipntr[0] + self.n)
+        yslice = slice(self.ipntr[1], self.ipntr[1] + self.n)
+        if self.arpack_dict['ido'] == 1:
             # compute y = Op*x
             if self.mode == 1:
                 self.workd[yslice] = self.OP(self.workd[xslice])
@@ -559,45 +593,62 @@ class _SymmetricArpackParams(_ArpackParams):
                 self.workd[xslice] = self.OPb(self.workd[xslice])
                 self.workd[yslice] = self.OPa(self.workd[xslice])
             elif self.mode == 5:
-                Bxslice = slice(self.ipntr[2] - 1, self.ipntr[2] - 1 + self.n)
+                Bxslice = slice(self.ipntr[2], self.ipntr[2] + self.n)
                 Ax = self.A_matvec(self.workd[xslice])
                 self.workd[yslice] = self.OPa(Ax + (self.sigma *
                                                     self.workd[Bxslice]))
             else:
-                Bxslice = slice(self.ipntr[2] - 1, self.ipntr[2] - 1 + self.n)
+                Bxslice = slice(self.ipntr[2], self.ipntr[2] + self.n)
                 self.workd[yslice] = self.OPa(self.workd[Bxslice])
-        elif self.ido == 2:
+
+        elif self.arpack_dict['ido'] == 2:
             self.workd[yslice] = self.B(self.workd[xslice])
-        elif self.ido == 3:
-            raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
+
+        elif self.arpack_dict['ido'] == 3:
+            raise ValueError("ARPACK requested user shifts. Assure ISHIFT==0")
+
+        elif self.arpack_dict['ido'] == 4:
+            # Generate random vector into resid
+            self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
+                                             size=[self.n]).astype(self.tp)
+
+        elif self.arpack_dict['ido'] == 5:
+            self.workd[yslice] = self.OP(self.workd[xslice])
+
         else:
             self.converged = True
 
-            if self.info == 0:
+            if self.arpack_dict['info'] == 0:
                 pass
-            elif self.info == 1:
+            elif self.arpack_dict['info'] == 1:
                 self._raise_no_convergence()
             else:
-                raise ArpackError(self.info, infodict=self.iterate_infodict)
+                raise ArpackError(self.arpack_dict['info'],
+                                  infodict=self.iterate_infodict)
 
     def extract(self, return_eigenvectors):
         rvec = return_eigenvectors
         ierr = 0
-        howmny = 'A'  # return all eigenvectors
-        sselect = np.zeros(self.ncv, 'int')  # unused
-        d, z, ierr = self._arpack_extract(rvec, howmny, sselect, self.sigma,
-                                          self.bmat, self.which, self.k,
-                                          self.tol, self.resid, self.v,
-                                          self.iparam[0:7], self.ipntr,
-                                          self.workd[0:2 * self.n],
-                                          self.workl, ierr)
+        self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
+        howmny = HOWMNY_DICT["A"]  # return all eigenvectors
+        sselect = np.zeros(self.ncv, dtype=np.int32)
+        d = np.zeros(self.k, dtype=self.tp)
+        z = np.zeros((self.n, self.ncv), dtype=self.tp, order='F')
+
+        self._arpack_extract(
+            self.arpack_dict, rvec, howmny, sselect, d, z, self.sigma,
+            self.resid, self.v, self.ipntr, self.workd, #[0:2 * self.n],
+            self.workl
+        )
+
+        ierr = self.arpack_dict['info']
         if ierr != 0:
             raise ArpackError(ierr, infodict=self.extract_infodict)
-        k_ok = self.iparam[4]
+        k_ok = self.arpack_dict['nconv']
         d = d[:k_ok]
-        z = z[:, :k_ok]
 
         if return_eigenvectors:
+            z = z[:, :k_ok].copy(order='C')
             return d, z
         else:
             return d
@@ -606,7 +657,7 @@ class _SymmetricArpackParams(_ArpackParams):
 class _UnsymmetricArpackParams(_ArpackParams):
     def __init__(self, n, k, tp, matvec, mode=1, M_matvec=None,
                  Minv_matvec=None, sigma=None,
-                 ncv=None, v0=None, maxiter=None, which="LM", tol=0):
+                 ncv=None, v0=None, maxiter=None, which="LM", tol=0, rng=None):
         # The following modes are supported:
         #  mode = 1:
         #    Solve the standard eigenvalue problem:
@@ -696,101 +747,120 @@ class _UnsymmetricArpackParams(_ArpackParams):
             raise ValueError(f"mode={mode} not implemented")
 
         if which not in _NEUPD_WHICH:
-            raise ValueError(f"Parameter which must be one of {' '.join(_NEUPD_WHICH)}")
+            raise ValueError("Parameter which must be one of"
+                             f" {' '.join(_NEUPD_WHICH)}")
         if k >= n - 1:
             raise ValueError(f"k must be less than ndim(A)-1, k={k}")
 
-        _ArpackParams.__init__(self, n, k, tp, mode, sigma,
-                               ncv, v0, maxiter, which, tol)
+        self.rng = np.random.default_rng(rng)
+        _ArpackParams.__init__(self, n, k, tp, rng, mode, sigma, ncv, v0, maxiter,
+                               which, tol)
+
+        self.arpack_dict['bmat'] = 0 if self.bmat == 'I' else 1
 
         if self.ncv > n or self.ncv <= k + 1:
             raise ValueError(f"ncv must be k+1<ncv<=n, ncv={self.ncv}")
 
-        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-        self.workd = _aligned_zeros(3 * n, self.tp)
-        self.workl = _aligned_zeros(3 * self.ncv * (self.ncv + 2), self.tp)
+        self.workd = np.zeros(3 * n, dtype=self.tp)
+        self.workl = np.zeros(3 * self.ncv * (self.ncv + 2), dtype=self.tp)
 
         ltr = _type_conv[self.tp]
-        self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
-        self._arpack_extract = _arpack.__dict__[ltr + 'neupd']
+        self._arpack_solver = _arpacklib.__dict__[ltr + 'naupd_wrap']
+        self._arpack_extract = _arpacklib.__dict__[ltr + 'neupd_wrap']
 
         self.iterate_infodict = _NAUPD_ERRORS[ltr]
         self.extract_infodict = _NEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(14, arpack_int)
+        self.ipntr = np.zeros(14, dtype=np.int32)
 
         if self.tp in 'FD':
-            # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-            self.rwork = _aligned_zeros(self.ncv, self.tp.lower())
+            self.rwork = np.zeros(self.ncv, dtype=self.tp.lower())
         else:
             self.rwork = None
 
     def iterate(self):
         if self.tp in 'fd':
-            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                          self.tol, self.resid, self.v, self.iparam,
-                                          self.ipntr, self.workd, self.workl, self.info)
-            self.ido, self.tol, self.resid, self.v, \
-                self.iparam, self.ipntr, self.info = results
+            self._arpack_solver(
+                self.arpack_dict, self.resid, self.v, self.ipntr, self.workd,
+                self.workl
+            )
 
         else:
-            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                          self.tol, self.resid, self.v, self.iparam,
-                                          self.ipntr, self.workd, self.workl,
-                                          self.rwork, self.info)
-            self.ido, self.tol, self.resid, self.v, \
-                self.iparam, self.ipntr, self.info = results
+            self._arpack_solver(
+                self.arpack_dict, self.resid, self.v, self.ipntr, self.workd,
+                self.workl, self.rwork
+            )
 
+        xslice = slice(self.ipntr[0], self.ipntr[0] + self.n)
+        yslice = slice(self.ipntr[1], self.ipntr[1] + self.n)
 
-        xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
-        yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
-        if self.ido == -1:
-            # initialization
-            self.workd[yslice] = self.OP(self.workd[xslice])
-        elif self.ido == 1:
+        if self.arpack_dict['ido'] == 1:
             # compute y = Op*x
             if self.mode in (1, 2):
                 self.workd[yslice] = self.OP(self.workd[xslice])
             else:
-                Bxslice = slice(self.ipntr[2] - 1, self.ipntr[2] - 1 + self.n)
+                Bxslice = slice(self.ipntr[2], self.ipntr[2] + self.n)
                 self.workd[yslice] = self.OPa(self.workd[Bxslice])
-        elif self.ido == 2:
+
+        elif self.arpack_dict['ido'] == 2:
             self.workd[yslice] = self.B(self.workd[xslice])
-        elif self.ido == 3:
-            raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
+
+        elif self.arpack_dict['ido'] == 3:
+            raise ValueError("ARPACK requested user shifts. Assure ISHIFT==0")
+
+        elif self.arpack_dict['ido'] == 4:
+            if self.tp in 'fd':
+                # Generate random vector into resid
+                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
+                                                 size=[self.n]).astype(self.tp)
+            else:
+                # Generate complex random vector into resid
+                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0, size=[self.n, 2]
+                ).view(np.complex128).astype(self.tp).ravel()
+
+        elif self.arpack_dict['ido'] == 5:
+            self.workd[yslice] = self.OP(self.workd[xslice])
+
         else:
             self.converged = True
 
-            if self.info == 0:
+            if self.arpack_dict['info'] == 0:
                 pass
-            elif self.info == 1:
+            elif self.arpack_dict['info'] == 1:
                 self._raise_no_convergence()
             else:
-                raise ArpackError(self.info, infodict=self.iterate_infodict)
+                raise ArpackError(info=self.arpack_dict['info'],
+                                  infodict=self.iterate_infodict)
 
     def extract(self, return_eigenvectors):
         k, n = self.k, self.n
 
         ierr = 0
-        howmny = 'A'  # return all eigenvectors
-        sselect = np.zeros(self.ncv, 'int')  # unused
-        sigmar = np.real(self.sigma)
-        sigmai = np.imag(self.sigma)
+        self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
+        howmny = HOWMNY_DICT['A']  # return all eigenvectors
+        sselect = np.zeros(self.ncv, dtype=np.int32)
+        sigmar = float(np.real(self.sigma))
+        sigmai = float(np.imag(self.sigma))
         workev = np.zeros(3 * self.ncv, self.tp)
 
         if self.tp in 'fd':
-            dr = np.zeros(k + 1, self.tp)
-            di = np.zeros(k + 1, self.tp)
-            zr = np.zeros((n, k + 1), self.tp)
-            dr, di, zr, ierr = \
-                self._arpack_extract(return_eigenvectors,
-                       howmny, sselect, sigmar, sigmai, workev,
-                       self.bmat, self.which, k, self.tol, self.resid,
-                       self.v, self.iparam, self.ipntr,
-                       self.workd, self.workl, self.info)
+            dr = np.zeros([k + 1], dtype=self.tp)
+            di = np.zeros([k + 1], dtype=self.tp)
+            # Using a Fortran ordered array for NumPy parse the result correctly
+            zr = np.zeros([n, k + 1], dtype=self.tp, order='F')
+
+            # ARPACK _neupd call
+            self._arpack_extract(
+                self.arpack_dict, return_eigenvectors, howmny, sselect, dr, di,
+                zr, sigmar, sigmai, workev, self.resid, self.v, self.ipntr,
+                self.workd, self.workl
+            )
+
+            ierr = self.arpack_dict['info']
+
             if ierr != 0:
                 raise ArpackError(ierr, infodict=self.extract_infodict)
-            nreturned = self.iparam[4]  # number of good eigenvalues returned
+            nreturned = self.arpack_dict['nconv']  # number of good eigs returned
 
             # Build complex eigenvalues from real and imaginary parts
             d = dr + 1.0j * di
@@ -885,18 +955,19 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 d = d[ind]
                 z = z[:, ind]
         else:
-            # complex is so much simpler...
-            d, z, ierr =\
-                    self._arpack_extract(return_eigenvectors,
-                           howmny, sselect, self.sigma, workev,
-                           self.bmat, self.which, k, self.tol, self.resid,
-                           self.v, self.iparam, self.ipntr,
-                           self.workd, self.workl, self.rwork, ierr)
+            d = np.zeros([k], dtype=self.tp)
+            z = np.zeros([n, k], dtype=self.tp, order='F')
+            self._arpack_extract(
+                self.arpack_dict, return_eigenvectors, howmny, sselect, d, z,
+                self.sigma, workev, self.resid, self.v, self.ipntr, self.workd,
+                self.workl, self.rwork)
+
+            ierr = self.arpack_dict['info']
 
             if ierr != 0:
                 raise ArpackError(ierr, infodict=self.extract_infodict)
 
-            k_ok = self.iparam[4]
+            k_ok = self.arpack_dict['nconv']
             d = d[:k_ok]
             z = z[:, :k_ok]
 
@@ -1096,15 +1167,9 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             return SpLuInv(OP).matvec
 
 
-# ARPACK is not threadsafe or reentrant (SAVE variables), so we need a
-# lock and a re-entering check.
-_ARPACK_LOCK = ReentrancyLock("Nested calls to eigs/eighs not allowed: "
-                              "ARPACK is not re-entrant")
-
-
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          ncv=None, maxiter=None, tol=0, return_eigenvectors=True,
-         Minv=None, OPinv=None, OPpart=None):
+         Minv=None, OPinv=None, OPpart=None, rng=None):
     """
     Find k eigenvalues and eigenvectors of the square matrix A.
 
@@ -1207,6 +1272,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         See notes in sigma, above.
     OPpart : {'r' or 'i'}, optional
         See notes in sigma, above
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -1336,7 +1406,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         matvec = aslinearoperator(A).matvec
         if Minv is not None:
-            raise ValueError("Minv should not be specified when sigma is")
+            raise ValueError("Minv should not be specified when sigma is"
+                             "specified.")
         if OPinv is None:
             Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                            hermitian=False, tol=tol)
@@ -1348,20 +1419,20 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             M_matvec = aslinearoperator(M).matvec
 
+    rng = np.random.default_rng(rng)
     params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                       M_matvec, Minv_matvec, sigma,
-                                      ncv, v0, maxiter, which, tol)
+                                      ncv, v0, maxiter, which, tol, rng)
 
-    with _ARPACK_LOCK:
-        while not params.converged:
-            params.iterate()
+    while not params.converged:
+        params.iterate()
 
-        return params.extract(return_eigenvectors)
+    return params.extract(return_eigenvectors)
 
 
 def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
           ncv=None, maxiter=None, tol=0, return_eigenvectors=True,
-          Minv=None, OPinv=None, mode='normal'):
+          Minv=None, OPinv=None, mode='normal', rng=None):
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix
     or complex Hermitian matrix A.
@@ -1374,8 +1445,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     with corresponding eigenvectors x[i].
 
     Note that there is no specialized routine for the case when A is a complex
-    Hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return the
-    real parts of the eigenvalues thus obtained.
+    Hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return
+    the real parts of the eigenvalues thus obtained.
 
     Parameters
     ----------
@@ -1528,6 +1599,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The choice of mode will affect which eigenvalues are selected by
         the keyword 'which', and can also impact the stability of
         convergence (see [2] for a discussion).
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Raises
     ------
@@ -1626,16 +1702,14 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         matvec = A.matvec
 
         if OPinv is not None:
-            raise ValueError("OPinv should not be specified "
-                             "with sigma = None.")
+            raise ValueError("OPinv should not be specified with sigma = None.")
         if M is None:
             #standard eigenvalue problem
             mode = 1
             M_matvec = None
             Minv_matvec = None
             if Minv is not None:
-                raise ValueError("Minv should not be "
-                                 "specified with M = None.")
+                raise ValueError("Minv should not be specified with M = None.")
         else:
             #general eigenvalue problem
             mode = 2
@@ -1648,7 +1722,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     else:
         # sigma is not None: shift-invert mode
         if Minv is not None:
-            raise ValueError("Minv should not be specified when sigma is")
+            raise ValueError("Minv should not be specified when sigma is "
+                             "specified.")
 
         # normal mode
         if mode == 'normal':
@@ -1694,13 +1769,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         # unrecognized mode
         else:
             raise ValueError(f"unrecognized mode '{mode}'")
-
+    rng = np.random.default_rng(rng)
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,
-                                    ncv, v0, maxiter, which, tol)
+                                    ncv, v0, maxiter, which, tol, rng)
 
-    with _ARPACK_LOCK:
-        while not params.converged:
-            params.iterate()
+    while not params.converged:
+        params.iterate()
 
-        return params.extract(return_eigenvectors)
+    return params.extract(return_eigenvectors)

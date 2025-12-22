@@ -495,12 +495,12 @@ class Model:
         i.e. ``beta = array([B_1, B_2, ..., B_p])``
     `fjacb`
         if the response variable is multi-dimensional, then the
-        return array's shape is ``(q, p, n)`` such that ``fjacb(x,beta)[l,k,i] =
-        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If ``q == 1``, then
+        return array's shape is ``(q, p, n)`` such that ``fjacb(beta,x)[l,k,i] =
+        d f_l(beta,x)/d B_k`` evaluated at the ith data point.  If ``q == 1``, then
         the return array is only rank-2 and with shape ``(p, n)``.
     `fjacd`
         as with fjacb, only the return array's shape is ``(q, m, n)``
-        such that ``fjacd(x,beta)[l,j,i] = d f_l(X,B)/d X_j`` at the ith data
+        such that ``fjacd(beta,x)[l,j,i] = d f_l(beta,x)/d X_j`` at the ith data
         point.  If ``q == 1``, then the return array's shape is ``(m, n)``. If
         ``m == 1``, the shape is (q, n). If `m == q == 1`, the shape is ``(n,)``.
 
@@ -799,6 +799,9 @@ class ODR:
             y_s = list(self.data.y.shape)
             if self.model.implicit:
                 raise OdrError("an implicit model cannot use response data")
+            if self.job is not None and (self.job % 10) == 1:
+                raise OdrError("job parameter requests an implicit model,"
+                               " but an explicit model was passed")
         else:
             # implicit model with q == self.data.y
             y_s = [self.data.y, x_s[-1]]

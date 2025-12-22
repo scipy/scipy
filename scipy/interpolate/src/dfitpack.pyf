@@ -13,10 +13,10 @@ python module _dfitpack ! in
 
   usercode '''
 
-#ifdef HAVE_ILP64
-typedef npy_int64 F_INT;
+#ifdef HAVE_BLAS_ILP64
+#define F_INT npy_int64
 #else
-typedef int F_INT;
+#define F_INT int
 #endif
 
 static double dmax(double* seq, F_INT len) {

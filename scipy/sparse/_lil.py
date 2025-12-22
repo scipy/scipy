@@ -161,16 +161,6 @@ class _lil_base(_spbase, IndexMixin):
         # Everything else takes the normal path.
         return IndexMixin.__getitem__(self, key)
 
-    def _asindices(self, idx, N):
-        # LIL routines handle bounds-checking for us, so don't do it here.
-        try:
-            x = np.asarray(idx)
-        except (ValueError, TypeError, MemoryError) as e:
-            raise IndexError('invalid index') from e
-        if x.ndim not in (1, 2):
-            raise IndexError('Index dimension must be <= 2')
-        return x
-
     def _get_intXint(self, row, col):
         v = _csparsetools.lil_get1(self.shape[0], self.shape[1], self.rows,
                                    self.data, row, col)
@@ -269,6 +259,10 @@ class _lil_base(_spbase, IndexMixin):
             row, col = key
             # Fast path for simple (int, int) indexing.
             if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
+                if issparse(x):
+                    x = x.toarray()
+                if isinstance(x, np.ndarray):
+                    x = x.item()
                 x = self.dtype.type(x)
                 if x.size > 1:
                     raise ValueError("Trying to assign a sequence to an item")
@@ -291,8 +285,7 @@ class _lil_base(_spbase, IndexMixin):
         else:
             res_dtype = upcast_scalar(self.dtype, other)
 
-            new = self.copy()
-            new = new.astype(res_dtype)
+            new = self.astype(res_dtype)  # sure to make a copy
             # Multiply this scalar by every element.
             for j, rowvals in enumerate(new.data):
                 new.data[j] = [val*other for val in rowvals]

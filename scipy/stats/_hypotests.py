@@ -1,6 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass
-from math import comb
+import math
 import numpy as np
 import warnings
 from itertools import combinations
@@ -9,6 +9,9 @@ from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
+from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
+                                   xp_promote, xp_result_type, xp_copy, is_numpy)
+import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -26,8 +29,10 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy"),
+                                ("jax.numpy", "lazy -> no _axis_nan_policy")])
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
-def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
+def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
 
     Test the null hypothesis that two samples have the same underlying
@@ -44,6 +49,11 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         to be evaluated. It should be positive distinct numbers. The default
         value (0.4, 0.8) is proposed in [1]_. Input must not have more than
         one dimension.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -94,60 +104,78 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
+    xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
-    t = np.asarray(t)
+    # and `axis` is guaranteed to be -1.
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    t = xp.asarray(t, dtype=x.dtype)
     # check if x and y are valid inputs
-    nx, ny = len(x), len(y)
-    if (nx < 5) or (ny < 5):
+    nx, ny = x.shape[-1], y.shape[-1]
+    if (nx < 5) or (ny < 5):  # only used by test_axis_nan_policy
         raise ValueError('x and y should have at least 5 elements, but len(x) '
                          f'= {nx} and len(y) = {ny}.')
-    if not np.isfinite(x).all():
-        raise ValueError('x must not contain nonfinite values.')
-    if not np.isfinite(y).all():
-        raise ValueError('y must not contain nonfinite values.')
     n = nx + ny
 
     # check if t is valid
     if t.ndim > 1:
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
-    if np.less_equal(t, 0).any():
+    if xp.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
+
+    # Previously, non-finite input caused an error in linalg functions.
+    # To prevent an issue in one slice from halting the calculation, replace non-finite
+    # values with a harmless one, and replace results with NaN at the end.
+    i_x = ~xp.isfinite(x)
+    i_y = ~xp.isfinite(y)
+    # Ideally we would avoid copying all data here; see
+    # discussion in data-apis/array-api-extra#506.
+    x = xp.where(i_x, 1., x)
+    y = xp.where(i_y, 1., y)
+    invalid_result = xp.any(i_x, axis=-1) | xp.any(i_y, axis=-1)
 
     # rescale t with semi-iqr as proposed in [1]; import iqr here to avoid
     # circular import
     from scipy.stats import iqr
-    sigma = iqr(np.hstack((x, y))) / 2
-    ts = np.reshape(t, (-1, 1)) / sigma
+    sigma = iqr(xp.concat((x, y), axis=-1), axis=-1, keepdims=True) / 2
+    ts = xp.reshape(t, (-1,) + (1,)*x.ndim) / sigma
 
     # covariance estimation of ES test
-    gx = np.vstack((np.cos(ts*x), np.sin(ts*x))).T  # shape = (nx, 2*len(t))
-    gy = np.vstack((np.cos(ts*y), np.sin(ts*y))).T
-    cov_x = np.cov(gx.T, bias=True)  # the test uses biased cov-estimate
-    cov_y = np.cov(gy.T, bias=True)
+    gx = xp.concat((xp.cos(ts*x), xp.sin(ts*x)), axis=0)
+    gy = xp.concat((xp.cos(ts*y), xp.sin(ts*y)), axis=0)
+    gx, gy = xp.moveaxis(gx, 0, -2), xp.moveaxis(gy, 0, -2)
+    cov_x = xpx.cov(gx) * (nx-1)/nx  # the test uses biased cov-estimate
+    cov_y = xpx.cov(gy) * (ny-1)/ny
+    cov_x, cov_y = xp.astype(cov_x, x.dtype), xp.astype(cov_y, y.dtype)
     est_cov = (n/nx)*cov_x + (n/ny)*cov_y
-    est_cov_inv = np.linalg.pinv(est_cov)
-    r = np.linalg.matrix_rank(est_cov_inv)
-    if r < 2*len(t):
+    est_cov_inv = xp.linalg.pinv(est_cov)
+    r = xp.asarray(xp.linalg.matrix_rank(est_cov_inv), dtype=est_cov_inv.dtype)
+    if xp.any(r < 2*xp_size(t)):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
                       'test might not be consistent.', # see p. 183 in [1]_
                       stacklevel=2)
 
     # compute test statistic w distributed asympt. as chisquare with df=r
-    g_diff = np.mean(gx, axis=0) - np.mean(gy, axis=0)
-    w = n*np.dot(g_diff.T, np.dot(est_cov_inv, g_diff))
+    g_diff = xp.mean(gx, axis=-1, keepdims=True) - xp.mean(gy, axis=-1, keepdims=True)
+    w = n*xp.matmul(xp.matrix_transpose(g_diff), xp.matmul(est_cov_inv, g_diff))
+    w = w[..., 0, 0]
 
     # apply small-sample correction
     if (max(nx, ny) < 25):
         corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
-        w = corr * w
+        w *= corr
 
     chi2 = _stats_py._SimpleChi2(r)
-    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
+    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=xp)
 
+    w = xpx.at(w)[invalid_result].set(xp.nan)
+    p = xpx.at(p)[invalid_result].set(xp.nan)
+    w = w[()] if w.ndim == 0 else w
+    p = p[()] if p.ndim == 0 else p
     return Epps_Singleton_2sampResult(w, p)
 
 
+@xp_capabilities(np_only=True)
 def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     r"""
     Performs the Poisson means test, AKA the "E-test".
@@ -363,7 +391,7 @@ class CramerVonMisesResult:
                 f"pvalue={self.pvalue})")
 
 
-def _psi1_mod(x):
+def _psi1_mod(x, *, xp=None):
     """
     psi1 is defined in equation 1.10 in Csörgő, S. and Faraway, J. (1996).
     This implements a modified version by excluding the term V(x) / 12
@@ -375,45 +403,56 @@ def _psi1_mod(x):
     by Adrian Baddeley. Main difference in the implementation: the code
     here keeps adding terms of the series until the terms are small enough.
     """
+    xp = array_namespace(x) if xp is None else xp
 
     def _ed2(y):
         z = y**2 / 4
-        b = kv(1/4, z) + kv(3/4, z)
-        return np.exp(-z) * (y/2)**(3/2) * b / np.sqrt(np.pi)
+        z_ = np.asarray(z)
+        b = xp.asarray(kv(1/4, z_) + kv(3/4, z_))
+        return xp.exp(-z) * (y/2)**(3/2) * b / math.sqrt(np.pi)
 
     def _ed3(y):
         z = y**2 / 4
-        c = np.exp(-z) / np.sqrt(np.pi)
-        return c * (y/2)**(5/2) * (2*kv(1/4, z) + 3*kv(3/4, z) - kv(5/4, z))
+        z_ = np.asarray(z)
+        c = xp.exp(-z) / math.sqrt(np.pi)
+        kv_terms = xp.asarray(2*kv(1/4, z_)
+                              + 3*kv(3/4, z_) - kv(5/4, z_))
+        return c * (y/2)**(5/2) * kv_terms
 
     def _Ak(k, x):
         m = 2*k + 1
-        sx = 2 * np.sqrt(x)
+        sx = 2 * xp.sqrt(x)
         y1 = x**(3/4)
         y2 = x**(5/4)
 
-        e1 = m * gamma(k + 1/2) * _ed2((4 * k + 3)/sx) / (9 * y1)
-        e2 = gamma(k + 1/2) * _ed3((4 * k + 1) / sx) / (72 * y2)
-        e3 = 2 * (m + 2) * gamma(k + 3/2) * _ed3((4 * k + 5) / sx) / (12 * y2)
-        e4 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 1) / sx) / (144 * y1)
-        e5 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 5) / sx) / (144 * y1)
+        gamma_kp1_2 = float(gamma(k + 1 / 2))
+        gamma_kp3_2 = float(gamma(k + 3 / 2))
+
+        e1 = m * gamma_kp1_2 * _ed2((4 * k + 3)/sx) / (9 * y1)
+        e2 = gamma_kp1_2 * _ed3((4 * k + 1) / sx) / (72 * y2)
+        e3 = 2 * (m + 2) * gamma_kp3_2 * _ed3((4 * k + 5) / sx) / (12 * y2)
+        e4 = 7 * m * gamma_kp1_2 * _ed2((4 * k + 1) / sx) / (144 * y1)
+        e5 = 7 * m * gamma_kp1_2 * _ed2((4 * k + 5) / sx) / (144 * y1)
 
         return e1 + e2 + e3 + e4 + e5
 
-    x = np.asarray(x)
-    tot = np.zeros_like(x, dtype='float')
-    cond = np.ones_like(x, dtype='bool')
+    x = xp.asarray(x)
+    tot = xp.zeros_like(x)
+    cond = xp.ones_like(x, dtype=xp.bool)
     k = 0
-    while np.any(cond):
-        z = -_Ak(k, x[cond]) / (np.pi * gamma(k + 1))
-        tot[cond] = tot[cond] + z
-        cond[cond] = np.abs(z) >= 1e-7
+    while xp.any(cond):
+        gamma_kp1 = float(gamma(k + 1))
+        z = -_Ak(k, x[cond]) / (xp.pi * gamma_kp1)
+        tot = xpx.at(tot)[cond].set(tot[cond] + z)
+        # For float32 arithmetic, the tolerance may need to be adjusted or the
+        # algorithm may prove to be unsuitable.
+        cond = xpx.at(cond)[xp_copy(cond)].set(xp.abs(z) >= 1e-7)
         k += 1
 
     return tot
 
 
-def _cdf_cvm_inf(x):
+def _cdf_cvm_inf(x, *, xp=None):
     """
     Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
 
@@ -427,29 +466,32 @@ def _cdf_cvm_inf(x):
     The function is not expected to be accurate for large values of x, say
     x > 4, when the cdf is very close to 1.
     """
-    x = np.asarray(x)
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x)
 
     def term(x, k):
         # this expression can be found in [2], second line of (1.3)
-        u = np.exp(gammaln(k + 0.5) - gammaln(k+1)) / (np.pi**1.5 * np.sqrt(x))
+        u = math.exp(gammaln(k + 0.5) - gammaln(k+1)) / (xp.pi**1.5 * xp.sqrt(x))
         y = 4*k + 1
         q = y**2 / (16*x)
-        b = kv(0.25, q)
-        return u * np.sqrt(y) * np.exp(-q) * b
+        b = xp.asarray(kv(0.25, np.asarray(q)), dtype=u.dtype)  # not automatic?
+        return u * math.sqrt(y) * xp.exp(-q) * b
 
-    tot = np.zeros_like(x, dtype='float')
-    cond = np.ones_like(x, dtype='bool')
+    tot = xp.zeros_like(x, dtype=x.dtype)
+    cond = xp.ones_like(x, dtype=xp.bool)
     k = 0
-    while np.any(cond):
+    while xp.any(cond):
         z = term(x[cond], k)
-        tot[cond] = tot[cond] + z
-        cond[cond] = np.abs(z) >= 1e-7
+        # tot[cond] = tot[cond] + z
+        tot = xpx.at(tot)[cond].add(z)
+        # cond[cond] = np.abs(z) >= 1e-7
+        cond = xpx.at(cond)[xp_copy(cond)].set(xp.abs(z) >= 1e-7)  # torch needs copy
         k += 1
 
     return tot
 
 
-def _cdf_cvm(x, n=None):
+def _cdf_cvm(x, n=None, *, xp=None):
     """
     Calculate the cdf of the Cramér-von Mises statistic for a finite sample
     size n. If N is None, use the asymptotic cdf (n=inf).
@@ -465,31 +507,34 @@ def _cdf_cvm(x, n=None):
     and 1, respectively. These are limitations of the approximation by Csörgő
     and Faraway (1996) implemented in this function.
     """
-    x = np.asarray(x)
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x)
+
     if n is None:
-        y = _cdf_cvm_inf(x)
+        y = _cdf_cvm_inf(x, xp=xp)
     else:
         # support of the test statistic is [12/n, n/3], see 1.1 in [2]
-        y = np.zeros_like(x, dtype='float')
+        y = xp.zeros_like(x, dtype=x.dtype)
         sup = (1./(12*n) < x) & (x < n/3.)
         # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
         # therefore, we need to add it here
-        y[sup] = _cdf_cvm_inf(x[sup]) * (1 + 1./(12*n)) + _psi1_mod(x[sup]) / n
-        y[x >= n/3] = 1
+        y = xpx.at(y)[sup].set(_cdf_cvm_inf(x[sup], xp=xp) * (1 + 1./(12*n))
+                               + _psi1_mod(x[sup], xp=xp) / n)
+        y = xpx.at(y)[x >= n/3].set(1.)
 
-    if y.ndim == 0:
-        return y[()]
-    return y
+    return y[()] if y.ndim == 0 else y
 
 
-def _cvm_result_to_tuple(res):
+def _cvm_result_to_tuple(res, _):
     return res.statistic, res.pvalue
 
 
+@xp_capabilities(cpu_only=True,  # needs special function `kv`
+                 skip_backends=[('dask.array', 'typical dask issues')], jax_jit=False)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
-def cramervonmises(rvs, cdf, args=()):
-    """Perform the one-sample Cramér-von Mises test for goodness of fit.
+def cramervonmises(rvs, cdf, args=(), *, axis=0):
+    r"""Perform the one-sample Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
     function (cdf) :math:`F` compared to the empirical distribution function
@@ -497,6 +542,13 @@ def cramervonmises(rvs, cdf, args=()):
     assumed to be independent and identically distributed ([1]_).
     The null hypothesis is that the :math:`X_i` have cumulative distribution
     :math:`F`.
+
+    The test statistic :math:`T` is defined as in [1]_, where :math:`\omega^2`
+    is the Cramér-von Mises criterion and :math:`x_i` are the observed values.
+
+    .. math::
+        T = n\omega^2 =
+        \frac{1}{12n} + \sum_{i=1}^n \left[ \frac{2i-1}{2n} - F(x_i) \right]^2
 
     Parameters
     ----------
@@ -510,12 +562,17 @@ def cramervonmises(rvs, cdf, args=()):
         to calculate the cdf: ``cdf(x, *args) -> float``.
     args : tuple, optional
         Distribution parameters. These are assumed to be known; see Notes.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 
@@ -584,22 +641,28 @@ def cramervonmises(rvs, cdf, args=()):
     significance level.
 
     """
-    if isinstance(cdf, str):
+    # `_axis_nan_policy` decorator ensures `axis=-1`
+    xp = array_namespace(rvs)
+
+    if isinstance(cdf, str) and is_numpy(xp):
         cdf = getattr(distributions, cdf).cdf
+    elif isinstance(cdf, str):
+        message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
+        raise ValueError(message)
 
-    vals = np.sort(np.asarray(rvs))
-
-    if vals.size <= 1:
+    n = rvs.shape[-1]
+    if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
-    n = len(vals)
+    rvs, n = xp_promote(rvs, n, force_floating=True, xp=xp)
+    vals = xp.sort(rvs, axis=-1)
     cdfvals = cdf(vals, *args)
 
-    u = (2*np.arange(1, n+1) - 1)/(2*n)
-    w = 1/(12*n) + np.sum((u - cdfvals)**2)
+    u = (2*xp.arange(1, n+1, dtype=n.dtype) - 1)/(2*n)
+    w = 1/(12*n) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
-    p = np.clip(1. - _cdf_cvm(w, n), 0., None)
+    p = xp.clip(1. - _cdf_cvm(w, n), 0., None)
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
@@ -709,6 +772,7 @@ class SomersDResult:
     table: np.ndarray
 
 
+@xp_capabilities(np_only=True)
 def somersd(x, y=None, alternative='two-sided'):
     r"""Calculates Somers' D, an asymmetric measure of ordinal association.
 
@@ -920,6 +984,7 @@ class BarnardExactResult:
     pvalue: float
 
 
+@xp_capabilities(np_only=True)
 def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     r"""Perform a Barnard exact test on a 2x2 contingency table.
 
@@ -1191,6 +1256,7 @@ class BoschlooExactResult:
     pvalue: float
 
 
+@xp_capabilities(np_only=True)
 def boschloo_exact(table, alternative="two-sided", n=32):
     r"""Perform Boschloo's exact test on a 2x2 contingency table.
 
@@ -1491,6 +1557,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     return -log_pvalue
 
 
+@np.vectorize(otypes=[np.float64])
 def _pval_cvm_2samp_exact(s, m, n):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
@@ -1517,7 +1584,7 @@ def _pval_cvm_2samp_exact(s, m, n):
 
     # bound maximum value that may appear in `gs` (remember both rows!)
     zeta_bound = lcm**2 * (m + n)  # bound elements in row 1
-    combinations = comb(m + n, m)  # sum of row 2
+    combinations = math.comb(m + n, m)  # sum of row 2
     max_gs = max(zeta_bound, combinations)
     dtype = np.min_scalar_type(max_gs)
 
@@ -1544,15 +1611,51 @@ def _pval_cvm_2samp_exact(s, m, n):
     return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
+def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
+    # compute expected value and variance of T (eq. 11 and 14 in [2])
+    et = (1 + 1 / N) / 6
+    vt = (N + 1) * (4 * k * N - 3 * (nx ** 2 + ny ** 2) - 2 * k)
+    vt = vt / (45 * N ** 2 * 4 * k)
+
+    # computed the normalized statistic (eq. 15 in [2])
+    tn = 1 / 6 + (t - et) / math.sqrt(45 * vt)
+
+    # approximate distribution of tn with limiting distribution
+    # of the one-sample test statistic
+    # if tn < 0.003, the _cdf_cvm_inf(tn) < 1.28*1e-18, return 1.0 directly
+    p = xpx.apply_where(tn >= 0.003,
+                        (tn,),
+                        lambda tn: xp.clip(1. - _cdf_cvm_inf(tn, xp=xp), 0.),
+                        fill_value = 1.)
+    return p
+
+
+@xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
+                                ('dask.array', 'needs rankdata')],
+                 cpu_only=True, jax_jit=False)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
-def cramervonmises_2samp(x, y, method='auto'):
-    """Perform the two-sample Cramér-von Mises test for goodness of fit.
+def cramervonmises_2samp(x, y, method='auto', *, axis=0):
+    r"""Perform the two-sample Cramér-von Mises test for goodness of fit.
 
     This is the two-sample version of the Cramér-von Mises test ([1]_):
     for two independent samples :math:`X_1, ..., X_n` and
     :math:`Y_1, ..., Y_m`, the null hypothesis is that the samples
     come from the same (unspecified) continuous distribution.
+
+    The test statistic :math:`T` is defined as in [1]_:
+
+    .. math::
+        T = \frac{nm}{n+m}\omega^2 =
+        \frac{U}{n m (n+m)} - \frac{4 m n - 1}{6(m+n)}
+
+    where :math:`U` is defined as below, and :math:`\omega^2` is the Cramér-von
+    Mises criterion. The function :math:`r(\cdot)` here denotes the rank of the
+    observed values :math:`x_i` and :math:`y_j` within the pooled sample of size
+    :math:`n + m`, with ties assigned mid-rank values:
+
+    .. math::
+        U = n \sum_{i=1}^n (r(x_i)-i)^2 + m \sum_{j=1}^m (r(y_j)-j)^2
 
     Parameters
     ----------
@@ -1565,12 +1668,17 @@ def cramervonmises_2samp(x, y, method='auto'):
     method : {'auto', 'asymptotic', 'exact'}, optional
         The method used to compute the p-value, see Notes for details.
         The default is 'auto'.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 
@@ -1645,16 +1753,14 @@ def cramervonmises_2samp(x, y, method='auto'):
     chosen significance level in this example.
 
     """
-    xa = np.sort(np.asarray(x))
-    ya = np.sort(np.asarray(y))
+    xp = array_namespace(x, y)
+    nx = x.shape[-1]
+    ny = y.shape[-1]
 
-    if xa.size <= 1 or ya.size <= 1:
+    if nx <= 1 or ny <= 1:  # only needed for testing / `test_axis_nan_policy`
         raise ValueError('x and y must contain at least two observations.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
-
-    nx = len(xa)
-    ny = len(ya)
 
     if method == 'auto':
         if max(nx, ny) > 20:
@@ -1662,40 +1768,34 @@ def cramervonmises_2samp(x, y, method='auto'):
         else:
             method = 'exact'
 
+    # axis=-1 is guaranteed by _axis_nan_policy decorator
+    xa = xp.sort(x, axis=-1)
+    ya = xp.sort(y, axis=-1)
+
     # get ranks of x and y in the pooled sample
-    z = np.concatenate([xa, ya])
+    z = xp.concat([xa, ya], axis=-1)
     # in case of ties, use midrank (see [1])
-    r = scipy.stats.rankdata(z, method='average')
-    rx = r[:nx]
-    ry = r[nx:]
+    r = scipy.stats.rankdata(z, method='average', axis=-1)
+    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
+    r = xp.astype(r, dtype, copy=False)
+    rx = r[..., :nx]
+    ry = r[..., nx:]
 
     # compute U (eq. 10 in [2])
-    u = nx * np.sum((rx - np.arange(1, nx+1))**2)
-    u += ny * np.sum((ry - np.arange(1, ny+1))**2)
+    u = (nx * xp.sum((rx - xp.arange(1, nx+1, dtype=dtype))**2, axis=-1)
+         + ny * xp.sum((ry - xp.arange(1, ny+1, dtype=dtype))**2, axis=-1))
 
     # compute T (eq. 9 in [2])
     k, N = nx*ny, nx + ny
     t = u / (k*N) - (4*k - 1)/(6*N)
 
     if method == 'exact':
-        p = _pval_cvm_2samp_exact(u, nx, ny)
+        p = xp.asarray(_pval_cvm_2samp_exact(np.asarray(u), nx, ny), dtype=dtype)
     else:
-        # compute expected value and variance of T (eq. 11 and 14 in [2])
-        et = (1 + 1/N)/6
-        vt = (N+1) * (4*k*N - 3*(nx**2 + ny**2) - 2*k)
-        vt = vt / (45 * N**2 * 4 * k)
+        p = _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, xp=xp)
 
-        # computed the normalized statistic (eq. 15 in [2])
-        tn = 1/6 + (t - et) / np.sqrt(45 * vt)
-
-        # approximate distribution of tn with limiting distribution
-        # of the one-sample test statistic
-        # if tn < 0.003, the _cdf_cvm_inf(tn) < 1.28*1e-18, return 1.0 directly
-        if tn < 0.003:
-            p = 1.0
-        else:
-            p = max(0, 1. - _cdf_cvm_inf(tn))
-
+    t = t[()] if t.ndim == 0 else t
+    p = p[()] if p.ndim == 0 else p
     return CramerVonMisesResult(statistic=t, pvalue=p)
 
 
@@ -1749,13 +1849,12 @@ class TukeyHSDResult:
         s = ("Pairwise Group Comparisons"
              f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
         s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
-        for i in range(self.pvalue.shape[0]):
-            for j in range(self.pvalue.shape[0]):
-                if i != j:
-                    s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
-                          f"{self.pvalue[i, j]:>10.3f}"
-                          f"{self._ci.low[i, j]:>10.3f}"
-                          f"{self._ci.high[i, j]:>10.3f}\n")
+        for i, j in np.ndindex(self.pvalue.shape):
+            if i != j:
+                s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                      f"{self.pvalue[i, j]:>10.3f}"
+                      f"{self._ci.low[i, j]:>10.3f}"
+                      f"{self._ci.high[i, j]:>10.3f}\n")
         return s
 
     def confidence_interval(self, confidence_level=.95):
@@ -1847,6 +1946,7 @@ def _tukey_hsd_iv(args, equal_var):
     return args
 
 
+@xp_capabilities(np_only=True)
 def tukey_hsd(*args, equal_var=True):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 

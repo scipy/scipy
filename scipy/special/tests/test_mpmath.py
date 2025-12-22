@@ -3,7 +3,7 @@ Test SciPy functions versus mpmath, if available.
 
 """
 import numpy as np
-from numpy.testing import assert_, assert_allclose, suppress_warnings
+from numpy.testing import assert_, assert_allclose
 from numpy import pi
 import pytest
 import itertools
@@ -27,6 +27,9 @@ try:
 except ImportError:
     mpmath = MissingModule('mpmath')
 
+pytestmark = pytest.mark.thread_unsafe(
+    reason=("mpmath gmpy2 backend is not thread-safe, "
+            "see https://github.com/mpmath/mpmath/issues/974"))
 
 # ------------------------------------------------------------------------------
 # expi
@@ -671,14 +674,6 @@ def test_lambertw_smallz():
 # ------------------------------------------------------------------------------
 # Systematic tests
 # ------------------------------------------------------------------------------
-
-# The functions lpn, lpmn, clpmn, and sph_harm appearing below are
-# deprecated in favor of legendre_p_all, assoc_legendre_p_all,
-# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn),
-# and sph_harm_y respectively. The deprecated functions listed above are
-# implemented as shims around their respective replacements. The replacements
-# are tested separately, but tests for the deprecated functions remain to
-# verify the correctness of the shims.
 
 HYPERKW = dict(maxprec=200, maxterms=200)
 
@@ -1578,7 +1573,7 @@ class TestSystematic:
             lambda n, a, b, x: sc.eval_jacobi(int(n), a, b, x),
             lambda n, a, b, x: exception_to_nan(jacobi)(n, a, b, x, **HYPERKW),
             [IntArg(), Arg(), Arg(), Arg()],
-            n=20000,
+            n=4095,
             dps=50,
         )
 
@@ -1663,119 +1658,6 @@ class TestSystematic:
             lambda n, x: sc.eval_legendre(int(n), x),
             lambda n, x: exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
             [IntArg(), FixedArg(np.logspace(-30, -4, 20))],
-        )
-
-    def test_legenp(self):
-        def lpnm(n, m, z):
-            try:
-                with suppress_warnings() as sup:
-                    sup.filter(category=DeprecationWarning)
-                    v = sc.lpmn(m, n, z)[0][-1,-1]
-            except ValueError:
-                return np.nan
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = np.inf * np.sign(v.real)
-            return v
-
-        def lpnm_2(n, m, z):
-            v = sc.lpmv(m, n, z)
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = np.inf * np.sign(v.real)
-            return v
-
-        def legenp(n, m, z):
-            if (z == 1 or z == -1) and int(n) == n:
-                # Special case (mpmath may give inf, we take the limit by
-                # continuity)
-                if m == 0:
-                    if n < 0:
-                        n = -n - 1
-                    return mpmath.power(mpmath.sign(z), n)
-                else:
-                    return 0
-
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-
-            typ = 2 if abs(z) <= 1 else 3
-            v = exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
-
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = mpmath.inf * mpmath.sign(v.real)
-
-            return v
-
-        assert_mpmath_equal(lpnm, legenp, [IntArg(-100, 100), IntArg(-100, 100), Arg()])
-
-        assert_mpmath_equal(
-            lpnm_2,
-            legenp,
-            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)],
-            atol=1e-10,
-        )
-
-    def test_legenp_complex_2(self):
-        def clpnm(n, m, z):
-            try:
-                with suppress_warnings() as sup:
-                    sup.filter(category=DeprecationWarning)
-                    return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=2)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
-        )
-
-    def test_legenp_complex_3(self):
-        def clpnm(n, m, z):
-            try:
-                with suppress_warnings() as sup:
-                    sup.filter(category=DeprecationWarning)
-                    return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=3)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
         )
 
     @pytest.mark.xfail(run=False, reason="apparently picks wrong function at |z| > 1")
@@ -2018,22 +1900,6 @@ class TestSystematic:
             exception_to_nan(dilog),
             [ComplexArg()],
             rtol=1e-14,
-        )
-
-    def test_spherharm(self):
-        def spherharm(l, m, theta, phi):
-            if m > l:
-                return np.nan
-            with suppress_warnings() as sup:
-                sup.filter(category=DeprecationWarning)
-                return sc.sph_harm(m, l, phi, theta)
-        assert_mpmath_equal(
-            spherharm,
-            mpmath.spherharm,
-            [IntArg(0, 100), IntArg(0, 100), Arg(a=0, b=pi), Arg(a=0, b=2*pi)],
-            atol=1e-8,
-            n=6000,
-            dps=150,
         )
 
     def test_struveh(self):

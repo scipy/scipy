@@ -60,10 +60,8 @@ computing the distances between all pairs.
    dice             -- the Dice dissimilarity.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
-   kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
-   sokalmichener    -- the Sokal-Michener dissimilarity.
    sokalsneath      -- the Sokal-Sneath dissimilarity.
    yule             -- the Yule dissimilarity.
 
@@ -88,7 +86,6 @@ __all__ = [
     'is_valid_y',
     'jaccard',
     'jensenshannon',
-    'kulczynski1',
     'mahalanobis',
     'minkowski',
     'num_obs_dm',
@@ -97,7 +94,6 @@ __all__ = [
     'rogerstanimoto',
     'russellrao',
     'seuclidean',
-    'sokalmichener',
     'sokalsneath',
     'sqeuclidean',
     'squareform',
@@ -116,7 +112,6 @@ import numpy as np
 from scipy._lib._array_api import _asarray
 from scipy._lib._util import _asarray_validated, _transition_to_rng
 from scipy._lib import array_api_extra as xpx
-from scipy._lib.deprecation import _deprecated
 from scipy.linalg import norm
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
@@ -377,10 +372,11 @@ def directed_hausdorff(u, v, rng=0):
     (as with the brute force algorithm), this is unlikely in practice
     as the input data would have to require the algorithm to explore
     every single point interaction, and after the algorithm shuffles
-    the input points at that. The best case performance is O(m), which
-    is satisfied by selecting an inner loop distance that is less than
-    cmax and leads to an early break as often as possible. The authors
-    have formally shown that the average runtime is closer to O(m).
+    the input points at that. The best case performance is ``O(m)``,
+    which is satisfied by selecting an inner loop distance that is
+    less than cmax and leads to an early break as often as possible.
+    The authors have formally shown that the average runtime is
+    closer to ``O(m)``.
 
     .. versionadded:: 0.19.0
 
@@ -388,8 +384,8 @@ def directed_hausdorff(u, v, rng=0):
     ----------
     .. [1] A. A. Taha and A. Hanbury, "An efficient algorithm for
            calculating the exact Hausdorff distance." IEEE Transactions On
-           Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
-           2015.
+           Pattern Analysis And Machine Intelligence, vol. 37, no. 11,
+           pp. 2153-63, 2015. :doi:`10.1109/TPAMI.2015.2408351`.
 
     Examples
     --------
@@ -615,14 +611,8 @@ def correlation(u, v, w=None, centered=True):
     ----------
     u : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -655,10 +645,8 @@ def correlation(u, v, w=None, centered=True):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if np.iscomplexobj(u) or np.iscomplexobj(v):
-        message = (
-            "Complex `u` and `v` are deprecated and will raise an error in "
-            "SciPy 1.17.0.")
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        msg = "`u` and `v` must be real."
+        raise TypeError(msg)
     if w is not None:
         w = _validate_weights(w)
         w = w / w.sum()
@@ -702,14 +690,8 @@ def cosine(u, v, w=None):
     ----------
     u : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -915,86 +897,6 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else np.float64(0)
 
 
-_deprecated_kulczynski1 = _deprecated(
-    "The kulczynski1 metric is deprecated since SciPy 1.15.0 and will be "
-    "removed in SciPy 1.17.0.  Replace usage of 'kulczynski1(u, v)' with "
-    "'1/jaccard(u, v) - 1'."
-)
-
-
-@_deprecated_kulczynski1
-def kulczynski1(u, v, *, w=None):
-    """
-    Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
-
-    .. deprecated:: 1.15.0
-       This function is deprecated and will be removed in SciPy 1.17.0.
-       Replace usage of ``kulczynski1(u, v)`` with ``1/jaccard(u, v) - 1``.
-
-    The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
-    of length ``n``, is defined as
-
-    .. math::
-
-         \\frac{c_{11}}
-              {c_{01} + c_{10}}
-
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k \\in {0, 1, ..., n-1}`.
-
-    Parameters
-    ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
-
-    Returns
-    -------
-    kulczynski1 : float
-        The Kulczynski 1 distance between vectors `u` and `v`.
-
-    Notes
-    -----
-    This measure has a minimum value of 0 and no upper limit.
-    It is un-defined when there are no non-matches.
-
-    .. versionadded:: 1.8.0
-
-    References
-    ----------
-    .. [1] Kulczynski S. et al. Bulletin
-           International de l'Academie Polonaise des Sciences
-           et des Lettres, Classe des Sciences Mathematiques
-           et Naturelles, Serie B (Sciences Naturelles). 1927;
-           Supplement II: 57-203.
-
-    Examples
-    --------
-    >>> from scipy.spatial import distance
-    >>> distance.kulczynski1([1, 0, 0], [0, 1, 0])
-    0.0
-    >>> distance.kulczynski1([True, False, False], [True, True, False])
-    1.0
-    >>> distance.kulczynski1([True, False, False], [True])
-    0.5
-    >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
-    -3.0
-
-    """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if w is not None:
-        w = _validate_weights(w)
-    (_, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-
-    return ntt / (ntf + nft)
-
-
 def seuclidean(u, v, V):
     """
     Return the standardized Euclidean distance between two 1-D arrays.
@@ -1015,7 +917,7 @@ def seuclidean(u, v, V):
     v : (N,) array_like
         Input array.
     V : (N,) array_like
-        `V` is an 1-D array of component variances. It is usually computed
+        `V` is a 1-D array of component variances. It is usually computed
         among a larger collection of vectors.
 
     Returns
@@ -1610,69 +1512,6 @@ def russellrao(u, v, w=None):
     return float(n - ntt) / n
 
 
-_deprecated_sokalmichener = _deprecated(
-    "The sokalmichener metric is deprecated since SciPy 1.15.0 and will be "
-    "removed in SciPy 1.17.0.  Replace usage of 'sokalmichener(u, v)' with "
-    "'rogerstanimoto(u, v)'."
-)
-
-
-@_deprecated_sokalmichener
-def sokalmichener(u, v, w=None):
-    """
-    Compute the Sokal-Michener dissimilarity between two boolean 1-D arrays.
-
-    .. deprecated:: 1.15.0
-       This function is deprecated and will be removed in SciPy 1.17.0.
-       Replace usage of ``sokalmichener(u, v)`` with ``rogerstanimoto(u, v)``.
-
-    The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
-    is defined as
-
-    .. math::
-
-       \\frac{R}
-            {S + R}
-
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`, :math:`R = 2 * (c_{TF} + c_{FT})` and
-    :math:`S = c_{FF} + c_{TT}`.
-
-    Parameters
-    ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
-
-    Returns
-    -------
-    sokalmichener : double
-        The Sokal-Michener dissimilarity between vectors `u` and `v`.
-
-    Examples
-    --------
-    >>> from scipy.spatial import distance
-    >>> distance.sokalmichener([1, 0, 0], [0, 1, 0])
-    0.8
-    >>> distance.sokalmichener([1, 0, 0], [1, 1, 0])
-    0.5
-    >>> distance.sokalmichener([1, 0, 0], [2, 0, 0])
-    -1.0
-
-    """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if w is not None:
-        w = _validate_weights(w)
-    nff, nft, ntf, ntt = _nbool_correspond_all(u, v, w=w)
-    return float(2.0 * (ntf + nft)) / float(ntt + nff + 2.0 * (ntf + nft))
-
-
 def sokalsneath(u, v, w=None):
     """
     Compute the Sokal-Sneath dissimilarity between two boolean 1-D arrays.
@@ -1900,14 +1739,6 @@ _METRIC_INFOS = [
         pdist_func=PDistMetricWrapper('jensenshannon'),
     ),
     MetricInfo(
-        canonical_name='kulczynski1',
-        aka={'kulczynski1'},
-        types=['bool'],
-        dist_func=kulczynski1,
-        cdist_func=_deprecated_kulczynski1(_distance_pybind.cdist_kulczynski1),
-        pdist_func=_deprecated_kulczynski1(_distance_pybind.pdist_kulczynski1),
-    ),
-    MetricInfo(
         canonical_name='mahalanobis',
         aka={'mahalanobis', 'mahal', 'mah'},
         validator=_validate_mahalanobis_kwargs,
@@ -1946,14 +1777,6 @@ _METRIC_INFOS = [
         dist_func=seuclidean,
         cdist_func=CDistMetricWrapper('seuclidean'),
         pdist_func=PDistMetricWrapper('seuclidean'),
-    ),
-    MetricInfo(
-        canonical_name='sokalmichener',
-        aka={'sokalmichener'},
-        types=['bool'],
-        dist_func=sokalmichener,
-        cdist_func=_deprecated_sokalmichener(_distance_pybind.cdist_sokalmichener),
-        pdist_func=_deprecated_sokalmichener(_distance_pybind.pdist_sokalmichener),
     ),
     MetricInfo(
         canonical_name='sokalsneath',
@@ -2005,9 +1828,9 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'jensenshannon', 'kulczynski1',
+        'jaccard', 'jensenshannon',
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
-        'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+        'russellrao', 'seuclidean', 'sokalsneath',
         'sqeuclidean', 'yule'.
     out : ndarray, optional
         The output array.
@@ -2196,47 +2019,23 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the Dice distance between each pair of boolean
         vectors. (see dice function documentation)
 
-    18. ``Y = pdist(X, 'kulczynski1')``
 
-        Computes the kulczynski1 distance between each pair of
-        boolean vectors. (see kulczynski1 function documentation)
-
-        .. deprecated:: 1.15.0
-           This metric is deprecated and will be removed in SciPy 1.17.0.
-           Replace usage of ``pdist(X, 'kulczynski1')`` with
-           ``1 / pdist(X, 'jaccard') - 1``.
-
-    19. ``Y = pdist(X, 'rogerstanimoto')``
+    18. ``Y = pdist(X, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between each pair of
         boolean vectors. (see rogerstanimoto function documentation)
 
-    20. ``Y = pdist(X, 'russellrao')``
+    19. ``Y = pdist(X, 'russellrao')``
 
         Computes the Russell-Rao distance between each pair of
         boolean vectors. (see russellrao function documentation)
 
-    21. ``Y = pdist(X, 'sokalmichener')``
-
-        Computes the Sokal-Michener distance between each pair of
-        boolean vectors. (see sokalmichener function documentation)
-
-        .. deprecated:: 1.15.0
-           This metric is deprecated and will be removed in SciPy 1.17.0.
-           Replace usage of ``pdist(X, 'sokalmichener')`` with
-           ``pdist(X, 'rogerstanimoto')``.
-
-    22. ``Y = pdist(X, 'sokalsneath')``
+    20. ``Y = pdist(X, 'sokalsneath')``
 
         Computes the Sokal-Sneath distance between each pair of
         boolean vectors. (see sokalsneath function documentation)
 
-    23. ``Y = pdist(X, 'kulczynski1')``
-
-        Computes the Kulczynski 1 distance between each pair of
-        boolean vectors. (see kulczynski1 function documentation)
-
-    24. ``Y = pdist(X, f)``
+    21. ``Y = pdist(X, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
@@ -2294,7 +2093,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     X = _asarray(X)
     if X.ndim != 2:
-        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
+        raise ValueError('A 2-dimensional array must be passed. '
+                         f'(Shape was {X.shape}).')
 
     n = X.shape[0]
     return xpx.lazy_apply(_np_pdist, X, out,
@@ -2303,7 +2103,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           kwargs.pop('V', None),
                           kwargs.pop('VI', None),
                           # See src/distance_pybind.cpp::pdist
-                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
+                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype,
                           as_numpy=True, metric=metric, **kwargs)
 
 
@@ -2383,7 +2183,7 @@ def squareform(X, force="no", checks=True):
     1. ``v = squareform(X)``
 
        Given a square n-by-n symmetric distance matrix ``X``,
-       ``v = squareform(X)`` returns a ``n * (n-1) / 2``
+       ``v = squareform(X)`` returns an ``n * (n-1) / 2``
        (i.e. binomial coefficient n choose 2) sized vector `v`
        where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        is the distance between distinct points ``i`` and ``j``.
@@ -2391,9 +2191,9 @@ def squareform(X, force="no", checks=True):
 
     2. ``X = squareform(v)``
 
-       Given a ``n * (n-1) / 2`` sized vector ``v``
+       Given an ``n * (n-1) / 2`` sized vector ``v``
        for some integer ``n >= 1`` encoding distances as described,
-       ``X = squareform(v)`` returns a n-by-n distance matrix ``X``.
+       ``X = squareform(v)`` returns an n-by-n distance matrix ``X``.
        The ``X[i, j]`` and ``X[j, i]`` values are set to
        :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        and all diagonal elements are zero.
@@ -2506,39 +2306,52 @@ def squareform(X, force="no", checks=True):
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     """
-    Return True if input array is a valid distance matrix.
+    Return True if input array satisfies basic distance matrix properties
+    (symmetry and zero diagonal).
 
-    Distance matrices must be 2-dimensional numpy arrays.
-    They must have a zero-diagonal, and they must be symmetric.
+    This function checks whether the input is a 2-dimensional square NumPy array
+    with a zero diagonal and symmetry within a specified tolerance. These are
+    necessary properties for a distance matrix but not sufficient -- in particular,
+    this function does **not** check the triangle inequality, which is required
+    for a true metric distance matrix.
 
+    The triangle inequality states that for any three points ``i``, ``j``, and ``k``:
+    ``D[i,k] <= D[i,j] + D[j,k]``
+    
     Parameters
     ----------
     D : array_like
-        The candidate object to test for validity.
+        The candidate object to test for basic distance matrix properties.
     tol : float, optional
-        The distance matrix should be symmetric. `tol` is the maximum
-        difference between entries ``ij`` and ``ji`` for the distance
-        metric to be considered symmetric.
+        The distance matrix is considered symmetric if the absolute difference
+        between entries ``ij`` and ``ji`` is less than or equal to `tol`. The same
+        tolerance is used to determine whether diagonal entries are effectively zero.
     throw : bool, optional
-        An exception is thrown if the distance matrix passed is not valid.
+        If True, raises an exception when the input is invalid.
     name : str, optional
-        The name of the variable to checked. This is useful if
-        throw is set to True so the offending variable can be identified
-        in the exception message when an exception is thrown.
+        The name of the variable to check. This is used in exception messages when
+        `throw` is True to identify the offending variable.
     warning : bool, optional
-        Instead of throwing an exception, a warning message is
-        raised.
-
+        If True, a warning message is raised instead of throwing an exception.
+        
     Returns
     -------
     valid : bool
-        True if the variable `D` passed is a valid distance matrix.
+        True if the input satisfies the symmetry and zero-diagonal conditions.
+
+    Raises
+    ------
+    ValueError
+        If `throw` is True and `D` is not a valid distance matrix.
+    UserWarning
+        If `warning` is True and `D` is not a valid distance matrix.
 
     Notes
     -----
-    Small numerical differences in `D` and `D.T` and non-zeroness of
-    the diagonal are ignored if they are within the tolerance specified
-    by `tol`.
+    This function does not check the triangle inequality, which is required for
+    a complete validation of a metric distance matrix. Only structural properties
+    (symmetry and zero diagonal) are verified. Small numerical deviations from symmetry
+    or exact zero diagonal are tolerated within the `tol` parameter.
 
     Examples
     --------
@@ -2706,7 +2519,7 @@ def num_obs_dm(d):
     --------
     Find the number of original observations corresponding
     to a square redundant distance matrix d.
-    
+
     >>> from scipy.spatial.distance import num_obs_dm
     >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
@@ -2736,7 +2549,7 @@ def num_obs_y(Y):
     --------
     Find the number of original observations corresponding to a
     condensed distance matrix Y.
-    
+
     >>> from scipy.spatial.distance import num_obs_y
     >>> Y = [1, 2, 3.5, 7, 10, 4]
     >>> num_obs_y(Y)
@@ -2810,9 +2623,8 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
-        'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
-        'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
-        'sokalsneath', 'sqeuclidean', 'yule'.
+        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
+        'seuclidean', 'sokalsneath', 'sqeuclidean', 'yule'.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2996,44 +2808,24 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     17. ``Y = cdist(XA, XB, 'dice')``
 
         Computes the Dice distance between the boolean vectors. (see
-        `dice` function documentation)
+        `dice` function documentation).
 
-    18. ``Y = cdist(XA, XB, 'kulczynski1')``
-
-        Computes the kulczynski distance between the boolean
-        vectors. (see `kulczynski1` function documentation)
-
-        .. deprecated:: 1.15.0
-           This metric is deprecated and will be removed in SciPy 1.17.0.
-           Replace usage of ``cdist(XA, XB, 'kulczynski1')`` with
-           ``1 / cdist(XA, XB, 'jaccard') - 1``.
-
-    19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
+    18. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between the boolean
         vectors. (see `rogerstanimoto` function documentation)
 
-    20. ``Y = cdist(XA, XB, 'russellrao')``
+    19. ``Y = cdist(XA, XB, 'russellrao')``
 
         Computes the Russell-Rao distance between the boolean
         vectors. (see `russellrao` function documentation)
 
-    21. ``Y = cdist(XA, XB, 'sokalmichener')``
-
-        Computes the Sokal-Michener distance between the boolean
-        vectors. (see `sokalmichener` function documentation)
-
-        .. deprecated:: 1.15.0
-           This metric is deprecated and will be removed in SciPy 1.17.0.
-           Replace usage of ``cdist(XA, XB, 'sokalmichener')`` with
-           ``cdist(XA, XB, 'rogerstanimoto')``.
-
-    22. ``Y = cdist(XA, XB, 'sokalsneath')``
+    20. ``Y = cdist(XA, XB, 'sokalsneath')``
 
         Computes the Sokal-Sneath distance between the vectors. (see
         `sokalsneath` function documentation)
 
-    23. ``Y = cdist(XA, XB, f)``
+    21. ``Y = cdist(XA, XB, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,

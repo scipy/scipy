@@ -1,5 +1,6 @@
 import operator
 from math import prod
+from types import GenericAlias
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
@@ -13,6 +14,7 @@ from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
 
+from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
@@ -65,7 +67,13 @@ def _diff_dual_poly(j, k, y, d, t):
                         if (j + p) not in comb[i//d]])
     return res
 
-
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class BSpline:
     r"""Univariate spline in the B-spline basis.
 
@@ -145,7 +153,6 @@ class BSpline:
 
     Examples
     --------
-
     Translating the recursive definition of B-splines into Python code, we have:
 
     >>> def B(x, k, i, t):
@@ -206,21 +213,27 @@ class BSpline:
 
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
+
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super().__init__()
 
+        self._asarray = array_namespace(c, t).asarray
+
         self.k = operator.index(k)
-        self.c = np.asarray(c)
-        self.t = np.ascontiguousarray(t, dtype=np.float64)
+        self._c = np.asarray(c)
+        self._t = np.ascontiguousarray(t, dtype=np.float64)
 
         if extrapolate == 'periodic':
             self.extrapolate = extrapolate
         else:
             self.extrapolate = bool(extrapolate)
 
-        n = self.t.shape[0] - self.k - 1
+        n = self._t.shape[0] - self.k - 1
 
-        axis = normalize_axis_index(axis, self.c.ndim)
+        axis = normalize_axis_index(axis, self._c.ndim)
 
         # Note that the normalized axis is stored in the object.
         self.axis = axis
@@ -230,27 +243,28 @@ class BSpline:
             # and axis !=0 means that we have c.shape (..., n, ...)
             #                                               ^
             #                                              axis
-            self.c = np.moveaxis(self.c, axis, 0)
+            self._c = np.moveaxis(self._c, axis, 0)
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
-        if self.t.ndim != 1:
+        if self._t.ndim != 1:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
             raise ValueError(f"Need at least {2*k + 2} knots for degree {k}")
-        if (np.diff(self.t) < 0).any():
+        if (np.diff(self._t) < 0).any():
             raise ValueError("Knots must be in a non-decreasing order.")
-        if len(np.unique(self.t[k:n+1])) < 2:
+        if len(np.unique(self._t[k:n+1])) < 2:
             raise ValueError("Need at least two internal knots.")
-        if not np.isfinite(self.t).all():
+        if not np.isfinite(self._t).all():
             raise ValueError("Knots should not have nans or infs.")
-        if self.c.ndim < 1:
+        if self._c.ndim < 1:
             raise ValueError("Coefficients must be at least 1-dimensional.")
-        if self.c.shape[0] < n:
+        if self._c.shape[0] < n:
             raise ValueError("Knots, coefficients and degree are inconsistent.")
 
-        dt = _get_dtype(self.c.dtype)
-        self.c = np.ascontiguousarray(self.c, dtype=dt)
+        dt = _get_dtype(self._c.dtype)
+
+        self._c = np.ascontiguousarray(self._c, dtype=dt)
 
     @classmethod
     def construct_fast(cls, t, c, k, extrapolate=True, axis=0):
@@ -260,9 +274,10 @@ class BSpline:
         `t` and `c` must of correct shape and dtype.
         """
         self = object.__new__(cls)
-        self.t, self.c, self.k = t, c, k
+        self._t, self._c, self.k = np.asarray(t), np.asarray(c), k
         self.extrapolate = extrapolate
         self.axis = axis
+        self._asarray = array_namespace(t, c).asarray
         return self
 
     @property
@@ -270,6 +285,24 @@ class BSpline:
         """Equivalent to ``(self.t, self.c, self.k)`` (read-only).
         """
         return self.t, self.c, self.k
+
+    # Under the hood, self._c and self._t are always saved as numpy array
+    # because they are used in a C extension expecting numpy arrays.
+    @property
+    def t(self):
+        return self._asarray(self._t)
+
+    @t.setter
+    def t(self, t):
+        self._t = np.asarray(t)
+
+    @property
+    def c(self):
+        return self._asarray(self._c)
+
+    @c.setter
+    def c(self, c):
+        self._c = np.asarray(c)
 
     @classmethod
     def basis_element(cls, t, extrapolate=True):
@@ -299,7 +332,6 @@ class BSpline:
 
         Examples
         --------
-
         Construct a cubic B-spline:
 
         >>> import numpy as np
@@ -328,11 +360,15 @@ class BSpline:
         >>> plt.show()
 
         """
-        k = len(t) - 2
-        t = _as_float_array(t)
+        xp = array_namespace(t)
+        t = np.asarray(t)
+        k = t.shape[0] - 2
+        t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
         c[k] = 1.
+
+        t, c = xp.asarray(t), xp.asarray(c)
         return cls.construct_fast(t, c, k, extrapolate)
 
     @classmethod
@@ -501,8 +537,8 @@ class BSpline:
         # With periodic extrapolation we map x to the segment
         # [self.t[k], self.t[n]].
         if extrapolate == 'periodic':
-            n = self.t.size - self.k - 1
-            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] - self.t[self.k])
+            n = self._t.size - self.k - 1
+            x = self._t[self.k] + (x - self._t[self.k]) % (self._t[n] - self._t[self.k])
             extrapolate = False
 
         self._ensure_c_contiguous()
@@ -513,30 +549,30 @@ class BSpline:
         # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
         # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
 
-        is_complex = self.c.dtype.kind == 'c'
+        is_complex = self._c.dtype.kind == 'c'
         if is_complex:
-            cc = self.c.view(float)
-            if self.c.ndim == 1:
-                cc = cc.reshape(self.c.shape[0], 2)
+            cc = self._c.view(float)
+            if self._c.ndim == 1:
+                cc = cc.reshape(self._c.shape[0], 2)
         else:
-            cc = self.c
+            cc = self._c
 
         # flatten the trailing dims
         cc = cc.reshape(cc.shape[0], -1)
 
         # heavy lifting: actually perform the evaluations
-        out = _dierckx.evaluate_spline(self.t, cc, self.k, x, nu, extrapolate)
+        out = _dierckx.evaluate_spline(self._t, cc, self.k, x, nu, extrapolate)
 
         if is_complex:
             out = out.view(complex)
 
-        out = out.reshape(x_shape + self.c.shape[1:])
+        out = out.reshape(x_shape + self._c.shape[1:])
         if self.axis != 0:
             # transpose to move the calculated values to the interpolation axis
             l = list(range(out.ndim))
             l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
             out = out.transpose(l)
-        return out
+        return self._asarray(out)
 
     def _ensure_c_contiguous(self):
         """
@@ -544,10 +580,10 @@ class BSpline:
         that they are C contiguous.
 
         """
-        if not self.t.flags.c_contiguous:
-            self.t = self.t.copy()
-        if not self.c.flags.c_contiguous:
-            self.c = self.c.copy()
+        if not self._t.flags.c_contiguous:
+            self._t = self._t.copy()
+        if not self._c.flags.c_contiguous:
+            self._c = self._c.copy()
 
     def derivative(self, nu=1):
         """Return a B-spline representing the derivative.
@@ -568,12 +604,15 @@ class BSpline:
         splder, splantider
 
         """
-        c = self.c.copy()
+        c = self._asarray(self.c, copy=True)
+        t = self.t
+        xp = array_namespace(t, c)
+
         # pad the c array if needed
-        ct = len(self.t) - len(c)
+        ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
-        tck = _fitpack_impl.splder((self.t, c, self.k), nu)
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+        tck = _fitpack_impl.splder((t, c, self.k), nu)
         return self.construct_fast(*tck, extrapolate=self.extrapolate,
                                    axis=self.axis)
 
@@ -602,12 +641,15 @@ class BSpline:
         splder, splantider
 
         """
-        c = self.c.copy()
+        c = self._asarray(self.c, copy=True)
+        t = self.t
+        xp = array_namespace(t, c)
+
         # pad the c array if needed
-        ct = len(self.t) - len(c)
+        ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
-        tck = _fitpack_impl.splantider((self.t, c, self.k), nu)
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+        tck = _fitpack_impl.splantider((t, c, self.k), nu)
 
         if self.extrapolate == 'periodic':
             extrapolate = False
@@ -676,31 +718,31 @@ class BSpline:
         if b < a:
             a, b = b, a
             sign = -1
-        n = self.t.size - self.k - 1
+        n = self._t.size - self.k - 1
 
         if extrapolate != "periodic" and not extrapolate:
             # Shrink the integration interval, if needed.
-            a = max(a, self.t[self.k])
-            b = min(b, self.t[n])
+            a = max(a, self._t[self.k])
+            b = min(b, self._t[n])
 
-            if self.c.ndim == 1:
+            if self._c.ndim == 1:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
-                integral = _fitpack_impl.splint(a, b, self.tck)
-                return np.asarray(integral * sign)
+                integral = _fitpack_impl.splint(a, b, (self._t, self._c, self.k))
+                return self._asarray(integral * sign)
 
         # Compute the antiderivative.
-        c = self.c
-        ct = len(self.t) - len(c)
+        c = self._c
+        ct = len(self._t) - len(c)
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
-        ta, ca, ka = _fitpack_impl.splantider((self.t, c, self.k), 1)
+        ta, ca, ka = _fitpack_impl.splantider((self._t, c, self.k), 1)
 
         if extrapolate == 'periodic':
             # Split the integral into the part over period (can be several
             # of them) and the remaining part.
 
-            ts, te = self.t[self.k], self.t[n]
+            ts, te = self._t[self.k], self._t[n]
             period = te - ts
             interval = b - a
             n_periods, left = divmod(interval, period)
@@ -713,8 +755,8 @@ class BSpline:
                 integral = out[1] - out[0]
                 integral *= n_periods
             else:
-                integral = np.zeros((1, prod(self.c.shape[1:])),
-                                    dtype=self.c.dtype)
+                integral = np.zeros((1, prod(self._c.shape[1:])),
+                                    dtype=self._c.dtype)
 
             # Map a to [ts, te], b is always a + left.
             a = ts + (a - ts) % period
@@ -745,7 +787,7 @@ class BSpline:
             integral = out[1] - out[0]
 
         integral *= sign
-        return integral.reshape(ca.shape[1:])
+        return self._asarray(integral.reshape(ca.shape[1:]))
 
     @classmethod
     def from_power_basis(cls, pp, bc_type='not-a-knot'):
@@ -923,16 +965,19 @@ class BSpline:
         array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
 
         """
-        if x < self.t[self.k] or x > self.t[-self.k-1]:
+        x = float(x)
+
+        if x < self._t[self.k] or x > self._t[-self.k-1]:
             raise ValueError(f"Cannot insert a knot at {x}.")
         if m <= 0:
             raise ValueError(f"`m` must be positive, got {m = }.")
 
-        tt = self.t.copy()
-        cc = self.c.copy()
+        tt = self._t.copy()
+        cc = self._c.copy()
 
         for _ in range(m):
             tt, cc = _insert(x, tt, cc, self.k, self.extrapolate == "periodic")
+        tt, cc = self._asarray(tt), self._asarray(cc)
         return self.construct_fast(tt, cc, self.k, self.extrapolate, self.axis)
 
 
@@ -1273,7 +1318,7 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
             ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
 
 
-def _make_periodic_spline(x, y, t, k, axis):
+def _make_periodic_spline(x, y, t, k, axis, *, xp):
     '''
     Compute the (coefficients of) interpolating B-spline with periodic
     boundary conditions.
@@ -1324,6 +1369,7 @@ def _make_periodic_spline(x, y, t, k, axis):
         for i in range(extradim):
             c[:, i] = _make_interp_per_full_matr(x, y_new[:, i], t, k)
         c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
+        t, c = xp.asarray(t), xp.asarray(c)
         return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
     nt = len(t) - k - 1
@@ -1363,9 +1409,11 @@ def _make_periodic_spline(x, y, t, k, axis):
         cc = _woodbury_algorithm(A, ur, ll, y_new[:, i][:-1], k)
         c[:, i] = np.concatenate((cc[-kul:], cc, cc[:kul + k % 2]))
     c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
+    t, c = xp.asarray(t), xp.asarray(c)
     return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Create an interpolating B-spline with specified degree and boundary conditions.
@@ -1395,7 +1443,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
-           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
+          equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
           equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
         * ``"not-a-knot"`` (default): The first and second segments are the
@@ -1426,7 +1474,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Examples
     --------
-
     Use cubic interpolation on Chebyshev nodes:
 
     >>> import numpy as np
@@ -1509,13 +1556,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         except TypeError as e:
             raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
-    y = np.asarray(y)
-
-    axis = normalize_axis_index(axis, y.ndim)
-
+    xp = array_namespace(x, y, t)
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
 
+    axis = normalize_axis_index(axis, y.ndim)
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
     # sanity check the input
@@ -1537,6 +1582,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
+        t, c = xp.asarray(t), xp.asarray(c)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
@@ -1546,6 +1592,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
+        t, c = xp.asarray(t), xp.asarray(c)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     k = operator.index(k)
@@ -1577,7 +1624,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError(f'Out of bounds w/ x = {x}.')
 
     if bc_type == 'periodic':
-        return _make_periodic_spline(x, y, t, k, axis)
+        return _make_periodic_spline(x, y, t, k, axis, xp=xp)
 
     # Here : deriv_l, r = [(nu, value), ...]
     deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
@@ -1640,9 +1687,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     elif info < 0:
         raise ValueError(f'illegal value in {-info}-th argument of internal gbsv')
     c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
+    t, c = xp.asarray(t), xp.asarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
     r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion.
 
@@ -1755,6 +1804,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     does not matter as long as the corresponding weight is zero.)
 
     """
+    xp = array_namespace(x, y, t, w)
+
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
     t = _as_float_array(t, check_finite)
@@ -1837,7 +1888,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         c = cho_solve_banded((cho_decomp, lower), rhs.reshape(m, -1), overwrite_b=True,
                              check_finite=check_finite).reshape(rhs.shape)
     elif method == "qr":
-        _, _, c = _lsq_solve_qr(x, yy, t, k, w)
+        _, _, c, _, _ = _lsq_solve_qr(x, yy, t, k, w)
 
         if was_complex:
             c = c.view(complex)
@@ -1849,6 +1900,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
+    t, c = xp.asarray(t), xp.asarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
@@ -1856,21 +1908,51 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
 # LSQ spline helpers #
 ######################
 
-def _lsq_solve_qr(x, y, t, k, w):
+def _lsq_solve_qr_for_root_rati_periodic(x, y, t, k, w):
     """Solve for the LSQ spline coeffs given x, y and knots.
 
     `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
     `w` is always 1D: one weight value per `x` value.
 
     """
-    assert y.ndim == 2
-
     y_w = y * w[:, None]
-    A, offset, nc = _dierckx.data_matrix(x, t, k, w)
-    _dierckx.qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
-    c = _dierckx.fpback(A, nc, y_w)
+    # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L221-L238
+    R, H1, H2, offset, nc = _dierckx.data_matrix_periodic(x, t, k, w, False)
+    # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L239-L314
+    A1, A2, Z, p, _ = _dierckx.qr_reduce_periodic(
+        R, H1, H2, offset, nc, y_w, k,
+        len(t), True
+    )         # modifies arguments in-place
+    # Ref: https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpbacp.f
+    c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x, y, t, w)
+    return R, A1, A2, Z, y_w, c, p, residuals
 
-    return A, y_w, c
+
+def _lsq_solve_qr(x, y, t, k, w, periodic=False):
+    """Solve for the LSQ spline coeffs given x, y and knots.
+
+    `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
+    `w` is always 1D: one weight value per `x` value.
+
+    """
+    y_w = y * w[:, None]
+    if not periodic:
+        A, offset, nc = _dierckx.data_matrix(x, t, k, w)
+        _dierckx.qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
+        c, residuals, fp = _dierckx.fpback(A, nc, x, y, t, k, w, y_w)
+        return A, y_w, c, fp, residuals
+    else:
+        # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L221-L238
+        R, H1, H2, offset, nc = _dierckx.data_matrix_periodic(x, t, k, w, False)
+        # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L239-L314
+        A1, A2, Z, fp = _dierckx.qr_reduce_periodic(
+            R, H1, H2, offset, nc, y_w, k,
+            len(t), False)         # modifies arguments in-place
+        # Ref: https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpbacp.f
+        c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x, y, t, w)
+        return R, y_w, c, fp, residuals
+
+
 
 
 #############################
@@ -2124,7 +2206,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             else:
                 raise ValueError(f"Unable to find minimum of the GCV "
                                  f"function: {gcv_est.message}")
-        return gcv_est 
+        return gcv_est
     else:
         # trailing dims must have been flattened already.
         raise RuntimeError("Internal error. Please report it to scipy developers.")
@@ -2163,6 +2245,7 @@ def _coeff_of_divided_diff(x):
     return res
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
@@ -2278,6 +2361,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     >>> plt.show()
 
     """  # noqa:E501
+    xp = array_namespace(x, y)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
@@ -2377,6 +2461,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
                cm0 * (t[-4] - t[-6]) + cm1,
                cm0 * (2 * t[-4] - t[-5] - t[-6]) + cm1]
 
+    t, c_ = xp.asarray(t), xp.asarray(c_)
     return BSpline.construct_fast(t, c_, 3, axis=axis)
 
 
@@ -2384,29 +2469,52 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
 #  FITPACK look-alikes #
 ########################
 
-def fpcheck(x, t, k):
-    """ Check consistency of the data vector `x` and the knot vector `t`.
+def fpcheck(x, t, k, periodic=False):
+    """Check consistency of data vector `x` and knot vector `t`.
 
-    Return None if inputs are consistent, raises a ValueError otherwise.
+    Parameters
+    ----------
+    x : array_like, shape (m,)
+        1D sorted array of data points.
+    t : array_like, shape (n,)
+        1D non-decreasing knot vector.
+    k : int
+        Degree of the spline.
+    periodic : bool, optional
+        Whether the spline is periodic. Default is False.
+
+    Raises
+    ------
+    ValueError
+        If the configuration of `x`, `t`, and `k` violates any required condition.
     """
-    # This routine is a clone of the `fpchec` Fortran routine,
-    # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
-    # which carries the following comment:
+    # This routine is a unified clone of the FITPACK Fortran routines `fpchec.f`
+    # and `fpchep.f`:
+    # - https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
+    # - https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchep.f
     #
-    # subroutine fpchec verifies the number and the position of the knots
-    #  t(j),j=1,2,...,n of a spline of degree k, in relation to the number
-    #  and the position of the data points x(i),i=1,2,...,m. if all of the
-    #  following conditions are fulfilled, the error parameter ier is set
-    #  to zero. if one of the conditions is violated ier is set to ten.
-    #      1) k+1 <= n-k-1 <= m
-    #      2) t(1) <= t(2) <= ... <= t(k+1)
-    #         t(n-k) <= t(n-k+1) <= ... <= t(n)
-    #      3) t(k+1) < t(k+2) < ... < t(n-k)
-    #      4) t(k+1) <= x(i) <= t(n-k)
-    #      5) the conditions specified by schoenberg and whitney must hold
-    #         for at least one subset of data points, i.e. there must be a
-    #         subset of data points y(j) such that
-    #             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    # These routines verify the number and position of the knots t(j), j=1,...,n,
+    # of a spline of degree k, relative to the number and distribution of data points
+    # x(i), i=1,...,m. If all of the following conditions are fulfilled,
+    # validation passes.
+    #
+    # For non-periodic splines:
+    #   1) k+1 <= n-k-1 <= m
+    #   2) t(1) <= t(2) <= ... <= t(k+1)
+    #      t(n-k) <= t(n-k+1) <= ... <= t(n)
+    #   3) t(k+1) < t(k+2) < ... < t(n-k)
+    #   4) t(k+1) <= x(i) <= t(n-k)
+    #   5) Schoenberg-Whitney conditions hold: there exists a subset y(j) such that
+    #        t(j) < y(j) < t(j+k+1), for j = 1, ..., n-k-1
+    #
+    # For periodic splines:
+    #   1) k+1 <= n-k-1 <= m + k - 1
+    #   2) Same boundary knot monotonicity as above
+    #   3) Same strict interior knot increase as above
+    #   4) t(k+1) <= x(i) <= t(n-k)
+    #   5) Schoenberg-Whitney conditions must hold for *some periodic shift*
+    #        of the data sequence; i.e. wrapped data points x(i) must satisfy
+    #        t(j) < y(j) < t(j+k+1), j = k+1, ..., n-k-1
     x = np.asarray(x)
     t = np.asarray(t)
 
@@ -2418,9 +2526,14 @@ def fpcheck(x, t, k):
     nk1 = n - k - 1
 
     # check condition no 1
-    # c      1) k+1 <= n-k-1 <= m
-    if not (k + 1 <= nk1 <= m):
-        raise ValueError(f"Need k+1 <= n-k-1 <= m. Got {m = }, {n = } and {k = }.")
+    if periodic:
+        # c      1) k+1 <= nk1 <= m+k-1
+        if not (k + 1 <= nk1 <= m + k - 1):
+            raise ValueError(f"Need k+1 <= n-k-1 <= m+k-1. Got {m = }, {n = }, {k = }")
+    else:
+        # c      1) k+1 <= n-k-1 <= m
+        if not (k + 1 <= nk1 <= m):
+            raise ValueError(f"Need k+1 <= n-k-1 <= m. Got {m = }, {n = } and {k = }.")
 
     # check condition no 2
     # c      2) t(1) <= t(2) <= ... <= t(k+1)
@@ -2443,27 +2556,59 @@ def fpcheck(x, t, k):
         raise ValueError(f"Out of bounds: {x = } and {t = }.")
 
     # c  check condition no 5
-    # c      5) the conditions specified by schoenberg and whitney must hold
-    # c         for at least one subset of data points, i.e. there must be a
-    # c         subset of data points y(j) such that
-    # c             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    # c      5) the conditions specified by Schoenberg and Whitney must hold
+    # c         for at least one subset of data points y(j) such that
+    # c             t(j) < y(j) < t(j+k+1)
+    # c
+    # c         For non-periodic splines:
+    # c             j = 1, 2, ..., n-k-1 (i.e., j in [1, n-k-1])
+    # c             The data points must lie strictly inside some B-spline supports.
+    # c
+    # c         For periodic splines:
+    # c             j = k+1, ..., n-k-1
+    # c             The condition must hold for a wrapped subset of the data points,
+    # c             i.e., there exists a cyclic shift of the data such that
+    # c                 t(j) < x(i) < t(j+k+1)
+    # c             holds for all j in that range. The test must account for the
+    # c             periodic domain length: per = t(n-k) - t(k+1), and wrap around x(i)
+    # c             as x(i) + per if needed.
     mesg = f"Schoenberg-Whitney condition is violated with {t = } and {x =}."
 
-    if (x[0] >= t[k+1]) or (x[-1] <= t[n-k-2]):
+    if periodic:
+        per = t[n - k - 1] - t[k]
+        m1 = m - 1
+        for shift in range(1, m):
+            for j in range(k, nk1):
+                tj = t[j]
+                tl = t[j + k + 1]
+                found = False
+                for i in range(shift, shift + m1 + 1):
+                    idx = i if i < m else i - m
+                    xi = x[idx] + (0 if i < m else per)
+                    if tj < xi < tl:
+                        found = True
+                        break
+                if not found:
+                    break
+            else:
+                return
         raise ValueError(mesg)
+    else:
+        if (x[0] >= t[k+1]) or (x[-1] <= t[n-k-2]):
+            raise ValueError(mesg)
 
-    m = x.shape[0]
-    l = k+1
-    nk3 = n - k - 3
-    if nk3 < 2:
+        m = x.shape[0]
+        l = k+1
+        nk3 = n - k - 3
+        if nk3 < 2:
+            return
+        for j in range(1, nk3+1):
+            tj = t[j]
+            l += 1
+            tl = t[l]
+            i = np.argmax(x > tj)
+            if i >= m-1:
+                raise ValueError(mesg)
+            if x[i] >= tl:
+                raise ValueError(mesg)
         return
-    for j in range(1, nk3+1):
-        tj = t[j]
-        l += 1
-        tl = t[l]
-        i = np.argmax(x > tj)
-        if i >= m-1:
-            raise ValueError(mesg)
-        if x[i] >= tl:
-            raise ValueError(mesg)
-    return

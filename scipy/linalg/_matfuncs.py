@@ -119,10 +119,11 @@ def fractional_matrix_power(A, t):
 
     References
     ----------
-    .. [1] Nicholas J. Higham and Lijing lin (2011)
+    .. [1] Nicholas J. Higham and Lijing Lin (2011)
            "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
            SIAM Journal on Matrix Analysis and Applications,
-           32 (3). pp. 1056-1078. ISSN 0895-4798
+           32 (3). pp. 1056-1078. ISSN 0895-4798.
+           :doi:`10.1137/10081232X`
 
     Examples
     --------
@@ -233,6 +234,10 @@ def logm(A, disp=_NoValue):
 def expm(A):
     """Compute the matrix exponential of an array.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     A : ndarray
@@ -245,7 +250,7 @@ def expm(A):
 
     Notes
     -----
-    Implements the algorithm given in [1], which is essentially a Pade
+    Implements the algorithm given in [1]_, which is essentially a Pade
     approximation with a variable order that is decided based on the array
     data.
 
@@ -255,7 +260,7 @@ def expm(A):
 
     For cases ``n >= 400``, the exact 1-norm computation cost, breaks even with
     1-norm estimation and from that point on the estimation scheme given in
-    [2] is used to decide on the approximation order.
+    [2]_ is used to decide on the approximation order.
 
     References
     ----------
@@ -320,7 +325,7 @@ def expm(A):
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
+    # An explicit formula for 2x2 case exists (formula (2.2) in [1]_). However, without
     # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
     # here until we have a more stable implementation.
 
@@ -365,7 +370,7 @@ def expm(A):
         if s != 0:  # squaring needed
 
             if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
-                # This branch implements Code Fragment 2.1 of [1]
+                # This branch implements Code Fragment 2.1 of [1]_
 
                 diag_aw = np.diag(aw)
                 # einsum returns a writable view
@@ -418,6 +423,10 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     Moreover, not every real matrix has a real square root. Hence, for
     real-valued matrices the return type can be complex if, numerically, there
     is an eigenvalue on the negative real axis.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -986,7 +995,7 @@ def signm(A, disp=_NoValue):
 @_apply_over_batch(('a', 2), ('b', 2))
 def khatri_rao(a, b):
     r"""
-    Khatri-rao product
+    Khatri-Rao product of two matrices.
 
     A column-wise Kronecker product of two matrices
 

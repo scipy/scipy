@@ -182,7 +182,7 @@ def shgo(
 
         minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
-            local minimization routine every iteration. If True then only the
+            local minimization routine every iteration. If False then only the
             final minimizer pool will be run. Defaults to True.
 
         local_iter : int
@@ -496,6 +496,12 @@ class SHGO:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
+        # copy the options dictionaries so that the user input is not mutated
+        if minimizer_kwargs is not None and isinstance(minimizer_kwargs, dict):
+            minimizer_kwargs = minimizer_kwargs.copy()
+        if options is not None and isinstance(options, dict):
+            options = options.copy()
+
         if options is not None and options.get('jac', None) is True:
             if minimizer_kwargs is None:
                 minimizer_kwargs = {}
@@ -509,7 +515,7 @@ class SHGO:
                 self.func = MemoizeJac(func)
                 jac = self.func.derivative
                 minimizer_kwargs['jac'] = jac
-                func = self.func  # .fun
+                func = self.func  # fun
             else:
                 self.func = func  # Normal definition of objective function
         except (TypeError, KeyError):
@@ -620,6 +626,20 @@ class SHGO:
 
             # Feedback
             self.disp = False
+
+        # normalize grad + hess calls for args
+        # this has to be done after minimizer_kwargs has finished having its
+        # jac/hess/args edited.
+        _grad = self.minimizer_kwargs.get('jac', None)
+        if callable(_grad):
+            self.minimizer_kwargs['jac'] = _FunctionWrapper(_grad, self.args)
+        _hess = self.minimizer_kwargs.get('hess', None)
+        if callable(_hess):
+            self.minimizer_kwargs['hess'] = _FunctionWrapper(_hess, self.args)
+
+        # we've already wrapped fun, grad, hess, so no need for args
+        self.minimizer_kwargs.pop("args", None)
+        self.minimizer_kwargs["options"].pop("args", None)
 
         # Remove unknown arguments in self.minimizer_kwargs
         # Start with arguments all the solvers have in common

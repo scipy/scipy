@@ -1,10 +1,11 @@
+import warnings
+
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_array
 from numpy.testing import (assert_array_almost_equal,
-                           assert_array_less, assert_,
-                           suppress_warnings)
+                           assert_array_less, assert_)
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
                             Bounds,
@@ -465,14 +466,14 @@ class TestTrustRegionConstr:
                         Elec(n_electrons=2, constr_jac='3-point',
                              constr_hess=SR1())]
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('prob', list_of_problems)
     @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
-    @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
-                                      BFGS(exception_strategy='damp_update'),
-                                      BFGS(exception_strategy='skip_update')))
+    @pytest.mark.parametrize('hess', ("prob.hess", '3-point', lambda: SR1(),
+                                      lambda: BFGS(exception_strategy='damp_update'),
+                                      lambda: BFGS(exception_strategy='skip_update')))
     def test_list_of_problems(self, prob, grad, hess):
         grad = prob.grad if grad == "prob.grad" else grad
+        hess = hess() if callable(hess) else hess
         hess = prob.hess if hess == "prob.hess" else hess
         # Remove exceptions
         if (grad in {'2-point', '3-point', 'cs', False} and
@@ -484,8 +485,8 @@ class TestTrustRegionConstr:
                      and isinstance(hess, BFGS))
         if sensitive:
             pytest.xfail("Seems sensitive to initial conditions w/ Accelerate")
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.0")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.0", UserWarning)
             result = minimize(prob.fun, prob.x0,
                               method='trust-constr',
                               jac=grad, hess=hess,
@@ -636,8 +637,8 @@ class TestTrustRegionConstr:
         bounds = Bounds(np.array([0., 0.]), np.array([1., 1.]),
                         keep_feasible=True)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.0")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.0", UserWarning)
             result = minimize(
                 method='trust-constr',
                 fun=obj,
@@ -703,8 +704,8 @@ def test_bug_11886():
     def opt(x):
         return x[0]**2+x[1]**2
 
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(PendingDeprecationWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", PendingDeprecationWarning)
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
     # just checking that there are no errors
@@ -756,8 +757,8 @@ def test_gh20665_too_many_constraints():
         g = NonlinearConstraint(lambda x:  A_eq @ x, lb=b_eq, ub=b_eq)
         minimize(rosen, x0, method='trust-constr', constraints=[g])
     # no error with `SVDFactorization`
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(UserWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
         minimize(rosen, x0, method='trust-constr', constraints=[g],
                  options={'factorization_method': 'SVDFactorization'})
 
@@ -770,9 +771,9 @@ def test_issue_18882():
     def of(u):
         return np.sum(u**2)
 
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, "delta_grad == 0.0")
-        sup.filter(UserWarning, "Singular Jacobian matrix.")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "delta_grad == 0.0", UserWarning)
+        warnings.filterwarnings("ignore", "Singular Jacobian matrix.", UserWarning)
         res = minimize(
             of,
             [0.0, 0.0],
@@ -791,9 +792,9 @@ class TestBoundedNelderMead:
                               ])
     def test_rosen_brock_with_bounds(self, bounds, x_opt):
         prob = Rosenbrock()
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Initial guess is not within "
-                                    "the specified bounds")
+        with warnings.catch_warnings():
+            msg = "Initial guess is not within the specified bounds"
+            warnings.filterwarnings("ignore", msg, UserWarning)
             result = minimize(prob.fun, [-10, -10],
                               method='Nelder-Mead',
                               bounds=bounds)
@@ -805,9 +806,11 @@ class TestBoundedNelderMead:
     def test_equal_all_bounds(self):
         prob = Rosenbrock()
         bounds = Bounds([4.0, 5.0], [4.0, 5.0])
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Initial guess is not within "
-                                    "the specified bounds")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Initial guess is not within the specified bounds",
+                UserWarning)
             result = minimize(prob.fun, [-10, 8],
                               method='Nelder-Mead',
                               bounds=bounds)
@@ -816,9 +819,11 @@ class TestBoundedNelderMead:
     def test_equal_one_bounds(self):
         prob = Rosenbrock()
         bounds = Bounds([4.0, 5.0], [4.0, 20.0])
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Initial guess is not within "
-                                    "the specified bounds")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Initial guess is not within the specified bounds",
+                UserWarning)
             result = minimize(prob.fun, [-10, 8],
                               method='Nelder-Mead',
                               bounds=bounds)

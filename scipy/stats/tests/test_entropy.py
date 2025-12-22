@@ -6,12 +6,14 @@ import numpy as np
 
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
+from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
+
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-@pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
+@make_xp_test_case(stats.entropy)
 class TestEntropy:
     def test_entropy_positive(self, xp):
         # See ticket #497
@@ -117,7 +119,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
-@pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
+@make_xp_test_case(stats.differential_entropy)
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.
@@ -128,6 +130,18 @@ class TestDifferentialEntropy:
     # entropy.estimate(x = samp, window = <window_length>)
 
     """
+    methods = pytest.mark.parametrize('method', [
+        "vasicek",
+        "van es",
+        pytest.param(
+            "correa",
+            marks=[
+                skip_xp_backends("array_api_strict", reason="Invalid fancy indexing"),
+                skip_xp_backends("dask.array", reason="Invalid fancy indexing"),
+            ],
+        ),
+        "ebrahimi",
+    ])
 
     def test_differential_entropy_vasicek(self, xp):
 
@@ -212,7 +226,7 @@ class TestDifferentialEntropy:
         )
 
     def test_input_validation(self, xp):
-        x = np.random.rand(10)
+        x = np.ones(10)
         x = xp.asarray(x.tolist())
 
         message = "`base` must be a positive number or `None`."
@@ -223,16 +237,14 @@ class TestDifferentialEntropy:
         with pytest.raises(ValueError, match=message):
             stats.differential_entropy(x, method='ekki-ekki')
 
-    @pytest.mark.parametrize('method', [
-        'vasicek',
-        'van es',
-        'ebrahimi',
-        pytest.param(
-            'correa',
-            marks=skip_xp_backends("array_api_strict",
-                                   reason="Needs fancy indexing.")
-        )
-    ])
+    def test_window_length_is_none(self, xp):
+        rng = np.random.default_rng(358923459826738562)
+        x = xp.asarray(rng.random(size=10))
+        ref = stats.differential_entropy(x)
+        res = stats.differential_entropy(x, window_length=None)
+        xp_assert_close(res, ref, rtol=0.005)
+
+    @methods
     def test_consistency(self, method, xp):
         # test that method is a consistent estimator
         n = 10000 if method == 'correa' else 1000000
@@ -261,16 +273,7 @@ class TestDifferentialEntropy:
     rmse_std_cases = {norm: norm_rmse_std_cases,
                       expon: expon_rmse_std_cases}
 
-    @pytest.mark.parametrize('method', [
-        'vasicek',
-        'van es',
-        'ebrahimi',
-        pytest.param(
-            'correa',
-            marks=skip_xp_backends("array_api_strict",
-                                   reason="Needs fancy indexing.")
-        )
-    ])
+    @methods
     @pytest.mark.parametrize('dist', [norm, expon])
     def test_rmse_std(self, method, dist, xp):
         # test that RMSE and standard deviation of estimators matches values
@@ -300,15 +303,7 @@ class TestDifferentialEntropy:
         res2 = stats.differential_entropy(rvs, method=method)
         xp_assert_equal(res1, res2)
 
-    @pytest.mark.parametrize('method', [
-        "vasicek",
-        "van es",
-        pytest.param(
-            "correa",
-            marks=skip_xp_backends("array_api_strict", reason="Needs fancy indexing.")
-        ),
-        "ebrahimi"
-    ])
+    @methods
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_dtypes_gh21192(self, xp, method, dtype):
         # gh-21192 noted a change in the output of method='ebrahimi'
