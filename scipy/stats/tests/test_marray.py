@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from scipy import stats
-from packaging import version
 
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _length_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
@@ -303,8 +302,6 @@ def test_ttest_ind_from_stats(xp):
     assert res.pvalue.shape == shape
 
 
-@pytest.mark.skipif(version.parse(np.__version__) < version.parse("2"),
-                    reason="Call to _getnamespace fails with AttributeError")
 def test_length_nonmasked_marray_iterable_axis_raises():
     xp = marray._get_namespace(np)
 

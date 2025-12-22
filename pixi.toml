@@ -152,7 +152,6 @@ blas-devel = "*"
 ### Default building ###
 
 [feature.build-deps.dependencies]
-compilers = "*"
 ccache = "*"
 pkg-config = "*"
 ninja = "*"
@@ -165,9 +164,16 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
+[feature.build-deps.target.unix.dependencies]
+compilers = "*"
+
+[feature.build-deps.target.win-64.dependencies]
+# force flang 21 until https://github.com/conda-forge/compilers-feedstock/pull/76 is in
+flang_win-64 = "21.*"
+
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
-blas-devel = { version = "*", build = "*openblas"}
+blas-devel = { version = "*", build = "*openblas" }
 
 # XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
@@ -177,7 +183,7 @@ description = "Build SciPy (default settings)"
 
 [feature.build-task.target.win-64.tasks.build]
 cmd = "spin build --setup-args=-Dblas=openblas --setup-args=-Dlapack=openblas --setup-args=-Duse-g77-abi=true && cp .pixi/envs/build/Library/bin/openblas.dll build-install/Lib/site-packages/scipy/linalg/openblas.dll"
-env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC", FC_LD = "lld-link" }
+env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC" }
 description = "Build SciPy (default settings)"
 
 
@@ -556,12 +562,12 @@ BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/include/
 BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/lib"
 
 [feature.system-libs.tasks.build-system-libs]
-cmd = "spin build --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cmd = "spin build --build-dir=build-system-libs --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with system libs (e.g. boost, qhull)"
 
 [feature.system-libs.tasks.test-system-libs]
-cmd = "spin test --no-build"
+cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
 

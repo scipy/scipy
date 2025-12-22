@@ -10,10 +10,6 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 dtypes = ['float32', 'float64']
 
 
-if np.__version__ < "2":  # need NEP 50 dtype behavior
-    pytest.skip(allow_module_level=True)
-
-
 def get_arrays(n_arrays, *, dtype=np.float64, xp=np, shape=(30,), device=None,
                seed=84912165484321):
     rng = np.random.default_rng(seed)

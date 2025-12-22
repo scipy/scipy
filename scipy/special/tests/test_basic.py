@@ -2489,7 +2489,7 @@ class TestFactorialFunctions:
             if exact:
                 # avoid attempting huge calculation
                 pass
-            elif np.lib.NumpyVersion(np.__version__) >= "2.0.0":
+            else:
                 # N does not fit into int64 --> cannot use _check
                 _check_inf(dtype(N-1))
                 _check_inf(np.array(N-1, dtype=dtype))
