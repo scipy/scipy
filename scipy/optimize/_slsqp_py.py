@@ -219,7 +219,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
-                    eps=_epsilon, callback=None, finite_diff_rel_step=None,
+                    eps=None, callback=None, finite_diff_rel_step=None,
                     workers=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
