@@ -313,38 +313,31 @@ See `Common Gotchas in JAX <https://docs.jax.dev/en/latest/notebooks/Common_Gotc
 
 It is also possible to run JAX in eager-mode without the JIT (in fact this is the
 default behavior when ``@jax.jit`` is not applied). Eager-mode comes with serious
-performance limitations and is typically only done to debug functions which one
-ultimately intends to run with the JIT. Developers may be tempted to try to distinguish
-whether or not JAX is being used with the JIT in order to bypass some restrictions
-and allow better support for eager-mode. There is however no way to make this distinction
-using JAX's public API, and any means of determining if JAX is running with the
-JIT necessarily involves implementation details that SciPy should not rely upon.
-In general, support for eager-mode is not a high-value target, and it is not considered
-a good use of developer time to put significant effort into enabling eager-only
-support.
+performance limitations and is typically only used to debug functions which are
+ultimately intended to be run with the JIT. Do not be tempted to attempt to distinguish
+whether JAX is being used with the JIT in order to bypass some restrictions only in
+eager-mode. There is no way to make this distinction using JAX's public API, and any means
+of determining if JAX is running with the JIT would necessarily involve implementation
+details that SciPy should not rely upon. In general, support for eager-mode is not a high-value
+target, and it is not considered a good use of developer time to put significant effort
+into enabling eager-only support.
 
 .. _dev-arrayapi_default_dtype:
 
-Default Dtypes
-``````````````
+Default Datatypes
+`````````````````
 
-PyTorch has a concept of default dtype. By default, arrays of floating point
-numbers will have dtype ``torch.float32`` when no explicit dtype is specified,
-but arithmetic with 64-bit double precision is still allowed. The default dtype
-in Pytorch can be changed with ``torch.set_default_dtype``. In contrast, by default,
-JAX allows only 32 bit floats, and support for 64-bit double precision must be enabled
-using a configuration flag. Currently, SciPy requires 64-bit precision to be available,
-and no effort is made to support JAX in its default 32-bit only configuration.
-SciPy does aim to support PyTorch with default dtype ``float32`` and the desired
-behavior is that the choice of default dtype does not impact the results of
-computations with array inputs. To this effect, any use of array creation functions
-from the ``xp`` namespace such as ``xp.zeros`` or ``xp.arange`` should take care
-to explicitly set a dtype. At the moment, it is still under debate what should be
-done for array creation functions within SciPy. Should they respect default dtype
-by default? Should they have a ``dtype`` kwarg? For the time-being, the most
-important thing perhaps is to clearly document how such functions behave with
-respect to the default dtype in the :ref:`extra_note <dev-arrayapi_extra_note>`
-described below.
+The Array API Standard allows conforming libraries to have
+`default datatypes <https://data-apis.org/array-api/latest/API_specification/data_types.html#default-data-types>`_
+for integers and real and complex floating point numbers which differ from the `int64`, `float64`,
+`complex128` defaults used by NumPy. Our aim is to have array API supporting SciPy functions
+with array inputs have behavior which is independent of the default dtype. This means that any
+when using array creation functions from the ``xp`` namespace such as ``xp.zeros`` or ``xp.arange``,
+one should take care to explicitly set a dtype with the ``dtype`` kwarg; otherwise, the result
+will depend on the default dtype. Also, note that SciPy currently requires a ``float64`` dtype
+to be available, and for instance thus does not currently aim to support JAX in its
+`default configuration <https://docs.jax.dev/en/latest/default_dtypes.html>`_ that
+does not ``float64`` arithmetic enabled.
 
 
 Array creation functions without array inputs
@@ -364,6 +357,15 @@ can be inferred. For the sake of API simplicity and consistency and in the
 spirit of "There should be one-- and preferably only one --obvious way to do it.",
 it is recommended to avoid the use of these kwargs in functions which take
 at least one array argument.
+
+It is still under debate how array creation functions without array inputs should
+behave with respect to :ref:`default dtypes <dev-arrayapi_default_dtype>`.
+Should they respect default dtype or should the output dtype be fixed across
+backends and defaults? Should there be ``dtype`` kwarg for controlling the output
+dtype or is being able to apply ``xp.astype`` on the output sufficient?
+For the time-being, the most important thing perhaps is to clearly document how such
+functions behave with respect to the default dtype in the
+:ref:`extra_note <dev-arrayapi_extra_note>` described below.
 
 
 Documenting array API standard support
