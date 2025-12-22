@@ -317,8 +317,8 @@ It is also possible to run JAX in eager-mode without the JIT (in fact this is th
 default behavior when ``@jax.jit`` is not applied). Eager-mode comes with serious
 performance limitations and is typically only used to debug functions which are
 ultimately intended to be run with the JIT. Do not be tempted to attempt to distinguish
-whether JAX is being used with the JIT in order to bypass some restrictions only in
-eager-mode. There is no way to make this distinction using JAX's public API, and any means
+whether JAX is being used with the JIT in order to bypass some restrictions while running
+with eager-mode. There is no way to make this distinction using JAX's public API, and any means
 of determining if JAX is running with the JIT would necessarily involve implementation
 details that SciPy should not rely upon. In general, support for eager-mode is not a high-value
 target, and it is not considered a good use of developer time to put significant effort
@@ -331,15 +331,17 @@ Default Datatypes
 
 The Array API Standard allows conforming libraries to have
 `default datatypes <https://data-apis.org/array-api/latest/API_specification/data_types.html#default-data-types>`_
-for integers and real and complex floating point numbers which differ from the `int64`, `float64`,
-`complex128` defaults used by NumPy. Our aim is to have array API supporting SciPy functions
-with array inputs have behavior which is independent of the default dtype. This means that any
-when using array creation functions from the ``xp`` namespace such as ``xp.zeros`` or ``xp.arange``,
-one should take care to explicitly set a dtype with the ``dtype`` kwarg; otherwise, the result
-will depend on the default dtype. Also, note that SciPy currently requires a ``float64`` dtype
-to be available, and for instance thus does not currently aim to support JAX in its
+for integers and real and complex floating point numbers which differ from the
+``int64``, ``float64``, ``complex128`` defaults used by NumPy. Our aim is to
+have array API supporting SciPy functions with array inputs have behavior which
+is independent of the default dtype. This means that any when using array
+creation functions from the ``xp`` namespace such as ``xp.zeros`` or
+``xp.arange``, one should take care to explicitly set a dtype with the ``dtype``
+kwarg; otherwise, the result will depend on the default dtype. Also, note that
+SciPy currently requires a ``float64`` dtype to be available, and for instance
+thus does not currently aim to support JAX in its
 `default configuration <https://docs.jax.dev/en/latest/default_dtypes.html>`_ that
-does not ``float64`` arithmetic enabled.
+does not have ``float64`` arithmetic enabled.
 
 
 Array creation functions without array inputs
@@ -348,9 +350,9 @@ Array creation functions without array inputs
 For array creation functions without array inputs,
 adding array API standard support can be accomplished by adding keyword
 only arguments ``xp`` and ``device`` to specify the desired backend and
-device respectively. See for instance `~scipy.signal.buttap` for creating
-the analog prototype of an Nth-order Butterworth filter. It may also be
-desirable to add a ``dtype`` kwarg to control the output ``dtype`` for
+device respectively. See for instance `~scipy.signal.buttap` which
+constructs the analog prototype of an Nth-order Butterworth filter. It may also
+be desirable to add a ``dtype`` kwarg to control the output ``dtype`` for
 such functions.
 
 Note that none of these keyword arguments are necessary when
@@ -365,11 +367,11 @@ at least one array argument.
 It is still under debate how array creation functions without array inputs should
 behave with respect to :ref:`default dtypes <dev-arrayapi_default_dtype>`.
 Should they respect default dtype or should the output dtype be fixed across
-backends and defaults? Should there be ``dtype`` kwarg for controlling the output
+backends and defaults? Should there be a ``dtype`` kwarg for controlling the output
 dtype or is being able to apply ``xp.astype`` on the output sufficient?
-For the time-being, the most important thing perhaps is to clearly document how such
-functions behave with respect to the default dtype in the
-:ref:`extra_note <dev-arrayapi_extra_note>` described below.
+Since there is not yet a consistent pattern to follow, for now its
+important to clearly document how such functions behave with respect to the
+default dtype in the :ref:`extra_note <dev-arrayapi_extra_note>` described below.
 
 
 Documenting array API standard support
@@ -430,14 +432,14 @@ computation with ``dask.persist``).
 
 Note that in some modules a systematic process for delegation to native
 implementations is set up, where functions are replaced with wrappers
-that perform delegation. In this case, `xp_capabilities` is not always
-applied as a decorator with `@` syntax, but may instead be applied
+that perform delegation. In this case, ``xp_capabilities`` is not always
+applied as a decorator with ``@`` syntax, but may instead be applied
 programatically on the wrappers. When working on array API standard
 support within a module, its important to be aware of how such delegation
-is set up, if any, and how `xp_capabilities` is being applied. A common
-practice currently is to have a file, `_support_alternative_backends.py`
+is set up, if any, and how ``xp_capabilities`` is being applied. A common
+practice currently is to have a file, ``_support_alternative_backends.py``
 within a module that sets up such delegation. See for instance
-`scipy.signal._support_alternative_backends.py <https://github.com/scipy/scipy/blob/main/scipy/signal/_support_alternative_backends.py>`_.
+`scipy/signal/_support_alternative_backends.py <https://github.com/scipy/scipy/blob/main/scipy/signal/_support_alternative_backends.py>`_.
 
 
 Basic behavior
@@ -482,7 +484,7 @@ JAX JIT
 ```````
 
 One may declare a function as not supporting the JAX JIT with the option
-``jax_jit=False``. See the earlier note on :ref:`JAX support <_dev-arrayapi_jax_support>`
+``jax_jit=False``. See the earlier note on :ref:`JAX support <dev-arrayapi_jax_support>`
 for more information.
 
 
@@ -521,9 +523,7 @@ kwarg)::
   )
 
 Valid strings to pass in the exceptions list are ``"array_api_strict"``,
-``"cupy"``, ``"dask.array"``, ``"jax.numpy"``, and ``"torch"``. Note that
-it should almost never be the case that ``"a
-
+``"cupy"``, ``"dask.array"``, ``"jax.numpy"``, and ``"torch"``.
 
 If ``np_only=True`` and ``"torch"`` or ``"jax.numpy"`` is added to
 the lists of exceptions, it will be declared as supported on both CPU and
@@ -615,7 +615,7 @@ we discussed the edge-case of a function which has not been given array
 API standard support in the usual way, is available on JAX through delegation to
 a native implementation which supports ``jax.jit``, but does not work on the GPU.
 For now, such situations can in principle be handled by using ``cpu_only=True``
-and passing in any backends which are not even supported on CPU to ``skip_backends``::
+and passing in any backends which are not supported even on CPU to ``skip_backends``::
 
   @xp_capabilities(
       cpu_only=True,
@@ -660,16 +660,18 @@ Adding tests
 ------------
 
 To run a test on multiple array backends, you should add the ``xp`` fixture to
-it. ``xp`` currently supports testing with the backends
-`array_api_strict <https://data-apis.org/array-api-strict/>`_,
-`cupy <https://cupy.dev/>`_,
-`dask.array <https://www.dask.org/>`_,
-`jax.numpy <https://docs.jax.dev/en/latest/>`_,
-`numpy <https://numpy.org/>`_,
-and `torch <https://pytorch.org/>`_. It is a
+it. ``xp`` currently supports testing with the following backends:
+* `array_api_strict <https://data-apis.org/array-api-strict/>`_
+* `cupy <https://cupy.dev/>`_,
+* `dask.array <https://www.dask.org/>`_,
+* `jax.numpy <https://docs.jax.dev/en/latest/>`_,
+* `numpy <https://numpy.org/>`_,
+* `torch <https://pytorch.org/>`_.
+
+``xp`` is a
 `pytest fixture <https://docs.pytest.org/en/6.2.x/fixture.html>`_
-which is parameterized over all currently installed backends among the
-backends listed above.
+which is parameterized over all currently installed backends among
+those listed above.
 
 ``scipy._lib._array_api`` provides the ``make_xp_test_case``
 decorator, and the ``make_xp_pytest_param`` and ``make_xp_pytest_marks``
@@ -677,6 +679,8 @@ functions to declare which functions are being tested by a test.  These draw on
 the ``xp_capabilities`` entries for a function (or in some cases those for a
 list of functions) to insert the relevant backend specific skip and xfail
 markers.
+
+**make_xp_test_case:**
 
 In most cases, developers should use ``make_xp_test_case``, which is applied as a
 decorator to a test function, test method, or entire test class. Applying it to a
@@ -709,6 +713,8 @@ are many methods in a class testing the same function.::
       def test_integration_with_other_function(self, xp)
           ...
 
+**make_xp_pytest_param:**
+
 ``make_xp_pytest_param`` covers the situation where a common test body is
 parametrized over a list of functions using ``pytest.mark.parametrize``.
 It is not used as frequently as ``make_xp_test_case`` but this kind of
@@ -737,7 +743,7 @@ tests being run with unnecessary skips and xfails.
 
 Unlike ``make_xp_test_case``, only a single function can be passed to any given
 call to ``make_xp_pytest_param``. Additional arguments specify additional
-parameters for ``pytest.mark.parametrize``, such as in the contrived example
+parameters for ``pytest.mark.parametrize``, such as in the example
 below::
 
   @pytest.mark.parametrize(
@@ -750,9 +756,13 @@ below::
    def test_normed_foo(func, norm, xp):
        ...
 
+**make_xp_pytest_marks:**
+
 ``make_xp_pytest_marks`` is rarely used. It directly returns a list of
 pytest marks which can be used with the ``pytestmark = ...`` variable
 to set marks for all tests in a file.
+
+**Strict checks:**
 
 The ``xp`` fixture should almost always be used along with ``make_xp_test_case``
 or one of the similar functions listed above and the ``xp`` fixture has
@@ -779,9 +789,11 @@ functions which do not have associated ``xp_capabilities`` entries. To bypass
 the strict checks, one can explicitly mark a test with
 ``@pytest.mark.uses_xp_capabilities(False)``. An optional ``reason`` string can
 be passed to this mark. Tests of private functionality for which there are no
-relevant ``xp_capabilities`` entries, one should use
-``pytest.mark.uses_xp_capabilities(False, reason="private")``.
+relevant ``xp_capabilities`` entries, one should use ``reason="private"``.::
 
+  pytest.mark.uses_xp_capabilities(False, reason="private")
+  def test_private_toto_helper(xp):
+      ...
 
 Directly adding pytest markers
 ``````````````````````````````
