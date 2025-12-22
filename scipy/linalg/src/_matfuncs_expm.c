@@ -206,11 +206,9 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
-    // work_arr is two n cols that will be used multiplying absA, alternating.
-    float* work_arr = PyMem_RawMalloc(2*n*sizeof(float));
-    if (!work_arr) { *m = -1; return; }
-    float* absA = PyMem_RawMalloc(n*n*sizeof(float));
-    if (!absA) { *m = -2; PyMem_RawFree(work_arr); return; }
+    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    float* restrict work_arr = &Am[6*n*n];
+    float* restrict absA = &Am[5*n*n];
 
     dims[0] = n;
     dims[1] = n;
@@ -270,7 +268,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 5
@@ -290,7 +288,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta1 < theta[1]) && lm == 0)
     {
         *m = 5;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 7
@@ -302,7 +300,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = snorm1est(&Am[0], 8);
         // If memory error in s1normest
-        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -3; return; }
         d8 = powf(test, 0.125);
     }
 
@@ -323,7 +321,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta2 < theta[2]) && lm == 0)
     {
         *m = 7;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 9
@@ -346,7 +344,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
             sgemm_("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
         }
         *m = 9;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 13
@@ -359,7 +357,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = snorm1est(&Am[0], 10);
         // If memory error in s1normest
-        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -4; return; }
         d10 = powf(test, 0.1);
     }
 
@@ -410,9 +408,6 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
         }
     }
 
-FREE_EXIT:
-    PyMem_RawFree(absA);
-    PyMem_RawFree(work_arr);
     return;
 }
 
@@ -427,11 +422,9 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
-    // work_arr is two n cols that will be used multiplying absA, alternating.
-    double* work_arr = PyMem_RawMalloc(2*n*sizeof(double));
-    if (!work_arr) { *m = -1; return; }
-    double* absA = PyMem_RawMalloc(n*n*sizeof(double));
-    if (!absA) { *m = -2; PyMem_RawFree(work_arr); return; }
+    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    double* restrict work_arr = &Am[6*n*n];
+    double* restrict absA = &Am[5*n*n];
 
     dims[0] = n;
     dims[1] = n;
@@ -491,7 +484,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 5
@@ -511,7 +504,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta1 < theta[1]) && lm == 0)
     {
         *m = 5;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 7
@@ -523,7 +516,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = dnorm1est(&Am[0], 8);
         // If memory error in d1normest
-        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -3; return; }
         d8 = pow(test, 0.125);
     }
 
@@ -544,7 +537,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta2 < theta[2]) && lm == 0)
     {
         *m = 7;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 9
@@ -567,7 +560,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
             dgemm_("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
         }
         *m = 9;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 13
@@ -580,7 +573,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = dnorm1est(&Am[0], 10);
         // If memory error in d1normest
-        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -4; return; }
         d10 = pow(test, 0.1);
     }
 
@@ -631,9 +624,6 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
         }
     }
 
-FREE_EXIT:
-    PyMem_RawFree(absA);
-    PyMem_RawFree(work_arr);
     return;
 }
 
@@ -650,11 +640,10 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
-    // work_arr is two n cols that will be used multiplying absA, alternating.
-    float* work_arr = PyMem_RawMalloc(2*n*sizeof(float));
-    if (!work_arr) { *m = -1; return; }
-    float* absA = PyMem_RawMalloc(n*n*sizeof(float));
-    if (!absA) { *m = -2; PyMem_RawFree(work_arr); return; }
+    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    // Am is complex, but work_arr and absA are real.
+    float* restrict work_arr = (float*)&Am[6*n*n];
+    float* restrict absA = (float*)&Am[5*n*n];
 
     dims[0] = n;
     dims[1] = n;
@@ -714,7 +703,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 5
@@ -734,7 +723,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta1 < theta[1]) && lm == 0)
     {
         *m = 5;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 7
@@ -746,7 +735,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = cnorm1est(&Am[0], 8);
         // If memory error in c1normest
-        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -3; return; }
         d8 = powf(test, 0.125);
     }
 
@@ -767,7 +756,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta2 < theta[2]) && lm == 0)
     {
         *m = 7;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 9
@@ -790,7 +779,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
             cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
         }
         *m = 9;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 13
@@ -803,7 +792,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = cnorm1est(&Am[0], 10);
         // If memory error in c1normest
-        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -4; return; }
         d10 = powf(test, 0.1);
     }
 
@@ -861,9 +850,6 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
         }
     }
 
-FREE_EXIT:
-    PyMem_RawFree(absA);
-    PyMem_RawFree(work_arr);
     return;
 }
 
@@ -880,11 +866,10 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
-    // work_arr is two n cols that will be used multiplying absA, alternating.
-    double* work_arr = PyMem_RawMalloc(2*n*sizeof(double));
-    if (!work_arr) { *m = -1; return; }
-    double* absA = PyMem_RawMalloc(n*n*sizeof(double));
-    if (!absA) { *m = -2; PyMem_RawFree(work_arr); return; }
+    // work_arr is two (n,) cols that will be used multiplying absA, alternating.
+    // Am is complex, but work_arr and absA are double.
+    double* restrict work_arr = (double*)&Am[6*n*n];
+    double* restrict absA = (double*)&Am[5*n*n];
 
     dims[0] = n;
     dims[1] = n;
@@ -944,7 +929,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 5
@@ -964,7 +949,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta1 < theta[1]) && lm == 0)
     {
         *m = 5;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 7
@@ -976,7 +961,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = znorm1est(&Am[0], 8);
         // If memory error in z1normest
-        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -3; return; }
         d8 = pow(test, 0.125);
     }
 
@@ -997,7 +982,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta2 < theta[2]) && lm == 0)
     {
         *m = 7;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 9
@@ -1022,7 +1007,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
             zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
         }
         *m = 9;
-        goto FREE_EXIT;
+        return;
     }
 
     // m = 13
@@ -1035,7 +1020,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     } else {
         test = znorm1est(&Am[0], 10);
         // If memory error in z1normest
-        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        if (test <= -100.0) { *m = -4; return; }
         d10 = pow(test, 0.1);
     }
 
@@ -1093,9 +1078,6 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
         }
     }
 
-FREE_EXIT:
-    PyMem_RawFree(absA);
-    PyMem_RawFree(work_arr);
     return;
 }
 
@@ -1105,7 +1087,7 @@ FREE_EXIT:
  *******************************************************************************/
 
 static void
-pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
+pade_UV_calc_s(float* restrict Am, int* restrict ipiv, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -1116,9 +1098,6 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
     int n2 = n*n, i, j;
     float b[13];
     float two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
-
-    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -11; return; }
 
     if (m == 3)
     {
@@ -1268,13 +1247,12 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
         //          U = K @ (L @ M + N)
         //          V =      P @ Q + R
         // So we need A[0], A[3] all the way. We can scratch A[1], A[2] and A[4]
-        // but it will not be enough and hence the costly malloc.
+        // but it will not be enough and hence we use A[5].
 
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        float* work = PyMem_RawMalloc(n2*sizeof(float));
-        if (!work) { *info = -12; return; }
+        float* work = &Am[5*n2];
         float temp1, temp2, temp3;
         for (i = 0; i < n; i++)
         {
@@ -1303,7 +1281,6 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
         sgemm_("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*n2], &n, &dbl1, &Am[2*n2], &n);
         sgemm_("N", "N", &n, &n, &n, &dbl1, &Am[2*n2], &n, Am, &n, &dbl1, &Am[3*n2], &n);
 
-        PyMem_RawFree(work);
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
@@ -1315,7 +1292,6 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
 
     sgetrf_(&n, &n, &Am[n2], &n, ipiv, info);
     sgetrs_("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    PyMem_RawFree(ipiv);
     sscal_(&n2, &two, &Am[2*n2], &int1);
     for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += 1.0; }
 
@@ -1326,7 +1302,7 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
 
 
 static void
-pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
+pade_UV_calc_d(double* restrict Am, int* restrict ipiv, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -1337,9 +1313,6 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
     int n2 = n*n, i, j;
     double b[13];
     double two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
-
-    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -11; return; }
 
     if (m == 3)
     {
@@ -1493,13 +1466,12 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
         //          U = K @ (L @ M + N)
         //          V =      P @ Q + R
         // So we need A[0], A[3] all the way. We can scratch A[1], A[2] and A[4]
-        // but it will not be enough and hence the costly malloc.
+        // but it will not be enough and hence we use A[5].
 
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        double* work = PyMem_RawMalloc(n2*sizeof(double));
-        if (!work) { *info = -12; return; }
+        double* work = &Am[5*n2];
         double temp1, temp2, temp3;
         for (i = 0; i < n; i++)
         {
@@ -1528,7 +1500,6 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
         dgemm_("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*n2], &n, &dbl1, &Am[2*n2], &n);
         dgemm_("N", "N", &n, &n, &n, &dbl1, &Am[2*n2], &n, Am, &n, &dbl1, &Am[3*n2], &n);
 
-        PyMem_RawFree(work);
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
@@ -1540,7 +1511,6 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
 
     dgetrf_(&n, &n, &Am[n2], &n, ipiv, info);
     dgetrs_("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    PyMem_RawFree(ipiv);
     dscal_(&n2, &two, &Am[2*n2], &int1);
     for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += 1.0; }
 
@@ -1550,7 +1520,7 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
 
 
 static void
-pade_UV_calc_c(SCIPY_C* Am, const Py_ssize_t size_n, const int m, int* info)
+pade_UV_calc_c(SCIPY_C* restrict Am, int* restrict ipiv, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -1567,9 +1537,6 @@ pade_UV_calc_c(SCIPY_C* Am, const Py_ssize_t size_n, const int m, int* info)
 #if defined(_MSC_VER)
     SCIPY_C inter1, inter2, inter3, inter4;
 #endif
-
-    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -11; return; }
 
     if (m == 3)
     {
@@ -1790,13 +1757,12 @@ pade_UV_calc_c(SCIPY_C* Am, const Py_ssize_t size_n, const int m, int* info)
         //          U = K @ (L @ M + N)
         //          V =      P @ Q + R
         // So we need A[0], A[3] all the way. We can scratch A[1], A[2] and A[4]
-        // but it will not be enough and hence the costly malloc.
+        // but it will not be enough and hence we use A[5].
 
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        SCIPY_C* work = PyMem_RawMalloc(n2*sizeof(SCIPY_C));
-        if (!work) { *info = -12; return; }
+        SCIPY_C* work = &Am[5*n2];
 
         for (i = 0; i < n; i++)
         {
@@ -1864,7 +1830,6 @@ pade_UV_calc_c(SCIPY_C* Am, const Py_ssize_t size_n, const int m, int* info)
         cgemm_("N", "N", &n, &n, &n, &cdbl1, work, &n, &Am[3*n2], &n, &cdbl1, &Am[2*n2], &n);
         cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[2*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
 
-        PyMem_RawFree(work);
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
@@ -1876,7 +1841,6 @@ pade_UV_calc_c(SCIPY_C* Am, const Py_ssize_t size_n, const int m, int* info)
 
     cgetrf_(&n, &n, &Am[n2], &n, ipiv, info);
     cgetrs_("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    PyMem_RawFree(ipiv);
     csscal_(&n2, &two, &Am[2*n2], &int1);
 
 #if defined(_MSC_VER)
@@ -1892,7 +1856,7 @@ pade_UV_calc_c(SCIPY_C* Am, const Py_ssize_t size_n, const int m, int* info)
 
 
 static void
-pade_UV_calc_z(SCIPY_Z* Am, const Py_ssize_t size_n, const int m, int* info)
+pade_UV_calc_z(SCIPY_Z* restrict Am, int* restrict ipiv, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -1909,9 +1873,6 @@ pade_UV_calc_z(SCIPY_Z* Am, const Py_ssize_t size_n, const int m, int* info)
 #if defined(_MSC_VER)
     SCIPY_Z inter1, inter2, inter3, inter4;
 #endif
-
-    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -11; return; }
 
     if (m == 3)
     {
@@ -2126,13 +2087,12 @@ pade_UV_calc_z(SCIPY_Z* Am, const Py_ssize_t size_n, const int m, int* info)
         //          U = K @ (L @ M + N)
         //          V =      P @ Q + R
         // So we need A[0], A[3] all the way. We can scratch A[1], A[2] and A[4]
-        // but it will not be enough and hence the costly malloc.
+        // but it will not be enough and hence we use A[5].
 
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        SCIPY_Z* work = PyMem_RawMalloc(n2*sizeof(SCIPY_Z));
-        if (!work) { *info = -12; return; }
+        SCIPY_Z* work = &Am[5*n2];
 
         for (i = 0; i < n; i++)
         {
@@ -2200,7 +2160,6 @@ pade_UV_calc_z(SCIPY_Z* Am, const Py_ssize_t size_n, const int m, int* info)
         zgemm_("N", "N", &n, &n, &n, &cdbl1, work, &n, &Am[3*n2], &n, &cdbl1, &Am[2*n2], &n);
         zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[2*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
 
-        PyMem_RawFree(work);
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
@@ -2211,7 +2170,6 @@ pade_UV_calc_z(SCIPY_Z* Am, const Py_ssize_t size_n, const int m, int* info)
 
     zgetrf_(&n, &n, &Am[n2], &n, ipiv, info);
     zgetrs_("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    PyMem_RawFree(ipiv);
     zdscal_(&n2, &two, &Am[2*n2], &int1);
 
 #if defined(_MSC_VER)
@@ -2246,12 +2204,19 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, int* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    float* restrict Am = malloc(sizeof(float)*(n*n*5 + 2*n));
+    // expm requires 6*n*n + 2*n workspace.
+    // 5*n*n is for holding the powers of A
+    // n*n for holding the absolute values of A
+    // 2*n is both for 1-norm calculations
+    // 2*n for the scaling/squaring in the triangular case
+    float* restrict Am = malloc(sizeof(float)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
+    int* ipiv = malloc(sizeof(int)*n);
+    if (ipiv == NULL) { free(Am); *info = -101; return; }
     float* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
-    float* restrict diag_aw = &Am[5*n*n];
-    float* restrict sd = &Am[5*n*n + n];
+    float* restrict diag_aw = &Am[6*n*n + 2*n];
+    float* restrict sd = &Am[6*n*n + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2302,12 +2267,14 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, int* info)
 
         pick_pade_structure_s(Am, n, &m, &s);
         if (m < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
         }
-        pade_UV_calc_s(Am, n, m, info);
+        pade_UV_calc_s(Am, ipiv, n, m, info);
         if (*info < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
@@ -2369,6 +2336,7 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, int* info)
         swap_cf_s(temp1, &result[idx*n*n], n, n, n);
     }
 
+    free(ipiv);
     free(Am);
 }
 
@@ -2393,12 +2361,19 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, int* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    double* restrict Am = malloc(sizeof(double)*(n*n*5 + 2*n));
+    // expm requires 6*n*n + 2*n workspace.
+    // 5*n*n is for holding the powers of A
+    // n*n for holding the absolute values of A
+    // 2*n is both for 1-norm calculations
+    // 2*n for the scaling/squaring in the triangular case
+    double* restrict Am = malloc(sizeof(double)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
+    int* ipiv = malloc(sizeof(int)*n);
+    if (ipiv == NULL) { free(Am); *info = -101; return; }
     double* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
-    double* restrict diag_aw = &Am[5*n*n];
-    double* restrict sd = &Am[5*n*n + n];
+    double* restrict diag_aw = &Am[6*n*n + 2*n];
+    double* restrict sd = &Am[6*n*n + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2449,12 +2424,14 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, int* info)
 
         pick_pade_structure_d(Am, n, &m, &s);
         if (m < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
         }
-        pade_UV_calc_d(Am, n, m, info);
+        pade_UV_calc_d(Am, ipiv, n, m, info);
         if (*info < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
@@ -2516,6 +2493,7 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, int* info)
         swap_cf_d(temp1, &result[idx*n*n], n, n, n);
     }
 
+    free(ipiv);
     free(Am);
 }
 
@@ -2540,12 +2518,19 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, int* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    SCIPY_C* restrict Am = malloc(sizeof(SCIPY_C)*(n*n*5 + 2*n));
+    // expm requires 6*n*n + 2*n workspace.
+    // 5*n*n is for holding the powers of A
+    // n*n for holding the absolute values of A
+    // 2*n is both for 1-norm calculations
+    // 2*n for the scaling/squaring in the triangular case
+    SCIPY_C* restrict Am = malloc(sizeof(SCIPY_C)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
+    int* ipiv = malloc(sizeof(int)*n);
+    if (ipiv == NULL) { free(Am); *info = -101; return; }
     SCIPY_C* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
-    SCIPY_C* restrict diag_aw = &Am[5*n*n];
-    SCIPY_C* restrict sd = &Am[5*n*n + n];
+    SCIPY_C* restrict diag_aw = &Am[6*n*n + 2*n];
+    SCIPY_C* restrict sd = &Am[6*n*n + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2596,12 +2581,14 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, int* info)
 
         pick_pade_structure_c(Am, n, &m, &s);
         if (m < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
         }
-        pade_UV_calc_c(Am, n, m, info);
+        pade_UV_calc_c(Am, ipiv, n, m, info);
         if (*info < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
@@ -2711,6 +2698,7 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, int* info)
         swap_cf_c(temp1, &result[idx*n*n], n, n, n);
     }
 
+    free(ipiv);
     free(Am);
 }
 
@@ -2734,13 +2722,19 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, int* info)
     {
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
-
-    SCIPY_Z* restrict Am = malloc(sizeof(SCIPY_Z)*(n*n*5 + 2*n));
+    // expm requires 6*n*n + 2*n workspace.
+    // 5*n*n is for holding the powers of A
+    // n*n for holding the absolute values of A
+    // 2*n is both for 1-norm calculations
+    // 2*n for the scaling/squaring in the triangular case
+    SCIPY_Z* restrict Am = malloc(sizeof(SCIPY_Z)*(6*n*n + 4*n));
     if (Am == NULL) { *info = -100; return; }
+    int* ipiv = malloc(sizeof(int)*n);
+    if (ipiv == NULL) { free(Am); *info = -101; return; }
     SCIPY_Z* restrict Am1 = &Am[n*n];
     // These two arrays are only used for the triangular case for scaling/squaring
-    SCIPY_Z* restrict diag_aw = &Am[5*n*n];
-    SCIPY_Z* restrict sd = &Am[5*n*n + n];
+    SCIPY_Z* restrict diag_aw = &Am[6*n*n + 2*n];
+    SCIPY_Z* restrict sd = &Am[6*n*n + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2791,12 +2785,14 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, int* info)
 
         pick_pade_structure_z(Am, n, &m, &s);
         if (m < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
         }
-        pade_UV_calc_z(Am, n, m, info);
+        pade_UV_calc_z(Am, ipiv, n, m, info);
         if (*info < 0) {
+            free(ipiv);
             free(Am);
             *info = -100 + *info;
             return;
@@ -2906,5 +2902,6 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, int* info)
         swap_cf_z(temp1, &result[idx*n*n], n, n, n);
     }
 
+    free(ipiv);
     free(Am);
 }
