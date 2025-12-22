@@ -480,7 +480,7 @@ class TestLogSoftmax:
         xp_assert_close(log_softmax(x, axis=(1, 2)), expect, rtol=1e-13)
 
     @pytest.mark.parametrize(
-        "xp, expected",
+        "xp_input, expected",
         [
             ([1.0, 1.0, np.inf], [0.0, 0.0, 1.0]),
             ([1.0, np.inf, np.inf], [0.0, 0.5, 0.5]),
@@ -490,6 +490,6 @@ class TestLogSoftmax:
             ([-np.inf], [1.0]),
         ],
     )
-    def test_softmax_inf_inputs(self, xp, expected):
+    def test_softmax_inf_inputs(self, xp_input, expected, xp):
         # Handle infinite inputs without producing NaNs - see gh-23225
-        xp_assert_close(softmax(np.asarray(xp)), np.asarray(expected), rtol=1e-13)
+        xp_assert_close(softmax(xp.asarray(xp_input)), xp.asarray(expected), rtol=1e-13)
