@@ -1225,12 +1225,16 @@ def _result_dtype(x0_dtype, f_dtype):
     """
     Determines float precision of a minimization
     """
-    x0bits = np.finfo(x0_dtype).bits
-    fbits = np.finfo(f_dtype).bits
-    if x0bits < fbits:
-        return x0_dtype
-    elif x0bits == fbits:
-        return f_dtype
+    x0bytes = x0_dtype.itemsize
+    fbytes = f_dtype.itemsize
+    b = min(x0bytes, fbytes)
+    match b:
+        case 2:
+            return np.float16
+        case 4:
+            return np.float32
+        case _:
+            return np.float64
 
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
@@ -1459,6 +1463,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     gfk = myfprime(x0)
 
     # the float precision that the minimisation proceeds with
+    if not hasattr(old_fval, 'dtype'):
+        old_fval = np.float64(old_fval)
     res_dtype = _result_dtype(x0.dtype, old_fval.dtype)
     ls_defaults = _linesearch_defaults_for_dtype(res_dtype)
 
@@ -1830,6 +1836,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
+    # adjust float precision of problem based on x0, fun(x0)
+    if not hasattr(old_fval, 'dtype'):
+        old_fval = np.float64(old_fval)
     res_dtype = _result_dtype(x0.dtype, old_fval.dtype)
     ls_args = _linesearch_defaults_for_dtype(res_dtype)
 
