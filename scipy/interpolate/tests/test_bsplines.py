@@ -327,6 +327,11 @@ class TestBSpline:
         # 2nd derivative is not guaranteed to be continuous either
         assert not np.allclose(b(x - 1e-10, nu=2), b(x + 1e-10, nu=2))
 
+    def test_basis_element_invalid_too_short(self):
+        # There should be atleast 2 knots
+        assert_raises(ValueError, BSpline.basis_element, **dict(t=[0]))
+        assert_raises(ValueError, BSpline.basis_element, **dict(t=[]))
+
     def test_basis_element_quadratic(self, xp):
         xx = xp.linspace(-1, 4, 20)
         b = BSpline.basis_element(t=xp.asarray([0, 1, 2, 3]))
