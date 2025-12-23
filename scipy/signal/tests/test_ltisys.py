@@ -1076,6 +1076,42 @@ class Test_abcd_normalize:
         A, B = xp.asarray(self.A), xp.asarray(self.B)
         assert_raises(ValueError, abcd_normalize, A=A, B=B)
 
+    @pytest.mark.parametrize(
+        "A_dtype,B_dtype,C_dtype,D_dtype,expected_dtype",
+        [
+            ("int64", "int64", "int64", "int64", "float64"),
+            ("float32", "float32", "float32", "float32", "float32"),
+            ("float32", "float32", "float32", "float64", "float64"),
+            ("complex64", "complex64", "complex64", "complex64", "complex64"),
+            ("complex128", "complex128", "complex128", "complex128", "complex128"),
+            ("float64", "float64", "complex128", "float64", "complex128"),
+            (None, "int64", "int64", "int64", "float64"),
+            (None, "float32", "float32", "float32", "float32"),
+            (None, "float32", "float32", "float64", "float64"),
+            (None, "complex64", "complex64", "complex64", "complex64"),
+            (None, "complex128", "complex128", "complex128", "complex128"),
+            (None, "float64", "complex128", "float64", "complex128"),
+        ]
+    )
+    # Also check case where one input array has size zero.
+    @pytest.mark.parametrize("D", [[[2.5]], [[]]])
+    def test_dtypes(
+            self, D, A_dtype, B_dtype, C_dtype, D_dtype, expected_dtype, xp
+    ):
+        args = []
+        for X, X_dtype in zip(
+                [self.A, self.B, self.C, D],
+                [A_dtype, B_dtype, C_dtype, D_dtype]
+        ):
+            args.append(
+                xp.asarray(X, dtype=getattr(xp, X_dtype))
+                if X_dtype is not None else None
+            )
+        A, B, C, D = args
+        A, B, C, D = abcd_normalize(A=A, B=B, C=C, D=D)
+        expected_dtype = getattr(xp, expected_dtype)
+        assert A.dtype == B.dtype == C.dtype == D.dtype == expected_dtype
+
 
 class Test_bode:
 
