@@ -139,8 +139,9 @@ New features
   axes along which the two-dimensional analytic signal should be calculated.
   Furthermore, the documentation of `~scipy.signal.hilbert` and
   `~scipy.signal.hilbert2` was significantly improved.
-- The ``ShortTimeFFT`` class now support subscription, making it a generic
-  type, for compatibility with ``scipy-stubs``.
+- The ``ShortTimeFFT`` and ``LinearTimeInvariant`` classes now support
+  subscription, making them generic types, for compatibility with
+  ``scipy-stubs``.
 
 
 ``scipy.sparse`` improvements
@@ -162,7 +163,7 @@ New features
   or another ``dok_array`` matrix. It performs additional validation that keys
   are valid index tuples.
 - `~scipy.sparse.dia_array.tocsr` is approximately three times faster and
-  some unneccessary copy operations have been removed from sparse format
+  some unnecessary copy operations have been removed from sparse format
   interconversions more broadly.
 - Added `scipy.sparse.linalg.funm_multiply_krylov`, a restarted Krylov method
   for evaluating ``y = f(tA) b``.
@@ -328,6 +329,14 @@ Deprecated features and future changes
 - The ``precenter`` argument of `scipy.signal.lombscargle` is deprecated and
   will be removed in v1.19.0. Furthermore, some arguments will become keyword
   only.
+- For `scipy.stats.anderson`, the tuple-unpacking behavior of the return object
+  and attributes ``critical_values``, ``significance_level``, and
+  ``fit_result`` are deprecated. Beginning in SciPy 1.19.0, these features will
+  no longer be available, and the object returned will have attributes
+  ``statistic`` and ``pvalue``.
+- For `scipy.stats.anderson_ksamp`, the ``midrank`` parameter is deprecated
+  and the new ``variant`` parameter should be preferred. This also means that
+  the presence of the ``critical_values`` return array is deprecated.
 
 ********************
 Expired deprecations
@@ -417,7 +426,7 @@ Authors
 * Luca Cerina (1) +
 * Christine P. Chai (35)
 * Saransh Chopra (1)
-* Lucas Colley (117)
+* Lucas Colley (119)
 * Björn Ingvar Dahlgren (2) +
 * Sumit Das (1) +
 * Hans Dembinski (1)
@@ -488,7 +497,7 @@ Authors
 * Ritesh Rana (1) +
 * Adrian Raso (1) +
 * Dan Raviv (1) +
-* Tyler Reddy (108)
+* Tyler Reddy (115)
 * Lucas Roberts (4)
 * Bernard Roesler (1) +
 * Mikhail Ryazanov (27)
@@ -500,7 +509,7 @@ Authors
 * Rodrigo Silva (1) +
 * Samaresh Kumar Singh (8) +
 * Kartik Sirohi (1) +
-* Albert Steppi (178)
+* Albert Steppi (179)
 * Matthias Straka (1) +
 * Theo Teske (1) +
 * Noam Teyssier (1) +
@@ -665,6 +674,7 @@ Issues closed for 1.17.0
 * `#24052 <https://github.com/scipy/scipy/issues/24052>`__: CI: TypeError: Multiple namespaces for array inputs
 * `#24089 <https://github.com/scipy/scipy/issues/24089>`__: ENH: spatial.transform: Add ``normalize`` argument to ``Rotation.from_matrix``
 * `#24131 <https://github.com/scipy/scipy/issues/24131>`__: BUG: ``1.17.0rc1``\ : ModuleNotFoundError: No module named 'scipy.integrate._lso...
+* `#24212 <https://github.com/scipy/scipy/issues/24212>`__: BENCH, MAINT: (sparse) asv suite compat with NumPy 2.4.0
 
 ************************
 Pull requests for 1.17.0
@@ -1171,6 +1181,7 @@ Pull requests for 1.17.0
 * `#24100 <https://github.com/scipy/scipy/pull/24100>`__: DOC: SciPy 1.17.0 release notes
 * `#24106 <https://github.com/scipy/scipy/pull/24106>`__: BUG: interpolate: Fix h[m] -> h[n] typo in _deBoor_D derivative...
 * `#24107 <https://github.com/scipy/scipy/pull/24107>`__: ENH: linalg/solve: move the tridiagonal solve slice iteration...
+* `#24111 <https://github.com/scipy/scipy/pull/24111>`__: BLD/DEV: fix windows build
 * `#24113 <https://github.com/scipy/scipy/pull/24113>`__: DOC: signal: mark some legacy functions as out of scope for array...
 * `#24118 <https://github.com/scipy/scipy/pull/24118>`__: MAINT: version pins/prep for 1.17.0rc1
 * `#24129 <https://github.com/scipy/scipy/pull/24129>`__: REL: set 1.17.0rc2 unreleased
@@ -1185,3 +1196,7 @@ Pull requests for 1.17.0
 * `#24155 <https://github.com/scipy/scipy/pull/24155>`__: MAINT: bump ``xsf`` to fix ``special.itj0y0`` regression
 * `#24161 <https://github.com/scipy/scipy/pull/24161>`__: BUG:linalg.interpolative: Fix two edge cases for id_dist Cython...
 * `#24174 <https://github.com/scipy/scipy/pull/24174>`__: REV:integrate: Revert the stepsize change in LSODA
+* `#24213 <https://github.com/scipy/scipy/pull/24213>`__: TST: fft: Add allow_dask_compute=True to more places in fft
+* `#24214 <https://github.com/scipy/scipy/pull/24214>`__: DOC: update 1.17.0 notes for RBFInterpolator
+* `#24218 <https://github.com/scipy/scipy/pull/24218>`__: BENCH, MAINT: NumPy 2.4.0 bench compat
+* `#24223 <https://github.com/scipy/scipy/pull/24223>`__: BLD: linalg: ``link_language: 'fortran'`` for ``_fblas``
