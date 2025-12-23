@@ -232,12 +232,10 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     q = C.shape[0] or D.shape[0]
 
     # Create zero matrices as needed:
-    A = xp.zeros((n, n)) if xp_size(A) == 0 else A
-    B = xp.zeros((n, p)) if xp_size(B) == 0 else B
-    C = xp.zeros((q, n)) if xp_size(C) == 0 else C
-    D = xp.zeros((q, p)) if xp_size(D) == 0 else D
-
-    A, B, C, D = (xp.astype(M_, dtype, copy=False) for M_ in (A, B, C, D))
+    A = xp.zeros((n, n), dtype=dtype) if xp_size(A) == 0 else A
+    B = xp.zeros((n, p), dtype=dtype) if xp_size(B) == 0 else B
+    C = xp.zeros((q, n), dtype=dtype) if xp_size(C) == 0 else C
+    D = xp.zeros((q, p), dtype=dtype) if xp_size(D) == 0 else D
 
     if A.shape != (n, n):
         raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")
