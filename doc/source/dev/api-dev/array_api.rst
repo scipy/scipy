@@ -58,7 +58,7 @@ values:
 Note that the above example works for PyTorch CPU tensors. For GPU tensors or
 CuPy arrays, the expected result for ``vq`` is a ``TypeError``, because ``vq``
 uses compiled code in its implementation, which won't work on GPU, and there
-are currently no GPU specific implementations to dispatch to.
+are currently no GPU specific implementations to delegate to.
 
 More strict array input validation will reject ``np.matrix`` and
 ``np.ma.MaskedArray`` instances, as well as arrays with ``object`` dtype:
@@ -972,7 +972,7 @@ The intention behind testing with different default dtypes is primarily to catch
 subtle bugs that can arise with the ``torch`` backend due to internal array creation
 that does not explicitly specify a dtype. The intention is not to implicitly test
 that functions are numerically accurate with both ``float32`` and ``float64`` inputs,
-or that input dtype controls output dtype. These tasks should instead be accomplished
+or that input dtype controls output dtype. These tasks, if done, should instead be accomplished
 mindfully by explicitly setting dtypes within tests. For the sake of consistency,
 tests intended to be run with the ``torch`` backend should not use array creation
 functions without explicitly setting the dtype. At the time of writing, there are many
