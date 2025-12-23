@@ -325,8 +325,9 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
         code_book = code_book[has_members]
         code_book = xp.asarray(code_book)
         diff = xp.abs(prev_avg_dists[0] - prev_avg_dists[1])
-
-    return code_book, prev_avg_dists[1]
+    _,final_distortions = vq(obs, code_book, check_finite=False)
+    final_distortions_avg = xp.mean(final_distortions, axis=-1)
+    return code_book, final_distortions_avg
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
