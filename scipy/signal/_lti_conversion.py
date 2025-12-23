@@ -135,15 +135,6 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         Two-dimensional array of shape (q, n).
     D : array_like, optional
         Two-dimensional array of shape (q, p).
-    dtype : dtype | None, optional
-        Cast all matrices to the specified dtype. If set to ``None`` (default), their
-        dtypes will be "complex128" if any of the matrices are complex-valued.
-        Otherwise, they will be of the type "float64".
-
-        .. versionadded:: 1.18.0
-
-            With this new parameter, all return values have identical dtypes.
-            In previous versions the dtype of the input was preserved.
 
     Returns
     -------
@@ -194,20 +185,6 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     >>> CC
     array([[0., 0.]])
 
-    The following snippet shows the effect of the `dtype` parameter:
-
-    >>> import numpy as np
-    >>> from scipy.signal import abcd_normalize
-    >>> A, D = [[1, 2], [3, 4]], 2.5
-    ...
-    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D)  # default type casting
-    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
-     AA: float64, BB: float64
-     CC: float64, DD: float64
-    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=np.float32)  # Explicit dtype
-    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
-     AA: float32, BB: float32
-     CC: float32, DD: float32
     """
     if A is None and B is None and C is None:
         raise ValueError("Dimension n is undefined for parameters A = B = C = None!")
