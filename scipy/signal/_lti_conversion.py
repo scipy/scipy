@@ -8,7 +8,8 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, zeros, array, outer)
 from scipy import linalg
 
-from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
+                                   xp_result_type)
 import scipy._lib.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
@@ -114,7 +115,7 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
-def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
+def abcd_normalize(A=None, B=None, C=None, D=None):
     r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
     First, the input matrices are converted into two-dimensional arrays with
@@ -216,22 +217,15 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
         raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
     xp = array_namespace(A, B, C, D)
+    A, B, C, D = xp_promote(A, B, C, D, xp=xp, force_floating=True)
+    dtype = xp_result_type(A, B, C, D, xp=xp)
 
     # convert inputs into 2d arrays (zero-size 2d array if None):
-    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
-                  if M_ is not None else xp.zeros((0, 0)) for M_ in (A, B, C, D))
-
-    if dtype is None:
-        to_comp = any(xp.isdtype(M_.dtype, 'complex floating') for M_ in (A, B, C, D))
-        dtype = xp.complex128 if to_comp else xp.float64
-    else:
-        try:
-            is_numeric = xp.isdtype(dtype, 'numeric')
-        except Exception as dtype_error:
-            err_msg = f"Parameter {dtype=} must be None or a numeric dtype!"
-            raise ValueError(err_msg) from dtype_error
-        if not is_numeric:
-            raise ValueError(f"Parameter {dtype=} is not a numeric dtype!")
+    A, B, C, D = (
+        xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
+        if M_ is not None else xp.zeros((0, 0), dtype=dtype)
+        for M_ in (A, B, C, D)
+    )
 
     n = A.shape[0] or B.shape[0] or C.shape[1] # try finding non-zero dimensions
     p = B.shape[1] or D.shape[1]
