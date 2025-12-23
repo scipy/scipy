@@ -1337,7 +1337,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
+def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     r"""
     Compute the inverse of a matrix.
 

@@ -9,7 +9,7 @@ from ._arraytools import axis_slice
 
 
 def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
-                  use="conv", xp=None, device=None):
+                  use="conv", *, xp=None, device=None):
     """Compute the coefficients for a 1-D Savitzky-Golay FIR filter.
 
     Parameters

@@ -1254,7 +1254,7 @@ class lsoda(IntegratorBase):
                  with_jacobian=False,
                  rtol=1e-6, atol=1e-12,
                  lband=None, uband=None,
-                 nsteps=5000,  # Increased default for tighter tolerances
+                 nsteps=500,
                  max_step=0.0,  # corresponds to infinite
                  min_step=0.0,
                  first_step=0.0,  # determined by solver

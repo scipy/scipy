@@ -20,6 +20,7 @@ time invariant systems.
 #   Merged discrete systems and added dlti
 
 import warnings
+from types import GenericAlias
 
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
@@ -44,6 +45,9 @@ __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
 
 
 class LinearTimeInvariant:
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __new__(cls, *system, **kwargs):
         """Create a new object, don't allow direct instances."""
         if cls is LinearTimeInvariant:

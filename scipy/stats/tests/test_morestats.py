@@ -253,6 +253,7 @@ class TestShapiro:
         assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
 
 
+@pytest.mark.filterwarnings("ignore: As of SciPy 1.17: FutureWarning")
 class TestAnderson:
     def test_normal(self):
         rs = RandomState(1234567890)
@@ -397,6 +398,89 @@ class TestAnderson:
         assert_equal(_get_As_weibull(1/m), _Avals_weibull[0])
 
 
+class TestAndersonMethod:
+    def test_warning(self):
+        message = "As of SciPy 1.17, users..."
+        with pytest.warns(FutureWarning, match=message):
+            stats.anderson([1, 2, 3], 'norm')
+
+    def test_method_input_validation(self):
+        message = "`method` must be either..."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
+
+    def test_monte_carlo_method(self):
+        rng = np.random.default_rng(94982389149239)
+
+        message = "The `rvs` attribute..."
+        with pytest.warns(UserWarning, match=message):
+            method = stats.MonteCarloMethod(rvs=rng.random)
+            stats.anderson([1, 2, 3], 'norm', method=method)
+
+        message = "The `batch` attribute..."
+        with pytest.warns(UserWarning, match=message):
+            method = stats.MonteCarloMethod(batch=10)
+            stats.anderson([1, 2, 3], 'norm', method=method)
+
+        method = stats.MonteCarloMethod(n_resamples=9, rng=rng)
+        res = stats.anderson([1, 2, 3], 'norm', method=method)
+        ten_p = res.pvalue * 10
+        # p-value will always be divisible by n_resamples + 1
+        assert np.round(ten_p) == ten_p
+
+        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984827))
+        ref = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
+        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984827))
+        res = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
+        assert res.pvalue == ref.pvalue  # same random state -> same p-value
+        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984828))
+        res = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
+        assert res.pvalue != ref.pvalue  # different random state -> different p-value
+
+    @pytest.mark.parametrize('dist_name, seed',
+        [('norm', 4202165767275),
+         ('expon', 9094400417269),
+         pytest.param('logistic', 3776634590070, marks=pytest.mark.xslow),
+         pytest.param('gumbel_l', 7966588969335, marks=pytest.mark.xslow),
+         pytest.param('gumbel_r', 1886450383828, marks=pytest.mark.xslow)])
+    def test_method_consistency(self, dist_name, seed):
+        dist = getattr(stats, dist_name)
+        rng = np.random.default_rng(seed)
+        x = dist.rvs(size=50, random_state=rng)
+        ref = stats.anderson(x, dist_name, method='interpolate')
+        res = stats.anderson(x, dist_name, method=stats.MonteCarloMethod(rng=rng))
+        np.testing.assert_allclose(res.statistic, ref.statistic)
+        np.testing.assert_allclose(res.pvalue, ref.pvalue, atol=0.005)
+
+    @pytest.mark.parametrize('dist_name',
+        ['norm', 'expon', 'logistic', 'gumbel_l', 'gumbel_r', 'weibull_min'])
+    def test_interpolate_saturation(self, dist_name):
+        dist = getattr(stats, dist_name)
+        rng = np.random.default_rng(4202165767276)
+        args = (3.5,) if dist_name == 'weibull_min' else tuple()
+        x = dist.rvs(*args, size=50, random_state=rng)
+
+        with pytest.warns(FutureWarning):
+            res = stats.anderson(x, dist_name)
+        pvalues = (1 - np.asarray(res.significance_level) if dist_name == 'weibull_min'
+                   else np.asarray(res.significance_level) / 100)
+        pvalue_min = np.min(pvalues)
+        pvalue_max = np.max(pvalues)
+        statistic_min = np.min(res.critical_values)
+        statistic_max = np.max(res.critical_values)
+
+        # data drawn from distribution -> low statistic / high p-value
+        res = stats.anderson(x, dist_name, method='interpolate')
+        assert res.statistic < statistic_min
+        assert res.pvalue == pvalue_max
+
+        # data not from distribution -> high statistic / low p-value
+        res = stats.anderson(rng.random(size=50), dist_name, method='interpolate')
+        assert res.statistic > statistic_max
+        assert res.pvalue == pvalue_min
+
+
+@pytest.mark.filterwarnings("ignore:Parameter `variant`...:UserWarning")
 class TestAndersonKSamp:
     def test_example1a(self):
         # Example data from Scholz & Stephens (1987), originally
@@ -602,6 +686,63 @@ class TestAndersonKSamp:
         check_named_results(res, attributes)
 
         assert_equal(res.significance_level, res.pvalue)
+
+
+class TestAndersonKSampVariant:
+    def test_variant_values(self):
+        x = [1, 2, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 4, 5, 6, 6, 6, 7]
+        message = "Parameter `variant` has been introduced..."
+        with pytest.warns(UserWarning, match=message):
+            ref = stats.anderson_ksamp((x, y))
+        assert len(ref) == 3 and hasattr(ref, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            res = stats.anderson_ksamp((x, y), midrank=True)
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert len(res) == 3 and hasattr(res, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            res = stats.anderson_ksamp((x, y), midrank=False, variant='midrank')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+        res = stats.anderson_ksamp((x, y), variant='midrank')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            ref = stats.anderson_ksamp((x, y), midrank=False)
+        assert len(ref) == 3 and hasattr(ref, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            res = stats.anderson_ksamp((x, y), midrank=True, variant='right')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+        res = stats.anderson_ksamp((x, y), variant='right')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+    def test_variant_input_validation(self):
+        x = np.arange(10)
+        message = "`variant` must be one of 'midrank', 'right', or 'continuous'."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp((x, x), variant='Camelot')
+
+    @pytest.mark.parametrize('n_samples', [2, 3])
+    def test_variant_continuous(self, n_samples):
+        rng = np.random.default_rng(20182053007)
+        samples = rng.random((n_samples, 15)) + 0.1*np.arange(n_samples)[:, np.newaxis]
+        ref = stats.anderson_ksamp(samples, variant='right')
+        res = stats.anderson_ksamp(samples, variant='continuous')
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue)
 
 
 @make_xp_test_case(stats.ansari)
