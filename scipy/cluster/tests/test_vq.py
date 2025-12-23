@@ -384,6 +384,22 @@ class TestKMeans:
         xp_assert_close(res[0], xp.asarray([4.], dtype=xp.float64))
         xp_assert_close(res[1], xp.asarray(2.3999999999999999, dtype=xp.float64)[()])
 
+    def test_kmeans_distortion_matches_vq_mean_regression_24069(self, xp):
+        # Regression test for gh-24069
+        rows = [[8.0, 1e-5, 1e-5, 1e-5]]
+        rows += [[1e-5, 1e-5, 1e-5, 1e-5]] * 51
+        rows += [[0.0, 1e-5, 1e-5, 1e-5]]
+
+        wh = whiten(np.asarray(rows, dtype=np.float64))
+        wh = xp.asarray(wh, dtype=xp.float64)
+
+        rng = np.random.default_rng(1)
+        codebook, distortion = kmeans(wh, 3, iter=5, rng=rng)
+
+        _, dists = vq(wh, codebook, check_finite=False)
+        xp_assert_close(distortion, xp.mean(dists, axis=-1), rtol=1e-12, atol=1e-12)
+
+
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
         rng = np.random.default_rng(2358792345678234568)
