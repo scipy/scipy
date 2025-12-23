@@ -42,10 +42,7 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize, xp):
     xp_assert_close(z2, x)
 
 
-@skip_xp_backends(np_only=True,
-                  reason='`overwrite_x` only supported for NumPy backend.')
-@pytest.mark.parametrize("forward, backward", [
-    make_xp_pytest_param(dct, idct), make_xp_pytest_param(dst, idst)])
+@pytest.mark.parametrize("forward, backward", [[dct, idct], [dst, idst]])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
                                    np.complex64, np.complex128])
@@ -53,7 +50,7 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize, xp):
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("overwrite_x", [True, False])
 def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
-                               overwrite_x, xp):
+                               overwrite_x):
     # Test the identity f^-1(f(x)) == x
     x = np.random.rand(7, 8).astype(dtype)
     x_orig = x.copy()
@@ -116,10 +113,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
     xp_assert_close(z2, x)
 
 
-@skip_xp_backends(np_only=True,
-                  reason='`overwrite_x` only supported for NumPy backend.')
-@pytest.mark.parametrize("forward, backward", [
-    make_xp_pytest_param(dctn, idctn), make_xp_pytest_param(dstn, idstn)])
+@pytest.mark.parametrize("forward, backward", [[dctn, idctn], [dstn, idstn]])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
                          [
@@ -132,7 +126,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("overwrite_x", [False, True])
 def test_identity_nd_overwrite(forward, backward, type, shape, axes, dtype,
-                               norm, overwrite_x, xp):
+                               norm, overwrite_x):
     # Test the identity f^-1(f(x)) == x
 
     x = np.random.random(shape).astype(dtype)
@@ -241,20 +235,9 @@ def test_orthogonalize_dcst3(func, norm, xp):
     xp_assert_close(y1, y2)
 
 
-@skip_xp_backends(np_only=True,
-                  reason='array-likes only supported for NumPy backend')
-@pytest.mark.parametrize("func", [
-    make_xp_pytest_param(dct),
-    make_xp_pytest_param(idct),
-    make_xp_pytest_param(dctn),
-    make_xp_pytest_param(idctn),
-    make_xp_pytest_param(dst),
-    make_xp_pytest_param(idst),
-    make_xp_pytest_param(dstn),
-    make_xp_pytest_param(idstn),
-])
-def test_array_like(xp, func):
+@pytest.mark.parametrize("func", [dct, idct, dctn, idctn, dst, idst, dstn, idstn])
+def test_array_like(func):
     x = [[[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]]]
-    xp_assert_close(func(x), func(xp.asarray(x)))
+    xp_assert_close(func(x), func(np.asarray(x)))
