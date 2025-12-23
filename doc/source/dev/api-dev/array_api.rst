@@ -119,6 +119,8 @@ but this may change in the future.
 Please see `the tracker issue`_ for updates.
 
 
+.. _dev-arrayapi_implementation_notes:
+
 Implementation notes
 --------------------
 
@@ -661,17 +663,20 @@ Adding tests
 
 To run a test on multiple array backends, you should add the ``xp`` fixture to
 it. ``xp`` currently supports testing with the following backends:
+
 * `array_api_strict <https://data-apis.org/array-api-strict/>`_
-* `cupy <https://cupy.dev/>`_,
-* `dask.array <https://www.dask.org/>`_,
+* `cupy <https://cupy.dev/>`_
+* `dask.array <https://www.dask.org/>`_
 * `jax.numpy <https://docs.jax.dev/en/latest/>`_,
-* `numpy <https://numpy.org/>`_,
-* `torch <https://pytorch.org/>`_.
+* `numpy <https://numpy.org/>`_
+* `torch <https://pytorch.org/>`_
 
 ``xp`` is a
 `pytest fixture <https://docs.pytest.org/en/6.2.x/fixture.html>`_
 which is parameterized over all currently installed backends among
-those listed above.
+those listed above. Note that ``xp`` takes values from the set of "raw"
+namespaces, not the wrapped namespaces from
+:ref:`array_api_compat <dev-arrayapi_implementation_notes>`.
 
 ``scipy._lib._array_api`` provides the ``make_xp_test_case``
 decorator, and the ``make_xp_pytest_param`` and ``make_xp_pytest_marks``
