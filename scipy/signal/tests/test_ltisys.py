@@ -1,3 +1,4 @@
+import os
 import warnings
 from types import GenericAlias
 
@@ -5,15 +6,20 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
-    assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case
+    assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case,
+    is_torch
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
+
 from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
+
+
+DEFAULT_F32 = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64') == 'float32'
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -1098,6 +1104,14 @@ class Test_abcd_normalize:
     def test_dtypes(
             self, D, A_dtype, B_dtype, C_dtype, D_dtype, expected_dtype, xp
     ):
+        # This skip should not be needed for long.
+        if DEFAULT_F32 and is_torch(xp) and B_dtype == "int64":
+            pytest.xfail(
+                reason=(
+                    "xp_promote casts ints to default dtype"
+                    " when using force_floating=True with torch."
+                )
+            )
         args = []
         for X, X_dtype in zip(
                 [self.A, self.B, self.C, D],
