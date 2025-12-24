@@ -3632,4 +3632,26 @@ def test_optimize_32bit(method):
         pytest.skip(f"{method} needs more work before it can be used with 32-bit")
     else:
         result = optimize.minimize(fun, x0, method=method, options=opts)
-    np.testing.assert_allclose(result.x, [3, 2], rtol=1e-3)
+    assert_allclose(result.x, [3, 2], rtol=1e-3)
+
+
+@pytest.mark.parametrize('method', MINIMIZE_METHODS)
+@pytest.mark.parametrize('_dtype', [np.float16, np.float32, np.float64])
+def test_minimize_float_precision(method, _dtype):
+    # purely a smoke test to check for overflow during operation
+    if method in ['slsqp', 'tnc']:
+        # code requires 64 bit inputs
+        pytest.skip(f"{method} requires 64 bit inputs for native code")
+    if method in ['trust-krylov', 'trust-ncg', 'trust-exact', 'dogleg']:
+        pytest.skip(f"{method} requires hessian, skipping")
+    elif method in ['newton-cg']:
+        pytest.skip(
+            f"{method} needs more work before it can be used with various bitnesses"
+        )
+
+    def fun(x):
+        return x**4 - x
+
+    for x0 in np.linspace(-1., 1, 21, dtype=_dtype):
+        res = optimize.minimize(fun, [x0], method=method)
+        assert res.x.dtype == _dtype

@@ -365,7 +365,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
                                   workers=workers)
 
     func_and_grad = sf.fun_and_grad
-    f_dtype = sf.fun(x0).dtype
+    f0 = sf.fun(x0)
+    if not hasattr(f0, "dtype"):
+        f0 = np.float64(f0)
+    f_dtype = f0.dtype
     g_dtype = sf.grad(x0).dtype
 
     nbd = zeros(n, np.int32)

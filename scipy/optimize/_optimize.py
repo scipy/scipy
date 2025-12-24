@@ -1172,6 +1172,9 @@ def _linesearch_defaults_for_dtype(dtype):
             kwargs['amin'] = 1e-30
             kwargs['amax'] = 1e30
             kwargs['xtol'] = 1e-6
+        case 16:
+            kwargs['amin'] = 1e-4
+            kwargs['amax'] = 1e4
 
     return kwargs
 
@@ -1862,6 +1865,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
         def polak_ribiere_powell_step(alpha, gfkp1=None):
             xkp1 = xk + alpha * pk
+
             if gfkp1 is None:
                 gfkp1 = myfprime(xkp1)
             yk = gfkp1 - gfk
@@ -1888,11 +1892,20 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
             return np.dot(pk, gfk) <= -sigma_3 * np.dot(gfk, gfk)
 
         try:
-            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                     _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c1=c1, c2=c2,
-                                          extra_condition=descent_condition,
-                                          **ls_args)
+            _res = _line_search_wolfe12(
+                f,
+                myfprime,
+                xk,
+                pk,
+                gfk,
+                old_fval,
+                old_old_fval,
+                c1=c1,
+                c2=c2,
+                extra_condition=descent_condition,
+                **ls_args
+            )
+            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = _res
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
