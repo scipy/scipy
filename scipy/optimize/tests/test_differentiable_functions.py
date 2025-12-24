@@ -451,6 +451,8 @@ class TestScalarFunction(TestCase):
         fx = sf.fun(x0)
         assert fun(x0).dtype == np.float32
         assert fx.dtype == np.float32
+        # check that the round trip cast works as intended
+        assert_equal(fx, fun(x0))
 
 
 class ExVectorialFunction:
