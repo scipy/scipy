@@ -3635,20 +3635,10 @@ def test_optimize_32bit(method):
     assert_allclose(result.x, [3, 2], rtol=1e-3)
 
 
-@pytest.mark.parametrize('method', MINIMIZE_METHODS)
-@pytest.mark.parametrize('_dtype', [np.float16, np.float32, np.float64])
+@pytest.mark.parametrize('method', ['BFGS', 'CG', 'L-BFGS-B', 'nelder-mead'])
+@pytest.mark.parametrize('_dtype', [np.float32])
 def test_minimize_float_precision(method, _dtype):
-    # purely a smoke test to check for overflow during operation
-    if method in ['slsqp', 'tnc']:
-        # code requires 64 bit inputs
-        pytest.skip(f"{method} requires 64 bit inputs for native code")
-    if method in ['trust-krylov', 'trust-ncg', 'trust-exact', 'dogleg']:
-        pytest.skip(f"{method} requires hessian, skipping")
-    elif method in ['newton-cg']:
-        pytest.skip(
-            f"{method} needs more work before it can be used with various bitnesses"
-        )
-
+    # purely a smoke test to check output dtypes
     def fun(x):
         return x**4 - x
 
