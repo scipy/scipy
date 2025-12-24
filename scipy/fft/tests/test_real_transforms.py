@@ -19,8 +19,8 @@ SQRT_2 = math.sqrt(2)
 # fftpack/test_real_transforms.py
 
 
-@pytest.mark.parametrize("forward, backward", [make_xp_pytest_param(dct, idct),
-                                               make_xp_pytest_param(dst, idst)])
+@make_xp_test_case(dct, idct, dst, idst)
+@pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 10, 16])
 @pytest.mark.parametrize("axis", [0, 1])
@@ -66,8 +66,8 @@ def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
         assert_allclose(z, x_orig, rtol=1e-6, atol=1e-6)
 
 
-@pytest.mark.parametrize("forward, backward", [make_xp_pytest_param(dctn, idctn),
-                                               make_xp_pytest_param(dstn, idstn)])
+@make_xp_test_case(dctn, idctn, dstn, idstn)
+@pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
                          [
