@@ -428,7 +428,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
 
             intermediate_result = OptimizeResult(
                 x=xp_asarray(x, dtype=x0.dtype, copy=False),
-                fun=np.astype(f, f_dtype)
+                fun=f_dtype.type(f)
             )
             if _call_callback_maybe_halt(callback, intermediate_result):
                 task[0] = 5
@@ -462,7 +462,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
 
     msg = status_messages[task[0]] + ": " + task_messages[task[1]]
 
-    return OptimizeResult(fun=np.astype(f, f_dtype),
+    return OptimizeResult(fun=f_dtype.type(f),
                           jac=xp_asarray(g, dtype=g_dtype, copy=False),
                           nfev=sf.nfev,
                           njev=sf.ngev,
