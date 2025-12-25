@@ -171,7 +171,7 @@ class NDInterpolatorBase:
             border of a very oblique triangle.  Only relevant for linear and 2-D
             cubic interpolation.
 
-            .. versionadded:: 1.17.0
+            .. versionadded:: 1.18.0
 
         Raises
         ------

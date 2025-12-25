@@ -222,7 +222,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         oblique triangle.  Only relevant for linear and 2-D cubic
         interpolation.
 
-        .. versionadded:: 1.17.0
+        .. versionadded:: 1.18.0
 
     Returns
     -------
