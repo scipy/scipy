@@ -4,8 +4,8 @@ version: 2.1
 _defaults: &defaults
   docker:
     # CircleCI maintains a library of pre-built images
-    # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: cimg/python:3.11
+    # documented at https://circleci.com/developer/images/image/cimg/python
+    - image: cimg/python:3.13.10
   working_directory: ~/repo
 
 commands:
@@ -77,7 +77,7 @@ jobs:
             pip install numpy cython pybind11 pythran ninja meson
             pip install -r requirements/doc.txt
             # asv upper bound due to issue in gh-23611, remove when that is resolved
-            pip install mpmath gmpy2 "asv<0.6.5" pooch threadpoolctl spin
+            pip install mpmath gmpy2 "asv<0.6.5" pooch threadpoolctl spin marray
             # extra benchmark deps
             pip install pyfftw cffi pytest
 
@@ -116,7 +116,8 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
+            export SCIPY_ARRAY_API=1
             spin docs -j2 2>&1 | tee sphinx_log.txt
 
       - run:
@@ -149,7 +150,7 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
@@ -177,7 +178,7 @@ jobs:
           no_output_timeout: 25m
           command: |
             sudo apt-get install -y wamerican-small
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
             spin refguide-check
 
       - run:

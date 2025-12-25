@@ -259,6 +259,10 @@ class _lil_base(_spbase, IndexMixin):
             row, col = key
             # Fast path for simple (int, int) indexing.
             if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
+                if issparse(x):
+                    x = x.toarray()
+                if isinstance(x, np.ndarray):
+                    x = x.item()
                 x = self.dtype.type(x)
                 if x.size > 1:
                     raise ValueError("Trying to assign a sequence to an item")
@@ -281,8 +285,7 @@ class _lil_base(_spbase, IndexMixin):
         else:
             res_dtype = upcast_scalar(self.dtype, other)
 
-            new = self.copy()
-            new = new.astype(res_dtype)
+            new = self.astype(res_dtype)  # sure to make a copy
             # Multiply this scalar by every element.
             for j, rowvals in enumerate(new.data):
                 new.data[j] = [val*other for val in rowvals]

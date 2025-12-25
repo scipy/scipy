@@ -5,8 +5,17 @@ namespace, and "new-style", np.polynomial.polynomial, routines.
 
 To distinguish the two sets, the "new-style" routine names start with `npp_`
 """
+import warnings
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_promote, xp_default_dtype
+from scipy._lib._array_api import (
+    xp_promote, xp_default_dtype, xp_size, xp_device, is_numpy
+)
+
+try:
+    from numpy.exceptions import RankWarning
+except ImportError:
+    # numpy 1.x
+    from numpy import RankWarning
 
 
 def _sort_cmplx(arr, xp):
@@ -67,6 +76,39 @@ def _trim_zeros(filt, trim='fb'):
     return filt[first:last]
 
 
+# For numpy arrays, use scipy.linalg.lstsq;
+# For other backends,
+#   - use xp.linalg.lstsq, if available (cupy, torch, jax.numpy);
+#   - otherwise manually compute pseudoinverse via SVD factorization
+def _lstsq(a, b, xp=None, rcond=None):
+    a, b = xp_promote(a, b, force_floating=True, xp=xp)
+
+    if rcond is None:
+        rcond = xp.finfo(a.dtype).eps * max(a.shape[-1], a.shape[-2])
+
+    if is_numpy(xp):
+        from scipy.linalg import lstsq as s_lstsq
+        return s_lstsq(a, b, cond=rcond)
+    elif lstsq_func := getattr(xp.linalg, "lstsq", None):
+        # cupy, torch, jax.numpy all have xp.linalg.lstsq
+        return lstsq_func(a, b, rcond=rcond)
+    else:
+        # unknown array library: LSQ solve via pseudoinverse
+        u, s, vt = xp.linalg.svd(a, full_matrices=False)
+
+        sing_val_mask = s > rcond
+        s = xpx.apply_where(sing_val_mask, (s,), lambda x: 1. / x, fill_value=0.)
+
+        sigma = xp.eye(s.shape[0]) * s    # == np.diag(s)
+        x = vt.T @ sigma @ u.T @ b
+
+        rank = xp.count_nonzero(sing_val_mask)
+
+        # XXX actually compute residuals, when there's a use case
+        residuals = xp.asarray([])
+        return x, residuals, rank, s
+
+
 # ### Old-style routines ###
 
 
@@ -87,10 +129,14 @@ def _poly1d(c_or_r, *, xp):
 def polyval(p, x, *, xp):
     """ Old-style polynomial, `np.polyval`
     """
+    p = xp.asarray(p)
+    x = xp.asarray(x)
     y = xp.zeros_like(x)
 
-    for pv in p:
-        y = y * x + pv
+    # NB: cannot do `for pv in p` since array API iteration
+    # is only defined for 1D arrays.
+    for j in range(p.shape[0]):
+        y = y * x + p[j, ...]
     return y
 
 
@@ -101,7 +147,7 @@ def poly(seq_of_zeros, *, xp):
     seq_of_zeros = xpx.atleast_nd(seq_of_zeros, ndim=1, xp=xp)
 
     if seq_of_zeros.shape[0] == 0:
-        return 1.0
+        return xp.asarray(1.0, dtype=xp.real(seq_of_zeros).dtype)
 
     # prefer np.convolve etc, if available
     convolve_func = getattr(xp, 'convolve', None)
@@ -134,6 +180,49 @@ def polymul(a1, a2, *, xp):
 
     val = convolve_func(a1, a2)
     return val
+
+
+# https://github.com/numpy/numpy/blob/v2.3.3/numpy/lib/_polynomial_impl.py#L459
+def polyfit(x, y, deg, *, xp, rcond=None):
+    # only reproduce the variant with full=False, w=None, cov=False
+    order = int(deg) + 1
+    x = xp.asarray(x)
+    y = xp.asarray(y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+
+    # check arguments.
+    if deg < 0:
+        raise ValueError("expected deg >= 0")
+    if x.ndim != 1:
+        raise TypeError("expected 1D vector for x")
+    if xp_size(x) == 0:
+        raise TypeError("expected non-empty vector for x")
+    if y.ndim < 1 or y.ndim > 2:
+        raise TypeError("expected 1D or 2D array for y")
+    if x.shape[0] != y.shape[0]:
+        raise TypeError("expected x and y to have same length")
+
+    # set rcond
+    if rcond is None:
+        rcond = x.shape[0] * xp.finfo(x.dtype).eps
+
+    # set up least squares equation for powers of x: lhs = vander(x, order)
+    powers = xp.flip(xp.arange(order, dtype=x.dtype, device=xp_device(x)))
+    lhs = x[:, None] ** powers[None, :]
+
+    # scale lhs to improve condition number and solve
+    scale = xp.sqrt(xp.sum(lhs * lhs, axis=0))
+    lhs /= scale
+
+    c, _, rank, _ = _lstsq(lhs, y, rcond=rcond, xp=xp)
+    c = (c.T / scale).T  # broadcast scale coefficients
+
+    # warn on rank reduction, which indicates an ill conditioned matrix
+    if rank != order:
+        msg = "Polyfit may be poorly conditioned"
+        warnings.warn(msg, RankWarning, stacklevel=2)
+
+    return c
 
 
 # ### New-style routines ###

@@ -356,7 +356,7 @@ coordinates of multivariate observations.
 
    linregress
    pearsonr
-   spearmanr
+   spearmanrho
    pointbiserialr
    kendalltau
    chatterjeexi
@@ -366,6 +366,7 @@ coordinates of multivariate observations.
    theilslopes
    page_trend_test
    multiscale_graphcorr
+   spearmanr
 
 These association tests and are to work with samples in the form of contingency
 tables. Supporting functions are available in `scipy.stats.contingency`.
@@ -471,6 +472,7 @@ Random Variables
 
    make_distribution
    Normal
+   Logistic
    Uniform
    Binomial
    Mixture
@@ -651,9 +653,9 @@ from ._survival import *
 from ._distribution_infrastructure import (
     make_distribution, Mixture, order_statistic, truncate, exp, log, abs
 )
-from ._new_distributions import Normal, Uniform, Binomial
+from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
-from ._correlation import chatterjeexi
+from ._correlation import chatterjeexi, spearmanrho
 from ._quantile import quantile
 
 

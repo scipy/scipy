@@ -289,10 +289,33 @@ def _random_covariance(dim, evals, rng, singular=False):
 
 
 def _sample_orthonormal_matrix(n):
-    M = np.random.randn(n, n)
+    rng = np.random.default_rng(9086764251)
+    M = rng.standard_normal((n, n))
     u, s, v = scipy.linalg.svd(M)
     return u
 
+def marginal_pdf(X, X_ndim, dimensions, x):
+    """Integrate marginalized dimensions of multivariate
+    probability distribution to calculate the marginalized
+    distribution.
+    """
+    # Sort input data based on order of dimensions
+    dimensions = np.asarray(dimensions)
+    dimensions[dimensions < 0] += X_ndim
+    dim_sort_idx = dimensions.argsort()
+    x = x[:, dim_sort_idx]
+
+    i_marginalize = np.ones(X_ndim, dtype=bool)
+    i_marginalize[dimensions] = False
+
+    def g(z):
+        y = np.empty((z.shape[0], x.shape[0], X_ndim))
+        y[..., i_marginalize] = z[:, np.newaxis, :]
+        y[..., ~i_marginalize] = x
+        return X.pdf(y)
+
+    inf = np.full(X_ndim - len(dimensions), np.inf)
+    return cubature(g, -inf, inf).estimate
 
 @dataclass
 class MVNProblem:
@@ -444,7 +467,8 @@ class SingularMVNProblem:
     ----------
     .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
            singular multivariate normal distribution." Journal of Statistical
-           Computation and Simulation, 51(2-4), 121-135. doi:10.1080/00949659508811627
+           Computation and Simulation, 51(2-4), 121-135.
+           :doi:`10.1080/00949659508811627`.
     """
     ndim : int
     low : np.ndarray
@@ -1039,8 +1063,8 @@ class TestMultivariateNormal:
         assert_allclose(cdf, cdf[0]*expected_signs)
 
     @pytest.mark.slow
-    def test_cdf_vs_cubature(self):
-        ndim = 3
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_cdf_vs_cubature(self, ndim):
         rng = np.random.default_rng(123)
         a = rng.uniform(size=(ndim, ndim))
         cov = a.T @ a
@@ -1197,7 +1221,6 @@ class TestMultivariateNormal:
                                                      ).sum()
         assert logp_perturbed < logp_fix
 
-
     def test_fit_fix_cov(self):
         rng = np.random.default_rng(4385269356937404)
         loc = rng.random(3)
@@ -1224,6 +1247,80 @@ class TestMultivariateNormal:
                                                      cov=cov_fix)
                                                      ).sum()
         assert logp_perturbed < logp_fix
+
+
+class TestMarginal:
+    @pytest.mark.parametrize('dist,kwargs', [(multivariate_normal, {}),
+                                             (multivariate_t, {'df': 4})])
+    @pytest.mark.parametrize('X_ndim', [3])
+    @pytest.mark.parametrize('dimensions', [[1], [-1, 1]])
+    @pytest.mark.parametrize('frozen', [True, False])
+    @pytest.mark.parametrize('cov_object', [True, False])
+    def test_marginal_distribution(self, dist, X_ndim, dimensions, frozen,
+                                   cov_object, kwargs):
+        rng = np.random.default_rng(413911473)
+        loc = rng.standard_normal(X_ndim)
+        A = rng.standard_normal((X_ndim, X_ndim))
+        scale = A @ A.T
+
+        if cov_object and dist == multivariate_t:
+            pytest.skip('`multivariate_t` does not accept a `Covariance` object')
+        elif cov_object:
+            scale = _covariance.CovViaPrecision(scale)
+
+        # number of points at which to evaluate marginal PDF
+        x = np.random.standard_normal((4, len(dimensions)))
+        X = dist(loc, scale, **kwargs)
+
+        if frozen:
+            Y = X.marginal(dimensions)
+            res = Y.pdf(x)
+        else:
+            Y = dist.marginal(dimensions, loc, scale, **kwargs)
+            res = Y.pdf(x)
+
+        ref = marginal_pdf(X, X_ndim, dimensions, x)
+        assert_allclose(ref, res)
+
+    @pytest.mark.parametrize('dist', [multivariate_normal, multivariate_t])
+    def test_marginal_input_validation(self, dist):
+        rng = np.random.default_rng(413911473)
+        mean = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        cov = A @ A.T
+
+        X = dist(mean, cov)
+
+        msg = r"Dimensions \[3\] are invalid .*"
+        with pytest.raises(ValueError, match=msg):
+            X.marginal(3)
+
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([0, 1, 2, 3])
+
+        msg = r"All elements of `dimensions` must be unique."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([2, -1])
+
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([[0, 1]])
+
+        msg = r"Elements of `dimensions` must be integers."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([1.1, 2.0])
+
+    @pytest.mark.parametrize('dist', [multivariate_normal, multivariate_t])
+    def test_marginal_special_cases(self, dist):
+        rng = np.random.default_rng(413911473)
+        loc = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        scale = A @ A.T
+
+        X = dist(loc, scale)
+
+        msg = r"Cannot marginalize all dimensions."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([])
 
 
 class TestMatrixNormal:
@@ -3331,7 +3428,8 @@ class TestMultivariateT:
         # pdf() and logpdf() should return probabilities of shape
         # (n_samples,) when x has n_samples.
         n_samples = 7
-        x = np.random.random((n_samples, dim))
+        rng = np.random.default_rng(2767231913)
+        x = rng.random((n_samples, dim))
         res = multivariate_t(loc, shape, df).pdf(x)
         assert (res.shape == (n_samples,))
         res = multivariate_t(loc, shape, df).logpdf(x)
@@ -3707,6 +3805,29 @@ class TestMultivariateT:
         _entropy1 = stats.multivariate_t.entropy(shape=cov, df=df1)
         _entropy2 = stats.multivariate_t.entropy(shape=cov, df=df2)
         assert_allclose(_entropy1, _entropy2, rtol=1e-5)
+
+    def test_logpdf_df_inf_gh19930(self):
+        # `multivariate_t._logpdf` (and `logpdf`/`pdf`) was not working with infinite
+        # `df` after an update to `multivariate_normal._logpdf`.
+
+        # Reproducible example from the issue
+        res = multivariate_t.logpdf(1, 1, 1, df=np.inf)
+        ref = multivariate_normal.logpdf(1, 1, 1)
+        assert_allclose(res, ref)
+
+        # More extensive test
+        # Generate a valid multivariate normal distribution and corresponding MVT
+        rng = np.random.default_rng(324893259825)
+        mean = rng.random(3)
+        cov = rng.random((3, 3)) + np.eye(3)*3
+        cov = cov.T + cov
+        X = multivariate_normal(mean=mean, cov=cov)
+        Y = multivariate_t(loc=mean, shape=cov, df=np.inf)
+
+        # compare the pdf and logpdf at 10 random points
+        x = X.rvs(10)
+        assert_allclose(Y.logpdf(x), X.logpdf(x))
+        assert_allclose(Y.pdf(x), X.pdf(x))
 
 
 class TestMultivariateHypergeom:
@@ -4892,8 +5013,6 @@ class TestNormalInverseGamma:
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float16, np.float32, np.float64])
     def test_dtype(self, dtype):
-        if np.__version__ < "2":
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         rng = np.random.default_rng(8925849245)
         x, s2, mu, lmbda, a, b = rng.uniform(3, 10, size=6).astype(dtype)
         dtype_out = np.result_type(1.0, dtype)

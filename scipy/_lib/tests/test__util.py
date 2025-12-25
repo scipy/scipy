@@ -11,8 +11,8 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.conftest import skip_xp_invalid_arg
 
-from scipy._lib._array_api import xp_assert_equal, is_numpy
-from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
+from scipy._lib._array_api import xp_assert_equal
+from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _workers_wrapper)
@@ -22,42 +22,6 @@ from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
 lazy_xp_function(_contains_nan)
-
-
-@pytest.mark.slow
-def test__aligned_zeros():
-    niter = 10
-
-    def check(shape, dtype, order, align):
-        err_msg = repr((shape, dtype, order, align))
-        x = _aligned_zeros(shape, dtype, order, align=align)
-        if align is None:
-            align = np.dtype(dtype).alignment
-        assert_equal(x.__array_interface__['data'][0] % align, 0)
-        if hasattr(shape, '__len__'):
-            assert_equal(x.shape, shape, err_msg)
-        else:
-            assert_equal(x.shape, (shape,), err_msg)
-        assert_equal(x.dtype, dtype)
-        if order == "C":
-            assert_(x.flags.c_contiguous, err_msg)
-        elif order == "F":
-            if x.size > 0:
-                # Size-0 arrays get invalid flags on NumPy 1.5
-                assert_(x.flags.f_contiguous, err_msg)
-        elif order is None:
-            assert_(x.flags.c_contiguous, err_msg)
-        else:
-            raise ValueError()
-
-    # try various alignments
-    for align in [1, 2, 3, 4, 8, 16, 32, 64, None]:
-        for n in [0, 1, 3, 11]:
-            for order in ["C", "F", None]:
-                for dtype in [np.uint8, np.float64]:
-                    for shape in [n, (1, 2, 3, n)]:
-                        for j in range(niter):
-                            check(shape, dtype, order, align)
 
 
 def test_check_random_state():
@@ -352,7 +316,7 @@ class TestContainsNaN:
         # Integer arrays cannot contain NaN
         assert not _contains_nan(np.array([1, 2, 3]))
         assert not _contains_nan(np.array([[1, 2], [3, 4]]))
-        
+
         assert not _contains_nan(np.array([1., 2., 3.]))
         assert not _contains_nan(np.array([1., 2.j, 3.]))
         assert _contains_nan(np.array([1., 2.j, np.nan]))
@@ -384,14 +348,12 @@ class TestContainsNaN:
         x = xp.asarray(x0)
         assert not _contains_nan(x, nan_policy)
 
-        x = xpx.at(x)[1, 2, 1].set(np.nan)
+        x = xpx.at(x)[1, 2, 1].set(xp.nan)
 
         if nan_policy == 'raise':
             with pytest.raises(ValueError, match="The input contains nan values"):
                 _contains_nan(x, nan_policy)
-        elif nan_policy == 'omit' and not is_numpy(xp):
-            with pytest.raises(ValueError, match="nan_policy='omit' is incompatible"):
-                _contains_nan(x, nan_policy)
+        elif nan_policy == 'omit':
             assert _contains_nan(x, nan_policy, xp_omit_okay=True)
         elif nan_policy == 'propagate':
             assert _contains_nan(x, nan_policy)
@@ -585,7 +547,6 @@ class TestTransitionToRNG:
         (random_array, 'random_state'),
         (random, 'random_state'),
         (rand, 'random_state'),
-        (svds, "random_state"),
         (random_rotation, "random_state"),
         (goodness_of_fit, "random_state"),
         (permutation_test, "random_state"),

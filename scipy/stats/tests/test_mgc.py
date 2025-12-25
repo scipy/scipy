@@ -70,25 +70,29 @@ class TestMGCErrorWarnings:
 class TestMGCStat:
     """ Test validity of MGC test statistic
     """
-    def _simulations(self, samps=100, dims=1, sim_type=""):
+    def setup_method(self):
+        self.rng = np.random.default_rng(1266219746)
+
+    def _simulations(self, samps=100, dims=1, sim_type="", rng=None):
+        rng = rng or self.rng
         # linear simulation
         if sim_type == "linear":
-            x = np.random.uniform(-1, 1, size=(samps, 1))
-            y = x + 0.3 * np.random.random_sample(size=(x.size, 1))
+            x = rng.uniform(-1, 1, size=(samps, 1))
+            y = x + 0.3 * rng.random(size=(x.size, 1))
 
         # spiral simulation
         elif sim_type == "nonlinear":
-            unif = np.array(np.random.uniform(0, 5, size=(samps, 1)))
+            unif = np.array(self.rng.uniform(0, 5, size=(samps, 1)))
             x = unif * np.cos(np.pi * unif)
             y = (unif * np.sin(np.pi * unif) +
-                 0.4*np.random.random_sample(size=(x.size, 1)))
+                 0.4*self.rng.random(size=(x.size, 1)))
 
         # independence (tests type I simulation)
         elif sim_type == "independence":
-            u = np.random.normal(0, 1, size=(samps, 1))
-            v = np.random.normal(0, 1, size=(samps, 1))
-            u_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
-            v_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
+            u = self.rng.standard_normal(size=(samps, 1))
+            v = self.rng.standard_normal(size=(samps, 1))
+            u_2 = self.rng.binomial(1, p=0.5, size=(samps, 1))
+            v_2 = self.rng.binomial(1, p=0.5, size=(samps, 1))
             x = u/3 + 2*u_2 - 1
             y = v/3 + 2*v_2 - 1
 
@@ -99,74 +103,74 @@ class TestMGCStat:
 
         # add dimensions of noise for higher dimensions
         if dims > 1:
-            dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
+            dims_noise = self.rng.standard_normal(size=(samps, dims-1))
             x = np.concatenate((x, dims_noise), axis=1)
 
         return x, y
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
-        ("linear", 0.97, 1/1000),           # test linear simulation
-        ("nonlinear", 0.163, 1/1000),       # test spiral simulation
-        ("independence", -0.0094, 0.78)     # test independence simulation
+        # Reference values produced by `multiscale_graphcorr` ->
+        # this only guards against unintended changes
+        ("linear", 0.970137188683, 0.000999000999),      # test linear simulation
+        ("nonlinear", 0.149843048137, 0.000999000999),   # test spiral simulation
+        ("independence", -0.003965353120, 0.4675324675)  # test independence simulation
     ])
     def test_oned(self, sim_type, obs_stat, obs_pvalue):
-        np.random.seed(12345678)
-
         # generate x and y
-        x, y = self._simulations(samps=100, dims=1, sim_type=sim_type)
+        rng = np.random.default_rng(8157117705)
+        x, y = self._simulations(samps=100, dims=1, sim_type=sim_type, rng=rng)
 
         # test stat and pvalue
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
-        assert_approx_equal(stat, obs_stat, significant=1)
-        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=rng)
+        assert_allclose(stat, obs_stat)
+        assert_allclose(pvalue, obs_pvalue)
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
-        ("linear", 0.184, 1/1000),           # test linear simulation
-        ("nonlinear", 0.0190, 0.117),        # test spiral simulation
+        # Reference values produced by `multiscale_graphcorr` ->
+        # this only guards against unintended changes
+        ("linear", 0.193063672972, 0.000999000999),     # test linear simulation
+        ("nonlinear", 0.010042844939, 0.216783216783),  # test spiral simulation
     ])
     def test_fived(self, sim_type, obs_stat, obs_pvalue):
-        np.random.seed(12345678)
-
         # generate x and y
-        x, y = self._simulations(samps=100, dims=5, sim_type=sim_type)
+        rng = np.random.default_rng(8157117705)
+        x, y = self._simulations(samps=100, dims=5, sim_type=sim_type, rng=rng)
 
         # test stat and pvalue
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
-        assert_approx_equal(stat, obs_stat, significant=1)
-        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=rng)
+        assert_allclose(stat, obs_stat)
+        assert_allclose(pvalue, obs_pvalue)
 
     @pytest.mark.xslow
     def test_twosamp(self):
-        np.random.seed(12345678)
-
         # generate x and y
-        x = np.random.binomial(100, 0.5, size=(100, 5))
-        y = np.random.normal(0, 1, size=(80, 5))
+        x = self.rng.binomial(100, 0.5, size=(100, 5))
+        y = self.rng.standard_normal(size=(80, 5))
 
         # test stat and pvalue
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=self.rng)
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
         # generate x and y
-        y = np.random.normal(0, 1, size=(100, 5))
+        y = self.rng.standard_normal(size=(100, 5))
 
         # test stat and pvalue
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True,
+                                                     random_state=self.rng)
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
     @pytest.mark.xslow
     def test_workers(self):
-        np.random.seed(12345678)
-
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
 
         # test stat and pvalue
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, workers=2)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, workers=2,
+                                                     random_state=self.rng)
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
@@ -182,7 +186,6 @@ class TestMGCStat:
 
     @pytest.mark.xslow
     def test_dist_perm(self):
-        np.random.seed(12345678)
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="nonlinear")
         distx = cdist(x, x, metric="euclidean")
@@ -197,8 +200,6 @@ class TestMGCStat:
     @pytest.mark.fail_slow(20)  # all other tests are XSLOW; we need at least one to run
     @pytest.mark.slow
     def test_pvalue_literature(self):
-        np.random.seed(12345678)
-
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
 
@@ -208,8 +209,6 @@ class TestMGCStat:
 
     @pytest.mark.xslow
     def test_alias(self):
-        np.random.seed(12345678)
-
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
 

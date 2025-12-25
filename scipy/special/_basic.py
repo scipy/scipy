@@ -91,9 +91,9 @@ _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
 
 
 def diric(x, n):
-    """Periodic sinc function, also called the Dirichlet function.
+    """Periodic sinc function, also called the Dirichlet kernel.
 
-    The Dirichlet function is defined as::
+    The Dirichlet kernel is defined as::
 
         diric(x, n) = sin(x * n/2) / (n * sin(x / 2)),
 
@@ -1147,7 +1147,7 @@ def h1vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h1v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel1` itself.
 
     Returns
     -------
@@ -1216,7 +1216,7 @@ def h2vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h2v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel2` itself.
 
     Returns
     -------
@@ -1275,14 +1275,14 @@ def h2vp(v, z, n=1):
 
 
 def riccati_jn(n, x):
-    r"""Compute Ricatti-Bessel function of the first kind and its derivative.
+    r"""Compute Riccati-Bessel function of the first kind and its derivative.
 
-    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    The Riccati-Bessel function of the first kind is defined as :math:`x
     j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
     kind of order :math:`n`.
 
     This function computes the value and first derivative of the
-    Ricatti-Bessel function for all orders up to and including `n`.
+    Riccati-Bessel function for all orders up to and including `n`.
 
     Parameters
     ----------
@@ -1331,9 +1331,9 @@ def riccati_jn(n, x):
 
 
 def riccati_yn(n, x):
-    """Compute Ricatti-Bessel function of the second kind and its derivative.
+    """Compute Riccati-Bessel function of the second kind and its derivative.
 
-    The Ricatti-Bessel function of the second kind is defined here as :math:`+x
+    The Riccati-Bessel function of the second kind is defined here as :math:`+x
     y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
     kind of order :math:`n`. *Note that this is in contrast to a common convention
     that includes a minus sign in the definition.*
@@ -1640,7 +1640,7 @@ def mathieu_even_coef(m, q):
 
 
 def mathieu_odd_coef(m, q):
-    r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
+    r"""Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
     The Fourier series of the odd solutions of the Mathieu differential
     equation are of the form
@@ -1865,10 +1865,26 @@ def euler(n):
 
 
 def lqn(n, z):
-    """Legendre function of the second kind.
+    """Legendre functions of the second kind.
 
-    Compute sequence of Legendre functions of the second kind, Qn(z) and
-    derivatives for all degrees from 0 to n (inclusive).
+    Compute sequence of Legendre functions of the second kind, ``Qn(z)`` and
+    derivatives for all degrees from 0 to `n` (inclusive).
+    Returns two arrays of size ``(n+1,) + z.shape`` containing ``Qn(z)`` and
+    ``Qn'(z)``.
+
+    Parameters
+    ----------
+    n : int
+        Maximum degree of the Legendre functions.
+    z : array_like, complex
+        Real or complex input values.
+
+    Returns
+    -------
+    Qn_z : ndarray, shape (n+1,) + shape(z)
+        Values for all degrees ``0..n``
+    Qn_d_z : ndarray, shape (n+1,) + shape(z)
+        Derivatives for all degrees ``0..n``
 
     References
     ----------
@@ -1876,6 +1892,35 @@ def lqn(n, z):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute :math:`Q_n(x)` and its derivatives on an interval.
+
+    >>> import numpy as np
+    >>> from scipy.special import lqn
+    >>> import matplotlib.pyplot as plt
+
+    >>> xs = np.linspace(-2, 2, 200)
+    >>> n_max = 3
+    >>> Qn, dQn = lqn(n_max, xs)
+
+    Plot the Legendre functions of the second kind :math:`Q_n(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, Qn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
+
+    Plot the derivatives :math:`Q_n'(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, dQn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n'(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
@@ -2528,6 +2573,21 @@ def comb(N, k, *, exact=False, repetition=False):
 
     """
     if repetition:
+        # Special case: C(n, 0) with repetition = 1 for n >= 0
+        # Without this check, comb(0, 0, repetition=True) would compute
+        # comb(-1, 0) which incorrectly returns 0
+        if exact:
+            if k == 0 and int(N) == N and N >= 0:
+                return 1
+        else:
+            k, N = asarray(k), asarray(N)
+            cond = (k == 0) & (N >= 0)
+            vals = binom(N + k - 1, k)
+            if isinstance(vals, np.ndarray):
+                vals[cond] = 1.0
+            elif cond:
+                vals = np.float64(1.0)
+            return vals
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
@@ -3052,7 +3112,7 @@ def factorialk(n, k, exact=False, extend="zero"):
     n : int or float or complex (or array_like thereof)
         Input values for multifactorial. Non-integer values require
         ``extend='complex'``. By default, the return value for ``n < 0`` is 0.
-    n : int or float or complex (or array_like thereof)
+    k : int or float or complex (or array_like thereof)
         Order of multifactorial. Non-integer values require ``extend='complex'``.
     exact : bool, optional
         If ``exact`` is set to True, calculate the answer exactly using

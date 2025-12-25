@@ -191,6 +191,9 @@ warnings.filterwarnings(
     category=Warning,
 )
 
+warnings.filterwarnings("ignore", message="`scipy.odr` is deprecated",
+                        category=DeprecationWarning)
+
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
     'autosummary.import_cycle',
@@ -251,25 +254,12 @@ if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
     html_theme_options["show_version_warning_banner"] = False
 
-if 'versionwarning' in tags:  # noqa: F821
-    # Specific to docs.scipy.org deployment.
-    # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
-    src = ('var script = document.createElement("script");\n'
-           'script.type = "text/javascript";\n'
-           'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);')
-    html_context = {
-        'VERSIONCHECK_JS': src
-    }
-    html_js_files += ['versioncheck.js', ]
-
 html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
 html_css_files = [
     "scipy.css",
-    "try_examples.css",
 ]
 
 # html_additional_pages = {
@@ -362,6 +352,7 @@ plot_pre_code = """
 import warnings
 for key in (
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
+        'odr'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

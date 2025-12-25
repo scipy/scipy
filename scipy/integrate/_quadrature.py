@@ -7,8 +7,9 @@ from collections.abc import Callable
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type,
-                                   xp_capabilities, xp_promote, xp_swapaxes)
+from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
+                                   xp_capabilities, xp_promote, xp_swapaxes, is_numpy)
+import scipy._lib.array_api_extra as xpx
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -1083,8 +1084,7 @@ def newton_cotes(rn, equal=0):
     return ai, BN*fac
 
 
-def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
-
+def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log, xp):
     # lazy import to avoid issues with partially-initialized submodule
     if not hasattr(qmc_quad, 'qmc'):
         from scipy import stats
@@ -1097,9 +1097,11 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
         raise TypeError(message)
 
     # a, b will be modified, so copy. Oh well if it's copied twice.
-    a = np.atleast_1d(a).copy()
-    b = np.atleast_1d(b).copy()
-    a, b = np.broadcast_arrays(a, b)
+    a, b = xp_promote(a, b, broadcast=True, force_floating=True, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a, b = xp.broadcast_arrays(a, b)
+    a, b = xp_copy(a), xp_copy(b)
     dim = a.shape[0]
 
     try:
@@ -1112,25 +1114,33 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
         raise ValueError(message) from e
 
     try:
-        func(np.array([a, b]).T)
+        func(xp.stack([a, b]).T)
         vfunc = func
     except Exception as e:
+        if not is_numpy(xp):
+            message = ("Exception encountered when attempting vectorized call to "
+                       f"`func`: {e}. When using array library {xp}, `func` must "
+                       "accept two-dimensional array `x` with shape `(a.shape[0], "
+                       "n_points)` and return an array of the integrand value at "
+                       "each of the `n_points`.")
+            raise ValueError(message)
+
         message = ("Exception encountered when attempting vectorized call to "
                    f"`func`: {e}. For better performance, `func` should "
                    "accept two-dimensional array `x` with shape `(len(a), "
                    "n_points)` and return an array of the integrand value at "
-                   "each of the `n_points.")
+                   "each of the `n_points`.")
         warnings.warn(message, stacklevel=3)
 
         def vfunc(x):
             return np.apply_along_axis(func, axis=-1, arr=x)
 
-    n_points_int = np.int64(n_points)
+    n_points_int = int(n_points)
     if n_points != n_points_int:
         message = "`n_points` must be an integer."
         raise TypeError(message)
 
-    n_estimates_int = np.int64(n_estimates)
+    n_estimates_int = int(n_estimates)
     if n_estimates != n_estimates_int:
         message = "`n_estimates` must be an integer."
         raise TypeError(message)
@@ -1160,7 +1170,9 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array",
+                                 "Dask arrays are confused about their shape")],
+                 jax_jit=False)
 def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
              log=False):
     """
@@ -1271,72 +1283,79 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     0.00018430867675187443
 
     """
-    args = _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log)
+    xp = array_namespace(a, b)
+    args = _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log, xp)
     func, a, b, n_points, n_estimates, qrng, rng, log, stats = args
 
     def sum_product(integrands, dA, log=False):
         if log:
-            return logsumexp(integrands) + np.log(dA)
+            return logsumexp(integrands) + math.log(dA)
         else:
-            return np.sum(integrands * dA)
+            return xp.sum(integrands * dA)
 
     def mean(estimates, log=False):
         if log:
-            return logsumexp(estimates) - np.log(n_estimates)
+            return logsumexp(estimates) - math.log(n_estimates)
         else:
-            return np.mean(estimates)
+            return xp.mean(estimates)
 
     def std(estimates, m=None, ddof=0, log=False):
         m = m or mean(estimates, log)
         if log:
-            estimates, m = np.broadcast_arrays(estimates, m)
-            temp = np.vstack((estimates, m + np.pi * 1j))
+            estimates, m = xp.broadcast_arrays(estimates, m)
+            temp = xp.stack((estimates, m + xp.pi * 1j))
             diff = logsumexp(temp, axis=0)
-            return np.real(0.5 * (logsumexp(2 * diff)
-                                  - np.log(n_estimates - ddof)))
+            return xp.real(0.5 * (logsumexp(2 * diff)
+                                  - math.log(n_estimates - ddof)))
         else:
-            return np.std(estimates, ddof=ddof)
+            return xp.std(estimates, correction=ddof)
 
     def sem(estimates, m=None, s=None, log=False):
         m = m or mean(estimates, log)
         s = s or std(estimates, m, ddof=1, log=log)
         if log:
-            return s - 0.5*np.log(n_estimates)
+            return s - 0.5*math.log(n_estimates)
         else:
-            return s / np.sqrt(n_estimates)
+            return s / math.sqrt(n_estimates)
 
     # The sign of the integral depends on the order of the limits. Fix this by
     # ensuring that lower bounds are indeed lower and setting sign of resulting
     # integral manually
-    if np.any(a == b):
+    if xp.any(a == b):
         message = ("A lower limit was equal to an upper limit, so the value "
                    "of the integral is zero by definition.")
         warnings.warn(message, stacklevel=2)
-        return QMCQuadResult(-np.inf if log else 0, 0)
+        zero = xp.asarray(-xp.inf if log else 0, dtype=a.dtype)
+        return QMCQuadResult(zero, xp.asarray(0., dtype=a.dtype))
 
     i_swap = b < a
-    sign = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
-    a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+    sign = (-1)**(xp.count_nonzero(i_swap, axis=-1))  # odd # of swaps -> negative
+    sign = xp.astype(sign, a.dtype)
+    # a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+    a_iswap = a[i_swap]
+    b_iswap = b[i_swap]
+    a = xpx.at(a)[i_swap].set(b_iswap)
+    b = xpx.at(b)[i_swap].set(a_iswap)
 
-    A = np.prod(b - a)
+    A = xp.prod(b - a)
     dA = A / n_points
 
-    estimates = np.zeros(n_estimates)
+    estimates = xp.zeros(n_estimates, dtype=a.dtype)
     rngs = _rng_spawn(qrng.rng, n_estimates)
     for i in range(n_estimates):
         # Generate integral estimate
-        sample = qrng.random(n_points)
+        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype)
         # The rationale for transposing is that this allows users to easily
         # unpack `x` into separate variables, if desired. This is consistent
         # with the `xx` array passed into the `scipy.integrate.nquad` `func`.
-        x = stats.qmc.scale(sample, a, b).T  # (n_dim, n_points)
+        x = (sample * (b - a) + a).T  # (n_dim, n_points)
         integrands = func(x)
-        estimates[i] = sum_product(integrands, dA, log)
+        estimates = xpx.at(estimates)[i].set(sum_product(integrands, dA, log))
 
         # Get a new, independently-scrambled QRNG for next time
         qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
 
     integral = mean(estimates, log)
     standard_error = sem(estimates, m=integral, log=log)
-    integral = integral + np.pi*1j if (log and sign < 0) else integral*sign
+    integral = integral + xp.pi*1j if (log and sign < 0) else integral*sign
     return QMCQuadResult(integral, standard_error)

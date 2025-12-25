@@ -15,13 +15,13 @@
     .. [3] P. Dierckx, "An algorithm for smoothing, differentiation and integration
          of experimental data using spline functions",
          Journal of Computational and Applied Mathematics, vol. I, no 3, p. 165 (1975).
-         https://doi.org/10.1016/0771-050X(75)90034-0
+         :doi:`10.1016/0771-050X(75)90034-0`.
 """
 import warnings
 import operator
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, concat_1d
+from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 
 from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr,
@@ -101,14 +101,24 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
 
+    if not x.flags.c_contiguous:
+        x = x.copy()
+    if not y.flags.c_contiguous:
+        y = y.copy()
+
     if w is None:
         w = np.ones_like(x, dtype=float)
     else:
         w = np.asarray(w, dtype=float)
+        if not w.flags.c_contiguous:
+            w = w.copy()
         if w.ndim != 1:
             raise ValueError(f"{w.ndim = } not implemented yet.")
         if (w < 0).any():
             raise ValueError("Weights must be non-negative")
+        if w.sum() == 0:
+            raise ValueError("All weights are zero.")
+
 
     if y.ndim == 0 or y.ndim > 2:
         raise ValueError(f"{y.ndim = } not supported (must be 1 or 2.)")
@@ -148,6 +158,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     return x, y, w, k, s, xb, xe
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def generate_knots(x, y, *, w=None, xb=None, xe=None,
                    k=3, s=0, nest=None, bc_type=None):
     """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
@@ -520,7 +531,7 @@ class F:
     ----------
     [1] P. Dierckx, Algorithms for Smoothing Data with Periodic and Parametric Splines,
         COMPUTER GRAPHICS AND IMAGE PROCESSING vol. 20, pp 171-184 (1982.)
-        https://doi.org/10.1016/0146-664X(82)90043-0
+        :doi:`10.1016/0146-664X(82)90043-0`.
 
     """
     def __init__(self, x, y, t, k, s, w=None, *, R=None, Y=None):
@@ -997,6 +1008,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
     return spl
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_splrep(x, y, *, w=None, xb=None, xe=None,
                 k=3, s=0, t=None, nest=None, bc_type=None):
     r"""Create a smoothing B-spline function with bounded error, minimizing derivative jumps.
@@ -1153,6 +1165,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     return spl
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
                  k=3, s=0, t=None, nest=None, bc_type=None):
     r"""

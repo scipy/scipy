@@ -75,15 +75,17 @@ def test_sparray_vs_spmatrix():
 
 @pytest.mark.parametrize("value", [0, 1.2])
 @pytest.mark.parametrize("ndim", [1, 2, 3])
-def test_nd_coo_format(ndim, value, tmpdir):
+def test_nd_coo_format(ndim, value):
     A = coo_array([value]).reshape((1,) * ndim)
 
     #save/load array
-    with tmpdir.as_cwd():
-        tmpfile = "f.npz"
-
+    fd, tmpfile = tempfile.mkstemp(suffix='.npz')
+    os.close(fd)
+    try:
         save_npz(tmpfile, A)
         loaded_A = load_npz(tmpfile)
+    finally:
+        os.remove(tmpfile)
 
     assert isinstance(loaded_A, coo_array)
     assert_(loaded_A.shape == A.shape)

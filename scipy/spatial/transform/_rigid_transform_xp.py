@@ -3,6 +3,7 @@ from types import EllipsisType
 from scipy._lib._array_api import (
     array_namespace,
     Array,
+    ArrayLike,
     is_lazy_array,
     xp_vector_norm,
     xp_result_type,
@@ -13,11 +14,13 @@ import scipy._lib.array_api_extra as xpx
 from scipy.spatial.transform._rotation_xp import (
     as_matrix as quat_as_matrix,
     from_matrix as quat_from_matrix,
+    _from_matrix_orthogonal as quat_from_matrix_orthogonal,
     from_rotvec as quat_from_rotvec,
     as_rotvec as quat_as_rotvec,
     compose_quat,
     from_quat,
     inv as quat_inv,
+    mean as quat_mean,
 )
 from scipy._lib.array_api_compat import device as xp_device
 from scipy._lib._util import broadcastable
@@ -37,13 +40,16 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
     # We delay lazy branch checks until after normalization to avoid overwriting nans
     # with the rotation matrix
     if not lazy and xp.any(~last_row_ok):
-        last_row_ok = xpx.atleast_nd(last_row_ok, ndim=1, xp=xp)
-        matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
-        ind = int(xp.nonzero(~last_row_ok)[0][0])
+        if last_row_ok.shape == ():
+            idx = ()
+        else:
+            idx = tuple(int(i[0]) for i in xp.nonzero(~last_row_ok))
+        vals = matrix[idx + (3, ...)]
         raise ValueError(
-            f"Expected last row of transformation matrix {ind} to be "
-            f"exactly [0, 0, 0, 1], got {matrix[ind, 3, xp.arange(4)]}."
+            f"Expected last row of transformation matrix {idx} to be "
+            f"exactly [0, 0, 0, 1], got {vals}"
         )
+
     # The quat_from_matrix() method orthogonalizes the rotation
     # component of the transformation matrix. While this does have some
     # overhead in converting a rotation matrix to a quaternion and back, it
@@ -72,10 +78,9 @@ def from_rotation(quat: Array) -> Array:
 def from_translation(translation: Array) -> Array:
     xp = array_namespace(translation)
 
-    if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
+    if translation.shape[-1] != 3:
         raise ValueError(
-            "Expected `translation` to have shape (3,), or (N, 3), "
-            f"got {translation.shape}."
+            f"Expected `translation` to have shape (..., 3), got {translation.shape}."
         )
     device = xp_device(translation)
     dtype = xp_result_type(translation, force_floating=True, xp=xp)
@@ -109,10 +114,9 @@ def from_exp_coords(exp_coords: Array) -> Array:
 def from_dual_quat(dual_quat: Array, *, scalar_first: bool = False) -> Array:
     xp = array_namespace(dual_quat)
 
-    if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
+    if dual_quat.shape[-1] != 8:
         raise ValueError(
-            "Expected `dual_quat` to have shape (8,), or (N, 8), "
-            f"got {dual_quat.shape}."
+            f"Expected `dual_quat` to have shape (..., 8), got {dual_quat.shape}."
         )
 
     real_part = dual_quat[..., :4]
@@ -133,7 +137,7 @@ def from_dual_quat(dual_quat: Array, *, scalar_first: bool = False) -> Array:
 
 def as_exp_coords(matrix: Array) -> Array:
     xp = array_namespace(matrix)
-    rot_vec = quat_as_rotvec(quat_from_matrix(matrix[..., :3, :3]))
+    rot_vec = quat_as_rotvec(quat_from_matrix_orthogonal(matrix[..., :3, :3]))
     translation_transform = _compute_se3_log_translation_transform(rot_vec)
     translations = (translation_transform @ matrix[..., :3, 3][..., None])[..., 0]
     exp_coords = xp.concat([rot_vec, translations], axis=-1)
@@ -142,7 +146,7 @@ def as_exp_coords(matrix: Array) -> Array:
 
 def as_dual_quat(matrix: Array, *, scalar_first: bool = False) -> Array:
     xp = array_namespace(matrix)
-    real_parts = quat_from_matrix(matrix[..., :3, :3])
+    real_parts = quat_from_matrix_orthogonal(matrix[..., :3, :3])
 
     pure_translation_quats = xp.empty(
         (*matrix.shape[:-2], 4), dtype=matrix.dtype, device=xp_device(matrix)
@@ -191,10 +195,8 @@ def inv(matrix: Array) -> Array:
 
 def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     xp = array_namespace(matrix)
-    if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
-        raise ValueError(
-            f"Expected vector to have shape (N, 3), or (3,), got {vector.shape}."
-        )
+    if vector.shape[-1] != 3:
+        raise ValueError(f"Expected vector to have shape (..., 3), got {vector.shape}.")
     vec = xp.empty(
         (*vector.shape[:-1], 4), dtype=vector.dtype, device=xp_device(vector)
     )
@@ -246,6 +248,68 @@ def pow(matrix: Array, n: float | Array) -> Array:
     return from_exp_coords(as_exp_coords(matrix) * n)
 
 
+def mean(
+    matrix: Array,
+    weights: ArrayLike | None = None,
+    axis: None | int | tuple[int, ...] = None
+) -> Array:
+    xp = array_namespace(matrix)
+    if matrix.shape[0] == 0:
+        raise ValueError("Mean of an empty rotation set is undefined.")
+    # Axis logic: For None, we reduce over all axes. For int, we only reduce over that
+    # axis. For tuple, we reduce over all specified axes.
+    all_axes = tuple(range(matrix.ndim - 2))
+    if axis is None:
+        axis = all_axes
+    elif isinstance(axis, int):
+        axis = (axis,)
+    if not isinstance(axis, tuple):
+        raise ValueError("`axis` must be None, int, or tuple of ints.")
+    # Ensure all axes are within bounds
+    if (axis != () and
+       (min(axis) < -(matrix.ndim - 2) or max(axis) > (matrix.ndim - 3))
+    ):
+        raise ValueError(
+            f"axis {axis} is out of bounds for transform with shape "
+            f"{matrix.shape[:-2]}."
+        )
+    # Ensure all axes are positive and unique
+    axis = tuple(sorted(set(x % (matrix.ndim - 2) for x in axis)))
+
+    lazy = is_lazy_array(matrix)
+    quats = quat_from_matrix_orthogonal(matrix[..., :3, :3])
+    if weights is None:
+        quats_mean = quat_mean(quats, axis=axis)
+    else:
+        neg_weights = weights < 0
+        any_neg_weights = xp.any(neg_weights)
+        if not lazy and any_neg_weights:
+            raise ValueError("`weights` must be non-negative.")
+        if weights.shape != matrix.shape[:-2]:
+            raise ValueError(
+                f"Expected `weights` to match transform shape, got shape "
+                f"{weights.shape} for {matrix.shape[:-2]} transformations."
+            )
+        quats_mean = quat_mean(quats, weights=weights, axis=axis)
+    r_mean = quat_as_matrix(quats_mean)
+
+    t = matrix[..., :3, 3]
+    if weights is None:
+        t_mean = xp.mean(t, axis=axis)
+    else:
+        norm = xp.sum(weights[..., None], axis=axis)
+        wsum = xp.sum(t * weights[..., None], axis=axis)
+        t_mean = wsum / norm
+
+    tf = _create_transformation_matrix(t_mean, r_mean)
+    if weights is not None and lazy:
+        # We cannot raise on negative weights because jit code needs to be
+        # non-branching. We return NaN instead
+        mask = xp.where(any_neg_weights, xp.nan, 1.0)
+        tf = mask * tf
+    return tf
+
+
 def setitem(
     matrix: Array,
     indexer: Array | int | tuple | slice | EllipsisType | None,
@@ -270,7 +334,6 @@ def _create_transformation_matrix(
     translations: Array, rotation_matrices: Array
 ) -> Array:
     if not translations.shape[:-1] == rotation_matrices.shape[:-2]:
-        print(translations.shape, rotation_matrices.shape)
         raise ValueError(
             "The number of rotation matrices and translations must be the same."
         )

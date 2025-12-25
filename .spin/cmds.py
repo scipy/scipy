@@ -65,16 +65,20 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
           tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
-    MESON_ARGS are passed through e.g.:
+    MESON_ARGS can be passed via `--setup-args` e.g.:
 
-    spin build -- -Dpkg_config_path=/lib64/pkgconfig
+        spin build --setup-args=-Dpkg_config_path=/lib64/pkgconfig
 
     The package is installed to build-install
 
-    By default builds for release, to be able to use a debugger set CFLAGS
-    appropriately. For example, for linux use
+    By default builds for release.
+    To use alternative build types, you can set the corresponding flags in `-Dc_args`.
+    For example, for a debug build, use:
 
-    CFLAGS="-O0 -g" spin build
+        spin build --setup-args=-Dc_args="-O0 -g"
+
+    Note that `-Dbuildtype=debug` is not sufficient when using default compilers from
+    conda-forge, as this will not override the `-O2` set by the compiler activation.
     """
     MESON_ARGS = "meson_args"
     MESON_COMPILE_ARGS = "meson_compile_args"
@@ -299,9 +303,13 @@ def _set_pythonpath(pythonpath):
 def python(*, parent_callback, pythonpath, **kwargs):
     """🐍 Launch Python shell with PYTHONPATH set
 
-    OPTIONS are passed through directly to Python, e.g.:
+    OPTIONS refers to the spin command options (see below).
 
-    spin python -c 'import sys; print(sys.path)'
+    The optional PYTHON_ARGS, which must be separated from the
+    spin command options with `--`, are passed directly through to
+    the Python command.  For example,
+
+    spin python -- -c 'import sys; print(sys.path)'
     """
     _set_pythonpath(pythonpath)
     parent_callback(**kwargs)
@@ -313,9 +321,13 @@ def python(*, parent_callback, pythonpath, **kwargs):
 def ipython(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch IPython shell with PYTHONPATH set
 
-    OPTIONS are passed through directly to IPython, e.g.:
+    OPTIONS refers to the spin command options (see below).
 
-    spin ipython -i myscript.py
+    The optional IPYTHON_ARGS, which must be separated from the
+    spin command options with `--`, are passed directly through to
+    the IPython command.  For example,
+
+    spin ipython -- -i myscript.py
     """
     _set_pythonpath(pythonpath)
     parent_callback(**kwargs)
@@ -779,7 +791,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             "Invoking `build` prior to running benchmarks:",
             bold=True, fg="bright_green"
         )
-        ctx.invoke(build)
+        ctx.invoke(build, build_dir=build_dir)
 
         meson._set_pythonpath(build_dir)
 
