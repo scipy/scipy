@@ -3,6 +3,7 @@
 import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
+from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 from . import _signaltools
 from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
 from .windows import get_window
@@ -15,13 +16,14 @@ __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
+@_deprecate_positional_args(version="1.19.0")
 def lombscargle(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
     freqs: npt.ArrayLike,
-    precenter: bool = False,
-    normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     *,
+    precenter: bool = _NoValue,
+    normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     weights: npt.NDArray | None = None,
     floating_mean: bool = False,
 ) -> npt.NDArray:
@@ -67,6 +69,11 @@ def lombscargle(
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
         a legacy parameter and unnecessary if `floating_mean` is True.
+
+        .. deprecated:: 1.17.0
+            The `precenter` argument is deprecated and will be removed in SciPy 1.19.0.
+            The functionality can be substituted by passing ``y - y.mean()`` to `y`.
+
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
         Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
@@ -102,17 +109,21 @@ def lombscargle(
     Notes
     -----
     The algorithm used will not automatically account for any unknown y offset, unless
-    floating_mean is True. Therefore, for most use cases, if there is a possibility of
-    a y offset, it is recommended to set floating_mean to True. If precenter is True,
-    it performs the operation ``y -= y.mean()``. However, precenter is a legacy
-    parameter, and unnecessary when floating_mean is True. Furthermore, the mean
-    removed by precenter does not account for sample weights, nor will it correct for
-    any bias due to consistently missing observations at peaks and/or troughs. When the
-    normalize parameter is "amplitude", for any frequency in freqs that is below
-    ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards infinity.
-    The concept of a "Nyquist frequency" limit (see Nyquist-Shannon sampling theorem)
-    is not generally applicable to unevenly sampled data. Therefore, with unevenly
-    sampled data, valid frequencies in freqs can often be much higher than expected.
+    `floating_mean` is ``True``. Therefore, for most use cases, if there is a
+    possibility of a y offset, it is recommended to set `floating_mean` to ``True``.
+    Furthermore, `floating_mean` accounts for sample weights, and will also correct for
+    any bias due to consistently missing observations at peaks and/or troughs.
+
+    The legacy concept of "pre-centering" entails removing the mean from parameter `y`
+    before processing, i.e., passing ``y - y.mean()`` instead of setting the parameter
+    `floating_mean` to ``True``.
+
+    When the normalize parameter is "amplitude", for any frequency in freqs that is
+    below ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards
+    infinity. The concept of a "Nyquist frequency" limit (see Nyquist-Shannon sampling
+    theorem) is not generally applicable to unevenly sampled data. Therefore, with
+    unevenly sampled data, valid frequencies in freqs can often be much higher than
+    expected for those familiar with methods like FFT.
 
     References
     ----------
@@ -246,8 +257,15 @@ def lombscargle(
     weights = weights * (1.0 / weights.sum())
 
     # if requested, perform precenter
-    if precenter:
-        y = y - y.mean()
+    if precenter is not _NoValue:
+        msg = ("Use of parameter 'precenter' is deprecated as of SciPy 1.17.0 and "
+               "will be removed in 1.19.0. Please leave 'precenter' unspecified. "
+               "Passing True to 'precenter' "
+               "can be exactly substituted by passing 'y = (y - y.mean())' into "
+               "the input. Consider setting `floating_mean` to True instead.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        if precenter:
+            y = y - y.mean()
 
     # transform arrays
     # row vector
@@ -1704,7 +1722,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     function.
 
     An STFT which has been modified (via masking or otherwise) is not
-    guaranteed to correspond to a exactly realizible signal. This
+    guaranteed to correspond to an exactly realizible signal. This
     function implements the iSTFT via the least-squares estimation
     algorithm detailed in [2]_, which produces a signal that minimizes
     the mean squared error between the STFT of the returned signal and

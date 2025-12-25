@@ -2692,7 +2692,7 @@ def hilbert2(x, N=None, axes=(-2, -1)):
         if N <= 0:
             raise ValueError("N must be positive.")
         N = (N, N)
-    elif len(N) != 2 or xp.any(xp.asarray(N) <= 0):
+    elif len(N) != 2 or np.any(np.asarray(N) <= 0):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
@@ -3013,9 +3013,9 @@ def _cmplx_sort(p):
 
     Examples
     --------
-    >>> from scipy import signal
+    >>> from scipy.signal._signaltools import _cmplx_sort
     >>> vals = [1, 4, 1+1.j, 3]
-    >>> p_sorted, indx = signal.cmplx_sort(vals)
+    >>> p_sorted, indx = _cmplx_sort(vals)
     >>> p_sorted
     array([1.+0.j, 1.+1.j, 3.+0.j, 4.+0.j])
     >>> indx
@@ -4216,7 +4216,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     See Also
     --------
-    numpy.polynomial.polynomial.Polynomial.fit: Create least squares fit polynomial.
+    :meth:`numpy.polynomial.polynomial.Polynomial.fit` : Create least squares fit polynomial.
 
 
     Examples
@@ -4257,15 +4257,11 @@ def detrend(data: np.ndarray, axis: int = -1,
     Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
     degree polynomials. Consult its documentation on how to extract the polynomial
     coefficients.
-    """
+    """  # noqa: E501
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
-    # XXX simplify when data-apis/array-api-compat#147 is available
-    if isinstance(bp, int):
-       xp = array_namespace(data)
-    else:
-       xp = array_namespace(data, bp)
+    xp = array_namespace(data, bp)
 
     data = np.asarray(data)
     dtype = data.dtype.char

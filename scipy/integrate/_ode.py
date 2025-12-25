@@ -81,26 +81,15 @@ an alternative to ode with the zvode solver, sometimes performing better.
 __all__ = ['ode', 'complex_ode']
 
 import re
-import threading
 import types
 import warnings
 
 import numpy as np
-from numpy import asarray, array, zeros, isscalar, real, imag, vstack
+from numpy import asarray, array, zeros, isscalar, real, imag
 
 from . import _vode
 from . import _dop
-from . import _lsoda
-
-
-_vode_int_dtype = _vode.types.intvar.dtype
-_lsoda_int_dtype = _lsoda.types.intvar.dtype
-
-
-# lsoda, vode and zvode are not thread-safe. VODE_LOCK protects both vode and
-# zvode; they share the `def run` implementation
-LSODA_LOCK = threading.Lock()
-VODE_LOCK = threading.Lock()
+from ._odepack import lsoda as lsoda_step
 
 
 # ------------------------------------------------------------------------------
@@ -155,11 +144,6 @@ class ode:
 
         Source: http://www.netlib.org/ode/vode.f
 
-        .. warning::
-
-           This integrator is not re-entrant. You cannot have two `ode`
-           instances using the "vode" integrator at the same time.
-
         This integrator accepts the following parameters in `set_integrator`
         method of the `ode` class:
 
@@ -202,11 +186,6 @@ class ode:
 
         Source: http://www.netlib.org/ode/zvode.f
 
-        .. warning::
-
-           This integrator is not re-entrant. You cannot have two `ode`
-           instances using the "zvode" integrator at the same time.
-
         This integrator accepts the same parameters in `set_integrator`
         as the "vode" solver.
 
@@ -230,12 +209,8 @@ class ode:
         problems) and a method based on backward differentiation formulas (BDF)
         (for stiff problems).
 
-        Source: http://www.netlib.org/odepack
-
-        .. warning::
-
-           This integrator is not re-entrant. You cannot have two `ode`
-           instances using the "lsoda" integrator at the same time.
+        This integrator uses the C translation of the original Fortran 77 ODEPACK
+        library, which can be found at http://www.netlib.org/odepack
 
         This integrator accepts the following parameters in `set_integrator`
         method of the `ode` class:
@@ -375,7 +350,8 @@ class ode:
         n_prev = len(self._y)
         if not n_prev:
             self.set_integrator('')  # find first available integrator
-        self._y = asarray(y, self._integrator.scalar)
+        # NOTE: The C code modifies y in place, hence the copy.
+        self._y = asarray(y, self._integrator.scalar).copy()
         self.t = t
         self._integrator.reset(len(self._y), self.jac is not None)
         return self
@@ -633,6 +609,7 @@ class complex_ode(ode):
     def __init__(self, f, jac=None):
         self.cf = f
         self.cjac = jac
+        self.tmp_derivative = None  # Work array for derivatives in _wrap
         if jac is None:
             ode.__init__(self, self._wrap, None)
         else:
@@ -640,11 +617,12 @@ class complex_ode(ode):
 
     def _wrap(self, t, y, *f_args):
         f = self.cf(*((t, y[::2] + 1j * y[1::2]) + f_args))
-        # self.tmp is a real-valued array containing the interleaved
-        # real and imaginary parts of f.
-        self.tmp[::2] = real(f)
-        self.tmp[1::2] = imag(f)
-        return self.tmp
+        # self.tmp_derivative is a real-valued array containing the interleaved
+        # real and imaginary parts of f (the derivative).
+        # IMPORTANT: Must NOT use self.tmp here, as it may alias with y!
+        self.tmp_derivative[::2] = real(f)
+        self.tmp_derivative[1::2] = imag(f)
+        return self.tmp_derivative
 
     def _wrap_jac(self, t, y, *jac_args):
         # jac is the complex Jacobian computed by the user-defined function.
@@ -705,6 +683,8 @@ class complex_ode(ode):
         self.tmp = zeros(y.size * 2, 'float')
         self.tmp[::2] = real(y)
         self.tmp[1::2] = imag(y)
+        # Create separate work array for derivatives to avoid aliasing issues
+        self.tmp_derivative = zeros(y.size * 2, 'float')
         return ode.set_initial_value(self, self.tmp, t)
 
     def integrate(self, t, step=False, relax=False):
@@ -833,20 +813,6 @@ class IntegratorBase:
     # XXX: __str__ method for getting visual state of the integrator
 
 
-def _banded_jac_wrapper(jacfunc, ml, jac_params):
-    """
-    Wrap a banded Jacobian function with a function that pads
-    the Jacobian with `ml` rows of zeros.
-    """
-
-    def jac_wrapper(t, y):
-        jac = asarray(jacfunc(t, y, *jac_params))
-        padded_jac = vstack((jac, zeros((ml, jac.shape[1]))))
-        return padded_jac
-
-    return jac_wrapper
-
-
 class vode(IntegratorBase):
     runner = getattr(_vode, 'dvode', None)
 
@@ -861,7 +827,6 @@ class vode(IntegratorBase):
                 }
     supports_run_relax = 1
     supports_step = 1
-    active_global_handle = 0
 
     def __init__(self,
                  method='adams',
@@ -894,7 +859,10 @@ class vode(IntegratorBase):
         self.first_step = first_step
         self.success = 1
 
-        self.initialized = False
+        # State persistence arrays for VODE internal state
+        # These retain the solver state between calls
+        self.state_doubles = zeros(51, dtype=np.float64)  # VODE_STATE_DOUBLE_SIZE
+        self.state_ints = zeros(41, dtype=np.int32)        # VODE_STATE_INT_SIZE
 
     def _determine_mf_and_set_bands(self, has_jac):
         """
@@ -988,7 +956,7 @@ class vode(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), _vode_int_dtype)
+        iwork = zeros((liw,), dtype=np.int32)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1003,24 +971,25 @@ class vode(IntegratorBase):
         self.success = 1
         self.initialized = False
 
+        # Zero state arrays on reset to avoid contamination from previous problems.
+        # State persistence works within a single integration (istate=2), but between
+        # different problems (different n etc.), state needs to be cleared.
+        self.state_doubles.fill(0.0)
+        self.state_ints.fill(0)
+
+
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        if self.initialized:
-            self.check_handle()
-        else:
-            self.initialized = True
-            self.acquire_new_handle()
+        # Note: For banded Jacobians, the user provides the compressed format
+        # (ml + mu + 1, n), and the C code handles padding to the expanded
+        # format (ml + 2*mu + 1, n) internally. No Python wrapper needed.
 
-        if self.ml is not None and self.ml > 0:
-            # Banded Jacobian. Wrap the user-provided function with one
-            # that pads the Jacobian array with the extra `self.ml` rows
-            # required by the f2py-generated wrapper.
-            jac = _banded_jac_wrapper(jac, self.ml, jac_params)
-
+        # VODE C wrapper signature:
+        # dvode(f, jac, y0, t0, t1, rtol, atol, itask, istate, rwork, iwork, mf,
+        #       f_params, jac_params, state_doubles, state_ints)
         args = ((f, jac, y0, t0, t1) + tuple(self.call_args) +
-                (f_params, jac_params))
+                (f_params, jac_params, self.state_doubles, self.state_ints))
 
-        with VODE_LOCK:
-            y1, t, istate = self.runner(*args)
+        y1, t, istate = self.runner(*args)
 
         self.istate = istate
         if istate < 0:
@@ -1059,9 +1028,14 @@ class zvode(vode):
     supports_run_relax = 1
     supports_step = 1
     scalar = complex
-    active_global_handle = 0
 
     __class_getitem__ = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Override state array sizes for ZVODE (53 doubles vs 51 for VODE)
+        self.state_doubles = zeros(53, dtype=np.float64)  # ZVODE_STATE_DOUBLE_SIZE
+        self.state_ints = zeros(41, dtype=np.int32)        # ZVODE_STATE_INT_SIZE
 
     def reset(self, n, has_jac):
         mf = self._determine_mf_and_set_bands(has_jac)
@@ -1107,7 +1081,7 @@ class zvode(vode):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), _vode_int_dtype)
+        iwork = zeros((liw,), np.int32)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1121,6 +1095,12 @@ class zvode(vode):
                           self.zwork, self.rwork, self.iwork, mf]
         self.success = 1
         self.initialized = False
+
+        # Zero state arrays on reset to avoid contamination from previous problems.
+        # State persistence works within a single integration (istate=2), but between
+        # different problems (different n etc.), state needs to be cleared.
+        self.state_doubles.fill(0.0)
+        self.state_ints.fill(0)
 
 
 if zvode.runner is not None:
@@ -1255,8 +1235,7 @@ if dop853.runner is not None:
 
 
 class lsoda(IntegratorBase):
-    runner = getattr(_lsoda, 'lsoda', None)
-    active_global_handle = 0
+    runner = lsoda_step  # Use low-level lsoda wrapper
 
     messages = {
         2: "Integration successful.",
@@ -1304,26 +1283,40 @@ class lsoda(IntegratorBase):
 
         self.initialized = False
 
+        # State persistence arrays for LSODA internal state
+        # These retain the solver state between calls
+        self.state_doubles = zeros(240, dtype=np.float64)  # LSODA_STATE_DOUBLE_SIZE
+        self.state_ints = zeros(48, dtype=np.int32)        # LSODA_STATE_INT_SIZE
+
     def reset(self, n, has_jac):
-        # Calculate parameters for Fortran subroutine dvode.
+        # Zero state arrays on reset to avoid contamination from previous steps.
+        # State persistence works within a single integration (istate=2), but between
+        # different problems (different n etc.), state needs to be cleared.
+        self.state_doubles.fill(0.0)
+        self.state_ints.fill(0)
+
+        # Calculate parameters for lsoda subroutine.
+        # jt values: 1=user full, 2=FD full, 4=user banded, 5=FD banded (3=invalid)
         if has_jac:
             if self.mu is None and self.ml is None:
-                jt = 1
+                jt = 1  # User-supplied full Jacobian
             else:
                 if self.mu is None:
                     self.mu = 0
                 if self.ml is None:
                     self.ml = 0
-                jt = 4
+                jt = 4  # User-supplied banded Jacobian
         else:
             if self.mu is None and self.ml is None:
-                jt = 2
+                jt = 2  # Internally generated full Jacobian (finite differences)
             else:
                 if self.mu is None:
                     self.mu = 0
                 if self.ml is None:
                     self.ml = 0
-                jt = 5
+                jt = 5  # Internally generated banded Jacobian (finite differences)
+
+        # Calculate work array sizes
         lrn = 20 + (self.max_order_ns + 4) * n
         if jt in [1, 2]:
             lrs = 22 + (self.max_order_s + 4) * n + n * n
@@ -1333,12 +1326,15 @@ class lsoda(IntegratorBase):
             raise ValueError(f'Unexpected jt={jt}')
         lrw = max(lrn, lrs)
         liw = 20 + n
+
+        # Create and initialize work arrays
         rwork = zeros((lrw,), float)
         rwork[4] = self.first_step
         rwork[5] = self.max_step
         rwork[6] = self.min_step
         self.rwork = rwork
-        iwork = zeros((liw,), _lsoda_int_dtype)
+
+        iwork = zeros((liw,), dtype=np.int32)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1349,29 +1345,37 @@ class lsoda(IntegratorBase):
         iwork[7] = self.max_order_ns
         iwork[8] = self.max_order_s
         self.iwork = iwork
+
         self.call_args = [self.rtol, self.atol, 1, 1,
                           self.rwork, self.iwork, jt]
         self.success = 1
-        self.initialized = False
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        if self.initialized:
-            self.check_handle()
-        else:
-            self.initialized = True
-            self.acquire_new_handle()
+        # Prepare arguments for low-level lsoda wrapper
+        rtol = self.call_args[0]
+        atol = self.call_args[1]
+        itask = self.call_args[2]
+        istate = self.call_args[3]
+        rwork = self.call_args[4]
+        iwork = self.call_args[5]
+        jt = self.call_args[6]
 
-        if jac is not None and self.ml is not None and self.ml > 0:
-            # Banded Jacobian. Wrap the user-provided function with one
-            # that pads the Jacobian array with the extra `self.ml` rows
-            # required by the f2py-generated wrapper.
-            jac = _banded_jac_wrapper(jac, self.ml, jac_params)
+        # Note: For banded Jacobians, the user provides the compressed format
+        # (ml + mu + 1, n), and the C code handles padding to the expanded
+        # format (2*ml + mu + 1, n) internally. No Python wrapper needed.
 
-        args = [f, y0, t0, t1] + self.call_args[:-1] + \
-               [jac, self.call_args[-1], f_params, 0, jac_params]
-
-        with LSODA_LOCK:
-            y1, t, istate = self.runner(*args)
+        # Signature:
+        #
+        #    lsoda(fun, y0, t, tout, rtol, atol, itask, istate, rwork, iwork,
+        #          jac, jt, f_params, tfirst, jac_params, state_doubles, state_ints)
+        #
+        # "state_doubles" and "state_ints" are arrays for passing internal
+        # state between Python-C code.
+        y1, t, istate = self.runner(
+            f, y0, t0, t1, rtol, atol, itask, istate, rwork, iwork,
+            jac, jt, f_params, 1, jac_params,  # tfirst=1 for (t, y) signature
+            self.state_doubles, self.state_ints
+        )
 
         self.istate = istate
         if istate < 0:
@@ -1383,6 +1387,7 @@ class lsoda(IntegratorBase):
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
             self.istate = 2
+            self.success = 1
         return y1, t
 
     def step(self, *args):
