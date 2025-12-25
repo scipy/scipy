@@ -349,7 +349,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     return res
 
 
-def _basic_simpson(y, start, stop, x, dx, axis, xp):
+def _basic_simpson(y, start, stop, x, dx, axis):
     nd = len(y.shape)
     if start is None:
         start = 0
@@ -358,36 +358,35 @@ def _basic_simpson(y, start, stop, x, dx, axis, xp):
     slice0 = tupleset(slice_all, axis, slice(start, stop, step))
     slice1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
     slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
-    slice_early = tupleset(slice_all, axis, slice(None, -1))
-    slice_late = tupleset(slice_all, axis, slice(1, None))
 
     if x is None:  # Even-spaced Simpson's rule.
-        result = xp.sum(y[slice0] + 4.0*y[slice1] + y[slice2], axis=axis)
+        result = np.sum(y[slice0] + 4.0*y[slice1] + y[slice2], axis=axis)
         result *= dx / 3.0
     else:
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
-        h = x[slice_late] - x[slice_early]
+        h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = xp.astype(h[sl0], xp.float64, copy=False)
-        h1 = xp.astype(h[sl1], xp.float64, copy=False)
+        h0 = h[sl0].astype(float, copy=False)
+        h1 = h[sl1].astype(float, copy=False)
         hsum = h0 + h1
         hprod = h0 * h1
-        with np.errstate(divide='ignore', invalid='ignore'):
-            zero = xp.zeros_like(h0)
-            h0divh1 = xp.where(h1 == 0, zero, h0 / h1)
-            h1divh0 = xp.where(h0 == 0, zero, h1 / h0)
-            hsumdivhprod = xp.where(hprod == 0, zero, hsum / hprod)
-            tmp = hsum/6.0 * (y[slice0] * (2.0 - h1divh0) +
-                              y[slice1] * (hsum * hsumdivhprod) +
-                              y[slice2] * (2.0 - h0divh1))
-        result = xp.sum(tmp, axis=axis)
+        h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1 != 0)
+        tmp = hsum/6.0 * (y[slice0] *
+                          (2.0 - np.true_divide(1.0, h0divh1,
+                                                out=np.zeros_like(h0divh1),
+                                                where=h0divh1 != 0)) +
+                          y[slice1] * (hsum *
+                                       np.true_divide(hsum, hprod,
+                                                      out=np.zeros_like(hsum),
+                                                      where=hprod != 0)) +
+                          y[slice2] * (2.0 - h0divh1))
+        result = np.sum(tmp, axis=axis)
     return result
 
 
-@xp_capabilities(skip_backends=[('jax.numpy',
-                                 "JAX arrays do not support item assignment")])
+@xp_capabilities(np_only=True)
 def simpson(y, x=None, *, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
@@ -450,20 +449,19 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
     1640.25
 
     """
-    xp = array_namespace(y)
-    y = _asarray(y, xp=xp, subok=True)
+    y = np.asarray(y)
     nd = len(y.shape)
     N = y.shape[axis]
     last_dx = dx
     returnshape = 0
     if x is not None:
-        x = _asarray(x, xp=xp, subok=True)
+        x = np.asarray(x)
         if len(x.shape) == 1:
             shapex = [1] * nd
             shapex[axis] = x.shape[0]
             saveshape = x.shape
             returnshape = 1
-            x = xp.reshape(x, tuple(shapex))
+            x = x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
@@ -487,23 +485,21 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
             val += 0.5 * last_dx * (y[slice1] + y[slice2])
         else:
             # use Simpson's rule on first intervals
-            result = _basic_simpson(y, 0, N-3, x, dx, axis, xp)
+            result = _basic_simpson(y, 0, N-3, x, dx, axis)
 
             slice1 = tupleset(slice_all, axis, -1)
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
-            slice_early = tupleset(slice_all, axis, slice(None, -1))
-            slice_late = tupleset(slice_all, axis, slice(1, None))
 
-            h = xp.asarray([dx, dx], dtype=xp.float64)
+            h = np.asarray([dx, dx], dtype=np.float64)
             if x is not None:
                 # grab the last two spacings from the appropriate axis
                 hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
                 hm1 = tupleset(slice_all, axis, slice(-1, None, 1))
 
-                diffs = xp.asarray(x[slice_late] - x[slice_early], dtype=xp.float64)
-                h = [xp.squeeze(diffs[hm2], axis=axis),
-                     xp.squeeze(diffs[hm1], axis=axis)]
+                diffs = np.float64(np.diff(x, axis=axis))
+                h = [np.squeeze(diffs[hm2], axis=axis),
+                     np.squeeze(diffs[hm1], axis=axis)]
 
             # This is the correction for the last interval according to
             # Cartwright.
@@ -515,27 +511,40 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
             # Wikipedia article are adjusting for the last integral. If the
             # proper algebraic substitutions are made, the equation results in
             # the values shown.
-            with np.errstate(divide='ignore', invalid='ignore'):
-                num = 2 * h[1] ** 2 + 3 * h[0] * h[1]
-                den = 6 * (h[1] + h[0])
-                zero = xp.zeros_like(num)
-                alpha = xp.where(den == 0, zero, num / den)
+            num = 2 * h[1] ** 2 + 3 * h[0] * h[1]
+            den = 6 * (h[1] + h[0])
+            alpha = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
 
-                num = h[1] ** 2 + 3.0 * h[0] * h[1]
-                den = 6 * h[0]
-                beta = xp.where(den == 0, zero, num / den)
+            num = h[1] ** 2 + 3.0 * h[0] * h[1]
+            den = 6 * h[0]
+            beta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
 
-                num = 1 * h[1] ** 3
-                den = 6 * h[0] * (h[0] + h[1])
-                eta = xp.where(den == 0, zero, num / den)
+            num = 1 * h[1] ** 3
+            den = 6 * h[0] * (h[0] + h[1])
+            eta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
 
             result += alpha*y[slice1] + beta*y[slice2] - eta*y[slice3]
 
         result += val
     else:
-        result = _basic_simpson(y, 0, N-2, x, dx, axis, xp)
+        result = _basic_simpson(y, 0, N-2, x, dx, axis)
     if returnshape:
-        x = xp.reshape(x, saveshape)
+        x = x.reshape(saveshape)
     return result
 
 
