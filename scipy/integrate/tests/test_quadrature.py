@@ -19,21 +19,36 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+
 @make_xp_test_case(fixed_quad)
 class TestFixedQuad:
-    def test_scalar(self):
+    def test_scalar(self, xp):
         n = 4
         expected = 1/(2*n)
-        got, _ = fixed_quad(lambda x: x**(2*n - 1), 0, 1, n=n)
+        got, _ = fixed_quad(lambda x: x**(2*n - 1), xp.asarray(0.), xp.asarray(1.), n=n)
         # quadrature exact for this input
-        assert_allclose(got, expected, rtol=1e-12)
+        xp_assert_close(got, xp.asarray(expected), rtol=1e-12)
 
-    def test_vector(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_vector(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
         n = 4
-        p = np.arange(1, 2*n)
+        p = xp.arange(1., 2*n, dtype=dtype)
+        a, b = xp.asarray(0., dtype=dtype), xp.asarray(1., dtype=dtype)
         expected = 1/(p + 1)
-        got, _ = fixed_quad(lambda x: x**p[:, None], 0, 1, n=n)
-        assert_allclose(got, expected, rtol=1e-12)
+        got, _ = fixed_quad(lambda x, p: x**p[:, xp.newaxis],a, b, args=(p,), n=n)
+        rtol = 1e-12 if dtype == xp.float64 else 1e-7
+        xp_assert_close(got, xp.asarray(expected), rtol=rtol)
+
+    @skip_xp_backends('jax.numpy', reason="lazy -> limited input validation")
+    @skip_xp_backends('dask.array', reason="lazy -> limited input validation")
+    def test_input_validation(self, xp):
+        n = 4
+        message = "Gaussian quadrature is only available for finite limits."
+        with pytest.raises(ValueError, match=message):
+            fixed_quad(lambda x: x**(2*n - 1), xp.asarray(-xp.inf), xp.asarray(1.), n=n)
+        with pytest.raises(ValueError, match=message):
+            fixed_quad(lambda x: x**(2*n - 1), xp.asarray(0.), xp.asarray(xp.inf), n=n)
 
 
 @make_xp_test_case(romb)
