@@ -1134,18 +1134,19 @@ class TestCorrSpearmanr:
     @pytest.mark.parametrize("axis", [0, 1])
     def test_constant_input_gh22816(self, axis):
         X = np.zeros((10, 4))
-        X[:,0] = np.arange(0, 10)
-        X[:,1] = np.arange(0, 10)
+        X[:, 2] = np.arange(0, 10)
+        X[:, 3] = -np.arange(0, 10)
 
-        corr = np.array([[1., 1., np.nan, np.nan],
-                         [1., 1., np.nan, np.nan],
+        corr = np.array([[np.nan, np.nan, np.nan, np.nan],
                          [np.nan, np.nan, np.nan, np.nan],
-                         [np.nan, np.nan, np.nan, np.nan]])
+                         [np.nan, np.nan, 1., -1.],
+                         [np.nan, np.nan, -1., 1.]])
         if axis == 1:
             X = X.T
         with pytest.warns(stats._warnings_errors.ConstantInputWarning):
             res = stats.spearmanr(X, axis=axis)
-        assert_allclose(res.statistic, corr, equal_nan=True)
+        assert_allclose(res.statistic, corr)
+        assert_allclose(res.pvalue, 0*corr, atol=1e-50)
 
     def test_sXX(self):
         y = stats.spearmanr(X,X)

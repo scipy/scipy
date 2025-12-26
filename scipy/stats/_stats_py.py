@@ -5378,7 +5378,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     
     constant_axis = False
     if axisout == 0:
-        constant_columns = np.all(a == a[0,:], axis = 0)
+        constant_columns = np.all(a == a[0, :], axis=0)
         constant_axis = np.any(constant_columns)
         if constant_axis:
             # If an input is constant, the correlation coefficient
