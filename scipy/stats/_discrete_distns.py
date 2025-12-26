@@ -23,6 +23,7 @@ from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
 from ._stats_pythran import _poisson_binom
+from ._zipfian_rvs import zipfian_rvs as _zipfian_rvs
 
 
 class binom_gen(rv_discrete):
@@ -1474,6 +1475,21 @@ class zipfian_gen(rv_discrete):
               - 3*Hna1**4) / mu2n**2
         g2 -= 3
         return mu1, mu2, g1, g2
+
+    def _rvs(self, a, n, size=None, random_state=None):
+        # This method should only be called by the public function rvs()
+        # with random_state set to an instance of np.random.RandomState or
+        # np.random.Generator, and both of those have a _bit_generator
+        # attribute, so despite the default value shown in the signature,
+        # we can safely access that attribute.
+        bitgen = random_state._bit_generator
+        a_f64 = a.astype(np.float64)
+        # _argcheck() & rvs() will have ensured that all the values in `n`
+        # can be cast safely to int64. The actual dtype of `n` might be some
+        # other integer or floating point type.
+        n_int64 = n.astype(np.int64)
+
+        return _zipfian_rvs(bitgen, a=a_f64, n=n_int64, size=size)
 
 
 zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
