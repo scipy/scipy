@@ -347,6 +347,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         a corresponding element in the Jacobian is always zero. If None
         (default), the Jacobian is assumed to be dense.
         Not supported by 'LSODA', see `lband` and `uband` instead.
+    mass_matrix:, array_like, sparse_matrix, None, optional
+        Defines the constant mass matrix of the system. It is of shape (n,n).
+        Only compatible with 'Radau' method.
+        If None, it defaults to the identity matrix.
+        The problem considered is then of the form:
+          ``M y' = fun(t,y)``
+        This matrix may be singular, thus defining a problem of the differential-
+        algebraic type (DAE), see [1].
+        See the documentation of the 'Radau' method for additional parameters.
     lband, uband : int or None, optional
         Parameters defining the bandwidth of the Jacobian for the 'LSODA'
         method, i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``.
@@ -569,6 +578,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         53.17531184+103.80400411j]
      [ -2.26105874 +22.19277664j -15.1255713  +70.19616341j
        -38.34616845+153.29039931j]]
+
+
+    TODO: DAE example
 
 
     """

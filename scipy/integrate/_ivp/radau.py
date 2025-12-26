@@ -183,16 +183,45 @@ class Radau(OdeSolver):
       It is possible that one Newton iteration is such that residual or increment norm increases compared to the previous iteration. This is referred to as a bad iteration. Originally, the Newton iterations are stopped when such an event occurs, triggering a time step reduction. For certain problems, this may lead to unnecessary time reductions, potentially even leading to a failure of the integration. For some differential-algebraic equations (DAEs) of index higher than 1. It turns out that allowing one or more such bad iterations to occur without stopping the Newton iterations may lead to a successful convergence. Usually, setting `max_bad_ite` to 1 is a good all-around choice. It is set to 0 by default, or to 1 if a DAE problem of index higher than 1 (specified via ``var_index``). See [3, page TODO] for more details.
 
     scale_residuals : boolean, optional
-      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the residuals of the implicit system (solved by a Newton method at each time step) are scaled component-by-component with h^i, i being the algebraic index of the component, and h the time step size. Defaults to true. This usually improves the robustness of the solver for DAEs of index higher than 1. See [3, page TODO] for more details.
+      If a system of differential-algebraic equations (DAEs) is considered
+      (see ``mass_matrix``), and if this parameter is true, the residuals
+      of the implicit system (solved by a Newton method at each time step)
+      are scaled component by component by h^i, i being the algebraic index
+      of the component, and h the time step size.
+      Defaults to true.
+      This usually improves the robustness of the solver for DAEs of index higher than 1.
+      See [3, page TODO] for more details.
 
     scale_newton_norm : boolean, optional
-      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the convergence of the Newton iterations are evaluated based on a modified norm, where the components corresponding to algebraic variables are scaled by h^i, i being the algebraic index of the component, and h the time step size. Defaults to true. This usually improves the robustness of the solver for DAEs of index higher than 1. See [3, page TODO] for more details.
+      If a system of differential-algebraic equations (DAEs) is considered
+      (see ``mass_matrix``), and if this parameter is true, the convergence
+      of the Newton iterations are evaluated based on a modified norm, where
+      the components corresponding to algebraic variables are scaled by h^i,
+      i being the algebraic index of the component, and h the time step size.
+      Defaults to true.
+      This usually improves the robustness of the solver for DAEs of index higher than 1.
+      See [3, page TODO] for more details.
 
     scale_error : boolean, optional
-      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the norm of the error estimate used for adapting the time step is computed with a specific scaling for the algberaic components. Each component of the error estimate is scaled by h^i, i being the algebraic index of the component, and h the time step size. Defaults to true. This lowers the estimated error on the algebraic variables, which is usually overestimated. This usually leads to larger step sizes for DAEs, while maintaining the desired accuracy on the differential components.
+      If a system of differential-algebraic equations (DAEs) is considered
+      (see ``mass_matrix``), and if this parameter is true, the norm of the
+      error estimate used for adapting the time step is computed with a
+      specific scaling for the algberaic components. Each component of the
+      error estimate is scaled by h^i, i being the algebraic index of the
+      component, and h the time step size. Defaults to true. This lowers
+      the estimated error on the algebraic variables, which is usually
+      overestimated. This usually leads to larger step sizes for DAEs,
+      while maintaining the desired accuracy on the differential components.
 
     zero_algebraic_error : boolean, optional
-      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the norm of the error estimate is computed by considering only the differential components and discarding the error estimated on the algebraic components. Defaults to false. This may help with DAEs for which the time step seems to be unnecesseraily low, even when setting ``scale_error=True``. In any case, the error on the differential components remains below the prescribed accuracy.
+      If a system of differential-algebraic equations (DAEs) is considered
+      (see ``mass_matrix``), and if this parameter is true, the norm of the
+      error estimate is computed by considering only the differential
+      components and discarding the error estimated on the algebraic
+      components. Defaults to false. This may help with DAEs for which the
+      time step seems to be unnecesseraily low, even when setting
+      ``scale_error=True``. In any case, the error on the differential
+      components remains below the prescribed accuracy.
 
 
 
@@ -221,7 +250,8 @@ class Radau(OdeSolver):
     nlu : int
         Number of LU decompositions.
     nlusolve: int
-        Number of linear systems solved with the LU decompositions.
+        Number of linear systems solved with the LU decompositions
+        (2 per Newton iteration, 1 or 2 per error estimation)
       
 
     References
@@ -266,9 +296,10 @@ class Radau(OdeSolver):
 
         # Convergence tolerance for the Newton iterations
         # (relative to the integration error tolerance)
-        self.newton_tol = max(10 * EPS / rtol, min(0.03, rtol ** 0.5)) # see [1] and the original Radau5 Fortran code
+        self.newton_tol = max(10 * EPS / rtol, min(0.03, rtol ** 0.5))
+        # see [1] and the original Radau5 Fortran code
+        
         self.sol = None
-
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac, jac_sparsity)
         self.nlusolve = 0
@@ -314,15 +345,16 @@ class Radau(OdeSolver):
             assert var_index.size == y0.size
             self.var_index = var_index
 
+        if mass_matrix is None:
+            assert (var_index is None or np.all(var_index==0)),
+            """``var_index`` should not be specified, or only contains zeros,
+            when ``mass_matrix`` is not specified"""
+        
         self.var_exp = self.var_index - 1 # for DAE-specific scalings
         self.var_exp[ self.var_exp < 0 ] = 0 # for differential components
 
         if not ( max_bad_ite is None ):
-            self.NMAX_BAD = max_bad_ite # Maximum number of bad iterations per step
-            # this may be useful when the Newton starts with a bad iteration, which
-            # may temporarily cause a rise in the Newton increment norm, or let
-            # the predicted Newton error after the max number of iterations be
-            # too high
+            self.NMAX_BAD = max_bad_ite # Maximum number of bad Newton iterations per step
         else: # by default, if the DAE has index>1, allow one bad iteration
             if np.any(self.var_index>1):
                 self.NMAX_BAD = 1
@@ -434,7 +466,7 @@ class Radau(OdeSolver):
             # the next time step would be too small, hence we slightly
             # increase the step size to reach the final time directly
             h_abs = abs(self.t_bound - t)
-            # require refactorisation of the iteration matrices
+            # require refactorization of the iteration matrices
             self.LU_real = None
             self.LU_complex = None
 
@@ -489,7 +521,6 @@ class Radau(OdeSolver):
                       LU_complex = self.lu( self.hscale @ (MU_COMPLEX / h * self.mass_matrix - J) )
                       self.nlu -= 1 # to match original Fortran code
                   except ValueError as e:
-                    # import pdb; pdb.set_trace()
                     return False, 'LU decomposition failed ({})'.format(e)
 
                 converged, n_iter, n_bad, Z, f_subs, rate = self.solve_collocation_system(
@@ -508,8 +539,8 @@ class Radau(OdeSolver):
                     LU_complex = None
 
             if not converged:
-                h_abs *= 0.5
-                LU_real = None
+                h_abs *= 0.5 # retry with lower time step
+                LU_real = None # triggers refactorization
                 LU_complex = None
                 continue
 
@@ -524,6 +555,7 @@ class Radau(OdeSolver):
                 err_scale = err_scale / (h**self.var_exp) # scale for algebraic variables
 
             # see [1], chapter IV.8, page 127
+            # (akin to a single linearized backward Euler step, damping fast solution modes)
             error = self.solve_lu(LU_real, f + self.mass_matrix.dot(ZE))
             if self.zero_algebraic_error:
                 # we exclude the algebraic components, otherwise
@@ -534,8 +566,8 @@ class Radau(OdeSolver):
                 error_norm = norm(error / err_scale)
                 
             if (rejected and error_norm > 1): # try with stabilised error estimate
-                error = self.solve_lu(LU_real, self.fun(t, y + error) + self.mass_matrix.dot(ZE)) # error is not corrected for algebraic variables
-                self._nlusolve -= 1
+                error = self.solve_lu(LU_real, self.fun(t, y + error) + self.mass_matrix.dot(ZE))
+                # error is not corrected for algebraic variables
                 if self.zero_algebraic_error:
                     # again, we exclude the algebraic components
                     error[ self.index_algebraic_vars ] = 0.
@@ -560,6 +592,7 @@ class Radau(OdeSolver):
         factor = min(self.MAX_FACTOR, safety * factor)
 
         if not recompute_jac and factor < 1.2:
+            # maintain previous step size to avoid refactorization cost
             factor = 1
         else:
             LU_real = None
@@ -641,7 +674,6 @@ class Radau(OdeSolver):
 
         dW_norm_old = None
         res_norm = None
-        res_norm_old = None
         dW = np.empty_like(W)
         converged = False
         rate = None
@@ -662,13 +694,9 @@ class Radau(OdeSolver):
             f_real = residual_scale @ f_real
             f_complex = residual_scale @ f_complex
 
-            if res_norm_old is not None:
-                rate_res = res_norm / res_norm_old
-
             # compute Newton increment
             dW_real    = self.solve_lu(LU_real,    f_real)
             dW_complex = self.solve_lu(LU_complex, f_complex)
-            self._nlusolve -= 1 # to match the original Fortran code
 
             dW[0] = dW_real
             dW[1] = dW_complex.real
@@ -692,7 +720,8 @@ class Radau(OdeSolver):
                 if rate >= 1: # Newton loop diverges
                     if rate<100: # divergence is not too extreme yet
                         if nbad_iter<self.NMAX_BAD:
-                            # we accept a few number of bad iterations, which may be necessary for certain higer-index DAEs
+                            # we accept a few number of bad iterations,
+                            # which may be necessary for certain higher-index DAEs
                             nbad_iter+=1
                             continue
                 if dW_true < tol:
@@ -733,7 +762,8 @@ class RadauDenseOutput(DenseOutput):
         else:
             p = np.tile(x, (self.order + 1, 1))
             p = np.cumprod(p, axis=0)
-        # Here we don't multiply by h, not a mistake, because we rely on a dimensionless time
+        # Here we don't multiply by h, not a mistake,
+        # because we rely on a dimensionless time.
         y = np.dot(self.Q, p)
         if y.ndim == 2:
             y += self.y_old[:, None]
