@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from scipy.sparse import csc_matrix, issparse, eye
+from scipy.sparse import csc_matrix, issparse, eye, diags
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
@@ -16,7 +16,7 @@ E = np.array([-13 - 7 * S6, -13 + 7 * S6, -1]) / 3
 
 # Eigendecomposition of A is done: A = T L T**-1. There is 1 real eigenvalue
 # and a complex conjugate pair. They are written below.
-MU_REAL = 3 + 3 ** (2 / 3) - 3 ** (1 / 3)
+MU_REAL = 3 + 3 ** (2 / 3) - 3 ** (1 / 3) # inverse of the real eigenvalue of A
 MU_COMPLEX = (3 + 0.5 * (3 ** (1 / 3) - 3 ** (2 / 3))
               - 0.5j * (3 ** (5 / 6) + 3 ** (7 / 6)))
 
@@ -29,6 +29,7 @@ TI = np.array([
     [4.17871859155190428, 0.32768282076106237, 0.52337644549944951],
     [-4.17871859155190428, -0.32768282076106237, 0.47662355450055044],
     [0.50287263494578682, -2.57192694985560522, 0.59603920482822492]])
+
 # These linear combinations are used in the algorithm.
 TI_REAL = TI[0]
 TI_COMPLEX = TI[1] + 1j * TI[2]
@@ -39,105 +40,6 @@ P = np.array([
     [13/3 - 7*S6/3, -23/3 + 22*S6/3, 10/3 - 5 * S6],
     [1/3, -8/3, 10/3]])
 
-
-NEWTON_MAXITER = 6  # Maximum number of Newton iterations.
-MIN_FACTOR = 0.2  # Minimum allowed decrease in a step size.
-MAX_FACTOR = 10  # Maximum allowed increase in a step size.
-
-
-def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
-                             LU_real, LU_complex, solve_lu, mass_matrix):
-    """Solve the collocation system.
-
-    Parameters
-    ----------
-    fun : callable
-        Right-hand side of the system.
-    t : float
-        Current time.
-    y : ndarray, shape (n,)
-        Current state.
-    h : float
-        Step to try.
-    Z0 : ndarray, shape (3, n)
-        Initial guess for the solution. It determines new values of `y` at
-        ``t + h * C`` as ``y + Z0``, where ``C`` is the Radau method constants.
-    scale : ndarray, shape (n)
-        Problem tolerance scale, i.e. ``rtol * abs(y) + atol``.
-    tol : float
-        Tolerance to which solve the system. This value is compared with
-        the normalized by `scale` error.
-    LU_real, LU_complex
-        LU decompositions of the system Jacobians.
-    solve_lu : callable
-        Callable which solves a linear system given a LU decomposition. The
-        signature is ``solve_lu(LU, b)``.
-    mass_matrix : {None, array_like, sparse_matrix},
-           Defines the constant mass matrix of the system, with shape (n,n).
-           It may be singular, thus defining a problem of the differential-
-           algebraic type (DAE).
-
-    Returns
-    -------
-    converged : bool
-        Whether iterations converged.
-    n_iter : int
-        Number of completed iterations.
-    Z : ndarray, shape (3, n)
-        Found solution.
-    rate : float
-        The rate of convergence.
-    """
-    n = y.shape[0]
-    M_real = MU_REAL / h
-    M_complex = MU_COMPLEX / h
-
-    W = TI.dot(Z0)
-    Z = Z0
-
-    F = np.empty((3, n))
-    ch = h * C
-
-    dW_norm_old = None
-    dW = np.empty_like(W)
-    converged = False
-    rate = None
-    for k in range(NEWTON_MAXITER):
-        for i in range(3):
-            F[i] = fun(t + ch[i], y + Z[i])
-
-        if not np.all(np.isfinite(F)):
-            break
-
-        f_real = F.T.dot(TI_REAL) - M_real * mass_matrix.dot(W[0])
-        f_complex = F.T.dot(TI_COMPLEX) - M_complex * mass_matrix.dot(W[1] + 1j * W[2])
-
-        dW_real = solve_lu(LU_real, f_real)
-        dW_complex = solve_lu(LU_complex, f_complex)
-
-        dW[0] = dW_real
-        dW[1] = dW_complex.real
-        dW[2] = dW_complex.imag
-
-        dW_norm = norm(dW / scale)
-        if dW_norm_old is not None:
-            rate = dW_norm / dW_norm_old
-
-        if (rate is not None and (rate >= 1 or
-                rate ** (NEWTON_MAXITER - k) / (1 - rate) * dW_norm > tol)):
-            break
-
-        W += dW
-        Z = T.dot(W)
-
-        if (dW_norm == 0 or
-                rate is not None and rate / (1 - rate) * dW_norm < tol):
-            converged = True
-            break
-
-        dW_norm_old = dW_norm
-
-    return converged, k + 1, Z, rate
 
 
 def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
@@ -186,6 +88,7 @@ class Radau(OdeSolver):
     The implementation follows [1]_. The error is controlled with a
     third-order accurate embedded formula. A cubic polynomial which satisfies
     the collocation conditions is used for the dense output.
+    Specific treatment of systems of differential-algebraic equations (DAEs) follows [3]_.
 
     Parameters
     ----------
@@ -210,7 +113,7 @@ class Radau(OdeSolver):
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
-        estimates less than ``atol + rtol * abs(y)``. HHere `rtol` controls a
+        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
         desired `rtol`, set `atol` to be smaller than the smallest value that
@@ -262,10 +165,36 @@ class Radau(OdeSolver):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by this method, but may result in slower
         execution overall in some circumstances (e.g. small ``len(y0)``).
-    mass : {None, array_like, sparse_matrix}, optional
-        Defined the constant mass matrix of the system, with shape (n,n).
-        It may be singular, thus defining a problem of the differential-
-        algebraic type (DAE), see [1]. The default value is None.
+    mass_matrix : {None, array_like, sparse_matrix}, shape (n,n), optional
+        Defines the constant mass matrix M of the system, with shape (n,n).
+        The problem considered is then of the form:
+          ``M y' = fun(t,y)``
+        This matrix may be singular, thus defining a problem of the differential-
+        algebraic type (DAE), see [1]. The default value is None, correspoding to the identity matrix, i.e. all components are of the differential nature.
+    var_index : {None, array_like}, shape (n,), optional
+        In the case of a differential-algebraic system (DAE), i.e. a singular matrix is provided with the `mass_matrix`argument, this vector of integers of shape (n,) defines the algebraic index of each component. This index is 0 for differential components, and is larger than 0 for algebraic components. Note  that the Radau solver should be able to handle DAEs with components up to index 3. The values of the algebraic indices are used to apply various scalings (for the Newton iterations and the error estimate) to improve the robustness of the algorithm for DAEs.
+    max_newton_ite : int, optional
+        Defines the maximum number of Newton iterations that can be performed to solve each time step.
+
+    bUsePredictiveNewtonStoppingCriterion : boolean, optional
+        During the Newton iterations, their convergence is monitored. If this parameter is true (default value) and it is predicted that the Newton error level reached after performing all allowed  iteration (``max_newton_ite``) is too large, the iterations are stopped. This may greatly reduce the computational cost of the integration, by avoiding uneffective Newton iterations. Still, in particular when dealing with higher-index DAEs, this predictive monitoring may be too conservative and wrongly predict a poor convergence of the iterations. On certain problems, this may lead to a infinite loop of time step reduction. Setting this parameter to False may correct this issue.
+
+    max_bad_ite: int, optional
+      It is possible that one Newton iteration is such that residual or increment norm increases compared to the previous iteration. This is referred to as a bad iteration. Originally, the Newton iterations are stopped when such an event occurs, triggering a time step reduction. For certain problems, this may lead to unnecessary time reductions, potentially even leading to a failure of the integration. For some differential-algebraic equations (DAEs) of index higher than 1. It turns out that allowing one or more such bad iterations to occur without stopping the Newton iterations may lead to a successful convergence. Usually, setting `max_bad_ite` to 1 is a good all-around choice. It is set to 0 by default, or to 1 if a DAE problem of index higher than 1 (specified via ``var_index``). See [3, page TODO] for more details.
+
+    scale_residuals : boolean, optional
+      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the residuals of the implicit system (solved by a Newton method at each time step) are scaled component-by-component with h^i, i being the algebraic index of the component, and h the time step size. Defaults to true. This usually improves the robustness of the solver for DAEs of index higher than 1. See [3, page TODO] for more details.
+
+    scale_newton_norm : boolean, optional
+      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the convergence of the Newton iterations are evaluated based on a modified norm, where the components corresponding to algebraic variables are scaled by h^i, i being the algebraic index of the component, and h the time step size. Defaults to true. This usually improves the robustness of the solver for DAEs of index higher than 1. See [3, page TODO] for more details.
+
+    scale_error : boolean, optional
+      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the norm of the error estimate used for adapting the time step is computed with a specific scaling for the algberaic components. Each component of the error estimate is scaled by h^i, i being the algebraic index of the component, and h the time step size. Defaults to true. This lowers the estimated error on the algebraic variables, which is usually overestimated. This usually leads to larger step sizes for DAEs, while maintaining the desired accuracy on the differential components.
+
+    zero_algebraic_error : boolean, optional
+      If a system of differential-algebraic equations (DAEs) is considered (see ``mass_matrix``), and if this parameter is true, the norm of the error estimate is computed by considering only the differential components and discarding the error estimated on the algebraic components. Defaults to false. This may help with DAEs for which the time step seems to be unnecesseraily low, even when setting ``scale_error=True``. In any case, the error on the differential components remains below the prescribed accuracy.
+
+
 
     Attributes
     ----------
@@ -291,6 +220,9 @@ class Radau(OdeSolver):
         Number of evaluations of the Jacobian.
     nlu : int
         Number of LU decompositions.
+    nlusolve: int
+        Number of linear systems solved with the LU decompositions.
+      
 
     References
     ----------
@@ -299,10 +231,19 @@ class Radau(OdeSolver):
     .. [2] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
+    .. [3] E. Hairer, C. Lubich, M. Roche, "The Numerical Solution of
+           Differential-Algebraic Systems by Runge-Kutta Methods"
     """
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, first_step=None, mass_matrix=None, **extraneous):
+                 vectorized=False, first_step=None,
+                 max_newton_ite=6, max_bad_ite=None,
+                 mass_matrix=None, var_index=None,
+                 bUsePredictiveNewtonStoppingCriterion=True,
+                 scale_residuals=True, scale_newton_norm=True,
+                 scale_error=True, zero_algebraic_error=False,
+                 **extraneous):
+
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized)
         self.y_old = None
@@ -312,27 +253,33 @@ class Radau(OdeSolver):
         # Select initial step assuming the same order which is used to control
         # the error.
         if first_step is None:
-            self.h_abs = select_initial_step(
-                self.fun, self.t, self.y, t_bound, max_step, self.f, self.direction,
-                3, self.rtol, self.atol)
+            if mass_matrix is None:
+              self.h_abs = select_initial_step(
+                  self.fun, self.t, self.y, t_bound, max_step, self.f, self.direction,
+                  3, self.rtol, self.atol)
+            else: # as in [1], default to 1e-6
+                self.h_abs = self.direction * min(1e-6, abs(self.t_bound-self.t0))
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
         self.error_norm_old = None
 
-        self.newton_tol = max(10 * EPS / rtol, min(0.03, rtol ** 0.5))
+        # Convergence tolerance for the Newton iterations
+        # (relative to the integration error tolerance)
+        self.newton_tol = max(10 * EPS / rtol, min(0.03, rtol ** 0.5)) # see [1] and the original Radau5 Fortran code
         self.sol = None
 
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac, jac_sparsity)
-        self._nlusove = 0
+        self.nlusolve = 0
+
         if issparse(self.J):
             def lu(A):
                 self.nlu += 1
                 return splu(A)
 
             def solve_lu(LU, b):
-                self._nlusove += 1
+                self.nlusolve += 1
                 return LU.solve(b)
 
             I = eye(self.n, format='csc')
@@ -342,7 +289,7 @@ class Radau(OdeSolver):
                 return lu_factor(A, overwrite_a=True)
 
             def solve_lu(LU, b):
-                self._nlusove += 1
+                self.nlusolve += 1
                 return lu_solve(LU, b, overwrite_b=True)
 
             I = np.identity(self.n)
@@ -351,8 +298,40 @@ class Radau(OdeSolver):
         self.solve_lu = solve_lu
         self.I = I
 
-        self.mass_matrix, self.index_algebraic_vars, self.nvars_algebraic = \
-                          self._validate_mass_matrix(mass_matrix)
+        # DAE-specific treatment
+        self.scale_residuals = scale_residuals
+        self.scale_error = scale_error
+        self.scale_newton_norm = scale_newton_norm
+        self.zero_algebraic_error = zero_algebraic_error
+
+        self.hscale = self.I
+        self.mass_matrix = self._validate_mass_matrix(mass_matrix)
+        if var_index is None: # vector of the algebraic index of each variable
+            self.var_index = np.zeros((y0.size,)) # assume all differential
+        else:
+            assert isinstance(var_index, np.ndarray), '`var_index` must be an array'
+            assert var_index.ndim == 1
+            assert var_index.size == y0.size
+            self.var_index = var_index
+
+        self.var_exp = self.var_index - 1 # for DAE-specific scalings
+        self.var_exp[ self.var_exp < 0 ] = 0 # for differential components
+
+        if not ( max_bad_ite is None ):
+            self.NMAX_BAD = max_bad_ite # Maximum number of bad iterations per step
+            # this may be useful when the Newton starts with a bad iteration, which
+            # may temporarily cause a rise in the Newton increment norm, or let
+            # the predicted Newton error after the max number of iterations be
+            # too high
+        else: # by default, if the DAE has index>1, allow one bad iteration
+            if np.any(self.var_index>1):
+                self.NMAX_BAD = 1
+            else:
+                self.NMAX_BAD = 0
+
+        self.index_algebraic_vars = np.where( self.var_index != 0 )[0] #self.var_index != 0
+        self.nvars_algebraic = self.index_algebraic_vars.size
+
 
         self.current_jac = True
         self.LU_real = None
@@ -362,26 +341,20 @@ class Radau(OdeSolver):
     def _validate_mass_matrix(self, mass_matrix):
         if mass_matrix is None:
             M = self.I
-            index_algebraic_vars = None
-            nvars_algebraic = 0
         elif callable(mass_matrix):
             raise ValueError("`mass_matrix` should be a constant matrix, but is"
                              " callable")
         else:
             if issparse(mass_matrix):
                 M = csc_matrix(mass_matrix)
-                index_algebraic_vars = np.where(np.all(M.toarray()==0, axis=1))[0]
             else:
                 M = np.asarray(mass_matrix, dtype=float)
-                index_algebraic_vars = np.where(np.all(M==0, axis=1))[0]
             if M.shape != (self.n, self.n):
                 raise ValueError("`mass_matrix` is expected to have shape {}, "
                                  "but actually has {}."
                                  .format((self.n, self.n), M.shape))
-            nvars_algebraic = index_algebraic_vars.size
+        return M
 
-        return M, index_algebraic_vars, nvars_algebraic
-      
     def _validate_jac(self, jac, sparsity):
         t0 = self.t
         y0 = self.y
@@ -443,7 +416,7 @@ class Radau(OdeSolver):
         atol = self.atol
         rtol = self.rtol
 
-        min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
+        min_step = max(1e-20, 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t) )
         if self.h_abs > max_step:
             h_abs = max_step
             h_abs_old = None
@@ -456,6 +429,14 @@ class Radau(OdeSolver):
             h_abs = self.h_abs
             h_abs_old = self.h_abs_old
             error_norm_old = self.error_norm_old
+
+        if abs(self.t_bound - (t + self.direction * h_abs)) < 1e-2*h_abs:
+            # the next time step would be too small, hence we slightly
+            # increase the step size to reach the final time directly
+            h_abs = abs(self.t_bound - t)
+            # require refactorisation of the iteration matrices
+            self.LU_real = None
+            self.LU_complex = None
 
         J = self.J
         LU_real = self.LU_real
@@ -480,25 +461,45 @@ class Radau(OdeSolver):
             h = t_new - t
             h_abs = np.abs(h)
 
-            if self.sol is None:
+            # initial solution for the Newton solve
+            if (self.sol is None):
                 Z0 = np.zeros((3, y.shape[0]))
             else:
-                Z0 = self.sol(t + h * C).T - y
+                Z0 = self.sol(t + h * C).T - y  # extrapolate using previous dense output
 
-            scale = atol + np.abs(y) * rtol
+            newton_scale = atol + np.abs(y) * rtol
+            if self.scale_newton_norm:
+                # scale Newton increment for convergence measure (see [3], p. 95)
+                newton_scale = newton_scale / (h**self.var_exp)
 
             converged = False
             while not converged:
                 if LU_real is None or LU_complex is None:
-                    LU_real = self.lu(MU_REAL / h * self.mass_matrix - J)
-                    LU_complex = self.lu(MU_COMPLEX / h * self.mass_matrix - J)
+                  if self.scale_residuals:
+                    # residuals associated with high-index components are scaled
+                    # this may help with the stability of the matrix decomposition
+                    # (see [3], p97)
+                    # self.hscale = np.diag(h**(-self.var_index))
+                    if issparse(self.I):
+                        self.hscale = diags(h**(-np.minimum(1,self.var_index)), offsets=0, format='csc')
+                    else:
+                        self.hscale = np.diag(h**(-np.minimum(1,self.var_index))) # only by h or 1
+                  try:
+                      LU_real    = self.lu( self.hscale @ (MU_REAL    / h * self.mass_matrix - J) )
+                      LU_complex = self.lu( self.hscale @ (MU_COMPLEX / h * self.mass_matrix - J) )
+                      self.nlu -= 1 # to match original Fortran code
+                  except ValueError as e:
+                    # import pdb; pdb.set_trace()
+                    return False, 'LU decomposition failed ({})'.format(e)
 
-                converged, n_iter, Z, rate = solve_collocation_system(
-                    self.fun, t, y, h, Z0, scale, self.newton_tol,
-                    LU_real, LU_complex, self.solve_lu, self.mass_matrix)
+                converged, n_iter, n_bad, Z, f_subs, rate = self.solve_collocation_system(
+                    t, y, h, Z0, newton_scale, self.newton_tol,
+                    LU_real, LU_complex, residual_scale=self.hscale)
 
+                safety = self.safety_factor * (2 * self.NEWTON_MAXITER + 1) / (2 * self.NEWTON_MAXITER + n_iter)
+                  
                 if not converged:
-                    if current_jac:
+                    if current_jac: # we only allow one Jacobian computation per time step
                         break
 
                     J = self.jac(t, y, f)
@@ -513,43 +514,42 @@ class Radau(OdeSolver):
                 continue
 
             y_new = y + Z[-1]
+            
             ZE = Z.T.dot(E) / h
-            error = self.solve_lu(LU_real, f + ZE)
-            scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
-            # see [1], chapter IV.8, page 127
-            error = self.solve_lu(LU_real, f + self.mass_matrix.dot(ZE))
-            if self.index_algebraic_vars is not None:
+            err_scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
+            if self.scale_error:
                 # correct for the overestimation of the error on
                 # algebraic variables, ideally multiply their errors by
-                # (h ** index)
-                error[self.index_algebraic_vars] = 0.
-                error_norm = np.linalg.norm(error / scale) / (n - self.nvars_algebraic) ** 0.5
+                # (h ** index), see [3]
+                err_scale = err_scale / (h**self.var_exp) # scale for algebraic variables
+
+            # see [1], chapter IV.8, page 127
+            error = self.solve_lu(LU_real, f + self.mass_matrix.dot(ZE))
+            if self.zero_algebraic_error:
                 # we exclude the algebraic components, otherwise
                 # they artificially lower the error norm
+                error[ self.index_algebraic_vars ] = 0.
+                error_norm = np.linalg.norm(error / err_scale) / (n - self.nvars_algebraic) ** 0.5
             else:
-                error_norm = norm(error / scale)
-
-            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER
-                                                       + n_iter)
-
-            if rejected and error_norm > 1: # try with stabilised error estimate
-                error = self.solve_lu(LU_real, self.fun(t, y + error)
-                                      + self.mass_matrix.dot(ZE))
-                if self.index_algebraic_vars is not None:
-                    # ideally error*(h**index)
-                    error[self.index_algebraic_vars] = 0.
-                    error_norm = np.linalg.norm(error / scale) / (n - self.nvars_algebraic) ** 0.5
+                error_norm = norm(error / err_scale)
+                
+            if (rejected and error_norm > 1): # try with stabilised error estimate
+                error = self.solve_lu(LU_real, self.fun(t, y + error) + self.mass_matrix.dot(ZE)) # error is not corrected for algebraic variables
+                self._nlusolve -= 1
+                if self.zero_algebraic_error:
                     # again, we exclude the algebraic components
+                    error[ self.index_algebraic_vars ] = 0.
+                    error_norm = np.linalg.norm(error / err_scale) / (n - self.nvars_algebraic) ** 0.5
                 else:
-                    error_norm = norm(error / scale)
+                    error_norm = norm(error / err_scale)
+
             if error_norm > 1:
                 factor = predict_factor(h_abs, h_abs_old,
                                         error_norm, error_norm_old)
-                h_abs *= max(MIN_FACTOR, safety * factor)
-
+                
+                h_abs *= max(self.MIN_FACTOR, safety * factor)
                 LU_real = None
                 LU_complex = None
-                rejected = True
             else:
                 step_accepted = True
 
@@ -557,7 +557,7 @@ class Radau(OdeSolver):
         recompute_jac = jac is not None and n_iter > 2 and rate > 1e-3
 
         factor = predict_factor(h_abs, h_abs_old, error_norm, error_norm_old)
-        factor = min(MAX_FACTOR, safety * factor)
+        factor = min(self.MAX_FACTOR, safety * factor)
 
         if not recompute_jac and factor < 1.2:
             factor = 1
@@ -595,6 +595,120 @@ class Radau(OdeSolver):
 
         return step_accepted, message
 
+    def solve_collocation_system(self, t, y, h, Z0, norm_scale, tol,
+                                 LU_real, LU_complex, residual_scale):
+        """Solve the collocation system.
+
+        Parameters
+        ----------
+        t : float
+            Current time.
+        y : ndarray, shape (n,)
+            Current state.
+        h : float
+            Step to try.
+        Z0 : ndarray, shape (3, n)
+            Initial guess for the solution. It determines new values of `y` at
+            ``t + h * C`` as ``y + Z0``, where ``C`` is the Radau method constants.
+        norm_scale : ndarray, shape (n)
+            Problem tolerance scale, i.e. ``rtol * abs(y) + atol``.
+        tol : float
+            Tolerance to which solve the system. This value is compared with
+            the normalized by `scale` error.
+        LU_real, LU_complex
+            LU decompositions of the system Jacobians.
+
+        Returns
+        -------
+        converged : bool
+            Whether iterations converged.
+        n_iter : int
+            Number of completed iterations.
+        Z : ndarray, shape (3, n)
+            Found solution.
+        rate : float
+            The rate of convergence.
+        """
+        n = y.shape[0]
+        M_real = MU_REAL / h
+        M_complex = MU_COMPLEX / h
+
+        W = TI.dot(Z0) # state vector at each quadrature point (with complex transformation)
+        Z = Z0 # state vector at each quadrature point
+
+        F = np.empty((3, n))  # RHS evaluated at the quadrature points
+        ch = h * C # quadrature time points
+
+        dW_norm_old = None
+        res_norm = None
+        res_norm_old = None
+        dW = np.empty_like(W)
+        converged = False
+        rate = None
+        nbad_iter = 0
+
+        for k in range(self.NEWTON_MAXITER):
+            for i in range(3):
+                F[i] = self.fun(t + ch[i], y + Z[i])
+
+            if not np.all(np.isfinite(F)):
+                break
+
+            # compute residuals
+            f_real    = F.T.dot(TI_REAL)    - M_real    * self.mass_matrix.dot( W[0] )
+            f_complex = F.T.dot(TI_COMPLEX) - M_complex * self.mass_matrix.dot( W[1] + 1j * W[2] )
+
+            # scale residuals
+            f_real = residual_scale @ f_real
+            f_complex = residual_scale @ f_complex
+
+            if res_norm_old is not None:
+                rate_res = res_norm / res_norm_old
+
+            # compute Newton increment
+            dW_real    = self.solve_lu(LU_real,    f_real)
+            dW_complex = self.solve_lu(LU_complex, f_complex)
+            self._nlusolve -= 1 # to match the original Fortran code
+
+            dW[0] = dW_real
+            dW[1] = dW_complex.real
+            dW[2] = dW_complex.imag
+
+            dW_norm = norm(dW / norm_scale)
+
+            W += dW
+            Z = T.dot(W)
+
+            if dW_norm_old is not None:
+                rate = dW_norm / dW_norm_old
+                dW_true = rate / (1 - rate) * dW_norm # estimated true error
+                dW_true_max_ite = rate ** (self.NEWTON_MAXITER - k) / (1 - rate) * dW_norm # estimated true error after max number of iterations
+
+            if dW_norm < tol:
+                converged = True
+                break
+
+            if rate is not None:
+                if rate >= 1: # Newton loop diverges
+                    if rate<100: # divergence is not too extreme yet
+                        if nbad_iter<self.NMAX_BAD:
+                            # we accept a few number of bad iterations, which may be necessary for certain higer-index DAEs
+                            nbad_iter+=1
+                            continue
+                if dW_true < tol:
+                    converged = True
+                    break
+                if (dW_true_max_ite > tol) and self.bUsePredictiveNewtonStoppingCriterion :
+                    # Newton will most likely not converge in the allowed number of iterations
+                    if nbad_iter<self.NMAX_BAD:
+                        nbad_iter+=1
+                        continue
+
+            dW_norm_old  = dW_norm
+            res_norm_old = res_norm
+
+        return converged, k + 1, nbad_iter, Z, F, rate
+
     def _compute_dense_output(self):
         Q = np.dot(self.Z.T, P)
         return RadauDenseOutput(self.t_old, self.t, self.y_old, Q)
@@ -619,7 +733,7 @@ class RadauDenseOutput(DenseOutput):
         else:
             p = np.tile(x, (self.order + 1, 1))
             p = np.cumprod(p, axis=0)
-        # Here we don't multiply by h, not a mistake.
+        # Here we don't multiply by h, not a mistake, because we rely on a dimensionless time
         y = np.dot(self.Q, p)
         if y.ndim == 2:
             y += self.y_old[:, None]
