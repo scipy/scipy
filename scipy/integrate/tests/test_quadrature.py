@@ -16,6 +16,7 @@ from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib import array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -94,26 +95,27 @@ class TestNewtonCotes:
 
 @make_xp_test_case(simpson)
 class TestSimpson:
-    def test_simpson(self):
-        y = np.arange(17)
-        assert_equal(simpson(y), 128)
-        assert_equal(simpson(y, dx=0.5), 64)
-        assert_equal(simpson(y, x=np.linspace(0, 4, 17)), 32)
+
+    def test_simpson(self, xp):
+        y = xp.arange(17.)
+        xp_assert_equal(simpson(y), xp.asarray(128.))
+        xp_assert_equal(simpson(y, dx=0.5), xp.asarray(64.))
+        xp_assert_equal(simpson(y, x=xp.linspace(0., 4., 17)), xp.asarray(32.))
 
         # integral should be exactly 21
-        x = np.linspace(1, 4, 4)
+        x = xp.linspace(1., 4., 4)
         def f(x):
             return x**2
 
-        assert_allclose(simpson(f(x), x=x), 21.0)
+        xp_assert_close(simpson(f(x), x=x), xp.asarray(21.0))
 
         # integral should be exactly 114
-        x = np.linspace(1, 7, 4)
-        assert_allclose(simpson(f(x), dx=2.0), 114)
+        x = xp.linspace(1., 7., 4)
+        xp_assert_close(simpson(f(x), dx=2.0), xp.asarray(114.))
 
         # test multi-axis behaviour
-        a = np.arange(16).reshape(4, 4)
-        x = np.arange(64.).reshape(4, 4, 4)
+        a = np.arange(16.).reshape(4, 4)
+        x = xp.reshape(xp.arange(64.), (4, 4, 4))
         y = f(x)
         for i in range(3):
             r = simpson(y, x=x, axis=i)
@@ -122,19 +124,19 @@ class TestSimpson:
                 idx = list(it.multi_index)
                 idx.insert(i, slice(None))
                 integral = x[tuple(idx)][-1]**3 / 3 - x[tuple(idx)][0]**3 / 3
-                assert_allclose(r[it.multi_index], integral)
+                xp_assert_close(r[it.multi_index], xp.asarray(integral))
 
         # test when integration axis only has two points
-        x = np.arange(16).reshape(8, 2)
+        x = xp.reshape(xp.arange(16.), (8, 2))
         y = f(x)
         r = simpson(y, x=x, axis=-1)
 
         integral = 0.5 * (y[:, 1] + y[:, 0]) * (x[:, 1] - x[:, 0])
-        assert_allclose(r, integral)
+        xp_assert_close(r, xp.asarray(integral))
 
         # odd points, test multi-axis behaviour
         a = np.arange(25).reshape(5, 5)
-        x = np.arange(125).reshape(5, 5, 5)
+        x = xp.reshape(xp.arange(125.), (5, 5, 5))
         y = f(x)
         for i in range(3):
             r = simpson(y, x=x, axis=i)
@@ -143,46 +145,46 @@ class TestSimpson:
                 idx = list(it.multi_index)
                 idx.insert(i, slice(None))
                 integral = x[tuple(idx)][-1]**3 / 3 - x[tuple(idx)][0]**3 / 3
-                assert_allclose(r[it.multi_index], integral)
+                xp_assert_close(r[it.multi_index], xp.asarray(integral))
 
         # Tests for checking base case
-        x = np.array([3])
-        y = np.power(x, 2)
-        assert_allclose(simpson(y, x=x, axis=0), 0.0)
-        assert_allclose(simpson(y, x=x, axis=-1), 0.0)
+        x = xp.asarray([3.])
+        y = x**2
+        xp_assert_close(simpson(y, x=x, axis=0), xp.asarray(0.0))
+        xp_assert_close(simpson(y, x=x, axis=-1), xp.asarray(0.0))
 
-        x = np.array([3, 3, 3, 3])
-        y = np.power(x, 2)
-        assert_allclose(simpson(y, x=x, axis=0), 0.0)
-        assert_allclose(simpson(y, x=x, axis=-1), 0.0)
+        x = xp.asarray([3., 3., 3., 3.])
+        y = x**2
+        xp_assert_close(simpson(y, x=x, axis=0), xp.asarray(0.0))
+        xp_assert_close(simpson(y, x=x, axis=-1), xp.asarray(0.0))
 
-        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 2, 4, 8]])
-        y = np.power(x, 2)
-        zero_axis = [0.0, 0.0, 0.0, 0.0]
-        default_axis = [170 + 1/3] * 3   # 8**3 / 3 - 1/3
-        assert_allclose(simpson(y, x=x, axis=0), zero_axis)
+        x = xp.asarray([[1., 2., 4., 8.], [1., 2., 4., 8.], [1., 2., 4., 8.]])
+        y = x**2
+        zero_axis = xp.asarray([0.0, 0.0, 0.0, 0.0])
+        default_axis = xp.asarray([170 + 1/3] * 3)   # 8**3 / 3 - 1/3
+        xp_assert_close(simpson(y, x=x, axis=0), zero_axis)
         # the following should be exact
-        assert_allclose(simpson(y, x=x, axis=-1), default_axis)
+        xp_assert_close(simpson(y, x=x, axis=-1), default_axis)
 
-        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
-        y = np.power(x, 2)
-        zero_axis = [0.0, 136.0, 1088.0, 8704.0]
-        default_axis = [170 + 1/3, 170 + 1/3, 32**3 / 3 - 1/3]
-        assert_allclose(simpson(y, x=x, axis=0), zero_axis)
-        assert_allclose(simpson(y, x=x, axis=-1), default_axis)
+        x = xp.asarray([[1., 2., 4., 8.], [1., 2., 4., 8.], [1., 8., 16., 32.]])
+        y = x**2
+        zero_axis = xp.asarray([0.0, 136.0, 1088.0, 8704.0])
+        default_axis = xp.asarray([170 + 1/3, 170 + 1/3, 32**3 / 3 - 1/3])
+        xp_assert_close(simpson(y, x=x, axis=0), zero_axis)
+        xp_assert_close(simpson(y, x=x, axis=-1), default_axis)
 
-
+    @pytest.mark.skip_xp_backends('array_api_strict', reason="no int->float promotion")
     @pytest.mark.parametrize('droplast', [False, True])
-    def test_simpson_2d_integer_no_x(self, droplast):
+    def test_simpson_2d_integer_no_x(self, droplast, xp):
         # The inputs are 2d integer arrays.  The results should be
         # identical to the results when the inputs are floating point.
-        y = np.array([[2, 2, 4, 4, 8, 8, -4, 5],
-                      [4, 4, 2, -4, 10, 22, -2, 10]])
+        y = xp.asarray([[2, 2, 4, 4, 8, 8, -4, 5],
+                        [4, 4, 2, -4, 10, 22, -2, 10]])
         if droplast:
             y = y[:, :-1]
         result = simpson(y, axis=-1)
-        expected = simpson(np.array(y, dtype=np.float64), axis=-1)
-        assert_equal(result, expected)
+        expected = simpson(xp.asarray(y, dtype=xp_default_dtype(xp)), axis=-1)
+        xp_assert_equal(result, expected)
 
 
 @make_xp_test_case(cumulative_trapezoid)
@@ -275,11 +277,11 @@ class TestCumulative_trapezoid:
             cumulative_trapezoid(y=xp.asarray([]))
 
 
-@make_xp_test_case(trapezoid)
-class TestTrapezoid:
+class CommonTrapezoidSimpsonTests:
     def test_simple(self, xp):
         x = xp.arange(-10, 10, .1)
-        r = trapezoid(xp.exp(-.5 * x ** 2) / xp.sqrt(2 * xp.asarray(xp.pi)), dx=0.1)
+        r = self.quadrature_func(xp.exp(-.5 * x ** 2) / xp.sqrt(2 * xp.asarray(xp.pi)),
+                                 dx=0.1)
         # check integral of normal equals 1
         xp_assert_close(r, xp.asarray(1.0))
 
@@ -289,14 +291,14 @@ class TestTrapezoid:
         z = xp.linspace(0, 3, 13)
 
         wx = xp.ones_like(x) * (x[1] - x[0])
-        wx[0] /= 2
-        wx[-1] /= 2
+        wx = xpx.at(wx)[0].divide(2)
+        wx = xpx.at(wx)[-1].divide(2)
         wy = xp.ones_like(y) * (y[1] - y[0])
-        wy[0] /= 2
-        wy[-1] /= 2
+        wy = xpx.at(wy)[0].divide(2)
+        wy = xpx.at(wy)[-1].divide(2)
         wz = xp.ones_like(z) * (z[1] - z[0])
-        wz[0] /= 2
-        wz[-1] /= 2
+        wz = xpx.at(wz)[0].divide(2)
+        wz = xpx.at(wz)[-1].divide(2)
 
         q = x[:, None, None] + y[None,:, None] + z[None, None,:]
 
@@ -305,20 +307,31 @@ class TestTrapezoid:
         qz = xp.sum(q * wz[None, None, :], axis=2)
 
         # n-d `x`
-        r = trapezoid(q, x=x[:, None, None], axis=0)
+        r = self.quadrature_func(q, x=x[:, None, None], axis=0)
         xp_assert_close(r, qx)
-        r = trapezoid(q, x=y[None,:, None], axis=1)
+        r = self.quadrature_func(q, x=y[None,:, None], axis=1)
         xp_assert_close(r, qy)
-        r = trapezoid(q, x=z[None, None,:], axis=2)
+        r = self.quadrature_func(q, x=z[None, None,:], axis=2)
         xp_assert_close(r, qz)
 
         # 1-d `x`
-        r = trapezoid(q, x=x, axis=0)
+        r = self.quadrature_func(q, x=x, axis=0)
         xp_assert_close(r, qx)
-        r = trapezoid(q, x=y, axis=1)
+        r = self.quadrature_func(q, x=y, axis=1)
         xp_assert_close(r, qy)
-        r = trapezoid(q, x=z, axis=2)
+        r = self.quadrature_func(q, x=z, axis=2)
         xp_assert_close(r, qz)
+
+@make_xp_test_case(simpson)
+class TestSimpson2(CommonTrapezoidSimpsonTests):
+    # run additional tests without copying/moving classes around
+    def quadrature_func(self, *args, **kwargs):
+        return simpson(*args, **kwargs)
+
+@make_xp_test_case(trapezoid)
+class TestTrapezoid(CommonTrapezoidSimpsonTests):
+    def quadrature_func(self, *args, **kwargs):
+        return trapezoid(*args, **kwargs)
 
     def test_gh21908(self, xp):
         # extended testing for n-dim arrays
