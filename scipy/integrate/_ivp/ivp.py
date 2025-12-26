@@ -6,7 +6,7 @@ from .rk import RK23, RK45, DOP853
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
-from .base import OdeSolver
+from .base import OdeSolver, DaeSolver
 from scipy._lib._array_api import xp_capabilities
 
 
@@ -197,7 +197,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
         complex data type (even if the initial value is purely real).
-    method : string or `OdeSolver`, optional
+    method : string, `OdeSolver` or `DaeSolver`, optional
         Integration method to use:
 
             * 'RK45' (default): Explicit Runge-Kutta method of order 5(4) [1]_.
@@ -241,8 +241,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         choice, but it might be somewhat less convenient to work with as it
         wraps old Fortran code.
 
-        You can also pass an arbitrary class derived from `OdeSolver` which
-        implements the solver.
+        You can also pass an arbitrary class derived from `OdeSolver` or 
+        `DaeSolver` which implements the solver.
     t_eval : array_like or None, optional
         Times at which to store the computed solution, must be sorted and lie
         within `t_span`. If None (default), use points selected by the solver.
@@ -585,8 +585,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     """
     if method not in METHODS and not (
-            inspect.isclass(method) and issubclass(method, OdeSolver)):
-        raise ValueError(f"`method` must be one of {METHODS} or OdeSolver class.")
+            inspect.isclass(method) and
+            (issubclass(method, OdeSolver) or issubclass(method, DaeSolver)):
+        raise ValueError(f"`method` must be one of {METHODS} or OdeSolver or DaeSolver class.")
 
     t0, tf = map(float, t_span)
 
@@ -631,6 +632,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if method in METHODS:
         method = METHODS[method]
+
+    if options.get('mass_matrix'):
+        assert issubclass(method, DaeSolver), "Problems with mass matrices can only be solved with DAE solvers"
 
     solver = method(fun, t0, y0, tf, vectorized=vectorized, **options)
 

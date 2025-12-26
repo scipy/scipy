@@ -6,7 +6,7 @@ from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, num_jac, EPS, warn_extraneous,
                      validate_first_step)
-from .base import OdeSolver, DenseOutput
+from .base import DaeSolver, DenseOutput
 
 S6 = 6 ** 0.5
 
@@ -82,7 +82,7 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
     return factor
 
 
-class Radau(OdeSolver):
+class Radau(DaeSolver):
     """Implicit Runge-Kutta method of Radau IIA family of order 5.
 
     The implementation follows [1]_. The error is controlled with a
