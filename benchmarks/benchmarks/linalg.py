@@ -165,6 +165,20 @@ class BatchedSVDBench(Benchmark):
             sl.svd(self.a)
 
 
+class BatchedLstsqBench(Benchmark):
+    params = [
+        [(10, 10, 50, 2), (100, 20, 5), (100, 10, 10), (100, 5, 20), (100, 2, 50)],
+    ]
+    param_names = ['shape']
+
+    def setup(self, shape):
+         self.a = random(shape)
+         self.b = random((shape[-2],))
+
+    def time_lstsq(self, shape):
+        sl.lstsq(self.a, self.b, check_finite=False)
+
+
 class Norm(Benchmark):
     params = [
         [(20, 20), (100, 100), (1000, 1000), (20, 1000), (1000, 20)],
