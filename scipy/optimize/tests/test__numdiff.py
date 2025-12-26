@@ -917,7 +917,6 @@ def test__compute_absolute_step():
     assert_allclose(abs_step, sign_x0 * correct_step)
 
     # the dtype of absolute step should be the same as x0
-    #def _compute_absolute_step(rel_step, x0, f0, method):
     x0 = np.array([1e-5, 0, 1, 1e5], dtype=np.float32)
     abs_step = _compute_absolute_step(None, x0, f0, '3-point')
     assert abs_step.dtype == np.float32
