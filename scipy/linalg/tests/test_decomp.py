@@ -149,9 +149,16 @@ class TestEig:
         assert_array_almost_equal(v2, v[:, 2]*sign(v[0, 2]))
         for i in range(3):
             assert_array_almost_equal(a @ v[:, i], w[i]*v[:, i])
+
         w, v = eig(a, left=1, right=0)
         for i in range(3):
             assert_array_almost_equal(a.T @ v[:, i], w[i]*v[:, i])
+
+        # eigenvalues have zero imaginary parts => all of w, vr, vl have a real dtype
+        w, vr, vl = eig(a, left=True, right=True)
+        assert w.dtype == np.float64
+        assert vl.dtype == np.float64
+        assert vr.dtype == np.float64
 
     def test_simple_complex_eig(self):
         a = array([[1, 2], [-2, 1]])
