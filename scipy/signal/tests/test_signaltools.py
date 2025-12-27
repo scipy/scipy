@@ -2768,18 +2768,35 @@ class TestCorrelate2d:
 @make_xp_test_case(lfilter_zi)
 class TestLFilterZI:
 
+    def test_exceptions(self, xp):
+        """Raise all exceptions in `lfilter_zi`. """
+        with pytest.raises(ValueError, match="^Numerator `b` and Denominator `a` must"):
+             lfilter_zi(b=xp.eye(3), a=1)  # b must be 1-d array
+        with pytest.raises(ValueError, match="^Numerator `b` and Denominator `a` must"):
+             lfilter_zi(b=1, a=xp.eye(3))  # a must be 1-d array
+        with pytest.raises(ValueError, match="^First coefficient of parameter `a` "):
+            lfilter_zi(b=1, a=[0, 0, 0])
+        with pytest.raises(ValueError, match="^Filter not stable due to sum"):
+            lfilter_zi(b=1, a=[-1, 1, -2, 2])
+
     @skip_xp_backends(np_only=True, reason='list inputs are numpy specific')
     def test_array_like(self, xp):
         zi_expected = xp.asarray([5.0, -1.0])
         zi = lfilter_zi([1.0, 0.0, 2.0], [1.0, -1.0, 0.5])
         assert_array_almost_equal(zi, zi_expected)
 
-    def test_basic(self, xp):
-        a = xp.asarray([1.0, -1.0, 0.5])
-        b = xp.asarray([1.0, 0.0, 2.0])
-        zi_expected = xp.asarray([5.0, -1.0])
+    @pytest.mark.parametrize('b, a, zi_expected,',[
+        ([1., 0., 2.],     [1., -1., 0.5], [5., -1.]),
+        ([1., 2., 3., 4.], [1.,],          [9.,  7., 4.])])
+    def test_basic(self, b, a, zi_expected, xp):
+        b, a, zi_expected = (xp.asarray(v_) for v_ in (b, a, zi_expected))
+
         zi = lfilter_zi(b, a)
         assert_array_almost_equal(zi, zi_expected)
+
+        y = lfilter(b, a, xp.ones(5), zi=zi)[0]  # test for constant filter response
+        y_expected = xp.full_like(y, fill_value=sum(b)/sum(a))
+        assert_array_almost_equal(y, y_expected)
 
     def test_scale_invariance(self, xp):
         # Regression test.  There was a bug in which b was not correctly
