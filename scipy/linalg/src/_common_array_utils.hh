@@ -226,6 +226,24 @@ void BLAS_FUNC(cgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex6
 void BLAS_FUNC(zgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
 
 
+/* ?GEEV, non-symmetric eigenvalues */
+
+typedef npy_complex64 c64_t;
+typedef npy_complex128 c128_t;
+
+void BLAS_FUNC(sgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, float *a,  CBLAS_INT *lda, float *wr,  float *wi,  float *vl,  CBLAS_INT *ldvl, float *vr,  CBLAS_INT *ldvr, float *work,  CBLAS_INT *lwork,                CBLAS_INT *info);
+void BLAS_FUNC(dgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *wr, double *wi, double *vl, CBLAS_INT *ldvl, double *vr, CBLAS_INT *ldvr, double *work, CBLAS_INT *lwork,                CBLAS_INT *info);
+void BLAS_FUNC(cgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, c64_t *a,  CBLAS_INT *lda, c64_t *w,               c64_t *vl,  CBLAS_INT *ldvl, c64_t *vr,  CBLAS_INT *ldvr, c64_t *work,  CBLAS_INT *lwork, float *rwork,  CBLAS_INT *info);
+void BLAS_FUNC(zgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *w,              c128_t *vl, CBLAS_INT *ldvl, c128_t *vr, CBLAS_INT *ldvr, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
+
+//void BLAS_FUNC(sgeev)(char *jobvl, char *jobvr, int *n, s *a, int *lda, s *wr, s *wi, s *vl, int *ldvl, s *vr, int *ldvr, s *work, int *lwork,           int *info);
+//void BLAS_FUNC(dgeev)(char *jobvl, char *jobvr, int *n, d *a, int *lda, d *wr, d *wi, d *vl, int *ldvl, d *vr, int *ldvr, d *work, int *lwork,           int *info);
+//void BLAS_FUNC(cgeev)(char *jobvl, char *jobvr, int *n, c *a, int *lda, c *w,         c *vl, int *ldvl, c *vr, int *ldvr, c *work, int *lwork, s *rwork, int *info);
+//void BLAS_FUNC(zgeev)(char *jobvl, char *jobvr, int *n, z *a, int *lda, z *w,         z *vl, int *ldvl, z *vr, int *ldvr, z *work, int *lwork, d *rwork, int *info);
+//char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, void *w /*s *wr, s *wi */, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork,  TYPE *rwork, CBLAS_INT *info
+
+
+
 } // extern "C"
 
 
@@ -734,6 +752,34 @@ call_gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
 
 GEN_GELSY_CZ(c, npy_complex64, float)
 GEN_GELSY_CZ(z, npy_complex128, double)
+
+
+// NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it)
+//     s- and d- variants receive *wr, *wi; c- and z- variants receive *w ;
+//     our type-overloaded wrappers always receive wr, wi : sd-variants fill in wr,wi; cz-variants only fill wr and ignore wi
+#define GEN_GEEV_SD(PREFIX, TYPE) \
+inline void \
+geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *wr, TYPE *wi, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork,  TYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geev)(jobvl, jobvr, n, a, lda, wr, wi, vl, ldvl, vr, ldvr, work, lwork, info); \
+};
+
+GEN_GEEV_SD(s, float)
+GEN_GEEV_SD(d, double)
+
+#define GEN_GEEV_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *wr, TYPE *wi, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    /* ignore wi */ \
+    BLAS_FUNC(PREFIX ## geev)(jobvl, jobvr, n, a, lda, wr, vl, ldvl, vr, ldvr, work, lwork, rwork, info); \
+};
+
+//                      geev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, NULL, &info);
+
+
+GEN_GEEV_CZ(c, npy_complex64, float)
+GEN_GEEV_CZ(z, npy_complex128, double)
 
 
 // Structure tags; python side maps assume_a strings to these values
