@@ -250,7 +250,7 @@ def _iv_CensoredData(
     return sample
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def ecdf(sample: "npt.ArrayLike | CensoredData") -> ECDFResult:
     """Empirical cumulative distribution function of a sample.
 
@@ -485,7 +485,7 @@ class LogRankResult:
     pvalue: np.ndarray
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def logrank(
     x: "npt.ArrayLike | CensoredData",
     y: "npt.ArrayLike | CensoredData",
