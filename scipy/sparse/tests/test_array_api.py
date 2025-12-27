@@ -203,28 +203,30 @@ def test_inv(B):
 
 @parametrize_square_sparrays
 def test_expm(B):
+    rng = np.random.default_rng(2842387598417907)
     if B.__class__.__name__[:3] != 'csc':
         return
 
     Bmat = scipy.sparse.csc_matrix(B)
 
-    C = spla.expm(B)
+    C = spla.expm(B, rng=rng)
 
     assert isinstance(C, scipy.sparse.sparray)
     npt.assert_allclose(
         C.todense(),
-        spla.expm(Bmat).todense()
+        spla.expm(Bmat, rng=rng).todense()
     )
 
 
 @parametrize_square_sparrays
 def test_expm_multiply(B):
+    rng = np.random.default_rng(2842387598417907)
     if B.__class__.__name__[:3] != 'csc':
         return
 
     npt.assert_allclose(
-        spla.expm_multiply(B, np.array([1, 2])),
-        spla.expm(B) @ [1, 2]
+        spla.expm_multiply(B, np.array([1, 2]), rng=rng),
+        spla.expm(B, rng=rng) @ [1, 2]
     )
 
 
@@ -236,7 +238,8 @@ def test_norm(A):
 
 @parametrize_square_sparrays
 def test_onenormest(B):
-    C = spla.onenormest(B)
+    rng = np.random.default_rng(2842387598417907)
+    C = spla.onenormest(B, rng=rng)
     npt.assert_allclose(C, np.linalg.norm(B.todense(), 1))
 
 

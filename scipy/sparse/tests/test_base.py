@@ -1244,6 +1244,7 @@ class _TestCommon:
         assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
     def test_expm(self):
+        rng = np.random.default_rng(2842387598417907)
         M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
         sM = self.spcreator(M, shape=(3,3), dtype=float)
         Mexp = scipy.linalg.expm(M)
@@ -1268,8 +1269,8 @@ class _TestCommon:
                 "spsolve requires A be CSC or CSR matrix format",
                 SparseEfficiencyWarning,
             )
-            sMexp = expm(sM).toarray()
-            sNexp = expm(sN).toarray()
+            sMexp = expm(sM, rng=rng).toarray()
+            sNexp = expm(sN, rng=rng).toarray()
 
         assert_array_almost_equal((sMexp - Mexp), zeros((3, 3)))
         assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))

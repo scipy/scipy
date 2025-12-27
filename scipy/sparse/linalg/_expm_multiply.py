@@ -7,7 +7,6 @@ import scipy.linalg
 import scipy.sparse.linalg
 from scipy.linalg._decomp_qr import qr
 from scipy.sparse._sputils import is_pydata_spmatrix
-from scipy.sparse.linalg import aslinearoperator
 from scipy.sparse.linalg._interface import IdentityOperator
 from scipy.sparse.linalg._onenormest import onenormest
 
@@ -42,7 +41,7 @@ def _trace(A):
         return A.trace()
 
 
-def traceest(A, m3, seed=None):
+def _traceest(A, *, m3, rng):
     """Estimate `np.trace(A)` using `3*m3` matrix-vector products.
 
     The result is not deterministic.
@@ -54,9 +53,7 @@ def traceest(A, m3, seed=None):
     m3 : int
         Number of matrix-vector products divided by 3 used to estimate the
         trace.
-    seed : optional
-        Seed for `numpy.random.default_rng`.
-        Can be provided to obtain deterministic results.
+    rng : `numpy.random.Generator`
 
     Returns
     -------
@@ -76,7 +73,6 @@ def traceest(A, m3, seed=None):
        :doi:`10.1137/1.9781611976496.16`.
 
     """
-    rng = np.random.default_rng(seed)
     if len(A.shape) != 2 or A.shape[-1] != A.shape[-2]:
         raise ValueError("Expected A to be like a square matrix.")
     n = A.shape[-1]
@@ -106,17 +102,17 @@ def _ident_like(A):
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def expm_multiply(A, B, start=None, stop=None, num=None,
-                  endpoint=None, traceA=None):
-    """
-    Compute the action of the matrix exponential of A on B.
+def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None, traceA=None, *,
+                  rng=None):
+    r"""
+    Compute the action of the matrix exponential of `A` on `B`.
 
     Parameters
     ----------
     A : transposable linear operator
         The operator whose exponential is of interest.
     B : ndarray, sparse array
-        The matrix or vector to be multiplied by the matrix exponential of A.
+        The matrix or vector to be multiplied by the matrix exponential of `A`.
     start : scalar, optional
         The starting time point of the sequence.
     stop : scalar, optional
@@ -136,11 +132,17 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
         as the estimation is not guaranteed to be reliable for all cases.
 
         .. versionadded:: 1.9.0
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
     expm_A_B : ndarray
-         The result of the action :math:`e^{t_k A} B`.
+         The result of the action :math:`\exp(t_k A) B`.
 
     Warns
     -----
@@ -152,18 +154,18 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     The optional arguments defining the sequence of evenly spaced time points
     are compatible with the arguments of `numpy.linspace`.
 
-    The output ndarray shape is somewhat complicated so I explain it here.
-    The ndim of the output could be either 1, 2, or 3.
-    It would be 1 if you are computing the expm action on a single vector
-    at a single time point.
-    It would be 2 if you are computing the expm action on a vector
-    at multiple time points, or if you are computing the expm action
-    on a matrix at a single time point.
-    It would be 3 if you want the action on a matrix with multiple
-    columns at multiple time points.
-    If multiple time points are requested, expm_A_B[0] will always
-    be the action of the expm at the first time point,
-    regardless of whether the action is on a vector or a matrix.
+    The output shape is somewhat complicated so it is explained here.
+    The number of dimensions of the output can be either 1, 2, or 3:
+
+    * It is 1D if you are computing the action on a single vector at a single time
+      point.
+    * It is 2D if you are computing the action on a vector at multiple time points,
+      or if you are computing the action on a matrix at a single time point.
+    * It is 3 if you are computing the action on a matrix with multiple columns at
+      multiple time points.
+
+    If multiple time points are requested, ``expm_A_B[0]`` will always be the action at
+    the first time point, regardless of whether the action is on a vector or a matrix.
 
     References
     ----------
@@ -203,15 +205,16 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     >>> expm(2*A).dot(B)                # Verify 3rd timestep
     array([ 2.71828183,  1.        ])
     """
+    rng = np.random.default_rng(rng)
     if all(arg is None for arg in (start, stop, num, endpoint)):
-        X = _expm_multiply_simple(A, B, traceA=traceA)
+        X = _expm_multiply_simple(A, B, traceA=traceA, rng=rng)
     else:
-        X, status = _expm_multiply_interval(A, B, start, stop, num,
-                                            endpoint, traceA=traceA)
+        X, status = _expm_multiply_interval(A, B, start, stop, num, endpoint,
+                                            traceA=traceA, rng=rng)
     return X
 
 
-def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
+def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False, rng=None):
     """
     Compute the action of the matrix exponential at a single time point.
 
@@ -264,10 +267,10 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
                  " Provide `traceA` to ensure performance.", stacklevel=3)
         # m3=1 is bit arbitrary choice, a more accurate trace (larger m3) might
         # speed up exponential calculation, but trace estimation is more costly
-        traceA = traceest(A, m3=1) if is_linear_operator else _trace(A)
+        traceA = _traceest(A, m3=1, rng=rng) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
     A = A - mu * ident
-    A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
+    A_1_norm = onenormest(A, rng=rng) if is_linear_operator else _exact_1_norm(A)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
@@ -350,49 +353,6 @@ _theta = {
         }
 
 
-def _onenormest_matrix_power(A, p,
-        t=2, itmax=5, compute_v=False, compute_w=False):
-    """
-    Efficiently estimate the 1-norm of A^p.
-
-    Parameters
-    ----------
-    A : ndarray
-        Matrix whose 1-norm of a power is to be computed.
-    p : int
-        Non-negative integer power.
-    t : int, optional
-        A positive parameter controlling the tradeoff between
-        accuracy versus time and memory usage.
-        Larger values take longer and use more memory
-        but give more accurate output.
-    itmax : int, optional
-        Use at most this many iterations.
-    compute_v : bool, optional
-        Request a norm-maximizing linear operator input vector if True.
-    compute_w : bool, optional
-        Request a norm-maximizing linear operator output vector if True.
-
-    Returns
-    -------
-    est : float
-        An underestimate of the 1-norm of the sparse matrix.
-    v : ndarray, optional
-        The vector such that ||Av||_1 == est*||v||_1.
-        It can be thought of as an input to the linear operator
-        that gives an output with particularly large norm.
-    w : ndarray, optional
-        The vector Av which has relatively large 1-norm.
-        It can be thought of as an output of the linear operator
-        that is relatively large in norm compared to the input.
-
-    """
-    #XXX Eventually turn this into an API function in the  _onenormest module,
-    #XXX and remove its underscore,
-    #XXX but wait until expm_multiply goes into scipy.
-    from scipy.sparse.linalg._onenormest import onenormest
-    return onenormest(aslinearoperator(A) ** p)
-
 class LazyOperatorNormInfo:
     """
     Information about an operator is lazily computed.
@@ -405,7 +365,7 @@ class LazyOperatorNormInfo:
 
     """
 
-    def __init__(self, A, A_1_norm=None, ell=2, scale=1):
+    def __init__(self, A, A_1_norm=None, ell=2, scale=1, rng=None):
         """
         Provide the operator and some norm-related information.
 
@@ -426,6 +386,7 @@ class LazyOperatorNormInfo:
         self._ell = ell
         self._d = {}
         self._scale = scale
+        self._rng = rng
 
     def set_scale(self,scale):
         """
@@ -447,7 +408,7 @@ class LazyOperatorNormInfo:
         where :math:`||.||` is the 1-norm.
         """
         if p not in self._d:
-            est = _onenormest_matrix_power(self._A, p, self._ell)
+            est = onenormest(self._A**p, rng=self._rng)
             self._d[p] = est ** (1.0 / p)
         return self._scale*self._d[p]
 
@@ -456,6 +417,7 @@ class LazyOperatorNormInfo:
         Lazily compute max(d(p), d(p+1)).
         """
         return max(self.d(p), self.d(p+1))
+
 
 def _compute_cost_div_m(m, p, norm_info):
     """
@@ -596,7 +558,7 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
 
 def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
                             endpoint=None, traceA=None, balance=False,
-                            status_only=False):
+                            status_only=False, rng=None):
     """
     Compute the action of the matrix exponential at multiple time points.
 
@@ -666,7 +628,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         # m3=5 is bit arbitrary choice, a more accurate trace (larger m3) might
         # speed up exponential calculation, but trace estimation is also costly
         # an educated guess would need to consider the number of time points
-        traceA = traceest(A, m3=5) if is_linear_operator else _trace(A)
+        traceA = _traceest(A, m3=5, rng=rng) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
 
     # Get the linspace samples, attempting to preserve the linspace defaults.
@@ -693,7 +655,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
     t = t_q - t_0
     A = A - mu * ident
-    A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
+    A_1_norm = onenormest(A, rng=rng) if is_linear_operator else _exact_1_norm(A)
     ell = 2
     norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
     if t*A_1_norm == 0:
