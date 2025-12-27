@@ -245,6 +245,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               shape=permuted_shape, copy=copy)
 
     transpose.__doc__ = _spbase.transpose.__doc__
+    
+    @property
+    def mT(self):
+        axes = None if self.ndim <= 2 else tuple(range(self.ndim - 2)) + (-1, -2)
+        self.transpose(axes=axes)
+    
+    mT.__doc__ = _spbase.mT.__doc__
 
     def resize(self, *shape) -> None:
         shape = check_shape(shape, allow_nd=self._allow_nd)
