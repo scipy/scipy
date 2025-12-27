@@ -3,6 +3,7 @@
 #include "_linalg_solve.hh"
 #include "_linalg_svd.hh"
 #include "_linalg_lstsq.hh"
+#include "_linalg_eig.hh"
 #include "_common_array_utils.hh"
 
 
@@ -463,6 +464,120 @@ fail:
 }
 
 
+
+static PyObject*
+_linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_Am = NULL;
+    PyArrayObject *ap_w = NULL;
+    PyArrayObject *ap_vr = NULL;
+    PyArrayObject *ap_vl = NULL;
+    int compute_vl=0;
+    int compute_vr=0;
+
+    int info = 0;
+    SliceStatusVec vec_status;
+
+    // Get the input array
+    if (!PyArg_ParseTuple(args, "O!pp", &PyArray_Type, (PyObject **)&ap_Am, &compute_vl, &compute_vr)) {
+        return NULL;
+    }
+
+    // Check for dtype compatibility & array flags
+    int typenum = PyArray_TYPE(ap_Am);
+    bool dtype_ok = (typenum == NPY_FLOAT32)
+                     || (typenum == NPY_FLOAT64)
+                     || (typenum == NPY_COMPLEX64)
+                     || (typenum == NPY_COMPLEX128);
+    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+        return NULL;
+    }
+
+    // Basic checks of array dimensions
+    int ndim = PyArray_NDIM(ap_Am);
+    npy_intp *shape = PyArray_SHAPE(ap_Am);
+    if (ndim < 2) {
+        PyErr_SetString(PyExc_ValueError, "Expected at least a 2D array.");
+        return NULL;
+    }
+
+    npy_intp n = shape[ndim - 1];
+
+    if (PyArray_DIM(ap_Am, ndim-2) != n) {
+        PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
+        return NULL;
+    }
+
+    // Allocate the output(s)
+    // NB: we always allocate/return complex eigvalues/eigvecs even if
+    // eigenvalues happen to be on the real axis (and then the python wrapper will
+    // cast them to reals for backwards compat.
+
+    npy_intp shape_1[NPY_MAXDIMS];
+    for(int i=0; i<ndim; i++) {shape_1[i] = shape[i]; }
+
+    // eigenvalues
+    int w_typenum = typenum;
+    if (typenum == NPY_FLOAT32) { w_typenum = NPY_COMPLEX64; }
+    else if (typenum == NPY_FLOAT64) { w_typenum = NPY_COMPLEX128; }
+
+    ap_w = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, w_typenum);
+    if (ap_w == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    if (compute_vl) {
+        ap_vl = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum);
+        if (ap_vl == NULL) {
+            Py_DECREF(ap_w);
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+
+    if (compute_vr) {
+        ap_vr = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum);
+        if (ap_vr == NULL) {
+            Py_DECREF(ap_w);
+            Py_XDECREF(ap_vl);
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+
+    switch(typenum) {
+        case(NPY_FLOAT32):
+            info = _eig<float>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            break;
+        case(NPY_FLOAT64):
+            info = _eig<double>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            break;
+        case(NPY_COMPLEX64):
+            info = _eig<npy_complex64>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            break;
+        case(NPY_COMPLEX128):
+            info = _eig<npy_complex128>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            break;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
+    }
+
+    if (info < 0) {
+        // Either OOM or internal LAPACK error.
+        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.eig.");
+        return NULL;
+    }
+
+    PyObject *ret_lst = convert_vec_status(vec_status);
+
+    PyObject *vl_ret = ap_vl == NULL ? Py_None : PyArray_Return(ap_vl);
+    PyObject *vr_ret = ap_vr == NULL ? Py_None : PyArray_Return(ap_vr);
+
+    return Py_BuildValue("NNNN", PyArray_Return(ap_w), vl_ret, vr_ret, ret_lst);
+}
+
+
 /*
  * Helper: convert a vector of slice error statuses to list of dicts
  */
@@ -511,12 +626,14 @@ static char doc_inv[] = ("Compute the matrix inverse.");
 static char doc_solve[] = ("Solve the linear system of equations.");
 static char doc_svd[] = ("SVD factorization.");
 static char doc_lstsq[] = ("linear least squares.");
+static char doc_eig[] = ("eigenvalue solver.");
 
 static struct PyMethodDef inv_module_methods[] = {
   {"_inv", _linalg_inv, METH_VARARGS, doc_inv},
   {"_solve", _linalg_solve, METH_VARARGS, doc_solve},
   {"_svd", _linalg_svd, METH_VARARGS, doc_svd},
   {"_lstsq", _linalg_lstsq, METH_VARARGS, doc_lstsq},
+  {"_eig", _linalg_eig, METH_VARARGS, doc_eig},
   {NULL, NULL, 0, NULL}
 };
 

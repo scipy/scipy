@@ -23,8 +23,9 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
 # Local imports
 from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import LinAlgError, _datacopied, norm
+from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native
 from .lapack import get_lapack_funcs, _compute_lwork
-
+from . import _batched_linalg
 
 _I = np.array(1j, dtype='F')
 
@@ -111,8 +112,170 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     return w, vr
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
+        overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
+    """
+    Solve an ordinary or generalized eigenvalue problem of a square matrix.
+
+    Find eigenvalues w and right or left eigenvectors of a general matrix::
+
+        a   vr[:,i] = w[i]        b   vr[:,i]
+        a.H vl[:,i] = w[i].conj() b.H vl[:,i]
+
+    where ``.H`` is the Hermitian conjugation.
+
+    Parameters
+    ----------
+    a : (..., M, M) array_like
+        A complex or real matrix whose eigenvalues and eigenvectors
+        will be computed.
+    b : (..., M, M) array_like, optional
+        Right-hand side matrix in a generalized eigenvalue problem.
+        Default is None, identity matrix is assumed.
+    left : bool, optional
+        Whether to calculate and return left eigenvectors.  Default is False.
+    right : bool, optional
+        Whether to calculate and return right eigenvectors.  Default is True.
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.  Default is False.
+    overwrite_b : bool, optional
+        Whether to overwrite `b`; may improve performance.  Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    homogeneous_eigvals : bool, optional
+        If True, return the eigenvalues in homogeneous coordinates.
+        In this case ``w`` is a (2, M) array so that::
+
+            w[1,i] a vr[:,i] = w[0,i] b vr[:,i]
+
+        Default is False.
+
+    Returns
+    -------
+    w : (M,) or (2, M) double or complex ndarray
+        The eigenvalues, each repeated according to its
+        multiplicity. The shape is ``(M,)`` unless
+        ``homogeneous_eigvals=True``.
+    vl : (M, M) double or complex ndarray
+        The left eigenvector corresponding to the eigenvalue
+        ``w[i]`` is the column ``vl[:,i]``. Only returned if ``left=True``.
+        The left eigenvector is not normalized.
+    vr : (M, M) double or complex ndarray
+        The normalized right eigenvector corresponding to the eigenvalue
+        ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
+
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge.
+
+    See Also
+    --------
+    eigvals : eigenvalues of general arrays
+    eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
+    eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
+        band matrices
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
+        symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
+
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
+
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
+
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a) == linalg.eig(a)[0]
+    array([ True,  True])
+    >>> linalg.eig(a, left=True, right=False)[1] # normalized left eigenvector
+    array([[-0.70710678+0.j        , -0.70710678-0.j        ],
+           [-0.        +0.70710678j, -0.        -0.70710678j]])
+    >>> linalg.eig(a, left=False, right=True)[1] # normalized right eigenvector
+    array([[0.70710678+0.j        , 0.70710678-0.j        ],
+           [0.        -0.70710678j, 0.        +0.70710678j]])
+    """
+    if b is not None or homogeneous_eigvals:
+        return eig0(a, b, left, right, overwrite_a, overwrite_b,
+                    check_finite, homogeneous_eigvals
+        )
+
+    # basic sanity checks of the input matrix
+    a1 = _asarray_validated(a, check_finite=check_finite)
+
+    if len(a1.shape) < 2 or a1.shape[-1] != a1.shape[-2]:
+        raise ValueError(
+            f"Expected a square matrix or a batch of square matrices. Got {a.shape = }"
+        )
+
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
+
+    # Also check if dtype is LAPACK compatible
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+        overwrite_a = True
+        a1 = a1.copy()
+
+    # accommodate empty arrays
+    if a1.shape[-1] == 0 or a1.shape[-2] == 0:
+        batch_shape = a1.shape[:-2]
+        w_n, vr_n = eig(np.eye(2, dtype=a1.dtype))
+        w = np.empty(batch_shape + (0,), dtype=w_n.dtype)
+        w = _make_eigvals(w, None, homogeneous_eigvals)
+        vl = np.empty(batch_shape + (0, 0), dtype=vr_n.dtype)
+        vr = np.empty(batch_shape + (0, 0), dtype=vr_n.dtype)
+        if not (left or right):
+            return w
+        if left:
+            if right:
+                return w, vl, vr
+            return w, vl
+        return w, vr
+
+    res = _batched_linalg._eig(a1, left, right)
+    w, vl, vr, err_lst = res
+
+    # backwards compat: cast to reals if all eigenvalues have zero imaginary parts
+    a_is_real = a1.dtype in (np.float32, np.float64)
+    if a_is_real and (w.imag == 0).all():
+        w = w.real
+        if left:
+            vl = vl.real
+        if right:
+            vr = vr.real
+
+    if err_lst:
+        # XXX: find a test case to cover this
+        mesg = (
+            f"Internal geev return info = {[e['lapack_info'] for e in err_lst]} for "
+            f"slices {[e['num'] for e in err_lst]}."
+        )
+        raise LinAlgError(mesg)
+
+    if not (left or right):
+        return w
+    if left:
+        if right:
+            return w, vl, vr
+        return w, vl
+    return w, vr
+
+
+@_apply_over_batch(('a', 2), ('b', 2))
+def eig0(a, b=None, left=False, right=True, overwrite_a=False,
         overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
     """
     Solve an ordinary or generalized eigenvalue problem of a square matrix.
@@ -838,7 +1001,6 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
 def eigvals(a, b=None, overwrite_a=False, check_finite=True,
             homogeneous_eigvals=False):
     """
