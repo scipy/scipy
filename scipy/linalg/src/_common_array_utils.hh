@@ -168,6 +168,19 @@ void BLAS_FUNC(dgtcon)(char *norm, CBLAS_INT *n, double *dl, double *d, double *
 void BLAS_FUNC(cgtcon)(char *norm, CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
 void BLAS_FUNC(zgtcon)(char *norm, CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
 
+/* ?GBCON */
+void BLAS_FUNC(sgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *anorm, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(dgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(cgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, float *rwork, CBLAS_INT *info);
+void BLAS_FUNC(zgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, double *rwork, CBLAS_INT *info);
+
+/* ?GBSV */
+void BLAS_FUNC(sgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(cgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
+
 } // extern "C"
 
 
@@ -493,6 +506,38 @@ gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_IN
 GEN_GTCON_CZ(c, npy_complex64, float)
 GEN_GTCON_CZ(z, npy_complex128, double)
 
+#define GEN_GBSV(PREFIX, TYPE) \
+inline void \
+gbsv(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gbsv)(n, kl, ku, nrhs, ab, ldab, ipiv, b, ldb, info); \
+};
+
+GEN_GBSV(s, float)
+GEN_GBSV(d, double)
+GEN_GBSV(c, npy_complex64)
+GEN_GBSV(z, npy_complex128)
+
+#define GEN_GBCON(PREFIX, TYPE) \
+inline void \
+gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *anorm, TYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gbcon)(norm, n, kl, ku, ab, ldab, ipiv, anorm, rcond, work, (CBLAS_INT *)irwork, info); \
+};
+
+GEN_GBCON(s, float)
+GEN_GBCON(d, double)
+
+// c- and z- variants need rwork instead of iwork
+#define GEN_GBCON_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gbcon)(norm, n, kl, ku, ab, ldab, ipiv, anorm, rcond, work, (RTYPE *)irwork, info); \
+};
+
+GEN_GBCON_CZ(c, npy_complex64, float)
+GEN_GBCON_CZ(z, npy_complex128, double)
 
 
 
@@ -503,6 +548,7 @@ enum St : Py_ssize_t
     GENERAL = 0,
     DIAGONAL = 11,
     TRIDIAGONAL = 31,
+    BANDED = 41,
     UPPER_TRIANGULAR = 21,
     LOWER_TRIANGULAR = 22,
     POS_DEF = 101,
@@ -609,6 +655,7 @@ void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m
     }
 }
 
+
 /*
  * Copy n-by-m F-ordered `src` to C-ordered `dst`.
  */
@@ -621,9 +668,6 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m)
         }
     }
 }
-
-
-
 
 
 /*
@@ -748,6 +792,37 @@ norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
     return temp;
 }
 
+template <typename T>
+typename type_traits<T>::real_type
+norm1_banded(T* A, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
+    using real_type = typename type_traits<T>::real_type;
+    using value_type = typename type_traits<T>::value_type;
+
+    value_type *pA = reinterpret_cast<value_type *>(A);
+    real_type *rwork = (real_type *)work;
+
+    npy_intp i, j;
+    for (i = 0; i < n; i++) {
+        rwork[i] = std::abs(pA[i * n + i]);
+    }
+
+    for (i = 0; i < kl; i++) { // run over lower bands
+        for (j = 0; j < n - i - 1; j++) {
+            rwork[j] += std::abs(pA[j * (n + 1) + i + 1]);
+        }
+    }
+
+    for (i = 0; i < ku; i++) { // run over upper bands
+        for (j = i + 1; j < n; j++) {
+            rwork[j] += std::abs(pA[j * (n + 1) - i - 1]);
+        }
+    }
+
+    real_type temp = 0.0;
+    for (i = 0; i < n; i++) {if (rwork[i] > temp) {temp = rwork[i];} }
+    return temp;
+}
+
 
 /***************************
  ***  Structure detection
@@ -783,6 +858,25 @@ bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper
     *upper_band = ub;
 }
 
+template<typename T>
+void
+detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *kl_max, npy_intp *ku_max) {
+    // Looping mechanism copied from `_solve`
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+
+        T* slice_ptr = (T *)(data + offset/sizeof(T));
+
+        bandwidth(slice_ptr, shape[ndim-2], shape[ndim-1], &kl[idx], &ku[idx]);
+        if (kl[idx] > *kl_max) {*kl_max = kl[idx];}
+        if (ku[idx] > *ku_max) {*ku_max = ku[idx];}
+    }
+}
 
 
 
@@ -910,6 +1004,39 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
     }
 }
 
+/*
+ * Helper function for reshuffling a banded matrix into the appropriate
+ * structure for ?gbcon and ?gbsv.
+ *
+ * It is assumed that `ab` provides at least `ldab` x `n` memory elements,
+ * where ldab = 2 * `kl` + `ku` + 1
+ *
+ * Reference: https://www.netlib.org/lapack/explore-html/db/df8/group__gbsv_gad07ab8e600aceb923809483ad8ac82ec.html#gad07ab8e600aceb923809483ad8ac82ec
+ */
+ template<typename T>
+ inline void
+ to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab) {
+    npy_intp i, j;
+
+    // fill in the diagonal at row ldab - kl
+    for (i = 0; i < n; i++) {
+        ab[(i + 1) * ldab - kl - 1] = data[i * (n + 1)];
+    }
+
+    // lower bands
+    for (i = 0; i < kl; i++) {
+        for (j = 0; j < n - 1 - i; j++) {
+            ab[(j + 1) * ldab - kl + i] = data[j * (n + 1) + i + 1];
+        }
+    }
+
+    // upper bands
+    for (i = 0; i < ku; i++) {
+        for (j = i + 1; j < n; j++) {
+            ab[(j + 1) * ldab - kl - i - 2] = data[j * (n + 1) - i - 1];
+        }
+    }
+ }
 
 template<typename T>
 inline void
@@ -940,7 +1067,3 @@ nan_matrix(T * data, npy_intp n) {
     }
 }
 #endif
-
-
-
-
