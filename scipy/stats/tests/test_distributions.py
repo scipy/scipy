@@ -8467,7 +8467,16 @@ class TestTukeyLambda:
         expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
         assert_almost_equal(mv, expected, decimal=10)
 
-
+    def test_large_argument_ticket_21370(self):
+        # Check that survival function goes to 0 as x gets large
+        x = [1e4, 1e6, 1e8, 1e10, 1e12, 1e24]
+        lam = -0.5
+        probs = stats.tukeylambda.sf(x, lam)
+        # Check that the sf is 0 for large x
+        assert_(probs[-1] == 0.0)
+        # Check that the sf is always decreasing except when it is 0
+        assert_(np.all(np.diff(probs)[probs[:-1] > 0.0]))
+        
 class TestLevy:
 
     def test_levy_cdf_ppf(self):
