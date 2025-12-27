@@ -138,12 +138,12 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Notes
     -----
     Uses routine DCSRCH from MINPACK.
-    
+
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1`` as described in [1]_.
 
     References
     ----------
-    
+
     .. [1] Nocedal, J., & Wright, S. J. (2006). Numerical optimization.
        In Springer Series in Operations Research and Financial Engineering.
        (Springer Series in Operations Research and Financial Engineering).
@@ -490,7 +490,7 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             db = b - a
             dc = c - a
             denom = (db * dc) ** 2 * (db - dc)
-            d1 = np.empty((2, 2))
+            d1 = np.empty_like(fpa, shape=(2, 2))
             d1[0, 0] = dc ** 2
             d1[0, 1] = -db ** 2
             d1[1, 0] = -dc ** 3
