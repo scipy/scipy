@@ -5357,11 +5357,7 @@ def get_lebedev_recurrence_points(type_, start, a, b, v, leb):
     return leb, start
 
 
-_xp_note = ("This is because no arrays are accepted as input; simply convert the "
-            "output to the array type of choice.")
-
-
-@xp_capabilities(out_of_scope=True, extra_note=_xp_note)
+@xp_capabilities(np_only=True)
 def lebedev_rule(n):
     r"""Lebedev quadrature.
 

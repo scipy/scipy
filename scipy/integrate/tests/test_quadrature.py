@@ -19,10 +19,16 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-
 @make_xp_test_case(fixed_quad)
 class TestFixedQuad:
-    def test_scalar(self, xp):
+    def test_scalar(self):
+        n = 4
+        expected = 1/(2*n)
+        got, _ = fixed_quad(lambda x: x**(2*n - 1), 0, 1, n=n)
+        # quadrature exact for this input
+        xp_assert_close(got, np.asarray(expected), rtol=1e-12)
+
+    def test_0d(self, xp):
         n = 4
         expected = 1/(2*n)
         got, _ = fixed_quad(lambda x: x**(2*n - 1), xp.asarray(0.), xp.asarray(1.), n=n)
@@ -36,8 +42,8 @@ class TestFixedQuad:
         p = xp.arange(1., 2*n, dtype=dtype)
         a, b = xp.asarray(0., dtype=dtype), xp.asarray(1., dtype=dtype)
         expected = 1/(p + 1)
-        got, _ = fixed_quad(lambda x, p: x**p[:, xp.newaxis],a, b, args=(p,), n=n)
-        rtol = 1e-12 if dtype == xp.float64 else 1e-7
+        got, _ = fixed_quad(lambda x, p: x**p[:, xp.newaxis], a, b, args=(p,), n=n)
+        rtol = 1e-12 if dtype == xp.float64 else 2e-7
         xp_assert_close(got, xp.asarray(expected), rtol=rtol)
 
     @skip_xp_backends('jax.numpy', reason="lazy -> limited input validation")

@@ -238,8 +238,8 @@ def fixed_quad(func, a, b, args=(), n=5):
     1.0
 
     """
-    xp = array_namespace(a, b, *args)
-    # for B.C., `args` shouldn't be forced to be floating point (or even numeric)
+    # `args` not necessarily numeric arrays, so don't pass to array_namespace/xp_promote
+    xp = array_namespace(a, b)
     a, b = xp_promote(a, b, force_floating=True, xp=xp)
     x, w = _cached_roots_legendre(n)
     x, w = xp.asarray(x, dtype=a.dtype), xp.asarray(w, dtype=a.dtype)
@@ -988,11 +988,7 @@ _builtincoeffs = {
     }
 
 
-_xp_note = ("This is because no arrays are accepted as input; simply convert the "
-            "output to the array type of choice.")
-
-
-@xp_capabilities(out_of_scope=True, extra_note=_xp_note)
+@xp_capabilities(np_only=True)
 def newton_cotes(rn, equal=0):
     r"""
     Return weights and error coefficient for Newton-Cotes integration.
