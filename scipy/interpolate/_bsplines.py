@@ -363,6 +363,11 @@ class BSpline:
         xp = array_namespace(t)
         t = np.asarray(t)
         k = t.shape[0] - 2
+        
+        if k < 0:
+            raise ValueError("BSpline.basis_element requires at least 2 knots")
+
+        
         t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
