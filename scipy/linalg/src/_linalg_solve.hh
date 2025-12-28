@@ -285,7 +285,7 @@ inline void solve_slice_diagonal(
 // cluttering the main loop in `_solve` by branching to this function early.
 template<typename T>
 int
-_solve_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT nrhs, npy_intp ndim, npy_intp ndim_b, npy_intp outer_size,
+_solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT nrhs, npy_intp ndim, npy_intp ndim_b, npy_intp outer_size,
     npy_intp* shape, npy_intp *strides, npy_intp *shape_b, npy_intp *strides_b, char trans, bool F_contiguous, int overwrite_a, SliceStatus slice_status, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type;
@@ -452,7 +452,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     // branch early for `assume_a = banded`
     if (structure == St::BANDED) {
-        return _solve_banded(Am_data, bm_data, ret_data, intn, int_nrhs, ndim, ndim_b, outer_size, shape, strides, shape_b, strides_b, trans, PyArray_IS_F_CONTIGUOUS(ap_Am), overwrite_a, slice_status, vec_status);
+        return _solve_assume_banded(Am_data, bm_data, ret_data, intn, int_nrhs, ndim, ndim_b, outer_size, shape, strides, shape_b, strides_b, trans, PyArray_IS_F_CONTIGUOUS(ap_Am), overwrite_a, slice_status, vec_status);
     }
 
     lwork = _calc_lwork(tmp);
