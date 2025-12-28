@@ -4,6 +4,7 @@
 #ifndef _SCIPY_COMMON_ARRAY_UTILS_H
 #define _SCIPY_COMMON_ARRAY_UTILS_H
 #include "Python.h"
+#include <cfloat>
 #include <tuple>
 #include "numpy/npy_math.h"
 #include "npy_cblas.h"
@@ -168,18 +169,23 @@ void BLAS_FUNC(dgtcon)(char *norm, CBLAS_INT *n, double *dl, double *d, double *
 void BLAS_FUNC(cgtcon)(char *norm, CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
 void BLAS_FUNC(zgtcon)(char *norm, CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
 
+/* ?GBTRF */
+void BLAS_FUNC(sgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(dgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(cgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(zgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
+
+/* ?GBTRS */
+void BLAS_FUNC(sgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(cgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 
 /* ?GBCON */
 void BLAS_FUNC(sgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *anorm, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
 void BLAS_FUNC(dgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
 void BLAS_FUNC(cgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, float *rwork, CBLAS_INT *info);
 void BLAS_FUNC(zgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, double *rwork, CBLAS_INT *info);
-
-/* ?GBSV */
-void BLAS_FUNC(sgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(cgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zgbsv)(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 
 
 /* ?GESVD*/
@@ -564,17 +570,32 @@ gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_IN
 GEN_GTCON_CZ(c, npy_complex64, float)
 GEN_GTCON_CZ(z, npy_complex128, double)
 
-#define GEN_GBSV(PREFIX, TYPE) \
+
+#define GEN_GBTRF(PREFIX, TYPE) \
 inline void \
-gbsv(CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+gbtrf(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info) \
 { \
-    BLAS_FUNC(PREFIX ## gbsv)(n, kl, ku, nrhs, ab, ldab, ipiv, b, ldb, info); \
+    BLAS_FUNC(PREFIX ## gbtrf)(m, n, kl, ku, ab, ldab, ipiv, info); \
 };
 
-GEN_GBSV(s, float)
-GEN_GBSV(d, double)
-GEN_GBSV(c, npy_complex64)
-GEN_GBSV(z, npy_complex128)
+GEN_GBTRF(s, float)
+GEN_GBTRF(d, double)
+GEN_GBTRF(c, npy_complex64)
+GEN_GBTRF(z, npy_complex128)
+
+
+#define GEN_GBTRS(PREFIX, TYPE) \
+inline void \
+gbtrs(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gbtrs)(trans, n, kl, ku, nrhs, ab, ldab, ipiv, b, ldb, info); \
+};
+
+GEN_GBTRS(s, float)
+GEN_GBTRS(d, double)
+GEN_GBTRS(c, npy_complex64)
+GEN_GBTRS(z, npy_complex128)
+
 
 #define GEN_GBCON(PREFIX, TYPE) \
 inline void \
@@ -585,6 +606,7 @@ gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_IN
 
 GEN_GBCON(s, float)
 GEN_GBCON(d, double)
+
 
 // c- and z- variants need rwork instead of iwork
 #define GEN_GBCON_CZ(PREFIX, TYPE, RTYPE) \
@@ -1064,29 +1086,37 @@ norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
     return temp;
 }
 
+/*
+ * Compute the 1 norm of a matrix `A`, but assume it is already in its banded
+ * form `ab` as constructed by `to_banded`. It is assumed that the size of `ab`
+ * is always such that its number of rows is `2 * kl + ku + 1`.
+ */
 template <typename T>
 typename type_traits<T>::real_type
-norm1_banded(T* A, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
+norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
     using real_type = typename type_traits<T>::real_type;
     using value_type = typename type_traits<T>::value_type;
 
-    value_type *pA = reinterpret_cast<value_type *>(A);
+    value_type *pab = reinterpret_cast<value_type *>(ab);
     real_type *rwork = (real_type *)work;
 
     npy_intp i, j;
+    npy_intp ldab = 2 * kl + ku + 1;
+
     for (i = 0; i < n; i++) {
-        rwork[i] = std::abs(pA[i * n + i]);
+        rwork[i] = std::abs(pab[i * ldab + kl + ku]);
     }
 
     for (i = 0; i < kl; i++) { // run over lower bands
         for (j = 0; j < n - i - 1; j++) {
-            rwork[j] += std::abs(pA[j * (n + 1) + i + 1]);
+            rwork[j] += std::abs(pab[j * ldab + kl + ku + i + 1]);
         }
     }
 
+
     for (i = 0; i < ku; i++) { // run over upper bands
         for (j = i + 1; j < n; j++) {
-            rwork[j] += std::abs(pA[j * (n + 1) - i - 1]);
+            rwork[j] += std::abs(pab[j * ldab + kl + ku - i - 1]);
         }
     }
 
@@ -1275,12 +1305,12 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
 
 /*
  * Helper function for reshuffling a banded matrix into the appropriate
- * structure for ?gbcon and ?gbsv.
+ * structure for ?gbcon and ?gbtrf.
  *
  * It is assumed that `ab` provides at least `ldab` x `n` memory elements,
  * where ldab = 2 * `kl` + `ku` + 1
  *
- * Reference: https://www.netlib.org/lapack/explore-html/db/df8/group__gbsv_gad07ab8e600aceb923809483ad8ac82ec.html#gad07ab8e600aceb923809483ad8ac82ec
+ * Reference: https://www.netlib.org/lapack/explore-html/df/dd6/group__gbtrf_ga682f53142f0398f83f5461c277d23ba2.html#ga682f53142f0398f83f5461c277d23ba2
  */
  template<typename T>
  inline void
