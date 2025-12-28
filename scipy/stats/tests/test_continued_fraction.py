@@ -14,6 +14,7 @@ from scipy.stats._continued_fraction import _continued_fraction
 # n = int(xp.real(xp_ravel(n))[0])
 # (at some point in here the shape becomes nan)
 @pytest.mark.skip_xp_backends('dask.array', reason="dask has issues with the shapes")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestContinuedFraction:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10)
