@@ -266,6 +266,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         ap_U = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
         if (!ap_U) {
+            Py_DECREF(ap_S);
             PyErr_NoMemory();
             return NULL;
         }
@@ -275,6 +276,8 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         ap_Vh = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
         if (!ap_Vh) {
+            Py_DECREF(ap_S);
+            Py_DECREF(ap_U);
             PyErr_NoMemory();
             return NULL;
         }
