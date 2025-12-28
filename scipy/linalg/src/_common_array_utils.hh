@@ -815,29 +815,37 @@ norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
     return temp;
 }
 
+/*
+ * Compute the 1 norm of a matrix `A`, but assume it is already in its banded
+ * form `ab` as constructed by `to_banded`. It is assumed that the size of `ab`
+ * is always such that its number of rows is `2 * kl + ku + 1`.
+ */
 template <typename T>
 typename type_traits<T>::real_type
-norm1_banded(T* A, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
+norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
     using real_type = typename type_traits<T>::real_type;
     using value_type = typename type_traits<T>::value_type;
 
-    value_type *pA = reinterpret_cast<value_type *>(A);
+    value_type *pab = reinterpret_cast<value_type *>(ab);
     real_type *rwork = (real_type *)work;
 
     npy_intp i, j;
+    npy_intp ldab = 2 * kl + ku + 1;
+
     for (i = 0; i < n; i++) {
-        rwork[i] = std::abs(pA[i * n + i]);
+        rwork[i] = std::abs(pab[i * ldab + kl + ku]);
     }
 
     for (i = 0; i < kl; i++) { // run over lower bands
         for (j = 0; j < n - i - 1; j++) {
-            rwork[j] += std::abs(pA[j * (n + 1) + i + 1]);
+            rwork[j] += std::abs(pab[j * ldab + kl + ku + i + 1]);
         }
     }
 
+
     for (i = 0; i < ku; i++) { // run over upper bands
         for (j = i + 1; j < n; j++) {
-            rwork[j] += std::abs(pA[j * (n + 1) - i - 1]);
+            rwork[j] += std::abs(pab[j * ldab + kl + ku - i - 1]);
         }
     }
 

@@ -219,7 +219,7 @@ inline void solve_slice_banded(
     CBLAS_INT info;
     char norm = '1';
     real_type rcond;
-    real_type anorm = norm1_banded(data, kl, ku, work2, N);
+    real_type anorm = norm1_banded(ab, kl, ku, work2, N);
 
     gbtrf(&N, &N, &kl, &ku, ab, &ldab, ipiv, &info);
     status.lapack_info = (Py_ssize_t)info;
