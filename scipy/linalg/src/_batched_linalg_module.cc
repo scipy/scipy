@@ -403,6 +403,14 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
+    // rank.shape = batch_shape
+    ap_rank = (PyArrayObject *)PyArray_SimpleNew(ndim-2, shape_1, NPY_INT64);
+    if (!ap_rank) {
+        PyErr_NoMemory();
+        Py_DECREF(ap_x);
+        return NULL;
+    }
+
     // S array is not used by ?gelsy
     if (strcmp(lapack_driver, "gelsy") != 0) {
         // S.dtype is real if A.dtype is complex
@@ -414,16 +422,11 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         shape_1[ndim - 2] = min_mn;
         ap_S = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S);
         if (!ap_S) {
+            Py_DECREF(ap_x);
+            Py_DECREF(ap_rank);
             PyErr_NoMemory();
             return NULL;
         }
-    }
-
-    // rank.shape = batch_shape
-    ap_rank = (PyArrayObject *)PyArray_SimpleNew(ndim-2, shape_1, NPY_INT64);
-    if (!ap_rank) {
-        PyErr_NoMemory();
-        return NULL;
     }
 
     switch(typenum) {
