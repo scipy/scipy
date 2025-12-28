@@ -3,6 +3,7 @@
  */
 #include "Python.h"
 #include <iostream>
+#include "cpython/code.h"
 #include "numpy/arrayobject.h"
 #include "numpy/ndarraytypes.h"
 #include "numpy/npy_math.h"
@@ -206,42 +207,39 @@ void solve_slice_tridiag(
 // Banded array solve
 template<typename T>
 inline void solve_slice_banded(
-    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, T *work, T *work2, void *irwork,
+    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, T *ab, T *work2, void *irwork,
     CBLAS_INT kl, CBLAS_INT ku, SliceStatus &status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
+    // Get `data` in the correct structure for LAPACK calls
+    CBLAS_INT ldab = 2 * kl + ku + 1;
+    to_banded(data, N, kl, ku, ldab, ab);
+
     CBLAS_INT info;
     char norm = '1';
-
-    // use `work` for storage, but first used as scratch memory
-    T *ab = &work[0];
-    T *scratch = &work[(2 * kl + ku + 1) * N];
-
-    // gbsv does not provide a direct means to work with transposes, so do it manually:
-    // data is always input in the same order, so hardcode strides.
-    if (trans == 'T') {
-        std::swap(kl, ku);
-        swap_cf(data, scratch, N, N, N);
-    } else {
-        copy_slice(scratch, data, N, N, N * sizeof(T), sizeof(T));
-    }
-
-    CBLAS_INT ldab = 2 * kl + ku + 1;
-
-    // get bands in correct structure, reuse `work` for storage
-    to_banded(scratch, N, kl, ku, ldab, ab);
-
-    gbsv(&N, &kl, &ku, &NRHS, ab, &ldab, ipiv, b_data, &N, &info);
-    status.is_singular = (info > 0);
-    status.lapack_info = (Py_ssize_t)info;
-
     real_type rcond;
-    real_type anorm = norm1_banded(scratch, kl, ku, work2, N);
-    gbcon(&norm, &N, &kl, &ku, ab, &ldab, ipiv, &anorm, &rcond, work2, irwork, &info);
+    real_type anorm = norm1_banded(data, kl, ku, work2, N);
 
-    status.rcond = (double)rcond;
-    status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+    gbtrf(&N, &N, &kl, &ku, ab, &ldab, ipiv, &info);
+    status.lapack_info = (Py_ssize_t)info;
+    if (info == 0) {
+        // gbtrf success, check condition number
+        gbcon(&norm, &N, &kl, &ku, ab, &ldab, ipiv, &anorm, &rcond, work2, irwork, &info);
+
+        status.rcond = (double)rcond;
+        if (info >= 0) {
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+
+            // finally, solve
+            gbtrs(&trans, &N, &kl, &ku, &NRHS, ab, &ldab, ipiv, b_data, &N, &info);
+            status.is_singular = (info > 0);
+        }
+    }
+    else if (info > 0) {
+        // trf detected singularity
+        status.is_singular = 1;
+    }
 }
 
 
@@ -341,7 +339,7 @@ _solve_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT nrhs, 
     }
 
     buffer = (T *)malloc((n * n + n * nrhs + 3 * n) * sizeof(T));
-    ab = (T *)malloc(((n + 2 * kl_max + ku_max + 1) * n) * sizeof(T)); // Represents a buffer of n * n + the real `ab`
+    ab = (T *)malloc(((2 * kl_max + ku_max + 1) * n) * sizeof(T));
 
     if (buffer == NULL || ab == NULL) {
         free(ipiv);
