@@ -1829,6 +1829,7 @@ def _yeojohnson_llf(data, *, lmb, axis=0):
     if n == 0:
         return _get_nan(data, xp=xp)
     eps = xp.finfo(dtype).eps
+    # Special case all-positive/negative data to avoid overflow and precision loss
     pos = data >= 0  # binary mask
 
     # There exists numerical instability when abs(lmb) or abs(lmb - 2) is very small
