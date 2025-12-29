@@ -588,13 +588,14 @@ Plot-tests
    boxcox_normplot
    yeojohnson_normplot
 
-Univariate and multivariate kernel density estimation
+Univariate and multivariate density estimation
 -----------------------------------------------------
 
 .. autosummary::
    :toctree: generated/
 
    gaussian_kde
+   grenander
 
 Warnings / Errors used in :mod:`scipy.stats`
 --------------------------------------------
@@ -633,6 +634,7 @@ from ._multicomp import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
 from ._kde import gaussian_kde
+from ._grenander import grenander
 from . import mstats
 from . import qmc
 from ._multivariate import *
