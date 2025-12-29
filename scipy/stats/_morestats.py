@@ -2001,7 +2001,7 @@ ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
-def shapiro(x):
+def shapiro(x, *, axis=None):
     r"""Perform the Shapiro-Wilk test for normality.
 
     The Shapiro-Wilk test tests the null hypothesis that the
@@ -2011,6 +2011,11 @@ def shapiro(x):
     ----------
     x : array_like
         Array of sample data. Must contain at least three observations.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -2062,14 +2067,13 @@ def shapiro(x):
 
     For a more detailed example, see :ref:`hypothesis_shapiro`.
     """
-    x = np.ravel(x).astype(np.float64)
-
-    N = len(x)
+    # `x` is a an array and axis=-1 due to _axis_nan_policy decorator
+    N = x.shape[-1]
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    y = sort(x)
-    y -= x[N//2]  # subtract the median (or a nearby value); see gh-15777
+    y = np.sort(x, axis=-1)
+    y -= x[..., N//2:N//2+1]  # subtract the median (or a nearby value); see gh-15777
 
     w, pw = _swilk(y)
     if N > 5000:
@@ -2081,7 +2085,7 @@ def shapiro(x):
     # We want to ensure that they are NumPy floats, so until dtypes are
     # respected, we can explicitly convert each to float64 (faster than
     # `np.array([w, pw])`).
-    return ShapiroResult(np.float64(w), np.float64(pw))
+    return ShapiroResult(w[()], pw[()])
 
 
 def _swilk_w(y, a):
