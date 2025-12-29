@@ -2663,7 +2663,7 @@ class TestYeojohnson_llf:
         message = "One or more sample arguments is too small..."
         with eager_warns(SmallSampleWarning, match=message, xp=xp):
             assert xp.isnan(stats.yeojohnson_llf(1, xp.asarray([])))
-    
+
     def test_gh24172(self, xp):
         # Test all negative and all positive data
         data = xp.asarray([10, 10, 10, 9.9], dtype=xp.float64)
