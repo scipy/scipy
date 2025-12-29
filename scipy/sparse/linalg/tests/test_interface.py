@@ -288,19 +288,16 @@ class TestDotTests:
         rng = np.random.default_rng(42)
 
         dtype = np.dtype(data_dtype)
-        u = rng.standard_normal(op.shape[-1], dtype=dtype)
-        v = rng.standard_normal(op.shape[-2], dtype=dtype)
-        if complex_data:
-            u = u + (1j * rng.standard_normal(op.shape[-1], dtype=dtype))
-            v = v + (1j * rng.standard_normal(op.shape[-2], dtype=dtype))
+        *batch_shape, M, N = op.shape
         
         # TODO: handle empty batches
         # TODO: test vectors with different but broadcastable batch shapes?
         # Test `u` and `v` with the same batch shape as `op`
-        if batch_shape := op.shape[:-2]:
-            batch_scale = rng.standard_normal((*batch_shape, 1), dtype=dtype)
-            u = batch_scale * u
-            v = batch_scale * v
+        u = rng.standard_normal((*batch_shape, N), dtype=dtype)
+        v = rng.standard_normal((*batch_shape, M), dtype=dtype)
+        if complex_data:
+            u = u + (1j * rng.standard_normal((*batch_shape, N), dtype=dtype))
+            v = v + (1j * rng.standard_normal((*batch_shape, M), dtype=dtype))
 
         op_u = op.matvec(u)
         opH_v = op.rmatvec(v)
@@ -348,17 +345,16 @@ class TestDotTests:
         k = rng.integers(2, 100)
 
         dtype = np.dtype(data_dtype)
-        U = rng.standard_normal(size=(op.shape[-1], k), dtype=dtype)
-        V = rng.standard_normal(size=(op.shape[-2], k), dtype=dtype)
-        if complex_data:
-            U = U + (1j * rng.standard_normal(size=(op.shape[-1], k), dtype=dtype))
-            V = V + (1j * rng.standard_normal(size=(op.shape[-2], k), dtype=dtype))
-
+        *batch_shape, M, N = op.shape
+        
         # TODO: handle empty batches
-        if batch_shape := op.shape[:-2]:
-            batch_scale = rng.standard_normal((*batch_shape, 1, 1), dtype=dtype)
-            U = batch_scale * U
-            V = batch_scale * V
+        # TODO: test vectors with different but broadcastable batch shapes?
+        # Test `U` and `V` with the same batch shape as `op`
+        U = rng.standard_normal(size=(*batch_shape, N, k), dtype=dtype)
+        V = rng.standard_normal(size=(*batch_shape, M, k), dtype=dtype)
+        if complex_data:
+            U = U + (1j * rng.standard_normal(size=(*batch_shape, N, k), dtype=dtype))
+            V = V + (1j * rng.standard_normal(size=(*batch_shape, M, k), dtype=dtype))
 
         op_U = op.matmat(U)
         opH_V = op.rmatmat(V)
