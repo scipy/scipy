@@ -545,16 +545,7 @@ class TestDotTests:
         """
         rng = np.random.default_rng(42)
         constructor = sparse.random_array if format == "sparse" else rng.standard_normal
-        if batch_shape:
-            batch_size = np.prod(batch_shape)
-            core_matrices = [constructor((4, 4)) for _ in range(batch_size)]
-            if format == "sparse":
-                matrix = sparse.vstack(core_matrices).reshape(batch_shape + (4, 4))
-            else:
-                stacked = np.stack(core_matrices, axis=0)
-                matrix = np.reshape(stacked, batch_shape + (4, 4))
-        else:
-            matrix = constructor((4, 4))
+        matrix = constructor((*batch_shape, 4, 4))
         op = interface.aslinearoperator(matrix)
         data_dtype = "float64"
         self.check_matvec(op, data_dtype=data_dtype, complex_data=True)
