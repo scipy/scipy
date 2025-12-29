@@ -22,7 +22,7 @@ from numpy.testing import (assert_, assert_equal,
                            assert_allclose, assert_array_less)
 import pytest
 from pytest import raises as assert_raises
-from numpy import array, arange, float32, power
+from numpy import array, arange, power
 import numpy as np
 
 import scipy.stats as stats
@@ -41,7 +41,7 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes)
+                                   xp_swapaxes, xp_result_type)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -6637,7 +6637,7 @@ def test_obrientransform():
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
-                      rtol=1e-7, weights=None):
+                      rtol=None, weights=None):
     # Note this doesn't test when axis is not specified
     dtype = dtype or xp.float64
     if len(args) == 2:
@@ -6645,10 +6645,11 @@ def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
     else:
         array_like, p, desired = args
     array_like = xp.asarray(array_like, dtype=dtype)
-    desired = xp.asarray(desired, dtype=dtype)
+    dtype_reference = xp_result_type(array_like, force_floating=True, xp=xp)
+    desired = xp.asarray(desired, dtype=dtype_reference)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
     args = (array_like,) if len(args) == 2 else (array_like, p)
-    x = mean_fun(*args, axis=axis, dtype=dtype, weights=weights)
+    x = mean_fun(*args, axis=axis, weights=weights)
     xp_assert_close(x, desired, rtol=rtol)
 
 
@@ -6672,15 +6673,18 @@ class TestHMean:
         desired = 0
         check_equal_hmean(a, desired, xp=xp)
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 34.1417152147
-        check_equal_hmean(a, desired, xp=xp)
+        check_equal_hmean(a, desired, dtype=dtype, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
-        check_equal_hmean(a, desired, xp=xp)
+        check_equal_hmean(a, desired, dtype=dtype, xp=xp)
 
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
@@ -6791,19 +6795,18 @@ class TestGMean:
         desired = 0
         check_equal_gmean(a, desired, xp=xp)
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 45.2872868812
-        check_equal_gmean(a, desired, xp=xp)
+        check_equal_gmean(a, desired, dtype=dtype, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, rtol=1e-14, xp=xp)
-
-        a = array([1, 2, 3, 4], float32)
-        desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, dtype=xp.float32, xp=xp)
+        check_equal_gmean(a, desired, dtype=dtype, rtol=1e-14, xp=xp)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2d(self, xp):
@@ -6908,18 +6911,21 @@ class TestPMean:
         with pytest.raises(ValueError, match='Power mean only defined for'):
             stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
         desired = TestPMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], -2.5
         desired = TestPMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
         a, p = [1, 2, 3, 4], 2
         desired = np.sqrt((1**2 + 2**2 + 3**2 + 4**2) / 4)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
