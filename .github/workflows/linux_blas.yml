@@ -129,7 +129,7 @@ jobs:
         pip install git+https://github.com/numpy/meson.git@main-numpymeson
         # pin scipy-openblas on release branch--see:
         # https://github.com/scipy/scipy/pull/24207#issuecomment-3687862055
-        pip install "scipy-openblas32==0.3.30.0.8" "scipy-openblas64=="0.3.30.0.8"
+        pip install "scipy-openblas32==0.3.30.0.8" "scipy-openblas64==0.3.30.0.8"
 
     - name: Write out scipy-openblas64.pc
       run: |
