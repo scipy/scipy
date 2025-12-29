@@ -233,26 +233,25 @@ class TestDotTests:
         op_dtype: str
         data_dtype: str
         complex: bool
-        batch_shape: tuple[int, ...]
 
     real_square_args: OperatorArgs = OperatorArgs(
-        (12, 12), "float64", "float64", False, (4,)
+        (12, 12), "float64", "float64", False
     )
-    # TODO: batch shape (0,)
+
     integer_square_args: OperatorArgs = OperatorArgs(
-        (9, 9), "int32", "float32", False, (3, 4, 5)
+        (9, 9), "int32", "float32", False
     )
     complex_square_args: OperatorArgs = OperatorArgs(
-        (13, 13), "complex64", "float32", True, ()
+        (13, 13), "complex64", "float32", True
     )
     real_overdetermined_args: OperatorArgs = OperatorArgs(
-        (17, 11), "float64", "float64", False, (3,)
+        (17, 11), "float64", "float64", False
     )
     complex_overdetermined_args: OperatorArgs = OperatorArgs(
-        (17, 11), "complex128", "float64", True, (3,)
+        (17, 11), "complex128", "float64", True
     )
     real_underdetermined_args: OperatorArgs = OperatorArgs(
-        (5, 9), "float64", "float64", False, (3,)
+        (5, 9), "float64", "float64", False
     )
 
     square_args_list: list[OperatorArgs] = [
@@ -378,8 +377,10 @@ class TestDotTests:
         rtol = 3e-12 if np.finfo(data_dtype).eps < 1e-8 else 6e-4
         assert_allclose(op_U_H_V, UH_opH_V, rtol=rtol)
 
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize("args", square_args_list)
-    def test_identity_square(self, args: OperatorArgs):
+    def test_identity_square(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
         """
         Simple identity operator on square matrices.
         Tests batches of RHS via `args.batch_shape`.
@@ -387,7 +388,7 @@ class TestDotTests:
         def identity(x):
             return x
 
-        shape = args.batch_shape + args.shape
+        shape = batch_shape + args.shape
         op = interface.LinearOperator(
             shape=shape, dtype=args.op_dtype,
             matvec=identity, rmatvec=identity,
@@ -396,8 +397,10 @@ class TestDotTests:
         self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
     
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize("args", all_args_list)
-    def test_identity_nonsquare(self, args):
+    def test_identity_nonsquare(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
         """
         Identity operator with zero-padding on non-square matrices.
         Tests batches of RHS via `args.batch_shape`.
@@ -446,7 +449,7 @@ class TestDotTests:
                 case -1:  # crop x to size
                     return x[..., :N]
 
-        shape = args.batch_shape + args.shape
+        shape = batch_shape + args.shape
         op = interface.LinearOperator(
             shape=shape, dtype=args.op_dtype, matvec=mv, rmatvec=rmv
         )
@@ -454,8 +457,10 @@ class TestDotTests:
         self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
         
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize("args", square_args_list)
-    def test_scaling_square(self, args):
+    def test_scaling_square(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
         """
         Simple (complex) scaling operator on square matrices.
         Tests batches of RHS via `args.batch_shape`.
@@ -466,7 +471,7 @@ class TestDotTests:
         def r_scale(x):
             return (3 - 2j) * x
 
-        shape = args.batch_shape + args.shape
+        shape = batch_shape + args.shape
         op = interface.LinearOperator(
             shape=shape, dtype=args.op_dtype, matvec=scale, rmatvec=r_scale
         )
@@ -479,8 +484,8 @@ class TestDotTests:
             check_operators=True, check_dot=True
         )
 
-    # TODO: test empty batches
-    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3, 4)])
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     def test_subclass_matmat(self, batch_shape: tuple[int, ...]):
         """
         Simple rotation operator defined by `matmat` and `adjoint`,
@@ -525,9 +530,9 @@ class TestDotTests:
             op, data_dtype=dtype, complex_data=False,
             check_operators=True, check_dot=True
         )
-    
-    # TODO: test empty batches
-    @pytest.mark.parametrize("batch_shape", [(), (3,), (2, 3, 4)])
+
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize(
         "format", ["dense", "sparse"]
     )
