@@ -1847,6 +1847,7 @@ def _yeojohnson_llf(data, *, lmb, axis=0):
                 abs(2 - lmb)
             )
 
+    # overflow/precision loss not reported for mixed data; calculate `logvar` directly
     else:  # mixed positive and negative data
         y = _yeojohnson_transform(data, lmb, xp=xp)
         sigma = xp.var(y, axis=axis)
