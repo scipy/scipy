@@ -421,12 +421,12 @@ Authors
 * Matteo Brivio (1) +
 * Dietrich Brunn (34)
 * Johannes Buchner (2) +
-* Evgeni Burovski (288)
+* Evgeni Burovski (290)
 * Nicholas Carlini (1) +
 * Luca Cerina (1) +
 * Christine P. Chai (35)
 * Saransh Chopra (1)
-* Lucas Colley (119)
+* Lucas Colley (121)
 * Björn Ingvar Dahlgren (2) +
 * Sumit Das (1) +
 * Hans Dembinski (1)
@@ -497,7 +497,7 @@ Authors
 * Ritesh Rana (1) +
 * Adrian Raso (1) +
 * Dan Raviv (1) +
-* Tyler Reddy (115)
+* Tyler Reddy (122)
 * Lucas Roberts (4)
 * Bernard Roesler (1) +
 * Mikhail Ryazanov (27)
@@ -1200,3 +1200,5 @@ Pull requests for 1.17.0
 * `#24214 <https://github.com/scipy/scipy/pull/24214>`__: DOC: update 1.17.0 notes for RBFInterpolator
 * `#24218 <https://github.com/scipy/scipy/pull/24218>`__: BENCH, MAINT: NumPy 2.4.0 bench compat
 * `#24223 <https://github.com/scipy/scipy/pull/24223>`__: BLD: linalg: ``link_language: 'fortran'`` for ``_fblas``
+* `#24239 <https://github.com/scipy/scipy/pull/24239>`__: MAINT: bump array-api-compat for JAX>=0.8.2 compat
+* `#24240 <https://github.com/scipy/scipy/pull/24240>`__: MAINT: bump array-api-compat to 1.13 tag
