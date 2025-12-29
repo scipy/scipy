@@ -638,6 +638,65 @@ GEN_GBCON_CZ(c, npy_complex64, float)
 GEN_GBCON_CZ(z, npy_complex128, double)
 
 
+#define GEN_GEQRF(PREFIX, TYPE) \
+inline void \
+geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
+};
+
+GEN_GEQRF(s, float);
+GEN_GEQRF(d, double);
+GEN_GEQRF(c, npy_complex64);
+GEN_GEQRF(z, npy_complex128);
+
+
+// N.B. `rwork` is not used for `s` and `d` variants
+#define GEN_GEQP3(PREFIX, TYPE) \
+inline void \
+geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, info); \
+};
+
+GEN_GEQP3(s, float);
+GEN_GEQP3(d, double);
+
+
+#define GEN_GEQP3_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, (RTYPE *)rwork, info); \
+};
+
+GEN_GEQP3_CZ(c, npy_complex64, float);
+GEN_GEQP3_CZ(z, npy_complex128, double);
+
+
+// N.B. Different names for real and complex case, but unified calling signatures
+#define GEN_ORGQR(PREFIX, TYPE) \
+inline void \
+orungqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## orgqr)(m, n, k, a, lda, tau, work, lwork, info); \
+};
+
+GEN_ORGQR(s, float);
+GEN_ORGQR(d, double);
+
+
+#define GEN_UNGQR(PREFIX, TYPE) \
+inline void \
+orungqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## ungqr)(m, n, k, a, lda, tau, work, lwork, info); \
+};
+
+GEN_UNGQR(c, npy_complex64);
+GEN_UNGQR(z, npy_complex128);
+
+
 /*
  * ?GESVD wrappers.
  *
@@ -901,6 +960,15 @@ enum St : Py_ssize_t
     HER = 211
 };
 
+// QR mode tags; python side maps mode strings to these values
+enum QR_mode : Py_ssize_t
+{
+    FULL = 1,
+    R = 11,
+    RAW = 21,
+    ECONOMIC = 31
+};
+
 
 /*
  * Rich return object
@@ -1066,6 +1134,28 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
         }
     }
 }
+
+
+/*
+ * Extract only the upper triangle of an F-ordered MxN `src` to a C-ordered MxN
+ * `dst`. The rest is put to 0. This function is reminiscent of `zero_other_triangle`,
+ * but contains copying, swapping of ordering and zeroing in one.
+ */
+template<typename T>
+void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_intp n) {
+
+    for (npy_intp i = 0; i < n; i++) {
+        npy_intp stop = std::min(i + 1, m);
+        for (npy_intp j = 0; j < stop; j++) {
+            dst[j*n + i] = src[i*m + j];
+        }
+
+        for (npy_intp j = stop; j < m; j++) {
+            dst[j*n + i] = numeric_limits<T>::zero;
+        }
+    }
+}
+
 
 
 /*
