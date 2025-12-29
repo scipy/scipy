@@ -286,28 +286,28 @@ def _root_leastsq(fun, x0, args=(), jac=None,
 
     Options
     -------
-    col_deriv : bool
+    col_deriv : bool, default 0
         non-zero to specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
-    ftol : float
+    ftol : float, default 1.49012e-08
         Relative error desired in the sum of squares.
-    xtol : float
+    xtol : float, default 1.49012e-08
         Relative error desired in the approximate solution.
-    gtol : float
+    gtol : float, default 0.0
         Orthogonality desired between the function vector and the columns
         of the Jacobian.
-    maxiter : int
+    maxiter : int, default 0
         The maximum number of calls to the function. If zero, then
         100*(N+1) is the maximum where N is the number of elements in x0.
-    eps : float
+    eps : float, default 0.0
         A suitable step length for the forward-difference approximation of
         the Jacobian (for Dfun=None). If `eps` is less than the machine
         precision, it is assumed that the relative errors in the functions
         are of the order of the machine precision.
-    factor : float
+    factor : float, default 100
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
-    diag : sequence
+    diag : sequence, default None
         N positive entries that serve as a scale factors for the variables.
     """
     nfev = 0
