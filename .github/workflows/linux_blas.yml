@@ -127,7 +127,9 @@ jobs:
         pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
         pip install -r requirements/dev.txt
         pip install git+https://github.com/numpy/meson.git@main-numpymeson
-        pip install scipy-openblas32 scipy-openblas64
+        # pin scipy-openblas on release branch--see:
+        # https://github.com/scipy/scipy/pull/24207#issuecomment-3687862055
+        pip install "scipy-openblas32==0.3.30.0.8" "scipy-openblas64=="0.3.30.0.8"
 
     - name: Write out scipy-openblas64.pc
       run: |
