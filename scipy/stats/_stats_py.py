@@ -2708,7 +2708,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     --------
     numpy.mean : Arithmetic average
     numpy.std : Arithmetic standard deviation
-    scipy.stats.gzscore : Geometric standard score
+    gzscore : Geometric standard score
 
     Notes
     -----
@@ -5374,7 +5374,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     warn_msg = ("An input array is constant; the correlation coefficient "
                 "is not defined.")
-    
+
     constant_axis = False
     if axisout == 0:
         constant_columns = np.all(a == a[0, :], axis=0)
@@ -5408,7 +5408,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
                 variable_has_nan = np.isnan(a).any(axis=axisout)
 
     a_ranked = np.apply_along_axis(rankdata, axisout, a)
-    
+
     if constant_axis:
         with np.errstate(invalid='ignore'):
             rs = np.corrcoef(a_ranked, rowvar=axisout)
