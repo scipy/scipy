@@ -754,7 +754,7 @@ foreach name, machine : machines
   conf_data.set(name + '_CPU_SYSTEM', machine.system())
 endforeach
 
-conf_data.set('CROSS_COMPILED', meson.is_cross_build())
+conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
 conf_data.set('PYTHON_PATH', py3.full_path())
@@ -763,7 +763,7 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 # Dependencies information
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
-  conf_data.set(name + '_FOUND', dep.found())
+  conf_data.set(name + '_FOUND', dep.found().to_string())
   if dep.found()
     conf_data.set(name + '_VERSION', dep.version())
     conf_data.set(name + '_TYPE_NAME', dep.type_name())
@@ -771,7 +771,7 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
     conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
-    conf_data.set(name + '_HAS_ILP64', use_ilp64)
+    conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach
 
