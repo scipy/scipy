@@ -34,7 +34,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
     if math.prod(A.shape) == 0:
         message = "`A` must not be empty."
         raise ValueError(message)
-    if len(A.shape) != 2:
+    if A.ndim != 2:
         raise ValueError("Only 2-D input is supported for `A` (a single matrix)")
 
     # input validation/standardization for `k`
