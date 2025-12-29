@@ -10,7 +10,7 @@ from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan, np_vecdot
+from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib.deprecation import _NoValue
 import scipy._lib.array_api_extra as xpx
 
@@ -2087,9 +2087,9 @@ def shapiro(x):
 def _swilk_w(y, a):
     # calculate Shapiro-Wilk statistic given sorted sample and weights
     # Follows [4] Section 2.1
-    num = np_vecdot(a, y, axis=-1) ** 2
+    num = np.vecdot(a, y, axis=-1) ** 2
     y_ = _demean(y, mean=np.mean(y, axis=-1, keepdims=True), axis=-1, xp=np)
-    den = np_vecdot(y_, y_, axis=-1)
+    den = np.vecdot(y_, y_, axis=-1)
     return num / den
 
 
@@ -2111,7 +2111,7 @@ def _swilk(y):
     i = np.arange(1, n + 1)
     m = special.ndtri((i - 3 / 8) / (n + 1 / 4))
     u = n**(-0.5)
-    mTm = np_vecdot(m, m)
+    mTm = np.vecdot(m, m)
     c = mTm**(-0.5) * m
     mnm1, mn = m[..., -2], m[..., -1]
     cnm1, cn = c[..., -2], c[..., -1]
