@@ -1701,7 +1701,8 @@ def _yeojohnson_transform(x, lmbda, xp=None):
     return out
 
 
-@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")])
+@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")],
+                 jax_jit=False)
 def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False):
     r"""The Yeo-Johnson log-likelihood function.
 
@@ -1999,7 +2000,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
 def shapiro(x, *, axis=None):
     r"""Perform the Shapiro-Wilk test for normality.
@@ -2068,14 +2069,17 @@ def shapiro(x, *, axis=None):
     For a more detailed example, see :ref:`hypothesis_shapiro`.
     """
     # `x` is a an array and axis=-1 due to _axis_nan_policy decorator
+    xp = array_namespace(x)
+
     N = x.shape[-1]
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    y = np.sort(x, axis=-1)
+    y = xp.sort(x, axis=-1)
     y -= x[..., N//2:N//2+1]  # subtract the median (or a nearby value); see gh-15777
 
-    w, pw = _swilk(y)
+    y = xp_promote(y, force_floating=True, xp=xp)
+    w, pw = _swilk(y, xp=xp)
     if N > 5000:
         warnings.warn("scipy.stats.shapiro: For N > 5000, computed p-value "
                       f"may not be accurate. Current N is {N}.",
@@ -2088,34 +2092,34 @@ def shapiro(x, *, axis=None):
     return ShapiroResult(w[()], pw[()])
 
 
-def _swilk_w(y, a):
+def _swilk_w(y, a, *, xp):
     # calculate Shapiro-Wilk statistic given sorted sample and weights
     # Follows [4] Section 2.1
-    num = np.vecdot(a, y, axis=-1) ** 2
-    y_ = _demean(y, mean=np.mean(y, axis=-1, keepdims=True), axis=-1, xp=np)
-    den = np.vecdot(y_, y_, axis=-1)
+    num = xp.vecdot(a, y, axis=-1) ** 2
+    y_ = _demean(y, mean=xp.mean(y, axis=-1, keepdims=True), axis=-1, xp=xp)
+    den = xp.vecdot(y_, y_, axis=-1)
     return num / den
 
 
-def _swilk(y):
+def _swilk(y, *, xp):
     # calculate Shapiro-Wilk statistic and p-value from sorted sample
     n = y.shape[-1]
 
     if n == 3:
         # [2] Table 5 gives the first four digits
-        c = np.sqrt(2) / 2
-        a = np.asarray([-c, 0, c])
+        c = math.sqrt(2) / 2
+        a = xp.asarray([-c, 0, c])
         # [2] Corollary 4; discussed in https://github.com/scipy/scipy/issues/18322
-        W = np.clip(_swilk_w(y, a), 0.75, 1)
-        pvalue = 1. - 6/np.pi * np.arccos(np.sqrt(W))
+        W = xp.clip(_swilk_w(y, a, xp=xp), 0.75, 1.)
+        pvalue = xp.clip(1. - 6/np.pi * xp.acos(xp.sqrt(W)), 0., 1.)
         return W, pvalue
 
     # Follows [4] section 2.2
     # could calculate half the coefficients and get the rest by antisymmetry
-    i = np.arange(1, n + 1)
+    i = xp.arange(1, n + 1, dtype=y.dtype)
     m = special.ndtri((i - 3 / 8) / (n + 1 / 4))
     u = n**(-0.5)
-    mTm = np.vecdot(m, m)
+    mTm = xp.vecdot(m, m)
     c = mTm**(-0.5) * m
     mnm1, mn = m[..., -2], m[..., -1]
     cnm1, cn = c[..., -2], c[..., -1]
@@ -2127,24 +2131,24 @@ def _swilk(y):
            else (mTm - 2*mn**2 - 2*mnm1**2) / (1 - 2*an**2 - 2*anm1**2))
     a = phi**(-0.5) * m
     if n > 5:
-        a[..., -2] = anm1
-        a[..., 1] = -anm1
-    a[..., -1] = an
-    a[..., 0] = -an
-    W = _swilk_w(y, a)
+        a = xpx.at(a)[..., -2].set(anm1)
+        a = xpx.at(a)[..., 1].set(-anm1)
+    a = xpx.at(a)[..., -1].set(an)
+    a = xpx.at(a)[..., -0].set(-an)
+    W = _swilk_w(y, a, xp=xp)
 
     # Follows [4] Table 1
     if n <= 11:
         u = n
         gamma = -2.273 + 0.459*u
         mu = 0.5440 - 0.39978*u + 0.025054*u**2 - 0.0006714*u**3
-        sigma = np.exp(1.3822 - 0.77857*u + 0.062767*u**2 - 0.0020322*u**3)
-        gW = -np.log(gamma - np.log(1 - W))
+        sigma = math.exp(1.3822 - 0.77857*u + 0.062767*u**2 - 0.0020322*u**3)
+        gW = -xp.log(gamma - xp.log(1 - W))
     else:
-        u = np.log(n)
+        u = math.log(n)
         mu = -1.5861 - 0.31082*u - 0.083751*u**2 + 0.0038915*u**3
-        sigma = np.exp(-0.4803 - 0.082676*u + 0.0030302*u**2)
-        gW = np.log(1 - W)
+        sigma = math.exp(-0.4803 - 0.082676*u + 0.0030302*u**2)
+        gW = xp.log(1 - W)
 
     z = (gW - mu) / sigma
     pvalue = special.ndtr(-z)
@@ -3248,7 +3252,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], jax_jit=False)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3622,7 +3626,8 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+                 jax_jit=False)
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.

@@ -35,6 +35,7 @@ from scipy._lib._array_api_no_0d import (
     xp_assert_less,
 )
 
+lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 distcont = dict(distcont)  # type: ignore
@@ -135,112 +136,85 @@ class TestMvsdist:
 
 
 class TestShapiro:
-    def test_basic(self):
+    def test_basic(self, xp):
+        # reference values generated using R shapiro.test, e.g.
+        # options(digits=16)
+        # x = c(0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
+        #       4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
+        #       0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66)
+        # shapiro.test(x)
         x1 = [0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
               0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]
-        w, pw = stats.shapiro(x1)
-        shapiro_test = stats.shapiro(x1)
-        assert_almost_equal(w, 0.90047299861907959, decimal=6)
-        assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
-        assert_almost_equal(pw, 0.042089745402336121, decimal=6)
-        assert_almost_equal(shapiro_test.pvalue, 0.042089745402336121, decimal=6)
+        shapiro_test = stats.shapiro(xp.asarray(x1))
+        w, pw = shapiro_test
+        xp_assert_close(w, xp.asarray(0.90047287931756))
+        xp_assert_close(shapiro_test.statistic, xp.asarray(0.90047287931756))
+        xp_assert_close(pw, xp.asarray(0.04208957522226))
+        xp_assert_close(shapiro_test.pvalue, xp.asarray(0.04208957522226))
 
         x2 = [1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
               3.48, 1.10, 0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
               0.08, 3.67, 2.81, 3.49]
-        w, pw = stats.shapiro(x2)
-        shapiro_test = stats.shapiro(x2)
-        assert_almost_equal(w, 0.9590270, decimal=6)
-        assert_almost_equal(shapiro_test.statistic, 0.9590270, decimal=6)
-        assert_almost_equal(pw, 0.52460, decimal=3)
-        assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
+        shapiro_test = stats.shapiro(xp.asarray(x2))
+        xp_assert_close(shapiro_test.statistic, xp.asarray(0.95902694603234))
+        xp_assert_close(shapiro_test.pvalue, xp.asarray(0.5245979304707))
 
-        # Verified against R
         x3 = stats.norm.rvs(loc=5, scale=3, size=100, random_state=12345678)
-        w, pw = stats.shapiro(x3)
-        shapiro_test = stats.shapiro(x3)
-        assert_almost_equal(w, 0.9772805571556091, decimal=6)
-        assert_almost_equal(shapiro_test.statistic, 0.9772805571556091, decimal=6)
-        assert_almost_equal(pw, 0.08144091814756393, decimal=3)
-        assert_almost_equal(shapiro_test.pvalue, 0.08144091814756393, decimal=3)
+        shapiro_test = stats.shapiro(xp.asarray(x3.tolist()))
+        xp_assert_close(shapiro_test.statistic, xp.asarray(0.97728027037175))
+        xp_assert_close(shapiro_test.pvalue, xp.asarray(0.08143656270016))
 
-        # Extracted from original paper
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_basic2(self, dtype, xp):
+        # # Data from original paper; additional precision from R shapiro.test
         x4 = [0.139, 0.157, 0.175, 0.256, 0.344, 0.413, 0.503, 0.577, 0.614,
               0.655, 0.954, 1.392, 1.557, 1.648, 1.690, 1.994, 2.174, 2.206,
               3.245, 3.510, 3.571, 4.354, 4.980, 6.084, 8.351]
-        W_expected = 0.83467
-        p_expected = 0.000914
-        w, pw = stats.shapiro(x4)
-        shapiro_test = stats.shapiro(x4)
-        assert_almost_equal(w, W_expected, decimal=4)
-        assert_almost_equal(shapiro_test.statistic, W_expected, decimal=4)
-        assert_almost_equal(pw, p_expected, decimal=5)
-        assert_almost_equal(shapiro_test.pvalue, p_expected, decimal=5)
+        dtype = {'dtype': dtype if dtype is None else getattr(xp, dtype)}
+        W_expected = xp.asarray(0.83466627531817, **dtype)
+        p_expected = xp.asarray(0.000913490481813, **dtype)
+        shapiro_test = stats.shapiro(xp.asarray(x4, **dtype))
+        xp_assert_close(shapiro_test.statistic, xp.asarray(W_expected, **dtype))
+        xp_assert_close(shapiro_test.pvalue, xp.asarray(p_expected, **dtype))
 
-    def test_2d(self):
-        x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
-              4.43, 0.21, 4.75], [0.71, 1.52, 3.24,
-              0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
-        w, pw = stats.shapiro(x1)
-        shapiro_test = stats.shapiro(x1)
-        assert_almost_equal(w, 0.90047299861907959, decimal=6)
-        assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
-        assert_almost_equal(pw, 0.042089745402336121, decimal=6)
-        assert_almost_equal(shapiro_test.pvalue, 0.042089745402336121, decimal=6)
-
-        x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
-              3.48, 1.10], [0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
-              0.08, 3.67, 2.81, 3.49]]
-        w, pw = stats.shapiro(x2)
-        shapiro_test = stats.shapiro(x2)
-        assert_almost_equal(w, 0.9590270, decimal=6)
-        assert_almost_equal(shapiro_test.statistic, 0.9590270, decimal=6)
-        assert_almost_equal(pw, 0.52460, decimal=3)
-        assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
-
+    @skip_xp_backends('jax.numpy', reason='lazy backend -> limited input validation')
+    @skip_xp_backends('dask.array', reason='lazy backend -> limited input validation')
     @pytest.mark.parametrize('x', ([], [1], [1, 2]))
-    def test_not_enough_values(self, x):
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = stats.shapiro(x)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+    def test_not_enough_values(self, x, xp):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = stats.shapiro(xp.asarray(x))
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_nan_input(self):
-        x = np.arange(10.)
-        x[9] = np.nan
+    def test_nan_input(self, xp):
+        x = xp.arange(10.)
+        x = xpx.at(x)[9].set(xp.nan)
 
-        w, pw = stats.shapiro(x)
-        shapiro_test = stats.shapiro(x)
-        assert_equal(w, np.nan)
-        assert_equal(shapiro_test.statistic, np.nan)
-        # Originally, shapiro returned a p-value of 1 in this case,
-        # but there is no way to produce a numerical p-value if the
-        # statistic is not a number. NaN is more appropriate.
-        assert_almost_equal(pw, np.nan)
-        assert_almost_equal(shapiro_test.pvalue, np.nan)
+        shapiro_test = stats.shapiro(xp.asarray(x))
+        xp_assert_equal(shapiro_test.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(shapiro_test.pvalue, xp.asarray(xp.nan))
 
-    def test_gh14462(self):
+    def test_gh14462(self, xp):
         # shapiro is theoretically location-invariant, but when the magnitude
         # of the values is much greater than the variance, there can be
         # numerical issues. Fixed by subtracting median from the data.
         # See gh-14462.
 
         trans_val, maxlog = stats.boxcox([122500, 474400, 110400])
-        res = stats.shapiro(trans_val)
+        res = stats.shapiro(xp.asarray(trans_val.tolist()))
 
         # Reference from R:
         # options(digits=16)
         # x = c(0.00000000e+00, 3.39996924e-08, -6.35166875e-09)
         # shapiro.test(x)
-        ref = (0.86468431705371, 0.2805581751566)
+        xp_assert_close(res.statistic, xp.asarray(0.86468431705371))
+        xp_assert_close(res.pvalue, xp.asarray(0.2805581751566))
 
-        assert_allclose(res, ref, rtol=1e-5)
-
-    def test_length_3_gh18322(self):
+    def test_length_3_gh18322(self, xp):
         # gh-18322 reported that the p-value could be negative for input of
         # length 3. Check that this is resolved.
-        res = stats.shapiro([0.6931471805599453, 0.0, 0.0])
+        res = stats.shapiro(xp.asarray([0.6931471805599453, 0.0, 0.0]))
         assert res.pvalue >= 0
 
         # R `shapiro.test` doesn't produce an accurate p-value in the case
@@ -249,24 +223,24 @@ class TestShapiro:
         # x = c(-0.7746653110021126, -0.4344432067942129, 1.8157053280290931)
         # shapiro.test(x)
         x = [-0.7746653110021126, -0.4344432067942129, 1.8157053280290931]
-        res = stats.shapiro(x)
-        assert_allclose(res.statistic, 0.84658770645509)
-        assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
+        res = stats.shapiro(xp.asarray(x))
+        xp_assert_close(res.statistic, xp.asarray(0.84658770645509))
+        xp_assert_close(res.pvalue, xp.asarray(0.2313666489882))
 
     @pytest.mark.parametrize('n', [3, 4, 5, 8, 11, 20, 100, 200, 500, 1000, 2000, 5000])
-    def test_against_as181(self, n):
+    def test_against_as181(self, n, xp):
         rng = np.random.default_rng(n)
         x = rng.standard_normal(n)
 
-        res = stats.shapiro(x)
+        res = stats.shapiro(xp.asarray(x.tolist()))
 
         a = np.zeros(n // 2, dtype=np.float64)
         y = np.sort(x) - x[n // 2]
         ref_statistic, ref_pvalue, _ = swilk(y, a, 0)
 
-        rtol = 5e-7 if n >= 2000 else 1e-7
-        assert_allclose(res.statistic, ref_statistic, rtol=rtol)
-        assert_allclose(res.pvalue, ref_pvalue, rtol=rtol)
+        rtol = 5e-7 if xp_default_dtype(xp) == xp.float64 else 1e-3
+        xp_assert_close(res.statistic, xp.asarray(ref_statistic), rtol=rtol)
+        xp_assert_close(res.pvalue, xp.asarray(ref_pvalue), rtol=rtol)
 
 
 @pytest.mark.filterwarnings("ignore: As of SciPy 1.17: FutureWarning")
