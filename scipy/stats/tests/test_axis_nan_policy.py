@@ -172,6 +172,8 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.spearmanrho, tuple(), dict(), 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
     (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.kendalltau, tuple(), dict(), 2, 3, True,
@@ -192,6 +194,7 @@ axis_nan_policy_cases = [
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in

@@ -458,7 +458,7 @@ def from_euler(seq, angles, bint degrees=False):
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_matrix(matrix):
+def from_matrix(matrix, bint assume_valid=False):
     cdef int ind
     is_single = False
     matrix = np.array(matrix, dtype=float)
@@ -475,40 +475,55 @@ def from_matrix(matrix):
         matrix = matrix[np.newaxis, :, :]
         is_single = True
 
-    # Calculate the determinant of the rotation matrix
-    # (should be positive for right-handed rotations)
-    dets = np.linalg.det(matrix)
-    if np.any(dets <= 0):
-        ind = np.where(dets <= 0)[0][0]
-        raise ValueError("Non-positive determinant (left-handed or null "
-                            f"coordinate frame) in rotation matrix {ind}: "
-                            f"{matrix[ind]}.")
+    if not assume_valid:
+        # Calculate the determinant of the rotation matrix
+        # (should be positive for right-handed rotations)
+        dets = np.linalg.det(matrix)
+        if np.any(dets <= 0):
+            ind = np.where(dets <= 0)[0][0]
+            raise ValueError("Non-positive determinant (left-handed or null "
+                                f"coordinate frame) in rotation matrix {ind}: "
+                                f"{matrix[ind]}.")
 
-    # Gramian orthogonality check
-    # (should be the identity matrix for orthogonal matrices)
-    # Note that we have already ruled out left-handed cases above
-    gramians = matrix @ np.transpose(matrix, (0, 2, 1))
-    is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
-                            axis=(1, 2))
-    indices_to_orthogonalize = np.where(~is_orthogonal)[0]
+        # Gramian orthogonality check
+        # (should be the identity matrix for orthogonal matrices)
+        # Note that we have already ruled out left-handed cases above
+        gramians = matrix @ np.transpose(matrix, (0, 2, 1))
+        is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
+                                axis=(1, 2))
+        indices_to_orthogonalize = np.where(~is_orthogonal)[0]
 
-    # Orthogonalize the rotation matrices where necessary
-    if len(indices_to_orthogonalize) > 0:
-        # Exact solution to the orthogonal Procrustes problem using singular
-        # value decomposition
-        U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
-        matrix[indices_to_orthogonalize, :, :] = U @ Vt
+        # Orthogonalize the rotation matrices where necessary
+        if len(indices_to_orthogonalize) > 0:
+            # Exact solution to the orthogonal Procrustes problem using singular
+            # value decomposition
+            U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
+            matrix[indices_to_orthogonalize, :, :] = U @ Vt
 
     # Convert the orthogonal rotation matrices to quaternions using the
     # algorithm described in [3]_. This will also apply another
     # orthogonalization step to correct for any small errors in the matrices
     # that skipped the SVD step above.
+    if is_single:
+        return _from_matrix_orthogonal(matrix[0])
+    return _from_matrix_orthogonal(matrix)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _from_matrix_orthogonal(matrix):
+    is_single = False
+    if matrix.shape == (3, 3):
+        matrix = matrix[np.newaxis, :, :]
+        is_single = True
+
     cdef double[:, :, :] cmatrix
     cmatrix = matrix
     cdef Py_ssize_t num_rotations = cmatrix.shape[0]
     cdef Py_ssize_t i, j, k
     cdef double[:] decision = _empty1(4)
     cdef int choice
+    cdef int ind
 
     cdef double[:, :] quat = _empty2(num_rotations, 4)
 
@@ -1258,8 +1273,8 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
         with np.errstate(divide='ignore', invalid='ignore'):
             sensitivity = np.mean(weights) / zeta * (
                     kappa * np.eye(3) + np.dot(B, B.T))
-        return from_matrix(C), rssd, sensitivity
-    return from_matrix(C), rssd, None
+        return _from_matrix_orthogonal(C), rssd, sensitivity
+    return _from_matrix_orthogonal(C), rssd, None
 
 
 @cython.embedsignature(True)

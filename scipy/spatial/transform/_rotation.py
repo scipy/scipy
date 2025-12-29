@@ -477,7 +477,7 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def from_matrix(matrix: ArrayLike) -> Rotation:
+    def from_matrix(matrix: ArrayLike, *, assume_valid: bool = False) -> Rotation:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 orthogonal
@@ -492,6 +492,13 @@ class Rotation:
         matrix : array_like, shape (..., 3, 3)
             A single matrix or an ND array of matrices, where the last two dimensions
             contain the rotation matrices.
+        assume_valid : bool, optional
+            Must be False unless users can guarantee the input is a valid rotation
+            matrix, i.e. it is orthogonal, rows and columns have unit norm and the
+            determinant is 1. Setting this to True without ensuring these properties
+            is unsafe and will silently lead to incorrect results. If True,
+            normalization steps are skipped, which can improve runtime performance.
+            Default is False.
 
         Returns
         -------
@@ -590,7 +597,7 @@ class Rotation:
         matrix = _promote(matrix, xp=xp)
         # Resulting quat will have 1 less dimension than matrix
         backend = select_backend(xp, cython_compatible=matrix.ndim < 4)
-        quat = backend.from_matrix(matrix)
+        quat = backend.from_matrix(matrix, assume_valid=assume_valid)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
@@ -1237,7 +1244,7 @@ class Rotation:
         .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
                conversion: A direct, general and computationally efficient
                method. PLoS ONE 17(11): e0276302.
-               https://doi.org/10.1371/journal.pone.0276302
+               :doi:`10.1371/journal.pone.0276302`.
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         Examples

@@ -531,8 +531,9 @@ def _wrap_scalar_function(function, args):
         # Ideally, we'd like to a have a true scalar returned from f(x). For
         # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.float64)
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError("The user-provided objective function "
                                  "must return a scalar value.") from e
@@ -562,8 +563,9 @@ def _wrap_scalar_function_maxfun_validation(function, args, maxfun):
         # backwards-compatibility, also allow np.array([1.3]),
         # np.array([[1.3]]) etc.
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError("The user-provided objective function "
                                  "must return a scalar value.") from e

@@ -4,6 +4,7 @@
 #ifndef _SCIPY_COMMON_ARRAY_UTILS_H
 #define _SCIPY_COMMON_ARRAY_UTILS_H
 #include "Python.h"
+#include <tuple>
 #include "numpy/npy_math.h"
 #include "npy_cblas.h"
 
@@ -107,6 +108,65 @@ void BLAS_FUNC(dpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBL
 void BLAS_FUNC(cpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 void BLAS_FUNC(zpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 
+/* ?SYTRF*/
+void BLAS_FUNC(ssytrf)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dsytrf)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(csytrf)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(zsytrf)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+
+/* ?SYTRI */
+void BLAS_FUNC(ssytri)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *work, CBLAS_INT *info);
+void BLAS_FUNC(dsytri)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *work, CBLAS_INT *info);
+void BLAS_FUNC(csytri)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *info);
+void BLAS_FUNC(zsytri)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *info);
+
+/* ?SYCON*/
+void BLAS_FUNC(ssycon)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *anorm, float *rcond,  float *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(dsycon)(char *uplo, CBLAS_INT *n, double *a,CBLAS_INT *lda, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(csycon)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
+void BLAS_FUNC(zsycon)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
+
+/* ?HETRF */
+void BLAS_FUNC(chetrf)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(zhetrf)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+
+/* ?HETRI */
+void BLAS_FUNC(chetri)(char *uplo, CBLAS_INT *n, npy_complex64 *a,  CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *info);
+void BLAS_FUNC(zhetri)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *info);
+
+/* ?SYTRS*/
+void BLAS_FUNC(ssytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dsytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(csytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zsytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
+/* ?HECON*/
+void BLAS_FUNC(checon)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
+void BLAS_FUNC(zhecon)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
+
+/* ?HETRS*/
+void BLAS_FUNC(chetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zhetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
+
+/* ?GTTRF */
+void BLAS_FUNC(sgttrf)(CBLAS_INT *n, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(dgttrf)(CBLAS_INT *n, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(cgttrf)(CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(zgttrf)(CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+
+/* ?GTTRS */
+void BLAS_FUNC(sgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(cgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
+
+/* ?GTCON */
+void BLAS_FUNC(sgtcon)(char *norm, CBLAS_INT *n, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(dgtcon)(char *norm, CBLAS_INT *n, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(cgtcon)(char *norm, CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
+void BLAS_FUNC(zgtcon)(char *norm, CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
 
 } // extern "C"
 
@@ -260,12 +320,189 @@ GEN_POTRS(c, npy_complex64)
 GEN_POTRS(z, npy_complex128)
 
 
+#define GEN_SYTRF(PREFIX, TYPE) \
+inline void \
+sytrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## sytrf)(uplo, n, a, lda, ipiv, work, lwork, info); \
+};
+
+GEN_SYTRF(s, float)
+GEN_SYTRF(d, double)
+GEN_SYTRF(c, npy_complex64)
+GEN_SYTRF(z, npy_complex128)
+
+
+// dispatch to sSYtrf for "float hermitian"
+#define GEN_HETRF(PREFIX, L_PREFIX, TYPE) \
+inline void \
+hetrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## L_PREFIX ## trf)(uplo, n, a, lda, ipiv, work, lwork, info); \
+};
+
+GEN_HETRF(s, sy, float)
+GEN_HETRF(d, sy, double)
+GEN_HETRF(c, he, npy_complex64)
+GEN_HETRF(z, he, npy_complex128)
+
+
+#define GEN_SYTRI(PREFIX, TYPE) \
+inline void \
+sytri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## sytri)(uplo, n, a, lda, ipiv, work, info); \
+};
+
+GEN_SYTRI(s, float)
+GEN_SYTRI(d, double)
+GEN_SYTRI(c, npy_complex64)
+GEN_SYTRI(z, npy_complex128)
+
+
+// dispatch to sSYtri for "float hermitian"
+#define GEN_HETRI(PREFIX, L_PREFIX, TYPE) \
+inline void \
+hetri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## L_PREFIX ## tri)(uplo, n, a, lda, ipiv, work, info); \
+};
+
+GEN_HETRI(s, sy, float)
+GEN_HETRI(d, sy, double)
+GEN_HETRI(c, he, npy_complex64)
+GEN_HETRI(z, he, npy_complex128)
+
+
+// NB: iwork for real arrays only, no rwork for complex routines (10 arguments for s- d- variants; 9 arguments for c- and z- variants)
+#define GEN_SYCON(PREFIX, CTYPE, RTYPE, WTYPE) \
+inline void \
+sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, (WTYPE *)irwork, info); \
+};
+
+GEN_SYCON(s, float, float, CBLAS_INT)
+GEN_SYCON(d, double, double, CBLAS_INT)
+
+#define GEN_SYCON_CZ(PREFIX, CTYPE, RTYPE, WTYPE) \
+inline void \
+sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, info); \
+};
+
+GEN_SYCON_CZ(c, npy_complex64, float, float)
+GEN_SYCON_CZ(z, npy_complex128, double, double)
+
+
+// dispatch to sSYcon for "float hermitian"
+#define GEN_HECON(PREFIX, CTYPE, RTYPE, WTYPE) \
+inline void \
+hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, (WTYPE *)irwork, info); \
+};
+
+GEN_HECON(s, float, float, CBLAS_INT)
+GEN_HECON(d, double, double, CBLAS_INT)
+
+#define GEN_HECON_CZ(PREFIX, CTYPE, RTYPE, WTYPE) \
+inline void \
+hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## hecon)(uplo, n, a, lda, ipiv, anorm, rcond, work, info); \
+};
+
+GEN_HECON_CZ(c, npy_complex64, float, float)
+GEN_HECON_CZ(z, npy_complex128, double, double)
+
+
+#define GEN_SYTRS(PREFIX, TYPE) \
+inline void \
+sytrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## sytrs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
+};
+
+GEN_SYTRS(s, float)
+GEN_SYTRS(d, double)
+GEN_SYTRS(c, npy_complex64)
+GEN_SYTRS(z, npy_complex128)
+
+
+// dispatch to sSYtrs for "float hermitian"
+#define GEN_HETRS(PREFIX, L_PREFIX, TYPE) \
+inline void \
+hetrs(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## L_PREFIX ## trs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
+};
+
+GEN_HETRS(s, sy, float)
+GEN_HETRS(d, sy, double)
+GEN_HETRS(c, he, npy_complex64)
+GEN_HETRS(z, he, npy_complex128)
+
+
+#define GEN_GTTRF(PREFIX, TYPE) \
+inline void \
+gttrf(CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gttrf)(n, dl, d, du, du2, ipiv, info); \
+};
+
+GEN_GTTRF(s, float)
+GEN_GTTRF(d, double)
+GEN_GTTRF(c, npy_complex64)
+GEN_GTTRF(z, npy_complex128)
+
+
+#define GEN_GTTRS(PREFIX, TYPE) \
+inline void \
+gttrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gttrs)(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info); \
+};
+
+GEN_GTTRS(s, float)
+GEN_GTTRS(d, double)
+GEN_GTTRS(c, npy_complex64)
+GEN_GTTRS(z, npy_complex128)
+
+
+#define GEN_GTCON(PREFIX, TYPE) \
+inline void \
+gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *anorm, TYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, iwork, info); \
+};
+
+GEN_GTCON(s, float)
+GEN_GTCON(d, double)
+
+
+// NB: `iwork` is not used for c- and z- variants of ?gtcon
+#define GEN_GTCON_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, info); \
+};
+
+GEN_GTCON_CZ(c, npy_complex64, float)
+GEN_GTCON_CZ(z, npy_complex128, double)
+
+
+
 
 // Structure tags; python side maps assume_a strings to these values
 enum St : Py_ssize_t
 {
     NONE = -1,
     GENERAL = 0,
+    DIAGONAL = 11,
+    TRIDIAGONAL = 31,
     UPPER_TRIANGULAR = 21,
     LOWER_TRIANGULAR = 22,
     POS_DEF = 101,
@@ -298,6 +535,51 @@ void init_status(SliceStatus& slice_status, npy_intp idx, St slice_structure) {
 
 
 typedef std::vector<SliceStatus> SliceStatusVec;
+
+
+/*
+ * lwork defensive handler :
+ *  cf https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/lapack.py#L1004
+ *
+ *  Round floating-point lwork returned by lapack to integer.
+ *
+ *  Several LAPACK routines compute optimal values for LWORK, which
+ *  they return in a floating-point variable. However, for large
+ *  values of LWORK, single-precision floating point is not sufficient
+ *  to hold the exact value --- some LAPACK versions (<= 3.5.0 at
+ *  least) truncate the returned integer to single precision and in
+ *  some cases this can be smaller than the required value.
+ *
+ *  The fudge_factor comes from
+ *  https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/_basic.py#L1154
+ *
+ *  A fudge factor of 1% was added in commit https://github.com/scipy/scipy/commit/dfb543c147c
+ *  to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
+ */
+template<typename T>
+CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
+    using real_type = typename type_traits<T>::real_type;
+
+    real_type value = real_part(_lwrk) * fudge_factor;
+    if((std::is_same<real_type, float>::value) ||
+       (std::is_same<real_type, npy_complex64>::value)
+    ) {
+        // Single-precision routine -- take next fp value to work
+        // around possible truncation in LAPACK code
+        value = std::nextafter(value, std::numeric_limits<real_type>::infinity());
+    }
+
+    CBLAS_INT lwork;
+    if ((value < 0) || !(value <= (real_type)std::numeric_limits<CBLAS_INT>::max())) {
+        // Too large lwork required - Computation cannot be performed with standard LAPACK
+        lwork = -1;
+    }
+    else {
+        lwork = (CBLAS_INT)value;
+    }
+    return lwork;
+}
+
 
 
 /*
@@ -439,6 +721,34 @@ norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
 }
 
 
+template<typename T>
+typename type_traits<T>::real_type
+norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
+    using real_type = typename type_traits<T>::real_type;
+    using value_type = typename type_traits<T>::value_type;
+
+    value_type *pd = reinterpret_cast<value_type *>(d);
+    value_type *pdu = reinterpret_cast<value_type *>(du);
+    value_type *pdl = reinterpret_cast<value_type *>(dl);
+    real_type *rwork = (real_type *)work;
+
+    npy_intp i;
+    for (i=0; i<n; i++) {
+        rwork[i] = std::abs(pd[i]);
+    }
+    for (i=0; i<n-1; i++) {
+        rwork[i] += std::abs(pdl[i]);
+    }
+    for (i=1; i<n-1; i++) {
+        rwork[i] += std::abs(pdu[i-1]);
+    }
+
+    real_type temp = 0.0;
+    for (i = 0; i < n; i++) { if (rwork[i] > temp) { temp = rwork[i]; } }
+    return temp;
+}
+
+
 /***************************
  ***  Structure detection
  ***************************/
@@ -477,17 +787,26 @@ bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper
 
 
 template<typename T>
-bool
+std::tuple<bool, bool>
 is_sym_herm(const T *data, npy_intp n) {
+    // Return a pair of (is_symmetric_or_hermitian, is_symmetric_not_hermitian)
     using value_type = typename type_traits<T>::value_type;
     const value_type *p_data = reinterpret_cast<const value_type *>(data);
+    bool all_sym = true, all_herm = true;
 
     for (npy_intp i=0; i < n; i++) {
         for (npy_intp j=0; j < n; j++) {
-            if(p_data[i*n + j] != std::conj(p_data[i + j*n])) { return false; }
+            value_type elem1 = p_data[i*n + j];
+            value_type elem2 = p_data[i + j*n];
+            all_sym = all_sym && (elem1 == elem2);
+            all_herm = all_herm && (elem1 == std::conj(elem2));
+            if(!(all_sym || all_herm)) {
+                // short-circuit : it's neither symmetric not hermitian
+                return std::make_tuple(false, false);
+            }
         }
     }
-    return true;
+    return std::make_tuple(true, all_sym ? true : false);
 }
 
 
@@ -549,6 +868,47 @@ fill_other_triangle(char uplo, T *data, npy_intp n) {
     }
 }
 
+// XXX deduplicate (conj or noconj)
+template<typename T>
+inline void
+fill_other_triangle_noconj(char uplo, T *data, npy_intp n) {
+    if (uplo == 'U') {
+        for (npy_intp i=0; i<n; i++) {
+            for (npy_intp j=i+1; j<n; j++){
+                data[j + i*n] = data[i + j*n];
+            }
+        }
+    } else {
+        for (npy_intp i=0; i<n; i++) {
+            for (npy_intp j=0; j<i+1; j++){
+                data[j + i*n] = data[i + j*n];
+            }
+        }
+    }
+}
+
+
+/*
+ * Helper for converting an NxN matrix to tridiagonal form:
+ * extract the diagonals of `data` (a full NxN matrix) into du, d, dl
+ *
+ * the upper and lower subdiagonals, `dl` and `du`, are have length N-1
+ * the main diagonal, `d`, has length N
+ *
+ */
+template<typename T>
+inline void
+to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
+    for (npy_intp i=0; i<N; i++) {
+        d[i] = data[i + i*N];
+    }
+    for (npy_intp i=0; i<N-1; i++) {
+        dl[i] = data[i*N + i + 1];
+    }
+    for (npy_intp i=0; i<N-1; i++) {
+        du[i] = data[(i+1)*N + i];
+    }
+}
 
 
 template<typename T>

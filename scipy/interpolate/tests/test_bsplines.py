@@ -39,7 +39,7 @@ from scipy._lib._testutils import _run_concurrent_barrier
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
 
-from scipy.interpolate import _dfitpack as dfitpack
+from scipy.interpolate import _fitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
@@ -1117,15 +1117,15 @@ class TestInterop:
         # automatically calculated parameters are non-increasing
         # see gh-7589
         x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             splprep([x])
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             _impl.splprep([x])
 
         # given non-increasing parameter values u
         x = [1, 3, 2, 4]
         u = [0, 0.3, 0.2, 1]
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             splprep(*[[x], None, u])
 
     def test_sproot(self):
@@ -2172,6 +2172,16 @@ class TestGivensQR:
 
         xp_assert_close(cc, c, atol=1e-14)
 
+    def test_evaluate_all_bspl(self):
+        n = 10
+        x, _, t, k = self._get_xyt(n)
+        zero_array = np.zeros((k + 1,), dtype=float)
+        for xval in x:
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, k + 2), zero_array)
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, 2*k), zero_array)
+
 
 def data_file(basename):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)),
@@ -2614,6 +2624,11 @@ class TestNdBSpline:
             (1, 0): lambda x, y: 3 * x**2 * (y**2 + 2*y),
             (1, 1): lambda x, y: 3 * x**2 * (2*y + 2),
             (0, 0): lambda x, y: x**3 * (y**2 + 2*y),
+            (2*kx, 1): lambda x, y: 0,
+            (2*kx, 0): lambda x, y: 0,
+            (1, 3*ky): lambda x, y: 0,
+            (0, 3*ky): lambda x, y: 0,
+            (3*kx, 2*ky): lambda x, y: 0,
         }
 
         for nu, expected_fn in test_cases.items():

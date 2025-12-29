@@ -11,6 +11,7 @@ from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan, np_vecdot
+from scipy._lib.deprecation import _NoValue
 import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._array_api import (
@@ -2248,8 +2249,19 @@ AndersonResult = _make_tuple_bunch('AndersonResult',
                                     'significance_level'], ['fit_result'])
 
 
+_anderson_warning_message = (
+"""As of SciPy 1.17, users must choose a p-value calculation method by providing the
+`method` parameter. `method='interpolate'` interpolates the p-value from pre-calculated
+tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
+p-value via Monte Carlo simulation. When `method` is specified, the result object will
+include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
+or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
+available, and a p-value will always be computed according to one of the available
+`method` options.""".replace('\n', ' '))
+
+
 @xp_capabilities(np_only=True)
-def anderson(x, dist='norm'):
+def anderson(x, dist='norm', *, method=None):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -2267,11 +2279,35 @@ def anderson(x, dist='norm'):
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
         same distribution.
+    method : str or instance of `MonteCarloMethod`
+        Defines the method used to compute the p-value.
+        If `method` is ``"interpolated"``, the p-value is interpolated from
+        pre-calculated tables.
+        If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
+        `scipy.stats.monte_carlo_test` with the provided configuration options and other
+        appropriate settings.
+
+        .. versionadded:: 1.17.0
+            If `method` is not specified, `anderson` will emit a ``FutureWarning``
+            specifying that the user must opt into a p-value calculation method.
+            When `method` is specified, the object returned will include a ``pvalue``
+            attribute, but no ``critical_value``, ``significance_level``, or
+            ``fit_result`` attributes. Beginning in 1.19.0, these other attributes will
+            no longer be available, and a p-value will always be computed according to
+            one of the available `method` options.
 
     Returns
     -------
     result : AndersonResult
-        An object with the following attributes:
+        If `method` is provided, this is an object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        pvalue: float
+            The p-value corresponding with the test statistic, calculated according to
+            the specified `method`.
+
+        If `method` is unspecified, this is an object with the following attributes:
 
         statistic : float
             The Anderson-Darling test statistic.
@@ -2286,13 +2322,21 @@ def anderson(x, dist='norm'):
             An object containing the results of fitting the distribution to
             the data.
 
+        .. deprecated :: 1.17.0
+            The tuple-unpacking behavior of the return object and attributes
+            ``critical_values``, ``significance_level``, and ``fit_result`` are
+            deprecated. Beginning in SciPy 1.19.0, these features will no longer be
+            available, and the object returned will have attributes ``statistic`` and
+            ``pvalue``.
+
     See Also
     --------
     kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
 
     Notes
     -----
-    Critical values provided are for the following significance levels:
+    Critical values provided when `method` is unspecified are for the following
+    significance levels:
 
     normal/exponential
         15%, 10%, 5%, 2.5%, 1%
@@ -2351,18 +2395,15 @@ def anderson(x, dist='norm'):
 
     >>> import numpy as np
     >>> from scipy.stats import anderson
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(9781234521)
     >>> data = rng.random(size=35)
-    >>> res = anderson(data)
+    >>> res = anderson(data, dist='norm', method='interpolate')
     >>> res.statistic
-    0.8398018749744764
-    >>> res.critical_values
-    array([0.548, 0.617, 0.735, 0.853, 1.011])
-    >>> res.significance_level
-    array([15. , 10. ,  5. ,  2.5,  1. ])
+    np.float64(0.9887620209957291)
+    >>> res.pvalue
+    np.float64(0.012111200538380142)
 
-    The value of the statistic (barely) exceeds the critical value associated
-    with a significance level of 2.5%, so the null hypothesis may be rejected
+    The p-value is approximately 0.012,, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
     """ # numpy/numpydoc#87  # noqa: E501
@@ -2455,7 +2496,72 @@ def anderson(x, dist='norm'):
     fit_result = FitResult(getattr(distributions, dist), y,
                            discrete=False, res=res)
 
-    return AndersonResult(A2, critical, sig, fit_result=fit_result)
+    if method is None:
+        warnings.warn(_anderson_warning_message, FutureWarning, stacklevel=2)
+        return AndersonResult(A2, critical, sig, fit_result=fit_result)
+
+    if method == 'interpolate':
+        sig = 1 - sig if dist == 'weibull_min' else sig / 100
+        pvalue = np.interp(A2, critical, sig)
+    elif isinstance(method, stats.MonteCarloMethod):
+        pvalue = _anderson_simulate_pvalue(x, dist, method)
+    else:
+        message = ("`method` must be either 'interpolate' or "
+                   "an instance of `MonteCarloMethod`.")
+        raise ValueError(message)
+    return SignificanceResult(statistic=A2, pvalue=pvalue)
+
+
+def _anderson_simulate_pvalue(x, dist, method):
+    message = ("The `___` attribute of a `MonteCarloMethod` object passed as the "
+               "`method` parameter of `scipy.stats.anderson` is ignored.")
+
+    method = method._asdict()
+    if method.pop('rvs', False):
+        warnings.warn(message.replace('___', 'rvs'), UserWarning, stacklevel=3)
+    if method.pop('batch', False):
+        warnings.warn(message.replace('___', 'batch'), UserWarning, stacklevel=3)
+    method['n_mc_samples'] = method.pop('n_resamples')
+
+    kwargs= {'known_params': {'loc': 0}} if dist == 'expon' else {}
+    dist = getattr(stats, dist)
+    res = stats.goodness_of_fit(dist, x, statistic='ad', **kwargs, **method)
+    return res.pvalue
+
+
+def _anderson_ksamp_continuous(samples, Z, Zstar, k, n, N):
+    """Compute A2akN equation 3 of Scholz & Stephens.
+
+    Parameters
+    ----------
+    samples : sequence of 1-D array_like
+        Array of sample arrays.
+    Z : array_like
+        Sorted array of all observations.
+    Zstar : array_like
+        Sorted array of unique observations. Unused.
+    k : int
+        Number of samples.
+    n : array_like
+        Number of observations in each sample.
+    N : int
+        Total number of observations.
+
+    Returns
+    -------
+    A2KN : float
+        The A2KN statistics of Scholz and Stephens 1987.
+
+    """
+    A2kN = 0.
+
+    j = np.arange(1, N)
+    for i in arange(0, k):
+        s = np.sort(samples[i])
+        Mij = s.searchsorted(Z[:-1], side='right')
+        inner = (N*Mij - j*n[i])**2 / (j * (N - j))
+        A2kN += inner.sum() / n[i]
+    return A2kN / N
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
@@ -2544,7 +2650,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 
 
 @xp_capabilities(np_only=True)
-def anderson_ksamp(samples, midrank=True, *, method=None):
+def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2558,10 +2664,20 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     samples : sequence of 1-D array_like
         Array of sample data in arrays.
     midrank : bool, optional
-        Type of Anderson-Darling test which is computed. Default
+        Variant of Anderson-Darling test which is computed. Default
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+
+        .. deprecated::1.17.0
+            Use parameter `variant` instead.
+    variant : {'midrank', 'right', 'continuous'}
+        Variant of Anderson-Darling test to be computed. ``'midrank'`` is applicable
+        to both continuous and discrete populations. ``'discrete'`` and ``'continuous'``
+        perform alternative versions of the test for discrete  and continuous
+        populations, respectively.
+        When `variant` is specified, the return object will not be unpackable as a
+        tuple, and only attributes ``statistic`` and ``pvalue`` will be present.
     method : PermutationMethod, optional
         Defines the method used to compute the p-value. If `method` is an
         instance of `PermutationMethod`, the p-value is computed using
@@ -2579,6 +2695,10 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
         critical_values : array
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
+
+            .. deprecated::1.17.0
+                 Present only when `variant` is unspecified.
+
         pvalue : float
             The approximate p-value of the test. If `method` is not
             provided, the value is floored / capped at 0.1% / 25%.
@@ -2601,11 +2721,12 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
     midrank empirical distribution function. This test is applicable
-    to continuous and discrete data. If midrank is set to False, the
+    to continuous and discrete data. If `variant` is set to ``'discrete'``, the
     right side empirical distribution is used for a test for discrete
-    data. According to [1]_, the two discrete test statistics differ
-    only slightly if a few collisions due to round-off errors occur in
-    the test not adjusted for ties between samples.
+    data; if `variant` is ``'continuous'``, the same test statistic and p-value are
+    computed for data with no ties, but with less computation. According to [1]_,
+    the two discrete test statistics differ only slightly if a few collisions due
+    to round-off errors occur in the test not adjusted for ties between samples.
 
     The critical values corresponding to the significance levels from 0.01
     to 0.25 are taken from [1]_. p-values are floored / capped
@@ -2625,41 +2746,33 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(loc=0.5, size=30)])
+    >>> rng = np.random.default_rng(44925884305279435)
+    >>> res = stats.anderson_ksamp([rng.normal(size=50), rng.normal(loc=0.5, size=30)],
+    ...                            variant='midrank')
     >>> res.statistic, res.pvalue
-    (1.974403288713695, 0.04991293614572478)
-    >>> res.critical_values
-    array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])
+    (3.4444310693448936, 0.013106682406720973)
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
-    test value is greater than the critical value for 5% (1.961) but
-    not at the 2.5% level. The interpolation gives an approximate
-    p-value of 4.99%.
+    p-value is less than 0.05, but not at the 1% level.
 
     >>> samples = [rng.normal(size=50), rng.normal(size=30),
     ...            rng.normal(size=20)]
-    >>> res = stats.anderson_ksamp(samples)
+    >>> res = stats.anderson_ksamp(samples, variant='continuous')
     >>> res.statistic, res.pvalue
-    (-0.29103725200789504, 0.25)
-    >>> res.critical_values
-    array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
-      4.07210043, 5.56419101])
+    (-0.6309662273193832, 0.25)
 
-    The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The reported p-value (25%) has been capped and
-    may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.291).
+    As we might expect, the null hypothesis cannot be rejected here for three samples
+    from an identical distribution. The reported p-value (25%) has been capped at the
+    maximum value for which pre-computed p-values are available.
 
     In such cases where the p-value is capped or when sample sizes are
     small, a permutation test may be more accurate.
 
     >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
-    >>> res = stats.anderson_ksamp(samples, method=method)
+    >>> res = stats.anderson_ksamp(samples, variant='continuous', method=method)
     >>> res.pvalue
-    0.5254
+    0.699
 
     """
     k = len(samples)
@@ -2679,10 +2792,28 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
-    if midrank:
+    if variant == _NoValue or midrank != _NoValue:
+        message = ("Parameter `variant` has been introduced to replace `midrank`; "
+                   "`midrank` will be removed in SciPy 1.19.0. Specify `variant` to "
+                   "silence this warning. Note that the returned object will no longer "
+                   "be unpackable as a tuple, and `critical_values` will be omitted.")
+        warnings.warn(message, category=UserWarning, stacklevel=2)
+
+    return_critical_values = False
+    if variant == _NoValue:
+        return_critical_values = True
+        variant = 'midrank' if midrank else 'right'
+
+    if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank
-    else:
+    elif variant == 'right':
         A2kN_fun = _anderson_ksamp_right
+    elif variant == 'continuous':
+        A2kN_fun = _anderson_ksamp_continuous
+    else:
+        message = "`variant` must be one of 'midrank', 'right', or 'continuous'."
+        raise ValueError(message)
+
     A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
 
     def statistic(*samples):
@@ -2733,10 +2864,15 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     else:
         p = res.pvalue if method is not None else p
 
-    # create result object with alias for backward compatibility
-    res = Anderson_ksampResult(A2, critical, p)
-    res.significance_level = p
+    if return_critical_values:
+        # create result object with alias for backward compatibility
+        res = Anderson_ksampResult(A2, critical, p)
+        res.significance_level = p
+    else:
+        res = SignificanceResult(statistic=A2, pvalue=p)
+
     return res
+
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
@@ -3406,20 +3542,19 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     return FlignerResult(statistic, pval)
 
 
-def _mood_statistic_with_ties(x, y, t, m, n, N):
+def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     # First equation of "Mood's Squared Rank Test", Mielke pg 313
     E_0_T = m * (N * N - 1) / 12
 
     # m, n, N, t, and S are defined in the second paragraph of Mielke pg 312
     # The only difference is that our `t` has zeros interspersed with the relevant
     # numbers to keep the array rectangular, but these terms add nothing to the sum.
-    np = array_namespace(x, y, t)  # needed to use `cumulative_sum`
-    S = np.cumulative_sum(t, include_initial=True, axis=-1)
+    S = xp.cumulative_sum(t, include_initial=True, axis=-1)
     S_i, S_i_m1 = S[..., 1:], S[..., :-1]
     # Second equation of "Mood's Squared Rank Test", Mielke pg 313
     varM = (m * n * (N + 1.0) * (N**2 - 4) / 180
             - m * n / (180 * N * (N - 1))
-            * np.sum(t * (t ** 2 - 1) * (t ** 2 - 4 + (15 * (N - S_i - S_i_m1) ** 2)),
+            * xp.sum(t * (t ** 2 - 1) * (t ** 2 - 4 + (15 * (N - S_i - S_i_m1) ** 2)),
                      axis=-1))
 
     # There is a formula for Phi (`phi` in code) in terms of t, S, and Psi(I) at the
@@ -3446,31 +3581,33 @@ def _mood_statistic_with_ties(x, y, t, m, n, N):
         c = (N + 1) / 2
         phi = (sum_I2 - 2*c*sum_I + sum_1*c**2) / t
 
-    phi[t == 0] = 0  # where t = 0 we get NaNs; eliminate them
+    phi = xpx.at(phi)[t == 0].set(0.)  # where t = 0 we get NaNs; eliminate them
 
     # Mielke pg 312 defines `a` as the count of elements in sample `x` for each of the
     # unique values in the combined sample. The tricky thing is getting these to line
     # up with the locations of nonzero elements in `t`/`phi`.
-    x = np.sort(x, axis=-1)
-    xy = np.concatenate((x, y), axis=-1)
-    i = np.argsort(xy, stable=True, axis=-1)
+    x = xp.sort(x, axis=-1)
+    xy = xp.concat((x, y), axis=-1)
+    i = xp.argsort(xy, stable=True, axis=-1)
     _, a = _stats_py._rankdata(x, method='average', return_ties=True)
-    zeros = np.zeros(a.shape[:-1] + (n,))
-    a = np.concatenate((a, zeros), axis=-1)
-    a = np.take_along_axis(a, i, axis=-1)
+    a = xp.astype(a, phi.dtype)
+
+    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
+    a = xp.concat((a, zeros), axis=-1)
+    a = xp.take_along_axis(a, i, axis=-1)
 
     # Mielke pg 312 defines test statistic `T` as the inner product `a` and `phi`
-    T = np.vecdot(a, phi, axis=-1)
+    T = xp.vecdot(a, phi, axis=-1)
 
-    return (T - E_0_T) / np.sqrt(varM)
+    return (T - E_0_T) / xp.sqrt(varM)
 
 
-def _mood_statistic_no_ties(r, m, n, N):
+def _mood_statistic_no_ties(r, m, n, N, xp):
     rx = r[..., :m]
-    M = np.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
-    mnM = m * (N * N - 1.0) / 12
+    M = xp.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
+    E_0_T = m * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-    return (M - mnM) / sqrt(varM)
+    return (M - E_0_T) / math.sqrt(varM)
 
 
 def _mood_too_small(samples, kwargs, axis=-1):
@@ -3481,7 +3618,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3546,7 +3683,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     ----------
     [1] Mielke, Paul W. "Note on Some Squared Rank Tests with Existing Ties."
         Technometrics, vol. 9, no. 2, 1967, pp. 312-14. JSTOR,
-        https://doi.org/10.2307/1266427. Accessed 18 May 2022.
+        :doi:`10.2307/1266427`. Accessed 18 May 2022.
 
     Examples
     --------
@@ -3573,29 +3710,36 @@ def mood(x, y, axis=0, alternative="two-sided"):
                        pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
+
     # _axis_nan_policy decorator ensures axis=-1
-    xy = np.concatenate((x, y), axis=-1)
+    xy = xp.concat((x, y), axis=-1)
 
     m = x.shape[-1]
     n = y.shape[-1]
     N = m + n
 
     if m == 0 or n == 0 or N < 3:  # only needed for test_axis_nan_policy
-        NaN = _get_nan(x, y)
+        NaN = _get_nan(x, y, xp=xp)
         return SignificanceResult(NaN, NaN)
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
     r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
 
-    if np.any(t > 1):
-        z = _mood_statistic_with_ties(x, y, t, m, n, N)
+    if xp.any(t > 1):
+        z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
-        z = _mood_statistic_no_ties(r, m, n, N)
+        z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
 
-    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
+    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
 
-    return SignificanceResult(z[()], pval[()])
+    z = z[()] if z.ndim == 0 else z
+    pval = pval[()] if pval.ndim == 0 else pval
+    return SignificanceResult(z, pval)
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
@@ -3622,7 +3766,9 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
+                                ("cupy", "no rankdata")],
+                jax_jit=False, cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
