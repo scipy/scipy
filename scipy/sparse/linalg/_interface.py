@@ -236,9 +236,7 @@ class LinearOperator:
         Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
-            batch_shape = self.shape[:-2]
-            N = self.shape[-1]
-            v = np.zeros((*batch_shape, N), dtype=np.int8)
+            v = np.zeros(self.shape[-1], dtype=np.int8)
             try:
                 matvec_v = np.asarray(self.matvec(v))
             except OverflowError:
