@@ -4333,7 +4333,7 @@ def lfilter_zi(b, a):
     zi : 1-D ndarray
         The initial state for the filter.
 
-     Raises
+    Raises
     ------
     ValueError
         If ``a[0] == 0`` (invalid denominator polynomial) or
@@ -4405,10 +4405,12 @@ def lfilter_zi(b, a):
     """
     xp = array_namespace(b, a)
 
-    # FIXME: Can this function be replaced with an appropriate
-    # use of lfiltic?  For example, when b,a = butter(N,Wn),
+    # Note: As an alternative to this function, using `lfiltic` might work as well.
+    # For example, when b,a = butter(N,Wn), then
     #    lfiltic(b, a, y=numpy.ones_like(a)*y_inf, x=numpy.ones_like(b)).
-    #
+    # should produce the same result. Though, no obvious algorithmic advantages over
+    # this implementation could be identified.
+
 
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
@@ -4430,19 +4432,16 @@ def lfilter_zi(b, a):
         raise ValueError("Filter not stable due to sum(a) == 0, i.e., " +
                          "having a pole at z = 1!")
 
-    y_inf = sum(b) / sum_a  # y[k → ∞] for unit-step input
+    y_inf = xp.sum(b) / sum_a  # y[k → ∞] for unit-step input
 
     # Calculate `zi[k] = zi[k+1] + b - y_inf*a` allowing different length for a, b:
     n_a, n_b = a.shape[0], b.shape[0]
     n = max(n_a, n_b)
-    zi = xp.zeros(n, dtype=xp.result_type(a, b, y_inf))
-    zi[:n_b] = b
-    zi[:n_a] -= y_inf * a
-    # Note: As of 2025-12, the cumsum function is not part of the Array API yet
-    for i in range(n-1, 0, -1):
-        zi[i-1] += zi[i]
-    return zi[1:]
-
+    b = xpx.pad(b, (0, n-n_b))
+    a = xpx.pad(a, (0, n-n_a))
+    # `xp.cumulative_sum((b - y_inf*a)[::-1])[-2::-1]` does not work in torch due to
+    # unsupported slicing with a negative step index. Hence, `flip` is used:
+    return xp.flip(xp.cumulative_sum(xp.flip(b - y_inf*a)))[1:]
 
 def sosfilt_zi(sos):
     """

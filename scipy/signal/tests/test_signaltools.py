@@ -2786,15 +2786,16 @@ class TestLFilterZI:
         assert_array_almost_equal(zi, zi_expected)
 
     @pytest.mark.parametrize('b, a, zi_expected,',[
-        ([1., 0., 2.],     [1., -1., 0.5], [5., -1.]),
-        ([1., 2., 3., 4.], [1.,],          [9.,  7., 4.])])
+        ([1., 0., 2.],     [1., -1., 0.5],   [5., -1.]),
+        ([1., 2., 3., 4.], [1.,],            [9.,  7.,  4.]),
+        ([1., 9.],         [1., 2., 3., 4.], [0. ,-7., -4.])])
     def test_basic(self, b, a, zi_expected, xp):
         b, a, zi_expected = (xp.asarray(v_) for v_ in (b, a, zi_expected))
 
         zi = lfilter_zi(b, a)
         assert_array_almost_equal(zi, zi_expected)
 
-        y = lfilter(b, a, xp.ones(5), zi=zi)[0]  # test for constant filter response
+        y = lfilter(b, a, xp.ones(9), zi=zi)[0]  # test for constant filter response
         y_expected = xp.full_like(y, fill_value=sum(b)/sum(a))
         assert_array_almost_equal(y, y_expected)
 
