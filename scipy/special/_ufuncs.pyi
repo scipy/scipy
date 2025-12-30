@@ -129,6 +129,7 @@ __all__ = [
     'j0',
     'j1',
     'jn',
+    'js_div',
     'jv',
     'jve',
     'k0',
@@ -411,6 +412,7 @@ ive: np.ufunc
 j0: np.ufunc
 j1: np.ufunc
 jn: np.ufunc
+js_div: np.ufunc
 jv: np.ufunc
 jve: np.ufunc
 k0: np.ufunc
