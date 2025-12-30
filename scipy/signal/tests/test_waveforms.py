@@ -1,10 +1,15 @@
+import math
+from typing import Literal
+
 import numpy as np
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, xp_assert_close
+    array_namespace, assert_almost_equal, xp_assert_equal, xp_assert_close
 )
 
 import scipy.signal._waveforms as waveforms
+from scipy.fft import irfft
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -46,6 +51,17 @@ def compute_frequency(t, theta):
 
 
 class TestChirp:
+
+    def test_exceptions(self):
+        """Raise all exceptions in used functions. """
+        t = np.arange(3)
+        with pytest.raises(ValueError, match="^For a logarithmic chirp, f0 and f1 "):
+            waveforms._chirp_phase(t, f0=-1, t1=2, f1=1, method='log')
+        for f0, f1 in [(0, 1), (1, 0)]:
+            with pytest.raises(ValueError, match="^For a hyperbolic chirp, f0 and f1"):
+                waveforms._chirp_phase(t, f0=f0, t1=2, f1=f1, method='hyp')
+        with pytest.raises(ValueError, match="^method must be 'linear', 'quadratic',"):
+            waveforms._chirp_phase(t, f0=f0, t1=2, f1=f1, method='INVALID')
 
     def test_linear_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
@@ -195,6 +211,16 @@ class TestChirp:
         assert_raises(ValueError, waveforms.chirp, t, 0, t1, 1, method)
         assert_raises(ValueError, waveforms.chirp, t, 1, t1, 0, method)
 
+    def test_hyperbolic_const_freq(self):
+        """Test case parameter f1 == f2.
+
+        This test is required to achieve 100% coverage.
+        """
+        t, x_ref = np.arange(3), np.array([1., 1., 1.])
+
+        x = waveforms.chirp(t, f0=2, t1=2, f1=2, method='hyp')
+        xp_assert_close(x, x_ref)
+
     def test_unknown_method(self):
         method = "foo"
         f0 = 10.0
@@ -248,6 +274,15 @@ class TestChirp:
 
 
 class TestSweepPoly:
+
+    def test_sweep_poly(self):
+        """This test ensures that function `sweep_poly` has 100% coverage. """
+        t, p = np.arange(3), np.ones(2)
+        x_ref = np.array([1., -1., 1.])
+
+        x = waveforms.sweep_poly(t, p)
+        xp_assert_close(x, x_ref)
+
 
     def test_sweep_poly_quad1(self):
         p = np.poly1d([1.0, 0.0, 1.0])
@@ -317,6 +352,19 @@ class TestSweepPoly:
 
 class TestGaussPulse:
 
+    def test_exceptions(self):
+        """Raise all exceptions in function. """
+        with pytest.raises(ValueError, match="^Center frequency "):
+             waveforms.gausspulse('cutoff', fc=-1.0)
+        with pytest.raises(ValueError, match="^Fractional bandwidth "):
+            waveforms.gausspulse('cutoff', fc=1000.0, bw=-0.5)
+        with pytest.raises(ValueError, match="^Reference level for bandwidth "):
+            waveforms.gausspulse('cutoff', bwr=1.0)
+        with pytest.raises(ValueError, match="^Reference level for time cutoff must"):
+            waveforms.gausspulse('cutoff', tpr=1.0)
+        with pytest.raises(ValueError, match="^If `t` is a string, it must be "):
+            waveforms.gausspulse('INVALID')
+
     def test_integer_fc(self):
         float_result = waveforms.gausspulse('cutoff', fc=1000.0)
         int_result = waveforms.gausspulse('cutoff', fc=1000)
@@ -341,6 +389,40 @@ class TestGaussPulse:
         err_msg = "Integer input 'tpr=-60' gives wrong result"
         xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
+    def test_parameter_t_values(self):
+        """Pass numeric array instead of string "cutoff". """
+        t = np.array([-0.5, 0, 0.5])
+        x0_ref = np.array([-0.7999183981317266, 1, -0.7999183981317266])
+        e0_ref = np.array([0.7999183981317266, 1, 0.7999183981317266])
+        y0_ref = np.array([-9.796175058510971e-17, 0, 9.796175058510971e-17])
+
+
+        x = waveforms.gausspulse(t, fc=1, retquad=False, retenv=False)
+        print(f"{x[0]=:0.16f}")
+        xp_assert_close(x, x0_ref, rtol=1e-8,
+                        err_msg="Invalid result x for retquad=False, retenv=False)")
+
+        x, e = waveforms.gausspulse(t, fc=1, retquad=False, retenv=True)
+        xp_assert_close(x, x0_ref, rtol=1e-8,
+                        err_msg="Invalid result x for retquad=False, retenv=True)")
+        xp_assert_close(e, e0_ref, rtol=1e-8,
+                        err_msg="Invalid result e for retquad=False, retenv=True)")
+
+        x, y = waveforms.gausspulse(t, fc=1, retquad=True, retenv=False)
+        print(f"{y[0]=:.16g}")
+        xp_assert_close(x, x0_ref, rtol=1e-8,
+                        err_msg="Invalid result x for retquad=True, retenv=False)")
+        xp_assert_close(y, y0_ref, rtol=1e-8,
+                        err_msg="Invalid result y for retquad=True, retenv=False)")
+
+        x, y, e = waveforms.gausspulse(t, fc=1, retquad=True, retenv=True)
+        print(f"{y[0]=:.16g}")
+        xp_assert_close(x, x0_ref, rtol=1e-8,
+                        err_msg="Invalid result x for retquad=True, retenv=True)")
+        xp_assert_close(y, y0_ref, rtol=1e-8,
+                        err_msg="Invalid result y for retquad=True, retenv=True)")
+        xp_assert_close(e, e0_ref, rtol=1e-8,
+                        err_msg="Invalid result e for retquad=True, retenv=True)")
 
 class TestUnitImpulse:
 
@@ -390,11 +472,152 @@ class TestSawtoothWaveform:
         waveform = waveforms.sawtooth(1)
         assert waveform.dtype == np.float64
 
+    @pytest.mark.parametrize("width, x_ref", ([
+                              (   0, [ 1,  1/2,   0, -1/2]),
+                              (0.25, [-1,    1, 1/3, -1/3]),
+                              ( 0.5, [-1,    0,   1,    0]),
+                              (0.75, [-1, -1/3, 1/3,    1]),
+                              (   1, [-1, -1/2,   0,  1/2])]))
+    def test_values(self, width, x_ref):
+        t = np.linspace(0, 2 * np.pi, 4, endpoint=False)
+        x = waveforms.sawtooth(t, width)
+        xp_assert_close(x, np.asarray(x_ref, dtype=float), atol=1e-12)
+
+
+class TestSawtoothRFFT:
+    """Unit tests for function `signal.sawtooth_rfft`. """
+
+    def setup_class(self):
+        """Reference values are calculated here. """
+        xp = array_namespace()
+        # For self.test_values():
+        vv0 = -8 / 3 * xp.array([1 + 1j, 2., 1 - 1j, 0, 1 + 1j])
+        self.Xa_ref = xp.zeros((6,), dtype=vv0.dtype)
+        self.Xa_ref[1:] = vv0 / (xp.arange(1, 6) * xp.pi) ** 2
+        self.Xb_ref = xp.zeros_like(self.Xa_ref)
+        self.Xb_ref[2::2] = self.Xa_ref[1:3]
+
+        # For self.test_norm_parameter():
+        self.x0_ref = irfft(self.Xa_ref, norm='forward')
+
+        # For self.test_duty01():
+        self.X01a_ref = xp.zeros(6, dtype=complex)
+        self.X01a_ref[1:] = 1j / xp.pi / xp.arange(1, 6)
+        self.X01b_ref = xp.zeros_like(self.X01a_ref)
+        self.X01b_ref[2::2] = self.X01a_ref[1:3]
+
+    def test_exceptions(self):
+        """Raise all exceptions in function. """
+        for n in (10.5, -10):
+            with pytest.raises(ValueError, match=f"^Parameter {n=} is not a positive"):
+                waveforms.sawtooth_rfft(n, 1, 0.5)
+        for m_cyc in (5.5, 0, 10):
+            with pytest.raises(ValueError, match=f"^Parameter {m_cyc=} is not a "):
+                waveforms.sawtooth_rfft(10, m_cyc, 0.5)
+        for duty in (-0.1, 1.1):
+            with pytest.raises(ValueError, match="^0 <= duty <= 1 does not hold for "):
+                waveforms.sawtooth_rfft(10, 1, duty)
+        norm = 'INVALID'
+        with pytest.raises(ValueError, match=f"^Parameter {norm=} not in "):
+            # noinspection PyTypeChecker
+            waveforms.sawtooth_rfft(10, 1, 0.5, norm=norm)
+
+    @pytest.mark.parametrize('n', (10, 11))
+    def test_values(self, n):
+        """Test output against reference values. """
+        Xa = waveforms.sawtooth_rfft(n, 1, duty=0.25)
+        xp_assert_close(Xa, n * self.Xa_ref, atol=1e-12)
+
+        Xb = waveforms.sawtooth_rfft(n, 2, duty=0.25)
+        xp_assert_close(Xb, n * self.Xb_ref, atol=1e-12)
+
+    @pytest.mark.parametrize('norm', ('backward', 'ortho', 'forward'))
+    def test_norm_parameter(self, norm: Literal['backward', 'ortho', 'forward']):
+        """Verify that parameter `norm` is compatible with `scipy.fft.irfft`. """
+        X0 = waveforms.sawtooth_rfft(10, 1, duty=0.25, norm=norm)
+        x0 = irfft(X0, norm=norm)
+        xp_assert_close(x0, self.x0_ref, atol=1e-12)
+
+    @pytest.mark.parametrize('norm', ('backward', 'ortho', 'forward'))
+    @pytest.mark.parametrize('n', (10, 11))
+    def test_duty01(self, n, norm: Literal['backward', 'ortho', 'forward']):
+        """Test for parameter ``duty=0`` and ``duty=1``. """
+        s = {'backward': n, 'ortho': math.sqrt(n), 'forward': 1}[norm]
+
+        X0a = waveforms.sawtooth_rfft(n, 1, duty=0, norm=norm)
+        xp_assert_close(X0a, -s * self.X01a_ref, atol=1e-12)
+
+        X0b = waveforms.sawtooth_rfft(n, 2, duty=0, norm=norm)
+        xp_assert_close(X0b, -s * self.X01b_ref, atol=1e-12)
+
+        X1a = waveforms.sawtooth_rfft(n, 1, duty=1, norm=norm)
+        xp_assert_close(X1a, s * self.X01a_ref, atol=1e-12)
+
+        X1b = waveforms.sawtooth_rfft(n, 2, duty=1, norm=norm)
+        xp_assert_close(X1b, s * self.X01b_ref, atol=1e-12)
+
+
 
 class TestSquareWaveform:
     def test_dtype(self):
-        waveform = waveforms.square(np.array(1, dtype=np.float32), duty=np.float32(0.5))
+        waveform = waveforms.square(np.array(1, dtype=np.float32),
+                                    duty=np.float32(0.5))
         assert waveform.dtype == np.float64
 
         waveform = waveforms.square(1)
         assert waveform.dtype == np.float64
+
+    @pytest.mark.parametrize('duty, x_ref', ([
+                             (   0, [-1, -1, -1, -1]),
+                             (0.25, [ 1, -1, -1, -1]),
+                             ( 0.5, [ 1,  1, -1, -1]),
+                             (0.75, [ 1,  1,  1, -1]),
+                             (   1, [ 1,  1,  1,  1])]))
+    def test_values(self, duty, x_ref):
+        t = np.linspace(0, 2 * np.pi, 4, endpoint=False)
+        x = waveforms.square(t, duty)
+        xp_assert_equal(x, np.asarray(x_ref, dtype=np.float64))
+
+
+class TestSquareRFFT:
+    """Unit tests for function `signal.square_rfft`. """
+
+    def setup_class(self):
+        """Reference values are calculated here. """
+        # For self.test_values():
+        xp = array_namespace()
+        self.X0 = xp.array([0, 1 - 1j, -1j, -(1 + 1j) / 3, 0., (1 - 1j) / 5]) / xp.pi
+        self.X0[0] = -0.5
+
+        # For self.test_norm_parameter():
+        X_ref = xp.asarray([4., 0., -(8 + 8j) / xp.pi, 0., -8j / xp.pi])
+        self.x_ref = irfft(X_ref, norm='backward')
+
+    def test_exceptions(self):
+        """Raise all exceptions in function. """
+        for n in (10.5, -10):
+            with pytest.raises(ValueError, match=f"^Parameter {n=} is not a positive"):
+                waveforms.square_rfft(n, 1, 0.5)
+        for m_cyc in (5.5, 0, 10):
+            with pytest.raises(ValueError, match=f"^Parameter {m_cyc=} is not a "):
+                waveforms.square_rfft(10, m_cyc, 0.5)
+        for duty in (0, 1):
+            with pytest.raises(ValueError, match="^0 < duty < 1 does not hold for "):
+                waveforms.square_rfft(10, 1, duty)
+        norm = 'INVALID'
+        with pytest.raises(ValueError, match=f"^Parameter {norm=} not in "):
+            # noinspection PyTypeChecker
+            waveforms.square_rfft(10, 1, 0.5, norm=norm)
+
+    @pytest.mark.parametrize('n', (10, 11))
+    def test_values(self, n):
+        """Test output against reference values. """
+        X = waveforms.square_rfft(n, 1, 0.25)
+        xp_assert_close(X, self.X0 * n, atol=1e-12)
+
+    @pytest.mark.parametrize('norm', ('backward', 'ortho', 'forward'))
+    def test_norm_parameter(self, norm: Literal['backward', 'ortho', 'forward']):
+        """Test that parameter `norm` is compatible with `scipy.fft.irfft`. """
+        X = waveforms.square_rfft(8, 2, 0.75, norm=norm)
+        x = irfft(X, norm=norm)
+        xp_assert_close(x, self.x_ref, atol=1e-12)

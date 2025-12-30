@@ -4,13 +4,17 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+from typing import Literal
+
 import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
+from scipy._lib._array_api import array_namespace
+from scipy.fft import rfft
 
-__all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
-           'unit_impulse']
+__all__ = ['sawtooth', 'sawtooth_rfft', 'square', 'square_rfft', 'gausspulse', 'chirp',
+           'sweep_poly', 'unit_impulse']
 
 
 def sawtooth(t, width=1):
@@ -21,9 +25,8 @@ def sawtooth(t, width=1):
     interval 0 to ``width*2*pi``, then drops from 1 to -1 on the interval
     ``width*2*pi`` to ``2*pi``. `width` must be in the interval [0, 1].
 
-    Note that this is not band-limited.  It produces an infinite number
-    of harmonics, which are aliased back and forth across the frequency
-    spectrum.
+    Note that the created signal is not band-limited. Consult the example of
+    `sawtooth_rfft` on how to create a waveform bandlimited by the Nyquist frequency.
 
     Parameters
     ----------
@@ -41,16 +44,32 @@ def sawtooth(t, width=1):
     y : ndarray
         Output array containing the sawtooth waveform.
 
+    See Also
+    --------
+    sawtooth_rfft: Onesided FFT of a sawtooth or triangle waveform.
+    square: Create periodic square-wave waveform.
+    square_rfft: Onesided FFT of a square-wave waveform.
+
     Examples
     --------
-    A 5 Hz waveform sampled at 500 Hz for 1 second:
+    The following example depicts 5 Hz waveforms with various `width` parameters:
 
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    ...
     >>> t = np.linspace(0, 1, 500)
-    >>> plt.plot(t, signal.sawtooth(2 * np.pi * 5 * t))
-
+    >>> fg0, axx = plt.subplots(5, 1, sharex='all', figsize=(5, 5), tight_layout=True)
+    >>> axx[0].set_title("Triangle signals with various width parameters")
+    >>> for i_, ax_ in enumerate(axx):
+    ...     w_ = i_ / (len(axx) - 1)
+    ...     y_ = signal.sawtooth(2 * np.pi * 5 * t, width=w_)
+    ...     ax_.plot(t, y_, f'C{i_}', label=f"width={w_}")
+    ...     ax_.legend(loc='upper right', framealpha=1)
+    ...     ax_.grid(True)
+    ...     ax_.set_ylabel("Ampl.")
+    >>> axx[-1].set(xlabel="Time in seconds")
+    >>> plt.show()
     """
     t, w = asarray(t), asarray(width)
     w = asarray(w + (t - t))
@@ -81,6 +100,131 @@ def sawtooth(t, width=1):
     return y
 
 
+def sawtooth_rfft(n: int, m_cyc: int, duty: float = 0.5, *,
+                  norm: Literal['backward', 'ortho', 'forward'] = 'backward'):
+    r"""Onesided FFT of a sawtooth or triangle wave which is band-limited by the
+    Nyquist frequency.
+
+    This function returns the result of applying the :func:`~scipy.fft.rfft` function
+    to a virtual sawtooth wave signal of `n` samples which had an ideal low-pass filter
+    applied to remove spectral components above the Nyquist frequency ``0.5/T``. Here,
+    ``T`` is assumed to be the sampling interval.
+
+    Parameters
+    ----------
+    n : int
+        Number of samples of the virtual input signal.
+    m_cyc : int
+        Number of full cycles for `n` samples (``0 < m_cyc < n // 2`` must hold).
+        The frequency of the sawtooth wave is ``m_cyc / (n*T)``.
+    duty : float
+        Duty cycle, i.e., the ratio of the duration of the first part with positive
+        slope divided by the duration of a complete cycle. Note that ``0 <= duty <= 1``
+        must hold. Default: ``1``
+    norm :  Literal['backward', 'ortho', 'forward']
+        Scaling factor. Same as in :func:`~scipy.fft.rfft`. Default: ``'backward'``
+
+    Returns
+    -------
+    X: np.ndarray
+        A complex-valued array of length ``(n+1)//2`` containing the spectral values.
+        ``scipy.fft.rfftfreq(n, T)`` determines the corresponding frequency values of
+        `X`. The signal is calculated with ``scipy.fft.irfft(X, n, norm=norm)``.
+
+    See Also
+    --------
+    sawtooth: Create a periodic sawtooth or triangle waveform.
+    square: Create periodic square-wave waveform.
+    square_rfft: Onesided FFT of a square-wave waveform.
+
+    Notes
+    -----
+    A sawtooth wave :math:`x(t)` of frequency :math:`1/\tau` and duty cycle `d` can be
+    expressed as the Fourier series
+
+    .. math::
+
+        x(t) = \sum_{l=-\infty}^\infty c[l] \exp\{\mathbb{j}2\pi l t /\tau\}\ ,\quad
+        c[l] = \begin{cases}
+               0 &\text{ for } l = 0\ ,\\
+               -\frac{\mathbb{j}\tau}{\pi l} &\text{ for } l \neq 0 \wedge d = 0 \ ,\\
+               +\frac{\mathbb{j}\tau}{\pi l} &\text{ for } l \neq 0 \wedge d = 1 \ ,\\
+               \frac{\tau \left(1 - \operatorname{e}^{\mathbb{j}2\pi d l}\right)}{
+                     2\pi^2 l^2 d (d-1)}
+               &\text{ for } l \neq 0 \wedge 0 < d < 1 \ .
+            \end{cases}
+
+    The close relationship between Fourier series and the discrete Fourier transform
+    allows to utilize :math:`c[l]` to obtain a closed-form expression for `X`. I.e.,
+    ``X[m_cyc*l] = s * c[l] / tau``, with ``tau = n * T / m_cyc`` being the duration of
+    one cycle. The scaling factor ``s`` has a value of ``n`` for parameter
+    `norm` = ``'backward'``, ``sqrt(n)`` for `norm` = ``'ortho'``, or ``1`` for
+    `norm` = ``'forward'``. All other values of `X` are zero.
+
+    Note that the magnitude :math:`|c[l]|` decreases proportionally to :math:`1/l^2`
+    if :math:`0 < d < 1` holds, else proportionally to :math:`1/|l|`. Hence, an ideal
+    sawtooth wave is not band-limited. The function :func:`~scipy.signal.sawtooth` can
+    be used to sample non-band-limited sawtooth waves.
+
+    Examples
+    --------
+    The following code generates a plot of 1 Hz square wave and its Magnitude spectrum
+    (Consult the `square_rfft` examples on creating a signal with varying frequency):
+
+    >>> import numpy as np
+    >>> from matplotlib import pyplot as plt
+    >>> from scipy.fft import irfft, rfftfreq
+    >>> from scipy.signal import sawtooth_rfft
+    ...
+    >>> n, T = 500, 1e-2  # number of samples and sampling interval
+    >>> m_cyc, d = 5, 1  # number of full cycles and duty cycle
+    ...
+    >>> X = sawtooth_rfft(n, m_cyc, duty=d)
+    >>> x, t = irfft(X, n), np.arange(n) * T  # signal and time stamps
+    ...
+    >>> f = rfftfreq(n, T)  # frequencies of X
+    >>> df = f[1] - f[0]  # frequency resolution
+    ...
+    >>> fg, axx = plt.subplots(2, 1, tight_layout=True)
+    >>> axx[0].set_title(f"{m_cyc*df:g} Hz Sawtooth Wave ({100*d:g}% duty cycle)")
+    >>> axx[0].set(xlabel=rf"Time $t$ in seconds ($T={1e3*T:g}\,$ms, ${n=}$ samples)",
+    ...            ylabel="Amplitude $x(t)$", xlim=t[[0, -1]])
+    >>> axx[1].set_title(f"Magnitude Spectrum of $x(t)$")
+    >>> axx[1].set(ylabel="Magnitude $|X(f)| / (nT)$", xlim=f[[0, -1]],
+    ...            xlabel=rf"Frequency $f$ in hertz ($\Delta f={df:g}\,$Hz)")
+    >>> axx[0].plot(t, x, 'C0-')
+    >>> axx[1].plot(f, abs(X)/n, 'C1-')
+    ...
+    >>> for ax_ in axx:
+    ...    ax_.grid()
+    >>> plt.show()
+    """
+    xp = array_namespace()
+    if not (xp.result_type(n, xp.int64) == xp.int64 and n > 0):
+        raise ValueError(f"Parameter {n=} is not a positive integer!")
+    if not (xp.result_type(m_cyc, xp.int64) == xp.int64 and 0 < m_cyc < n // 2):
+        raise ValueError(f"Parameter {m_cyc=} is not a positive integer < {n//2=}!")
+    if not (0 <= duty <= 1):
+        raise ValueError(f"0 <= duty <= 1 does not hold for parameter {duty=}!")
+
+    scale_factors = {'backward': n, 'ortho': xp.sqrt(n), 'forward': 1}
+    if norm not in scale_factors:
+        raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
+
+    n_X = n // 2 + 1  # number of bins produced by rfft for signal of n samples
+    X_dtype = rfft([0., ], norm=norm).dtype  # Use same dtype as rfft produces
+    X = xp.zeros((n_X,), dtype=X_dtype)
+
+    ll = xp.arange(1, (n_X + m_cyc - 1) // m_cyc) * xp.pi
+    if duty == 0:
+        X[m_cyc::m_cyc] = -scale_factors[norm] * 1j / ll
+    elif duty == 1:
+        X[m_cyc::m_cyc] = scale_factors[norm] * 1j / ll
+    else:
+        exponent, denominator = xp.exp(-2j * duty * ll), 2 * ll**2 * duty * (duty - 1)
+        X[m_cyc::m_cyc] = scale_factors[norm] * (1 - exponent) / denominator
+    return X
+
 def square(t, duty=0.5):
     """
     Return a periodic square-wave waveform.
@@ -89,9 +233,8 @@ def square(t, duty=0.5):
     ``2*pi*duty`` and -1 from ``2*pi*duty`` to ``2*pi``. `duty` must be in
     the interval [0,1].
 
-    Note that this is not band-limited.  It produces an infinite number
-    of harmonics, which are aliased back and forth across the frequency
-    spectrum.
+    Note that the created signal is not band-limited. Consult the example of
+    `square_rfft` on how to create a waveform bandlimited by the Nyquist frequency.
 
     Parameters
     ----------
@@ -107,28 +250,50 @@ def square(t, duty=0.5):
     y : ndarray
         Output array containing the square waveform.
 
+    See Also
+    --------
+    square_rfft: Onesided FFT of a square-wave waveform.
+    sawtooth: Create a periodic sawtooth or triangle waveform.
+    sawtooth_rfft: Onesided FFT of a sawtooth or triangle waveform.
+
     Examples
     --------
-    A 5 Hz waveform sampled at 500 Hz for 1 second:
+    The following example shows a 5 Hz waveform sampled at 500 Hz for 1 second:
 
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    ...
     >>> t = np.linspace(0, 1, 500, endpoint=False)
-    >>> plt.plot(t, signal.square(2 * np.pi * 5 * t))
-    >>> plt.ylim(-2, 2)
+    >>> x = signal.square(2 * np.pi * 5 * t)
+    >>>
+    ...
+    >>> fg0, ax0 = plt.subplots(tight_layout=True)
+    >>> ax0.set_title("5 Hz Square Wave signal")
+    >>> ax0.set(xlabel="Time in seconds", ylabel="Amplitude")
+    >>> ax0.plot(t, x)
+    >>> plt.show()
 
-    A pulse-width modulated sine wave:
 
-    >>> plt.figure()
+    The second example shows how to generate a pulse-width modulated square wave
+    signal:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    ...
+    >>> t = np.linspace(0, 1, 500, endpoint=False)
     >>> sig = np.sin(2 * np.pi * t)
     >>> pwm = signal.square(2 * np.pi * 30 * t, duty=(sig + 1)/2)
-    >>> plt.subplot(2, 1, 1)
-    >>> plt.plot(t, sig)
-    >>> plt.subplot(2, 1, 2)
-    >>> plt.plot(t, pwm)
-    >>> plt.ylim(-1.5, 1.5)
-
+    ...
+    >>> fg1, (ax10, ax11) = plt.subplots(2, 1, sharex='all', tight_layout=True)
+    >>> ax10.set_title("1 Hz Sine wave")
+    >>> ax10.set_ylabel("Amplitude")
+    >>> ax10.plot(t, sig, 'C1-')
+    >>> ax11.set_title("Pulse-width modulated Square Wave")
+    >>> ax11.set(xlabel="Time in seconds", ylabel="Amplitude")
+    >>> ax11.plot(t, pwm, 'C0-')
+    >>> plt.show()
     """
     t, w = asarray(t), asarray(duty)
     w = asarray(w + (t - t))
@@ -149,6 +314,157 @@ def square(t, duty=0.5):
     mask3 = (1 - mask1) & (1 - mask2)
     place(y, mask3, -1)
     return y
+
+
+def square_rfft(n: int, m_cyc: int, duty: float = 0.5,  *,
+                norm: Literal['backward', 'ortho', 'forward'] = 'backward'):
+    r"""Onesided FFT of a square wave which is band-limited by the Nyquist frequency.
+
+    This function returns the result of applying the :func:`~scipy.fft.rfft` function
+    to a virtual square wave signal of `n` samples which had an ideal low-pass filter
+    applied to remove spectral components above the Nyquist frequency ``0.5/T``. Here,
+    ``T`` is assumed to be the sampling interval.
+
+    Parameters
+    ----------
+    n : int
+        Number of samples of the virtual input signal.
+    m_cyc : int
+        Number of full cycles for `n` samples (``0 < m_cyc < n // 2`` must hold).
+        The frequency of the square wave is ``m_cyc / (n*T)``.
+    duty : float
+        Duty cycle, i.e., the ratio of the duration of the positive part divided by the
+        duration of a complete cycle. Note that ``0 < duty < 1`` must hold.
+        Default: ``0.5``
+    norm :  Literal['backward', 'ortho', 'forward']
+        Scaling factor. Same as in :func:`~scipy.fft.rfft`. Default: ``'backward'``
+
+    Returns
+    -------
+    X: np.ndarray
+        A complex-valued array of length ``(n+1)//2`` containing the spectral values.
+        ``scipy.fft.rfftfreq(n, T)`` determines the corresponding frequency values of
+        `X`. The signal is calculated with ``scipy.fft.irfft(X, n, norm=norm)``.
+
+    .. versionadded:: 1.16.0
+
+    See Also
+    --------
+    square: Create periodic square-wave waveform.
+    sawtooth: Create a periodic sawtooth or triangle waveform.
+    sawtooth_rfft: Onesided FFT of a sawtooth or triangle waveform.
+
+
+    Notes
+    -----
+    A square wave :math:`x(t)` of frequency :math:`1/\tau` and duty cycle `d` can be
+    expressed as the Fourier series
+
+    .. math::
+
+        x(t) = \sum_{l=-\infty}^\infty c[l] \exp\{\mathbb{j}2\pi l t /\tau\}\ ,\quad
+        c[l] = \begin{cases}
+               \tau (2 d - 1) &\text{ for } l = 0\ ,\\
+               \frac{\mathbb{j}\tau}{\pi l}
+               \left(\operatorname{e}^{\mathbb{j}2\pi d l} - 1 \right)
+               &\text{ for } l \neq 0\ .
+            \end{cases}
+
+    The close relationship between Fourier series and the discrete Fourier transform
+    allows to utilize :math:`c[l]` to obtain a closed-form expression for `X`. I.e.,
+    ``X[m_cyc*l] = s * c[l] / tau``, with ``tau = n * T / m_cyc`` being the duration of
+    one cycle. The scaling factor ``s`` has a value of ``n`` for parameter
+    `norm` = ``'backward'``, ``sqrt(n)`` for `norm` = ``'ortho'``, or ``1`` for
+    `norm` = ``'forward'``. All other values of `X` are zero.
+
+    Note that the magnitude :math:`|c[l]|` decreases proportionally to :math:`1/|l|`.
+    Hence, an ideal square wave is not band-limited. The function
+    :func:`~scipy.signal.square` can be used to sample non-band-limited square waves.
+
+    Examples
+    --------
+    The following code generates a plot of 1 Hz square wave and its Magnitude
+    spectrum:
+
+    >>> import numpy as np
+    >>> from matplotlib import pyplot as plt
+    >>> from scipy.fft import irfft, rfftfreq
+    >>> from scipy.signal import square_rfft
+    ...
+    >>> n, T = 500, 1e-2  # number of samples and sampling interval
+    >>> m_cyc, d = 5, 0.5  # number of full cycles and duty cycle
+    ...
+    >>> X = square_rfft(n, m_cyc, duty=d)
+    >>> x, t = irfft(X, n), np.arange(n) * T  # signal and time stamps
+    ...
+    >>> f = rfftfreq(n, T)  # frequencies of X
+    >>> df = f[1] - f[0]  # frequency resolution
+    ...
+    >>> fg, axx = plt.subplots(2, 1, tight_layout=True)
+    >>> axx[0].set_title(f"{m_cyc*df:g} Hz Square Wave ({100*d:g}% duty cycle)")
+    >>> axx[0].set(xlabel=rf"Time $t$ in seconds ($T={1e3*T:g}\,$ms, ${n=}$ samples)",
+    ...            ylabel="Amplitude", xlim=t[[0, -1]])
+    >>> axx[1].set_title(f"Magnitude Spectrum")
+    >>> axx[1].set(ylabel="Magnitude", xlim=f[[0, -1]],
+    ...            xlabel=rf"Frequency $f$ in hertz ($\Delta f={df:g}\,$Hz)")
+    >>> axx[0].plot(t, x, 'C0-')
+    >>> axx[1].plot(f, abs(X)/n, 'C1-')
+    ...
+    >>> for ax_ in axx:
+    ...     ax_.grid()
+    >>> plt.show()
+
+    The second example illustrates how to create a square wave with varying frequency.
+    This is achieved by creating the signal directly from the Fourier series with the
+    caveat that the complex exponential :math:`\exp\{\mathbb{j}2\pi l t /\tau\}` is
+    replaced with a sinuoisod function with varying in frequency.
+
+    >>> from matplotlib import pyplot as plt
+    >>> from scipy.signal import chirp
+    >>> from scipy.signal import square_rfft
+    ...
+    >>> n, T = 500, 1/500  # number of samples and sampling interval
+    >>> m = 20  # number of Fourier coefficients
+    >>> f0, f1 = 3, 10  # start and stop frequency of sweep
+    ...
+    >>> X = square_rfft(m, 1, duty=0.5, norm='forward') * n*T  # Fourier coefficients
+    >>> t = np.arange(n) * T  # timestamps
+    >>> x = np.ones(n) * X[0].real  # signal of zeroth Fourier coefficient
+    >>> for l_, X_ in enumerate(X[1:], start=1):
+    ...     x_ =  X_* chirp(t, f0*l_, n*T, f1*l_, method='linear', complex=True)
+    ...     x += (x_ + np.conj(x_)).real  # since x is real, X[-l] == conj(X[l]) holds
+    ...
+    >>> fg0, ax0 = plt.subplots()
+    >>> ax0.set_title(f"{m} Coefficient Fourier Series sweeping from " +
+    ...               rf"${f0}\,$Hz to ${f1}\,$Hz ")
+    >>> ax0.set(xlabel=rf"Time $t$ in seconds ({n} samples, $T={T*1e3:g}\,$ms)",
+    ...         ylabel="Amplitude", xlim=(0, t[-1]))
+    >>> ax0.plot(np.arange(n) * T, x)
+    >>> ax0.grid()
+    >>> plt.show()
+    """
+    xp = array_namespace()
+    if not (xp.result_type(n, xp.int64) == xp.int64 and n > 0):
+        raise ValueError(f"Parameter {n=} is not a positive integer!")
+    if not (xp.result_type(m_cyc, xp.int64) == xp.int64 and 0 < m_cyc < n // 2):
+        raise ValueError(f"Parameter {m_cyc=} is not a positive integer < {n//2=}!")
+    if not (0 < duty < 1):
+        raise ValueError(f"0 < duty < 1 does not hold for parameter {duty=}!")
+
+    scale_factors = {'backward': n, 'ortho': xp.sqrt(n), 'forward': 1}
+    if norm not in scale_factors:
+        raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
+
+    n_X = n // 2 + 1  # number of bins produced by rfft for signal of n samples
+    X_dtype = rfft([0., ], norm=norm).dtype  # Use same dtype as rfft produces
+    X = xp.zeros((n_X,), dtype=X_dtype)
+
+    fac0, fac1 = scale_factors[norm], scale_factors[norm] * 1j / xp.pi
+    X[0] = fac0 * (2 * duty - 1)  # zeroth Fourier coefficient
+    ll = xp.arange(1, (n_X + m_cyc - 1) // m_cyc)
+    X[m_cyc::m_cyc] = fac1 * (xp.exp(-2j * xp.pi * duty * ll) - 1) / ll
+    return X
+
 
 
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
@@ -244,8 +560,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         return yI, yenv
     if retquad and not retenv:
         return yI, yQ
-    if retquad and retenv:
-        return yI, yQ, yenv
+    return yI, yQ, yenv  # if retquad and retenv
 
 
 def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
