@@ -434,7 +434,7 @@ class TestSquareWaveform:
         xp_assert_equal(y, xp.full(t.shape, expected))
 
     def test_periodic(self, xp):
-        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False)
+        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False, dtype=xp.float64)
         y1 = square(t, duty=0.4)
         y2 = square(t + 2*xp.pi, duty=0.4)
 
