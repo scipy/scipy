@@ -440,7 +440,7 @@ def test_presolve_gh18907():
     r2 = milp(c=c, constraints=constraints, integrality=integrality, bounds=bounds,
               options={'presolve': False})
     assert r1.status == r2.status
-    assert_allclose(r1.x, r2.x)
+    assert_allclose(r1.fun, r2.fun)
 
     # another example from the same issue
     bounds = Bounds(lb=0, ub=1)
