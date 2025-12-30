@@ -148,7 +148,7 @@ def square(t, duty=0.5):
     y = xpx.at(y, mask2).set(1)
 
     # on the interval duty*2*pi to 2*pi function is -1
-    mask3 = ~mask1 & ~mask2
+    mask3 = ~(mask1 | mask2)
     y = xpx.at(y, mask3).set(-1)
     return y
 
