@@ -6,7 +6,12 @@ from numpy.testing import assert_allclose, assert_equal, assert_
 import pytest
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
+from scipy.sparse.linalg._onenormest import _onenormest_core
+from scipy.sparse.linalg import aslinearoperator, onenormest
+
+
+def less_than_or_close(a, b):
+    return np.allclose(a, b) or (a < b)
 
 
 class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
@@ -44,7 +49,7 @@ class TestOnenormest:
     def test_onenormest_table_3_t_2(self):
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
-        np.random.seed(1234)
+        rng = np.random.default_rng(1749823759)
         t = 2
         n = 100
         itmax = 5
@@ -55,7 +60,7 @@ class TestOnenormest:
         nresample_list = []
         for i in range(nsamples):
             A = scipy.linalg.inv(np.random.randn(n, n))
-            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax, rng)
             observed.append(est)
             expected.append(scipy.linalg.norm(A, 1))
             nmult_list.append(nmults)
@@ -84,7 +89,7 @@ class TestOnenormest:
     def test_onenormest_table_4_t_7(self):
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
-        np.random.seed(1234)
+        rng = np.random.default_rng(289572975298)
         t = 7
         n = 100
         itmax = 5
@@ -95,7 +100,7 @@ class TestOnenormest:
         nresample_list = []
         for i in range(nsamples):
             A = np.random.randint(-1, 2, size=(n, n))
-            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax, rng)
             observed.append(est)
             expected.append(scipy.linalg.norm(A, 1))
             nmult_list.append(nmults)
@@ -121,6 +126,7 @@ class TestOnenormest:
 
     def test_onenormest_table_5_t_1(self):
         # "note that there is no randomness and hence only one estimate for t=1"
+        rng = np.random.default_rng(1894719874198)
         t = 1
         n = 100
         itmax = 5
@@ -130,14 +136,14 @@ class TestOnenormest:
         first_row = np.array([(-alpha)**i for i in range(n)])
         B = -scipy.linalg.toeplitz(first_col, first_row)
         assert_allclose(A, B)
-        est, v, w, nmults, nresamples = _onenormest_core(B, B.T, t, itmax)
+        est, v, w, nmults, nresamples = _onenormest_core(B, B.T, t, itmax, rng)
         exact_value = scipy.linalg.norm(B, 1)
         underest_ratio = est / exact_value
         assert_allclose(underest_ratio, 0.05, rtol=1e-4)
         assert_equal(nmults, 11)
         assert_equal(nresamples, 0)
         # check the non-underscored version of onenormest
-        est_plain = scipy.sparse.linalg.onenormest(B, t=t, itmax=itmax)
+        est_plain = scipy.sparse.linalg.onenormest(B, t=t, itmax=itmax, rng=rng)
         assert_allclose(est, est_plain)
 
     @pytest.mark.xslow
@@ -147,7 +153,7 @@ class TestOnenormest:
         #TODO complex numbers in the one-norm estimation.
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
-        np.random.seed(1234)
+        rng = np.random.default_rng(789237923735932)
         t = 2
         n = 100
         itmax = 5
@@ -159,7 +165,7 @@ class TestOnenormest:
         for i in range(nsamples):
             A_inv = np.random.rand(n, n) + 1j * np.random.rand(n, n)
             A = scipy.linalg.inv(A_inv)
-            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax, rng)
             observed.append(est)
             expected.append(scipy.linalg.norm(A, 1))
             nmult_list.append(nmults)
@@ -191,12 +197,12 @@ class TestOnenormest:
         C = np.dot(A, B)
         return scipy.linalg.norm(C, 1)
 
-    def _help_product_norm_fast(self, A, B):
+    def _help_product_norm_fast(self, A, B, rng):
         # for profiling
         t = 2
         itmax = 5
         D = MatrixProductOperator(A, B)
-        est, v, w, nmults, nresamples = _onenormest_core(D, D.T, t, itmax)
+        est, v, w, nmults, nresamples = _onenormest_core(D, D.T, t, itmax, rng)
         return est
 
     @pytest.mark.slow
@@ -206,47 +212,40 @@ class TestOnenormest:
         # it could be easy to multiply this product by a small matrix,
         # but it could be annoying to look at all of
         # the entries of the product explicitly.
-        np.random.seed(1234)
+        rng = np.random.default_rng(7982374927359287359)
         n = 6000
         k = 3
         A = np.random.randn(n, k)
         B = np.random.randn(k, n)
-        fast_estimate = self._help_product_norm_fast(A, B)
+        fast_estimate = self._help_product_norm_fast(A, B, rng)
         exact_value = self._help_product_norm_slow(A, B)
         assert_(fast_estimate <= exact_value <= 3*fast_estimate,
                 f'fast: {fast_estimate:g}\nexact:{exact_value:g}')
 
     def test_returns(self):
-        np.random.seed(1234)
-        A = scipy.sparse.rand(50, 50, 0.1)
+        rng = np.random.default_rng(1234)
+        A = scipy.sparse.random_array((50, 50), density=0.1, rng=rng)
 
         s0 = scipy.linalg.norm(A.toarray(), 1)
-        s1, v = scipy.sparse.linalg.onenormest(A, compute_v=True)
-        s2, w = scipy.sparse.linalg.onenormest(A, compute_w=True)
-        s3, v2, w2 = scipy.sparse.linalg.onenormest(A, compute_w=True, compute_v=True)
+        s1, v = onenormest(A, compute_v=True, rng=rng)
+        s2, w = onenormest(A, compute_w=True, rng=rng)
+        s3, v2, w2 = onenormest(A, compute_w=True, compute_v=True, rng=rng)
 
         assert_allclose(s1, s0, rtol=1e-9)
         assert_allclose(np.linalg.norm(A.dot(v), 1), s0*np.linalg.norm(v, 1), rtol=1e-9)
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
-
-class TestAlgorithm_2_2:
-
-    @pytest.mark.thread_unsafe(reason="Fails in parallel for unknown reasons")
-    def test_randn_inv(self):
-        rng = np.random.RandomState(1234)
-        n = 20
-        nsamples = 100
-        for i in range(nsamples):
-
-            # Choose integer t uniformly between 1 and 3 inclusive.
-            t = rng.randint(1, 4)
-
-            # Choose n uniformly between 10 and 40 inclusive.
-            n = rng.randint(10, 41)
-
-            # Sample the inverse of a matrix with random normal entries.
-            A = scipy.linalg.inv(rng.randn(n, n))
-
-            # Compute the 1-norm bounds.
-            g, ind = _algorithm_2_2(A, A.T, t)
+    def test_onenormest_matrix_power(self):
+        rng = np.random.default_rng(1234)
+        n = 40
+        for _ in range(10):
+            A = scipy.linalg.inv(rng.random((n, n)))
+            for p in range(4):
+                if not p:
+                    M = np.identity(n)
+                else:
+                    M = np.dot(M, A)
+                estimated = onenormest(aslinearoperator(A)**p, rng=rng)
+                exact = np.linalg.norm(M, 1)
+                assert less_than_or_close(estimated, exact)
+                assert less_than_or_close(exact, 3*estimated)

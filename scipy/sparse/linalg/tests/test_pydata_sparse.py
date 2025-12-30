@@ -206,9 +206,10 @@ def test_spsolve_triangular(matrices):
 
 
 def test_onenormest(matrices):
+    rng = np.random.default_rng(827592875982)
     A_dense, A_sparse, b = matrices
-    est0 = splin.onenormest(A_dense)
-    est = splin.onenormest(A_sparse)
+    est0 = splin.onenormest(A_dense, rng=rng)
+    est = splin.onenormest(A_sparse, rng=rng)
     assert_allclose(est, est0)
 
 
@@ -227,16 +228,18 @@ def test_inv(matrices):
 
 
 def test_expm(matrices):
+    rng = np.random.default_rng(2842387598417907)
     A_dense, A_sparse, b = matrices
-    x0 = splin.expm(sp.csc_array(A_dense))
-    x = splin.expm(A_sparse)
+    x0 = splin.expm(sp.csc_array(A_dense), rng=rng)
+    x = splin.expm(A_sparse, rng=rng)
     assert_allclose(x.todense(), x0.todense())
 
 
 def test_expm_multiply(matrices):
+    rng = np.random.default_rng(2842387598417907)
     A_dense, A_sparse, b = matrices
-    x0 = splin.expm_multiply(A_dense, b)
-    x = splin.expm_multiply(A_sparse, b)
+    x0 = splin.expm_multiply(A_dense, b, rng=rng)
+    x = splin.expm_multiply(A_sparse, b, rng=rng)
     assert_allclose(x, x0)
 
     x0 = splin.expm_multiply(A_dense, A_dense)
