@@ -2785,6 +2785,7 @@ class TestLFilterZI:
         zi = lfilter_zi([1.0, 0.0, 2.0], [1.0, -1.0, 0.5])
         assert_array_almost_equal(zi, zi_expected)
 
+    @skip_xp_backends("dask.array", reason="FutureWarning emitted")
     @pytest.mark.parametrize('b, a, zi_expected,',[
         ([1., 0., 2.],     [1., -1., 0.5],   [5., -1.]),
         ([1., 2., 3., 4.], [1.,],            [9.,  7.,  4.]),
