@@ -3989,10 +3989,7 @@ for method_name in _remove_scale_methods:
     # remove `scale` parameter from method documentation
     method = getattr(rv_discrete, method_name)
     doc = FunctionDoc(method)
-    for i, param in enumerate(doc['Parameters']):
-        if param.name == 'scale':
-            break
-    doc['Parameters'].pop(i)
+    doc['Parameters'] = [p for p in doc['Parameters'] if p.name != 'scale']
     doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
     method.__doc__ = str(doc)
 
