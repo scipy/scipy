@@ -413,6 +413,7 @@ class TestSquareWaveform:
                           duty=xp.asarray(0.5, dtype=duty_dtype))
         assert waveform.dtype == xp.result_type(t_dtype, duty_dtype)
 
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")
     @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     @pytest.mark.parametrize("duty", [0.1, 0.25, 0.5, 0.75])
     def test_duty_cycle_fraction(self, dtype, duty, xp):
