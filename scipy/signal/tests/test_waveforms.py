@@ -3,7 +3,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
-    make_xp_test_case
+    make_xp_test_case, xp_default_dtype
 )
 
 import scipy.signal._waveforms as waveforms
@@ -413,24 +413,28 @@ class TestSquareWaveform:
                           duty=xp.asarray(0.5, dtype=duty_dtype))
         assert waveform.dtype == xp.result_type(t_dtype, duty_dtype)
 
+    @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     @pytest.mark.parametrize("duty", [0.1, 0.25, 0.5, 0.75])
-    def test_duty_cycle_fraction(self, duty, xp):
-        t = xp.linspace(0, 2*xp.pi, 10_000, endpoint=False, dtype=xp.float64)
+    def test_duty_cycle_fraction(self, dtype, duty, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)  # duty is Python float
+        # imperfect arithmetic w/ JAX `float32` causes trouble with duty=0.5
+        # t = xp.linspace(0, 2*xp.pi, 10000, endpoint=False, dtype=dtype)
+        t = xp.arange(10000., dtype=dtype) / 10000 * 2*xp.pi
         y = square(t, duty=duty)
 
-        fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=xp.float64))
-        xp_assert_close(fraction_high, xp.asarray(duty, dtype=xp.float64)[()],
-                        rtol=1e-8)
-        xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=xp.float64)[()])
+        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=dtype))
+        xp_assert_close(fraction_high, xp.asarray(duty, dtype=dtype)[()])
+        xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=dtype)[()])
 
-    @pytest.mark.parametrize("duty,expected", [(1., 1), (0., -1)])
+    @pytest.mark.parametrize("duty, expected", [(1., 1.), (0., -1.)])
     def test_duty_edge_cases(self, duty, expected, xp):
-        t = xp.linspace(0, 2*xp.pi, 100, dtype=xp.float64)
+        t = xp.linspace(0, 2*xp.pi, 100)
         y = square(t, duty=duty)
-        xp_assert_equal(y, xp.full_like(t, expected))
+        xp_assert_equal(y, xp.full(t.shape, expected))
 
     def test_periodic(self, xp):
-        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False, dtype=xp.float64)
+        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False)
         y1 = square(t, duty=0.4)
         y2 = square(t + 2*xp.pi, duty=0.4)
 
