@@ -352,7 +352,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> from scipy.optimize import milp
     >>> res = milp(c=c, constraints=constraints, integrality=integrality)
     >>> res.x
-    [2.0, 2.0]
+    array([1., 2.])
 
     Note that had we solved the relaxed problem (without integrality
     constraints):
@@ -360,7 +360,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> res = milp(c=c, constraints=constraints)  # OR:
     >>> # from scipy.optimize import linprog; res = linprog(c, A, b_u)
     >>> res.x
-    [1.8, 2.8]
+    array([1.8, 2.8])
 
     we would not have obtained the correct solution by rounding to the nearest
     integers.
