@@ -13,6 +13,7 @@ from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
+from scipy.differentiate import derivative
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -2081,6 +2082,16 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ## Algorithms
 
+    def _differentiation(self, f, x, args=None, params=None):
+        args = [] if args is None else args
+        params = {} if params is None else params
+        f, args = _kwargs2args(f, args=args, kwargs=params)
+        args = np.broadcast_arrays(*args)
+        rtol = None if _isnull(self.tol) else self.tol
+        # todo: do one-sided differentiation at support endpoint
+        res = derivative(f, x, args=args, tolerances={'rtol': rtol})
+        return res.df
+
     def _quadrature(self, integrand, limits=None, args=None,
                     params=None, log=False):
         # Performs numerical integration of an integrand between limits.
@@ -2470,12 +2481,24 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _pdf_dispatch(self, x, *, method=None, **params):
         if self._overrides('_pdf_formula'):
             method = self._pdf_formula
+        elif (not self._overrides('_logpdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            if self._overrides('_icdf_formula'):
+                method = self._pdf_differentiation_cdf
+            elif self._overrides('_iccdf_formula'):
+                method = self._pdf_differentiation_ccdf
         else:
             method = self._pdf_logexp
         return method
 
     def _pdf_formula(self, x, **params):
         raise NotImplementedError(self._not_implemented)
+
+    def _pdf_differentiation_cdf(self, x, **params):
+        return self._differentiation(self._cdf_dispatch, x, params=params)
+
+    def _pdf_differentiation_ccdf(self, x, **params):
+        return -self._differentiation(self._ccdf_dispatch, x, params=params)
 
     def _pdf_logexp(self, x, **params):
         return np.exp(self._logpdf_dispatch(x, **params))
@@ -2598,6 +2621,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._logcdf_complement
         elif self._overrides('_cdf_formula'):
             method = self._logcdf_logexp_safe
+        elif (self._overrides('_ilogcdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._logcdf_inversion
         else:
             method = self._logcdf_quadrature
         return method
@@ -2620,6 +2646,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._logcdf_quadrature(x[mask], **params_mask)
         return out[()]
+
+    def _logcdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._ilogcdf_dispatch, x,
+                                              bounds=(-np.inf, 0), params=params)
 
     def _logcdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
@@ -2705,6 +2735,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._cdf_logexp
         elif self._overrides('_ccdf_formula'):
             method = self._cdf_complement_safe
+        elif (self._overrides('_icdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._cdf_inversion
         else:
             method = self._cdf_quadrature
         return method
@@ -2730,6 +2763,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._cdf_quadrature(x[mask], *params_mask)
         return out[()]
+
+    def _cdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._icdf_dispatch, x,
+                                              bounds=(0, 1), params=params)
 
     def _cdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
@@ -2776,6 +2813,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._logccdf_complement
         elif self._overrides('_ccdf_formula'):
             method = self._logccdf_logexp_safe
+        elif (self._overrides('_ilogccdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._logccdf_inversion
         else:
             method = self._logccdf_quadrature
         return method
@@ -2798,6 +2838,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._logccdf_quadrature(x[mask], **params_mask)
         return out[()]
+
+    def _logccdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._ilogccdf_dispatch, x,
+                                              bounds=(-np.inf, 0), params=params)
 
     def _logccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
@@ -2843,6 +2887,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._ccdf_logexp
         elif self._overrides('_cdf_formula'):
             method = self._ccdf_complement_safe
+        elif (self._overrides('_iccdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._ccdf_inversion
         else:
             method = self._ccdf_quadrature
         return method
@@ -2868,6 +2915,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._ccdf_quadrature(x[mask], **params_mask)
         return out[()]
+
+    def _ccdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._iccdf_dispatch, x,
+                                              bounds=(0, 1), params=params)
 
     def _ccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
@@ -3622,8 +3673,8 @@ class ContinuousDistribution(UnivariateDistribution):
     def _logpxf_dispatch(self, x, *, method=None, **params):
         return self._logpdf_dispatch(x, method=method, **params)
 
-    def _solve_bounded_continuous(self, func, p, params, xatol=None):
-        return self._solve_bounded(func, p, params=params, xatol=xatol).x
+    def _solve_bounded_continuous(self, func, p, params, bounds=None, xatol=None):
+        return self._solve_bounded(func, p, params=params, bounds=bounds, xatol=xatol).x
 
 
 class DiscreteDistribution(UnivariateDistribution):
