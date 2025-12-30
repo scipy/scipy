@@ -3951,6 +3951,37 @@ class rv_discrete(rv_generic):
         param_info = shape_info + [loc_info]
         return param_info
 
+    # these methods are identical to those of `rv_generic` except that
+    # they don't accept the `scale` parameter. They need their own copy
+    # of the methods so we can adjust the documentation.
+
+    def entropy(self, *args, **kwargs):
+        return super().entropy(*args, **kwargs)
+
+    def interval(self, confidence, *args, **kwargs):
+        return super().interval(confidence, *args, **kwargs)
+
+    def mean(self, *args, **kwargs):
+        return super().mean(*args, **kwargs)
+
+    def median(self, *args, **kwargs):
+        return super().median(*args, **kwargs)
+
+    def moment(self, order, *args, **kwargs):
+        return super().moment(order, *args, **kwargs)
+
+    def stats(self, *args, **kwargs):
+        return super().stats(*args, **kwargs)
+
+    def std(self, *args, **kwargs):
+        return super().std(*args, **kwargs)
+
+    def support(self, *args, **kwargs):
+        return super().support(*args, **kwargs)
+
+    def var(self, *args, **kwargs):
+        return super().var(*args, **kwargs)
+
 
 _remove_scale_methods = ['entropy', 'interval', 'mean', 'median',
                          'moment', 'stats', 'std', 'support', 'var']
