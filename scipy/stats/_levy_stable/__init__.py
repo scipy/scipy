@@ -272,21 +272,14 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
         # QUADPACK to evaluate the function inside its support
         #
 
-        # lastly, we add additional samples at
-        #   ~exp(-100), ~exp(-10), ~exp(-5), ~exp(-1)
-        # to improve QUADPACK's detection of rapidly descending tail behavior
-        # (this choice is fairly ad hoc)
-        tail_points = [
-            optimize.bisect(lambda t: g(t) - exp_height, -xi, np.pi / 2)
-            for exp_height in [100, 10, 5]
-            # exp_height = 1 is handled by peak
-        ]
-        intg_points = [0, peak] + tail_points
+        # Providing points ensures the integral evaluates with enough 
+        # precision to pass tests and is accurate in the tails
+        points = np.linspace(-xi, np.pi/2, num=10)
         intg, *ret = integrate.quad(
             integrand,
             -xi,
             np.pi / 2,
-            points=intg_points,
+            points=points,
             limit=100,
             epsrel=quad_eps,
             epsabs=0,

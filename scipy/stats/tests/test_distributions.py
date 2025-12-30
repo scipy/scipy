@@ -6400,6 +6400,48 @@ class TestLevyStable:
             frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
             assert_equal(frozen_b, unfrozen_b)
 
+    @pytest.mark.parametrize(
+        "param, alpha, beta, xs, expected",
+        [
+            (
+                0,
+                1.6,
+                1.0,
+                [-15.0, -14.0, -13.0],
+                [-187.1444263, -157.1411663, -130.3526688],
+            ),
+            (
+                1,
+                1.6,
+                1.0,
+                [-15.0, -14.0, -13.0],
+                [-165.0203129, -137.3671717, -112.8223545],
+            ),
+            (
+                0,
+                1.4,
+                -1.0,
+                [13.0, 14.0, 15.0],
+                [-367.1943293, -464.7049565, -579.4399286],
+            ),
+            (
+                1,
+                1.4,
+                -1.0,
+                [13.0, 14.0, 15.0],
+                [-258.1216497, -334.6139857, -426.0724094],
+            ),
+        ],
+    )
+    def test_logpdf_tail(self, param, alpha, beta, xs, expected):
+        # gh-20636
+        # Expected values computed from Mathematica.
+        # Test levy_stable.logpdf accuracy in the tails when beta=1 or beta=-1
+        # for both S0/S1 parameterizations.
+        # Testing logpdf instead of pdf as more compact.
+        stats.levy_stable.parameterization = f"S{param}"
+        logpdfs = stats.levy_stable(alpha=alpha, beta=beta).logpdf(xs)
+        assert_allclose(logpdfs, expected, rtol=1e-5)
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
