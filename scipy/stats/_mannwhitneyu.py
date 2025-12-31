@@ -2,11 +2,10 @@ import threading
 import numpy as np
 from collections import namedtuple
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
-from scipy._lib import array_api_extra as xpx
 from scipy import special
 from scipy import stats
 from scipy.stats._stats_py import _rankdata
-from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_concatenate
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
