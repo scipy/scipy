@@ -5013,8 +5013,6 @@ class TestNormalInverseGamma:
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float16, np.float32, np.float64])
     def test_dtype(self, dtype):
-        if np.__version__ < "2":
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         rng = np.random.default_rng(8925849245)
         x, s2, mu, lmbda, a, b = rng.uniform(3, 10, size=6).astype(dtype)
         dtype_out = np.result_type(1.0, dtype)

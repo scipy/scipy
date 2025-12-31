@@ -22,7 +22,8 @@ JAX_SIGNAL_FUNCS = [
 
 # some cupyx.scipy.signal functions are incompatible with their scipy counterparts
 CUPY_BLACKLIST = [
-    'lfilter_zi', 'sosfilt_zi', 'get_window', 'besselap', 'envelope', 'remez', 'bessel'
+    'abcd_normalize', 'bessel', 'besselap', 'envelope', 'get_window', 'lfilter_zi',
+    'sosfilt_zi', 'remez',
 ]
 
 # freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
@@ -96,7 +97,6 @@ untested = {
     "place_pols",
     "sawtooth",
     "sepfir2d",
-    "square",
     "ss2tf",
     "ss2zpk",
     "step",

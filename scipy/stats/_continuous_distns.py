@@ -11449,7 +11449,7 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 
 
 class gennorm_gen(rv_continuous):
-    r"""A generalized normal continuous random variable.
+    r"""A (symmetric) generalized normal continuous random variable.
 
     %(before_notes)s
 
@@ -11460,6 +11460,10 @@ class gennorm_gen(rv_continuous):
 
     Notes
     -----
+    The (symmetric) generalized normal distribution is also known as the
+    Subbotin distribution, exponential power distribution, and generalized
+    error distribution [1]_.
+    
     The probability density function for `gennorm` is [1]_:
 
     .. math::

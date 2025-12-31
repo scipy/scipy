@@ -157,6 +157,7 @@ depends_on = [
     "scipy.linalg.blas",
     "scipy.ndimage",
     "scipy.optimize",
+    "scipy.optimize.elementwise",
     "scipy.sparse",
     "scipy.sparse.csgraph",
     "scipy.spatial",

@@ -206,12 +206,7 @@ def find_repeats(arr):
     # Make sure we get a copy. ma.compressed promises a "new array", but can
     # actually return a reference.
     compr = np.asarray(ma.compressed(arr), dtype=np.float64)
-    try:
-        need_copy = np.may_share_memory(compr, arr)
-    except AttributeError:
-        # numpy < 1.8.2 bug: np.may_share_memory([], []) raises,
-        # while in numpy 1.8.2 and above it just (correctly) returns False.
-        need_copy = False
+    need_copy = np.may_share_memory(compr, arr)
     if need_copy:
         compr = compr.copy()
     return _find_repeats(compr)

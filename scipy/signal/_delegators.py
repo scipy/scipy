@@ -58,9 +58,8 @@ def _skip_if_poly1d(arg):
 
 ###################
 
-def abcd_normalize_signature(A=None, B=None, C=None, D=None):
+def abcd_normalize_signature(A=None, B=None, C=None, D=None, *, dtype=None):
     return array_namespace(A, B, C, D)
-
 
 def argrelextrema_signature(data, *args, **kwds):
     return array_namespace(data)
@@ -515,7 +514,7 @@ def spline_filter_signature(Iin, lmbda=5.0):
 
 
 def square_signature(t, duty=0.5):
-    return array_namespace(t)
+    return array_namespace(t, duty)
 
 
 def ss2tf_signature(A, B, C, D, input=0):

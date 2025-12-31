@@ -91,7 +91,7 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
-    if os.name == 'posix' and sys.version_info < (3, 14):
+    if os.name == 'posix' and sys.version_info < (3, 14) and sys.platform != "cygwin":
         # On POSIX, Python 3.13 and older uses the 'fork' context by
         # default. Calling fork() from multiple threads leads to
         # deadlocks. This has been changed in 3.14 to 'forkserver'.
@@ -628,28 +628,6 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabFunction.strides',
         'scipy.io.matlab.MatlabFunction.dtype'
     ])
-
-    # these are affected by NumPy 2.0 scalar repr: rely on string comparison
-    if np.__version__ < "2":
-        dt_config.skiplist.update(set([
-            'scipy.io.hb_read',
-            'scipy.io.hb_write',
-            'scipy.sparse.csgraph.connected_components',
-            'scipy.sparse.csgraph.depth_first_order',
-            'scipy.sparse.csgraph.shortest_path',
-            'scipy.sparse.csgraph.floyd_warshall',
-            'scipy.sparse.csgraph.dijkstra',
-            'scipy.sparse.csgraph.bellman_ford',
-            'scipy.sparse.csgraph.johnson',
-            'scipy.sparse.csgraph.yen',
-            'scipy.sparse.csgraph.breadth_first_order',
-            'scipy.sparse.csgraph.reverse_cuthill_mckee',
-            'scipy.sparse.csgraph.structural_rank',
-            'scipy.sparse.csgraph.construct_dist_matrix',
-            'scipy.sparse.csgraph.reconstruct_path',
-            'scipy.ndimage.value_indices',
-            'scipy.stats.mstats.describe',
-    ]))
 
     # help pytest collection a bit: these names are either private
     # (distributions), or just do not need doctesting.

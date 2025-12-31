@@ -62,8 +62,8 @@ __all__ = [
 ]
 
 
-Array: type = Any  # To be changed to a Protocol later (see array-api#589)
-ArrayLike: type = Array | npt.ArrayLike
+type Array = Any  # To be changed to a Protocol later (see array-api#589)
+type ArrayLike = Array | npt.ArrayLike
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -425,7 +425,7 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
 
 # maybe use `scipy.linalg` if/when array API support is added
 def xp_vector_norm(x: Array, /, *,
-                   axis: int | tuple[int] | None = None,
+                   axis: int | tuple[int, int] | None = None,
                    keepdims: bool = False,
                    ord: int | float = 2,
                    xp: ModuleType | None = None) -> Array:
@@ -496,12 +496,6 @@ def xp_result_type(*args, force_floating=False, xp):
     args_not_none = [arg for arg in args if arg is not None]
     if force_floating:
         args_not_none.append(1.0)
-
-    if is_numpy(xp) and xp.__version__ < '2.0':
-        # Follow NEP 50 promotion rules anyway
-        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
-                         for arg in args_not_none]
-        return xp.result_type(*args_not_none)
 
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
@@ -886,7 +880,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
 
     The above is equivalent to::
         @pytest.mark.skip_xp_backends(...)
-        @pytest.mark.skip_xp_backends(...)        
+        @pytest.mark.skip_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         def test_f1(xp):
@@ -978,7 +972,7 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
         def test(xp):
             ...
-    
+
     See Also
     --------
     xp_capabilities

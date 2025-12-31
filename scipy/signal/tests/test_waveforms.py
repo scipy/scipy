@@ -1,10 +1,13 @@
 import numpy as np
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, xp_assert_close
+    assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
+    make_xp_test_case, xp_default_dtype
 )
 
 import scipy.signal._waveforms as waveforms
+from scipy.signal import square
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -391,10 +394,56 @@ class TestSawtoothWaveform:
         assert waveform.dtype == np.float64
 
 
+@make_xp_test_case(square)
 class TestSquareWaveform:
-    def test_dtype(self):
-        waveform = waveforms.square(np.array(1, dtype=np.float32), duty=np.float32(0.5))
-        assert waveform.dtype == np.float64
+    def test_unique(self, xp):
+        t = xp.linspace(0, 2*np.pi, 1000)
+        y = square(t)
+        assert y.shape == t.shape
+        unique = np.unique(_xp_copy_to_numpy(y))
+        assert set(unique).issubset({-1.0, 1.0})
 
-        waveform = waveforms.square(1)
-        assert waveform.dtype == np.float64
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")
+    @pytest.mark.parametrize("t_dtype", ["float32", "float64"])
+    @pytest.mark.parametrize("duty_dtype", ["float32", "float64"])
+    def test_dtype(self, t_dtype, duty_dtype, xp):
+        t_dtype = getattr(xp, t_dtype)
+        duty_dtype = getattr(xp, duty_dtype)
+        waveform = square(xp.asarray(1, dtype=t_dtype),
+                          duty=xp.asarray(0.5, dtype=duty_dtype))
+        assert waveform.dtype == xp.result_type(t_dtype, duty_dtype)
+
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")
+    @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
+    @pytest.mark.parametrize("duty", [0.1, 0.25, 0.5, 0.75])
+    def test_duty_cycle_fraction(self, dtype, duty, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)  # duty is Python float
+        # imperfect arithmetic w/ JAX `float32` causes trouble with duty=0.5
+        # t = xp.linspace(0, 2*xp.pi, 10000, endpoint=False, dtype=dtype)
+        t = xp.arange(10000., dtype=dtype) / 10000 * 2*xp.pi
+        y = square(t, duty=duty)
+
+        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=dtype))
+        xp_assert_close(fraction_high, xp.asarray(duty, dtype=dtype)[()])
+        xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=dtype)[()])
+
+    @pytest.mark.parametrize("duty, expected", [(1., 1.), (0., -1.)])
+    def test_duty_edge_cases(self, duty, expected, xp):
+        t = xp.linspace(0, 2*xp.pi, 100)
+        y = square(t, duty=duty)
+        xp_assert_equal(y, xp.full(t.shape, expected))
+
+    def test_periodic(self, xp):
+        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False, dtype=xp.float64)
+        y1 = square(t, duty=0.4)
+        y2 = square(t + 2*xp.pi, duty=0.4)
+
+        xp_assert_equal(y1, y2)
+
+    @pytest.mark.parametrize("duty", [-0.1, 1.1, 2.0])
+    def test_invalid_duty(self, duty, xp):
+        t = xp.linspace(0, 2*np.pi, 10)
+        y = square(t, duty=duty)
+
+        assert xp.all(xp.isnan(y))
