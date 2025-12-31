@@ -1828,13 +1828,13 @@ class rv_continuous(rv_generic):
     Statistics are computed using numerical integration by default.
     For speed you can redefine this using ``_stats``:
 
-     - take shape parameters and return mu, mu2, g1, g2
-     - If you can't compute one of these, return it as None
-     - Can also be defined with a keyword argument ``moments``, which is a
-       string composed of "m", "v", "s", and/or "k".
-       Only the components appearing in string should be computed and
-       returned in the order "m", "v", "s", or "k"  with missing values
-       returned as None.
+    - take shape parameters and return mu, mu2, g1, g2
+    - If you can't compute one of these, return it as None
+    - Can also be defined with a keyword argument ``moments``, which is a
+      string composed of "m", "v", "s", and/or "k".
+      Only the components appearing in string should be computed and
+      returned in the order "m", "v", "s", or "k"  with missing values
+      returned as None.
 
     Alternatively, you can override ``_munp``, which takes ``n`` and shape
     parameters and returns the n-th non-central moment of the distribution.

@@ -212,6 +212,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         - If `keepdims` is set to True, the axis will not be reduced away.
         - If `keepdims` is set to False, the axis will be reduced away
           if possible, and an error will be raised otherwise.
+
     weights : array_like of finite, non-negative real numbers
         Frequency weights; e.g., for counting number weights,
         ``quantile(x, p, weights=weights)`` is equivalent to
