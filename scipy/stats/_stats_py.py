@@ -175,8 +175,9 @@ def gmean(a, axis=0, dtype=None, weights=None):
         Axis along which the geometric mean is computed. Default is 0.
         If None, compute over the whole array `a`.
     dtype : dtype, optional
-        Type to which the input arrays are cast before the calculation is
-        performed.
+        (Floating point) dtype to which numerical arguments are cast before performing
+        the calculation. If `dtype` is not specified, it defaults to the floating point
+        result dtype of the numerical arguments.
     weights : array_like, optional
         The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
@@ -219,6 +220,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
     """
     xp = array_namespace(a, weights)
+    dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
+             if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
@@ -258,11 +261,9 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         Axis along which the harmonic mean is computed. Default is 0.
         If None, compute over the whole array `a`.
     dtype : dtype, optional
-        Type of the returned array and of the accumulator in which the
-        elements are summed. If `dtype` is not specified, it defaults to the
-        dtype of `a`, unless `a` has an integer `dtype` with a precision less
-        than that of the default platform integer. In that case, the default
-        platform integer is used.
+        (Floating point) dtype to which numerical arguments are cast before performing
+        the calculation. If `dtype` is not specified, it defaults to the floating point
+        result dtype of the numerical arguments.
     weights : array_like, optional
         The weights array can either be 1-D (in which case its length must be
         the size of `a` along the given `axis`) or of the same shape as `a`.
@@ -312,6 +313,8 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 
     """
     xp = array_namespace(a, weights)
+    dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
+             if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
@@ -368,11 +371,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         Axis along which the power mean is computed. Default is 0.
         If None, compute over the whole array `a`.
     dtype : dtype, optional
-        Type of the returned array and of the accumulator in which the
-        elements are summed. If `dtype` is not specified, it defaults to the
-        dtype of `a`, unless `a` has an integer `dtype` with a precision less
-        than that of the default platform integer. In that case, the default
-        platform integer is used.
+        (Floating point) dtype to which numerical arguments are cast before performing
+        the calculation. If `dtype` is not specified, it defaults to the floating point
+        result dtype of the numerical arguments.
     weights : array_like, optional
         The weights array can either be 1-D (in which case its length must be
         the size of `a` along the given `axis`) or of the same shape as `a`.
@@ -444,6 +445,8 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         raise NotImplementedError(message)
 
     xp = array_namespace(a, weights)
+    dtype = (xp_result_type(a, p, weights, force_floating=True, xp=xp)
+             if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
 
     if weights is not None:
@@ -5374,7 +5377,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     warn_msg = ("An input array is constant; the correlation coefficient "
                 "is not defined.")
-    
+
     constant_axis = False
     if axisout == 0:
         constant_columns = np.all(a == a[0, :], axis=0)
@@ -5408,7 +5411,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
                 variable_has_nan = np.isnan(a).any(axis=axisout)
 
     a_ranked = np.apply_along_axis(rankdata, axisout, a)
-    
+
     if constant_axis:
         with np.errstate(invalid='ignore'):
             rs = np.corrcoef(a_ranked, rowvar=axisout)
