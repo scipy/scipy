@@ -348,6 +348,7 @@ class TestMannWhitneyU:
         xp_assert_close(res.statistic, xp.asarray(expected[0]))
         xp_assert_close(res.pvalue, xp.asarray(expected[1]))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy->no _axis_nan_policy deco')
     def test_tie_correct(self, xp):
         # Test tie correction against R's wilcox.test
         # options(digits = 16)
