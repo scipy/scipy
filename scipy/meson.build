@@ -669,11 +669,12 @@ else
   use_math_defines = []
 endif
 
-# Determine whether it is necessary to link libatomic. This could be the case
-# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# Determine whether it is necessary to link libatomic (required for HiGHS, see
+# gh-17777) This could be the case on, e.g., 32-bit platforms when atomic
+# operations are used on 64-bit types.
+# We do want this exact logic to minimize the number of cases where we use
+# `-latomic`, we can't switch to the builtin `dependency('atomic')` support.
 # The check is copied from Mesa <https://www.mesa3d.org/>.
-# Note that this dependency is not desired, it came in with a HiGHS update.
-# We should try to get rid of it. For discussion, see gh-17777.
 null_dep = dependency('', required : false)
 atomic_dep = null_dep
 code_non_lockfree = '''
