@@ -248,6 +248,19 @@ New features
   `scipy.stats.ks_1samp`, `scipy.stats.levene`, and `scipy.stats.mood`.
   Typically, this improves performance with multidimensional (batch) input.
 - The critical value tables of `scipy.stats.anderson` have been updated.
+- A new ``method`` parameter of `scipy.stats.anderson` allows the user
+  to compute p-values by interpolating between tabulated values or using Monte
+  Carlo simulation. The ``method`` parameter must be passed explicitly
+  to add a ``pvalue`` attribute to the result object and avoid a warning
+  about the upcoming removal of ``critical_value``, ``significance_level``,
+  and ``fit_result`` attributes.
+- A new ``variant`` parameter of `scipy.stats.anderson_ksamp` allows the user
+  to select between three different variants of the statistic, superseding the
+  ``midrank`` parameter which allowed toggling beteen two. The new ``'continuous'``
+  variant is equivalent to ``'discrete'`` when there are no ties in the sample, but
+  the calculation is faster. The ``variant`` parameter must be passed explicitly to
+  avoid a warning about the deprecation of the ``midrank`` attribute and the upcoming
+  removal of ``critical_values`` from the result object.
 - The speed and accuracy of most `scipy.stats.zipfian` methods has been
   improved.
 - The accuracies of the `scipy.stats.Binomial` methods ``logcdf`` and
@@ -331,7 +344,8 @@ Deprecated features and future changes
   only.
 - For `scipy.stats.anderson`, the tuple-unpacking behavior of the return object
   and attributes ``critical_values``, ``significance_level``, and
-  ``fit_result`` are deprecated. Beginning in SciPy 1.19.0, these features will
+  ``fit_result`` are deprecated. Use the new ``method`` parameter to avoid the
+  deprecation warning. Beginning in SciPy 1.19.0, these features will
   no longer be available, and the object returned will have attributes
   ``statistic`` and ``pvalue``.
 - For `scipy.stats.anderson_ksamp`, the ``midrank`` parameter is deprecated
