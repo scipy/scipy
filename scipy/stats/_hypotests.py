@@ -175,7 +175,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     return Epps_Singleton_2sampResult(w, p)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     r"""
     Performs the Poisson means test, AKA the "E-test".
@@ -772,7 +772,7 @@ class SomersDResult:
     table: np.ndarray
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def somersd(x, y=None, alternative='two-sided'):
     r"""Calculates Somers' D, an asymmetric measure of ordinal association.
 
@@ -984,7 +984,7 @@ class BarnardExactResult:
     pvalue: float
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     r"""Perform a Barnard exact test on a 2x2 contingency table.
 
@@ -1256,7 +1256,7 @@ class BoschlooExactResult:
     pvalue: float
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def boschloo_exact(table, alternative="two-sided", n=32):
     r"""Perform Boschloo's exact test on a 2x2 contingency table.
 
@@ -1946,7 +1946,7 @@ def _tukey_hsd_iv(args, equal_var):
     return args
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def tukey_hsd(*args, equal_var=True):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 

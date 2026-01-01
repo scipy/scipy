@@ -159,7 +159,7 @@ def bayes_mvs(data, alpha=0.90):
     return m_res, v_res, s_res
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def mvsdist(data):
     """
     'Frozen' distributions for mean, variance, and standard deviation of data.

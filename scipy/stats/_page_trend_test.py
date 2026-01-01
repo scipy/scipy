@@ -17,7 +17,7 @@ class PageTrendTestResult:
     method: str
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     r"""
     Perform Page's Test, a measure of trend in observations between treatments.

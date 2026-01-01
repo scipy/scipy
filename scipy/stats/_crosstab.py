@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import coo_matrix
 from scipy._lib._bunch import _make_tuple_bunch
+from scipy._lib._array_api import xp_capabilities
 
 
 CrosstabResult = _make_tuple_bunch(
@@ -8,6 +9,7 @@ CrosstabResult = _make_tuple_bunch(
 )
 
 
+@xp_capabilities(np_only=True)
 def crosstab(*args, levels=None, sparse=False):
     """
     Return table of counts for each possible unique combination in ``*args``.
