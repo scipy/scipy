@@ -160,19 +160,21 @@ struct nodeinfo_pool {
     // Tuning parameter:
     // Alignment should hit a cache line and also cater for simd. 
     // For most hardware 64 is OK, but Apple silicon needs 128.
-    #define ALIGN 128
+    // We will use 64 for now.
+    #define ALIGN 64
 
     // Tuning parameter:
     // Minumum arena size should be at least one page.
     // For most hardware a page is 4KB, but Apple silicon uses 16KB.
     // Allocating at least one page prevents new/malloc from searching the 
     // heap for the smallest piece of free memory, which is slow.
-    #define ARENA 16384
+    // We will use 4K for now.
+    #define ARENA 4096
 
     nodeinfo_pool(ckdtree_intp_t m) {
-        alloc_size = sizeof(nodeinfo) + (3 * m -1)*sizeof(double);
-        alloc_size = ALIGN*(alloc_size/ALIGN)+ALIGN;
-        arena_size = ARENA*((ALIGN*alloc_size)/ARENA)+ARENA;
+        alloc_size = sizeof(nodeinfo) + (3 * m - 1)*sizeof(double);
+        alloc_size = alloc_size % ALIGN ? ALIGN*(alloc_size/ALIGN)+ALIGN : alloc_size;
+        arena_size = ALIGN*alloc_size % ARENA ? ARENA*((ALIGN*alloc_size)/ARENA)+ARENA : ALIGN*alloc_size;
         arena = new char[arena_size];
         arena_ptr = arena;
         pool.push_back(arena);
