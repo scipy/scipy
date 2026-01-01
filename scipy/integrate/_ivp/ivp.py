@@ -368,7 +368,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ascending or descending in the same manner as the direction
         defined by ``t_span``.
 
-        .. versionadded:: 1.17.0
+        .. versionadded:: 1.18.0
 
     Returns
     -------

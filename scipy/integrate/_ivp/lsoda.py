@@ -91,7 +91,7 @@ class LSODA(OdeSolver):
         ascending or descending in the same manner as the direction
         between ``t0`` and ``t_bound``.
 
-        .. versionadded:: 1.17.0
+        .. versionadded:: 1.18.0
 
     Attributes
     ----------
