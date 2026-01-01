@@ -9,7 +9,7 @@ from scipy.optimize._trustregion_exact import (
     singular_leading_submatrix,
     IterativeSubproblem)
 from scipy.linalg import (svd, get_lapack_funcs, det, qr, norm)
-from numpy.testing import (assert_array_equal,
+from numpy.testing import (assert_allclose, assert_array_equal,
                            assert_equal, assert_array_almost_equal)
 
 
@@ -201,6 +201,22 @@ class TestIterativeSubproblem:
         p, hits_boundary = subprob.solve(trust_radius)
 
         assert_array_almost_equal(-s, subprob.lambda_current)
+
+    def test_gh20244(self):
+        g = [20, -10]
+        H = [[15, 0],
+             [0, 5]]
+
+        subprob = IterativeSubproblem(x=np.zeros(2),
+                                      fun=lambda _: 0,
+                                      jac=lambda _: np.array(g),
+                                      hess=lambda _: np.array(H),
+                                      k_easy=1e-6,
+                                      k_hard=1e-9)
+        p, hits_boundary = subprob.solve(1.0)
+
+        assert_allclose(p, [-0.77472957,  0.63229272])
+        assert_equal(hits_boundary, True)
 
     def test_for_interior_convergence(self):
 
