@@ -692,6 +692,7 @@ def _make_sphinx_capabilities(
     warnings = (),
     # unused in documentation
     reason=None,
+    method_capabilities=None,
 ):
     if out_of_scope:
         return {"out_of_scope": True}
@@ -795,6 +796,9 @@ def xp_capabilities(
     allow_dask_compute=False, jax_jit=True,
     # Extra note to inject into the docstring
     extra_note=None,
+    # Dictionaries of distinct capabilities for methods for use
+    # when xp_capabilities is applied to a class.
+    method_capabilities=None,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -819,6 +823,24 @@ def xp_capabilities(
     if out_of_scope:
         np_only = True
 
+    if method_capabilities is None:
+        method_capabilities = {}
+    for method, capabilities in method_capabilities.items():
+        # Fill in missing entries of method capabilities with
+        # defaults if any entries are missing.
+        method_capabilities[method] = dict(
+            skip_backends=(),
+            xfail_backends=(),
+            cpu_only=False,
+            np_only=False,
+            out_of_scope=False,
+            reason=None,
+            exceptions=(),
+            warnings=(),
+            allow_dask_compute=False,
+            jax_jit=True,
+        ) | capabilities
+
     capabilities = dict(
         skip_backends=skip_backends,
         xfail_backends=xfail_backends,
@@ -830,6 +852,7 @@ def xp_capabilities(
         allow_dask_compute=allow_dask_compute,
         jax_jit=jax_jit,
         warnings=warnings,
+        method_capabilities=method_capabilities,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 
@@ -950,6 +973,8 @@ def make_xp_pytest_param(func, *args, capabilities_table=None):
     import pytest
 
     marks = make_xp_pytest_marks(func, capabilities_table=capabilities_table)
+    if isinstance(func, tuple):
+        func, _ = func
     return pytest.param(func, *args, marks=marks, id=func.__name__)
 
 
@@ -990,8 +1015,16 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
     # Inject a marker which will help us identify tests using the xp
     # fixture which do not use xp_capabilities.
     marks.append(pytest.mark.uses_xp_capabilities(True, funcs=funcs))
+    from scipy.spatial.transform import Rotation
     for func in funcs:
-        capabilities = capabilities_table[func]
+        if isinstance(func, tuple):
+            cls, method = func
+            capabilities = capabilities_table[cls]
+            if method in capabilities["method_capabilities"]:
+                capabilities = capabilities["method_capabilities"][method]
+            func = getattr(cls, method)
+        else:
+            capabilities = capabilities_table[func]
         exceptions = capabilities['exceptions']
         reason = capabilities['reason']
 
