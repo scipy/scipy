@@ -202,8 +202,8 @@ struct nodeinfo_pool {
         // allocate one arena, make sure its alinment is ALIGN so we get
         // all nodeinfo structs aligned when advancing the pointer by alloc_size
         arena = (char*)ckdtree_aligned_alloc(ARENA_ALIGN, ARENA);
-        if (!arena) {
-            std::bad_alloc e();
+        if (arena == NULL) {
+            std::bad_alloc e;
             throw e;
         }
         arena_ptr = arena;
@@ -222,8 +222,8 @@ struct nodeinfo_pool {
 
         if (need_new_arena) {
             arena = (char*)ckdtree_aligned_alloc(ARENA_ALIGN, ARENA);
-            if (!arena) {
-                std::bad_alloc e();
+            if (arena == NULL) {
+                std::bad_alloc e;
                 throw e;
             }
             arena_ptr = arena;
