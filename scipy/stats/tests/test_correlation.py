@@ -303,3 +303,27 @@ class TestTheilslopes:
         y = rng.integers(0, 255, size=10, dtype=np.uint8)
         res = stats.theilslopes(y, y)
         np.testing.assert_allclose(res.slope, 1)
+
+    @pytest.mark.parametrize("case_number", [0, 1, 2, 3])
+    def test_against_mstats(self, case_number):
+        rng = np.random.default_rng(349824598234528554)
+        match case_number:
+            case 0:  # no x
+                x = None
+                y = rng.random(100)
+            case 1:  # no ties
+                x = rng.random(100)
+                y = rng.random(100)
+            case 2:  # no x ties
+                x = rng.random(100)
+                y = rng.integers(50, size=100)
+            case 3:  # ties in x and y
+                x = rng.integers(25, size=100)
+                y = rng.integers(50, size=100)
+        res = stats.theilslopes(y, x, axis=-1)
+        ref = stats.mstats.theilslopes(y, x)
+        assert res.slope != 0  # avoid trivial cases
+        assert_allclose(res.slope, ref.slope)
+        assert_allclose(res.intercept, ref.intercept)
+        assert_allclose(res.low_slope, ref.low_slope)
+        assert_allclose(res.high_slope, ref.high_slope)
