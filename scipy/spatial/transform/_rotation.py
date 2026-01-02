@@ -62,6 +62,10 @@ def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
 @xp_capabilities(
     skip_backends=[("dask.array", "missing linalg.cross/det functions")],
     method_capabilities={
+        "__init__": dict(
+            jax_jit=False,
+            skip_backends=[("dask.array", "dask not supported")],
+        ),
         "as_davenport": dict(
             skip_backends=[
                 ("dask.array", "missing linalg.cross/det functions and .mT attribute"),
@@ -2621,6 +2625,15 @@ class Rotation:
         return rot
 
 
+@xp_capabilities(
+    skip_backends=[("dask.array", "missing linalg.cross function")],
+    method_capabilities={
+        "__init__": dict(
+            jax_jit=False,
+            skip_backends=[("dask.array", "missing linalg.cross function")],
+        ),
+    },
+)
 class Slerp:
     """Spherical Linear Interpolation of Rotations.
 
@@ -2701,10 +2714,6 @@ class Slerp:
            [ -88.94647804,  -49.64400082,  -65.80546984]])
 
     """
-
-    @xp_capabilities(
-        jax_jit=False, skip_backends=[("dask.array", "missing linalg.cross function")]
-    )
     def __init__(self, times: ArrayLike, rotations: Rotation):
         if not isinstance(rotations, Rotation):
             raise TypeError("`rotations` must be a `Rotation` instance.")
@@ -2747,7 +2756,6 @@ class Slerp:
         self.rotations = rotations[:-1]
         self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
 
-    @xp_capabilities()
     def __call__(self, times: ArrayLike) -> Rotation:
         """Interpolate rotations.
 

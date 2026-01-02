@@ -2193,7 +2193,7 @@ Rotation.from_matrix(array([[[ 0.,  0.,  1.],
         assert actual.startswith("Rotation.from_matrix(")
 
 
-@make_xp_test_case(Slerp.__init__, Slerp.__call__)
+@make_xp_test_case((Slerp, "__init__"), (Slerp, "__call__"))
 def test_slerp(xp):
     rnd = np.random.RandomState(0)
 
@@ -2241,7 +2241,7 @@ def test_slerp(xp):
     assert_equal(len(interp_rots), len(times))
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_rot_is_rotation(xp):
     with pytest.raises(TypeError, match="must be a `Rotation` instance"):
         r = xp.asarray([[1,2,3,4],
@@ -2253,14 +2253,14 @@ def test_slerp_rot_is_rotation(xp):
 SLERP_EXCEPTION_MESSAGE = "must be a sequence of at least 2 rotations"
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_single_rot(xp):
     r = Rotation.from_quat(xp.asarray([[1.0, 2, 3, 4]]))
     with pytest.raises(ValueError, match=SLERP_EXCEPTION_MESSAGE):
         Slerp([1], r)
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_rot_len0(xp):
     r = Rotation.random()
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
@@ -2268,7 +2268,7 @@ def test_slerp_rot_len0(xp):
         Slerp([], r)
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_rot_len1(xp):
     r = Rotation.random(1)
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
@@ -2276,14 +2276,14 @@ def test_slerp_rot_len1(xp):
         Slerp([1], r)
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_tensor_rot(xp):
     r = Rotation.from_quat(xp.ones((2, 2, 4)))
     with pytest.raises(ValueError, match="Rotations with more than 1 leading"):
         Slerp([1, 2], r)
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_time_dim_mismatch(xp):
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):
@@ -2294,7 +2294,7 @@ def test_slerp_time_dim_mismatch(xp):
         Slerp(t, r)
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_num_rotations_mismatch(xp):
     with pytest.raises(ValueError, match="number of rotations to be equal to "
                                          "number of timestamps"):
@@ -2304,7 +2304,7 @@ def test_slerp_num_rotations_mismatch(xp):
         Slerp(t, r)
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_equal_times(xp):
     rnd = np.random.RandomState(0)
     q = xp.asarray(rnd.uniform(size=(5, 4)))
@@ -2318,7 +2318,7 @@ def test_slerp_equal_times(xp):
             Slerp(t, r)
 
 
-@make_xp_test_case(Slerp.__init__)
+@make_xp_test_case((Slerp, "__init__"))
 def test_slerp_decreasing_times(xp):
     rnd = np.random.RandomState(0)
     q = xp.asarray(rnd.uniform(size=(5, 4)))
@@ -2332,7 +2332,7 @@ def test_slerp_decreasing_times(xp):
             Slerp(t, r)
 
 
-@make_xp_test_case(Slerp.__init__, Slerp.__call__)
+@make_xp_test_case((Slerp, "__init__"), (Slerp, "__call__"))
 def test_slerp_call_time_dim_mismatch(xp):
     rnd = np.random.RandomState(0)
     r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
@@ -2346,7 +2346,7 @@ def test_slerp_call_time_dim_mismatch(xp):
         s(interp_times)
 
 
-@make_xp_test_case(Slerp.__init__, Slerp.__call__)
+@make_xp_test_case((Slerp, "__init__"), (Slerp, "__call__"))
 def test_slerp_call_time_out_of_range(xp):
     rnd = np.random.RandomState(0)
     r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
@@ -2371,7 +2371,7 @@ def test_slerp_call_time_out_of_range(xp):
             s(times_high)
 
 
-@make_xp_test_case(Slerp.__init__, Slerp.__call__, (Rotation, "from_euler"), (Rotation, "inv"),
+@make_xp_test_case((Slerp, "__init__"), (Slerp, "__call__"), (Rotation, "from_euler"), (Rotation, "inv"),
                    (Rotation, "magnitude"))
 def test_slerp_call_scalar_time(xp):
     dtype = xpx.default_dtype(xp)
