@@ -1005,7 +1005,9 @@ def maybe_warn_gimbal_lock(should_warn, xp):
             yield
 
 
-@make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler"))
+@make_xp_test_case(
+    (Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler")
+)
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 @pytest.mark.parametrize("suppress_warnings", (False, True))
@@ -1039,7 +1041,9 @@ def test_as_euler_degenerate_asymmetric_axes(
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
 
 
-@make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler"))
+@make_xp_test_case(
+    (Rotation, "from_euler"), (Rotation, "as_matrix"), (Rotation, "as_euler")
+)
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 @pytest.mark.parametrize("suppress_warnings", (False, True))
@@ -1247,7 +1251,9 @@ def test_magnitude_single_rotation(xp):
     xp_assert_close(result2, xp.asarray(0.0)[()])
 
 
-@make_xp_test_case((Rotation, "inv"), (Rotation, "magnitude"), (Rotation, "approx_equal"))
+@make_xp_test_case(
+    (Rotation, "inv"), (Rotation, "magnitude"), (Rotation, "approx_equal")
+)
 def test_approx_equal(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     p = Rotation.random(10, rng=rng)
@@ -1275,7 +1281,9 @@ def test_approx_equal_single_rotation(xp):
         assert p.approx_equal(q[3], degrees=True)
 
 
-@make_xp_test_case((Rotation, "inv"), (Rotation, "magnitude"), (Rotation, "approx_equal"))
+@make_xp_test_case(
+    (Rotation, "inv"), (Rotation, "magnitude"), (Rotation, "approx_equal")
+)
 def test_approx_equal_batched(xp):
     # Same shapes
     batch_shape = (2, 10, 3)
@@ -1324,7 +1332,9 @@ def test_approx_equal_batched_input_validation(xp):
         p.approx_equal(q)
 
 
-@make_xp_test_case((Rotation, "from_rotvec"), (Rotation, "mean"), (Rotation, "magnitude"))
+@make_xp_test_case(
+    (Rotation, "from_rotvec"), (Rotation, "mean"), (Rotation, "magnitude")
+)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_mean(xp, ndim: int):
     axes = xp.concat((-xp.eye(3), xp.eye(3)))
@@ -1338,7 +1348,9 @@ def test_mean(xp, ndim: int):
         xp_assert_close(r_mean.magnitude(), desired, atol=atol)
 
 
-@make_xp_test_case((Rotation, "from_rotvec"), (Rotation, "mean"), (Rotation, "magnitude"))
+@make_xp_test_case(
+    (Rotation, "from_rotvec"), (Rotation, "mean"), (Rotation, "magnitude")
+)
 @pytest.mark.parametrize("ndim", range(1, 5))
 def test_mean_axis(xp, ndim: int):
     axes = xp.tile(xp.concat((-xp.eye(3), xp.eye(3))), (3,) * (ndim - 1) + (1, 1))
@@ -1661,7 +1673,9 @@ def test_apply_input_validation(xp):
         r.apply(xp.ones((2, 2, 3)))
 
 
-@make_xp_test_case((Rotation, "from_matrix"), (Rotation, "as_matrix"), (Rotation, "__getitem__"))
+@make_xp_test_case(
+    (Rotation, "from_matrix"), (Rotation, "as_matrix"), (Rotation, "__getitem__")
+)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_getitem(xp, ndim: int):
     rng = np.random.default_rng(0)
@@ -1680,7 +1694,9 @@ def test_getitem_single(xp):
         Rotation.from_quat(xp.asarray([0, 0, 0, 1]))[0]
 
 
-@make_xp_test_case((Rotation, "from_matrix"), (Rotation, "__getitem__"), (Rotation, "as_matrix"))
+@make_xp_test_case(
+    (Rotation, "from_matrix"), (Rotation, "__getitem__"), (Rotation, "as_matrix")
+)
 def test_getitem_array_like():
     mat = np.array([[[0.0, -1, 0],
                      [1, 0, 0],
@@ -1852,7 +1868,9 @@ def test_align_vectors_scaled_weights(xp):
     xp_assert_close(cov1, cov2)
 
 
-@make_xp_test_case((Rotation, "apply"), (Rotation, "from_rotvec"), (Rotation, "align_vectors"))
+@make_xp_test_case(
+    (Rotation, "apply"), (Rotation, "from_rotvec"), (Rotation, "align_vectors")
+)
 def test_align_vectors_noise(xp):
     dtype = xpx.default_dtype(xp)
     rng = np.random.default_rng(146972845698875399755764481408308808739)
@@ -1976,7 +1994,9 @@ def test_align_vectors_invalid_input(xp):
         Rotation.align_vectors(a, b)
 
 
-@make_xp_test_case((Rotation, "align_vectors"), (Rotation, "as_matrix"), (Rotation, "apply"))
+@make_xp_test_case(
+    (Rotation, "align_vectors"), (Rotation, "as_matrix"), (Rotation, "apply")
+)
 def test_align_vectors_align_constrain(xp):
     # Align the primary +X B axis with the primary +Y A axis, and rotate about
     # it such that the +Y B axis (residual of the [1, 1, 0] secondary b vector)
@@ -2072,8 +2092,10 @@ def test_align_vectors_parallel(xp):
     xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
 
-@make_xp_test_case((Rotation, "align_vectors"), (Rotation, "magnitude"), (Rotation, "apply"),
-                   (Rotation, "from_rotvec"), (Rotation, "as_rotvec"), (Rotation, "as_matrix"))
+@make_xp_test_case(
+    (Rotation, "align_vectors"), (Rotation, "magnitude"), (Rotation, "apply"),
+    (Rotation, "from_rotvec"), (Rotation, "as_rotvec"), (Rotation, "as_matrix")
+)
 def test_align_vectors_antiparallel(xp):
     dtype = xpx.default_dtype(xp)
     # Test exact 180 deg rotation
@@ -2371,8 +2393,10 @@ def test_slerp_call_time_out_of_range(xp):
             s(times_high)
 
 
-@make_xp_test_case((Slerp, "__init__"), (Slerp, "__call__"), (Rotation, "from_euler"), (Rotation, "inv"),
-                   (Rotation, "magnitude"))
+@make_xp_test_case(
+    (Slerp, "__init__"), (Slerp, "__call__"), (Rotation, "from_euler"),
+    (Rotation, "inv"), (Rotation, "magnitude")
+)
 def test_slerp_call_scalar_time(xp):
     dtype = xpx.default_dtype(xp)
     atol = 1e-16 if dtype == xp.float64 else 1e-7
@@ -2450,8 +2474,10 @@ def test_multiplication_stability(xp):
         xp_assert_close(xp_vector_norm(rs.as_quat(), axis=1), expected)
 
 
-@make_xp_test_case((Rotation, "inv"), (Rotation, "__pow__"), (Rotation, "inv"), (Rotation, "magnitude"),
-                   (Rotation, "from_rotvec"), (Rotation, "as_rotvec"))
+@make_xp_test_case(
+    (Rotation, "inv"), (Rotation, "__pow__"), (Rotation, "inv"),
+    (Rotation, "magnitude"), (Rotation, "from_rotvec"), (Rotation, "as_rotvec")
+)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_pow(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
@@ -2822,7 +2848,9 @@ def test_as_davenport_nd(xp):
         xp_assert_close(angles_dav, angles)
 
 
-@make_xp_test_case((Rotation, "from_davenport"), (Rotation, "as_davenport"), (Rotation, "as_matrix"))
+@make_xp_test_case(
+    (Rotation, "from_davenport"), (Rotation, "as_davenport"), (Rotation, "as_matrix")
+)
 @pytest.mark.parametrize("suppress_warnings", (False, True))
 def test_as_davenport_degenerate(xp, suppress_warnings):
     dtype = xpx.default_dtype(xp)
@@ -2898,7 +2926,9 @@ def test_compare_from_davenport_from_euler(xp):
             xp_assert_close(eul.as_quat(), dav.as_quat(), rtol=rtol)
 
 
-@make_xp_test_case((Rotation, "from_euler"), (Rotation, "as_euler"), (Rotation, "as_davenport"))
+@make_xp_test_case(
+    (Rotation, "from_euler"), (Rotation, "as_euler"), (Rotation, "as_davenport")
+)
 def test_compare_as_davenport_as_euler(xp):
     rnd = np.random.RandomState(0)
     n = 100
@@ -2933,8 +2963,10 @@ def test_compare_as_davenport_as_euler(xp):
             xp_assert_close(eul, dav, rtol=1e-12)
 
 
-@make_xp_test_case((Rotation, "from_matrix"), (Rotation, "from_euler"), (Rotation, "from_rotvec"),
-                   (Rotation, "from_davenport"), (Rotation, "from_mrp"))
+@make_xp_test_case(
+    (Rotation, "from_matrix"), (Rotation, "from_euler"), (Rotation, "from_rotvec"),
+    (Rotation, "from_davenport"), (Rotation, "from_mrp")
+)
 def test_zero_rotation_construction(xp):
     r = Rotation.random(num=0)
     assert len(r) == 0
@@ -2964,8 +2996,10 @@ def test_zero_rotation_construction(xp):
     assert len(r_mrp) == 0
 
 
-@make_xp_test_case((Rotation, "as_matrix"), (Rotation, "as_euler"), (Rotation, "as_rotvec"),
-                   (Rotation, "as_mrp"), (Rotation, "as_davenport"))
+@make_xp_test_case(
+    (Rotation, "as_matrix"), (Rotation, "as_euler"), (Rotation, "as_rotvec"),
+    (Rotation, "as_mrp"), (Rotation, "as_davenport")
+)
 def test_zero_rotation_representation(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
     assert r.as_quat().shape == (0, 4)

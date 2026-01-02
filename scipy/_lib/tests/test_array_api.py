@@ -3,14 +3,11 @@ import re
 import numpy as np
 import pytest
 
-from importlib import import_module
-
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat, xp_default_dtype, xp_result_type, is_torch,
-    xp_capabilities_table, _xp_copy_to_numpy
+    np_compat, xp_default_dtype, xp_result_type, is_torch, _xp_copy_to_numpy
 )
-from scipy._lib._array_api_docs_tables import is_named_function_like_object
+
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 from scipy._lib.array_api_extra.testing import lazy_xp_function

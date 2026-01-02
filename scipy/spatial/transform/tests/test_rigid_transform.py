@@ -627,10 +627,12 @@ def test_as_dual_quat(xp, ndim: int):
         xp_assert_close(actual, expected, atol=1e-12)
 
 
-@make_xp_test_case((RigidTransform, "from_components"), (RigidTransform, "as_components"),
-                   (RigidTransform, "from_exp_coords"), (RigidTransform, "as_exp_coords"),
-                   (RigidTransform, "from_matrix"), (RigidTransform, "as_matrix"),
-                   (RigidTransform, "from_dual_quat"), (RigidTransform, "as_dual_quat"))
+@make_xp_test_case(
+    (RigidTransform, "from_components"), (RigidTransform, "as_components"),
+    (RigidTransform, "from_exp_coords"), (RigidTransform, "as_exp_coords"),
+    (RigidTransform, "from_matrix"), (RigidTransform, "as_matrix"),
+    (RigidTransform, "from_dual_quat"), (RigidTransform, "as_dual_quat")
+)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_as_internal_consistency(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
@@ -1347,9 +1349,11 @@ def test_normalize_dual_quaternion(xp, ndim: int):
     xp_assert_close(vecdot, expected, atol=atol)
 
 
-@make_xp_test_case((RigidTransform, "from_matrix"), (RigidTransform, "from_rotation"),
-                   (RigidTransform, "from_translation"), (RigidTransform, "from_components"),
-                   (RigidTransform, "from_exp_coords"), (RigidTransform, "from_dual_quat"))
+@make_xp_test_case(
+    (RigidTransform, "from_matrix"), (RigidTransform, "from_rotation"),
+    (RigidTransform, "from_translation"), (RigidTransform, "from_components"),
+    (RigidTransform, "from_exp_coords"), (RigidTransform, "from_dual_quat")
+)
 def test_empty_transform_construction(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf) == 0
