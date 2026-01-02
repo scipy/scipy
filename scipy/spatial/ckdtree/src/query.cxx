@@ -219,7 +219,7 @@ struct nodeinfo_pool {
 
     inline nodeinfo *allocate() {
 
-        if (CKDTREE_UNLIKELY(need_new_arena)) {
+        if (need_new_arena) {
             arena = (char*)ckdtree_aligned_alloc(ALIGN, arena_size);
             arena_ptr = arena;
             pool.push_back(arena);
@@ -237,7 +237,7 @@ struct nodeinfo_pool {
         // This avoids allocating a new arena when we can fit exactly one more
         // nodeinfo. It also avoid undefined behaviour by calculating
         // an address that may not exist.
-        if (CKDTREE_UNLIKELY(spaceleft < alloc_size + nodeinfo_size)) 
+        if (spaceleft < alloc_size + nodeinfo_size) 
             need_new_arena = true;
         else 
             arena_ptr += alloc_size;
