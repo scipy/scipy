@@ -11,13 +11,19 @@ local_capabilities_table = {}
 # B is a child of A which inherits the method g which is array-agnostic
 # so long as the method f is supported. A.f does not support the JAX jit but
 # B.f does support the JAX jit. Test that this inheritence does not
-# cause problems when testing with JAX jit.
+# cause problems when testing with JAX jit. For verisimilitude, there is also
+# a method h such that A.h and B.h both support that jit, making it so it
+# makes sense to have both A and B in lazy_xp_modules.
 
 @xp_capabilities(
     capabilities_table=local_capabilities_table,
     cpu_only=True,
-    jax_jit=False,
     skip_backends=[("dask.array", ""), ("torch", "")],
+    jax_jit=False,
+    method_capabilities={
+        "h": dict(jax_jit=True, cpu_only=True,
+                  skip_backends=[("dask.array", ""), ("torch", "")]),
+    },
 )
 class A:
     def __init__(self, x):
@@ -31,6 +37,11 @@ class A:
 
     def g(self, y, z):
         return self.f(y) + self.f(z)
+
+    def h(self, y):
+        xp = array_namespace(y)
+        y = xp.asarray(y)
+        return xp.matmul(y, y)
 
 
 @xp_capabilities(
@@ -47,10 +58,6 @@ class B(A):
         return self._xp.matmul(self.x, y)
 
 
-# The test is somewhat contrived because there is no need to add ``A`` to
-# lazy_xp_modules here, but imagine that most methods of ``A`` support the
-# JAX JIT, and B is a special case of A with more restrictions which allows
-# ``B.g`` to support the JIT but not ``A.g``.
 lazy_xp_modules = [A, B]
 
 
@@ -61,11 +68,27 @@ lazy_xp_modules = [A, B]
         make_xp_pytest_param((B, "g"), capabilities_table=local_capabilities_table),
     ],
 )
-def test_inheritance(xp):
+def test_inheritance1(cls, xp):
     x = xp.asarray([1.1, 2.2, 3.3])
     y = xp.asarray([1.0, 2.0, 3.0])
     z = xp.asarray([3.0, 4.0, 5.0])
     foo = cls(x)
     observed = foo.g(y, z)
     expected = xp.asarray(44.0)[()]
+    xp_assert_close(observed, expected)
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [
+        make_xp_pytest_param((A, "h"), capabilities_table=local_capabilities_table),
+        make_xp_pytest_param((B, "h"), capabilities_table=local_capabilities_table),
+    ],
+)
+def test_inheritance2(cls, xp):
+    x = xp.asarray([1.1, 2.2, 3.3])
+    y = xp.asarray([1.0, 2.0, 3.0])
+    foo = cls(x)
+    observed = foo.h(y)
+    expected = xp.asarray(14.0)[()]
     xp_assert_close(observed, expected)
