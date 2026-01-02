@@ -65,11 +65,15 @@ def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
         ),
         "__getitem__": dict(
             jax_jit=False,
-            skip_backends=[("dask.array", "cannot handle zero-length rigid transforms")],
+            skip_backends=[
+                ("dask.array", "cannot handle zero-length rigid transforms")
+            ],
         ),
         "__setitem__": dict(
             jax_jit=False,
-            skip_backends=[("dask.array", "cannot handle zero-length rigid transforms")],
+            skip_backends=[
+                ("dask.array", "cannot handle zero-length rigid transforms")
+            ],
         ),
         "apply": dict(
             skip_backends=[
