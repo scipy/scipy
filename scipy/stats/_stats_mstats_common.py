@@ -1,6 +1,4 @@
-import warnings
 import numpy as np
-from . import distributions
 from .._lib._array_api import xp_capabilities
 from .._lib._bunch import _make_tuple_bunch
 from ._axis_nan_policy import _axis_nan_policy_factory
