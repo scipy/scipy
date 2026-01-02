@@ -261,11 +261,11 @@ class TestTheilslopes:
         # Test for correct masking.
         y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
         slope, intercept, lower, upper = stats.theilslopes(y)
-        assert_almost_equal(slope, 1. / 3)
-        assert_almost_equal(intercept, 2. / 3)
+        assert_almost_equal(slope, 0.5)
+        assert_almost_equal(intercept, 0.5)
 
         slope, intercept, lower, upper = stats.theilslopes(y, method='joint')
-        assert_almost_equal(slope, 1. / 3)
+        assert_almost_equal(slope, 0.5)
         assert_almost_equal(intercept, 0.0)
 
     def test_theilslopes_warnings(self):
