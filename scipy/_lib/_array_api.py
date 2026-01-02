@@ -1015,7 +1015,6 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
     # Inject a marker which will help us identify tests using the xp
     # fixture which do not use xp_capabilities.
     marks.append(pytest.mark.uses_xp_capabilities(True, funcs=funcs))
-    from scipy.spatial.transform import Rotation
     for func in funcs:
         if isinstance(func, tuple):
             cls, method = func
