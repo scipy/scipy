@@ -168,16 +168,20 @@ struct nodeinfo_pool {
 
     ckdtree_intp_t nodeinfo_size;
     ckdtree_intp_t alloc_size;
-    ckdtree_intp_t arena_size;
+
     ckdtree_intp_t m;
     char *arena;
     char *arena_ptr;
     bool need_new_arena;
 
     // Tuning parameter:
-    // Alignment should hit a cache line and also cater for simd. 
+    // Alignment of an allocted nodeinfo struct
+    #define ALIGN 16
+
+    // Tuning parameter:
+    // Alignment should hit a cache line.
     // For most hardware 64 is OK, but Apple silicon needs 128.
-    #define ALIGN 128
+    #define ARENA_ALIGN 128
 
     // Tuning parameter:
     // Minumum arena size should be at least one page.
@@ -195,16 +199,9 @@ struct nodeinfo_pool {
         // with its trailing struct hack buffer
         alloc_size = nodeinfo_size % ALIGN ? ALIGN*(nodeinfo_size/ALIGN)+ALIGN : nodeinfo_size;
 
-        // arena_size must be in multiples of ARENA and large enough to fit at least
-        // one ALIGN aligned nodeinfo with its trailing struct hack buffer
-        if (alloc_size < ARENA)
-            arena_size = ARENA;
-        else
-            arena_size = alloc_size % ARENA ? ARENA*(alloc_size/ARENA) + ARENA : ARENA*(alloc_size/ARENA);
-
         // allocate one arena, make sure its alinment is ALIGN so we get
         // all nodeinfo structs aligned when advancing the pointer by alloc_size
-        arena = (char*)ckdtree_aligned_alloc(ALIGN, arena_size);
+        arena = (char*)ckdtree_aligned_alloc(ARENA_ALIGN, ARENA);
         arena_ptr = arena;
         pool.push_back(arena);
         need_new_arena = false;
@@ -220,7 +217,7 @@ struct nodeinfo_pool {
     inline nodeinfo *allocate() {
 
         if (need_new_arena) {
-            arena = (char*)ckdtree_aligned_alloc(ALIGN, arena_size);
+            arena = (char*)ckdtree_aligned_alloc(ARENA_ALIGN, ARENA);
             arena_ptr = arena;
             pool.push_back(arena);
             need_new_arena = false;
@@ -232,7 +229,7 @@ struct nodeinfo_pool {
         
         ckdtree_intp_t m1 = (ckdtree_intp_t)arena_ptr;
         ckdtree_intp_t m0 = (ckdtree_intp_t)arena;
-        ckdtree_intp_t spaceleft = arena_size-(ckdtree_intp_t)(m1-m0);
+        ckdtree_intp_t spaceleft = arena_size - (ckdtree_intp_t)(m1 - m0);
 
         // This avoids allocating a new arena when we can fit exactly one more
         // nodeinfo. It also avoid undefined behaviour by calculating
