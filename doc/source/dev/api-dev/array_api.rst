@@ -664,6 +664,47 @@ best demonstrated with an example::
 
 .. _dev-arrayapi_adding_tests:
 
+Applying ``xp_capabilities`` to classes
+```````````````````````````````````````
+
+For classes with array API standard support, one must apply ``xp_capabilities``
+once to the class itself, not separately to individual methods. The class level
+capabilities should be decided based on best judgment of which backends
+are generally usable with the class in a holistic sense. If individual methods
+differ in their capabilities, this can be specified using the
+``method_capabilities`` kwarg of ``xp_capabilities`` like in the example
+below::
+
+  @xp_capabilities(
+      method_capabilities={
+          "__init__": dict(jax_jit=False),
+	  "bar": dict(cpu_only=True, exceptions=["cupy"], jax_jit=False),
+      }
+  )
+  class Foo:
+      def __init__(self, x):
+          ...
+      def bar(self, y):
+          # not array-agnostic but has delegation to CuPy to set up
+	  ...
+      def baz(self, y):
+          # array-agnostic method
+	  ...
+
+Adding ``method_capabilities`` makes no changes to the documentation but does
+make it possible to access method level capabilities when adding tests and
+to test class methods with the JAX JIT, as we will see below. Documentation of
+method specific support and limitations should be added to the ``extra_note``
+described above.
+
+``method_capabilities`` should be a dictionary mapping method names to
+dictionaries with keys corresponding to the usual arguments of ``xp_capabilities``.
+Keys that are not supplied in the inner dictionaries will be filled with the
+``xp_capabilities`` default values. Entries in ``method_capabilities`` completely
+override the class level capabilities entry so that one can declare that some
+methods are supported on backends for which the class itself is considered
+unsupported; this is useful for incremental development.
+
 
 Adding tests
 ------------
