@@ -797,8 +797,9 @@ def xp_capabilities(
     allow_dask_compute=False, jax_jit=True,
     # Extra note to inject into the docstring
     extra_note=None,
-    # Dictionaries of distinct capabilities for methods for use
-    # when xp_capabilities is applied to a class.
+    # Dictionary mapping method names to dictionaries of method
+    # specific capabilities for use when when xp_capabilities is
+    # applied to a class with varying capabilities per method
     method_capabilities=None,
 ):
     """Decorator for a function that states its support among various

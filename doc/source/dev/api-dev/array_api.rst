@@ -407,6 +407,10 @@ signature::
       allow_dask_compute=False, jax_jit=True,
       # Extra note to inject into the docstring
       extra_note=None,
+      # Dictionary mapping method names to dictionaries of method
+      # specific capabilities for use when when xp_capabilities is
+      # applied to a class with varying capabilities per method
+      method_capabilities=None,
   ):
 
 This is available in ``scipy._lib._array_api`` and can be applied to functions,
