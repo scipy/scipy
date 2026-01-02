@@ -1012,9 +1012,15 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
     import pytest
 
     marks = []
-    # Inject a marker which will help us identify tests using the xp
-    # fixture which do not use xp_capabilities.
-    marks.append(pytest.mark.uses_xp_capabilities(True, funcs=funcs))
+    # func may be a (cls, method_name) pair. This objs list will store cls
+    # if the corresponding entry of funcs is such a tuple, and func otherwise.
+    # the objs list is passed to the uses_xp_capabilities mark and used in
+    # check_xp_untested. The intention is that all classes ``cls`` which advertise
+    # support must have at least one test that uses the ``xp`` fixture along
+    # with ``make_xp_test_case(cls)``. Testing is not enforced at the method level
+    # since the documentation of capabilities is done at the class level.
+    objs = []
+
     for func in funcs:
         if isinstance(func, tuple):
             cls, method = func
@@ -1022,8 +1028,11 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
             if method in capabilities["method_capabilities"]:
                 capabilities = capabilities["method_capabilities"][method]
             func = getattr(cls, method)
+            objs.append(cls)
         else:
             capabilities = capabilities_table[func]
+            objs.append(func)
+
         exceptions = capabilities['exceptions']
         reason = capabilities['reason']
 
@@ -1042,6 +1051,10 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
         lazy_kwargs = {k: capabilities[k]
                        for k in ('allow_dask_compute', 'jax_jit')}
         lazy_xp_function(func, **lazy_kwargs)
+
+    # Inject a marker which will help us identify tests using the xp
+    # fixture which do not use xp_capabilities.
+    marks.append(pytest.mark.uses_xp_capabilities(True, funcs=objs))
 
     return marks
 
