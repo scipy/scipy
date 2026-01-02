@@ -1022,22 +1022,19 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
     @pytest.mark.slow
-    @pytest.mark.parametrize('dist_name', ('norm', 'logistic'))
-    @pytest.mark.parametrize('i', range(5))
-    def test_against_anderson(self, dist_name, i):
-        # test that monte_carlo_test can reproduce results of `anderson`. Note:
-        # `anderson` does not provide a p-value; it provides a list of
-        # significance levels and the associated critical value of the test
-        # statistic. `i` used to index this list.
+    @pytest.mark.parametrize('dist_name', ['norm', 'logistic'])
+    @pytest.mark.parametrize('target_statistic', [0.6, 0.7, 0.8])
+    def test_against_anderson(self, dist_name, target_statistic):
+        # test that monte_carlo_test can reproduce results of `anderson`.
 
-        # find the skewness for which the sample statistic matches one of the
-        # critical values provided by `stats.anderson`
+        # find the skewness for which the sample statistic is within the range of
+        # values tubulated by `anderson`
 
         def fun(a):
             rng = np.random.default_rng(394295467)
             x = stats.tukeylambda.rvs(a, size=100, random_state=rng)
-            expected = stats.anderson(x, dist_name)
-            return expected.statistic - expected.critical_values[i]
+            expected = stats.anderson(x, dist_name, method='interpolate')
+            return expected.statistic - target_statistic
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
             sol = root(fun, x0=0)
@@ -1048,13 +1045,13 @@ class TestMonteCarloHypothesisTest:
         a = sol.x[0]
         rng = np.random.default_rng(394295467)
         x = stats.tukeylambda.rvs(a, size=100, random_state=rng)
-        expected = stats.anderson(x, dist_name)
+        expected = stats.anderson(x, dist_name, method='interpolate')
         expected_stat = expected.statistic
-        expected_p = expected.significance_level[i]/100
+        expected_p = expected.pvalue
 
         # perform equivalent Monte Carlo test and compare results
         def statistic1d(x):
-            return stats.anderson(x, dist_name).statistic
+            return stats.anderson(x, dist_name, method='interpolate').statistic
 
         dist_rvs = self.get_rvs(getattr(stats, dist_name).rvs, rng)
         with warnings.catch_warnings():
@@ -1166,7 +1163,12 @@ class TestPower:
         with pytest.raises(TypeError, match=message):
             power(test, rvs, n_observations, kwargs=(1, 2, 3))
 
-        message = "not be broadcast|Chunks do not add|Incompatible shapes"
+        message = (
+            "not be broadcast"
+            "|Chunks do not add"
+            "|Incompatible shapes"
+            "|Attempting to broadcast"
+        )
         with pytest.raises((ValueError, RuntimeError), match=message):
             power(test, rvs, (xp.asarray([10, 11]), xp.asarray([12, 13, 14])))
         with pytest.raises((ValueError, RuntimeError), match=message):
@@ -1983,6 +1985,32 @@ class TestPermutationTest:
         # y = c(2, 4, 6, 8)
         # cor.test(x, y, alternative = "t", method = "spearman")  # 0.333333333
         # cor.test(x, y, alternative = "t", method = "kendall")  # 0.333333333
+
+    def test_nan_statistic(self, xp):
+        # Where the observed statistic is NaN, the p-value should be NaN
+        # (Whether a single NaN in the permutation distribution should make the p-value
+        #  NaN is debatable. Users can choose for themselves.)
+        rng = np.random.default_rng(8951482112)
+        dtype = xp_default_dtype(xp)
+        x = xp.asarray(rng.random(5), dtype=dtype)
+        x_nan = xp.asarray([0, 0, 0, xp.nan, 0])
+        y = xp.asarray(rng.random(6), dtype=dtype)
+
+        def statistic(x, y, axis):
+            return xp.mean(x, axis=axis) - xp.mean(y, axis=axis)
+
+        kwds = {'permutation_type': 'independent', 'rng': rng, 'axis': -1}
+
+        ref = permutation_test((x, y), statistic, **kwds)
+
+        data = (xp.stack([x, x + x_nan]), y)
+        res = permutation_test(data, statistic, **kwds)
+
+        NaN = xp.asarray(xp.nan, dtype=dtype)
+        xp_assert_equal(res.statistic[0], ref.statistic)
+        xp_assert_equal(res.pvalue[0], ref.pvalue)
+        xp_assert_equal(res.statistic[1], NaN)
+        xp_assert_equal(res.pvalue[1], NaN)
 
 
 def test_all_partitions_concatenated():

@@ -72,8 +72,8 @@ def traceest(A, m3, seed=None):
     .. [1] Meyer, Raphael A., Cameron Musco, Christopher Musco, and David P.
        Woodruff. "Hutch++: Optimal Stochastic Trace Estimation." In Symposium
        on Simplicity in Algorithms (SOSA), pp. 142-155. Society for Industrial
-       and Applied Mathematics, 2021
-       https://doi.org/10.1137/1.9781611976496.16
+       and Applied Mathematics, 2021.
+       :doi:`10.1137/1.9781611976496.16`.
 
     """
     rng = np.random.default_rng(seed)

@@ -3907,7 +3907,8 @@ class TestStudentT:
         assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
         assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
         assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
-        assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
+        assert_allclose(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)),
+                        rtol=1e-14)
 
     def test_t_entropy(self):
         df = [1, 2, 25, 100]

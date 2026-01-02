@@ -190,7 +190,7 @@ class PchipInterpolator(CubicHermiteSpline):
         A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
     y : ndarray, shape (..., npoints, ...)
-        A N-D array of real values. ``y``'s length along the interpolation
+        An N-D array of real values. ``y``'s length along the interpolation
         axis must be equal to the length of ``x``. Use the ``axis``
         parameter to select the interpolation axis.
     axis : int, optional

@@ -84,7 +84,7 @@ class GridData(Benchmark):
     def time_evaluation(self, n_grids, method):
         interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y),
                              method=method)
-        
+
 class GridDataPeakMem(Benchmark):
     """
     Benchmark based on https://github.com/scipy/scipy/issues/20357
@@ -100,17 +100,17 @@ class GridDataPeakMem(Benchmark):
 
         random_values = rng.random(num_nonzero, dtype=np.float32)
 
-        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)), 
+        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)),
                                    shape=shape, dtype=np.float32)
         sparse_matrix = sparse_matrix.toarray()
 
         self.coords = np.column_stack(np.nonzero(sparse_matrix))
         self.values = sparse_matrix[self.coords[:, 0], self.coords[:, 1]]
-        self.grid_x, self.grid_y = np.mgrid[0:sparse_matrix.shape[0], 
+        self.grid_x, self.grid_y = np.mgrid[0:sparse_matrix.shape[0],
                                             0:sparse_matrix.shape[1]]
 
     def peakmem_griddata(self):
-        interpolate.griddata(self.coords, self.values, (self.grid_x, self.grid_y), 
+        interpolate.griddata(self.coords, self.values, (self.grid_x, self.grid_y),
                              method='cubic')
 
 class Interpolate1d(Benchmark):
@@ -431,7 +431,7 @@ class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
         # check dimensionality
         self._check_dimensionality(self.grid, values)
         # flip, if needed
-        self.values = np.flip(values, axis=self._descending_dimensions)
+        self._values = np.flip(values, axis=self._descending_dimensions)
         return super().__call__(self.xi, method=method)
 
 
@@ -496,7 +496,7 @@ class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
                 interpolate.CloughTocher2DInterpolator._preprocess_xi(self, *args)
             )
         return self.xi, self.interpolation_points_shape
-    
+
     def __call__(self, values):
         self._set_values(values)
         return super().__call__(self.xi)
@@ -543,3 +543,33 @@ class AAA(Benchmark):
         r.poles()
         r.residues()
         r.roots()
+
+
+class NearestNDInterpolator(Benchmark):
+    """
+    Benchmark NearestNDInterpolator.
+
+    Derived from the docstring example,
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.NearestNDInterpolator.html
+    """
+    param_names = ['n_samples', 'grid']
+    params = [
+        [10, 100, 1000],
+        [50, 100, 500]
+    ]
+
+    def setup(self, n_samples, grid):
+        rng = np.random.default_rng(20191102)
+
+        self.x = x = rng.random(n_samples) - 0.5
+        self.y = y = rng.random(n_samples) - 0.5
+        self.z = np.hypot(x, y)
+
+        X = np.linspace(min(x), max(x), num=grid)
+        Y = np.linspace(min(y), max(y), num=grid)
+        self.X, self.Y = np.meshgrid(X, Y)
+
+    def time_nearest_ND_interpolator(self, n_samples, grid):
+           interp = interpolate.NearestNDInterpolator(
+               list(zip(self.x, self.y)), self.z)
+           interp(self.X, self.Y)

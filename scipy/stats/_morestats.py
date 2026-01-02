@@ -1,16 +1,18 @@
+import itertools
 import math
 import warnings
 import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
+from numpy import (isscalar, log, around, zeros,
                    arange, sort, amin, amax, sqrt, array,
                    pi, exp, ravel, count_nonzero)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib.deprecation import _NoValue
 import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._array_api import (
@@ -916,6 +918,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
     keepdims : bool, default: False
         If this is set to True, the axes which are reduced are left
         in the result as dimensions with size one. With this option,
@@ -1727,6 +1730,7 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
     keepdims : bool, default: False
         If this is set to True, the axes which are reduced are left
         in the result as dimensions with size one. With this option,
@@ -1820,15 +1824,41 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
                           result_to_tuple=lambda x, _: (x,))
 def _yeojohnson_llf(data, *, lmb, axis=0):
     xp = array_namespace(data)
-    y = _yeojohnson_transform(data, lmb, xp=xp)
-    sigma = xp.var(y, axis=axis)
-
-    # Suppress RuntimeWarning raised by np.log when the variance is too low
-    finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
-    log_sigma = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
 
     n = data.shape[axis]
-    loglike = (-n / 2 * log_sigma
+    if n == 0:
+        return _get_nan(data, xp=xp)
+    eps = xp.finfo(dtype).eps
+    # Special case all-positive/negative data to avoid overflow and precision loss
+    pos = data >= 0  # binary mask
+
+    # There exists numerical instability when abs(lmb) or abs(lmb - 2) is very small
+    if xp.all(pos):
+        if abs(lmb) < eps:
+            logvar = xp.log(xp.var(xp.log1p(data), axis=axis))
+        else:
+            logvar = _log_var(lmb * xp.log1p(data), xp, axis) - 2 * math.log(abs(lmb))
+
+    elif xp.all(~pos):
+        if abs(lmb - 2) < eps:
+            logvar = xp.log(xp.var(xp.log1p(-data), axis=axis))
+        else:
+            logvar = _log_var((2 - lmb) * xp.log1p(-data), xp, axis) - 2 * math.log(
+                abs(2 - lmb)
+            )
+
+    # overflow/precision loss not reported for mixed data; calculate `logvar` directly
+    else:  # mixed positive and negative data
+        y = _yeojohnson_transform(data, lmb, xp=xp)
+        sigma = xp.var(y, axis=axis)
+
+        # Suppress RuntimeWarning raised by np.log when the variance is too low
+        finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
+        logvar = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
+
+    loglike = (-n / 2 * logvar
                + (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
 
     return loglike
@@ -2089,11 +2119,9 @@ def shapiro(x):
     return ShapiroResult(np.float64(w), np.float64(pw))
 
 
-# Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
-#             Some Comparisons", Journal of the American Statistical
-#             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
-_Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
-_Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
+# Values from [8]
+_Avals_norm = array([0.561, 0.631, 0.752, 0.873, 1.035])
+_Avals_expon = array([0.916, 1.062, 1.321, 1.591, 1.959])
 # From Stephens, M A, "Goodness of Fit for the Extreme Value Distribution",
 #             Biometrika, Vol. 64, Issue 3, Dec. 1977, pp 583-588.
 _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
@@ -2193,8 +2221,19 @@ AndersonResult = _make_tuple_bunch('AndersonResult',
                                     'significance_level'], ['fit_result'])
 
 
+_anderson_warning_message = (
+"""As of SciPy 1.17, users must choose a p-value calculation method by providing the
+`method` parameter. `method='interpolate'` interpolates the p-value from pre-calculated
+tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
+p-value via Monte Carlo simulation. When `method` is specified, the result object will
+include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
+or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
+available, and a p-value will always be computed according to one of the available
+`method` options.""".replace('\n', ' '))
+
+
 @xp_capabilities(np_only=True)
-def anderson(x, dist='norm'):
+def anderson(x, dist='norm', *, method=None):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -2212,11 +2251,35 @@ def anderson(x, dist='norm'):
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
         same distribution.
+    method : str or instance of `MonteCarloMethod`
+        Defines the method used to compute the p-value.
+        If `method` is ``"interpolated"``, the p-value is interpolated from
+        pre-calculated tables.
+        If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
+        `scipy.stats.monte_carlo_test` with the provided configuration options and other
+        appropriate settings.
+
+        .. versionadded:: 1.17.0
+            If `method` is not specified, `anderson` will emit a ``FutureWarning``
+            specifying that the user must opt into a p-value calculation method.
+            When `method` is specified, the object returned will include a ``pvalue``
+            attribute, but no ``critical_value``, ``significance_level``, or
+            ``fit_result`` attributes. Beginning in 1.19.0, these other attributes will
+            no longer be available, and a p-value will always be computed according to
+            one of the available `method` options.
 
     Returns
     -------
     result : AndersonResult
-        An object with the following attributes:
+        If `method` is provided, this is an object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        pvalue: float
+            The p-value corresponding with the test statistic, calculated according to
+            the specified `method`.
+
+        If `method` is unspecified, this is an object with the following attributes:
 
         statistic : float
             The Anderson-Darling test statistic.
@@ -2231,13 +2294,21 @@ def anderson(x, dist='norm'):
             An object containing the results of fitting the distribution to
             the data.
 
+        .. deprecated :: 1.17.0
+            The tuple-unpacking behavior of the return object and attributes
+            ``critical_values``, ``significance_level``, and ``fit_result`` are
+            deprecated. Beginning in SciPy 1.19.0, these features will no longer be
+            available, and the object returned will have attributes ``statistic`` and
+            ``pvalue``.
+
     See Also
     --------
     kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
 
     Notes
     -----
-    Critical values provided are for the following significance levels:
+    Critical values provided when `method` is unspecified are for the following
+    significance levels:
 
     normal/exponential
         15%, 10%, 5%, 2.5%, 1%
@@ -2284,6 +2355,10 @@ def anderson(x, dist='norm'):
            Fit for the Three-Parameter Weibull Distribution"
            Journal of the Royal Statistical Society.Series B(Methodological)
            Vol. 56, No. 3 (1994), pp. 491-500, Table 0.
+    .. [8] D'Agostino, Ralph B. (1986). "Tests for the Normal Distribution".
+           In: Goodness-of-Fit Techniques. Ed. by Ralph B. D'Agostino and
+           Michael A. Stephens. New York: Marcel Dekker, pp. 122-141. ISBN:
+           0-8247-7487-6.
 
     Examples
     --------
@@ -2292,18 +2367,15 @@ def anderson(x, dist='norm'):
 
     >>> import numpy as np
     >>> from scipy.stats import anderson
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(9781234521)
     >>> data = rng.random(size=35)
-    >>> res = anderson(data)
+    >>> res = anderson(data, dist='norm', method='interpolate')
     >>> res.statistic
-    0.8398018749744764
-    >>> res.critical_values
-    array([0.527, 0.6  , 0.719, 0.839, 0.998])
-    >>> res.significance_level
-    array([15. , 10. ,  5. ,  2.5,  1. ])
+    np.float64(0.9887620209957291)
+    >>> res.pvalue
+    np.float64(0.012111200538380142)
 
-    The value of the statistic (barely) exceeds the critical value associated
-    with a significance level of 2.5%, so the null hypothesis may be rejected
+    The p-value is approximately 0.012,, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
     """ # numpy/numpydoc#87  # noqa: E501
@@ -2325,7 +2397,7 @@ def anderson(x, dist='norm'):
         logcdf = distributions.norm.logcdf(w)
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
+        critical = around(_Avals_norm / (1.0 + 0.75/N + 2.25/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
         fit_params = 0, xbar
@@ -2396,7 +2468,72 @@ def anderson(x, dist='norm'):
     fit_result = FitResult(getattr(distributions, dist), y,
                            discrete=False, res=res)
 
-    return AndersonResult(A2, critical, sig, fit_result=fit_result)
+    if method is None:
+        warnings.warn(_anderson_warning_message, FutureWarning, stacklevel=2)
+        return AndersonResult(A2, critical, sig, fit_result=fit_result)
+
+    if method == 'interpolate':
+        sig = 1 - sig if dist == 'weibull_min' else sig / 100
+        pvalue = np.interp(A2, critical, sig)
+    elif isinstance(method, stats.MonteCarloMethod):
+        pvalue = _anderson_simulate_pvalue(x, dist, method)
+    else:
+        message = ("`method` must be either 'interpolate' or "
+                   "an instance of `MonteCarloMethod`.")
+        raise ValueError(message)
+    return SignificanceResult(statistic=A2, pvalue=pvalue)
+
+
+def _anderson_simulate_pvalue(x, dist, method):
+    message = ("The `___` attribute of a `MonteCarloMethod` object passed as the "
+               "`method` parameter of `scipy.stats.anderson` is ignored.")
+
+    method = method._asdict()
+    if method.pop('rvs', False):
+        warnings.warn(message.replace('___', 'rvs'), UserWarning, stacklevel=3)
+    if method.pop('batch', False):
+        warnings.warn(message.replace('___', 'batch'), UserWarning, stacklevel=3)
+    method['n_mc_samples'] = method.pop('n_resamples')
+
+    kwargs= {'known_params': {'loc': 0}} if dist == 'expon' else {}
+    dist = getattr(stats, dist)
+    res = stats.goodness_of_fit(dist, x, statistic='ad', **kwargs, **method)
+    return res.pvalue
+
+
+def _anderson_ksamp_continuous(samples, Z, Zstar, k, n, N):
+    """Compute A2akN equation 3 of Scholz & Stephens.
+
+    Parameters
+    ----------
+    samples : sequence of 1-D array_like
+        Array of sample arrays.
+    Z : array_like
+        Sorted array of all observations.
+    Zstar : array_like
+        Sorted array of unique observations. Unused.
+    k : int
+        Number of samples.
+    n : array_like
+        Number of observations in each sample.
+    N : int
+        Total number of observations.
+
+    Returns
+    -------
+    A2KN : float
+        The A2KN statistics of Scholz and Stephens 1987.
+
+    """
+    A2kN = 0.
+
+    j = np.arange(1, N)
+    for i in arange(0, k):
+        s = np.sort(samples[i])
+        Mij = s.searchsorted(Z[:-1], side='right')
+        inner = (N*Mij - j*n[i])**2 / (j * (N - j))
+        A2kN += inner.sum() / n[i]
+    return A2kN / N
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
@@ -2485,7 +2622,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 
 
 @xp_capabilities(np_only=True)
-def anderson_ksamp(samples, midrank=True, *, method=None):
+def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2499,10 +2636,20 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     samples : sequence of 1-D array_like
         Array of sample data in arrays.
     midrank : bool, optional
-        Type of Anderson-Darling test which is computed. Default
+        Variant of Anderson-Darling test which is computed. Default
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+
+        .. deprecated::1.17.0
+            Use parameter `variant` instead.
+    variant : {'midrank', 'right', 'continuous'}
+        Variant of Anderson-Darling test to be computed. ``'midrank'`` is applicable
+        to both continuous and discrete populations. ``'discrete'`` and ``'continuous'``
+        perform alternative versions of the test for discrete  and continuous
+        populations, respectively.
+        When `variant` is specified, the return object will not be unpackable as a
+        tuple, and only attributes ``statistic`` and ``pvalue`` will be present.
     method : PermutationMethod, optional
         Defines the method used to compute the p-value. If `method` is an
         instance of `PermutationMethod`, the p-value is computed using
@@ -2520,6 +2667,10 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
         critical_values : array
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
+
+            .. deprecated::1.17.0
+                 Present only when `variant` is unspecified.
+
         pvalue : float
             The approximate p-value of the test. If `method` is not
             provided, the value is floored / capped at 0.1% / 25%.
@@ -2542,11 +2693,12 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
     midrank empirical distribution function. This test is applicable
-    to continuous and discrete data. If midrank is set to False, the
+    to continuous and discrete data. If `variant` is set to ``'discrete'``, the
     right side empirical distribution is used for a test for discrete
-    data. According to [1]_, the two discrete test statistics differ
-    only slightly if a few collisions due to round-off errors occur in
-    the test not adjusted for ties between samples.
+    data; if `variant` is ``'continuous'``, the same test statistic and p-value are
+    computed for data with no ties, but with less computation. According to [1]_,
+    the two discrete test statistics differ only slightly if a few collisions due
+    to round-off errors occur in the test not adjusted for ties between samples.
 
     The critical values corresponding to the significance levels from 0.01
     to 0.25 are taken from [1]_. p-values are floored / capped
@@ -2566,41 +2718,33 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(loc=0.5, size=30)])
+    >>> rng = np.random.default_rng(44925884305279435)
+    >>> res = stats.anderson_ksamp([rng.normal(size=50), rng.normal(loc=0.5, size=30)],
+    ...                            variant='midrank')
     >>> res.statistic, res.pvalue
-    (1.974403288713695, 0.04991293614572478)
-    >>> res.critical_values
-    array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])
+    (3.4444310693448936, 0.013106682406720973)
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
-    test value is greater than the critical value for 5% (1.961) but
-    not at the 2.5% level. The interpolation gives an approximate
-    p-value of 4.99%.
+    p-value is less than 0.05, but not at the 1% level.
 
     >>> samples = [rng.normal(size=50), rng.normal(size=30),
     ...            rng.normal(size=20)]
-    >>> res = stats.anderson_ksamp(samples)
+    >>> res = stats.anderson_ksamp(samples, variant='continuous')
     >>> res.statistic, res.pvalue
-    (-0.29103725200789504, 0.25)
-    >>> res.critical_values
-    array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
-      4.07210043, 5.56419101])
+    (-0.6309662273193832, 0.25)
 
-    The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The reported p-value (25%) has been capped and
-    may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.291).
+    As we might expect, the null hypothesis cannot be rejected here for three samples
+    from an identical distribution. The reported p-value (25%) has been capped at the
+    maximum value for which pre-computed p-values are available.
 
     In such cases where the p-value is capped or when sample sizes are
     small, a permutation test may be more accurate.
 
     >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
-    >>> res = stats.anderson_ksamp(samples, method=method)
+    >>> res = stats.anderson_ksamp(samples, variant='continuous', method=method)
     >>> res.pvalue
-    0.5254
+    0.699
 
     """
     k = len(samples)
@@ -2620,10 +2764,28 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
-    if midrank:
+    if variant == _NoValue or midrank != _NoValue:
+        message = ("Parameter `variant` has been introduced to replace `midrank`; "
+                   "`midrank` will be removed in SciPy 1.19.0. Specify `variant` to "
+                   "silence this warning. Note that the returned object will no longer "
+                   "be unpackable as a tuple, and `critical_values` will be omitted.")
+        warnings.warn(message, category=UserWarning, stacklevel=2)
+
+    return_critical_values = False
+    if variant == _NoValue:
+        return_critical_values = True
+        variant = 'midrank' if midrank else 'right'
+
+    if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank
-    else:
+    elif variant == 'right':
         A2kN_fun = _anderson_ksamp_right
+    elif variant == 'continuous':
+        A2kN_fun = _anderson_ksamp_continuous
+    else:
+        message = "`variant` must be one of 'midrank', 'right', or 'continuous'."
+        raise ValueError(message)
+
     A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
 
     def statistic(*samples):
@@ -2674,10 +2836,15 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     else:
         p = res.pvalue if method is not None else p
 
-    # create result object with alias for backward compatibility
-    res = Anderson_ksampResult(A2, critical, p)
-    res.significance_level = p
+    if return_critical_values:
+        # create result object with alias for backward compatibility
+        res = Anderson_ksampResult(A2, critical, p)
+        res.significance_level = p
+    else:
+        res = SignificanceResult(statistic=A2, pvalue=p)
+
     return res
+
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
@@ -2743,9 +2910,10 @@ class _ABW:
 _abw_state = threading.local()
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False,    # p-value is Cython
+                 skip_backends=[('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
-def ansari(x, y, alternative='two-sided'):
+def ansari(x, y, alternative='two-sided', *, axis=0):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
@@ -2767,6 +2935,11 @@ def ansari(x, y, alternative='two-sided'):
         * 'greater': the ratio of scales is greater than 1.
 
         .. versionadded:: 1.7.0
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -2849,6 +3022,9 @@ def ansari(x, y, alternative='two-sided'):
     AnsariResult(statistic=425.0, pvalue=0.9998643258449039)
 
     """
+    xp = array_namespace(x, y)
+    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
+
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
@@ -2856,57 +3032,66 @@ def ansari(x, y, alternative='two-sided'):
     if not hasattr(_abw_state, 'a'):
         _abw_state.a = _ABW()
 
-    x, y = asarray(x), asarray(y)
-    n = len(x)
-    m = len(y)
-    if m < 1:
+    # _axis_nan_policy decorator guarantees that axis=-1
+    n = x.shape[-1]
+    m = y.shape[-1]
+    if m < 1:  # needed by test_axis_nan_policy; not user-facing
         raise ValueError("Not enough other observations.")
     if n < 1:
         raise ValueError("Not enough test observations.")
 
     N = m + n
-    xy = r_[x, y]  # combine
-    rank = _stats_py.rankdata(xy)
-    symrank = amin(array((rank, N - rank + 1)), 0)
-    AB = np.sum(symrank[:n], axis=0)
-    uxy = unique(xy)
-    repeats = (len(uxy) != len(xy))
+    xy = xp.concat([x, y], axis=-1)  # combine
+    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    rank, t = xp.astype(rank, dtype), xp.astype(t, dtype)
+    symrank = xp.minimum(rank, N - rank + 1)
+    AB = xp.sum(symrank[..., :n], axis=-1)
+    repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
     exact = ((m < 55) and (n < 55) and not repeats)
-    if repeats and (m < 55 or n < 55):
-        warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
+        # np.vectorize converts to NumPy here, and we convert back to the result
+        # type before returning
+        cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
+        sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
         if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.a.cdf(AB, n, m),
-                                    _abw_state.a.sf(AB, n, m))
+            pval = 2.0 * np.minimum(cdf(AB, n, m),
+                                    sf(AB, n, m))
         elif alternative == 'greater':
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
-            pval = _abw_state.a.cdf(AB, n, m)
+            pval = cdf(AB, n, m)
         else:
-            pval = _abw_state.a.sf(AB, n, m)
-        return AnsariResult(AB, np.minimum(1.0, pval))
+            pval = sf(AB, n, m)
+        pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
+        AB = AB[()] if AB.ndim == 0 else AB
+        pval = pval[()] if pval.ndim == 0 else pval
+        return AnsariResult(AB, pval)
 
-    # otherwise compute normal approximation
-    if N % 2:  # N odd
-        mnAB = n * (N+1.0)**2 / 4.0 / N
-        varAB = n * m * (N+1.0) * (3+N**2) / (48.0 * N**2)
-    else:
-        mnAB = n * (N+2.0) / 4.0
-        varAB = m * n * (N+2) * (N-2.0) / 48 / (N-1.0)
+    mnAB = (n * (N + 1.0) ** 2 / 4.0 / N) if N % 2 else (n * (N + 2.0) / 4.0)
+
     if repeats:   # adjust variance estimates
         # compute np.sum(tj * rj**2,axis=0)
-        fac = np.sum(symrank**2, axis=0)
+        fac = xp.sum(symrank**2, axis=-1)
         if N % 2:  # N odd
             varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N**2 * (N-1))
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
+    else:
+        # otherwise compute normal approximation
+        if N % 2:  # N odd
+            varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
+        else:
+            varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
+        varAB = xp.asarray(varAB, dtype=dtype)
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
     # This is opposite to the way we define the ratio of scales. see [1]_.
-    z = (mnAB - AB) / sqrt(varAB)
-    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
-    return AnsariResult(AB[()], pvalue[()])
+    z = (mnAB - AB) / xp.sqrt(varAB)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
+    AB = AB[()] if AB.ndim == 0 else AB
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return AnsariResult(AB, pvalue)
 
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
@@ -3176,7 +3361,8 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
+                                ('cupy', 'no rankdata')], jax_jit=False)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3268,140 +3454,143 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
 
     For a more detailed example, see :ref:`hypothesis_fligner`.
     """
+    xp = array_namespace(*samples)
+
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(samples)
     if k < 2:
-        raise ValueError("Must enter at least two input sample vectors.")
+        raise ValueError("Must provide at least two samples.")
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    dtype = samples[0].dtype
 
     # Handle empty input
     for sample in samples:
         if sample.size == 0:
-            NaN = _get_nan(*samples)
+            NaN = _get_nan(*samples, xp=xp)
             return FlignerResult(NaN, NaN)
 
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=-1, keepdims=True)
+            return (xp.median(x, axis=-1, keepdims=True)
+                    if (is_numpy(xp) or is_dask(xp))
+                    else stats.quantile(x, 0.5, axis=-1, keepdims=True))
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=-1, keepdims=True)
+            return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
+            # keepdims=True doesn't currently work for lazy arrays
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
     ni = [sample.shape[-1] for sample in samples]
     N = sum(ni)
 
     # Implementation follows [3] pg 355 F-K.
     Xibar = [func(sample) for sample in samples]
-    Xij_Xibar = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
-    Xij_Xibar = np.concatenate(Xij_Xibar, axis=-1)
-    ranks = _stats_py._rankdata(Xij_Xibar, method='average')
+    Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
+    Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
+    ranks = _stats_py._rankdata(Xij_Xibar, method='average', xp=xp)
+    ranks = xp.astype(ranks, dtype)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
-    splits = np.cumsum(ni[:-1])
-    Ai = np.split(a_Ni,  splits, axis=-1)
-    Aibar = [np.mean(Ai_, axis=-1) for Ai_ in Ai]
-    abar = np.mean(a_Ni, axis=-1)
-    V2 = np.var(a_Ni, axis=-1, ddof=1)
+    splits = list(itertools.accumulate(ni, initial=0))
+    Ai = [a_Ni[..., i:j] for i, j in zip(splits[:-1], splits[1:])]
+    Aibar = [xp.mean(Ai_, axis=-1) for Ai_ in Ai]
+    abar = xp.mean(a_Ni, axis=-1)
+    V2 = xp.var(a_Ni, axis=-1, correction=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
 
-    chi2 = _SimpleChi2(k-1)
-    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FlignerResult(statistic, pval)
 
 
-@_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
-def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
-    # Obtain the unique values and their frequencies from the pooled samples.
-    # "a_j, + b_j, = t_j, for j = 1, ... k" where `k` is the number of unique
-    # classes, and "[t]he number of values associated with the x's and y's in
-    # the jth class will be denoted by a_j, and b_j respectively."
-    # (Mielke, 312)
-    # Reuse previously computed sorted array and `diff` arrays to obtain the
-    # unique values and counts. Prepend `diffs` with a non-zero to indicate
-    # that the first element should be marked as not matching what preceded it.
-    diffs_prep = np.concatenate(([1], diffs))
-    # Unique elements are where the was a difference between elements in the
-    # sorted array
-    uniques = sorted_xy[diffs_prep != 0]
-    # The count of each element is the bin size for each set of consecutive
-    # differences where the difference is zero. Replace nonzero differences
-    # with 1 and then use the cumulative sum to count the indices.
-    t = np.bincount(np.cumsum(np.asarray(diffs_prep != 0, dtype=int)))[1:]
-    k = len(uniques)
-    js = np.arange(1, k + 1, dtype=int)
-    # the `b` array mentioned in the paper is not used, outside of the
-    # calculation of `t`, so we do not need to calculate it separately. Here
-    # we calculate `a`. In plain language, `a[j]` is the number of values in
-    # `x` that equal `uniques[j]`.
-    sorted_xyx = np.sort(np.concatenate((xy, x)))
-    diffs = np.diff(sorted_xyx)
-    diffs_prep = np.concatenate(([1], diffs))
-    diff_is_zero = np.asarray(diffs_prep != 0, dtype=int)
-    xyx_counts = np.bincount(np.cumsum(diff_is_zero))[1:]
-    a = xyx_counts - t
-    # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
-    # and `t` arrays over 1 to allow a first element of 0 to accommodate this
-    # indexing.
-    t = np.concatenate(([0], t))
-    a = np.concatenate(([0], a))
-    # S is built from `t`, so it does not need a preceding zero added on.
-    S = np.cumsum(t)
-    # define a copy of `S` with a prepending zero for later use to avoid
-    # the need for indexing.
-    S_i_m1 = np.concatenate(([0], S[:-1]))
+def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
+    # First equation of "Mood's Squared Rank Test", Mielke pg 313
+    E_0_T = m * (N * N - 1) / 12
 
-    # Psi, as defined by the 6th unnumbered equation on page 313 (Mielke).
-    # Note that in the paper there is an error where the denominator `2` is
-    # squared when it should be the entire equation.
-    def psi(indicator):
-        return (indicator - (N + 1)/2)**2
+    # m, n, N, t, and S are defined in the second paragraph of Mielke pg 312
+    # The only difference is that our `t` has zeros interspersed with the relevant
+    # numbers to keep the array rectangular, but these terms add nothing to the sum.
+    S = xp.cumulative_sum(t, include_initial=True, axis=-1)
+    S_i, S_i_m1 = S[..., 1:], S[..., :-1]
+    # Second equation of "Mood's Squared Rank Test", Mielke pg 313
+    varM = (m * n * (N + 1.0) * (N**2 - 4) / 180
+            - m * n / (180 * N * (N - 1))
+            * xp.sum(t * (t ** 2 - 1) * (t ** 2 - 4 + (15 * (N - S_i - S_i_m1) ** 2)),
+                     axis=-1))
 
-    # define summation range for use in calculation of phi, as seen in sum
-    # in the unnumbered equation on the bottom of page 312 (Mielke).
-    s_lower = S[js - 1] + 1
-    s_upper = S[js] + 1
-    phi_J = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
+    # There is a formula for Phi (`phi` in code) in terms of t, S, and Psi(I) at the
+    # bottom of Mielke pg 312. Psi(I) = [I - (N+1)/2]^2 is defined (with a mistake in
+    # the location of the ^2) at the beginning of "Mood's Squared Rank Test" (pg 313).
+    # To vectorize this calculation, let c = (N + 1) / 2, so Psi(I) = I^2 - 2*c*I + c^2.
+    # We sum each of these three parts of Psi separately using formulas for sums from a
+    # to b (inclusive) of terms I^2, I, and 1 where I takes on successive integers.
+    def sum_I2(a, b=None):
+        return (a * (a + 1) * (2 * a + 1) / 6 if b is None
+                else sum_I2(b) - sum_I2(a) + a**2)
 
-    # for every range in the above array, determine the sum of psi(I) for
-    # every element in the range. Divide all the sums by `t`. Following the
-    # last unnumbered equation on page 312.
-    phis = [np.sum(psi(I_j)) for I_j in phi_J] / t[js]
+    def sum_I(a, b=None):
+        return (a * (a + 1) / 2 if b is None
+                else sum_I(b) - sum_I(a) + a)
 
-    # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
-    # page 312. `phis` is already in the order based on `js`, so we index
-    # into `a` with `js` as well.
-    T = sum(phis * a[js])
+    def sum_1(a, b):
+        return (b - a) + 1
 
-    # The approximate statistic
-    E_0_T = n * (N * N - 1) / 12
+    with np.errstate(invalid='ignore', divide='ignore'):
+        sum_I2 = sum_I2(S_i_m1 + 1, S_i)
+        sum_I = sum_I(S_i_m1 + 1, S_i)
+        sum_1 = sum_1(S_i_m1 + 1, S_i)
+        c = (N + 1) / 2
+        phi = (sum_I2 - 2*c*sum_I + sum_1*c**2) / t
 
-    varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
-            m * n / (180 * N * (N - 1)) * np.sum(
-                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_i_m1) ** 2))
-            ))
+    phi = xpx.at(phi)[t == 0].set(0.)  # where t = 0 we get NaNs; eliminate them
 
-    return ((T - E_0_T) / np.sqrt(varM),)
+    # Mielke pg 312 defines `a` as the count of elements in sample `x` for each of the
+    # unique values in the combined sample. The tricky thing is getting these to line
+    # up with the locations of nonzero elements in `t`/`phi`.
+    x = xp.sort(x, axis=-1)
+    xy = xp.concat((x, y), axis=-1)
+    i = xp.argsort(xy, stable=True, axis=-1)
+    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
+    a = xp.astype(a, phi.dtype)
+
+    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
+    a = xp.concat((a, zeros), axis=-1)
+    a = xp.take_along_axis(a, i, axis=-1)
+
+    # Mielke pg 312 defines test statistic `T` as the inner product `a` and `phi`
+    T = xp.vecdot(a, phi, axis=-1)
+
+    return (T - E_0_T) / xp.sqrt(varM)
+
+
+def _mood_statistic_no_ties(r, m, n, N, xp):
+    rx = r[..., :m]
+    M = xp.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
+    E_0_T = m * (N * N - 1.0) / 12
+    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+    return (M - E_0_T) / math.sqrt(varM)
 
 
 def _mood_too_small(samples, kwargs, axis=-1):
     x, y = samples
-    n = x.shape[axis]
-    m = y.shape[axis]
+    m = x.shape[axis]
+    n = y.shape[axis]
     N = m + n
     return N < 3
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3466,7 +3655,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     ----------
     [1] Mielke, Paul W. "Note on Some Squared Rank Tests with Existing Ties."
         Technometrics, vol. 9, no. 2, 1967, pp. 312-14. JSTOR,
-        https://doi.org/10.2307/1266427. Accessed 18 May 2022.
+        :doi:`10.2307/1266427`. Accessed 18 May 2022.
 
     Examples
     --------
@@ -3493,60 +3682,36 @@ def mood(x, y, axis=0, alternative="two-sided"):
                        pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
 
-    if axis < 0:
-        axis = x.ndim + axis
+    # _axis_nan_policy decorator ensures axis=-1
+    xy = xp.concat((x, y), axis=-1)
 
-    # Determine shape of the result arrays
-    res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
-    if not (res_shape == tuple([y.shape[ax] for ax in range(len(y.shape)) if
-                                ax != axis])):
-        raise ValueError("Dimensions of x and y on all axes except `axis` "
-                         "should match")
-
-    n = x.shape[axis]
-    m = y.shape[axis]
+    m = x.shape[-1]
+    n = y.shape[-1]
     N = m + n
-    if N < 3:
-        raise ValueError("Not enough observations.")
 
-    xy = np.concatenate((x, y), axis=axis)
+    if m == 0 or n == 0 or N < 3:  # only needed for test_axis_nan_policy
+        NaN = _get_nan(x, y, xp=xp)
+        return SignificanceResult(NaN, NaN)
+
     # determine if any of the samples contain ties
-    sorted_xy = np.sort(xy, axis=axis)
-    diffs = np.diff(sorted_xy, axis=axis)
-    if 0 in diffs:
-        z = np.asarray(_mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N,
-                                      axis=axis))
+    # `a` represents ties within `x`; `t` represents ties within `xy`
+    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
+
+    if xp.any(t > 1):
+        z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
-        if axis != 0:
-            xy = np.moveaxis(xy, axis, 0)
+        z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
 
-        xy = xy.reshape(xy.shape[0], -1)
-        # Generalized to the n-dimensional case by adding the axis argument,
-        # and using for loops, since rankdata is not vectorized.  For improving
-        # performance consider vectorizing rankdata function.
-        all_ranks = np.empty_like(xy)
-        for j in range(xy.shape[1]):
-            all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
+    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
 
-        Ri = all_ranks[:n]
-        M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
-        # Approx stat.
-        mnM = n * (N * N - 1.0) / 12
-        varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-        z = (M - mnM) / sqrt(varM)
-    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
-
-    if res_shape == ():
-        # Return scalars, not 0-D arrays
-        z = z[0]
-        pval = pval[0]
-    else:
-        z = z.reshape(res_shape)
-        pval = pval.reshape(res_shape)
-    return SignificanceResult(z[()], pval[()])
+    z = z[()] if z.ndim == 0 else z
+    pval = pval[()] if pval.ndim == 0 else pval
+    return SignificanceResult(z, pval)
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
@@ -3573,7 +3738,9 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
+                                ("cupy", "no rankdata")],
+                jax_jit=False, cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -3682,11 +3849,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     - When ``len(d)`` is sufficiently large, the null distribution of the
       normalized test statistic (`zstatistic` above) is approximately normal,
       and ``method = 'asymptotic'`` can be used to compute the p-value.
-
     - When ``len(d)`` is small, the normal approximation may not be accurate,
       and ``method='exact'`` is preferred (at the cost of additional
       execution time).
-
     - The default, ``method='auto'``, selects between the two:
       ``method='exact'`` is used when ``len(d) <= 50``, and
       ``method='asymptotic'`` is used otherwise.

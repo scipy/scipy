@@ -50,8 +50,8 @@ class _csc_base(_cs_matrix):
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(N, M,
-                  self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
+                  self.indptr.astype(idx_dtype, copy=False),
+                  self.indices.astype(idx_dtype, copy=False),
                   self.data,
                   indptr,
                   indices,
