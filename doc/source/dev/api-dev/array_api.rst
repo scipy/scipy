@@ -1165,6 +1165,7 @@ because their contents are considered out-of-scope.
    array_api_modules_tables/sparse_csgraph
    array_api_modules_tables/spatial
    array_api_modules_tables/spatial_distance
+   array_api_modules_tables/spatial_transform
    array_api_modules_tables/special
    array_api_modules_tables/stats
    array_api_modules_tables/stats_contingency
@@ -1195,6 +1196,7 @@ Support on CPU
    :sparse.csgraph: array_api_support_sparse_csgraph_cpu
    :spatial: array_api_support_spatial_cpu
    :spatial.distance: array_api_support_spatial_distance_cpu
+   :spatial.transform: array_api_support_spatial_transform_cpu
    :special: array_api_support_special_cpu
    :stats: array_api_support_stats_cpu
    :stats.contingency: array_api_support_stats_contingency_cpu
@@ -1225,6 +1227,7 @@ Support on GPU
    :sparse.csgraph: array_api_support_sparse_csgraph_gpu
    :spatial: array_api_support_spatial_gpu
    :spatial.distance: array_api_support_spatial_distance_gpu
+   :spatial.transform: array_api_support_spatial_transform_gpu
    :special: array_api_support_special_gpu
    :stats: array_api_support_stats_gpu
    :stats.contingency: array_api_support_stats_contingency_gpu
@@ -1255,6 +1258,7 @@ Support with JIT
    :sparse.csgraph: array_api_support_sparse_csgraph_jit
    :spatial: array_api_support_spatial_jit
    :spatial.distance: array_api_support_spatial_distance_jit
+   :spatial.transform: array_api_support_spatial_transform_jit
    :special: array_api_support_special_jit
    :stats: array_api_support_stats_jit
    :stats.contingency: array_api_support_stats_contingency_jit
