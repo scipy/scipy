@@ -1,6 +1,9 @@
+import warnings
 import pytest
 import numpy as np
+from numpy.testing import assert_allclose, assert_equal, assert_almost_equal
 
+from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_jax
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy import stats
@@ -224,3 +227,79 @@ class TestSpearmanRho:
         with pytest.warns(stats.ConstantInputWarning, match=message):
             res = stats.spearmanrho(y, x)
             check_nan(res)
+
+
+class TestTheilslopes:
+    def test_theilslopes(self):
+        # Test for basic slope and intercept.
+        slope, intercept, lower, upper = stats.theilslopes([0, 1, 1])
+        assert_almost_equal(slope, 0.5)
+        assert_almost_equal(intercept, 0.5)
+
+        slope, intercept, lower, upper = stats.theilslopes([0, 1, 1], method='joint')
+        assert_almost_equal(slope, 0.5)
+        assert_almost_equal(intercept, 0.0)
+
+        # Test of confidence intervals from example in Sen (1968).
+        x = [1, 2, 3, 4, 10, 12, 18]
+        y = [9, 15, 19, 20, 45, 55, 78]
+        slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07)
+        assert_almost_equal(slope, 4)
+        assert_almost_equal(intercept, 4.0)
+        assert_almost_equal(upper, 4.38, decimal=2)
+        assert_almost_equal(lower, 3.71, decimal=2)
+
+        slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07,
+                                                           method='joint')
+        assert_almost_equal(slope, 4)
+        assert_almost_equal(intercept, 6.0)
+        assert_almost_equal(upper, 4.38, decimal=2)
+        assert_almost_equal(lower, 3.71, decimal=2)
+
+    @skip_xp_invalid_arg
+    def test_mask(self):
+        # Test for correct masking.
+        y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
+        slope, intercept, lower, upper = stats.theilslopes(y)
+        assert_almost_equal(slope, 1. / 3)
+        assert_almost_equal(intercept, 2. / 3)
+
+        slope, intercept, lower, upper = stats.theilslopes(y, method='joint')
+        assert_almost_equal(slope, 1. / 3)
+        assert_almost_equal(intercept, 0.0)
+
+    def test_theilslopes_warnings(self):
+        # Test `theilslopes` with degenerate input; see gh-15943
+        msg = "All-NaN slice.*|Mean of empty slice|invalid value encountered.*"
+        with pytest.warns(RuntimeWarning, match=msg):
+            res = stats.theilslopes([0, 1], [0, 0])
+            assert np.all(np.isnan(res))
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered...", RuntimeWarning)
+            res = stats.theilslopes([0, 0, 0], [0, 1, 0])
+            assert_allclose(res, (0, 0, np.nan, np.nan))
+
+    def test_theilslopes_namedtuple_consistency(self):
+        """
+        Simple test to ensure tuple backwards-compatibility of the returned
+        TheilslopesResult object
+        """
+        y = [1, 2, 4]
+        x = [4, 6, 8]
+        slope, intercept, low_slope, high_slope = stats.theilslopes(y, x)
+        result = stats.theilslopes(y, x)
+
+        # note all four returned values are distinct here
+        assert_equal(slope, result.slope)
+        assert_equal(intercept, result.intercept)
+        assert_equal(low_slope, result.low_slope)
+        assert_equal(high_slope, result.high_slope)
+
+    def test_gh19678_uint8(self):
+        # `theilslopes` returned unexpected results when `y` was an unsigned type.
+        # Check that this is resolved.
+        rng = np.random.default_rng(2549824598234528)
+        y = rng.integers(0, 255, size=10, dtype=np.uint8)
+        res = stats.theilslopes(y, y)
+        np.testing.assert_allclose(res.slope, 1)
