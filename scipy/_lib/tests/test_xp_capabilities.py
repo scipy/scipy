@@ -2,8 +2,7 @@ import pytest
 
 from scipy._lib.array_api_compat import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, make_xp_pytest_param, xp_capabilities, _xp_copy_to_numpy,
-    xp_assert_close, make_xp_test_case
+    array_namespace, make_xp_pytest_param, xp_assert_close, xp_capabilities
 )
 
 local_capabilities_table = {}
@@ -18,7 +17,12 @@ local_capabilities_table = {}
 @xp_capabilities(
     capabilities_table=local_capabilities_table,
     cpu_only=True,
-    skip_backends=[("dask.array", ""), ("torch", "")],
+    skip_backends=[
+        ("array_api_strict", ""),
+        ("numpy", ""),
+        ("dask.array", ""),
+        ("torch", "")
+    ],
     jax_jit=False,
     method_capabilities={
         "h": dict(jax_jit=True, cpu_only=True,
@@ -46,7 +50,14 @@ class A:
 
 @xp_capabilities(
     capabilities_table=local_capabilities_table,
-    skip_backends=[("cupy", ""), ("dask.array", ""), ("torch", "")],
+    cpu_only=True,
+    skip_backends=[
+        ("array_api_strict", ""),
+        ("cupy", ""),
+        ("numpy", ""),
+        ("dask.array", ""),
+        ("torch", "")
+    ],
 )
 class B(A):
     def __init__(self, x):
@@ -72,7 +83,7 @@ lazy_xp_modules = [A, B]
         make_xp_pytest_param((B, "g"), capabilities_table=local_capabilities_table),
     ],
 )
-def test_inheritance1(cls, xp):
+def test_no_spooky_action_at_a_distance(cls, xp):
     x = xp.asarray([1.1, 2.2, 3.3])
     y = xp.asarray([1.0, 2.0, 3.0])
     z = xp.asarray([3.0, 4.0, 5.0])
@@ -89,7 +100,7 @@ def test_inheritance1(cls, xp):
         make_xp_pytest_param((B, "h"), capabilities_table=local_capabilities_table),
     ],
 )
-def test_inheritance2(cls, xp):
+def test_method_capabilities(cls, xp):
     x = xp.asarray([1.1, 2.2, 3.3])
     y = xp.asarray([1.0, 2.0, 3.0])
     foo = cls(x)
