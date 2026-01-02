@@ -31,8 +31,6 @@ class TestEppsSingleton:
         # Epps & Singleton. Note: values do not match exactly, the
         # value of the interquartile range varies depending on how
         # quantiles are computed
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.asarray([-0.35, 2.55, 1.73, 0.73, 0.35,
                         2.69, 0.46, -0.94, -0.37, 12.07], dtype=dtype)
@@ -144,8 +142,6 @@ class TestCvm:
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_values_R(self, dtype, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         # compared against R package goftest, version 1.1.1
         # library(goftest)
@@ -317,8 +313,6 @@ class TestMannWhitneyU:
     @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_basic(self, kwds, expected, dtype, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x, y = xp.asarray(self.x, dtype=dtype), xp.asarray(self.y, dtype=dtype)
         res = mannwhitneyu(x, y, **kwds)
@@ -354,6 +348,7 @@ class TestMannWhitneyU:
         xp_assert_close(res.statistic, xp.asarray(expected[0]))
         xp_assert_close(res.pvalue, xp.asarray(expected[1]))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy->no _axis_nan_policy deco')
     def test_tie_correct(self, xp):
         # Test tie correction against R's wilcox.test
         # options(digits = 16)
@@ -1525,8 +1520,6 @@ class TestCvm_2samp:
     def test_example_conover(self, dtype, xp):
         # Example 2 in Section 6.2 of W.J. Conover: Practical Nonparametric
         # Statistics, 1971.
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.asarray([7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2], dtype=dtype)
         y = xp.asarray([5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8,

@@ -22,7 +22,7 @@ from numpy.testing import (assert_, assert_equal,
                            assert_allclose, assert_array_less)
 import pytest
 from pytest import raises as assert_raises
-from numpy import array, arange, float32, power
+from numpy import array, arange, power
 import numpy as np
 
 import scipy.stats as stats
@@ -41,7 +41,7 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes)
+                                   xp_swapaxes, xp_result_type)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -1132,6 +1132,23 @@ class TestCorrSpearmanr:
         res = [[stats.spearmanr(x[i, :], x[j, :]).statistic for i in range(m)]
                for j in range(m)]
         assert_allclose(corr, res)
+
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_constant_input_gh22816(self, axis):
+        X = np.zeros((10, 4))
+        X[:, 2] = np.arange(0, 10)
+        X[:, 3] = -np.arange(0, 10)
+
+        corr = np.array([[np.nan, np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, 1., -1.],
+                         [np.nan, np.nan, -1., 1.]])
+        if axis == 1:
+            X = X.T
+        with pytest.warns(stats._warnings_errors.ConstantInputWarning):
+            res = stats.spearmanr(X, axis=axis)
+        assert_allclose(res.statistic, corr)
+        assert_allclose(res.pvalue, 0*corr, atol=1e-50)
 
     def test_sXX(self):
         y = stats.spearmanr(X,X)
@@ -4597,8 +4614,6 @@ class TestFriedmanChiSquare:
     @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     @pytest.mark.parametrize("data, ref", [(x1, ref1), (x2, ref2), (x3, ref3)])
     def test_against_references(self, dtype, data, ref, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = dtype if dtype is None else getattr(xp, dtype)
         data = [xp.asarray(array, dtype=dtype) for array in data]
         res = stats.friedmanchisquare(*data)
@@ -4677,8 +4692,6 @@ class TestKSOneSample:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_agree_with_r(self, dtype, xp):
         # comparing with some values from R
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.linspace(-1, 1, 9, dtype=dtype)
         self._testOne(x, 'two-sided', 0.15865525393145705, 0.95164069201518386,
@@ -4700,8 +4713,6 @@ class TestKSOneSample:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_known_examples(self, xp, dtype):
         # the following tests rely on deterministically replicated rvs
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
         x = xp.asarray(x, dtype=dtype)
@@ -6670,7 +6681,7 @@ def test_obrientransform():
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
-                      rtol=1e-7, weights=None):
+                      rtol=None, weights=None):
     # Note this doesn't test when axis is not specified
     dtype = dtype or xp.float64
     if len(args) == 2:
@@ -6678,10 +6689,12 @@ def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
     else:
         array_like, p, desired = args
     array_like = xp.asarray(array_like, dtype=dtype)
-    desired = xp.asarray(desired, dtype=dtype)
+    dtype_reference = (xp_result_type(array_like, force_floating=True, xp=xp)
+                       if xp != np.ma else None)
+    desired = xp.asarray(desired, dtype=dtype_reference)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
     args = (array_like,) if len(args) == 2 else (array_like, p)
-    x = mean_fun(*args, axis=axis, dtype=dtype, weights=weights)
+    x = mean_fun(*args, axis=axis, weights=weights)
     xp_assert_close(x, desired, rtol=rtol)
 
 
@@ -6705,15 +6718,18 @@ class TestHMean:
         desired = 0
         check_equal_hmean(a, desired, xp=xp)
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 34.1417152147
-        check_equal_hmean(a, desired, xp=xp)
+        check_equal_hmean(a, desired, dtype=dtype, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
-        check_equal_hmean(a, desired, xp=xp)
+        check_equal_hmean(a, desired, dtype=dtype, xp=xp)
 
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
@@ -6806,9 +6822,9 @@ class TestHMean:
     def test_weights_masked_1d_array(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
-        a = np.array([2, 10, 6, 42])
-        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
-        desired = 3
+        a = np.array([2., 10., 6., 42.])
+        weights = np.ma.array([10., 5., 3., 42.], mask=[0, 0, 0, 1])
+        desired = 3.
         xp = np.ma  # check_equal_hmean uses xp.asarray; this will preserve the mask
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5,
                           dtype=np.float64, xp=xp)
@@ -6824,19 +6840,18 @@ class TestGMean:
         desired = 0
         check_equal_gmean(a, desired, xp=xp)
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 45.2872868812
-        check_equal_gmean(a, desired, xp=xp)
+        check_equal_gmean(a, desired, dtype=dtype, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, rtol=1e-14, xp=xp)
-
-        a = array([1, 2, 3, 4], float32)
-        desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, dtype=xp.float32, xp=xp)
+        check_equal_gmean(a, desired, dtype=dtype, rtol=1e-14, xp=xp)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2d(self, xp):
@@ -6920,8 +6935,8 @@ class TestGMean:
     def test_weights_masked_1d_array(self, xp):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
-        a = np.array([1, 2, 3, 4, 5, 6])
-        weights = np.ma.array([2, 5, 6, 4, 3, 5], mask=[0, 0, 0, 0, 0, 1])
+        a = np.array([1., 2., 3., 4., 5., 6.])
+        weights = np.ma.array([2., 5., 6., 4., 3., 5.], mask=[0, 0, 0, 0, 0, 1])
         desired = 2.77748
         xp = np.ma  # check_equal_gmean uses xp.asarray; this will preserve the mask
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5,
@@ -6941,18 +6956,21 @@ class TestPMean:
         with pytest.raises(ValueError, match='Power mean only defined for'):
             stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
         desired = TestPMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], -2.5
         desired = TestPMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
         a, p = [1, 2, 3, 4], 2
         desired = np.sqrt((1**2 + 2**2 + 3**2 + 4**2) / 4)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
@@ -7021,8 +7039,8 @@ class TestPMean:
 
     @skip_xp_invalid_arg
     def test_weights_masked_1d_array(self, xp):
-        a, p = np.array([2, 10, 6, 42]), 1
-        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
+        a, p = np.array([2., 10., 6., 42.]), 1
+        weights = np.ma.array([10., 5., 3., 42.], mask=[0, 0, 0, 1])
         desired = np.average(a, weights=weights)
         xp = np.ma  # check_equal_pmean uses xp.asarray; this will preserve the mask
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5,
@@ -7093,7 +7111,6 @@ class TestGSTD:
         gstd_actual = stats.gstd(a, axis=1)
         xp_assert_close(gstd_actual, xp.asarray([4, np.nan]))
 
-    @xfail_xp_backends("jax.numpy", reason="returns subnormal instead of nan")
     def test_ddof_equal_to_number_of_observations(self, xp):
         x = xp.asarray(self.array_1d)
         res = stats.gstd(x, ddof=x.shape[0])
@@ -7708,8 +7725,6 @@ class TestFOneWay:
     def test_basic(self, dtype, xp):
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = None if dtype is None else getattr(xp, dtype)
         F, p = stats.f_oneway(xp.asarray([0, 2], dtype=dtype),
                               xp.asarray([2, 4], dtype=dtype))
@@ -7719,8 +7734,6 @@ class TestFOneWay:
     @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     def test_unequal_var(self, dtype, xp):
         # toy samples with unequal variances and different observations
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = None if dtype is None else getattr(xp, dtype)
         samples = [xp.asarray([-50.42, 40.31, -18.09, 35.58, -6.8, 0.22], dtype=dtype),
                    xp.asarray([23.44, 4.5, 15.1, 9.66], dtype=dtype),

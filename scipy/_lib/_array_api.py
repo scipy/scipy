@@ -497,12 +497,6 @@ def xp_result_type(*args, force_floating=False, xp):
     if force_floating:
         args_not_none.append(1.0)
 
-    if is_numpy(xp) and xp.__version__ < '2.0':
-        # Follow NEP 50 promotion rules anyway
-        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
-                         for arg in args_not_none]
-        return xp.result_type(*args_not_none)
-
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
     except TypeError:  # mixed type promotion isn't defined

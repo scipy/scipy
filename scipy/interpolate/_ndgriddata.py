@@ -169,7 +169,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
 
 def griddata(points, values, xi, method='linear', fill_value=np.nan,
-             rescale=False):
+             rescale=False, simplex_tolerance=1.0):
     """
     Convenience function for interpolating unstructured data in multiple dimensions.
 
@@ -214,11 +214,25 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         incommensurable units and differ by many orders of magnitude.
 
         .. versionadded:: 0.14.0
+    simplex_tolerance : float, optional
+        Multiplier for the default tolerance QHull uses to assign
+        a simplex to the xi.  Default is 1.0.  Increase if there are
+        difficulties assigning points to simplexes; this is most
+        reproducible with points exatly on the border of a very
+        oblique triangle.  Only relevant for linear and 2-D cubic
+        interpolation.
+
+        .. versionadded:: 1.18.0
 
     Returns
     -------
     ndarray
         Array of interpolated values.
+
+    Raises
+    ------
+    ValueError
+        If simplex_tolerance <= 0
 
     See Also
     --------
@@ -289,6 +303,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.show()
 
     """ # numpy/numpydoc#87  # noqa: E501
+    if simplex_tolerance <= 0:
+        raise ValueError("simplex_tolerance must be positive")
 
     points = _ndim_coords_from_arrays(points)
 
@@ -319,11 +335,11 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     elif method == 'linear':
         ip = LinearNDInterpolator(points, values, fill_value=fill_value,
                                   rescale=rescale)
-        return ip(xi)
+        return ip(xi, simplex_tolerance=simplex_tolerance)
     elif method == 'cubic' and ndim == 2:
         ip = CloughTocher2DInterpolator(points, values, fill_value=fill_value,
                                         rescale=rescale)
-        return ip(xi)
+        return ip(xi, simplex_tolerance=simplex_tolerance)
     else:
         raise ValueError(
             f"Unknown interpolation method {method!r} for {ndim} dimensional data"

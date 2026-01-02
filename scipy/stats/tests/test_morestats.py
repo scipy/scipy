@@ -874,8 +874,6 @@ class TestAnsari:
     @pytest.mark.parametrize('n', [10, 100])  # affects code path
     @pytest.mark.parametrize('ties', [False, True])  # affects code path
     def test_dtypes(self, dtype, n, ties, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(78587342806484)
         x, y = rng.integers(6, size=(2, n)) if ties else rng.random(size=(2, n))
@@ -1241,8 +1239,6 @@ class TestFligner:
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_data(self, dtype, xp):
-        if is_numpy(xp) and dtype == 'float32' and xp.__version__ < "2":
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         # numbers from R: fligner.test in package stats
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x1 = xp.arange(5, dtype=dtype)
@@ -1383,8 +1379,6 @@ class TestMood:
                                            .1538788064889380))])
     def test_against_SAS_2(self, dtype, alternative, expected, xp):
         # Code to run in SAS in above function
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
              101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
@@ -1508,8 +1502,6 @@ class TestMood:
 
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_mood_alternative(self, dtype, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
 
         rng = np.random.RandomState(0)
@@ -1778,8 +1770,6 @@ class TestWilcoxon:
         # do.call(wilcox.test, c(cfg, list(alternative = "less", correct = TRUE)))
         # do.call(wilcox.test, c(cfg, list(alternative = "greater", correct = FALSE)))
         # do.call(wilcox.test, c(cfg, list(alternative = "greater", correct = TRUE)))
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("dtypes not preserved with pre-NEP 50 rules")
 
         dtype = dtype if dtype is None else getattr(xp, dtype)
         x = xp.asarray([125, 115, 130, 140, 140, 115, 140, 125, 140, 135], dtype=dtype)
@@ -2663,6 +2653,21 @@ class TestYeojohnson_llf:
         message = "One or more sample arguments is too small..."
         with eager_warns(SmallSampleWarning, match=message, xp=xp):
             assert xp.isnan(stats.yeojohnson_llf(1, xp.asarray([])))
+
+    def test_gh24172(self, xp):
+        # Test all negative and all positive data
+        data = xp.asarray([10, 10, 10, 9.9], dtype=xp.float64)
+        # The expected value was computed with mpsci, set mpmath.mp.dps=100
+        # 1. Test precision loss
+        xp_assert_close(stats.yeojohnson_llf(-14, data),
+                        xp.asarray(12.418595783381280, dtype=xp.float64), rtol=1e-7)
+        xp_assert_close(stats.yeojohnson_llf(16, -data),
+                        xp.asarray(12.418595783381280, dtype=xp.float64), rtol=1e-7)
+        # 2. Test overflow
+        xp_assert_close(stats.yeojohnson_llf(-20, data),
+                        xp.asarray(12.360966379200528, dtype=xp.float64), rtol=1e-7)
+        xp_assert_close(stats.yeojohnson_llf(20, -data),
+                        xp.asarray(12.380287243698629, dtype=xp.float64), rtol=1e-7)
 
 
 class TestYeojohnson:

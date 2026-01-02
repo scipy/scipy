@@ -1541,9 +1541,9 @@ class chi_gen(rv_continuous):
 
     Special cases of `chi` are:
 
-        - ``chi(1, loc, scale)`` is equivalent to `halfnorm`
-        - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
-        - ``chi(3, 0, scale)`` is equivalent to `maxwell`
+    - ``chi(1, loc, scale)`` is equivalent to `halfnorm`
+    - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
+    - ``chi(3, 0, scale)`` is equivalent to `maxwell`
 
     `chi` takes ``df`` as a shape parameter.
 
@@ -5110,9 +5110,12 @@ class invgauss_gen(rv_continuous):
         SciPy's with the conversion `fshape_s = fshape / scale`.
 
         MLE formulas are not used in 3 conditions:
+
         - `loc` is not fixed
         - `mu` is fixed
+
         These cases fall back on the superclass fit method.
+
         - `loc` is fixed but translation results in negative data raises
           a `FitDataError`.
         '''
@@ -11463,7 +11466,7 @@ class gennorm_gen(rv_continuous):
     The (symmetric) generalized normal distribution is also known as the
     Subbotin distribution, exponential power distribution, and generalized
     error distribution [1]_.
-    
+
     The probability density function for `gennorm` is [1]_:
 
     .. math::

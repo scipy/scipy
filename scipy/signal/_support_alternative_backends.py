@@ -100,7 +100,7 @@ untested = {
     "periodogram",
     "place_poles",
     "sawtooth",
-    "square",
+    "sepfir2d",
     "ss2tf",
     "ss2zpk",
     "step",
