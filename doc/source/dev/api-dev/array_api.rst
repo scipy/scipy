@@ -662,8 +662,6 @@ best demonstrated with an example::
     """
   )
 
-.. _dev-arrayapi_adding_tests:
-
 Applying ``xp_capabilities`` to classes
 ```````````````````````````````````````
 
@@ -703,8 +701,11 @@ Keys that are not supplied in the inner dictionaries will be filled with the
 ``xp_capabilities`` default values. Entries in ``method_capabilities`` completely
 override the class level capabilities entry so that one can declare that some
 methods are supported on backends for which the class itself is considered
-unsupported; this is useful for incremental development.
+unsupported; this is useful for incremental development. If a method has no
+corresponding entry in ``method_capabilities``, then its capabilities will be
+considered the same as the class level capabilities.
 
+.. _dev-arrayapi_adding_tests:
 
 Adding tests
 ------------
@@ -814,6 +815,7 @@ below::
 ``make_xp_pytest_marks`` is rarely used. It directly returns a list of
 pytest marks which can be used with the ``pytestmark = ...`` variable
 to set marks for all tests in a file.
+
 
 **Strict checks:**
 
@@ -1070,7 +1072,8 @@ the trouble of backend isolation. Maintainers are free to use their discretion t
 decide whether backend isolation is necessary or desirable.
 
 Testing the JAX JIT compiler (and lazy evaluation with Dask)
-------------------------------------------------------------
+````````````````````````````````````````````````````````````
+
 The `JAX JIT compiler <https://jax.readthedocs.io/en/latest/jit-compilation.html>`_
 introduces special restrictions to all code wrapped by ``@jax.jit``, which are not
 present when running JAX in eager mode. Notably, boolean masks in ``__getitem__``
@@ -1149,6 +1152,39 @@ requiring ``lazy_xp_modules`` applies for tests Dask works with lazy evaluation 
 as it does for tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
+
+Adding tests for class methods
+``````````````````````````````
+
+To declare that a test is testing a particular method of a class,
+one can pass a tuple of the form ``Tuple[type, str]`` as an entry of
+``funcs`` in ``make_xp_test_case`` and ``make_xp_pytest_marks`` or as
+the argument ``func`` of ``make_xp_pytest_param``. The tuple
+``(A, "f")`` signifies that one is testing the method ``A.f`` of the
+class ``A``. Such a tuple is used rather than simply ``A.f``
+in order allow unambiguous specification of what is being tested in
+cases where a method is inherited from a parent class.::
+
+  @make_xp_test_case((Foo, "bar"))
+  def test_Foo_bar(xp):
+      ...
+
+When passing such a tuple to ``make_xp_pytest_param``, only the first
+entry of the tuple is actually used in the resulting pytest param::
+
+  @pytest.mark.parametrize("cls", [(A, "f"), (B, "f"), C])
+      def test(cls, xp):
+          # cls iterates over A, B, C.
+	  ...
+
+When using such tuple arguments, the pytest skips and xfails will be
+taken from the class level capabilities, unless a method specific
+override was added in the ``method_capabilities`` kwarg of
+``xp_capabilities``. If the capabilities for ``(A, "f")`` have
+``jax_jit=True` (or if testing is enabled for Dask) then ``lazy_xp_function``
+will be applied to ``A.f`` (note that this can currently cause unexpected behavior
+in some cases when ``A`` inherits ``f`` from a parent class).
+
 
 Additional information
 ----------------------
