@@ -7820,6 +7820,12 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         * 'exact' : use exact distribution of test statistic
         * 'asymp' : use asymptotic distribution of test statistic
 
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+
     Returns
     -------
     res: KstestResult
