@@ -975,6 +975,15 @@ def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=
         that one wants marks for a particular method of the given class.
         See the Notes section of the docstring for ``make_xp_test_case`` for
         more info.
+
+        Note that if func is a tuple, than only the first entry is actually
+        used in the resulting pytets param, and the second entry is only
+        used to specify capabilities for a particular given method and tell
+        the testing infra to apply ``lazy_xp_function`` to that method.::
+
+        @pytest.mark.parametrize("cls", [(A, "f"), (B, "f"), C])
+        def test(cls, xp):
+            # cls iterates over A, B, C.
     *args : Any, optional
         Extra pytest parameters for the use case, e.g.::
 
