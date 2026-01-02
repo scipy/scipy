@@ -691,7 +691,7 @@ below::
 
 Adding ``method_capabilities`` makes no changes to the documentation but does
 make it possible to access method level capabilities when adding tests and
-to test class methods with the JAX JIT, as we will see below. Documentation of
+to test class methods with the JAX JIT. Documentation of
 method specific support and limitations should be added to the ``extra_note``
 described above.
 
@@ -702,8 +702,8 @@ Keys that are not supplied in the inner dictionaries will be filled with the
 override the class level capabilities entry so that one can declare that some
 methods are supported on backends for which the class itself is considered
 unsupported; this is useful for incremental development. If a method has no
-corresponding entry in ``method_capabilities``, then its capabilities will be
-considered the same as the class level capabilities.
+corresponding entry in ``method_capabilities``, then by default, its capabilities
+will be the same as the class level capabilities.
 
 .. _dev-arrayapi_adding_tests:
 
