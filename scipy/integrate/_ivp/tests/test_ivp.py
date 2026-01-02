@@ -15,6 +15,8 @@ from scipy.integrate._ivp.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
 
 
+SOLVERS = ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']
+
 def fun_zero(t, y):
     return np.zeros_like(y)
 
@@ -182,7 +184,7 @@ def test_integration():
 
     for vectorized, method, t_span, jac in product(
             [False, True],
-            ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'],
+            SOLVERS,
             [[5, 9], [5, 1]],
             [None, jac_rational, jac_rational_sparse]):
 
@@ -1291,3 +1293,84 @@ def test_inital_maxstep():
                                             method_order,
                                             rtol, atol)
             assert_equal(max_step, step_with_max)
+
+@pytest.mark.parametrize('solver', SOLVERS)
+def test_tcrit_lsoda(solver):
+    """Verify that tcrit behavior is correct."""
+    def fun(t, y):
+        return np.array([1]) if t >0.99 and t<1.01 else np.array([0])
+
+    y0 = [0.]
+    t_span = [0., 2.]
+    # result without using critical time fails to find the critical region
+    res = solve_ivp(
+        fun, t_span, y0, method = solver,
+        atol=1e-9, rtol=1e-9, dense_output=True
+    )
+    assert 1. not in res.t
+    assert_allclose(res.sol(2.), 0., atol=1e-6)
+
+    # result with the critical time finds the critical region
+    res_crit = solve_ivp(
+        fun, t_span, y0, method = solver, tcrit=[1.],
+        atol=1e-9, rtol=1e-9, dense_output=True
+    )
+    assert 1. in res_crit.t
+    assert_allclose(res_crit.sol(2.), 0.02, rtol=1e-4)
+
+    # test in the other direction
+    t_span_backwards = [2., 0.]
+    res_crit_backwards = solve_ivp(
+        fun, t_span_backwards, y0, method = solver, tcrit = [1.],
+        atol=1e-9, rtol=1e-9, dense_output=True
+    )
+    assert 1. in res_crit_backwards.t
+    assert_allclose(res_crit_backwards.sol(0.), -0.02, rtol=1e-4)
+
+
+def test_tcrit_attribute():
+    def fun(t, y):
+        return np.array([1]) if t >0.99 and t<1.01 else np.array([0])
+
+    y0 = [0.]
+    
+    # end time is always included as a critical time
+    lsoda = LSODA(fun, 0., y0, 2.)
+    assert_equal(lsoda.tcrit, [2.])
+
+    lsoda = LSODA(fun, 0., y0, 2., tcrit=[1.])
+    assert_equal(lsoda.tcrit, [1., 2.])
+
+    # run solver past critical point
+    # this should remove the critical point from the attribute
+    while lsoda.t <= 1:
+        lsoda.step()
+    assert_equal(lsoda.tcrit, [2.])
+
+
+def test_tcrit_bounds():
+
+    def fun(t, y):
+        return np.array([1]) if t >0.99 and t<1.01 else np.array([0])
+
+    y0 = [0.]
+    t_span = [0., 2.]
+    t_span_backwards = [2., 0.]
+
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[0.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[-1.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[2.0])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[3.])
+
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[0.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[-1.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[2.0])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[3.])

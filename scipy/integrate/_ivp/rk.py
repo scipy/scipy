@@ -84,10 +84,10 @@ class RungeKutta(OdeSolver):
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False,
-                 first_step=None, **extraneous):
+                 first_step=None, tcrit=None, **extraneous):
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized,
-                         support_complex=True)
+                         support_complex=True, tcrit=tcrit)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -116,6 +116,8 @@ class RungeKutta(OdeSolver):
         rtol = self.rtol
         atol = self.atol
 
+        tcrit = self._find_next_tcrit()
+
         min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
 
         if self.h_abs > max_step:
@@ -135,8 +137,8 @@ class RungeKutta(OdeSolver):
             h = h_abs * self.direction
             t_new = t + h
 
-            if self.direction * (t_new - self.t_bound) > 0:
-                t_new = self.t_bound
+            if self.direction * (t_new - tcrit) > 0:
+                t_new = tcrit
 
             h = t_new - t
             h_abs = np.abs(h)
@@ -339,6 +341,15 @@ class RK45(RungeKutta):
         1e-3 for `rtol` and 1e-6 for `atol`.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
+    tcrit : float and array_like, optional
+        Critical points to take care during integration.  Forces
+        solver to integrate to this time point exactly before proceeding.
+        If an array of values is passed in, the solver will treat each
+        value as critical. The array of values must be sorted either
+        ascending or descending in the same manner as the direction
+        between ``t0`` and ``t_bound``.
+
+        .. versionadded:: 1.18.0
 
     Attributes
     ----------
@@ -365,6 +376,8 @@ class RK45(RungeKutta):
         Is always 0 for this solver as it does not use the Jacobian.
     nlu : int
         Number of LU decompositions. Is always 0 for this solver.
+    tcrit : ndarray
+        Array of critical points including ``t_bound``.
 
     References
     ----------
