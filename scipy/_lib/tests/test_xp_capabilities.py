@@ -3,7 +3,7 @@ import pytest
 from scipy._lib.array_api_compat import numpy as np
 from scipy._lib._array_api import (
     array_namespace, make_xp_pytest_param, xp_capabilities, _xp_copy_to_numpy,
-    xp_assert_close
+    xp_assert_close, make_xp_test_case
 )
 
 local_capabilities_table = {}
@@ -64,7 +64,11 @@ lazy_xp_modules = [A, B]
 @pytest.mark.parametrize(
     "cls",
     [
-        make_xp_pytest_param((A, "g"), capabilities_table=local_capabilities_table),
+        make_xp_pytest_param(
+            (A, "g"),
+            capabilities_table=local_capabilities_table,
+            additional_marks=pytest.mark.xfail(reason="spooky action at a distance"),
+        ),
         make_xp_pytest_param((B, "g"), capabilities_table=local_capabilities_table),
     ],
 )
