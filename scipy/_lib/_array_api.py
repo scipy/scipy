@@ -17,6 +17,7 @@ from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal
 from collections.abc import Iterable
+from pytest import MarkDecorator
 
 import numpy as np
 import numpy.typing as npt
@@ -925,7 +926,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
     return lambda func: functools.reduce(lambda f, g: g(f), marks, func)
 
 
-def make_xp_pytest_param(func, *args, capabilities_table=None):
+def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=None):
     """Variant of ``make_xp_test_case`` that returns a pytest.param for a function,
     with all necessary skip_xp_backends and xfail_xp_backends marks applied::
 
@@ -962,6 +963,9 @@ def make_xp_pytest_param(func, *args, capabilities_table=None):
         def test(func, verb, xp):
             # iterates on (func=f1, verb="hello")
             # and (func=f2, verb="world")
+    additional_marks : pytest.MarkDecorator | List[pytest.MarkDecorator]
+        Additional pytest marks to add to the parameter, e.g.
+        ``pytest.mark.slow``.
 
     See Also
     --------
@@ -973,6 +977,10 @@ def make_xp_pytest_param(func, *args, capabilities_table=None):
     import pytest
 
     marks = make_xp_pytest_marks(func, capabilities_table=capabilities_table)
+    if additional_marks is not None:
+        if isinstance(additional_marks, MarkDecorator):
+            additional_marks = [additional_marks]
+        marks.extend(additional_marks)
     if isinstance(func, tuple):
         func, _ = func
     return pytest.param(func, *args, marks=marks, id=func.__name__)
