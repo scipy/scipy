@@ -162,17 +162,20 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     slopes = np.sort(slopes, axis=-1)
     medslope = np.nanmedian(slopes, axis=-1)
     if method == 'joint':
-        medinter = np.nanmedian(y - medslope * x, axis=-1)
+        medinter = np.median(y - medslope * x, axis=-1)
     else:
-        medinter = np.nanmedian(y, axis=-1) - medslope * np.nanmedian(x, axis=-1)
+        medinter = np.median(y, axis=-1) - medslope * np.median(x, axis=-1)
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
 
     z = distributions.norm.ppf(alpha / 2.)
     # This implements (2.6) from Sen (1968)
-    _, nxreps = _stats_py._rankdata(x, method='average', return_ties=True)
-    _, nyreps = _stats_py._rankdata(y, method='average', return_ties=True)
+    # we don't actually need ranks, so an enhancement could be to have
+    # `rankdata` return only the second output. In the meantime, use the
+    # least expensive `method`.
+    _, nxreps = _stats_py._rankdata(x, method='min', return_ties=True)
+    _, nyreps = _stats_py._rankdata(y, method='min', return_ties=True)
     nt = np.count_nonzero(np.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
     ny = y.shape[-1]                                                    # n in Sen 1968
     # Equation 2.6 in Sen (1968):
