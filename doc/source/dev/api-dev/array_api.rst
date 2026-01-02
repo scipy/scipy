@@ -1133,14 +1133,12 @@ helped during the development phase:
 API Coverage
 ------------
 The below tables show the current state of alternative backend support across
-SciPy's modules. Currently only public functions and function-like callable
-objects are included in the tables, but it is planned to eventually also include
-relevant public classes. Functions which are deemed out-of-scope are excluded
-from consideration. If a module or submodule contains no in-scope functions, it
-is excluded from the tables. For example, `scipy.spatial.transform` is currently
-excluded because it's API contains no functions, but may be included in the future
-when the scope expands to include classes. `scipy.odr` and `scipy.datasets` are excluded
-because their contents are considered out-of-scope.
+SciPy's modules. Public functions, function-like callables, and classes are are
+included in the tables. Parts of the public API which are deemed out-of-scope
+are excluded from consideration when calculating coverage percentages. If a
+module or submodule contains no in-scope functions, it is excluded from the
+tables. For example, `scipy.datasets` is excluded because its contents are
+considered out-of-scope.
 
 .. toctree::
    :hidden:
