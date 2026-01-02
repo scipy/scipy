@@ -229,7 +229,7 @@ struct nodeinfo_pool {
         
         ckdtree_intp_t m1 = (ckdtree_intp_t)arena_ptr;
         ckdtree_intp_t m0 = (ckdtree_intp_t)arena;
-        ckdtree_intp_t spaceleft = arena_size - (ckdtree_intp_t)(m1 - m0);
+        ckdtree_intp_t spaceleft = ARENA - (ckdtree_intp_t)(m1 - m0);
 
         // This avoids allocating a new arena when we can fit exactly one more
         // nodeinfo. It also avoid undefined behaviour by calculating
