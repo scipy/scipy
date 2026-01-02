@@ -94,7 +94,7 @@ untested = {
     "peak_prominences",
     "peak_widths",
     "periodogram",
-    "place_pols",
+    "place_poles",
     "sawtooth",
     "sepfir2d",
     "ss2tf",

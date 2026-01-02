@@ -1202,9 +1202,9 @@ def _theilslopes(y, x=None, alpha=0.95, method='separate'):
         Method to be used for computing estimate for intercept.
         Following methods are supported,
 
-            * 'joint': Uses np.median(y - slope * x) as intercept.
-            * 'separate': Uses np.median(y) - slope * np.median(x)
-                          as intercept.
+        * 'joint': Uses np.median(y - slope * x) as intercept.
+        * 'separate': Uses np.median(y) - slope * np.median(x)
+                      as intercept.
 
         The default is 'separate'.
 
@@ -1363,9 +1363,9 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
         Method to be used for computing estimate for intercept.
         Following methods are supported,
 
-            * 'joint': Uses np.median(y - slope * x) as intercept.
-            * 'separate': Uses np.median(y) - slope * np.median(x)
-                          as intercept.
+        * 'joint': Uses np.median(y - slope * x) as intercept.
+        * 'separate': Uses np.median(y) - slope * np.median(x)
+                      as intercept.
 
         The default is 'separate'.
 
@@ -1933,9 +1933,9 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
-          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
-          * 'asymp' : use asymptotic distribution of test statistic
+        * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+        * 'exact' : use approximation to exact distribution of test statistic
+        * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -1970,9 +1970,9 @@ def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
-          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
-          * 'asymp' : use asymptotic distribution of test statistic
+        * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+        * 'exact' : use approximation to exact distribution of test statistic
+        * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -2744,9 +2744,9 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': allows nan values and may overwrite or propagate them
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': allows nan values and may overwrite or propagate them
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     Notes
     -----
@@ -3329,7 +3329,7 @@ def normaltest(a, axis=0):
         ``s^2 + k^2``, where ``s`` is the z-score returned by `skewtest` and
         ``k`` is the z-score returned by `kurtosistest`.
     pvalue : float or array
-       A 2-sided chi squared probability for the hypothesis test.
+         A 2-sided chi squared probability for the hypothesis test.
 
     Notes
     -----
@@ -3358,24 +3358,25 @@ def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
     equation: ``p(k) = (k - alphap)/(n + 1 - alphap - betap)``
 
     Typical values of (alphap,betap) are:
-        - (0,1)    : ``p(k) = k/n`` : linear interpolation of cdf
-          (**R** type 4)
-        - (.5,.5)  : ``p(k) = (k - 1/2.)/n`` : piecewise linear function
-          (**R** type 5)
-        - (0,0)    : ``p(k) = k/(n+1)`` :
-          (**R** type 6)
-        - (1,1)    : ``p(k) = (k-1)/(n-1)``: p(k) = mode[F(x[k])].
-          (**R** type 7, **R** default)
-        - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``: Then p(k) ~ median[F(x[k])].
-          The resulting quantile estimates are approximately median-unbiased
-          regardless of the distribution of x.
-          (**R** type 8)
-        - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``: Blom.
-          The resulting quantile estimates are approximately unbiased
-          if x is normally distributed
-          (**R** type 9)
-        - (.4,.4)  : approximately quantile unbiased (Cunnane)
-        - (.35,.35): APL, used with PWM
+
+    - (0,1)    : ``p(k) = k/n`` : linear interpolation of cdf
+      (**R** type 4)
+    - (.5,.5)  : ``p(k) = (k - 1/2.)/n`` : piecewise linear function
+      (**R** type 5)
+    - (0,0)    : ``p(k) = k/(n+1)`` :
+      (**R** type 6)
+    - (1,1)    : ``p(k) = (k-1)/(n-1)``: p(k) = mode[F(x[k])].
+      (**R** type 7, **R** default)
+    - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``: Then p(k) ~ median[F(x[k])].
+      The resulting quantile estimates are approximately median-unbiased
+      regardless of the distribution of x.
+      (**R** type 8)
+    - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``: Blom.
+      The resulting quantile estimates are approximately unbiased
+      if x is normally distributed
+      (**R** type 9)
+    - (.4,.4)  : approximately quantile unbiased (Cunnane)
+    - (.35,.35): APL, used with PWM
 
     Parameters
     ----------
@@ -3492,27 +3493,29 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     Returns plotting positions (or empirical percentile points) for the data.
 
     Plotting positions are defined as ``(i-alpha)/(n+1-alpha-beta)``, where:
-        - i is the rank order statistics
-        - n is the number of unmasked values along the given axis
-        - `alpha` and `beta` are two parameters.
+
+    - i is the rank order statistics
+    - n is the number of unmasked values along the given axis
+    - `alpha` and `beta` are two parameters.
 
     Typical values for `alpha` and `beta` are:
-        - (0,1)    : ``p(k) = k/n``, linear interpolation of cdf (R, type 4)
-        - (.5,.5)  : ``p(k) = (k-1/2.)/n``, piecewise linear function
-          (R, type 5)
-        - (0,0)    : ``p(k) = k/(n+1)``, Weibull (R type 6)
-        - (1,1)    : ``p(k) = (k-1)/(n-1)``, in this case,
-          ``p(k) = mode[F(x[k])]``. That's R default (R type 7)
-        - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``, then
-          ``p(k) ~ median[F(x[k])]``.
-          The resulting quantile estimates are approximately median-unbiased
-          regardless of the distribution of x. (R type 8)
-        - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``, Blom.
-          The resulting quantile estimates are approximately unbiased
-          if x is normally distributed (R type 9)
-        - (.4,.4)  : approximately quantile unbiased (Cunnane)
-        - (.35,.35): APL, used with PWM
-        - (.3175, .3175): used in scipy.stats.probplot
+
+    - (0,1)    : ``p(k) = k/n``, linear interpolation of cdf (R, type 4)
+    - (.5,.5)  : ``p(k) = (k-1/2.)/n``, piecewise linear function
+      (R, type 5)
+    - (0,0)    : ``p(k) = k/(n+1)``, Weibull (R type 6)
+    - (1,1)    : ``p(k) = (k-1)/(n-1)``, in this case,
+      ``p(k) = mode[F(x[k])]``. That's R default (R type 7)
+    - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``, then
+      ``p(k) ~ median[F(x[k])]``.
+      The resulting quantile estimates are approximately median-unbiased
+      regardless of the distribution of x. (R type 8)
+    - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``, Blom.
+      The resulting quantile estimates are approximately unbiased
+      if x is normally distributed (R type 9)
+    - (.4,.4)  : approximately quantile unbiased (Cunnane)
+    - (.35,.35): APL, used with PWM
+    - (.3175, .3175): used in scipy.stats.probplot
 
     Parameters
     ----------
