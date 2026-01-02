@@ -15,6 +15,7 @@ python_sources = [
   'test_tmpdirs.py',
   'test_warnings.py',
   'test_array_api.py',
+  'test_xp_capabilities.py'
 ]
 
 py3.install_sources(
