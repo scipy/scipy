@@ -13,9 +13,9 @@
 
 // Dense array solve with getrf, gecon and getrs
 template<typename T>
-inline CBLAS_INT solve_slice_general(
-    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, void *irwork, T *work, CBLAS_INT lwork,
-    int* isIllconditioned, int* isSingular
+inline void solve_slice_general(
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, void *irwork, T *work,
+    SliceStatus& status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
@@ -26,32 +26,32 @@ inline CBLAS_INT solve_slice_general(
 
     getrf(&N, &N, data, &N, ipiv, &info);
 
+    status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
         // getrf success, check the condition number
         gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
+        status.rcond = (double)rcond;
         if (info >= 0) {
-            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
             // finally, solve
             getrs(&trans, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
-            *isSingular = (info > 0);
+            status.is_singular = (info > 0);
         }
     }
     else if (info > 0) {
         // trf detected singularity
-        *isSingular = 1;
+        status.is_singular = 1;
     }
-
-    return info;
 }
 
 
 // triangular solve with trtrs
 template<typename T>
-inline CBLAS_INT solve_slice_triangular(
+inline void solve_slice_triangular(
     char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, char trans, T *work, void *irwork,
-    int* isIllconditioned, int* isSingular
+    SliceStatus& status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
@@ -61,67 +61,199 @@ inline CBLAS_INT solve_slice_triangular(
 
     trtrs(&uplo, &trans, &diag, &N, &NRHS, data, &N, b_data, &N, &info);
 
-    *isSingular  = (info > 0);
-
+    status.lapack_info = (Py_ssize_t)info;
+    status.is_singular  = (info > 0);
     if(info >= 0) {
-
         trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
         if (info >= 0) {
-            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.rcond = (double)rcond;
         }
     }
-    return info;
 }
 
 
 // Cholesky solve with potrf, pocon and potrs
 template<typename T>
-inline CBLAS_INT solve_slice_cholesky(
+inline void solve_slice_cholesky(
     char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, T* work, void *irwork,
-    int* isIllconditioned, int* isSingular
+    SliceStatus& status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
     CBLAS_INT info;
+    real_type rcond;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
-    real_type rcond;
-
     potrf(&uplo, &N, data, &N, &info);
+
+    status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // potrf success
         pocon(&uplo, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
         if (info >= 0) {
-            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.rcond = (double)rcond;
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
-            // finally, invert
+            // finally, solve
             potrs(&uplo, &N, &NRHS, data, &N, b_data, &N, &info);
-            *isSingular = (info > 0);
+            status.is_singular = (info > 0);
         }
     }
     else if (info > 0) {
         // trf detected singularity
-        *isSingular = 1;
+        status.is_singular = 1;
+    }
+}
+
+
+// Symmetric/hermitian solve with sytrf/hetrf and sytrs/hetrs
+template<typename T>
+void solve_slice_sym_herm(
+    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, CBLAS_INT *ipiv, T *work, void *irwork, CBLAS_INT lwork,
+    bool is_symm_not_herm,
+    SliceStatus& status
+) {
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT info;
+    real_type rcond;
+    real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
+
+    if(is_symm_not_herm) {
+        sytrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+    } else {
+        hetrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
     }
 
-    return info;
+    status.lapack_info = (Py_ssize_t)info;
+    if (info == 0) {
+        // {sy,he}trf success
+        if (is_symm_not_herm) {
+            sycon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+        } else {
+            hecon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+        }
+
+        if (info >= 0) {
+            status.rcond = (double)rcond;
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+
+            // finally, solve
+            if (is_symm_not_herm) {
+                sytrs(&uplo, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
+            } else {
+                hetrs(&uplo, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
+            }
+            status.is_singular = (info > 0);
+        }
+    }
+    else if (info > 0) {
+        // trf detected singularity
+        status.is_singular = 1;
+    }
 }
 
 
 template<typename T>
-void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
+void solve_slice_tridiag(
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, char trans,
+    T *b_data,
+    T *work, T *work2, void *irwork,
+    SliceStatus& status
+) {
+    using real_type = typename type_traits<T>::real_type;
+    // work is 4*n, is for dl, d, du, du2
+    // work2 is 2*n, is for trcon's work array
+
+    // copy the diagonals of `data`, use `work` for storage
+    T *du2 = work;
+    T *du = &work[N];
+    T *d = &work[2*N];
+    T *dl = &work[3*N];
+    to_tridiag(data, N, du, d, dl);
+
+    CBLAS_INT info;
+    CBLAS_INT *iwork = (CBLAS_INT *)irwork;
+    char norm = '1';
+    real_type rcond;
+    real_type anorm = norm1_tridiag(dl, d, du, work2, (npy_intp)N);
+
+    gttrf(&N, dl, d, du, du2, ipiv, &info);
+
+    status.lapack_info = (Py_ssize_t)info;
+    if (info == 0){
+        // gttrf success, check the condition number
+        gtcon(&norm, &N, dl, d, du, du2, ipiv, &anorm, &rcond, work2, iwork, &info);
+
+        status.rcond = (double)rcond;
+        if (info >= 0) {
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+
+            // finally, solve
+            gttrs(&trans, &N, &NRHS, dl, d, du, du2, ipiv, b_data, &N, &info);
+            status.is_singular = (info > 0);
+        }
+    }
+    else if (info > 0) {
+        // trf detected singularity
+        status.is_singular = 1;
+    }
+}
+
+
+// Diagonal array solve
+template<typename T>
+inline void solve_slice_diagonal(
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, SliceStatus& status
+) {
+    using real_type = typename type_traits<T>::real_type;
+    using value_type = typename type_traits<T>::value_type;
+    value_type *pdata = reinterpret_cast<value_type *>(data);
+    value_type *p_bdata = reinterpret_cast<value_type *>(b_data);
+
+    value_type zero(0.), one(1.);
+    real_type maxa(0.), maxinva(0.);
+
+    for (CBLAS_INT j=0; j<N; j++) {
+        value_type ajj = pdata[j*N + j];
+
+        status.is_singular = (ajj == zero);
+        if (status.is_singular) {
+            status.lapack_info = j;
+            return;
+        }
+
+        value_type inv_ajj = one / ajj;
+        for (CBLAS_INT i=0; i<NRHS; i++) {
+            p_bdata[j + i*N] *= inv_ajj;
+        }
+
+        // condition number
+        real_type absa = std::abs(ajj), absinva = std::abs(inv_ajj);
+
+        if(absa > maxa) {maxa = absa;}
+        if(absinva > maxinva) {maxinva = absinva;}
+    }
+    status.is_ill_conditioned = maxa * maxinva > 1./ numeric_limits<real_type>::eps;
+    status.rcond = maxa * maxinva;
+}
+
+
+template<typename T>
+int
+_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
-    *isIllconditioned = 0;
-    *isSingular = 0;
     char trans = transposed ? 'T' : 'N'; 
     npy_intp lower_band = 0, upper_band = 0;
-    bool is_symm = false;
-    char uplo = 'X';    // sentinel
+    bool is_symm_or_herm = false, is_symm_not_herm = false;
+    char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
+    SliceStatus slice_status;
 
     // --------------------------------------------------------------------
     // Input Array Attributes
@@ -147,21 +279,41 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork = -1;
+    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork=-1, info;
 
-    lwork = 4*n; // gecon needs at least 4*n
-    T* buffer = (T *)malloc((2*n*n + n*nrhs + lwork)*sizeof(T));
-    if (NULL == buffer) { *info = -101; return; }
+    T tmp = numeric_limits<T>::zero;
+    sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp, &lwork, &info);
+    if (info != 0) { info = -100; return (int)info; }
 
-    // Chop the buffer into parts, one for data and one for work
+    lwork = _calc_lwork(tmp);
+    if ((lwork < 0) ||
+        (n > std::numeric_limits<CBLAS_INT>::max() / 4)
+    ) {
+        // Too large lwork required - Computation cannot be performed.
+        // if CBLAS_INT is 32-bit, need ILP64; if already using ILP64, we're out of luck.
+        return -99;
+    }
+
+    // gecon needs lwork of at least 4*n
+    lwork = (4*n > lwork ? 4*n : lwork);
+
+    T* buffer = (T *)malloc((2*n*n + n*nrhs + 2*n + lwork)*sizeof(T));
+    if (NULL == buffer) { info = -101; return (int)info; }
+
+    // Chop the buffer into parts
     T* data = &buffer[0];
     T* scratch = &buffer[n*n];
 
     T *data_b = &buffer[2*n*n];
-    T* work = &buffer[2*n*n + n*nrhs];
+    T *work2 = &buffer[2*n*n + n*nrhs]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
+    T* work = &buffer[2*n*n + n*nrhs + 2*n];
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
-    if (ipiv == NULL) { free(ipiv); *info = -102; return; }
+    if (ipiv == NULL) {
+        free(buffer);
+        info = -102;
+        return (int)info;
+    }
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
@@ -170,24 +322,22 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
     }
-    if (irwork == NULL) { free(irwork); *info = -102; return; }
+    if (irwork == NULL) {
+        free(buffer);
+        free(ipiv);
+        info = -102;
+        return (int)info;
+    }
 
     // normalize the structure detection inputs
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
-        uplo = lower ? 'L' : 'U';
     }
-    else {
-        if (structure == St::POS_DEF_UPPER) {
-            structure = St::POS_DEF;
-            uplo = 'U';
-            posdef_fallback = false;
-        }
-        else if (structure == St::POS_DEF_LOWER) {
-            structure = St::POS_DEF;
-            uplo = 'L';
-            posdef_fallback = false;
-        }
+    else if (structure == St::SYM) {
+        is_symm_not_herm = true;
+    }
+    else if (structure == St::HER) {
+        is_symm_not_herm = false;
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -226,7 +376,13 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             // Get the bandwidth of the slice
             bandwidth(data, n, n, &lower_band, &upper_band);
 
-            if(lower_band == 0) {
+            if ((upper_band == 0) && (lower_band == 0)) {
+                slice_structure = St::DIAGONAL;
+            }
+            else if ((upper_band == 1) && (lower_band == 1) && (n > 3)) {
+                slice_structure = St::TRIDIAGONAL;
+            }
+            else if(lower_band == 0) {
                 slice_structure = St::UPPER_TRIANGULAR;
                 uplo = 'U';
             } else if (upper_band == 0) {
@@ -234,10 +390,9 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
                 uplo = 'L';
             } else {
                 // Check if symmetric/hermitian
-                is_symm = is_sym_herm(data, n);
-                if (is_symm) {
+                std::tie(is_symm_or_herm, is_symm_not_herm) = is_sym_herm(data, n);
+                if (is_symm_or_herm) {
                     slice_structure = St::POS_DEF;
-                    uplo = 'U';
                 }
                 else {
                     // give up auto-detection
@@ -246,23 +401,63 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             }
         }
 
+        init_status(slice_status, idx, slice_structure);
+
         switch(slice_structure) {
+            case St::DIAGONAL:
+            {
+                solve_slice_diagonal(intn, int_nrhs, data, data_b, slice_status);
+
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
+                break;
+            }
+            case St::TRIDIAGONAL:
+            {
+                solve_slice_tridiag(intn, int_nrhs, data, ipiv, trans, data_b, work, work2, irwork, slice_status);
+
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
+                break;
+            }
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
                 char diag = 'N';
-                *info = solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork, isIllconditioned, isSingular);
+                solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork, slice_status);
 
-                if ((*info < 0) || (*isSingular )) { goto free_exit;}
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
                 zero_other_triangle(uplo, data, intn);
                 break;
             }
             case St::POS_DEF:
             {
-                *info = solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork, isIllconditioned, isSingular);
+                solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork, slice_status);
 
-                if ((*info == 0) || (*isSingular == 0) ) {
-                    // success
+                if ((slice_status.lapack_info == 0) || (!slice_status.is_singular) ) {
+                    // success (maybe ill-conditioned)
+                    if(slice_status.is_ill_conditioned) {
+                        vec_status.push_back(slice_status);
+                    }
                     fill_other_triangle(uplo, data, intn);
                     break;
                 }
@@ -271,23 +466,52 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
                         // restore
                         copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
                         swap_cf(scratch, data, n, n, n);
+                        init_status(slice_status, idx, slice_structure);
 
                         // no break: fall back to the general solver
                     }
                     else {
                         // potrf failed but no fallback
+                        vec_status.push_back(slice_status);
                         break;
                     }
                 }
             }
+            case St::SYM:  // pos def fails, fall through to here
+            case St::HER:
+            {
+                solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv, work, irwork, lwork, is_symm_not_herm, slice_status);
+
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
+                if (is_symm_not_herm) {
+                    fill_other_triangle_noconj(uplo, data, intn);
+                }
+                else {
+                    fill_other_triangle(uplo, data, intn);
+                }
+                break;
+            }
             default:
             {
-                // general matrix inverse
-                *info = solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, lwork, isIllconditioned, isSingular);
+                // general matrix solve
+                solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, slice_status);
+
+                if ((slice_status.lapack_info != 0) || slice_status.is_singular || slice_status.is_ill_conditioned) {
+                    // some problem detected, store data to report
+                    vec_status.push_back(slice_status);
+                }
+
             }
         }
 
-        if (*isSingular == 1) {
+        if (slice_status.is_singular == 1) {
             // nan_matrix(data, n);
             goto free_exit;     // fail fast and loud
         }
@@ -300,5 +524,5 @@ free_exit:
     free(buffer);
     free(irwork);
     free(ipiv);
-    return;
+    return 1;
 }

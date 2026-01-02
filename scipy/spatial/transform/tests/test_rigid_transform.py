@@ -116,7 +116,7 @@ def test_from_matrix(xp, ndim: int):
     matrix = xp.tile(xp.eye(4), shape[:-2] + (1, 1))
     t = xp.reshape(xp.arange(ndim ** (ndim-1) * 3, dtype=dtype), shape[:-2] + (3,))
     matrix = xpx.at(matrix)[..., :3, 3].set(t)
-    
+
     tf = RigidTransform.from_matrix(matrix)
     xp_assert_close(tf.as_matrix(), matrix, atol=atol)
     assert tf.single == (ndim == 1)
@@ -379,7 +379,7 @@ def test_from_dual_quat(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
     shape = (ndim,) * (ndim - 1)
-    
+
     # identity
     dq = xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], dtype=dtype)
     dq = xp.tile(dq, shape + (1,))
@@ -479,7 +479,7 @@ def test_from_dual_quat(xp, ndim: int):
 
     dq = xp.tile(unnormalized_dual_quat, shape + (1,))
     dual_quat = RigidTransform.from_dual_quat(dq).as_dual_quat()
-    
+
     expected_ones = xp.ones(shape) if shape != () else xp.asarray(1.0)[()]
     expected_zeros = xp.zeros(shape) if shape != () else xp.asarray(0.0)[()]
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
@@ -498,7 +498,7 @@ def test_from_dual_quat(xp, ndim: int):
     assert xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
     dq = xp.tile(unnormalized_dual_quat, shape + (1,))
     dual_quat = RigidTransform.from_dual_quat(dq).as_dual_quat()
-    
+
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
                     atol=1e-12)
     vecdot = xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:])
@@ -638,7 +638,7 @@ def test_from_as_internal_consistency(xp, ndim: int):
     n = 10
     rng = np.random.default_rng(10)
     shape = (n,) + (ndim,) * (ndim - 1)
-    
+
     t = xp.asarray(rng.normal(size=shape + (3,)), dtype=dtype)
     r = Rotation.from_quat(xp.asarray(rng.normal(size=shape + (4,)), dtype=dtype))
     tf0 = RigidTransform.from_components(t, r)
@@ -670,14 +670,26 @@ def test_from_as_internal_consistency(xp, ndim: int):
 def test_identity():
     # We do not use xp here because identity always returns numpy arrays
     atol = 1e-12
-
     # Test single identity
     tf = RigidTransform.identity()
     xp_assert_close(tf.as_matrix(), np.eye(4), atol=atol)
-
     # Test multiple identities
     tf = RigidTransform.identity(5)
     xp_assert_close(tf.as_matrix(), np.array([np.eye(4)] * 5), atol=atol)
+    # Test shape
+    tf = RigidTransform.identity(shape=3)
+    expected = np.tile(np.eye(4), (3, 1, 1))
+    xp_assert_close(tf.as_matrix(), expected, atol=atol)
+    tf = RigidTransform.identity(shape=(2, 3))
+    expected = np.tile(np.eye(4), (2, 3, 1, 1))
+    xp_assert_close(tf.as_matrix(), expected, atol=atol)
+    # Test errors
+    with pytest.raises(ValueError, match="Only one of `num` and `shape` can be."):
+        RigidTransform.identity(10, shape=(2, 3))
+    with pytest.raises(TypeError, match="takes from 0 to 1 positional arguments"):
+        RigidTransform.identity(None, (-1, 3))  # Shape is kwarg only
+    with pytest.raises(ValueError, match="`shape` must be an int or a tuple of ints"):
+        RigidTransform.identity(shape="invalid")
 
 
 @make_xp_test_case(RigidTransform.apply)
@@ -973,6 +985,13 @@ def test_concatenate(xp):
     xp_assert_close(concatenated2[1].as_matrix(), tf1.as_matrix(), atol=atol)
     xp_assert_close(concatenated2[2].as_matrix(), tf2.as_matrix(), atol=atol)
 
+    # Test ND concatenation
+    tf3 = RigidTransform.from_translation(xp.reshape(xp.arange(18), (3, 2, 3)))
+    tf4 = RigidTransform.from_translation(xp.reshape(xp.arange(18) + 18, (3, 2, 3)))
+    concatenated3 = RigidTransform.concatenate([tf3, tf4])
+    xp_assert_close(concatenated3.as_matrix()[:3, ...], tf3.as_matrix(), atol=atol)
+    xp_assert_close(concatenated3.as_matrix()[3:, ...], tf4.as_matrix(), atol=atol)
+
 
 @make_xp_test_case(RigidTransform.from_matrix)
 def test_input_validation(xp):
@@ -1009,6 +1028,130 @@ def test_input_validation(xp):
     with pytest.raises(TypeError,
                        match="Expected `rotation` to be a `Rotation` instance"):
         RigidTransform.from_rotation(xp.eye(3))
+
+
+@make_xp_test_case(RigidTransform.mean)
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_mean(xp, ndim: int):
+    atol = 1e-12
+    rng = np.random.default_rng(123)
+
+    dtype = xpx.default_dtype(xp)
+    t = xp.asarray(rng.normal(size=(ndim,) * (ndim - 1) + (3,)), dtype=dtype)
+    q = xp.asarray(rng.normal(size=(ndim,) * (ndim - 1) + (4,)), dtype=dtype)
+    r = Rotation.from_quat(q)
+    tf = RigidTransform.from_components(t, r)
+
+    # Unweighted mean
+    axis = tuple(range(t.ndim - 1))
+    t_mean = xp.mean(t, axis=axis)
+    r_mean = r.mean()
+    tf_mean = tf.mean()
+    assert tf_mean.shape == ()
+    xp_assert_close(tf_mean.as_matrix(),
+                    RigidTransform.from_components(t_mean, r_mean).as_matrix(),
+                    atol=atol)
+
+    # Weighted mean
+    if ndim == 1:
+        weights = None
+        t_mean = t
+    else:
+        weights = xp.asarray(rng.random(size=(ndim,) * (ndim - 1)), dtype=dtype)
+        norm = xp.sum(weights[..., None], axis=axis)
+        wsum = xp.sum(t * weights[..., None], axis=axis)
+        t_mean = wsum/norm
+    r_mean = r.mean(weights=weights)
+    tf_mean = tf.mean(weights=weights)
+    assert tf_mean.shape == ()
+    xp_assert_close(tf_mean.as_matrix(),
+                    RigidTransform.from_components(t_mean, r_mean).as_matrix(),
+                    atol=atol)
+
+
+@make_xp_test_case(
+    RigidTransform.from_rotation, RigidTransform.mean, Rotation.magnitude
+)
+@pytest.mark.parametrize("ndim", range(1, 5))
+def test_mean_axis(xp, ndim: int):
+    axes = xp.tile(xp.concat((-xp.eye(3), xp.eye(3))), (3,) * (ndim - 1) + (1, 1))
+    theta = xp.pi / 4
+    r = Rotation.from_rotvec(theta * axes)
+    tf = RigidTransform.from_rotation(r)
+
+    # Test mean over last axis
+    desired = xp.full(axes.shape[:-2], 0.0)
+    if ndim == 1:
+        desired = desired[()]
+    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
+    xp_assert_close(tf.mean(axis=-1).rotation.magnitude(), desired, atol=atol)
+
+    # Test tuple axes
+    desired = xp.full(axes.shape[1:-2], 0.0)
+    if ndim < 3:
+        desired = desired[()]
+    xp_assert_close(tf.mean(axis=(0, -1)).rotation.magnitude(), desired, atol=atol)
+
+    # Empty axis tuple should return RigidTransform unchanged
+    tf_mean = tf.mean(axis=())
+    xp_assert_close(tf_mean.as_matrix(), tf.as_matrix(), atol=atol)
+
+
+@make_xp_test_case(RigidTransform.mean, Rotation.magnitude)
+def test_mean_compare_axis(xp):
+    # Create a random set of transforms and compare the mean over an axis with
+    # the mean without axis of the sliced transform
+    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1e-6
+    rng = np.random.default_rng(0)
+    q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
+    r = Rotation.from_quat(q)
+    t = xp.asarray(rng.normal(size=(4, 5, 6, 3)), dtype=xpx.default_dtype(xp))
+    tf = RigidTransform.from_components(t, r)
+
+    mean_0 = tf.mean(axis=0)
+    for i in range(q.shape[1]):
+        for j in range(q.shape[2]):
+            r_slice = Rotation.from_quat(q[:, i, j, ...])
+            t_slice = t[:, i, j, ...]
+            mean_slice_tf = RigidTransform.from_components(t_slice, r_slice).mean()
+            xp_assert_close(
+                (mean_0[i][j].rotation * mean_slice_tf.rotation.inv()).magnitude(),
+                xp.asarray(0.0)[()], atol=atol,
+            )
+            xp_assert_close(
+                mean_0[i][j].translation, mean_slice_tf.translation, atol=atol,
+            )
+    mean_1_2 = tf.mean(axis=(1, 2))
+    for i in range(q.shape[0]):
+        r_slice = Rotation.from_quat(q[i, ...])
+        t_slice = t[i, ...]
+        mean_slice_tf = RigidTransform.from_components(t_slice, r_slice).mean()
+        xp_assert_close(
+            (mean_1_2[i].rotation * mean_slice_tf.rotation.inv()).magnitude(),
+            xp.asarray(0.0)[()], atol=atol,
+        )
+        xp_assert_close(
+            mean_1_2[i].translation, mean_slice_tf.translation, atol=atol,
+        )
+
+
+@make_xp_test_case(RigidTransform.mean)
+def test_mean_invalid_weights(xp):
+    tf = RigidTransform.from_matrix(xp.tile(xp.eye(4), (4, 1, 1)))
+    if is_lazy_array(tf.as_matrix()):
+        m = tf.mean(weights=-xp.ones(4))
+        assert xp.all(xp.isnan(m.as_matrix()))
+    else:
+        with pytest.raises(ValueError, match="non-negative"):
+            tf.mean(weights=-xp.ones(4))
+
+    # Test weight shape mismatch
+    tf = RigidTransform.from_matrix(xp.eye(4))
+    with pytest.raises(ValueError, match="Expected `weights` to"):
+        tf.mean(weights=xp.ones((2,)))
+    tf = RigidTransform.from_matrix(xp.tile(xp.eye(4), (3, 2, 1, 1, 1)))
+    with pytest.raises(ValueError, match="Expected `weights` to"):
+        tf.mean(weights=xp.ones((2, 1)))
 
 
 @make_xp_test_case(RigidTransform.from_translation)
@@ -1067,6 +1210,31 @@ def test_composition_validation(xp):
         tf2 * tf4
 
 
+@make_xp_test_case(RigidTransform.__mul__, RigidTransform.__rmul__)
+def test_rotation_promotion(xp):
+    """Test that Rotation is promoted to RigidTransform in composition."""
+    atol = 1e-12
+    dtype = xpx.default_dtype(xp)
+    rng = np.random.default_rng(0)
+
+    t = xp.asarray(rng.normal(size=(3,)), dtype=dtype)
+    r1 = rotation_to_xp(Rotation.random(rng=rng), xp)
+    r2 = rotation_to_xp(Rotation.random(rng=rng), xp)
+    tf = RigidTransform.from_components(t, r2)
+
+    # RigidTransform * Rotation
+    result = tf * r1
+    expected = tf * RigidTransform.from_rotation(r1)
+    assert isinstance(result, RigidTransform)
+    xp_assert_close(result.as_matrix(), expected.as_matrix(), atol=atol)
+
+    # Rotation * RigidTransform
+    result = r1 * tf
+    expected = RigidTransform.from_rotation(r1) * tf
+    assert isinstance(result, RigidTransform)
+    xp_assert_close(result.as_matrix(), expected.as_matrix(), atol=atol)
+
+
 @make_xp_test_case(RigidTransform.concatenate)
 def test_concatenate_validation(xp):
     tf = RigidTransform.from_matrix(xp.eye(4))
@@ -1075,6 +1243,12 @@ def test_concatenate_validation(xp):
     with pytest.raises(TypeError,
                        match="input must contain RigidTransform objects"):
         RigidTransform.concatenate([tf, xp.eye(4)])
+
+    # Test incompatible shapes
+    tf2 = RigidTransform.from_translation(xp.ones((1, 1, 1, 3)))
+    # Frameworks have a highly heterogeneous way of reporting errors for this case
+    with pytest.raises((ValueError, TypeError, RuntimeError)):
+        RigidTransform.concatenate([tf, tf2])
 
 
 @make_xp_test_case(RigidTransform.__setitem__)
@@ -1156,7 +1330,7 @@ def test_normalize_dual_quaternion(xp, ndim: int):
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     rng = np.random.default_rng(100)
     shape = (ndim,) * (ndim - 1)
-    
+
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
     xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()],
                     atol=1e-12)
@@ -1180,7 +1354,7 @@ def test_empty_transform_construction(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf) == 0
     assert not tf.single
-    
+
     tf = RigidTransform.from_rotation(Rotation.from_quat(xp.zeros((0, 4))))
     assert len(tf) == 0
     assert not tf.single

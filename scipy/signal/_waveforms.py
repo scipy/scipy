@@ -8,6 +8,9 @@ import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
+from scipy._lib._array_api import array_namespace, xp_promote
+import scipy._lib.array_api_extra as xpx
+
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
@@ -87,7 +90,7 @@ def square(t, duty=0.5):
 
     The square wave has a period ``2*pi``, has value +1 from 0 to
     ``2*pi*duty`` and -1 from ``2*pi*duty`` to ``2*pi``. `duty` must be in
-    the interval [0,1].
+    the interval ``[0,1]``.
 
     Note that this is not band-limited.  It produces an infinite number
     of harmonics, which are aliased back and forth across the frequency
@@ -130,24 +133,23 @@ def square(t, duty=0.5):
     >>> plt.ylim(-1.5, 1.5)
 
     """
-    t, w = asarray(t), asarray(duty)
-    w = asarray(w + (t - t))
-    t = asarray(t + (w - w))
-    y = zeros(t.shape, dtype="d")
+    xp = array_namespace(t, duty)
+    t, w = xp_promote(t, duty, xp=xp, force_floating=True, broadcast=True)
+
+    y = xp.zeros(t.shape, dtype=t.dtype)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y, mask1, nan)
+    y = xpx.at(y, mask1).set(xp.nan)
 
     # on the interval 0 to duty*2*pi function is 1
-    tmod = mod(t, 2 * pi)
-    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    place(y, mask2, 1)
+    tmod = t % (2 * xp.pi)
+    mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    y = xpx.at(y, mask2).set(1)
 
-    # on the interval duty*2*pi to 2*pi function is
-    #  (pi*(w+1)-tmod) / (pi*(1-w))
-    mask3 = (1 - mask1) & (1 - mask2)
-    place(y, mask3, -1)
+    # on the interval duty*2*pi to 2*pi function is -1
+    mask3 = ~(mask1 | mask2)
+    y = xpx.at(y, mask3).set(-1)
     return y
 
 

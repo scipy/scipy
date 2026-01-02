@@ -13,6 +13,11 @@ const char *_gen_harmonic_doc = R"(
 
     nan is returned if n < 1.
 
+    When n is type double, if it is nan, nan is returned.
+    Otherwise when n is double it is assumed to be an integer
+    value that is between 0 and 2**53.  This is not checked by
+    the function.
+
     This function is used in scipy.stats.zipfian.
     )";
 
@@ -22,6 +27,12 @@ const char *_normalized_gen_harmonic_doc = R"(
     Internal private function.
 
     Compute (sum_{i=j}^{k} i**-a)/(sum_{i=1}^{n} i**-a) for 1 <= j <= k <= n.
+
+    When j, k and n are type double, nan is returned if any are nan.
+    Otherwise when the type is double it is assumed that i, j and k have integer
+    values that are between 0 and 2**53.  This is not checked by the function.
+    Failure to ensure this condition could result in invalid results and
+    possibly an infinite loop in the underlying C++ code.
 
     This function is used in scipy.stats.zipfian.
     )";
@@ -362,7 +373,9 @@ const char *zetac_doc = R"(
 
     This function is defined as
 
-    .. math:: \zeta(x) = \sum_{k=2}^{\infty} 1 / k^x
+    .. math::
+
+        \zeta(x) - 1 = \sum_{k=2}^{\infty} \frac{1}{k^x}
 
     where ``x > 1``.  For ``x < 1`` the analytic continuation is
     computed. For more information on the Riemann zeta function, see
@@ -431,28 +444,29 @@ const char *airy_doc = R"(
 
     Notes
     -----
-    The Airy functions Ai and Bi are two independent solutions of
+    The Airy functions :math:`\operatorname{Ai}` and :math:`\operatorname{Bi}` are two 
+    independent solutions of
 
-    .. math:: y''(x) = x y(x).
+    .. math:: y''(z) = z y(z).
 
-    For real `z` in [-10, 10], the computation is carried out by calling
+    For real :math:`z` in :math:`[-10, 10]`, the computation is carried out by calling
     the Cephes [1]_ `airy` routine, which uses power series summation
-    for small `z` and rational minimax approximations for large `z`.
+    for small :math:`z` and rational minimax approximations for large :math:`z`.
 
     Outside this range, the AMOS [2]_ `zairy` and `zbiry` routines are
     employed.  They are computed using power series for :math:`|z| < 1` and
-    the following relations to modified Bessel functions for larger `z`
+    the following relations to modified Bessel functions for larger :math:`z`
     (where :math:`t \equiv 2 z^{3/2}/3`):
 
     .. math::
 
-        Ai(z) = \frac{1}{\pi \sqrt{3}} K_{1/3}(t)
-
-        Ai'(z) = -\frac{z}{\pi \sqrt{3}} K_{2/3}(t)
-
-        Bi(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t) \right)
-
-        Bi'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
+        \operatorname{Ai}(z) = \frac{1}{\pi}\sqrt{\frac{z}{3}} \, K_{1/3}(t)
+        
+        \operatorname{Ai}'(z) = -\frac{z}{\pi \sqrt{3}} \, K_{2/3}(t)
+        
+        \operatorname{Bi}(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t)\right)
+        
+        \operatorname{Bi}'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
 
     References
     ----------
@@ -464,14 +478,14 @@ const char *airy_doc = R"(
 
     Examples
     --------
-    Compute the Airy functions on the interval [-15, 5].
+    Compute the Airy functions on the interval :math:`[-15, 5]`.
 
     >>> import numpy as np
     >>> from scipy import special
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
 
-    Plot Ai(x) and Bi(x).
+    Plot :math:`\operatorname{Ai}(x)` and :math:`\operatorname{Bi}(x)`.
 
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, ai, 'r', label='Ai(x)')
@@ -3749,7 +3763,7 @@ const char *iv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -4169,7 +4183,7 @@ const char *jv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -7197,7 +7211,7 @@ const char *yv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape

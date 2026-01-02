@@ -112,9 +112,9 @@ class TestMGCStat:
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         # Reference values produced by `multiscale_graphcorr` ->
         # this only guards against unintended changes
-        ("linear", 0.97, 1/1000),           # test linear simulation
-        ("nonlinear", 0.163, 1/1000),       # test spiral simulation
-        ("independence", -0.0012, 0.3646)   # test independence simulation
+        ("linear", 0.970137188683, 0.000999000999),      # test linear simulation
+        ("nonlinear", 0.149843048137, 0.000999000999),   # test spiral simulation
+        ("independence", -0.003965353120, 0.4675324675)  # test independence simulation
     ])
     def test_oned(self, sim_type, obs_stat, obs_pvalue):
         # generate x and y
@@ -123,15 +123,15 @@ class TestMGCStat:
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=rng)
-        assert_approx_equal(stat, obs_stat, significant=1)
-        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+        assert_allclose(stat, obs_stat)
+        assert_allclose(pvalue, obs_pvalue)
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         # Reference values produced by `multiscale_graphcorr` ->
         # this only guards against unintended changes
-        ("linear", 0.184, 1/1000),           # test linear simulation
-        ("nonlinear", 0.113, 0.001),         # test spiral simulation
+        ("linear", 0.193063672972, 0.000999000999),     # test linear simulation
+        ("nonlinear", 0.010042844939, 0.216783216783),  # test spiral simulation
     ])
     def test_fived(self, sim_type, obs_stat, obs_pvalue):
         # generate x and y
@@ -140,8 +140,8 @@ class TestMGCStat:
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=rng)
-        assert_approx_equal(stat, obs_stat, significant=1)
-        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+        assert_allclose(stat, obs_stat)
+        assert_allclose(pvalue, obs_pvalue)
 
     @pytest.mark.xslow
     def test_twosamp(self):

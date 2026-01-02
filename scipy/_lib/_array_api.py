@@ -15,7 +15,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal
 from collections.abc import Iterable
 
 import numpy as np
@@ -62,8 +62,8 @@ __all__ = [
 ]
 
 
-Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
-ArrayLike: TypeAlias = Array | npt.ArrayLike
+type Array = Any  # To be changed to a Protocol later (see array-api#589)
+type ArrayLike = Array | npt.ArrayLike
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -145,6 +145,47 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
         xp = array_namespace(x)
 
     return _asarray(x, copy=True, xp=xp)
+
+
+def _xp_copy_to_numpy(x: Array) -> np.ndarray:
+    """Copies a possibly on device array to a NumPy array.
+
+    This function is intended only for converting alternative backend
+    arrays to numpy arrays within test code, to make it easier for use
+    of the alternative backend to be isolated only to the function being
+    tested. `_xp_copy_to_numpy` should NEVER be used except in test code
+    for the specific purpose mentioned above. In production code, attempts
+    to copy device arrays to NumPy arrays should fail, or else functions
+    may appear to be working on the GPU when they actually aren't.
+
+    Parameters
+    ----------
+    x : array
+
+    Returns
+    -------
+    ndarray
+    """
+    xp = array_namespace(x)
+    if is_numpy(xp):
+        return x.copy()
+    if is_cupy(xp):
+        return x.get()
+    if is_torch(xp):
+        return x.cpu().numpy()
+    if is_array_api_strict(xp):
+        # array api strict supports multiple devices, so need to
+        # ensure x is on the cpu before copying to NumPy.
+        return np.asarray(
+            xp.asarray(x, device=xp.Device("CPU_DEVICE")), copy=True
+        )
+    # Fall back to np.asarray. This works for dask.array. It
+    # currently works for jax.numpy, but hopefully JAX will make
+    # the transfer guard workable enough for use in scipy tests, in
+    # which case, JAX will have to be handled explicitly.
+    # If new backends are added, they may require explicit handling as
+    # well.
+    return np.asarray(x, copy=True)
 
 
 _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
@@ -290,6 +331,21 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
                                       atol=atol, err_msg=err_msg)
 
 
+def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
+                         check_dtype=True, check_shape=True, check_0d=True,
+                         err_msg='', xp=None):
+    __tracebackhide__ = True  # Hide traceback for py.test
+
+    actual, desired, xp = _strict_check(
+        actual, desired, xp,
+        check_namespace=check_namespace, check_dtype=check_dtype,
+        check_shape=check_shape, check_0d=check_0d
+    )
+
+    actual, desired = map(_xp_copy_to_numpy, (actual, desired))
+    return np.testing.assert_array_almost_equal_nulp(actual, desired, nulp=nulp)
+
+
 def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
                    check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
@@ -369,7 +425,7 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
 
 # maybe use `scipy.linalg` if/when array API support is added
 def xp_vector_norm(x: Array, /, *,
-                   axis: int | tuple[int] | None = None,
+                   axis: int | tuple[int, int] | None = None,
                    keepdims: bool = False,
                    ord: int | float = 2,
                    xp: ModuleType | None = None) -> Array:
@@ -432,17 +488,14 @@ def xp_result_type(*args, force_floating=False, xp):
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
     """
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
-            for arg in args]
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
+    args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
+            else arg) for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
     if force_floating:
         args_not_none.append(1.0)
-
-    if is_numpy(xp) and xp.__version__ < '2.0':
-        # Follow NEP 50 promotion rules anyway
-        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
-                         for arg in args_not_none]
-        return xp.result_type(*args_not_none)
 
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
@@ -483,8 +536,11 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
-            for arg in args]  # solely to prevent double conversion of iterable to array
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
+    args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
+            else arg) for arg in args]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
@@ -679,7 +735,7 @@ def _make_sphinx_capabilities(
     return capabilities
 
 
-def _make_capabilities_note(fun_name, capabilities):
+def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     if "out_of_scope" in capabilities:
         # It will be better to link to a section of the dev-arrayapi docs
         # that explains what is and isn't in-scope, but such a section
@@ -714,8 +770,8 @@ def _make_capabilities_note(fun_name, capabilities):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
-    See :ref:`dev-arrayapi` for more information.
-    """
+    """ + (extra_note or "") + "    See :ref:`dev-arrayapi` for more information."
+
     return textwrap.dedent(note)
 
 
@@ -735,6 +791,8 @@ def xp_capabilities(
     # xpx.testing.lazy_xp_function kwargs.
     # Refer to array-api-extra documentation.
     allow_dask_compute=False, jax_jit=True,
+    # Extra note to inject into the docstring
+    extra_note=None,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -777,7 +835,7 @@ def xp_capabilities(
         # Don't use a wrapper, as in some cases @xp_capabilities is
         # applied to a ufunc
         capabilities_table[f] = capabilities
-        note = _make_capabilities_note(f.__name__, sphinx_capabilities)
+        note = _make_capabilities_note(f.__name__, sphinx_capabilities, extra_note)
         doc = FunctionDoc(f)
         doc['Notes'].append(note)
         doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
@@ -822,7 +880,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
 
     The above is equivalent to::
         @pytest.mark.skip_xp_backends(...)
-        @pytest.mark.skip_xp_backends(...)        
+        @pytest.mark.skip_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         def test_f1(xp):
@@ -914,7 +972,7 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
         def test(xp):
             ...
-    
+
     See Also
     --------
     xp_capabilities
