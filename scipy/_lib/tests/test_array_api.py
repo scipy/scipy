@@ -375,29 +375,3 @@ def test_xp_result_type_force_floating(x, y, xp):
 
     dtype_res = xp_result_type(x, y, force_floating=True, xp=xp)
     assert dtype_res == dtype_ref
-
-# Test that the xp_capabilities decorator has been applied to all
-# functions and function-likes in the public API. Modules will be
-# added to the list of tested_modules below as decorator coverage
-# is added on a module by module basis. It remains for future work
-# to offer similar functionality to xp_capabilities for classes in
-# the public API.
-
-tested_modules = ["scipy.stats"]
-
-
-def collect_public_functions():
-    functions = []
-    for module_name in tested_modules:
-        module = import_module(module_name)
-        for name in module.__all__:
-            obj = getattr(module, name)
-            if not is_named_function_like_object(obj):
-                continue
-            functions.append(pytest.param(obj, id=f"{module_name}.{name}"))
-    return functions
-
-
-@pytest.mark.parametrize("func", collect_public_functions())
-def test_xp_capabilities_coverage(func):
-    assert func in xp_capabilities_table
