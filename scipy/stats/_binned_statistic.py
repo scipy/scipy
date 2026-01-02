@@ -224,7 +224,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         * 'mean' : compute the mean of values for points within each bin.
           Empty bins will be represented by NaN.
         * 'std' : compute the standard deviation within each bin. This
-           is implicitly calculated with ddof=0.
+          is implicitly calculated with ddof=0.
         * 'median' : compute the median of values for points within each
           bin. Empty bins will be represented by NaN.
         * 'count' : compute the count of points within each bin.  This is
