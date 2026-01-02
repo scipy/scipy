@@ -47,6 +47,10 @@ class B(A):
         return self._xp.matmul(self.x, y)
 
 
+# The test is somewhat contrived because there is no need to add ``A`` to
+# lazy_xp_modules here, but imagine that most methods of ``A`` support the
+# JAX JIT, and B is a special case of A with more restrictions which allows
+# ``B.g`` to support the JIT but not ``A.g``.
 lazy_xp_modules = [A, B]
 
 
@@ -57,7 +61,7 @@ lazy_xp_modules = [A, B]
         make_xp_pytest_param((B, "g"), capabilities_table=local_capabilities_table),
     ],
 )
-def test_inheritance(xp, cls):
+def test_inheritance(xp):
     x = xp.asarray([1.1, 2.2, 3.3])
     y = xp.asarray([1.0, 2.0, 3.0])
     z = xp.asarray([3.0, 4.0, 5.0])
