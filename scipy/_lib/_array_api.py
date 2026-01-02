@@ -915,6 +915,22 @@ def make_xp_test_case(*funcs, capabilities_table=None):
     etc., where the arguments of ``skip_xp_backends`` and ``xfail_xp_backends`` are
     determined by the ``@xp_capabilities`` decorator applied to the functions.
 
+    Notes
+    -----
+
+    To allow use of ``make_xp_test_case`` with classes, elements of ``funcs`` may
+    also be tuples of the form ``(cls, method_name)`` consisting of a ``type`` and
+    a string giving the name of a method. `lazy_xp_function` will be applied to the
+    method of interest. Capabilities for the method with name ``method_name`` can be
+    specified in the ``method_capabilities`` kwarg in the application of ``xp_capabilities``
+    to ``cls``. If no ``method_capabilities`` entry is given for ``method_name``, then
+    the capabilities default to the class level capabilities.
+
+    Tuples of the form ``(cls, method_name)`` are used instead of
+    ``cls.method`` in order to handle inheritance gracefully, since if ``cls``
+    derives from a parent class, ``cls.method`` will be a reference to the parent
+    method, potentially causing problems for ``lazy_xp_function``.
+
     See Also
     --------
     xp_capabilities
@@ -952,8 +968,13 @@ def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=
 
     Parameters
     ----------
-    func : Callable
+    func : Callable | tuple[type, str]
         Function to be tested. It must be decorated with ``@xp_capabilities``.
+        Alternatively, a tuple of the form ``(cls, method_name)``, where
+        ``cls`` must be decorated with ``@xp_capabilities``, specifying
+        that one wants marks for a particular method of the given class.
+        See the Notes section of the docstring for ``make_xp_test_case`` for
+        more info.
     *args : Any, optional
         Extra pytest parameters for the use case, e.g.::
 
