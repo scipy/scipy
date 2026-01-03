@@ -224,10 +224,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # accommodate empty arrays
     if a1.shape[-1] == 0 or a1.shape[-2] == 0:

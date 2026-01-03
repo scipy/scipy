@@ -10,7 +10,10 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
+from .lapack import (
+    get_lapack_funcs, _compute_lwork,
+    _normalize_lapack_dtype, _ensure_aligned_and_native
+)
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
@@ -234,6 +237,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
@@ -245,14 +250,6 @@ def solve(a, b, lower=False, overwrite_a=False,
         raise NotImplementedError('scipy.linalg.solve can currently '
                                   'not solve a^T x = b or a^H x = b '
                                   'for complex matrices.')
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
-
-    if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
-        overwrite_a = True
-        b1 = b1.copy()
 
     # align the shape of b with a: 1. make b1 at least 2D
     b_is_1D = b1.ndim == 1
@@ -1428,10 +1425,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
@@ -1708,6 +1702,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # NB: makes a1.dtype == b1.dtype, if needed
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
+
     m, n = a1.shape[-2:]
 
     # Zero-sized problem, confuses LAPACK; bail out straight away
@@ -1718,14 +1715,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         else:
             residues = np.empty((0,))
         return x, residues, 0, np.empty((0,))
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
-
-    if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
-        # overwrite_b = True
-        b1 = b1.copy()
 
     # align the shape of b with a
     # 1. make b1 at least 2D
