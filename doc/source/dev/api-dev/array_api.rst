@@ -339,11 +339,17 @@ have array API supporting SciPy functions with array inputs have behavior which
 is independent of the default dtype. This means that any when using array
 creation functions from the ``xp`` namespace such as ``xp.zeros`` or
 ``xp.arange``, one should take care to explicitly set a dtype with the ``dtype``
-kwarg; otherwise, the result will depend on the default dtype. Also, note that
-SciPy currently requires a ``float64`` dtype to be available, and for instance
-thus does not currently aim to support JAX in its
-`default configuration <https://docs.jax.dev/en/latest/default_dtypes.html>`_ that
-does not have ``float64`` arithmetic enabled.
+kwarg; otherwise, the result will depend on the default dtype.
+
+Note that SciPy is currently only tested in CI on platforms/backends/backend-configurations
+where a ``float64`` dtype is available. At the moment, ``float32``-only support
+varies from function to function and is not well-documented. Some examples of
+``float32``-only backends are JAX in its
+`default configuration <https://docs.jax.dev/en/latest/default_dtypes.html>`_,
+and PyTorch with the
+`Metal performance shader backend <https://pytorch.org/blog/introducing-accelerated-pytorch-training-on-mac/>`_
+on ARM Mac. We are open to expanding and improving ``float32``-only
+support in cases where this is feasible and there is sufficient user interest.
 
 
 Array creation functions without array inputs
