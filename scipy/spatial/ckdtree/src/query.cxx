@@ -251,6 +251,24 @@ struct nodeinfo_pool {
     }
 };
 
+// public function for regression testing nodeinfo_pool.allocate()
+// returns -1 on error and 0 on success
+int
+test_nodeinfo_allocator(int m, int num_arenas)
+{
+    nodeinfo_pool pool(m);
+    while (pool.pool.size() < num_arenas) {
+        nodeinfo *info = pool.allocate(); // no need to dellocate, automatic clean up on exit
+        // check that the arena is aligned
+        if ((ckdtree_intp_t)(pool.pool.back()) % nodeinfo_pool::ARENA_ALIGN) goto error;
+        // check that the nodeinfo is aligned
+        if ((ckdtree_intp_t)((void*)info) % nodeinfo_pool::ALIGN) goto error;
+    }
+    return 0;
+error:
+    return -1;
+}
+
 /* k-nearest neighbor search for a single point x */
 template <typename MinMaxDist>
 static void
