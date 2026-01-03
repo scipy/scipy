@@ -1184,10 +1184,21 @@ entry of the tuple is actually used in the resulting pytest param::
 When using such tuple arguments, the pytest skips and xfails will be
 taken from the class level capabilities, unless a method specific
 override was added in the ``method_capabilities`` kwarg of
-``xp_capabilities``. If the capabilities for ``(A, "f")`` have
-``jax_jit=True` (or if testing is enabled for Dask) then ``lazy_xp_function``
-will be applied to ``A.f`` (note that this can currently cause unexpected behavior
-in some cases when ``A`` inherits ``f`` from a parent class).
+``xp_capabilities``.
+
+Due to how the lazy backend testing machinery works, to test a method
+``A.f`` on lazy backends, one must add the class ``A`` to the list
+``lazy_xp_modules`` discussed above::
+
+  lazy_xp_modules = [A]
+
+If the capabilities for ``(A, "f")`` have
+``jax_jit=True` (or if Dask is not in ``skip_backends``) then using
+``@make_xp_test_case((A, "f"))`` or one of its equivalents
+will cause ``lazy_xp_function`` to be applied to ``(A, "f")``.
+(``lazy_xp_function`` will in this case replace ``A.f`` with
+a clone to avoid unintentional modification of a parent
+in cases where a method is inherited from a parent class).
 
 
 Additional information
