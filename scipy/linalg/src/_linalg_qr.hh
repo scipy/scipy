@@ -4,6 +4,7 @@
  #include "Python.h"
  #include <iostream>
  #include "numpy/arrayobject.h"
+#include "numpy/ndarraytypes.h"
  #include "numpy/npy_math.h"
  #include "npy_cblas.h"
  #include "_npymath.hh"
@@ -11,7 +12,7 @@
 
 template<typename T>
 int
-_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_P, int overwrite_a, int lwork, QR_mode mode, int pivot, SliceStatusVec &vec_status)
+_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_P, int overwrite_a, int lwork, QR_mode mode, int pivot, SliceStatusVec &vec_status)
 {
     using real_type = typename type_traits<T>::real_type;
 
@@ -31,6 +32,8 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     npy_intp *strides_Q = PyArray_STRIDES(ap_Q);
     T *R_data = (T *)PyArray_DATA(ap_R);
     npy_intp *strides_R = PyArray_STRIDES(ap_R);
+    T *tau_data = (T *)PyArray_DATA(ap_tau);
+    npy_intp *strides_tau = PyArray_STRIDES(ap_tau);
     CBLAS_INT *P_data = (CBLAS_INT *)PyArray_DATA(ap_P);
     npy_intp *strides_P = PyArray_STRIDES(ap_P);
 
@@ -68,25 +71,24 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     else if (!pivot && lwork < std::max(M, N)) {
         // The assigned `lwork` would not be enough to perform computations
         PyErr_SetString(PyExc_ValueError, "Without pivoting an lwork of at least max(M, N) is required.");
-        return -1;
+        return 1;
     }
     else if (pivot && lwork < std::max(M, 3 * N + 1)) {
         PyErr_SetString(PyExc_ValueError, "With pivoting and real arrays, an lwork of at least max(M, 3 * N + 1) is required.");
-        return -1;
+        return 1;
     }
 
 
-    // `std::min(M, N)` for `tau`, std::max(M, N) for the buffer for A/Q
-    T *buffer = (T *)malloc((M * std::max(M, N) + lwork + std::min(M, N)) * sizeof(T));
+    // std::max(M, N) for the buffer for A/Q
+    T *buffer = (T *)malloc((M * std::max(M, N) + lwork) * sizeof(T));
     if ( buffer == NULL ) { info = -101; return int(info); }
 
     T *data_A = &buffer[0];
     T *work = &buffer[M * std::max(M, N)];
-    T *tau = &buffer[M * std::max(M, N) + lwork];
 
     // `c/zgeqp3` needs rwork
     void *rwork = NULL;
-    if (type_traits<T>::is_complex) {
+    if (pivot && type_traits<T>::is_complex) {
         rwork = malloc(2 * N * sizeof(real_type));
 
         if (rwork == NULL) {
@@ -101,12 +103,13 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
         // Bundle all looping for the slice pointers into one large loop.
         // The shape of all matrices is the same across the batching dimensions.
-        npy_intp offset_A = 0, offset_Q = 0, offset_R = 0, offset_P = 0;
+        npy_intp offset_A = 0, offset_Q = 0, offset_R = 0, offset_tau = 0, offset_P = 0;
         npy_intp temp_idx = idx;
         for (int i = ndim - 3; i >= 0; i--) {
             offset_A += (temp_idx % shape[i]) * strides[i];
             offset_Q += (temp_idx % shape[i]) * strides_Q[i];
             offset_R += (temp_idx % shape[i]) * strides_R[i];
+            offset_tau += (temp_idx % shape[i]) * strides_tau[i];
             offset_P += (temp_idx % shape[i]) * strides_P[i];
 
             temp_idx /= shape[i];
@@ -115,6 +118,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         T *slice_ptr_A = (T *)(A_data + (offset_A / sizeof(T)));
         T *slice_ptr_Q = (T *)(Q_data + (offset_Q / sizeof(T)));
         T *slice_ptr_R = (T *)(R_data + (offset_R / sizeof(T)));
+        T *slice_ptr_tau = (T *)(tau_data + (offset_tau / sizeof(T)));
         CBLAS_INT *slice_ptr_P = (CBLAS_INT *)(P_data + (offset_P/sizeof(CBLAS_INT)));
 
         copy_slice_F(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
@@ -124,13 +128,13 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         // Factorization step is identical for each algorithm so do not delegate
         if (pivot) {
             memset(slice_ptr_P, 0, intn * sizeof(int)); // geqp3 also takes in pivoting elements
-            geqp3(&intm, &intn, data_A, &intm, slice_ptr_P, tau, work, &lwork, rwork, &info);
+            geqp3(&intm, &intn, data_A, &intm, slice_ptr_P, slice_ptr_tau, work, &lwork, rwork, &info);
             for (int i = 0; i < intn; i++) {
                 slice_ptr_P[i] -= 1; // geqp3 returns a 1-based index array, so subtract 1
             }
         }
         else {
-            geqrf(&intm, &intn, data_A, &intm, tau, work, &lwork, &info);
+            geqrf(&intm, &intn, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
         }
 
         if (info != 0) {
@@ -140,7 +144,6 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             goto free_exit;
         }
 
-        // TODO: accomodate for different solutions
         switch (mode) {
             case QR_mode::FULL:
             {
@@ -148,7 +151,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
                 // Full mode QR, hence Q will be MxM.
                 // N.B. the number of reflectors is limited by the smallest dimension (= `K`)
-                orungqr(&intm, &intm, &K, data_A, &intm, tau, work, &lwork, &info);
+                orungqr(&intm, &intm, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
 
                 if (info != 0) {
                     slice_status.lapack_info = (Py_ssize_t)info;
@@ -169,6 +172,11 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
             case QR_mode::RAW:
             {
+                extract_upper_triangle(slice_ptr_R, data_A, K, intn, intm);
+
+                // `raw` just requires the factorization and `tau`
+                // hence simply copy the factorization
+                copy_slice_F_to_C(slice_ptr_Q, data_A, intm, intn);
                 break;
             }
 
@@ -177,7 +185,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
                 extract_upper_triangle(slice_ptr_R, data_A, K, intn, intm);
 
                 // Economic mode QR, hence Q is MxK
-                orungqr(&intm, &K, &K, data_A, &intm, tau, work, &lwork, &info);
+                orungqr(&intm, &K, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
 
                 if (info != 0) {
                     slice_status.lapack_info = (Py_ssize_t)info;
