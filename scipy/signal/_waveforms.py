@@ -57,7 +57,7 @@ def sawtooth(t, width=1):
     """
     xp = array_namespace(t, width)
     t, w = xp_promote(t, width, broadcast=True, force_floating=True, xp=xp)
-    y = xp.zeros(t.shape, dtype=t.dtype)
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
@@ -130,7 +130,7 @@ def square(t, duty=0.5):
     xp = array_namespace(t, duty)
     t, w = xp_promote(t, duty, xp=xp, force_floating=True, broadcast=True)
 
-    y = xp.zeros(t.shape, dtype=t.dtype)
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)

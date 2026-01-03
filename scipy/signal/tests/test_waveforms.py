@@ -385,6 +385,7 @@ class TestUnitImpulse:
 
 @make_xp_test_case(sawtooth)
 class TestSawtoothWaveform:
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")
     @pytest.mark.parametrize("t_dtype", ["float32", "float64"])
     @pytest.mark.parametrize("width_dtype", ["float32", "float64"])
     def test_dtype(self, t_dtype, width_dtype, xp):
@@ -402,9 +403,10 @@ class TestSawtoothWaveform:
         xp_assert_close(y1, y2)
 
     def test_known_values(self, xp):
-        t = xp.asarray([0, xp.pi, 2*xp.pi])
+        eps = xp.finfo(xp_default_dtype(xp)).eps
+        t = xp.asarray([0, xp.pi, 2*xp.pi - 10*eps, 2*xp.pi])
         y = sawtooth(t)
-        xp_assert_close(y, xp.asarray([-1., 0., -1.]))
+        xp_assert_close(y, xp.asarray([-1., 0., 1., -1.]))
 
     def test_invalid_width_nan(self, xp):
         t = xp.linspace(0, 2*xp.pi, 10)
@@ -415,6 +417,7 @@ class TestSawtoothWaveform:
         t = xp.linspace(0, 2*xp.pi, 1000)
         y = sawtooth(t, width=0.5)
         xp_assert_close(y, xp.flip(y))
+        xp_assert_close(sawtooth(-t, 0)[1:-1], sawtooth(t)[1:-1])
 
 
 @make_xp_test_case(square)
