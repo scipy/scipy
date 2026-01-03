@@ -131,7 +131,7 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     >>> np.allclose(a @ P, np.dot(q5, r5))
     True
     """
-    if mode in ["r", "raw"]:
+    if mode in ["raw"]:
         return qr0(a, overwrite_a, lwork, mode, pivoting)
 
     # structure mappings, keep in sync with the C side
@@ -202,10 +202,16 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     if err_lst:
         _format_emit_errors_warnings(err_lst)
 
+    # construct return objects
     if pivoting:
-        return Q, R, P
+        Rj = (R, P)
     else:
-        return Q, R
+        Rj = (R,)
+
+    if mode == "r":
+        return Rj
+    else:
+        return (Q,) + Rj
 
 
 @_apply_over_batch(('a', 2))
