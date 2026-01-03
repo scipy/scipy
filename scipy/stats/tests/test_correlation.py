@@ -1,7 +1,7 @@
 import warnings
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_almost_equal
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_jax
