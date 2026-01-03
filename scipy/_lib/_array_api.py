@@ -1066,7 +1066,6 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
             capabilities = capabilities_table[cls]
             if method in capabilities["method_capabilities"]:
                 capabilities = capabilities["method_capabilities"][method]
-            func = getattr(cls, method)
             objs.append(cls)
         else:
             capabilities = capabilities_table[func]
