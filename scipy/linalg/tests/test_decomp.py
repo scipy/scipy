@@ -1909,20 +1909,23 @@ class TestQR:
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int32)
 
-        r, *other = qr(a, mode='r', pivoting=pivoting)
-        assert_equal(r.shape, (m, n))
-        assert_equal(r.dtype, dtype)
+        r_r, *other = qr(a, mode='r', pivoting=pivoting)
+        assert_equal(r_r.shape, (m, n))
+        assert_equal(r_r.dtype, dtype)
+        assert_equal(r, r_r) # sanity check
         assert len(other) == (1 if pivoting else 0)
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int32)
 
-        q, r, *other = qr(a, mode='economic', pivoting=pivoting)
-        assert_equal(q.shape, (m, k))
-        assert_equal(q.dtype, dtype)
-        assert_equal(r.shape, (k, n))
-        assert_equal(r.dtype, dtype)
+        q_e, r_e, *other = qr(a, mode='economic', pivoting=pivoting)
+        assert_equal(q_e.shape, (m, k))
+        assert_equal(q_e.dtype, dtype)
+        assert_equal(r_e.shape, (k, n))
+        assert_equal(r_e.dtype, dtype)
+        assert_equal(q_e, q[:, :k])
+        assert_equal(r_e, r[:k, :])
         assert len(other) == (1 if pivoting else 0)
         if pivoting:
             p, = other

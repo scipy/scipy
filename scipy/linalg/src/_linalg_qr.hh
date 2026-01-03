@@ -163,6 +163,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
             case QR_mode::R:
             {
+                extract_upper_triangle(slice_ptr_R, data_A, intm, intn, intm);
                 break;
             }
 
