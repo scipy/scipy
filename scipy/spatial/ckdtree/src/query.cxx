@@ -164,41 +164,47 @@ struct nodeinfo {
 
 struct nodeinfo_pool {
 
-    std::vector<char*> pool;
+    std::vector<char *const> pool;
 
-    ckdtree_intp_t nodeinfo_size;
-    ckdtree_intp_t alloc_size;
+    const ckdtree_intp_t nodeinfo_size;
+    const ckdtree_intp_t alloc_size;
+    const ckdtree_intp_t m;
 
-    ckdtree_intp_t m;
     char *arena;
     char *arena_ptr;
     bool need_new_arena;
 
     // Tuning parameter:
     // Alignment of an allocted nodeinfo struct
-    #define ALIGN 16
+    // We will use at least 16 bytes
+    constexpr int ALIGN = alignof(nodeinfo) < 16 ? 16 : alignof(nodeinfo);
 
     // Tuning parameter:
     // Alignment should hit a cache line.
-    // For most hardware 64 is OK, but Apple silicon needs 128.
-    #define ARENA_ALIGN 128
+    // For most hardware 64 bytes is OK, but Apple silicon needs 128.
+    // As per discussion in gh-22928 we will use 64 bytes for now.
+    constexpr int ARENA_ALIGN = 64;
 
     // Tuning parameter:
     // Minumum arena size should be at least one page.
     // For most hardware a page is 4KB, but Apple silicon uses 16KB.
     // Allocating at least one page prevents new/malloc from searching the 
     // heap for the smallest piece of free memory, which is slow.
-    #define ARENA 16384
+    // As per discussion in gh-22928 we will use 4KB for now.
+    constexpr int ARENA = 4096;
 
-    nodeinfo_pool(ckdtree_intp_t m) {
-        
-        // size of a nodeinfo plus the trailing double[3*m] struct hack buffer
-        nodeinfo_size = sizeof(nodeinfo) + (3 * m - 1)*sizeof(double); 
+    nodeinfo_pool(ckdtree_intp_t _m)
+            :
+            m(_m),
 
-        // alloc_size must be large enough to fit an ALIGN aligned nodeinfo
-        // with its trailing struct hack buffer
-        alloc_size = nodeinfo_size % ALIGN ? ALIGN*(nodeinfo_size/ALIGN)+ALIGN : nodeinfo_size;
+            // size of a nodeinfo plus the trailing double[3*m] struct hack buffer
+            nodeinfo_size(sizeof(nodeinfo) + (3 * m - 1)*sizeof(double)),
 
+            // alloc_size must be large enough to fit an ALIGN aligned nodeinfo
+            // with its trailing struct hack buffer
+            alloc_size(nodeinfo_size % ALIGN ? ALIGN*(nodeinfo_size/ALIGN)+ALIGN : nodeinfo_size)
+
+    {
         // allocate one arena, make sure its alinment is ALIGN so we get
         // all nodeinfo structs aligned when advancing the pointer by alloc_size
         arena = (char*)ckdtree_aligned_alloc(ARENA_ALIGN, ARENA);
@@ -207,7 +213,7 @@ struct nodeinfo_pool {
             throw e;
         }
         arena_ptr = arena;
-        pool.push_back(arena);
+        pool.push_back((char *const)arena);
         need_new_arena = false;
         
         this->m = m;
@@ -227,7 +233,7 @@ struct nodeinfo_pool {
                 throw e;
             }
             arena_ptr = arena;
-            pool.push_back(arena);
+            pool.push_back((char *const)arena);
             need_new_arena = false;
         }    
         
@@ -235,9 +241,7 @@ struct nodeinfo_pool {
         ni1 = (nodeinfo*)arena_ptr;
         ni1->m = m;
         
-        ckdtree_intp_t m1 = (ckdtree_intp_t)arena_ptr;
-        ckdtree_intp_t m0 = (ckdtree_intp_t)arena;
-        ckdtree_intp_t spaceleft = ARENA - (ckdtree_intp_t)(m1 - m0);
+        const std::ptrdiff_t spaceleft = ARENA - (arena_ptr - arena);
 
         // This avoids allocating a new arena when we can fit exactly one more
         // nodeinfo. It also avoid undefined behaviour by calculating
