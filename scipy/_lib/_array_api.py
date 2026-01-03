@@ -17,7 +17,6 @@ from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal
 from collections.abc import Iterable
-from pytest import MarkDecorator
 
 import numpy as np
 import numpy.typing as npt
@@ -1010,7 +1009,7 @@ def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=
 
     marks = make_xp_pytest_marks(func, capabilities_table=capabilities_table)
     if additional_marks is not None:
-        if isinstance(additional_marks, MarkDecorator):
+        if isinstance(additional_marks, pytest.MarkDecorator):
             additional_marks = [additional_marks]
         marks.extend(additional_marks)
     if isinstance(func, tuple):
