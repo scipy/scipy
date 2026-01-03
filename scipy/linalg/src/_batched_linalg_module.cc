@@ -208,6 +208,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     PyArrayObject *ap_Q = NULL;
     PyArrayObject *ap_R = NULL;
+    PyArrayObject *ap_tau = NULL;
     PyArrayObject *ap_P = NULL;
 
     // Get the input array
@@ -246,17 +247,18 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     switch (mode) {
         case QR_mode::FULL:
         {
-            [[fallthrough]];
+            shape_1[ndim-1] = M;
+            break;
         }
 
         case QR_mode::R:
         {
-            [[fallthrough]];
+            break; // shape of `Q` irrelevant here
         }
 
         case QR_mode::RAW:
         {
-            shape_1[ndim-1] = M;
+            shape_1[ndim-1] = N;
             break;
         }
 
@@ -282,13 +284,13 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         case QR_mode::R:
         {
-            [[fallthrough]];
+            shape_1[ndim-1] = N;
+            break;
         }
 
         case QR_mode::RAW:
         {
-            shape_1[ndim-1] = N;
-            break;
+            [[fallthrough]];
         }
 
         case QR_mode::ECONOMIC:
@@ -306,13 +308,22 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Always allocate pivoting elements to be able to return an array at all times
-    shape_1[ndim - 2] = N;
-    ap_P = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, NPY_INT); // The pivots are integers
+    // Always allocate `tau` and pivoting elements to be able to return an array at all times
+    shape_1[ndim-2] = K;
+    ap_tau = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum);
+    if (!ap_tau) {
+        Py_DECREF(ap_Q);
+        Py_DECREF(ap_R);
+        PyErr_NoMemory();
+        return NULL;
+    }
 
+    shape_1[ndim-2] = N;
+    ap_P = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, NPY_INT); // The pivots are integers
     if (!ap_P) {
         Py_DECREF(ap_Q);
         Py_DECREF(ap_R);
+        Py_DECREF(ap_tau);
         PyErr_NoMemory();
         return NULL;
     }
@@ -320,16 +331,16 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _qr<float>(ap_A, ap_Q, ap_R, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<float>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _qr<double>(ap_A, ap_Q, ap_R, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<double>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _qr<npy_complex64>(ap_A, ap_Q, ap_R, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<npy_complex64>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _qr<npy_complex128>(ap_A, ap_Q, ap_R, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<npy_complex128>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -340,16 +351,15 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         // Either OOM error or requiested lwork too large.
         Py_DECREF(ap_Q);
         Py_DECREF(ap_R);
-        if (ap_P != NULL) {
-            Py_DECREF(ap_P);
-        }
+        Py_DECREF(ap_tau);
+        Py_DECREF(ap_P);
 
         PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.solve.");
         return NULL;
     }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
-    return Py_BuildValue("NNNN", PyArray_Return(ap_Q), PyArray_Return(ap_R), PyArray_Return(ap_P), ret_lst);
+    return Py_BuildValue("NNNNN", PyArray_Return(ap_Q), PyArray_Return(ap_R), PyArray_Return(ap_tau), PyArray_Return(ap_P), ret_lst);
 }
 
 static PyObject*
