@@ -414,8 +414,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
         Method to be used for computing estimate for intercept.
         Following methods are supported,
 
-        * 'joint': Uses np.median(y - slope * x) as intercept.
-        * 'separate': Uses np.median(y) - slope * np.median(x)
+        * 'joint': Uses ``np.median(y - slope * x)`` as intercept.
+        * 'separate': Uses ``np.median(y) - slope * np.median(x)``
                       as intercept.
 
         The default is 'separate'.

@@ -233,40 +233,46 @@ class TestTheilslopes:
     def test_theilslopes(self):
         # Test for basic slope and intercept.
         slope, intercept, lower, upper = stats.theilslopes([0, 1, 1])
-        assert_almost_equal(slope, 0.5)
-        assert_almost_equal(intercept, 0.5)
+        assert_allclose(slope, 0.5)
+        assert_allclose(intercept, 0.5)
 
         slope, intercept, lower, upper = stats.theilslopes([0, 1, 1], method='joint')
-        assert_almost_equal(slope, 0.5)
-        assert_almost_equal(intercept, 0.0)
+        assert_allclose(slope, 0.5)
+        assert_allclose(intercept, 0.0)
 
         # Test of confidence intervals from example in Sen (1968).
         x = [1, 2, 3, 4, 10, 12, 18]
         y = [9, 15, 19, 20, 45, 55, 78]
         slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07)
-        assert_almost_equal(slope, 4)
-        assert_almost_equal(intercept, 4.0)
-        assert_almost_equal(upper, 4.38, decimal=2)
-        assert_almost_equal(lower, 3.71, decimal=2)
+        assert_allclose(slope, 4)
+        assert_allclose(intercept, 4.0)
+        assert_allclose(upper, 4.38, rtol=5e-3)
+        assert_allclose(lower, 3.71, rtol=5e-3)
 
         slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07,
                                                            method='joint')
-        assert_almost_equal(slope, 4)
-        assert_almost_equal(intercept, 6.0)
-        assert_almost_equal(upper, 4.38, decimal=2)
-        assert_almost_equal(lower, 3.71, decimal=2)
+        assert_allclose(slope, 4)
+        assert_allclose(intercept, 6.0)
+        assert_allclose(upper, 4.38, rtol=5e-3)
+        assert_allclose(lower, 3.71, rtol=5e-3)
+
+    def test_input_validation(self):
+        msg = ("method must be either 'joint' or 'separate'."
+               "'joint_separate' is invalid.")
+        with pytest.raises(ValueError, match=msg):
+            stats.theilslopes([0, 1, 1], method='joint_separate')
 
     @skip_xp_invalid_arg
     def test_mask(self):
         # Test for correct masking.
         y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
         slope, intercept, lower, upper = stats.theilslopes(y)
-        assert_almost_equal(slope, 0.5)
-        assert_almost_equal(intercept, 0.5)
+        assert_allclose(slope, 0.5)
+        assert_allclose(intercept, 0.5)
 
         slope, intercept, lower, upper = stats.theilslopes(y, method='joint')
-        assert_almost_equal(slope, 0.5)
-        assert_almost_equal(intercept, 0.0)
+        assert_allclose(slope, 0.5)
+        assert_allclose(intercept, 0.0)
 
     def test_theilslopes_warnings(self):
         # Test `theilslopes` with degenerate input; see gh-15943
