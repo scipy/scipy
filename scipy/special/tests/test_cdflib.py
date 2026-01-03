@@ -201,14 +201,6 @@ def _tukey_lmbda_quantile(p, lmbda):
 @check_version(mpmath, '0.19')
 class TestCDFlib:
 
-    @pytest.mark.xfail(run=False)
-    def test_bdtrik(self):
-        _assert_inverts(
-            sp.bdtrik,
-            _binomial_cdf,
-            0, [ProbArg(), IntArg(1, 1000), ProbArg()],
-            rtol=1e-4)
-
     def test_bdtrin(self):
         _assert_inverts(
             sp.bdtrin,
