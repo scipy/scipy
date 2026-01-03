@@ -194,7 +194,9 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
 
     # heavy lifting
     lwork = -1 if lwork is None else lwork # same meaning, convert for C side
-    Q, R, tau, P, err_lst = _batched_linalg._qr(a1, overwrite_a, lwork, modeFlag, pivoting)
+    Q, R, tau, P, err_lst = _batched_linalg._qr(
+        a1, overwrite_a, lwork, modeFlag, pivoting
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
