@@ -6,7 +6,7 @@ from . import _batched_linalg
 
 # Local imports.
 from ._misc import LinAlgError, _datacopied
-from .lapack import _normalize_lapack_dtype, HAS_ILP64
+from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native, HAS_ILP64
 from scipy.linalg.lapack import get_lapack_funcs   # noqa: F401  (backwards compat)
 from ._decomp import _asarray_validated
 
@@ -144,10 +144,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # accommodate empty matrix
     if a1.size == 0:
