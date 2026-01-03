@@ -1137,17 +1137,19 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
 
 
 /*
- * Extract only the upper triangle of an F-ordered MxN `src` to a C-ordered MxN
+ * Extract only the upper triangle of an F-ordered ldaxN `src` to a C-ordered MxN
  * `dst`. The rest is put to 0. This function is reminiscent of `zero_other_triangle`,
  * but contains copying, swapping of ordering and zeroing in one.
+ *
+ * It is assumed that `lda` >= M
  */
 template<typename T>
-void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_intp n) {
+void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_intp n, const npy_intp lda) {
 
     for (npy_intp i = 0; i < n; i++) {
         npy_intp stop = std::min(i + 1, m);
         for (npy_intp j = 0; j < stop; j++) {
-            dst[j*n + i] = src[i*m + j];
+            dst[j*n + i] = src[i*lda + j];
         }
 
         for (npy_intp j = stop; j < m; j++) {

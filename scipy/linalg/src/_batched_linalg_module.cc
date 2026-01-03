@@ -236,19 +236,69 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Allocate the output objects
     npy_intp M = shape[ndim-2], N = shape[ndim-1];
+    npy_intp K = std::min(M, N);
     npy_intp shape_1[NPY_MAXDIMS];
 
     for (int i = 0; i < ndim; i++) {
         shape_1[i] = shape[i];
     }
-    shape_1[ndim-1] = M;
+
+    switch (mode) {
+        case QR_mode::FULL:
+        {
+            [[fallthrough]];
+        }
+
+        case QR_mode::R:
+        {
+            [[fallthrough]];
+        }
+
+        case QR_mode::RAW:
+        {
+            shape_1[ndim-1] = M;
+            break;
+        }
+
+        case QR_mode::ECONOMIC:
+        {
+            shape_1[ndim-1] = K;
+            break;
+        }
+    }
+
     ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
     if (!ap_Q) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    shape_1[ndim-1] = N;
+    switch (mode) {
+
+        case QR_mode::FULL:
+        {
+            [[fallthrough]];
+        }
+
+        case QR_mode::R:
+        {
+            [[fallthrough]];
+        }
+
+        case QR_mode::RAW:
+        {
+            shape_1[ndim-1] = N;
+            break;
+        }
+
+        case QR_mode::ECONOMIC:
+        {
+            shape_1[ndim-2] = K;
+            shape_1[ndim-1] = N;
+            break;
+        }
+    }
+
     ap_R = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
     if (!ap_R) {
         Py_DECREF(ap_Q);

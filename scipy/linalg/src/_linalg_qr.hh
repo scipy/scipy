@@ -96,7 +96,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         }
     }
 
-    // Main loop to traverse the slices, copied from `_linalg_solve()`
+    // Main loop to traverse the slices
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
         // Bundle all looping for the slice pointers into one large loop.
@@ -144,7 +144,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         switch (mode) {
             case QR_mode::FULL:
             {
-                extract_upper_triangle(slice_ptr_R, data_A, intm, intn);
+                extract_upper_triangle(slice_ptr_R, data_A, intm, intn, intm);
 
                 // Full mode QR, hence Q will be MxM.
                 // N.B. the number of reflectors is limited by the smallest dimension (= `K`)
@@ -173,6 +173,19 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
             case QR_mode::ECONOMIC:
             {
+                extract_upper_triangle(slice_ptr_R, data_A, K, intn, intm);
+
+                // Economic mode QR, hence Q is MxK
+                orungqr(&intm, &K, &K, data_A, &intm, tau, work, &lwork, &info);
+
+                if (info != 0) {
+                    slice_status.lapack_info = (Py_ssize_t)info;
+                    vec_status.push_back(slice_status);
+
+                    goto free_exit;
+                }
+
+                copy_slice_F_to_C(slice_ptr_Q, data_A, intm, K);
                 break;
             }
         }

@@ -131,7 +131,7 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     >>> np.allclose(a @ P, np.dot(q5, r5))
     True
     """
-    if mode in ["r", "economic", "raw"]:
+    if mode in ["r", "raw"]:
         return qr0(a, overwrite_a, lwork, mode, pivoting)
 
     # structure mappings, keep in sync with the C side
@@ -149,14 +149,12 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     if mode not in modes.keys():
         raise ValueError(f"Mode argument should be one of {list(modes.keys())}")
 
-    mode = modes[mode] # convert the string to an int for the C enum
+    modeFlag = modes[mode] # convert the string to an int for the C enum
 
     if check_finite:
         a1 = np.asarray_chkfinite(a)
     else:
         a1 = np.asarray(a)
-
-    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     if a1.ndim < 2:
         raise ValueError("expected at least a 2-D array")
@@ -166,14 +164,15 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     # accommodate empty arrays
     if a1.size == 0:
         K = min(M, N)
+        batch_shape = a1.shape[:-2]
 
         if mode not in ['economic', 'raw']:
-            Q = np.empty_like(a1, shape=(M, M))
-            Q[...] = np.identity(M)
+            Q = np.empty_like(a1, shape=batch_shape + (M, M))
+            Q[..., :, :] = np.identity(M)
             R = np.empty_like(a1)
         else:
-            Q = np.empty_like(a1, shape=(M, K))
-            R = np.empty_like(a1, shape=(K, N))
+            Q = np.empty_like(a1, shape=batch_shape + (M, K))
+            R = np.empty_like(a1, shape=batch_shape + (K, N))
 
         if pivoting:
             Rj = R, np.arange(N, dtype=np.int32)
@@ -183,16 +182,22 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
         if mode == 'r':
             return Rj
         elif mode == 'raw':
-            qr = np.empty_like(a1, shape=(M, N))
-            tau = np.zeros_like(a1, shape=(K,))
+            qr = np.empty_like(a1, shape=batch_shape + (M, N))
+            tau = np.zeros_like(a1, shape=batch_shape + (K,))
             return ((qr, tau),) + Rj
         return (Q,) + Rj
+
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+        overwrite_a = True
+        a1 = a1.copy()
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     # heavy lifting
-    lwork = -1 if lwork is None else lwork
-    Q, R, P, err_lst = _batched_linalg._qr(a1, overwrite_a, lwork, mode, pivoting)
+    lwork = -1 if lwork is None else lwork # same meaning, convert for C side
+    Q, R, P, err_lst = _batched_linalg._qr(a1, overwrite_a, lwork, modeFlag, pivoting)
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
