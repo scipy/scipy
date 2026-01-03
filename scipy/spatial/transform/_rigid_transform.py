@@ -56,6 +56,12 @@ def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     return dq
 
 
+rigid_transform_extra_note = (
+    """The method ``apply`` is not supported with cupy<14.*.
+
+    """)
+
+
 @xp_capabilities(
     skip_backends=[("dask.array", "missing linalg.cross/det functions")],
     method_capabilities={
@@ -82,6 +88,7 @@ def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
             ],
         ),
     },
+    extra_note=rigid_transform_extra_note,
 )
 class RigidTransform:
     """Rigid transform in 3 dimensions.

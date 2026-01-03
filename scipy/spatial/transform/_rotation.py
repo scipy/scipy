@@ -59,6 +59,12 @@ def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
     return xp_promote(*args, force_floating=True, xp=xp)
 
 
+rotation_extra_note = (
+    """The methods ``as_davenport``, ``apply``, and ``align_vectors``
+    are not supported with cupy<14.*.
+
+    """)
+
 @xp_capabilities(
     skip_backends=[("dask.array", "missing linalg.cross/det functions")],
     method_capabilities={
@@ -93,6 +99,7 @@ def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
             ],
         ),
     },
+    extra_note=rotation_extra_note,
 )
 class Rotation:
     """Rotation in 3 dimensions.
