@@ -166,10 +166,10 @@ struct nodeinfo_pool {
 
     std::vector<char *const> pool;
 
+    const ckdtree_intp_t m;
     const ckdtree_intp_t nodeinfo_size;
     const ckdtree_intp_t alloc_size;
-    const ckdtree_intp_t m;
-
+    
     char *arena;
     char *arena_ptr;
     bool need_new_arena;
@@ -177,13 +177,13 @@ struct nodeinfo_pool {
     // Tuning parameter:
     // Alignment of an allocted nodeinfo struct
     // We will use at least 16 bytes
-    constexpr int ALIGN = alignof(nodeinfo) < 16 ? 16 : alignof(nodeinfo);
+    constexpr static int ALIGN = alignof(nodeinfo) < 16 ? 16 : alignof(nodeinfo);
 
     // Tuning parameter:
     // Alignment should hit a cache line.
     // For most hardware 64 bytes is OK, but Apple silicon needs 128.
     // As per discussion in gh-22928 we will use 64 bytes for now.
-    constexpr int ARENA_ALIGN = 64;
+    constexpr static int ARENA_ALIGN = 64;
 
     // Tuning parameter:
     // Minumum arena size should be at least one page.
@@ -191,7 +191,7 @@ struct nodeinfo_pool {
     // Allocating at least one page prevents new/malloc from searching the 
     // heap for the smallest piece of free memory, which is slow.
     // As per discussion in gh-22928 we will use 4KB for now.
-    constexpr int ARENA = 4096;
+    constexpr static int ARENA = 4096;
 
     nodeinfo_pool(ckdtree_intp_t _m)
             :
@@ -215,8 +215,6 @@ struct nodeinfo_pool {
         arena_ptr = arena;
         pool.push_back((char *const)arena);
         need_new_arena = false;
-        
-        this->m = m;
     }
 
     ~nodeinfo_pool() {
