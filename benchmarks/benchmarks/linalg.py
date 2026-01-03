@@ -205,6 +205,28 @@ class BatchedEigBench(Benchmark):
             sl.eig(self.a)
 
 
+class BatchedQRBench(Benchmark):
+    params = [
+        [(100, 10, 10), (100, 20, 20), (100, 100)],
+        ["full/complete", "economic/reduced", "r/r"],
+        ["scipy", "numpy"]
+    ]
+    param_names = ["shape", "mode", "module"]
+
+    def setup(self, shape, mode, module):
+        self.a = random(shape)
+
+        if module == "scipy":
+            self.kwd = {"mode": mode.split("/")[0]}
+        elif module == "numpy":
+            self.kwd = {"mode": mode.split("/")[1]}
+
+    def time_solve(self, shape, mode, module):
+        if module == "numpy":
+            nl.qr(self.a, **self.kwd)
+        else:
+            sl.qr(self.a, **self.kwd)
+
 
 class Norm(Benchmark):
     params = [
