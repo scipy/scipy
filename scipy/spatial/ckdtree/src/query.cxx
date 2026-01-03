@@ -164,16 +164,6 @@ struct nodeinfo {
 
 struct nodeinfo_pool {
 
-    std::vector<char *const> pool;
-
-    const ckdtree_intp_t m;
-    const ckdtree_intp_t nodeinfo_size;
-    const ckdtree_intp_t alloc_size;
-    
-    char *arena;
-    char *arena_ptr;
-    bool need_new_arena;
-
     // Tuning parameter:
     // Alignment of an allocted nodeinfo struct
     // We will use at least 16 bytes
@@ -192,6 +182,14 @@ struct nodeinfo_pool {
     // heap for the smallest piece of free memory, which is slow.
     // As per discussion in gh-22928 we will use 4KB for now.
     constexpr static int ARENA = 4096;
+
+    std::vector<char*> pool;
+    const ckdtree_intp_t m;
+    const ckdtree_intp_t nodeinfo_size;
+    const ckdtree_intp_t alloc_size;
+    char *arena;
+    char *arena_ptr;
+    bool need_new_arena;
 
     nodeinfo_pool(ckdtree_intp_t _m)
             :
@@ -213,7 +211,7 @@ struct nodeinfo_pool {
             throw e;
         }
         arena_ptr = arena;
-        pool.push_back((char *const)arena);
+        pool.push_back(arena);
         need_new_arena = false;
     }
 
@@ -231,7 +229,7 @@ struct nodeinfo_pool {
                 throw e;
             }
             arena_ptr = arena;
-            pool.push_back((char *const)arena);
+            pool.push_back(arena);
             need_new_arena = false;
         }    
         
