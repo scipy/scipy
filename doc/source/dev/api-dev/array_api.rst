@@ -277,7 +277,7 @@ See `Common Gotchas in JAX <https://docs.jax.dev/en/latest/notebooks/Common_Gotc
   to SciPy functions which make in-place updates should use
   `array_api_extra.at <https://data-apis.org/array-api-extra/generated/array_api_extra.at.html>`_
   which works for all array API compatible backends, delegating to JAX's ``at`` for
-  JAX arraysand performing regular in-place operations with ``__setitem__`` for other kinds
+  JAX arrays and performing regular in-place operations with ``__setitem__`` for other kinds
   of arrays.
 
 * The restriction that functions be functionally pure to support the JAX JIT necessitates
