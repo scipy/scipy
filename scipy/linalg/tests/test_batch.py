@@ -185,12 +185,22 @@ class TestBatch:
         self.batch_test(fun, A, n_out=n_out)
 
     @pytest.mark.parametrize('compute_uv', [False, True])
+    @pytest.mark.parametrize('full_matrices', [False, True])
     @pytest.mark.parametrize('dtype', floating)
-    def test_svd(self, compute_uv, dtype):
+    def test_svd(self, compute_uv, full_matrices, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         n_out = 3 if compute_uv else 1
-        self.batch_test(linalg.svd, A, n_out=n_out, kwargs=dict(compute_uv=compute_uv))
+        self.batch_test(
+            linalg.svd, A, n_out=n_out,
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+        )
+
+        A = get_random((5, 3, 2, 0), dtype=dtype, rng=rng)
+        self.batch_test(
+            linalg.svd, A, n_out=n_out,
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+        )
 
     @pytest.mark.parametrize('fun', [linalg.polar, linalg.qr, linalg.rq])
     @pytest.mark.parametrize('dtype', floating)
@@ -612,7 +622,6 @@ class TestBatch:
 
     @pytest.mark.parametrize('f, args', [
         (linalg.toeplitz, (np.ones((0, 4)),)),
-        (linalg.eig, (np.ones((3, 0, 5, 5)),)),
     ])
     def test_zero_size_batch(self, f, args):
         message = "does not support zero-size batches."
