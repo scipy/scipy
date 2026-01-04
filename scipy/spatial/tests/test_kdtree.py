@@ -1538,7 +1538,7 @@ def test_gh_18800(incantation):
 
 def test_nodeinfo_allocator():
     # test memory alignment, gh-22928
-    for i in range(1,32):
+    for m in range(1,32):
         _test_nodeinfo_allocator(m, 10)
 
 
