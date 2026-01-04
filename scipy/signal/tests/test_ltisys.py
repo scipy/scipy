@@ -1,4 +1,3 @@
-import os
 import warnings
 from types import GenericAlias
 
@@ -7,7 +6,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
     assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case,
-    is_torch
+    xp_result_type
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
@@ -17,9 +16,6 @@ from scipy.signal import (ss2tf, tf2ss, lti,
 
 from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
-
-
-DEFAULT_F32 = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64') == 'float32'
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -1082,36 +1078,28 @@ class Test_abcd_normalize:
         A, B = xp.asarray(self.A), xp.asarray(self.B)
         assert_raises(ValueError, abcd_normalize, A=A, B=B)
 
+
     @pytest.mark.parametrize(
-        "A_dtype,B_dtype,C_dtype,D_dtype,expected_dtype",
-        [
-            ("int64", "int64", "int64", "int64", "float64"),
-            ("float32", "float32", "float32", "float32", "float32"),
-            ("float32", "float32", "float32", "float64", "float64"),
-            ("complex64", "complex64", "complex64", "complex64", "complex64"),
-            ("complex128", "complex128", "complex128", "complex128", "complex128"),
-            ("float64", "float64", "complex128", "float64", "complex128"),
-            (None, "int64", "int64", "int64", "float64"),
-            (None, "float32", "float32", "float32", "float32"),
-            (None, "float32", "float32", "float64", "float64"),
-            (None, "complex64", "complex64", "complex64", "complex64"),
-            (None, "complex128", "complex128", "complex128", "complex128"),
-            (None, "float64", "complex128", "float64", "complex128"),
-        ]
+        "A_dtype",
+        # A_dtype=None here means to pass None as the value for A
+        [None, "int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "B_dtype",
+        [None, "int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "C_dtype",
+        ["int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "D_dtype",
+        ["int64", "float32", "float64", "complex64", "complex128"],
     )
     # Also check case where one input array has size zero.
     @pytest.mark.parametrize("D", [[[2.5]], [[]]])
-    def test_dtypes(
-            self, D, A_dtype, B_dtype, C_dtype, D_dtype, expected_dtype, xp
-    ):
-        # This skip should not be needed for long.
-        if DEFAULT_F32 and is_torch(xp) and B_dtype == "int64":
-            pytest.xfail(
-                reason=(
-                    "xp_promote casts ints to default dtype"
-                    " when using force_floating=True with torch."
-                )
-            )
+    def test_dtypes(self, D, A_dtype, B_dtype, C_dtype, D_dtype, xp):
+       
         args = []
         for X, X_dtype in zip(
                 [self.A, self.B, self.C, D],
@@ -1122,8 +1110,8 @@ class Test_abcd_normalize:
                 if X_dtype is not None else None
             )
         A, B, C, D = args
+        expected_dtype = xp_result_type(A, B, C, D, xp=xp, force_floating=True)
         A, B, C, D = abcd_normalize(A=A, B=B, C=C, D=D)
-        expected_dtype = getattr(xp, expected_dtype)
         assert A.dtype == B.dtype == C.dtype == D.dtype == expected_dtype
 
 
