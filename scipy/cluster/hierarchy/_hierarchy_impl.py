@@ -45,7 +45,7 @@ import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
                                    is_lazy_array, xp_capabilities, xp_copy)
 from scipy._lib._disjoint_set import DisjointSet
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,

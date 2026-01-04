@@ -1085,7 +1085,7 @@ To achieve this for private functions without ``xp_capabilities`` entries,
 you should tag them as follows in your test module::
 
   from scipy._lib._array_api import xp_assert_close
-  from scipy._lib.array_api_extra.testing import lazy_xp_function
+  from scipy._external.array_api_extra.testing import lazy_xp_function
   from scipy.mymodule import _private_toto_helper
 
   lazy_xp_function(_private_toto_helper)

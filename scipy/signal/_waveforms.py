@@ -9,7 +9,7 @@ from numpy import asarray, zeros, pi, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
 from scipy._lib._array_api import array_namespace, xp_promote
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',

@@ -142,7 +142,8 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         n_cores = cpu_count(only_physical_cores=True)
         jobs = n_cores
 
-    meson_install_args = meson_install_args + ("--tags=" + tags, )
+    meson_install_args += ("--tags=" + tags, )
+    meson_install_args += ("--skip-subprojects",)
 
     if show_build_log:
         verbose = show_build_log

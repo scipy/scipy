@@ -15,7 +15,7 @@ from scipy._lib import doccer
 from scipy._lib._docscrape import FunctionDoc
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy.special import comb, entr
 

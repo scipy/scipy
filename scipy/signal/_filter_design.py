@@ -17,12 +17,12 @@ from scipy._lib._util import float_factorial
 from scipy.signal._arraytools import _validate_fs
 from scipy.signal import _polyutils as _pu
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
     xp_result_type,
 )
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',

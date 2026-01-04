@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from numpy import inf
 
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy import special
 from scipy.special import _ufuncs as scu
 from scipy.stats._distribution_infrastructure import (

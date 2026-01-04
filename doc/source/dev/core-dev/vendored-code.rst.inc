@@ -2,6 +2,7 @@
 
 Vendored Code
 =============
+TODO update this
 Many parts of the SciPy codebase are maintained elsewhere, and vendored in SciPy.
 Some of these parts are vendored as git submodules, for example, ``xsf``,
 or are placed under the ``subprojects`` directory (or both).
