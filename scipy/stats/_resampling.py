@@ -18,7 +18,7 @@ from scipy._lib._array_api import (
     xp_device,
     xp_swapaxes
 )
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy.special import ndtr, ndtri
 from scipy import stats
 

@@ -29,8 +29,8 @@ from ._sosfilt import _sosfilt
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
     xp_promote, xp_swapaxes,)
-from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import is_array_api_obj
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',

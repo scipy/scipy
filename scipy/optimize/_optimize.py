@@ -42,7 +42,7 @@ from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 
 # standard status messages of optimizers
