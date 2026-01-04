@@ -413,6 +413,7 @@ class TestSawtoothWaveform:
         y = sawtooth(t, width=1.5)
         assert xp.all(xp.isnan(y))
 
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9568")
     def test_triangle_symmetry(self, xp):
         t = xp.linspace(0, 2*xp.pi, 1000)
         y = sawtooth(t, width=0.5)
