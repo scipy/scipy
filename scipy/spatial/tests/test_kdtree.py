@@ -10,7 +10,7 @@ import pytest
 from platform import python_implementation
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
-from scipy.spatial._ckdtree import cKDTreeNode
+from scipy.spatial._ckdtree import cKDTreeNode, _test_nodeinfo_allocator
 from scipy.spatial import minkowski_distance
 
 import itertools
@@ -1534,3 +1534,12 @@ def test_gh_18800(incantation):
     tree = incantation(points, 10)
     tree.query(arr_like, 1)
     tree.query_ball_point(arr_like, 200)
+
+
+def test_nodeinfo_allocator():
+    # test memory alignment, gh-22928
+    for i in range(1,32):
+        _test_nodeinfo_allocator(m, 10)
+
+
+
