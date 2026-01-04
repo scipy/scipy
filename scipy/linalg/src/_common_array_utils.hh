@@ -4,7 +4,6 @@
 #ifndef _SCIPY_COMMON_ARRAY_UTILS_H
 #define _SCIPY_COMMON_ARRAY_UTILS_H
 #include "Python.h"
-#include <cfloat>
 #include <tuple>
 #include "numpy/npy_math.h"
 #include "npy_cblas.h"
@@ -591,7 +590,7 @@ GEN_GTCON_CZ(z, npy_complex128, double)
 
 #define GEN_GBTRF(PREFIX, TYPE) \
 inline void \
-gbtrf(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info) \
+call_gbtrf(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gbtrf)(m, n, kl, ku, ab, ldab, ipiv, info); \
 };
@@ -604,7 +603,7 @@ GEN_GBTRF(z, npy_complex128)
 
 #define GEN_GBTRS(PREFIX, TYPE) \
 inline void \
-gbtrs(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+call_gbtrs(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gbtrs)(trans, n, kl, ku, nrhs, ab, ldab, ipiv, b, ldb, info); \
 };
@@ -615,9 +614,10 @@ GEN_GBTRS(c, npy_complex64)
 GEN_GBTRS(z, npy_complex128)
 
 
+// s- and d- versions of `gbcon` need integer iwork.
 #define GEN_GBCON(PREFIX, TYPE) \
 inline void \
-gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *anorm, TYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
+call_gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, TYPE *anorm, TYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gbcon)(norm, n, kl, ku, ab, ldab, ipiv, anorm, rcond, work, (CBLAS_INT *)irwork, info); \
 };
@@ -626,10 +626,10 @@ GEN_GBCON(s, float)
 GEN_GBCON(d, double)
 
 
-// c- and z- variants need rwork instead of iwork
+// c- and z- variants need floating type rwork instead of iwork.
 #define GEN_GBCON_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
+call_gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gbcon)(norm, n, kl, ku, ab, ldab, ipiv, anorm, rcond, work, (RTYPE *)irwork, info); \
 };
@@ -1264,25 +1264,55 @@ bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper
     *upper_band = ub;
 }
 
+
+/*
+ * Overload of the original `bandwidth` function that allows to take into
+ * account the strides of the matrix to avoid having to explicitly set a
+ * flag regarding the ordering of the matrix.
+ *
+ * The addressing is done using `npy_intp` instead of `Py_ssize_t` for
+ * consistency.
+ */
+template<typename T>
+void
+bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy_intp *lower_band, npy_intp *upper_band)
+{
+    using value_type = typename type_traits<T>::value_type;
+    value_type *p_data = reinterpret_cast<value_type *>(data);
+    value_type zero = value_type(0.);
+
+    s1 = s1 / sizeof(T);
+    s2 = s2 / sizeof(T);
+    npy_intp lb = 0, ub = 0;
+    for (npy_intp c = 0; c < m-1; c++) {
+        for (npy_intp r = n-1; r > c + lb; r--) {
+            if (p_data[c * s2 + r * s1] != zero) { lb = r - c; break; }
+        }
+        if (c + lb + 1 > m) { break; }
+    }
+    for (npy_intp c = m-1; c > 0; c--) {
+        for (npy_intp r = 0; r < c - ub; r++) {
+            if (p_data[c * s2 + r * s1] != zero) { ub = c - r; break; }
+        }
+        if (c <= ub) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
 template<typename T>
 void
 detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *kl_max, npy_intp *ku_max) {
-    // Looping mechanism copied from `_solve`
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        npy_intp offset = 0;
-        npy_intp temp_idx = idx;
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset += (temp_idx % shape[i]) * strides[i];
-            temp_idx /= shape[i];
-        }
+        T* slice_ptr = compute_slice_ptr(idx, data, ndim, shape, strides);
 
-        T* slice_ptr = (T *)(data + offset/sizeof(T));
-
-        bandwidth(slice_ptr, shape[ndim-2], shape[ndim-1], &kl[idx], &ku[idx]);
+        bandwidth_strided(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
         if (kl[idx] > *kl_max) {*kl_max = kl[idx];}
         if (ku[idx] > *ku_max) {*ku_max = ku[idx];}
     }
 }
+
 
 template<typename T>
 std::tuple<bool, bool>
@@ -1407,39 +1437,45 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
     }
 }
 
+
 /*
- * Helper function for reshuffling a banded matrix into the appropriate
- * structure for ?gbcon and ?gbtrf.
+ * Helper function for reshuffling a banded slice into the appropriate
+ * structure for ?gbcon and ?gbtrf. `s1` and `s2` contain the strides in
+ * the column and row direction (`ndim` - 2 and `ndim` - 1, respectively).
+ * The result is stored in `ab` in Fortran order.
  *
  * It is assumed that `ab` provides at least `ldab` x `n` memory elements,
- * where ldab = 2 * `kl` + `ku` + 1
+ * where ldab >= 2 * `kl` + `ku` + 1
  *
  * Reference: https://www.netlib.org/lapack/explore-html/df/dd6/group__gbtrf_ga682f53142f0398f83f5461c277d23ba2.html#ga682f53142f0398f83f5461c277d23ba2
  */
- template<typename T>
- inline void
- to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab) {
+template<typename T>
+inline void
+to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab, npy_intp s1, npy_intp s2) {
+    s1 = s1 / sizeof(T);
+    s2 = s2 / sizeof(T);
     npy_intp i, j;
 
-    // fill in the diagonal at row ldab - kl
+    // main diagonal
     for (i = 0; i < n; i++) {
-        ab[(i + 1) * ldab - kl - 1] = data[i * (n + 1)];
+        ab[(i + 1) * ldab - kl - 1] = data[i * (s1 + s2)];
     }
 
     // lower bands
     for (i = 0; i < kl; i++) {
-        for (j = 0; j < n - 1 - i; j++) {
-            ab[(j + 1) * ldab - kl + i] = data[j * (n + 1) + i + 1];
+        for (j = 0; j < n - i - 1; j++) {
+            ab[(j + 1) * ldab - kl + i] = data[(i + 1) * s1 + j * (s1 + s2)];
         }
     }
 
     // upper bands
     for (i = 0; i < ku; i++) {
         for (j = i + 1; j < n; j++) {
-            ab[(j + 1) * ldab - kl - i - 2] = data[j * (n + 1) - i - 1];
+            ab[(j + 1) * ldab - kl - i - 2] = data[(i + 1) * s2 + (j - i - 1) * (s1 + s2)];
         }
     }
- }
+}
+
 
 template<typename T>
 inline void
