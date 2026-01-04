@@ -345,10 +345,8 @@ doplib_module_exec(PyObject *module)
 
 static struct PyModuleDef_Slot doplib_module_slots[] = {
     {Py_mod_exec, doplib_module_exec},
-#if PY_VERSION_HEX >= 0x030c00f0  // Python 3.12+
     // signal that this module can be imported in isolated subinterpreters
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-#endif
 #if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
     // signal that this module supports running without an active GIL
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
