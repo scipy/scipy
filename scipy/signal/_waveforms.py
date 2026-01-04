@@ -16,7 +16,7 @@ __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
 
 
-def sawtooth(t, width=1):
+def sawtooth(t, width=1.):
     """
     Return a periodic sawtooth or triangle waveform.
 
