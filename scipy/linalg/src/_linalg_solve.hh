@@ -285,19 +285,41 @@ inline void solve_slice_diagonal(
 // cluttering the main loop in `_solve` by branching to this function early.
 template<typename T>
 int
-_solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT nrhs, npy_intp ndim, npy_intp ndim_b, npy_intp outer_size,
-    npy_intp* shape, npy_intp *strides, npy_intp *shape_b, npy_intp *strides_b, char trans, bool F_contiguous, int overwrite_a, SliceStatus slice_status, SliceStatusVec& vec_status)
+_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, char trans, int overwrite_a, SliceStatus slice_status, SliceStatusVec &vec_status)
 {
     using real_type = typename type_traits<T>::real_type;
-    CBLAS_INT info;
 
+    CBLAS_INT info;
     npy_intp *kls = NULL;
     npy_intp *kus = NULL;
     T* buffer = NULL;
     T* ab = NULL;
 
+    // --------------------------------------------------------------------
+    // Input Array Attributes, duplicate of `_solve()`
+    // --------------------------------------------------------------------
+    T* Am_data = (T *)PyArray_DATA(ap_Am);
+    int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
+    npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
+    npy_intp n = shape[ndim - 1];                // Slice size
+    npy_intp* strides = PyArray_STRIDES(ap_Am);
+    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+
+    T *bm_data = (T *)PyArray_DATA(ap_b);
+    npy_intp ndim_b = PyArray_NDIM(ap_b);
+    npy_intp *shape_b = PyArray_SHAPE(ap_b);
+    npy_intp *strides_b = PyArray_STRIDES(ap_b);
+    npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
+
+    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
+
     // General allocations
-    CBLAS_INT *ipiv = (CBLAS_INT *)malloc(n * sizeof(CBLAS_INT));
+    CBLAS_INT *ipiv = (CBLAS_INT *)malloc(intn * sizeof(CBLAS_INT));
     if (ipiv == NULL) {
         info = -102;
         return int(info);
@@ -305,9 +327,9 @@ _solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT
 
     void *irwork;
     if (type_traits<T>::is_complex) {
-        irwork = malloc(n * sizeof(real_type));
+        irwork = malloc(intn * sizeof(real_type));
     } else {
-        irwork = malloc(n * sizeof(CBLAS_INT));
+        irwork = malloc(intn * sizeof(CBLAS_INT));
     }
 
     if (irwork == NULL) {
@@ -332,7 +354,7 @@ _solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT
     }
 
     // If not F-ordered, the lower and upper bands will be flipped.
-    if (F_contiguous) {
+    if (PyArray_IS_F_CONTIGUOUS(ap_Am)) {
         detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &kl_max, &ku_max);
     } else {
         detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kus, kls, &ku_max, &kl_max);
@@ -383,7 +405,7 @@ _solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT
 
         // structure is known to be banded
         init_status(slice_status, idx, St::BANDED);
-        solve_slice_banded(trans, n, nrhs, data, ipiv, b_data, ab, work2, irwork, kls[idx], kus[idx], slice_status);
+        solve_slice_banded(trans, intn, int_nrhs, data, ipiv, b_data, ab, work2, irwork, kls[idx], kus[idx], slice_status);
 
         if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
             vec_status.push_back(slice_status);
@@ -421,6 +443,12 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     bool posdef_fallback = true;
     SliceStatus slice_status;
 
+    // branch early for `assume_a = banded`
+    if (structure == St::BANDED) {
+        return _solve_assume_banded(ap_Am, ap_b, ret_data, trans, overwrite_a, slice_status, vec_status);
+    }
+
+
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
@@ -451,11 +479,6 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     T tmp = numeric_limits<T>::zero;
     sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp, &lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
-
-    // branch early for `assume_a = banded`
-    if (structure == St::BANDED) {
-        return _solve_assume_banded(Am_data, bm_data, ret_data, intn, int_nrhs, ndim, ndim_b, outer_size, shape, strides, shape_b, strides_b, trans, PyArray_IS_F_CONTIGUOUS(ap_Am), overwrite_a, slice_status, vec_status);
-    }
 
     lwork = _calc_lwork(tmp);
     if ((lwork < 0) ||
