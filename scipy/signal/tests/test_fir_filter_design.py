@@ -4,7 +4,7 @@ import numpy as np
 from pytest import raises as assert_raises, warns as assert_warns
 import pytest
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,

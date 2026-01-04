@@ -10,7 +10,7 @@ from scipy import linalg
 
 from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
                                    xp_result_type)
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
 

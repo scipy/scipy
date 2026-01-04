@@ -1,5 +1,5 @@
 import numpy as np
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
 from scipy.optimize.elementwise import find_root
 from scipy.special import ndtri
