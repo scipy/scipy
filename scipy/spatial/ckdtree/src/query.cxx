@@ -257,7 +257,11 @@ int
 test_nodeinfo_allocator(int m, int num_arenas)
 {
     nodeinfo_pool pool(m);
-    while (pool.pool.size() < num_arenas) {
+    if ((m < 1) || (num_arenas < 1)) {
+        std::invalid_argument e;
+        throw e;
+    }
+    while (pool.pool.size() < (size_t)num_arenas) {
         nodeinfo *info = pool.allocate(); // no need to dellocate, automatic clean up on exit
         // check that the arena is aligned
         if ((ckdtree_intp_t)(pool.pool.back()) % nodeinfo_pool::ARENA_ALIGN) goto error;
