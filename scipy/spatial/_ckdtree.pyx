@@ -29,7 +29,7 @@ cdef extern from "<limits.h>":
     long LONG_MAX
 
 
-__all__ = ['cKDTree']
+__all__ = ['cKDTree', '_test_nodeinfo_allocator']
 
 
 # C++ implementations
@@ -134,6 +134,8 @@ cdef extern from "ckdtree_decl.h":
                                   const np.float64_t p,
                                   const np.float64_t max_distance,
                                   vector[coo_entry] *results) except + nogil
+
+    int test_nodeinfo_allocator(int m, int num_arenas) except + nogil
 
 
 # C++ helper functions
@@ -1643,3 +1645,20 @@ cdef np.ndarray broadcast_contiguous(object x, tuple shape, object dtype):
     cdef np.ndarray ret = np.empty(shape, dtype)
     ret[...] = x
     return ret
+
+
+def _test_nodeinfo_allocator(m, num_arenas):
+    """
+    This is for regression testing the internal allocator of the query method.
+    Assuming a data set with m dimensions, the internal allocator for cKDTree.query
+    is test runned up to the indicated number of arenas. RuntimeError is raised
+    if the memory is not properly aligned.
+    """    
+    cdef int res
+    with nogil:
+        res = test_nodeinfo_allocator(<int> m, <int> num_arenas)
+    if (res == -1): raise RuntimeError("Allocator did not align memory as expected.")
+
+
+
+
