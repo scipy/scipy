@@ -338,7 +338,7 @@ _solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT
         detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kus, kls, &ku_max, &kl_max);
     }
 
-    buffer = (T *)malloc((n * n + n * nrhs + 3 * n) * sizeof(T));
+    buffer = (T *)malloc((2 * n * n + n * nrhs + 3 * n) * sizeof(T));
     ab = (T *)malloc(((2 * kl_max + ku_max + 1) * n) * sizeof(T));
 
     if (buffer == NULL || ab == NULL) {
@@ -354,8 +354,9 @@ _solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT
 
     // Chop up buffer
     T* data = &buffer[0];
-    T* b_data = &buffer[n * n];
-    T* work2 = &buffer[n * n + n * nrhs]; // for `gbcon` call
+    T *scratch = &buffer[n * n];
+    T* b_data = &buffer[2 * n * n];
+    T* work2 = &buffer[2 * n * n + n * nrhs]; // for `gbcon` call
 
     // Main loop traversal, taken from `_solve`
     for (npy_intp idx = 0; idx < outer_size; idx++) {
@@ -367,7 +368,8 @@ _solve_assume_banded(T* Am_data, T* bm_data, T* ret_data, CBLAS_INT n, CBLAS_INT
             temp_idx /= shape[i];
         }
         T* slice_ptr = (T *)(Am_data + (offset / sizeof(T)));
-        copy_slice_F(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
+        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+        swap_cf(scratch, data, n, n, n);
 
         // XXX: dedupe (cfr. _solve)
         offset = 0;
@@ -526,7 +528,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             temp_idx /= shape[i];
         }
         T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
-        copy_slice_F(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
+        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+        swap_cf(scratch, data, n, n, n);
 
         // copy the r.h.s, too; XXX: dedupe
         offset = 0;
