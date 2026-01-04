@@ -397,7 +397,7 @@ class TestSawtoothWaveform:
 @make_xp_test_case(square)
 class TestSquareWaveform:
     def test_unique(self, xp):
-        t = xp.linspace(0, 2*np.pi, 1000)
+        t = xp.linspace(-2*np.pi, 2*np.pi, 1000)
         y = square(t)
         assert y.shape == t.shape
         unique = np.unique(_xp_copy_to_numpy(y))
@@ -430,12 +430,12 @@ class TestSquareWaveform:
 
     @pytest.mark.parametrize("duty, expected", [(1., 1.), (0., -1.)])
     def test_duty_edge_cases(self, duty, expected, xp):
-        t = xp.linspace(0, 2*xp.pi, 100)
+        t = xp.linspace(-2*xp.pi, 2*xp.pi, 200)
         y = square(t, duty=duty)
         xp_assert_equal(y, xp.full(t.shape, expected))
 
     def test_periodic(self, xp):
-        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False, dtype=xp.float64)
+        t = xp.linspace(-2*xp.pi, 2*xp.pi, 20, endpoint=False, dtype=xp.float64)
         y1 = square(t, duty=0.4)
         y2 = square(t + 2*xp.pi, duty=0.4)
 
@@ -443,7 +443,7 @@ class TestSquareWaveform:
 
     @pytest.mark.parametrize("duty", [-0.1, 1.1, 2.0])
     def test_invalid_duty(self, duty, xp):
-        t = xp.linspace(0, 2*np.pi, 10)
+        t = xp.linspace(0, 2*xp.pi, 10)
         y = square(t, duty=duty)
 
         assert xp.all(xp.isnan(y))
