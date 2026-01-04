@@ -417,7 +417,7 @@ class TestSawtoothWaveform:
         t = xp.linspace(0, 2*xp.pi, 1000)
         y = sawtooth(t, width=0.5)
         xp_assert_close(y, xp.flip(y))
-        xp_assert_close(sawtooth(-t, 0)[1:-1], sawtooth(t)[1:-1])
+        xp_assert_close(sawtooth(-t, 0.)[1:-1], sawtooth(t)[1:-1])
 
 
 @make_xp_test_case(square)
