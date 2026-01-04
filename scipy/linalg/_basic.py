@@ -5,17 +5,15 @@
 #              and Jake Vanderplas, August 2012
 
 import warnings
-from warnings import warn
 from itertools import product
 import numpy as np
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
+from .lapack import get_lapack_funcs, _normalize_lapack_dtype
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
-                                      ishermitian)
+from ._cythonized_array_utils import find_det_from_lu
 from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -24,44 +22,6 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 
 # Linear equations
-def _solve_check(n, info, lamch=None, rcond=None):
-    """ Check arguments during the different steps of the solution phase """
-    if info < 0:
-        raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument.')
-    elif 0 < info or rcond == 0:
-        raise LinAlgError('Matrix is singular.')
-
-    if lamch is None:
-        return
-    E = lamch('E')
-    if not (rcond >= E):  # `rcond < E` doesn't handle NaN
-        warn(f'Ill-conditioned matrix (rcond={rcond:.6g}): '
-             'result may not be accurate.',
-             LinAlgWarning, stacklevel=3)
-
-
-def _find_matrix_structure(a):
-    n = a.shape[0]
-    n_below, n_above = bandwidth(a)
-
-    if n_below == n_above == 0:
-        kind = 'diagonal'
-    elif n_above == 0:
-        kind = 'lower triangular'
-    elif n_below == 0:
-        kind = 'upper triangular'
-    elif n_above <= 1 and n_below <= 1 and n > 3:
-        kind = 'tridiagonal'
-    elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
-        kind = 'hermitian'
-    elif issymmetric(a):
-        kind = 'symmetric'
-    else:
-        kind = 'general'
-
-    return kind, n_below, n_above
-
-
 def _format_emit_errors_warnings(err_lst):
     """Format/emit errors/warnings from a lowlevel batched routine.
 
@@ -277,7 +237,8 @@ def solve(a, b, lower=False, overwrite_a=False,
         return out[..., 0] if b_is_1D else out
 
     # heavy lifting
-    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed)
+    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed,
+                                        overwrite_a, overwrite_b)
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
@@ -285,46 +246,6 @@ def solve(a, b, lower=False, overwrite_a=False,
     if b_is_1D:
         x = x[..., 0]
     return x
-
-
-def _matrix_norm_diagonal(a, check_finite):
-    # Equivalent of dlange for diagonal matrix, assuming
-    # norm is either 'I' or '1' (really just not the Frobenius norm)
-    d = np.diag(a)
-    d = np.asarray_chkfinite(d) if check_finite else d
-    return np.abs(d).max()
-
-
-def _matrix_norm_tridiagonal(norm, a, check_finite):
-    # Equivalent of dlange for tridiagonal matrix, assuming
-    # norm is either 'I' or '1'
-    if norm == 'I':
-        a = a.T
-    # Context to avoid warning before error in cases like -inf + inf
-    with np.errstate(invalid='ignore'):
-        d = np.abs(np.diag(a))
-        d[1:] += np.abs(np.diag(a, 1))
-        d[:-1] += np.abs(np.diag(a, -1))
-    d = np.asarray_chkfinite(d) if check_finite else d
-    return d.max()
-
-
-def _matrix_norm_triangular(structure, norm, a, check_finite):
-    a = np.asarray_chkfinite(a) if check_finite else a
-    lantr = get_lapack_funcs('lantr', (a,))
-    return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
-
-
-def _matrix_norm_banded(kl, ku, norm, ab, check_finite):
-    ab = np.asarray_chkfinite(ab) if check_finite else ab
-    langb = get_lapack_funcs('langb', (ab,))
-    return langb(norm, kl, ku, ab)
-
-
-def _matrix_norm_general(norm, a, check_finite):
-    a = np.asarray_chkfinite(a) if check_finite else a
-    lange = get_lapack_funcs('lange', (a,))
-    return lange(norm, a)
 
 
 def _to_banded(n_below, n_above, a):
