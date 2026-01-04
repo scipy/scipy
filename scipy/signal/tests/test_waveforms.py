@@ -447,3 +447,7 @@ class TestSquareWaveform:
         y = square(t, duty=duty)
 
         assert xp.all(xp.isnan(y))
+
+    def test_small_negative_input(self, xp):
+        res = square(xp.asarray(-xp.finfo(xp.float64).eps, dtype=xp.float64), 1)
+        xp_assert_equal(res, xp.asarray(1.0, dtype=xp.float64))

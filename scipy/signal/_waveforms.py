@@ -8,7 +8,7 @@ import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
-from scipy._lib._array_api import array_namespace, xp_promote
+from scipy._lib._array_api import array_namespace, xp_promote, xp_fmod
 import scipy._lib.array_api_extra as xpx
 
 
@@ -142,12 +142,15 @@ def square(t, duty=0.5):
     mask1 = (w > 1) | (w < 0)
     y = xpx.at(y, mask1).set(xp.nan)
 
-    # on the interval 0 to duty*2*pi function is 1
-    tmod = t % (2 * xp.pi)
-    mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    # on the interval -2*pi to -2*pi*(1 - duty) and 0 to duty*2*pi function is 1
+    tmod = xp_fmod(t, xp.asarray(2*xp.pi), xp=xp)
+    mask2 = ~mask1 & (
+        ((0 <= tmod) & (tmod < w*2*xp.pi))
+        | ((-2*pi <= tmod) & (tmod < -(1 - w)*2*xp.pi))
+    )
     y = xpx.at(y, mask2).set(1)
 
-    # on the interval duty*2*pi to 2*pi function is -1
+    # on the interval -2*pi*(1 - duty) to 0 and duty*2*pi to 2*pi function is -1
     mask3 = ~(mask1 | mask2)
     y = xpx.at(y, mask3).set(-1)
     return y
