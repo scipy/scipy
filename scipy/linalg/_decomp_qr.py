@@ -36,7 +36,7 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
 
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
         Whether data in `a` is overwritten (may improve performance if
@@ -54,7 +54,7 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the
+        ``A[..., :, P] = Q @ R`` as above, but where P is chosen such that the
         diagonal of R is non-increasing. Equivalently, albeit less efficiently,
         an explicit P matrix may be formed explicitly by permuting the rows or columns
         (depending on the side of the equation on which it is to be used) of
@@ -67,13 +67,13 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     Returns
     -------
     Q : float or complex ndarray
-        Of shape (M, M), or (M, K) for ``mode='economic'``. Not returned
+        Of shape (..., M, M), or (..., M, K) for ``mode='economic'``. Not returned
         if ``mode='r'``. Replaced by tuple ``(Q, TAU)`` if ``mode='raw'``.
     R : float or complex ndarray
-        Of shape (M, N), or (K, N) for ``mode in ['economic', 'raw']``.
+        Of shape (..., M, N), or (..., K, N) for ``mode in ['economic', 'raw']``.
         ``K = min(M, N)``.
     P : int ndarray
-        Of shape (N,) for ``pivoting=True``. Not returned if
+        Of shape (..., N,) for ``pivoting=True``. Not returned if
         ``pivoting=False``.
 
     Raises
@@ -86,8 +86,8 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
     dorgqr, zungqr, dgeqp3, and zgeqp3.
 
-    If ``mode=economic``, the shapes of Q and R are (M, K) and (K, N) instead
-    of (M,M) and (M,N), with ``K=min(M,N)``.
+    If ``mode=economic``, the shapes of Q and R are (..., M, K) and (..., K, N) instead
+    of (..., M,M) and (..., M,N), with ``K=min(M,N)``.
 
     Examples
     --------
