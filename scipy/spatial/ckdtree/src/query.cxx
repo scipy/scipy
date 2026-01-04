@@ -258,7 +258,7 @@ test_nodeinfo_allocator(int m, int num_arenas)
 {
     nodeinfo_pool pool(m);
     if ((m < 1) || (num_arenas < 1)) {
-        std::invalid_argument e;
+        std::invalid_argument e("m and num_arenas must be at least 1");
         throw e;
     }
     while (pool.pool.size() < (size_t)num_arenas) {
