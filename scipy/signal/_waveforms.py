@@ -146,7 +146,7 @@ def square(t, duty=0.5):
     tmod = xp_fmod(t, xp.asarray(2*xp.pi), xp=xp)
     mask2 = ~mask1 & (
         ((0 <= tmod) & (tmod < w*2*xp.pi))
-        | ((-2*pi <= tmod) & (tmod < -(1 - w)*2*xp.pi))
+        | ((-2*xp.pi <= tmod) & (tmod < -(1 - w)*2*xp.pi))
     )
     y = xpx.at(y, mask2).set(1)
 
