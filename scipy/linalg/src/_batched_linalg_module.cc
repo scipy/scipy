@@ -319,7 +319,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     shape_1[ndim-2] = N;
-    ap_P = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, NPY_INT); // The pivots are integers
+    ap_P = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64);
     if (!ap_P) {
         Py_DECREF(ap_Q);
         Py_DECREF(ap_R);
