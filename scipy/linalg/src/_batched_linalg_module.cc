@@ -472,13 +472,19 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_vr = NULL;
     PyArrayObject *ap_vl = NULL;
     int compute_vl=0;
-    int compute_vr=0;
+    int compute_vr=1;
+
+    PyArrayObject *ap_Bm = NULL; // FIXME
 
     int info = 0;
     SliceStatusVec vec_status;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!pp", &PyArray_Type, (PyObject **)&ap_Am, &compute_vl, &compute_vr)) {
+    if (!PyArg_ParseTuple(args, "O!pp|O!",
+            &PyArray_Type, (PyObject **)&ap_Am,
+            &compute_vl, &compute_vr,
+            &PyArray_Type, (PyObject **)&ap_Bm)
+    ) {
         return NULL;
     }
 
@@ -548,16 +554,16 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _eig<float>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _eig<double>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _eig<npy_complex64>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _eig<npy_complex128>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
