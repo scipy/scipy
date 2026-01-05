@@ -2214,13 +2214,15 @@ function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
 
 end function <prefix>lantr
 
-subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
+subroutine <prefix>larfg(n, alpha, x, incx, tau)
+    callstatement (*f2py_func)(&n,&alpha,x,&incx,&info)
+    callprotoargument F_INT*, <ctype>*, <ctype>*, F_INT*, F_INT*
+
     integer intent(in), check(n>=1) :: n
     <ftype> intent(in,out) :: alpha
-    <ftype> intent(in,copy,out), dimension(lx) :: x
+    <ftype> intent(in,copy,out), dimension(1+(n-2)*abs(incx)), depend(n,incx) :: x
     integer intent(in), check(incx>0||incx<0) :: incx = 1
     <ftype> intent(out) :: tau
-    integer intent(hide),depend(x,n,incx),check(lx > (n-2)*incx) :: lx = len(x)
 end subroutine <prefix>larfg
 
 subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
