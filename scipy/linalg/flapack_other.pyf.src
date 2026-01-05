@@ -2215,8 +2215,8 @@ function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
 end function <prefix>lantr
 
 subroutine <prefix>larfg(n, alpha, x, incx, tau)
-    callstatement (*f2py_func)(&n,&alpha,x,&incx,&info)
-    callprotoargument F_INT*, <ctype>*, <ctype>*, F_INT*, F_INT*
+    callstatement (*f2py_func)(&n,&alpha,x,&incx,&tau)
+    callprotoargument F_INT*, <ctype>*, <ctype>*, F_INT*, <ctype>*
 
     integer intent(in), check(n>=1) :: n
     <ftype> intent(in,out) :: alpha
