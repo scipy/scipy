@@ -16,11 +16,7 @@
 
 
 // Microsoft CRT std::free cannot handle aligned allocations so we need this cludge
-#ifdef _WIN64
-    #include <malloc.h>
-    #define ckdtree_aligned_alloc(align,size) _aligned_malloc((size_t)size,(size_t)align)
-    #define ckdtree_aligned_free(ptr) _aligned_free(ptr)
-#elif _WIN32
+#if defined(_WIN64) || defined(_WIN32)
     #include <malloc.h>
     #define ckdtree_aligned_alloc(align,size) _aligned_malloc((size_t)size,(size_t)align)
     #define ckdtree_aligned_free(ptr) _aligned_free(ptr)
