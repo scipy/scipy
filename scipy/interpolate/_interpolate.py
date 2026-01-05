@@ -487,7 +487,7 @@ class interp1d(_Interpolator1D):
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
-        # 4. Calculate the slope of regions that each x_new value falls in.
+        # 4. Calculate y_new using de Boor's algorithm for linear interpolation.
         lo = x_new_indices - 1
         hi = x_new_indices
 
@@ -496,13 +496,13 @@ class interp1d(_Interpolator1D):
         y_lo = self._y[lo]
         y_hi = self._y[hi]
 
-        # Note that the following two expressions rely on the specifics of the
+        # Note that the following expression relies on the specifics of the
         # broadcasting semantics.
-        slope = (y_hi - y_lo) / (x_hi - x_lo)[:, None]
-
-        # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new - x_lo)[:, None] + y_lo
-
+        y_new = (
+            ((x_new-x_lo)/(x_hi-x_lo))[:, None]*y_hi
+            +((x_hi-x_new)/(x_hi-x_lo))[:, None]*y_lo
+            )
+        
         return y_new
 
     def _call_nearest(self, x_new):
