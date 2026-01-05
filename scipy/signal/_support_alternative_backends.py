@@ -162,7 +162,7 @@ abcd_normalize_extra_note = \
     """
 
 capabilities_overrides = {
-    "abcd_normalize": xp_capabilities(extra_note=abcd_normalize_extra_note)
+    "abcd_normalize": xp_capabilities(extra_note=abcd_normalize_extra_note),
     "bessel": xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True),
     "bilinear": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
