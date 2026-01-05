@@ -23,6 +23,7 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
 # Local imports
 from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import LinAlgError, _datacopied, norm
+from ._basic import _ensure_dtyle_sdcz
 from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native
 from .lapack import get_lapack_funcs, _compute_lwork
 from . import _batched_linalg
@@ -207,7 +208,8 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     array([[0.70710678+0.j        , 0.70710678-0.j        ],
            [0.        -0.70710678j, 0.        +0.70710678j]])
     """
-    if b is not None or homogeneous_eigvals:
+    #  if b is not None or homogeneous_eigvals:
+    if homogeneous_eigvals:
         return eig0(a, b, left, right, overwrite_a, overwrite_b,
                     check_finite, homogeneous_eigvals
         )
@@ -226,12 +228,30 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
+    b1 = b
+    if b1 is not None:
+        b1 = _asarray_validated(b, check_finite=check_finite)
+        a1, b1 = _ensure_dtype_cdsz(a1, b1)  # NB: makes a1.dtype == b1.dtype, if needed
+        overwrite_b = overwrite_b or (_datacopied(b1, b))
+        b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
+
+        if len(b1.shape) < 2 or b1.shape[-1] != b1.shape[-2]:
+            raise ValueError('expected square matrix')
+
+        if a1.shape[-1] != b1.shape[-1]:
+            raise ValueError('a and b must have the same shape')
+
+        # broadcast batch dimensions of b1 and a1
+        batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
+        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
+        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+
     # accommodate empty arrays
     if a1.shape[-1] == 0 or a1.shape[-2] == 0:
         batch_shape = a1.shape[:-2]
         w_n, vr_n = eig(np.eye(2, dtype=a1.dtype))
         w = np.empty(batch_shape + (0,), dtype=w_n.dtype)
-        w = _make_eigvals(w, None, homogeneous_eigvals)
+        w = _make_eigvals(w, None, homogeneous_eigvals)      # XXX
         vl = np.empty(batch_shape + (0, 0), dtype=vr_n.dtype)
         vr = np.empty(batch_shape + (0, 0), dtype=vr_n.dtype)
         if not (left or right):
@@ -242,8 +262,19 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             return w, vl
         return w, vr
 
-    res = _batched_linalg._eig(a1, left, right)
+    if b1 is None:
+        res = _batched_linalg._eig(a1, left, right)
+    else:
+        res = _batched_linalg._eig(a1, left, right, b1)
     w, vl, vr, err_lst = res
+
+    if err_lst:
+        # XXX: find a test case to cover this
+        mesg = (
+            f"Internal geev return info = {[e['lapack_info'] for e in err_lst]} for "
+            f"slices {[e['num'] for e in err_lst]}."
+        )
+        raise LinAlgError(mesg)
 
     # backwards compat: cast to reals if all eigenvalues have zero imaginary parts
     a_is_real = a1.dtype in (np.float32, np.float64)
@@ -254,13 +285,12 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         if right:
             vr = vr.real
 
-    if err_lst:
-        # XXX: find a test case to cover this
-        mesg = (
-            f"Internal geev return info = {[e['lapack_info'] for e in err_lst]} for "
-            f"slices {[e['num'] for e in err_lst]}."
-        )
-        raise LinAlgError(mesg)
+    # eigenvectors returned by ?GGEV are NOT normalized
+    if b1 is not None:
+        if right:
+            vr /= np.linalg.vector_norm(vr, axis=-2, keepdims=True)
+        if left:
+            vl /= np.linalg.vector_norm(vl, axis=-2, keepdims=True)
 
     if not (left or right):
         return w
