@@ -140,6 +140,10 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     -------
     A, B, C, D : array
         State-space matrices as two-dimensional arrays with identical dtype.
+        The result dtype is determined based on the standard
+        `dtype promotion rules <https://numpy.org/doc/2.3/reference/arrays.promotion.html>`_
+        except for when the inputs are all of integer dtype, in which case the returned
+        arrays will have the default floating point dtype of ``float64``.
 
     Raises
     ------
@@ -258,9 +262,10 @@ def ss2tf(A, B, C, D, input=0):
     Notes
     -----
     Before calculating `num` and `den`, the function `abcd_normalize` is called to
-    convert the parameters `A`, `B`, `C`, `D` into two-dimesional arrays. Their dtypes
-    will be "complex128" if any of the matrices are complex-valued. Otherwise, they
-    will be of type "float64".
+    convert the parameters `A`, `B`, `C`, `D` into two-dimesional arrays of the
+    same dtype. The resulting dtype will be based on NumPy's dtype promotion rules,
+    except in the case where each of `A`, `B`, `C`, and `D` has integer dtype, in which
+    case the resulting dtype will be the default floating point dtype of ``float64``.
 
     The :ref:`tutorial_signal_state_space_representation` section of the
     :ref:`user_guide` presents the corresponding definitions of continuous-time and
