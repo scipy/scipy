@@ -1035,39 +1035,44 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
     }
 }
 
+
 /*
  * Helper function for reshuffling a banded matrix into the appropriate
- * structure for ?gbcon and ?gbtrf.
+ * structure for ?gbcon and ?gbtrf. `s1` and `s2` contain the strides in
+ * the column and row direction (`ndim` - 2 and `ndim` - 1, respectively).
+ * The result is stored in `ab` in Fortran order.
+ *
+ * The strides are assumed not to be normalized yet.
  *
  * It is assumed that `ab` provides at least `ldab` x `n` memory elements,
- * where ldab = 2 * `kl` + `ku` + 1
+ * where ldab >= 2 * `kl` + `ku` + 1
  *
  * Reference: https://www.netlib.org/lapack/explore-html/df/dd6/group__gbtrf_ga682f53142f0398f83f5461c277d23ba2.html#ga682f53142f0398f83f5461c277d23ba2
  */
- template<typename T>
- inline void
- to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab) {
+template<typename T>
+inline void
+to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab, npy_intp s1, npy_intp s2) {
     npy_intp i, j;
 
-    // fill in the diagonal at row ldab - kl
+    // main diagonal
     for (i = 0; i < n; i++) {
-        ab[(i + 1) * ldab - kl - 1] = data[i * (n + 1)];
+        ab[(i + 1) * ldab - kl - 1] = data[i * (s1 / sizeof(T) + s2 / sizeof(T))];
     }
 
     // lower bands
     for (i = 0; i < kl; i++) {
-        for (j = 0; j < n - 1 - i; j++) {
-            ab[(j + 1) * ldab - kl + i] = data[j * (n + 1) + i + 1];
+        for (j = 0; j < n - i - 1; j++) {
+            ab[(j + 1) * ldab - kl + i] = data[(i + 1) * s1 / sizeof(T) + j * (s1 / sizeof(T) + s2 / sizeof(T))];
         }
     }
 
     // upper bands
     for (i = 0; i < ku; i++) {
         for (j = i + 1; j < n; j++) {
-            ab[(j + 1) * ldab - kl - i - 2] = data[j * (n + 1) - i - 1];
+            ab[(j + 1) * ldab - kl - i - 2] = data[(i + 1) * s2 / sizeof(T) + (j - i - 1) * (s1 / sizeof(T) + s2 / sizeof(T))];
         }
     }
- }
+}
 
 template<typename T>
 inline void

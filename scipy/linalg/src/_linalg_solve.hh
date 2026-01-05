@@ -204,17 +204,15 @@ void solve_slice_tridiag(
     }
 }
 
-// Banded array solve
+// Banded array solve, assumes the data is fed in in the banded structure `ab` already.
 template<typename T>
 inline void solve_slice_banded(
-    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, T *ab, T *work2, void *irwork,
+    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *ab, CBLAS_INT *ipiv, T *b_data, T *work2, void *irwork,
     CBLAS_INT kl, CBLAS_INT ku, SliceStatus &status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
-    // Get `data` in the correct structure for LAPACK calls
     CBLAS_INT ldab = 2 * kl + ku + 1;
-    to_banded(data, N, kl, ku, ldab, ab);
 
     CBLAS_INT info;
     char norm = '1';
@@ -360,7 +358,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kus, kls, &ku_max, &kl_max);
     }
 
-    buffer = (T *)malloc((2 * n * n + n * nrhs + 3 * n) * sizeof(T));
+    buffer = (T *)malloc((n * nrhs + 3 * n) * sizeof(T));
     ab = (T *)malloc(((2 * kl_max + ku_max + 1) * n) * sizeof(T));
 
     if (buffer == NULL || ab == NULL) {
@@ -375,10 +373,8 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     }
 
     // Chop up buffer
-    T* data = &buffer[0];
-    T *scratch = &buffer[n * n];
-    T* b_data = &buffer[2 * n * n];
-    T* work2 = &buffer[2 * n * n + n * nrhs]; // for `gbcon` call
+    T* b_data = &buffer[0];
+    T* work2 = &buffer[n * nrhs]; // for `gbcon` call
 
     // Main loop traversal, taken from `_solve`
     for (npy_intp idx = 0; idx < outer_size; idx++) {
@@ -390,8 +386,10 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
             temp_idx /= shape[i];
         }
         T* slice_ptr = (T *)(Am_data + (offset / sizeof(T)));
-        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-        swap_cf(scratch, data, n, n, n);
+
+        // Directly take into banded storage
+        npy_intp ldab = 2 * kls[idx] + kus[idx] + 1;
+        to_banded(slice_ptr, n, kls[idx], kus[idx], ldab, ab, strides[ndim-2], strides[ndim-1]);
 
         // XXX: dedupe (cfr. _solve)
         offset = 0;
@@ -405,7 +403,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
         // structure is known to be banded
         init_status(slice_status, idx, St::BANDED);
-        solve_slice_banded(trans, intn, int_nrhs, data, ipiv, b_data, ab, work2, irwork, kls[idx], kus[idx], slice_status);
+        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work2, irwork, kls[idx], kus[idx], slice_status);
 
         if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
             vec_status.push_back(slice_status);
