@@ -34,7 +34,7 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
 
 template<typename T>
 int
-_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
+_reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
     using npy_complex_type = typename type_traits<T>::npy_complex_type;
@@ -48,7 +48,7 @@ _eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObj
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];
     npy_intp* strides = PyArray_STRIDES(ap_Am);
-    
+
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
     npy_intp outer_size = 1;
     if (ndim > 2) {
@@ -176,3 +176,186 @@ _eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObj
 
     return 0;
 }
+
+
+template<typename T>
+int
+_gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
+{
+    using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using npy_complex_type = typename type_traits<T>::npy_complex_type;
+    SliceStatus slice_status;
+
+    // --------------------------------------------------------------------
+    // Input Array Attributes
+    // --------------------------------------------------------------------
+    T* Am_data = (T *)PyArray_DATA(ap_Am);
+    int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
+    npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
+    npy_intp n = shape[ndim - 1];
+    npy_intp *strides_A = PyArray_STRIDES(ap_Am);
+
+    T *Bm_data = (T *)PyArray_DATA(ap_Bm);
+    // shape(B) == shape(A)
+    npy_intp *strides_B = PyArray_STRIDES(ap_Bm);
+
+    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
+    npy_intp outer_size = 1;
+    if (ndim > 2) {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+
+    // Output array pointers
+    npy_complex_type *ptr_W = (npy_complex_type *)PyArray_DATA(ap_w);
+
+    int compute_vl = (ap_vl != NULL);
+    int compute_vr = (ap_vr != NULL);
+
+    npy_complex_type *ptr_vl = compute_vl ? (npy_complex_type *)PyArray_DATA(ap_vl) : NULL;
+    npy_complex_type *ptr_vr = compute_vr ? (npy_complex_type *)PyArray_DATA(ap_vr) : NULL;
+
+    // --------------------------------------------------------------------
+    // Workspace computation and allocation
+    // --------------------------------------------------------------------
+    CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
+    T tmp = numeric_limits<T>::zero;
+
+    char jobvl = compute_vl ? 'V': 'N', jobvr = compute_vr ? 'V' : 'N';
+    CBLAS_INT lda = n;
+    CBLAS_INT ldb = n;
+    CBLAS_INT ldvl = n;
+    CBLAS_INT ldvr = n;
+
+    // similar to geev, allocate rwork right away (not sure if ?ggev segfaults otherwise, too)
+    real_type *rwork = NULL;
+    if (type_traits<T>::is_complex) {
+        rwork = (real_type *)malloc(8*n*sizeof(real_type));
+        if (rwork == NULL) {
+            return -100;
+        }
+    }
+
+    // query LWORK
+    ggev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, &ldb, NULL, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
+    if (info != 0) { free(rwork);  return -101; }
+
+    lwork = _calc_lwork(tmp);
+    if (lwork < 0) { free(rwork); return -102; }
+
+    // allocate
+    npy_intp bufsize = n*n + n*n + lwork + n + n;
+    npy_intp alphai_size = type_traits<T>::is_complex ? 0 : n ;
+    bufsize += alphai_size;
+
+    npy_intp vl_size = compute_vl ? ldvl*n : 0;
+    npy_intp vr_size = compute_vr ? ldvr*n : 0;
+    bufsize += vl_size + vr_size;
+
+    T *buf = (T *)malloc(bufsize*sizeof(T));
+    if (buf == NULL) { free(rwork); return -103; }
+
+    // partition the workspace
+    T *data_A = &buf[0];
+    T *data_B = &buf[n*n];
+    T *work = &buf[2*n*n];
+    T *alphar = &buf[2*n*n + lwork];
+    T *beta = &buf[2*n*n + lwork + n];
+
+    T *alphai = NULL;
+    if(alphai_size > 0) { alphai = &buf[2*n*n + lwork + 2*n ]; }
+
+    T *buf_vl = NULL;
+    if(vl_size > 0) { buf_vl = &buf[2*n*n + lwork + 2*n + alphai_size]; }
+
+    T *buf_vr = NULL;
+    if(vr_size > 0) { buf_vr = &buf[2*n*n + lwork + 2*n + alphai_size + vl_size]; }
+
+
+    // --------------------------------------------------------------------
+    // Main loop to traverse the slices
+    // --------------------------------------------------------------------
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        init_status(slice_status, idx, St::GENERAL);
+
+        // copy the slice to `data` in F order
+        T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides_A);
+        copy_slice_F(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1]);
+
+        T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
+        copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
+
+
+        // compute eigenvalues for the slice
+        ggev(&jobvl, &jobvr, &intn, data_A, &lda, data_B, &ldb, alphar, alphai, beta, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
+
+        if(info != 0) {
+            slice_status.lapack_info = (Py_ssize_t)info;
+            vec_status.push_back(slice_status);
+
+            // cut it short on error in any slice
+            goto done;
+        }
+
+        // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
+        if constexpr (type_traits<T>::is_complex) {
+            std::complex<real_type> *p_alpha = reinterpret_cast<std::complex<real_type> *>(alphar);
+            std::complex<real_type> *p_beta = reinterpret_cast<std::complex<real_type> *>(beta);
+            std::complex<real_type> val;
+
+            for(npy_intp i=0; i<n; i++) {
+                // XXX edge cases: alpha=0, beta=0 etc
+                val = p_alpha[i] / p_beta[i];
+                ptr_W[i] = cpack(std::real(val), std::imag(val)); //  p_alpha[i] / p_beta[i];
+            }
+            ptr_W += n;
+
+            if (compute_vl) {
+                copy_slice_F_to_C(ptr_vl, buf_vl, n, n, ldvl);
+                ptr_vl += n*n;
+            }
+            if (compute_vr) {
+                copy_slice_F_to_C(ptr_vr, buf_vr, n, n, ldvr);
+                ptr_vr += n*n;
+            }
+        }
+        else {
+            // convert alphar,alphai,beta into w
+            for(npy_intp i=0; i<n; i++) {
+                // XXX edge cases: alpha=0, beta=0 etc
+                ptr_W[i] = cpack(alphar[i] / beta[i], alphai[i] / beta[i]);
+            }
+            ptr_W += n;
+
+            if (compute_vl) {
+                transform_eigvecs(ptr_vl, buf_vl, ldvl, n, alphai);
+                ptr_vl += n*n;
+            }
+            if (compute_vr) {
+                transform_eigvecs(ptr_vr, buf_vr, ldvr, n, alphai);
+                ptr_vr += n*n;
+            }
+        }
+    }
+
+
+ done:
+    free(buf);
+    free(rwork);
+
+    return 0;
+}
+
+template<typename T>
+int
+_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
+{
+    int info;
+    if (ap_Bm == NULL) {
+        info = _reg_eig<T>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+    }
+    else {
+        info = _gen_eig<T>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
+    }
+    return info;
+}
+
