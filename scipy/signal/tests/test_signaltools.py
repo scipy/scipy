@@ -2775,9 +2775,9 @@ class TestLFilterZI:
         with pytest.raises(ValueError, match="^Numerator `b` and Denominator `a` must"):
              lfilter_zi(b=1, a=xp.eye(3))  # a must be 1-d array
         with pytest.raises(ValueError, match="^First coefficient of parameter `a` "):
-            lfilter_zi(b=1, a=[0, 0, 0])
+            lfilter_zi(b=1, a=xp.asarray([0, 0, 0]))
         with pytest.raises(ValueError, match="^Filter not stable due to sum"):
-            lfilter_zi(b=1, a=[-1, 1, -2, 2])
+            lfilter_zi(b=1, a=xp.asarray([-1, 1, -2, 2]))
 
     @skip_xp_backends(np_only=True, reason='list inputs are numpy specific')
     def test_array_like(self, xp):
