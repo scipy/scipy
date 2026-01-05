@@ -28,9 +28,7 @@ from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
-    xp_swapaxes
-
-)
+    xp_promote, xp_swapaxes,)
 from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_extra as xpx
 
@@ -4411,12 +4409,12 @@ def lfilter_zi(b, a):
     # should produce the same result. Though, no obvious algorithmic advantages over
     # this implementation could be identified.
 
-
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
     # b to be 2D.
-    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
-    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
+    b, a = xp_promote(b, a, xp=xp, force_floating=True)  # need floats for division
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
 
     if not (b.ndim == a.ndim == 1):
         raise ValueError("Numerator `b` and Denominator `a` must be 1-D arrays, " +
