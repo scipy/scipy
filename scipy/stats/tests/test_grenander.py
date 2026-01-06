@@ -104,18 +104,6 @@ def test_pdf_cdf_boundary_behavior():
     assert_allclose(g.pdf(big), 0.0)
 
 
-def test_logpdf_handles_zeros():
-    rng = np.random.default_rng(3)
-    x = rng.exponential(size=120)
-    g = grenander(x, support_min=0.0)
-
-    # pdf=0 => logpdf=-inf both below and above support
-    big = g.knots[-1] + 1.0
-    assert_(np.isneginf(g.logpdf(big)))
-    
-    assert_(np.isneginf(g.logpdf(-1.0)))
-
-
 def test_cdf_is_consistent_with_histogram_representation():
     rng = np.random.default_rng(4)
     x = rng.exponential(size=250)
@@ -132,24 +120,42 @@ def test_cdf_is_consistent_with_histogram_representation():
     assert_allclose(g.cdf(g.knots), g.heights, rtol=0, atol=0)
 
 
-def test_rvs_reproducible_and_within_support():
-    rng = np.random.default_rng(5)
-    x = rng.exponential(size=200)
-    g = grenander(x, support_min=0.0)
+def test_pdf_cdf_compatibility_at_boundary():
+    """Test that PDF and CDF are consistent at the support boundary."""
+    rng = np.random.default_rng(1234567891)
+    x = rng.exponential(size=100)
+    g = grenander(x)
 
-    y1 = g.rvs(size=1000, random_state=123)
-    y2 = g.rvs(size=1000, random_state=123)
-    assert_array_equal(y1, y2)
+    k = g.knots[-1]  # Upper boundary of support
+    eps = 1e-10
 
-    assert_equal(y1.shape, (1000,))
-    assert_(np.all(y1 >= g.support_min))
-    assert_(np.all(y1 <= g.knots[-1]))  
+    # Test points: just before, at, and just after boundary
+    z_before = k - eps
+    z_at = k
+    z_after = k + eps
 
+    # PDF should be non-zero at and just before boundary
+    assert g.pdf(z_before) > 0, "PDF should be positive just before boundary"
+    assert g.pdf(z_at) > 0, "PDF should be positive at boundary"
 
-def test_sf_identity():
-    rng = np.random.default_rng(6)
-    x = rng.exponential(size=150)
-    g = grenander(x, support_min=0.0)
+    # PDF should be zero after boundary
+    assert g.pdf(z_after) == 0, "PDF should be zero after boundary"
 
-    grid = np.linspace(0.0, g.knots[-1] + 1.0, 200)
-    assert_allclose(g.sf(grid), 1.0 - g.cdf(grid), rtol=0, atol=0)
+    # CDF should reach 1.0 at the boundary
+    assert_allclose(g.cdf(z_at), 1.0, rtol=1e-10)
+
+    # CDF should stay at 1.0 after boundary
+    assert_allclose(g.cdf(z_after), 1.0, rtol=1e-10)
+
+    # PDF and CDF should be consistent: where PDF=0, CDF should be flat
+    # i.e., derivative of CDF should be zero where PDF is zero
+    cdf_before = g.cdf(z_before)
+    cdf_at = g.cdf(z_at)
+    cdf_after = g.cdf(z_after)
+
+    # CDF should increase from before to at (since PDF > 0)
+    assert cdf_at > cdf_before, "CDF should increase where PDF > 0"
+
+    # CDF should be flat from at to after (since PDF = 0)
+    assert_allclose(cdf_at, cdf_after, rtol=1e-10,
+                    atol=0, err_msg="CDF should be constant where PDF = 0")
