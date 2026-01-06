@@ -131,7 +131,10 @@ jobs:
         pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
         pip install -r requirements/dev.txt
         pip install git+https://github.com/numpy/meson.git@e72c717199fa18d34020c7c97f9de3f388c5e055
-        pip install scipy-openblas32 scipy-openblas64
+        # Yes, we install both of scipy-openblas32|64, we need both LP64 and
+        # ILP64 (this is obviously a hack, and not supportable outside of SciPy
+        # CI and manual dev env setup; see gh-21889 for details).
+        pip install -r requirements/openblas64.txt
 
     - name: Write out scipy-openblas64.pc
       run: |
