@@ -7180,7 +7180,7 @@ fpsurf(int iopt, int m, double* x, double* y, double* z, double* w,
     (void)ib3;      // unused
     (void)intest;   // unused
     (void)nrest;    // unused
-    double acc, arg, cos, dmax, fac1, fac2, fpmax, fpms, f1, f2, f3, hxi, p, pinv;
+    double acc = 0.0, arg, cos, dmax, fac1, fac2, fpmax, fpms, f1, f2, f3, hxi, p, pinv;
     double piv, p1, p2, p3, sigma, sin, sq, store, wi, x0, x1, y0, y1, zi, eps;
     int i, iband, iband1, iband3, iband4, ibb, ichang, ich1, ich3, ii;
     int in, irot, iter, i1, i2, i3, j, jrot, jxy, j1, kx, kx1, kx2, ky, ky1, ky2, l;

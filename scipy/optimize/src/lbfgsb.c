@@ -1590,7 +1590,7 @@ cauchy(int n, double* x, double* l, double* u,
         }
 
         // Update the derivative information.
-        nseg += 1;
+        *nseg += 1;
         dibp2 = pow(dibp, 2.0);
 
         // Update f1 and f2

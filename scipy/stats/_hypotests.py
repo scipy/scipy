@@ -202,12 +202,12 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided': the difference between distribution means is not
-            equal to `diff`
-          * 'less': the difference between distribution means is less than
-            `diff`
-          * 'greater': the difference between distribution means is greater
-            than `diff`
+        * 'two-sided': the difference between distribution means is not
+          equal to `diff`
+        * 'less': the difference between distribution means is less than
+          `diff`
+        * 'greater': the difference between distribution means is greater
+          than `diff`
 
     Returns
     -------
@@ -814,6 +814,7 @@ def somersd(x, y=None, alternative='two-sided'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
+
         * 'two-sided': the rank correlation is nonzero
         * 'less': the rank correlation is negative (less than zero)
         * 'greater':  the rank correlation is positive (greater than zero)
@@ -823,15 +824,15 @@ def somersd(x, y=None, alternative='two-sided'):
     res : SomersDResult
         A `SomersDResult` object with the following fields:
 
-            statistic : float
-               The Somers' :math:`D` statistic.
-            pvalue : float
-               The p-value for a hypothesis test whose null
-               hypothesis is an absence of association, :math:`D=0`.
-               See notes for more information.
-            table : 2D array
-               The contingency table formed from rankings `x` and `y` (or the
-               provided contingency table, if `x` is a 2D array)
+        statistic : float
+           The Somers' :math:`D` statistic.
+        pvalue : float
+           The p-value for a hypothesis test whose null
+           hypothesis is an absence of association, :math:`D=0`.
+           See notes for more information.
+        table : 2D array
+           The contingency table formed from rankings `x` and `y` (or the
+           provided contingency table, if `x` is a 2D array)
 
     See Also
     --------
@@ -1099,9 +1100,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             (1 - \pi)^{t - x_{11} - x_{12}}
 
     where the sum is over all  2x2 contingency tables :math:`X` such that:
+
     * :math:`T(X) \leq T(X_0)` when `alternative` = "less",
     * :math:`T(X) \geq T(X_0)` when `alternative` = "greater", or
     * :math:`T(X) \geq |T(X_0)|` when `alternative` = "two-sided".
+
     Above, :math:`c_1, c_2` are the sum of the columns 1 and 2,
     and :math:`t` the total (sum of the 4 sample's element).
 

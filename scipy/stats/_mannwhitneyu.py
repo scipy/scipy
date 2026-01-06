@@ -2,11 +2,10 @@ import threading
 import numpy as np
 from collections import namedtuple
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
-from scipy._lib import array_api_extra as xpx
 from scipy import special
 from scipy import stats
 from scipy.stats._stats_py import _rankdata
-from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_concatenate
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
@@ -170,7 +169,6 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     ''' Input validation and standardization for mannwhitneyu '''
     xp = array_namespace(x, y)
 
-    x, y = xpx.atleast_nd(x, ndim=1), xpx.atleast_nd(y, ndim=1)
     if xp.any(xp.isnan(x)) or xp.any(xp.isnan(y)):
         raise ValueError('`x` and `y` must not contain NaNs.')
     if xp_size(x) == 0 or xp_size(y) == 0:
@@ -440,9 +438,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     x, y, use_continuity, alternative, axis_int, method, xp = (
         _mwu_input_validation(x, y, use_continuity, alternative, axis, method))
 
-    xy = _broadcast_concatenate((x, y), axis)
+    # axis=-1 and arrays broadcasted due to _axis_nan_policy decorator
+    xy = xp.concat((x, y), axis=-1)
 
-    n1, n2 = x.shape[-1], y.shape[-1]  # _axis_nan_policy decorator ensures axis=-1
+    n1, n2 = x.shape[-1], y.shape[-1]
 
     # Follows [2]
     ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1

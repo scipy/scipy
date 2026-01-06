@@ -8756,6 +8756,8 @@ def test_ksone_fit_freeze():
             stats.ksone.fit(d)
 
 
+@pytest.mark.xfail(platform.machine() == "sparc64",
+    reason="complex special functions known to fail on sparc64 (gh-22577)")
 def test_norm_logcdf():
     # Test precision of the logcdf of the normal distribution.
     # This precision was enhanced in ticket 1614.

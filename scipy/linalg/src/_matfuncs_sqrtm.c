@@ -1,4 +1,4 @@
-#include "_matfuncs_sqrtm.h"
+#include "_common_array_utils.h"
 
 static int sqrtm_recursion_s(float* T, npy_intp bign, npy_intp n);
 static int sqrtm_recursion_d(double* T, npy_intp bign, npy_intp n);

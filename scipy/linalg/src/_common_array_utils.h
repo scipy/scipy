@@ -73,11 +73,127 @@ void zdscal_(int* n, double* sa, SCIPY_Z* sx, int* incx);
 void ztrsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* c, int* ldc, double* scale, int* info);
 // void ztrsyl3_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* c, int* ldc, double* scale, double* swork, int* ldswork, int* info);
 
+/**
+ *  These functions are used to measure the bandwidth of an (n x m) matrix
+ *  stored in row-major (C) format.
+ */
+static inline void
+bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    // Lower bandwidth: scan from bottom-left corner, row by row
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        for (Py_ssize_t c = 0; c < r - lb; c++) {
+            if (data[r*m + c] != 0.0f) { lb = r - c; break; }
+        }
+        if (r <= lb) { break; }
+    }
+    // Upper bandwidth: scan from top-right corner, row by row backwards
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+            if (data[r*m + c] != 0.0f) { ub = c - r; break; }
+        }
+        if (r + ub + 1 > m) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+static inline void
+bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    // Lower bandwidth: scan from bottom-left corner, row by row
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        for (Py_ssize_t c = 0; c < r - lb; c++) {
+            if (data[r*m + c] != 0.0) { lb = r - c; break; }
+        }
+        if (r <= lb) { break; }
+    }
+    // Upper bandwidth: scan from top-right corner, row by row backwards
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+            if (data[r*m + c] != 0.0) { ub = c - r; break; }
+        }
+        if (r + ub + 1 > m) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+static inline void
+bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    // Lower bandwidth: scan from bottom-left corner, row by row
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        for (Py_ssize_t c = 0; c < r - lb; c++) {
+#if defined(_MSC_VER)
+            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { lb = r - c; break; }
+#else
+            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { lb = r - c; break; }
+#endif
+        }
+        if (r <= lb) { break; }
+    }
+    // Upper bandwidth: scan from top-right corner, row by row backwards
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+#if defined(_MSC_VER)
+            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { ub = c - r; break; }
+#else
+            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { ub = c - r; break; }
+#endif
+        }
+        if (r + ub + 1 > m) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+static inline void
+bandwidth_z(SCIPY_Z* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    // Lower bandwidth: scan from bottom-left corner, row by row
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        for (Py_ssize_t c = 0; c < r - lb; c++) {
+#if defined(_MSC_VER)
+            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { lb = r - c; break; }
+#else
+            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { lb = r - c; break; }
+#endif
+        }
+        if (r <= lb) { break; }
+    }
+    // Upper bandwidth: scan from top-right corner, row by row backwards
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+#if defined(_MSC_VER)
+            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { ub = c - r; break; }
+#else
+            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { ub = c - r; break; }
+#endif
+        }
+        if (r + ub + 1 > m) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
 /*
  *  These swap functions are used to convert a C-contiguous n*n array to an F-
  *  contiguous one and back. Recursively halves on the longer dimension each
  *  time until it reaches to a small enough piece such that tries to benefit the
  *  locality of the data. Last letter denotes the LAPACK flavor s,d,c,z.
+ *
+ *  There is not much science behind the magical values but empirically they seem
+ *  to be at the sweetspot for the tradeoff between recursion overhead and data
+ *  locality.
  */
 static inline void
 swap_cf_s(float* restrict src, float* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
@@ -85,7 +201,7 @@ swap_cf_s(float* restrict src, float* restrict dst, const Py_ssize_t r, const Py
     Py_ssize_t i, j, ith_row, r2, c2;
     float *bb = dst;
     float *aa = src;
-    if (r < 16) {
+    if (r < 32) {
         for (j = 0; j < c; j++)
         {
             ith_row = 0;
@@ -184,7 +300,7 @@ swap_cf_z(SCIPY_Z* restrict src, SCIPY_Z* restrict dst, const Py_ssize_t r, cons
     Py_ssize_t i, j, ith_row, r2, c2;
     SCIPY_Z *bb = dst;
     SCIPY_Z *aa = src;
-    if (r < 16) {
+    if (r < 8) {
         for (j = 0; j < c; j++)
         {
             ith_row = 0;
@@ -225,7 +341,7 @@ swap_cf_z(SCIPY_Z* restrict src, SCIPY_Z* restrict dst, const Py_ssize_t r, cons
  *
  * For complex arrays, being Schur is equivalent to being upper triangular.
  */
-int
+static inline int
 isschurf(const float* restrict data, const Py_ssize_t n)
 {
     float prev_a, prev_b;
@@ -276,7 +392,7 @@ isschurf(const float* restrict data, const Py_ssize_t n)
 }
 
 
-int
+static inline int
 isschur(const double* restrict data, const Py_ssize_t n)
 {
     double prev_a, prev_b;

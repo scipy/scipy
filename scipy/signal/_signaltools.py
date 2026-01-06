@@ -3011,9 +3011,9 @@ def _cmplx_sort(p):
 
     Examples
     --------
-    >>> from scipy import signal
+    >>> from scipy.signal._signaltools import _cmplx_sort
     >>> vals = [1, 4, 1+1.j, 3]
-    >>> p_sorted, indx = signal.cmplx_sort(vals)
+    >>> p_sorted, indx = _cmplx_sort(vals)
     >>> p_sorted
     array([1.+0.j, 1.+1.j, 3.+0.j, 4.+0.j])
     >>> indx

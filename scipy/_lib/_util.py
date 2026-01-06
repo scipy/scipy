@@ -109,32 +109,6 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     return out
 
 
-def _aligned_zeros(shape, dtype=float, order="C", align=None):
-    """Allocate a new ndarray with aligned memory.
-
-    Primary use case for this currently is working around a f2py issue
-    in NumPy 1.9.1, where dtype.alignment is such that np.zeros() does
-    not necessarily create arrays aligned up to it.
-
-    """
-    dtype = np.dtype(dtype)
-    if align is None:
-        align = dtype.alignment
-    if not hasattr(shape, '__len__'):
-        shape = (shape,)
-    size = functools.reduce(operator.mul, shape) * dtype.itemsize
-    buf = np.empty(size + align + 1, np.uint8)
-    offset = buf.__array_interface__['data'][0] % align
-    if offset != 0:
-        offset = align - offset
-    # Note: slices producing 0-size arrays do not necessarily change
-    # data pointer --- so we use and allocate size+1
-    buf = buf[offset:offset+size+1][:-1]
-    data = np.ndarray(shape, dtype, buf, order=order)
-    data.fill(0)
-    return data
-
-
 def _prune_array(array):
     """Return an array equivalent to the input array. If the input
     array is a view of a much larger array, copy its contents to a
@@ -589,8 +563,9 @@ class _ScalarFunctionWrapper:
 
         # Make sure the function returns a true scalar
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError(
                     "The user-provided objective function "
@@ -806,20 +781,6 @@ def _rng_html_rewrite(func):
         return lines
 
     return _wrapped
-
-
-def _argmin(a, keepdims=False, axis=None):
-    """
-    argmin with a `keepdims` parameter.
-
-    See https://github.com/numpy/numpy/issues/8710
-
-    If axis is not None, a.shape[axis] must be greater than 0.
-    """
-    res = np.argmin(a, axis=axis)
-    if keepdims and axis is not None:
-        res = np.expand_dims(res, axis=axis)
-    return res
 
 
 def _contains_nan(

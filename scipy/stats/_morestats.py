@@ -918,6 +918,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
     keepdims : bool, default: False
         If this is set to True, the axes which are reduced are left
         in the result as dimensions with size one. With this option,
@@ -1729,6 +1730,7 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
     keepdims : bool, default: False
         If this is set to True, the axes which are reduced are left
         in the result as dimensions with size one. With this option,
@@ -1822,15 +1824,41 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
                           result_to_tuple=lambda x, _: (x,))
 def _yeojohnson_llf(data, *, lmb, axis=0):
     xp = array_namespace(data)
-    y = _yeojohnson_transform(data, lmb, xp=xp)
-    sigma = xp.var(y, axis=axis)
-
-    # Suppress RuntimeWarning raised by np.log when the variance is too low
-    finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
-    log_sigma = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
 
     n = data.shape[axis]
-    loglike = (-n / 2 * log_sigma
+    if n == 0:
+        return _get_nan(data, xp=xp)
+    eps = xp.finfo(dtype).eps
+    # Special case all-positive/negative data to avoid overflow and precision loss
+    pos = data >= 0  # binary mask
+
+    # There exists numerical instability when abs(lmb) or abs(lmb - 2) is very small
+    if xp.all(pos):
+        if abs(lmb) < eps:
+            logvar = xp.log(xp.var(xp.log1p(data), axis=axis))
+        else:
+            logvar = _log_var(lmb * xp.log1p(data), xp, axis) - 2 * math.log(abs(lmb))
+
+    elif xp.all(~pos):
+        if abs(lmb - 2) < eps:
+            logvar = xp.log(xp.var(xp.log1p(-data), axis=axis))
+        else:
+            logvar = _log_var((2 - lmb) * xp.log1p(-data), xp, axis) - 2 * math.log(
+                abs(2 - lmb)
+            )
+
+    # overflow/precision loss not reported for mixed data; calculate `logvar` directly
+    else:  # mixed positive and negative data
+        y = _yeojohnson_transform(data, lmb, xp=xp)
+        sigma = xp.var(y, axis=axis)
+
+        # Suppress RuntimeWarning raised by np.log when the variance is too low
+        finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
+        logvar = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
+
+    loglike = (-n / 2 * logvar
                + (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
 
     return loglike
@@ -3821,11 +3849,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     - When ``len(d)`` is sufficiently large, the null distribution of the
       normalized test statistic (`zstatistic` above) is approximately normal,
       and ``method = 'asymptotic'`` can be used to compute the p-value.
-
     - When ``len(d)`` is small, the normal approximation may not be accurate,
       and ``method='exact'`` is preferred (at the cost of additional
       execution time).
-
     - The default, ``method='auto'``, selects between the two:
       ``method='exact'`` is used when ``len(d) <= 50``, and
       ``method='asymptotic'`` is used otherwise.

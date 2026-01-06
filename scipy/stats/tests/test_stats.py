@@ -22,7 +22,7 @@ from numpy.testing import (assert_, assert_equal,
                            assert_allclose, assert_array_less)
 import pytest
 from pytest import raises as assert_raises
-from numpy import array, arange, float32, power
+from numpy import array, arange, power
 import numpy as np
 
 import scipy.stats as stats
@@ -41,7 +41,7 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes)
+                                   xp_swapaxes, xp_result_type)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -1131,6 +1131,23 @@ class TestCorrSpearmanr:
                for j in range(m)]
         assert_allclose(corr, res)
 
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_constant_input_gh22816(self, axis):
+        X = np.zeros((10, 4))
+        X[:, 2] = np.arange(0, 10)
+        X[:, 3] = -np.arange(0, 10)
+
+        corr = np.array([[np.nan, np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, 1., -1.],
+                         [np.nan, np.nan, -1., 1.]])
+        if axis == 1:
+            X = X.T
+        with pytest.warns(stats._warnings_errors.ConstantInputWarning):
+            res = stats.spearmanr(X, axis=axis)
+        assert_allclose(res.statistic, corr)
+        assert_allclose(res.pvalue, 0*corr, atol=1e-50)
+
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]
@@ -2148,28 +2165,31 @@ def test_weightedtau_vs_quadratic():
             rng.shuffle(rank)
 
 
+@make_xp_test_case(stats.linregress)
 class TestRegression:
-    def test_linregressBIGX(self):
+    def test_linregressBIGX(self, xp):
         # W.II.F.  Regress BIG on X.
-        result = stats.linregress(X, BIG)
-        assert_almost_equal(result.intercept, 99999990)
-        assert_almost_equal(result.rvalue, 1.0)
+        dtype = xp.float64  # needed for accurate results
+        result = stats.linregress(xp.asarray(X), xp.asarray(BIG))
+        xp_assert_close(result.intercept, xp.asarray(99999990., dtype=dtype))
+        xp_assert_close(result.rvalue, xp.asarray(1.0, dtype=dtype))
         # The uncertainty ought to be almost zero
         # since all points lie on a line
-        assert_almost_equal(result.stderr, 0.0)
-        assert_almost_equal(result.intercept_stderr, 0.0)
+        zero = xp.asarray(0.0, dtype=dtype)
+        xp_assert_close(result.stderr, zero, atol=1e-7)  # atol for JAX
+        xp_assert_close(result.intercept_stderr, zero, atol=1e-7)
 
-    def test_regressXX(self):
+    def test_regressXX(self, xp):
         # W.IV.B.  Regress X on X.
         # The constant should be exactly 0 and the regression coefficient
         # should be 1.  This is a perfectly valid regression and the
         # program should not complain.
-        result = stats.linregress(X, X)
-        assert_almost_equal(result.intercept, 0.0)
-        assert_almost_equal(result.rvalue, 1.0)
+        result = stats.linregress(xp.asarray(X.tolist()), xp.asarray(X.tolist()))
+        xp_assert_close(result.intercept, xp.asarray(0.0), atol=1e-15)
+        xp_assert_close(result.rvalue, xp.asarray(1.0))
         # The uncertainly on regression through two points ought to be 0
-        assert_almost_equal(result.stderr, 0.0)
-        assert_almost_equal(result.intercept_stderr, 0.0)
+        xp_assert_close(result.stderr, xp.asarray(0.0), atol=1e-7)
+        xp_assert_close(result.intercept_stderr, xp.asarray(0.0), atol=1e-7)
 
         # W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
         # should tell you that this model is "singular" because BIG and
@@ -2180,33 +2200,34 @@ class TestRegression:
         # Need to figure out how to handle multiple linear regression.
         # This is not obvious
 
-    def test_regressZEROX(self):
+    def test_regressZEROX(self, xp):
         # W.IV.D. Regress ZERO on X.
         # The program should inform you that ZERO has no variance or it should
         # go ahead and compute the regression and report a correlation and
         # total sum of squares of exactly 0.
-        result = stats.linregress(X, ZERO)
-        assert_almost_equal(result.intercept, 0.0)
-        with pytest.warns(stats.ConstantInputWarning, match="An input array..."):
-            ref_rvalue = stats.pearsonr(X, ZERO).statistic
-        assert_almost_equal(result.rvalue, ref_rvalue)
+        result = stats.linregress(xp.asarray(X.tolist()), xp.asarray(ZERO.tolist()))
+        xp_assert_close(result.intercept, xp.asarray(0.0))
+        with eager_warns(stats.ConstantInputWarning, match="An input array...", xp=xp):
+            ref_rvalue = stats.pearsonr(xp.asarray(X.tolist()),
+                                        xp.asarray(ZERO.tolist())).statistic
+        xp_assert_close(result.rvalue, ref_rvalue)
 
-    def test_regress_simple(self):
+    def test_regress_simple(self, xp):
         # Regress a line with sinusoidal noise.
-        x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10
-        y += np.sin(np.linspace(0, 20, 100))
+        x = xp.linspace(0, 100, 100)
+        y = 0.2 * xp.linspace(0, 100, 100) + 10
+        y = y + xp.sin(xp.linspace(0, 20, 100))
 
         result = stats.linregress(x, y)
         lr = LinregressResult
-        assert_(isinstance(result, lr))
-        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
+        assert isinstance(result, lr)
+        xp_assert_close(result.stderr, xp.asarray(2.3957814497838803e-3))
 
-    def test_regress_alternative(self):
+    def test_regress_alternative(self, xp):
         # test alternative parameter
-        x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10  # slope is greater than zero
-        y += np.sin(np.linspace(0, 20, 100))
+        x = xp.linspace(0, 100, 100)
+        y = 0.2 * xp.linspace(0, 100, 100) + 10  # slope is greater than zero
+        y = y + xp.sin(xp.linspace(0, 20, 100))
 
         with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
             stats.linregress(x, y, alternative="ekki-ekki")
@@ -2215,48 +2236,49 @@ class TestRegression:
 
         # slope is greater than zero, so "less" p-value should be large
         res2 = stats.linregress(x, y, alternative="less")
-        assert_allclose(res2.pvalue, 1 - (res1.pvalue / 2))
+        xp_assert_close(res2.pvalue, 1 - (res1.pvalue / 2))
 
         # slope is greater than zero, so "greater" p-value should be small
         res3 = stats.linregress(x, y, alternative="greater")
-        assert_allclose(res3.pvalue, res1.pvalue / 2)
+        xp_assert_close(res3.pvalue, res1.pvalue / 2)
 
         assert res1.rvalue == res2.rvalue == res3.rvalue
 
-    def test_regress_against_R(self):
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_regress_against_R(self, dtype, xp):
         # test against R `lm`
         # options(digits=16)
         # x <- c(151, 174, 138, 186, 128, 136, 179, 163, 152, 131)
         # y <- c(63, 81, 56, 91, 47, 57, 76, 72, 62, 48)
         # relation <- lm(y~x)
         # print(summary(relation))
-
-        x = [151, 174, 138, 186, 128, 136, 179, 163, 152, 131]
-        y = [63, 81, 56, 91, 47, 57, 76, 72, 62, 48]
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([151, 174, 138, 186, 128, 136, 179, 163, 152, 131], dtype=dtype)
+        y = xp.asarray([63, 81, 56, 91, 47, 57, 76, 72, 62, 48], dtype=dtype)
         res = stats.linregress(x, y, alternative="two-sided")
         # expected values from R's `lm` above
-        assert_allclose(res.slope, 0.6746104491292)
-        assert_allclose(res.intercept, -38.4550870760770)
-        assert_allclose(res.rvalue, np.sqrt(0.95478224775))
-        assert_allclose(res.pvalue, 1.16440531074e-06)
-        assert_allclose(res.stderr, 0.0519051424731)
-        assert_allclose(res.intercept_stderr, 8.0490133029927)
+        xp_assert_close(res.slope, xp.asarray(0.6746104491292, dtype=dtype))
+        xp_assert_close(res.intercept, xp.asarray(-38.4550870760770, dtype=dtype))
+        xp_assert_close(res.rvalue, xp.sqrt(xp.asarray(0.95478224775, dtype=dtype)))
+        xp_assert_close(res.pvalue, xp.asarray(1.16440531074e-06, dtype=dtype))
+        xp_assert_close(res.stderr, xp.asarray(0.0519051424731, dtype=dtype))
+        xp_assert_close(res.intercept_stderr, xp.asarray(8.0490133029927, dtype=dtype))
 
-    def test_linregress(self):
+    def test_linregress(self, xp):
         # compared with multivariate ols with pinv
         x = np.arange(11)
         y = np.arange(5, 16)
         y[[(1), (-2)]] -= 1
         y[[(0), (-1)]] += 1
 
-        result = stats.linregress(x, y)
+        result = stats.linregress(xp.asarray(x), xp.asarray(y))
 
         # This test used to use 'assert_array_almost_equal' but its
         # formulation got confusing since LinregressResult became
         # _lib._bunch._make_tuple_bunch instead of namedtuple
         # (for backwards compatibility, see PR #12983)
         def assert_ae(x, y):
-            return assert_almost_equal(x, y, decimal=14)
+            return xp_assert_close(x, xp.asarray(y), atol=1e-14)
         assert_ae(result.slope, 1.0)
         assert_ae(result.intercept, 5.0)
         assert_ae(result.rvalue, 0.98229948625750)
@@ -2264,67 +2286,68 @@ class TestRegression:
         assert_ae(result.stderr, 0.063564172616372733)
         assert_ae(result.intercept_stderr, 0.37605071654517686)
 
-    def test_regress_simple_negative_cor(self):
+    def test_regress_simple_negative_cor(self, xp):
         # If the slope of the regression is negative the factor R tend
         # to -1 not 1.  Sometimes rounding errors makes it < -1
         # leading to stderr being NaN.
         a, n = 1e-71, 100000
-        x = np.linspace(a, 2 * a, n)
-        y = np.linspace(2 * a, a, n)
+        dtype = xp.float64
+        x = xp.linspace(a, 2 * a, n, dtype=dtype)  # doesn't pass with float32
+        y = xp.linspace(2 * a, a, n, dtype=dtype)
         result = stats.linregress(x, y)
 
         # Make sure propagated numerical errors
         # did not bring rvalue below -1 (or were coerced)
-        assert_(result.rvalue >= -1)
-        assert_almost_equal(result.rvalue, -1)
+        assert result.rvalue >= -1
+        xp_assert_close(result.rvalue, xp.asarray(-1., dtype=dtype))
 
         # slope and intercept stderror should stay numeric
-        assert_(not np.isnan(result.stderr))
-        assert_(not np.isnan(result.intercept_stderr))
+        assert not xp.isnan(result.stderr)
+        assert not xp.isnan(result.intercept_stderr)
 
-    def test_linregress_result_attributes(self):
-        x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10
-        y += np.sin(np.linspace(0, 20, 100))
+    def test_linregress_result_attributes(self, xp):
+        x = xp.linspace(0, 100, 100)
+        y = 0.2 * xp.linspace(0, 100, 100) + 10
+        y = y + xp.sin(xp.linspace(0, 20, 100))
         result = stats.linregress(x, y)
 
         # Result is of a correct class
         lr = LinregressResult
-        assert_(isinstance(result, lr))
+        assert isinstance(result, lr)
 
         # LinregressResult elements have correct names
         attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
-        check_named_results(result, attributes)
+        check_named_results(result, attributes, xp=xp)
         # Also check that the extra attribute (intercept_stderr) is present
         assert 'intercept_stderr' in dir(result)
 
-    def test_regress_two_inputs(self):
+    def test_regress_two_inputs(self, xp):
         # Regress a simple line formed by two points.
-        x = np.arange(2)
-        y = np.arange(3, 5)
+        x = xp.arange(2)
+        y = xp.arange(3, 5)
         result = stats.linregress(x, y)
 
         # Non-horizontal line
-        assert_almost_equal(result.pvalue, 0.0)
+        xp_assert_close(result.pvalue, xp.asarray(0.0))
 
         # Zero error through two points
-        assert_almost_equal(result.stderr, 0.0)
-        assert_almost_equal(result.intercept_stderr, 0.0)
+        xp_assert_close(result.stderr, xp.asarray(0.0))
+        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
 
-    def test_regress_two_inputs_horizontal_line(self):
+    def test_regress_two_inputs_horizontal_line(self, xp):
         # Regress a horizontal line formed by two points.
-        x = np.arange(2)
-        y = np.ones(2)
+        x = xp.arange(2.)
+        y = xp.ones(2)
         result = stats.linregress(x, y)
 
         # Horizontal line
-        assert_almost_equal(result.pvalue, 1.0)
+        xp_assert_close(result.pvalue, xp.asarray(1.0))
 
         # Zero error through two points
-        assert_almost_equal(result.stderr, 0.0)
-        assert_almost_equal(result.intercept_stderr, 0.0)
+        xp_assert_close(result.stderr, xp.asarray(0.0))
+        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
 
-    def test_nist_norris(self):
+    def test_nist_norris(self, xp):
         # If this causes a lint failure in the future, please note the history of
         # requests to allow extra whitespace in table formatting (e.g. gh-12367).
         # Also see https://github.com/scipy/scipy/wiki/Why-do-we-not-use-an-auto%E2%80%90formatter%3F  # noqa: E501
@@ -2342,86 +2365,71 @@ class TestRegression:
                0.6, 557.6, 339.3, 888.0, 998.5, 778.9,
               10.2, 117.6, 228.9, 668.4, 449.2,   0.2]
 
-        result = stats.linregress(x, y)
+        result = stats.linregress(xp.asarray(x), xp.asarray(y))
 
-        assert_almost_equal(result.slope, 1.00211681802045)
-        assert_almost_equal(result.intercept, -0.262323073774029)
-        assert_almost_equal(result.rvalue**2, 0.999993745883712)
-        assert_almost_equal(result.pvalue, 0.0)
-        assert_almost_equal(result.stderr, 0.00042979684820)
-        assert_almost_equal(result.intercept_stderr, 0.23281823430153)
+        xp_assert_close(result.slope, xp.asarray(1.00211681802045))
+        xp_assert_close(result.intercept, xp.asarray(-0.262323073774029))
+        xp_assert_close(result.rvalue**2, xp.asarray(0.999993745883712))
+        xp_assert_close(result.pvalue, xp.asarray(0.0), atol=1e-80)
+        if result.pvalue.dtype == xp.float64:  # these are inaccurate with float32
+            xp_assert_close(result.stderr, xp.asarray(0.00042979684820))
+            xp_assert_close(result.intercept_stderr, xp.asarray(0.23281823430153))
 
-    def test_compare_to_polyfit(self):
+    def test_compare_to_polyfit(self, xp):
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
-        result = stats.linregress(x, y)
+        result = stats.linregress(xp.asarray(x), xp.asarray(y))
         poly = np.polyfit(x, y, 1)  # Fit 1st degree polynomial
 
         # Make sure linear regression slope and intercept
         # match with results from numpy polyfit
-        assert_almost_equal(result.slope, poly[0])
-        assert_almost_equal(result.intercept, poly[1])
+        xp_assert_close(result.slope, xp.asarray(poly[0]))
+        xp_assert_close(result.intercept, xp.asarray(poly[1]))
 
-    def test_empty_input(self):
-        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
-            res = stats.linregress([], [])
-            assert np.all(np.isnan(res))
+    def test_empty_input(self, xp):
+        with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
+            res = stats.linregress(xp.asarray([]), xp.asarray([]))
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.slope, NaN)
+            xp_assert_equal(res.intercept, NaN)
+            xp_assert_equal(res.rvalue, NaN)
+            xp_assert_equal(res.pvalue, NaN)
+            xp_assert_equal(res.stderr, NaN)
+            xp_assert_equal(res.intercept_stderr, NaN)
 
-    def test_nan_input(self):
+    def test_nan_input(self, xp):
         x = np.arange(10.)
         x[9] = np.nan
+        x = xp.asarray(x.tolist())
 
         with np.errstate(invalid="ignore"):
             result = stats.linregress(x, x)
 
         # Make sure the result still comes back as `LinregressResult`
         lr = LinregressResult
-        assert_(isinstance(result, lr))
-        assert_array_equal(result, (np.nan,)*5)
-        assert_equal(result.intercept_stderr, np.nan)
+        assert isinstance(result, lr)
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.slope, NaN)
+        xp_assert_equal(result.intercept, NaN)
+        xp_assert_equal(result.rvalue, NaN)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
-    def test_identical_x(self):
+    def test_identical_x(self, xp):
         rng = np.random.default_rng(7872425088)
-        x = np.zeros(10)
-        y = rng.random(10)
-        msg = "Cannot calculate a linear regression"
-        with assert_raises(ValueError, match=msg):
-            stats.linregress(x, y)
-
-
-def test_theilslopes():
-    # Basic slope test.
-    slope, intercept, lower, upper = stats.theilslopes([0,1,1])
-    assert_almost_equal(slope, 0.5)
-    assert_almost_equal(intercept, 0.5)
-
-    msg = ("method must be either 'joint' or 'separate'."
-           "'joint_separate' is invalid.")
-    with pytest.raises(ValueError, match=msg):
-        stats.theilslopes([0, 1, 1], method='joint_separate')
-
-    slope, intercept, lower, upper = stats.theilslopes([0, 1, 1],
-                                                       method='joint')
-    assert_almost_equal(slope, 0.5)
-    assert_almost_equal(intercept, 0.0)
-
-    # Test of confidence intervals.
-    x = [1, 2, 3, 4, 10, 12, 18]
-    y = [9, 15, 19, 20, 45, 55, 78]
-    slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07,
-                                                       method='separate')
-    assert_almost_equal(slope, 4)
-    assert_almost_equal(intercept, 4.0)
-    assert_almost_equal(upper, 4.38, decimal=2)
-    assert_almost_equal(lower, 3.71, decimal=2)
-
-    slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07,
-                                                       method='joint')
-    assert_almost_equal(slope, 4)
-    assert_almost_equal(intercept, 6.0)
-    assert_almost_equal(upper, 4.38, decimal=2)
-    assert_almost_equal(lower, 3.71, decimal=2)
+        x = xp.zeros(10)
+        y = xp.asarray(rng.random(10).tolist())
+        with np.errstate(invalid='ignore'):
+            res = stats.linregress(x, y)
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.slope, NaN)
+        xp_assert_equal(res.intercept, NaN)
+        xp_assert_equal(res.rvalue, NaN)
+        xp_assert_equal(res.pvalue, NaN)
+        xp_assert_equal(res.stderr, NaN)
+        xp_assert_equal(res.intercept_stderr, NaN)
 
 
 def test_cumfreq():
@@ -4570,8 +4578,6 @@ class TestFriedmanChiSquare:
     @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     @pytest.mark.parametrize("data, ref", [(x1, ref1), (x2, ref2), (x3, ref3)])
     def test_against_references(self, dtype, data, ref, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = dtype if dtype is None else getattr(xp, dtype)
         data = [xp.asarray(array, dtype=dtype) for array in data]
         res = stats.friedmanchisquare(*data)
@@ -4650,8 +4656,6 @@ class TestKSOneSample:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_agree_with_r(self, dtype, xp):
         # comparing with some values from R
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.linspace(-1, 1, 9, dtype=dtype)
         self._testOne(x, 'two-sided', 0.15865525393145705, 0.95164069201518386,
@@ -4673,8 +4677,6 @@ class TestKSOneSample:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_known_examples(self, xp, dtype):
         # the following tests rely on deterministically replicated rvs
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
         x = xp.asarray(x, dtype=dtype)
@@ -6601,7 +6603,7 @@ def test_obrientransform():
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
-                      rtol=1e-7, weights=None):
+                      rtol=None, weights=None):
     # Note this doesn't test when axis is not specified
     dtype = dtype or xp.float64
     if len(args) == 2:
@@ -6609,10 +6611,12 @@ def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
     else:
         array_like, p, desired = args
     array_like = xp.asarray(array_like, dtype=dtype)
-    desired = xp.asarray(desired, dtype=dtype)
+    dtype_reference = (xp_result_type(array_like, force_floating=True, xp=xp)
+                       if xp != np.ma else None)
+    desired = xp.asarray(desired, dtype=dtype_reference)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
     args = (array_like,) if len(args) == 2 else (array_like, p)
-    x = mean_fun(*args, axis=axis, dtype=dtype, weights=weights)
+    x = mean_fun(*args, axis=axis, weights=weights)
     xp_assert_close(x, desired, rtol=rtol)
 
 
@@ -6636,15 +6640,18 @@ class TestHMean:
         desired = 0
         check_equal_hmean(a, desired, xp=xp)
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 34.1417152147
-        check_equal_hmean(a, desired, xp=xp)
+        check_equal_hmean(a, desired, dtype=dtype, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
-        check_equal_hmean(a, desired, xp=xp)
+        check_equal_hmean(a, desired, dtype=dtype, xp=xp)
 
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
@@ -6737,9 +6744,9 @@ class TestHMean:
     def test_weights_masked_1d_array(self, xp):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
-        a = np.array([2, 10, 6, 42])
-        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
-        desired = 3
+        a = np.array([2., 10., 6., 42.])
+        weights = np.ma.array([10., 5., 3., 42.], mask=[0, 0, 0, 1])
+        desired = 3.
         xp = np.ma  # check_equal_hmean uses xp.asarray; this will preserve the mask
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5,
                           dtype=np.float64, xp=xp)
@@ -6755,19 +6762,18 @@ class TestGMean:
         desired = 0
         check_equal_gmean(a, desired, xp=xp)
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         #  Test a 1d case
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         desired = 45.2872868812
-        check_equal_gmean(a, desired, xp=xp)
+        check_equal_gmean(a, desired, dtype=dtype, xp=xp)
 
         a = [1, 2, 3, 4]
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, rtol=1e-14, xp=xp)
-
-        a = array([1, 2, 3, 4], float32)
-        desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        check_equal_gmean(a, desired, dtype=xp.float32, xp=xp)
+        check_equal_gmean(a, desired, dtype=dtype, rtol=1e-14, xp=xp)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2d(self, xp):
@@ -6851,8 +6857,8 @@ class TestGMean:
     def test_weights_masked_1d_array(self, xp):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
-        a = np.array([1, 2, 3, 4, 5, 6])
-        weights = np.ma.array([2, 5, 6, 4, 3, 5], mask=[0, 0, 0, 0, 0, 1])
+        a = np.array([1., 2., 3., 4., 5., 6.])
+        weights = np.ma.array([2., 5., 6., 4., 3., 5.], mask=[0, 0, 0, 0, 0, 1])
         desired = 2.77748
         xp = np.ma  # check_equal_gmean uses xp.asarray; this will preserve the mask
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5,
@@ -6872,18 +6878,21 @@ class TestPMean:
         with pytest.raises(ValueError, match='Power mean only defined for'):
             stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
 
-    def test_1d(self, xp):
+    @pytest.mark.parametrize('dtype', [None, 'int64', 'float32', 'float64'])
+    def test_1d(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
         desired = TestPMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], -2.5
         desired = TestPMean.pmean_reference(np.array(a), p)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
         a, p = [1, 2, 3, 4], 2
         desired = np.sqrt((1**2 + 2**2 + 3**2 + 4**2) / 4)
-        check_equal_pmean(a, p, desired, xp=xp)
+        check_equal_pmean(a, p, desired, dtype=dtype, xp=xp)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
@@ -6952,8 +6961,8 @@ class TestPMean:
 
     @skip_xp_invalid_arg
     def test_weights_masked_1d_array(self, xp):
-        a, p = np.array([2, 10, 6, 42]), 1
-        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
+        a, p = np.array([2., 10., 6., 42.]), 1
+        weights = np.ma.array([10., 5., 3., 42.], mask=[0, 0, 0, 1])
         desired = np.average(a, weights=weights)
         xp = np.ma  # check_equal_pmean uses xp.asarray; this will preserve the mask
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5,
@@ -7024,7 +7033,6 @@ class TestGSTD:
         gstd_actual = stats.gstd(a, axis=1)
         xp_assert_close(gstd_actual, xp.asarray([4, np.nan]))
 
-    @xfail_xp_backends("jax.numpy", reason="returns subnormal instead of nan")
     def test_ddof_equal_to_number_of_observations(self, xp):
         x = xp.asarray(self.array_1d)
         res = stats.gstd(x, ddof=x.shape[0])
@@ -7639,8 +7647,6 @@ class TestFOneWay:
     def test_basic(self, dtype, xp):
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = None if dtype is None else getattr(xp, dtype)
         F, p = stats.f_oneway(xp.asarray([0, 2], dtype=dtype),
                               xp.asarray([2, 4], dtype=dtype))
@@ -7650,8 +7656,6 @@ class TestFOneWay:
     @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     def test_unequal_var(self, dtype, xp):
         # toy samples with unequal variances and different observations
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = None if dtype is None else getattr(xp, dtype)
         samples = [xp.asarray([-50.42, 40.31, -18.09, 35.58, -6.8, 0.22], dtype=dtype),
                    xp.asarray([23.44, 4.5, 15.1, 9.66], dtype=dtype),
@@ -8957,23 +8961,30 @@ def test_rename_mode_method(fun, args):
         fun(*args, method='exact', mode='exact')
 
 
+@make_xp_test_case(stats.expectile)
 class TestExpectile:
-    def test_same_as_mean(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_same_as_mean(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(42)
-        x = rng.random(size=20)
-        assert_allclose(stats.expectile(x, alpha=0.5), np.mean(x))
 
-    def test_minimum(self):
+        x = xp.asarray(rng.random(size=20).tolist(), dtype=dtype)
+        xp_assert_close(stats.expectile(x, 0.5), xp.mean(x))
+
+        w = xp.asarray(rng.random(size=20).tolist(), dtype=dtype)
+        xp_assert_close(stats.expectile(x, 0.5, weights=w), _xp_mean(x, weights=w))
+
+    def test_minimum(self, xp):
         rng = np.random.default_rng(42)
-        x = rng.random(size=20)
-        assert_allclose(stats.expectile(x, alpha=0), np.amin(x))
+        x = xp.asarray(rng.random(size=20))
+        xp_assert_close(stats.expectile(x, alpha=0), xp.min(x))
 
-    def test_maximum(self):
+    def test_maximum(self, xp):
         rng = np.random.default_rng(42)
-        x = rng.random(size=20)
-        assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
+        x = xp.asarray(rng.random(size=20))
+        xp_assert_close(stats.expectile(x, alpha=1), xp.max(x))
 
-    def test_weights(self):
+    def test_weights(self, xp):
         # expectile should minimize `fun` defined below; see
         # F. Sobotka and T. Kneib, "Geoadditive expectile regression",
         # Computational Statistics and Data Analysis 56 (2012) 755-767
@@ -8995,15 +9006,15 @@ class TestExpectile:
         alpha = rng.random()
         weights = rng.random(n)
 
-        res = stats.expectile(a, alpha, weights=weights)
+        res = stats.expectile(xp.asarray(a), alpha, weights=xp.asarray(weights))
         ref = expectile2(a, alpha, weights)
-        assert_allclose(res, ref)
+        xp_assert_close(res, xp.asarray(ref))
 
     @pytest.mark.parametrize(
         "alpha", [0.2, 0.5 - 1e-12, 0.5, 0.5 + 1e-12, 0.8]
     )
     @pytest.mark.parametrize("n", [20, 2000])
-    def test_expectile_properties(self, alpha, n):
+    def test_expectile_properties(self, alpha, n, xp):
         """
         See Section 6 of
         I. Steinwart, C. Pasin, R.C. Williamson & S. Zhang (2014).
@@ -9018,32 +9029,32 @@ class TestExpectile:
         http://doi.org/10.2139/ssrn.2225751
         """
         rng = np.random.default_rng(42)
-        x = rng.normal(size=n)
+        x = xp.asarray(rng.normal(size=n))
 
         # 0. definite / constancy
         # Let T(X) denote the expectile of rv X ~ F.
         # T(c) = c for constant c
-        for c in [-5, 0, 0.5]:
-            assert_allclose(
-                stats.expectile(np.full(shape=n, fill_value=c), alpha=alpha),
-                c
+        for c in [-5., 0., 0.5]:
+            xp_assert_close(
+                stats.expectile(xp.full(shape=n, fill_value=c), alpha=alpha),
+                xp.asarray(c)
             )
 
         # 1. translation equivariance
         # T(X + c) = T(X) + c
-        c = rng.exponential()
-        assert_allclose(
+        c = xp.asarray(rng.exponential())
+        xp_assert_close(
             stats.expectile(x + c, alpha=alpha),
             stats.expectile(x, alpha=alpha) + c,
         )
-        assert_allclose(
+        xp_assert_close(
             stats.expectile(x - c, alpha=alpha),
             stats.expectile(x, alpha=alpha) - c,
         )
 
         # 2. positively homogeneity
         # T(cX) = c * T(X) for c > 0
-        assert_allclose(
+        xp_assert_close(
             stats.expectile(c * x, alpha=alpha),
             c * stats.expectile(x, alpha=alpha),
         )
@@ -9054,10 +9065,10 @@ class TestExpectile:
         # For alpha = 0.5, i.e. the mean, strict equality holds.
         # For alpha < 0.5, one can use property 6. to show
         # T(X + Y) >= T(X) + T(Y)
-        y = rng.logistic(size=n, loc=10)  # different distribution than x
+        y = xp.asarray(rng.logistic(size=n, loc=10))  # different distribution than x
         if alpha == 0.5:
             def assert_op(a, b):
-                assert_allclose(a, b)
+                xp_assert_close(a, b)
 
         elif alpha > 0.5:
             def assert_op(a, b):
@@ -9068,7 +9079,7 @@ class TestExpectile:
                 assert a > b
 
         assert_op(
-            stats.expectile(np.r_[x + y], alpha=alpha),
+            stats.expectile(x + y, alpha=alpha),
             stats.expectile(x, alpha=alpha)
             + stats.expectile(y, alpha=alpha)
         )
@@ -9077,7 +9088,7 @@ class TestExpectile:
         # This holds for first order stochastic dominance X:
         # X >= Y whenever P(X <= x) < P(Y <= x)
         # T(X) <= T(Y) whenever X <= Y
-        y = rng.normal(size=n, loc=5)
+        y = xp.asarray(rng.normal(size=n, loc=5))
         assert (
             stats.expectile(x, alpha=alpha) <= stats.expectile(y, alpha=alpha)
         )
@@ -9085,7 +9096,7 @@ class TestExpectile:
         # 5. convexity for alpha > 0.5, concavity for alpha < 0.5
         # convexity is
         # T((1 - c) X + c Y) <= (1 - c) T(X) + c T(Y) for 0 <= c <= 1
-        y = rng.logistic(size=n, loc=10)
+        y = xp.asarray(rng.logistic(size=n, loc=10))
         for c in [0.1, 0.5, 0.8]:
             assert_op(
                 stats.expectile((1-c)*x + c*y, alpha=alpha),
@@ -9095,21 +9106,21 @@ class TestExpectile:
 
         # 6. negative argument
         # T_{alpha}(-X) = -T_{1-alpha}(X)
-        assert_allclose(
+        xp_assert_close(
             stats.expectile(-x, alpha=alpha),
             -stats.expectile(x, alpha=1-alpha),
         )
 
     @pytest.mark.parametrize("n", [20, 2000])
-    def test_monotonicity_in_alpha(self, n):
+    def test_monotonicity_in_alpha(self, n, xp):
         rng = np.random.default_rng(42)
-        x = rng.pareto(a=2, size=n)
+        x = xp.asarray(rng.pareto(a=2, size=n))
         e_list = []
         alpha_seq = np.logspace(-15, np.log10(0.5), 100)
         # sorted list of unique alpha values in interval (0, 1)
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
-            e_list.append(stats.expectile(x, alpha=alpha))
-        assert np.all(np.diff(e_list) > 0)
+            e_list.append(stats.expectile(x, alpha=float(alpha)))
+        assert xp.all(xp.diff(xp.asarray(e_list)) > 0)
 
 
 @make_xp_test_case(stats.lmoment)
