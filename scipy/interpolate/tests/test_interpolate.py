@@ -235,6 +235,14 @@ class TestInterp1D:
         yp = interp1d(x, y)(x)
         xp_assert_close(yp, y, atol=1e-15)
 
+    def test_linear_numerical_stability(self):
+        # Using de Boor's algorithm, there should be no floating point error
+        # for query points contained exactly in the x input array
+        x = np.array([0.0007499999999999, 0.002])
+        y = np.array([[0.0, 0.0], [0.0004164930555555557, 0.0]])
+        yp = interp1d(x, y)(x)
+        xp_assert_equal(yp, y)
+
     def test_slinear_dtypes(self):
         # regression test for gh-7273: 1D slinear interpolation fails with
         # float32 inputs
