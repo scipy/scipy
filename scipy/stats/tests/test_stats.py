@@ -6993,6 +6993,22 @@ class TestPMean:
             stats.pmean([2], np.inf)
 
 
+    @pytest.mark.parametrize(
+        "p, weights, ref",
+        [
+            (2e-16, None, 47.23984586445856),
+            (2e-16, [1., 2., 1., 1., 1., 2., 1.], 55.80644618389137),
+        ],
+    )
+    def test_small_p_gh23407(self, xp, p, weights, ref):
+        # gh-23407 reported that pmean had poor numerical behavior for very small nonzero p
+        x = xp.asarray([50., 100., 300., 70., 25., 100., 2.])
+        w = None if weights is None else xp.asarray(weights)
+
+        res = stats.pmean(x, p, weights=w)
+        xp_assert_close(res, xp.asarray(ref), rtol=1e-14)
+
+
 @make_xp_test_case(stats.gstd)
 class TestGSTD:
     # must add 1 as `gstd` is only defined for positive values
