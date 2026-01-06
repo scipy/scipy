@@ -7019,7 +7019,8 @@ class TestPMean:
         ],
     )
     def test_small_p_gh23407(self, xp, p, weights, ref):
-        # gh-23407 reported that pmean had poor numerical behavior for very small nonzero p
+        # gh-23407 reported that pmean had
+        # poor numerical behavior for very small nonzero p
         x = xp.asarray(
             [50., 100., 300., 70., 25., 100., 2.]
         )
