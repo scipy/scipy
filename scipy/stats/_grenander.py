@@ -234,8 +234,8 @@ class grenander:
             )
 
         # Collect gaps in order statistics
-        W = np.r_[self.support_min, x]
-        w = W[1:] - W[:-1]
+        W = np.concat([[self.support_min], x])
+        w = np.diff(W)
 
         # Raw ECDF slopes on each interval are 1/(n*w); LCM slopes are the
         # isotonic (nonincreasing) regression of these with weights w
