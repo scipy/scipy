@@ -774,10 +774,10 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         parameters are present. The return must contain 1 or 2 elements in the
         following order:
 
-            * df_dy : array_like with shape (n, n, m), where an element
-              (i, j, q) equals to d f_i(x_q, y_q, p) / d (y_q)_j.
-            * df_dp : array_like with shape (n, k, m), where an element
-              (i, j, q) equals to d f_i(x_q, y_q, p) / d p_j.
+        * df_dy : array_like with shape ``(n, n, m)``, where an element
+            ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d (y_q)_j``.
+        * df_dp : array_like with shape ``(n, k, m)``, where an element
+            ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d p_j``.
 
         Here q numbers nodes at which x and y are defined, whereas i and j
         number vector components. If the problem is solved without unknown
@@ -791,12 +791,12 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         if parameters are present. The return must contain 2 or 3 elements in
         the following order:
 
-            * dbc_dya : array_like with shape (n, n), where an element (i, j)
-              equals to d bc_i(ya, yb, p) / d ya_j.
-            * dbc_dyb : array_like with shape (n, n), where an element (i, j)
-              equals to d bc_i(ya, yb, p) / d yb_j.
-            * dbc_dp : array_like with shape (n, k), where an element (i, j)
-              equals to d bc_i(ya, yb, p) / d p_j.
+        * dbc_dya : array_like with shape ``(n, n)``, where an element ``(i, j)``
+            equals to ``d bc_i(ya, yb, p) / d ya_j``.
+        * dbc_dyb : array_like with shape ``(n, n)``, where an element ``(i, j)``
+            equals to ``d bc_i(ya, yb, p) / d yb_j``.
+        * dbc_dp : array_like with shape ``(n, k)``, where an element ``(i, j)``
+            equals to ``d bc_i(ya, yb, p) / d p_j``.
 
         If the problem is solved without unknown parameters, dbc_dp should not
         be returned.
@@ -815,9 +815,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
-            * 0 (default) : work silently.
-            * 1 : display a termination report.
-            * 2 : display progress during iterations.
+        * 0 (default) : work silently.
+        * 1 : display a termination report.
+        * 2 : display progress during iterations.
     bc_tol : float, optional
         Desired absolute tolerance for the boundary condition residuals: `bc`
         value should satisfy ``abs(bc) < bc_tol`` component-wise.
@@ -847,10 +847,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     status : int
         Reason for algorithm termination:
 
-            * 0: The algorithm converged to the desired accuracy.
-            * 1: The maximum number of mesh nodes is exceeded.
-            * 2: A singular Jacobian encountered when solving the collocation
-              system.
+        * 0: The algorithm converged to the desired accuracy.
+        * 1: The maximum number of mesh nodes is exceeded.
+        * 2: A singular Jacobian encountered when solving the collocation system.
 
     message : string
         Verbal description of the termination reason.
