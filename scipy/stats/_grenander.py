@@ -50,8 +50,8 @@ class grenander:
 
     .. math::
         
-        f : [0,\infty) \\to [0,\infty) \\text{ nonincreasing, and } 
-        \int_0^\infty f(x)\,dx = 1.
+        f : [0,\\infty) \\to [0,\\infty) \\text{ nonincreasing, and } 
+        \\int_0^\\infty f(x)\\,dx = 1.
 
     The estimator may be characterized geometrically as the left derivative of 
     the least concave majorant (LCM) of the empirical cumulative distribution 
@@ -108,37 +108,26 @@ class grenander:
            2.08432892, 2.29638573, 2.68628217, 3.38105853, 4.67484783,
            5.93619219])
 
-    Draw new samples from the estimated density:
+    Convert to a distribution object for additional functionality:
 
-    >>> y = g.rvs(size=1000, random_state=0)
-    >>> y.shape
-    (1000,)
+    >>> dist = stats.make_distribution(g)()
+    >>> samples = dist.sample(500)
+    >>> median = dist.icdf(0.5)
 
-    Visualize the estimated density alongside the true exponential density
-    and the empirical CDF:
+    Visualize the estimated density alongside the true exponential density:
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
-
-    >>> # Plot density
     >>> xs = np.linspace(0, 6, 500)
-    >>> ax1.plot(xs, expon.pdf(xs), 'k-', label='True density')
-    >>> g.plot_pdf(ax=ax1, fill=True, alpha=0.7, label='Grenander')
-    >>> ax1.set_xlabel('x')
-    >>> ax1.set_ylabel('Density')
-    >>> ax1.legend()
-
-    >>> # Plot CDF
-    >>> ax2.plot(xs, g.cdf(xs), label='Grenander CDF')
-    >>> ax2.step(np.sort(x), np.arange(1, len(x)+1)/len(x), 
-    ...          where='post', label='Empirical CDF')
-    >>> ax2.plot(xs, expon.cdf(xs), 'k-', label='True CDF')
-    >>> ax2.set_xlabel('x')
-    >>> ax2.set_ylabel('CDF')
-    >>> ax2.legend()
-    >>> plt.tight_layout()
+    >>> plt.plot(xs, stats.expon.pdf(xs), 'k-', label='True density')
+    >>> plt.plot(xs, g.pdf(xs), drawstyle='steps-post', label='Grenander')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('Density')
+    >>> plt.legend()
     >>> plt.show()
     """
+    __make_distribution_version__ = "1.16.0"
+    parameters = tuple()
+
     def __init__(self,
                  dataset,
                  support_min=0.0,
@@ -147,9 +136,16 @@ class grenander:
         params = self._fit(dataset, assume_sorted)
         self.__dict__.update(params)
 
+    @property
+    def support(self):
+        """Support dict for make_distribution compatibility."""
+        return {
+            'endpoints': (self.support_min, self.knots[-1]),
+            'inclusive': (True, True)
+        }
+
     def pdf(self, x):
         """Evaluate the estimated density at `x`."""
-        x = np.asarray(x)
         indices = np.searchsorted(self.knots, x, side='right') - 1
         indices = np.clip(indices, 0, len(self.slopes) - 1)
         
@@ -167,42 +163,22 @@ class grenander:
 
     def cdf(self, x):
         """Evaluate the estimated CDF at `x`."""
-        x = np.asarray(x)
-        return np.interp(x, self.knots, self.heights, left=0.0, right=1.0)
+        return np.interp(x, self.knots, self.heights, 
+                         left=0.0, right=1.0)
 
     def sf(self, x):
         """Survival function 1 - CDF."""
         return 1.0 - self.cdf(x)
 
-    def rvs(self, size=None, random_state=None):
-        """Sample from the estimated density."""
-        rng = np.random.default_rng(random_state)
-        size = 1 if size is None else size
-
-        widths = np.diff(self.knots)
-        mass = widths * self.slopes
-        mass = mass / mass.sum()
-
-        j = rng.choice(len(mass), size=size, p=mass)
-        u = rng.random(size=size)
-        return self.knots[j] + u * widths[j]
-
-    def plot_pdf(self, ax=None, *, fill=True, **kwargs):
-        """Plot the estimated density as a histogram with variable bin widths.
+    def logcdf(self, x):
+        """Evaluate log CDF."""
+        return np.log(self.cdf(x))
     
-        Parameters
-        ----------
-        ax : matplotlib.axes.Axes, optional
-            Axes object to plot on. If None, uses current axes.
-        fill : bool, default=True
-            Whether to fill the histogram.
-        **kwargs
-            Additional arguments passed to matplotlib's stairs function.
-        """
-        import matplotlib.pyplot as plt
-        if ax is None:
-            ax = plt.gca()
-        return ax.stairs(self.slopes, self.knots, fill=fill, **kwargs)
+    def ppf(self, q):
+        """Percent point function (inverse CDF)."""
+        return np.interp(q, self.heights, self.knots,
+                         left=self.support_min,
+                         right=self.knots[-1])
 
     def _fit(self, dataset, assume_sorted=False):
         """Internal fitting method."""
