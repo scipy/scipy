@@ -150,7 +150,7 @@ class grenander:
         indices = np.searchsorted(self.knots, x, side='right') - 1
         indices = np.clip(indices, 0, len(self.slopes) - 1)
         
-        in_support = (self.support_min <= x) & (x < self.knots[-1])
+        in_support = (self.support_min <= x) & (x <= self.knots[-1])
         
         return np.where(in_support, self.slopes[indices], 0.0)
     
