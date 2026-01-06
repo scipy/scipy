@@ -12,7 +12,7 @@ from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
 from .lapack import (
     get_lapack_funcs, _compute_lwork,
-    _normalize_lapack_dtype, _ensure_aligned_and_native
+    _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz,
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -617,21 +617,6 @@ def _to_banded(n_below, n_above, a):
     for i in range(1, n_below + 1):
         ab[n_above + i, :-i] = np.diag(a, -i)
     return ab
-
-
-def _ensure_dtype_cdsz(*arrays):
-    # Ensure that the dtype of arrays is one of the standard types
-    # compatible with LAPACK functions (single or double precision
-    # real or complex).
-    dtype = np.result_type(*arrays)
-    if not np.issubdtype(dtype, np.inexact):
-        return (array.astype(np.float64) for array in arrays)
-    complex = np.issubdtype(dtype, np.complexfloating)
-    if np.finfo(dtype).bits <= 32:
-        dtype = np.complex64 if complex else np.float32
-    elif np.finfo(dtype).bits >= 64:
-        dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
 
 
 @_apply_over_batch(('a', 2), ('b', '1|2'))

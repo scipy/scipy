@@ -23,8 +23,9 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
 # Local imports
 from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import LinAlgError, _datacopied, norm
-from ._basic import _ensure_dtyle_sdcz
-from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native
+from .lapack import (
+    _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz
+)
 from .lapack import get_lapack_funcs, _compute_lwork
 from . import _batched_linalg
 
