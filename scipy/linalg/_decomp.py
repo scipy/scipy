@@ -116,13 +116,13 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
 
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
         overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
-    """
+    r"""
     Solve an ordinary or generalized eigenvalue problem of a square matrix.
 
     Find eigenvalues w and right or left eigenvectors of a general matrix::
 
-        a   vr[:,i] = w[i]        b   vr[:,i]
-        a.H vl[:,i] = w[i].conj() b.H vl[:,i]
+        a   @ vr[:, i] = w[i]        * b   @ vr[:, i]
+        a.H @ vl[:, i] = w[i].conj() * b.H @ vl[:, i]
 
     where ``.H`` is the Hermitian conjugation.
 
@@ -148,25 +148,29 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     homogeneous_eigvals : bool, optional
         If True, return the eigenvalues in homogeneous coordinates.
-        In this case ``w`` is a (2, M) array so that::
+        In this case ``w`` is a ``(2, M)`` array so that::
 
-            w[1,i] a vr[:,i] = w[0,i] b vr[:,i]
+            w[1, i] * a @ vr[:, i] = w[0, i] * b @ vr[:, i]
+
+        This option is sometimes useful for generalized eigenvalue problems,
+        ``b is not None``, where an eigenvalue, :math:`\lambda = \alpha / \beta`  ,
+        can over- or underflow; typically, :\math:`\alpha` and :math:`\beta` are of the
+        order of ``norm(a)`` and ``norm(b)``, respectively.
 
         Default is False.
 
     Returns
     -------
-    w : (M,) or (2, M) double or complex ndarray
+    w : (..., M,) or (..., 2, M) complex ndarray
         The eigenvalues, each repeated according to its
-        multiplicity. The shape is ``(M,)`` unless
-        ``homogeneous_eigvals=True``.
-    vl : (M, M) double or complex ndarray
+        multiplicity. The shape is ``(M,)`` unless ``homogeneous_eigvals=True``.
+    vl : (..., M, M) double or complex ndarray
         The left eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column ``vl[:,i]``. Only returned if ``left=True``.
+        ``w[i]`` is the column ``vl[:, i]``. Only returned if ``left=True``.
         The left eigenvector is not normalized.
-    vr : (M, M) double or complex ndarray
+    vr : (..., M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
+        ``w[i]`` is the column ``vr[:, i]``.  Only returned if ``right=True``.
 
     Raises
     ------
@@ -186,28 +190,66 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     --------
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> a = np.array([[0., -1.],
+    ...               [1.,  0.]])
+
+    Compute the eigenvalues (``eigvals`` is the same as ``eig(a, right=False)``)
+
     >>> linalg.eigvals(a)
     array([0.+1.j, 0.-1.j])
+
+    Solve a generalized eigenvalue problem:
 
     >>> b = np.array([[0., 1.], [1., 1.]])
     >>> linalg.eigvals(a, b)
     array([ 1.+0.j, -1.+0.j])
 
-    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
-    >>> linalg.eigvals(a, homogeneous_eigvals=True)
-    array([[3.+0.j, 8.+0.j, 7.+0.j],
-           [1.+0.j, 1.+0.j, 1.+0.j]])
+    Inputs with ``ndim > 2`` are interpreted as a batch of matrices
 
-    >>> a = np.array([[0., -1.], [1., 0.]])
-    >>> linalg.eigvals(a) == linalg.eig(a)[0]
-    array([ True,  True])
-    >>> linalg.eig(a, left=True, right=False)[1] # normalized left eigenvector
-    array([[-0.70710678+0.j        , -0.70710678-0.j        ],
-           [-0.        +0.70710678j, -0.        -0.70710678j]])
-    >>> linalg.eig(a, left=False, right=True)[1] # normalized right eigenvector
-    array([[0.70710678+0.j        , 0.70710678-0.j        ],
-           [0.        -0.70710678j, 0.        +0.70710678j]])
+    >>> a2 = np.stack((a, 2*a))
+    >>> linalg.eigvals(a2)
+    array([[0.+1.j, 0.-1.j],
+           [0.+2.j, 0.-2.j]])
+
+    ``homogeneous_eigvals=True`` argument effectively separates each eigenvalue into a
+    numerator-denominator pair:
+
+    >>> a = np.array([[3., 0., 0.],
+    ...               [0., 8., 0.],
+    ...               [0., 0., 7.]])
+    >>> b = 2*np.eye(3)
+    >>> linalg.eigvals(a, b, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [2.+0.j, 2.+0.j, 2.+0.j]])
+
+    **Eigenvectors**: by default, ``eig`` returns normalized right eigenvectors in
+    columns of the second return array
+
+    >>> a = np.array([[0., -1.],
+    ...               [1., 0.]])
+    >>> w, vr = linalg.eig(a)
+    >>> w      # eigenvalues
+    array([0. + 1.j, 0. - 1.j])
+    >>> vr     # normalized right eigenvectors
+    array([[0.70710678 + 0.j        , 0.70710678 - 0.j        ],
+           [0.         - 0.70710678j, 0.         + 0.70710678j]])
+
+    Verify that columns of ``vr`` are indeed eigenvectors:
+
+    >>> a @ vr[:, 0] - w[0] * vr[:, 0]
+    array([0.+0.j, 0.+0.j])
+    >>> a @ vr[:, 1] - w[1] * vr[:, 1]
+    array([0.+0.j, 0.+0.j])
+
+    To compute the normalized left eigenvectors, use ``left=True``:
+
+    >>> w, vl, vr = linalg.eig(a, left=True, right=True)
+    >>> vl * np.sqrt(2)   # ``vl`` is normalized left eigenvectors
+    array([[-1. + 0.j, -1. - 0.j],
+           [ 0. + 1.j,  0. - 1.j]])
+    >>> vr * np.sqrt(2)   # ``vr`` is normalized right eigenvectors
+    array([[1. + 0.j, 1. + 0.j],
+           [0. - 1.j, 0. + 1.j]])
     """
     #  if b is not None or homogeneous_eigvals:
     if homogeneous_eigvals:
@@ -1031,21 +1073,21 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
 def eigvals(a, b=None, overwrite_a=False, check_finite=True,
             homogeneous_eigvals=False):
-    """
+    r"""
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
-    Find eigenvalues of a general matrix::
+    Find eigenvalues, ``w``, of a general matrix::
 
-        a   vr[:,i] = w[i]        b   vr[:,i]
+        a @ vr[:, i] = w[i] * b  @ vr[:, i]
 
     Parameters
     ----------
-    a : (M, M) array_like
-        A complex or real matrix whose eigenvalues and eigenvectors
-        will be computed.
-    b : (M, M) array_like, optional
-        Right-hand side matrix in a generalized eigenvalue problem.
-        If omitted, identity matrix is assumed.
+    a : (..., M, M) array_like
+        A complex or real matrix (or a stack of matrices), whose eigenvalues will be
+        computed.
+    b : (..., M, M) array_like, optional
+        Right-hand side matrix (or a stack of matrices) in a generalized eigenvalue
+        problem. If omitted (default), identity matrix is assumed.
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
     check_finite : bool, optional
@@ -1055,17 +1097,22 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
         or NaNs.
     homogeneous_eigvals : bool, optional
         If True, return the eigenvalues in homogeneous coordinates.
-        In this case ``w`` is a (2, M) array so that::
+        In this case ``w`` is a ``(2, M)`` array so that::
 
-            w[1,i] a vr[:,i] = w[0,i] b vr[:,i]
+            w[1, i] * a @ vr[:, i] = w[0, i] * b @ vr[:, i]
+
+        This option is sometimes useful for generalized eigenvalue problems,
+        ``b is not None``, where an eigenvalue, :math:`\lambda = \alpha / \beta`,
+        can over- or underflow; typically, :\math:`\alpha` and :math:`\beta` are of the
+        order of ``norm(a)`` and ``norm(b)``, respectively.
 
         Default is False.
 
     Returns
     -------
-    w : (M,) or (2, M) double or complex ndarray
+    w : (..., M,) or (..., 2, M) complex ndarray
         The eigenvalues, each repeated according to its multiplicity
-        but not in any specific order. The shape is (M,) unless
+        but not in any specific order. The shape is ``(M,)`` unless
         ``homogeneous_eigvals=True``.
 
     Raises
@@ -1085,19 +1132,37 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
     --------
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> a = np.array([[0., -1.],
+    ...               [1.,  0.]])
+
+    Compute the eigenvalues (``eigvals`` is the same as ``eig(a, right=False)``)
+
     >>> linalg.eigvals(a)
     array([0.+1.j, 0.-1.j])
+
+    Solve a generalized eigenvalue problem:
 
     >>> b = np.array([[0., 1.], [1., 1.]])
     >>> linalg.eigvals(a, b)
     array([ 1.+0.j, -1.+0.j])
 
-    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
-    >>> linalg.eigvals(a, homogeneous_eigvals=True)
-    array([[3.+0.j, 8.+0.j, 7.+0.j],
-           [1.+0.j, 1.+0.j, 1.+0.j]])
+    Inputs with ``ndim > 2`` are interpreted as a batch of matrices
 
+    >>> a2 = np.stack((a, 2*a))
+    >>> linalg.eigvals(a2)
+    array([[0.+1.j, 0.-1.j],
+           [0.+2.j, 0.-2.j]])
+
+    ``homogeneous_eigvals=True`` argument effectively separates each eigenvalue into a
+    numerator-denominator pair:
+
+    >>> a = np.array([[3., 0., 0.],
+    ...               [0., 8., 0.],
+    ...               [0., 0., 7.]])
+    >>> b = 2*np.eye(3)
+    >>> linalg.eigvals(a, b, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [2.+0.j, 2.+0.j, 2.+0.j]])
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
                check_finite=check_finite,
