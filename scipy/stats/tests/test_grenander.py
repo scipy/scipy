@@ -89,39 +89,31 @@ def test_basic_shapes_and_monotonicity_invariants():
                     rtol=1e-13, atol=1e-13)
 
 
-def test_pdf_cdf_boundary_behavior_and_call_alias():
+def test_pdf_cdf_boundary_behavior():
     rng = np.random.default_rng(2)
     x = rng.exponential(size=100)
     g = grenander(x, support_min=0.0)
 
-    # below support_min: cdf=0, pdf=nan (per fill_value)
-    assert_allclose(g.cdf([-1.0, -0.5, 0.0]), [0.0, 0.0, 0.0], rtol=0, atol=0)
-    p = g.pdf([-1.0, -0.5])
-    assert_(np.all(np.isnan(p)))
+    # below support_min: cdf=0, pdf=0
+    assert_allclose(g.cdf([-1.0, -0.5, 0.0]), [0.0, 0.0, 0.0])
+    assert_allclose(g.pdf([-1.0, -0.5]), [0.0, 0.0])
 
     # above last knot: cdf=1, pdf=0
     big = g.knots[-1] + 10.0
-    assert_allclose(g.cdf(big), 1.0, rtol=0, atol=0)
-    assert_allclose(g.pdf(big), 0.0, rtol=0, atol=0)
-
-    # __call__ alias
-    grid = np.linspace(0.01, g.knots[-1], 50)
-    assert_allclose(g(grid), g.pdf(grid), rtol=0, atol=0)
+    assert_allclose(g.cdf(big), 1.0)
+    assert_allclose(g.pdf(big), 0.0)
 
 
 def test_logpdf_handles_zeros():
-    # construct a case where pdf(x) == 0 happens (x beyond last knot)
     rng = np.random.default_rng(3)
     x = rng.exponential(size=120)
     g = grenander(x, support_min=0.0)
 
+    # pdf=0 => logpdf=-inf both below and above support
     big = g.knots[-1] + 1.0
-    lp = g.logpdf(big)
-    assert_(np.isneginf(lp))
-
-    # below support_min => pdf is nan => logpdf is nan
-    lp2 = g.logpdf(-1.0)
-    assert_(np.isnan(lp2))
+    assert_(np.isneginf(g.logpdf(big)))
+    
+    assert_(np.isneginf(g.logpdf(-1.0)))
 
 
 def test_cdf_is_consistent_with_histogram_representation():

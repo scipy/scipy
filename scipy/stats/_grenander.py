@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.optimize import isotonic_regression
-from scipy.interpolate import interp1d
 
 class grenander:
     """Grenander estimator of a nonincreasing density.
@@ -45,7 +44,7 @@ class grenander:
 
     .. math::
 
-        \\text{maximize} \\frac{1}{n}\sum_{i=1}^n \log f(x_i)
+        \\text{maximize} \\frac{1}{n}\\sum_{i=1}^n \\log f(x_i)
 
     subject to
 
@@ -140,32 +139,23 @@ class grenander:
     >>> plt.tight_layout()
     >>> plt.show()
     """
-    def __init__(self, 
-                 dataset, 
-                 support_min=0.0, 
+    def __init__(self,
+                 dataset,
+                 support_min=0.0,
                  assume_sorted=False):
         self.support_min = support_min
         params = self._fit(dataset, assume_sorted)
         self.__dict__.update(params)
 
-        self._cdf_interp = interp1d(
-            self.knots, self.heights, kind="linear",
-            bounds_error=False, fill_value=(0.0, 1.0),
-            assume_sorted=True
-        )
-
-        self._pdf_interp = interp1d(
-            self.knots[:-1],
-            self.slopes,
-            kind="previous",
-            bounds_error=False,
-            fill_value=(np.nan, 0.0),
-            assume_sorted=True
-        )
-
     def pdf(self, x):
         """Evaluate the estimated density at `x`."""
-        return np.asarray(self._pdf_interp(x), dtype=float)
+        x = np.asarray(x)
+        indices = np.searchsorted(self.knots, x, side='right') - 1
+        indices = np.clip(indices, 0, len(self.slopes) - 1)
+        
+        in_support = (self.support_min <= x) & (x < self.knots[-1])
+        
+        return np.where(in_support, self.slopes[indices], 0.0)
     
     __call__ = pdf
 
@@ -177,7 +167,8 @@ class grenander:
 
     def cdf(self, x):
         """Evaluate the estimated CDF at `x`."""
-        return np.asarray(self._cdf_interp(x), dtype=float)
+        x = np.asarray(x)
+        return np.interp(x, self.knots, self.heights, left=0.0, right=1.0)
 
     def sf(self, x):
         """Survival function 1 - CDF."""
