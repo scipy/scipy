@@ -464,7 +464,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
     # Linearized approximation for small p to avoid numerical issues; see gh-23407
     p_threshold = 2e-6
-    if p <= p_threshold:
+    if abs(p) <= p_threshold:
         return _linearized_pmean(a, p, axis=axis, weights=weights, xp=xp)
 
     with np.errstate(divide='ignore', invalid='ignore'):
