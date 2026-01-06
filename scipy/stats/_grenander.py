@@ -81,10 +81,10 @@ class grenander:
     Estimate a decreasing density from exponential data.
 
     >>> import numpy as np
-    >>> from scipy.stats import expon, grenander
+    >>> from scipy import stats
     >>> rng = np.random.default_rng(1234567891)
     >>> x = rng.exponential(size=100)
-    >>> g = grenander(x)
+    >>> g = stats.grenander(x)
 
     The estimator provides the fitted density values at the observations:
 
@@ -190,7 +190,7 @@ class grenander:
             )
 
         # Collect gaps in order statistics
-        W = np.concat([[self.support_min], x])
+        W = np.concatenate([[self.support_min], x])
         w = np.diff(W)
 
         # Raw ECDF slopes on each interval are 1/(n*w); LCM slopes are the
