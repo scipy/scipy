@@ -146,6 +146,7 @@ class grenander:
 
     def pdf(self, x):
         """Evaluate the estimated density at `x`."""
+        x = np.asarray(x, dtype=float)
         indices = np.searchsorted(self.knots, x, side='right') - 1
         indices = np.clip(indices, 0, len(self.slopes) - 1)
         
@@ -155,27 +156,15 @@ class grenander:
     
     __call__ = pdf
 
-    def logpdf(self, x):
-        """Evaluate log density, returning -inf where density is 0."""
-        p = self.pdf(x)
-        with np.errstate(divide="ignore"):
-            return np.log(p)
-
     def cdf(self, x):
         """Evaluate the estimated CDF at `x`."""
+        x = np.asarray(x, dtype=float)
         return np.interp(x, self.knots, self.heights, 
                          left=0.0, right=1.0)
-
-    def sf(self, x):
-        """Survival function 1 - CDF."""
-        return 1.0 - self.cdf(x)
-
-    def logcdf(self, x):
-        """Evaluate log CDF."""
-        return np.log(self.cdf(x))
     
-    def ppf(self, q):
+    def icdf(self, q):
         """Percent point function (inverse CDF)."""
+        q = np.asarray(q, dtype=float)
         return np.interp(q, self.heights, self.knots,
                          left=self.support_min,
                          right=self.knots[-1])
