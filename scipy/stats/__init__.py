@@ -655,7 +655,7 @@ from ._distribution_infrastructure import (
 )
 from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
-from ._correlation import chatterjeexi, spearmanrho, theilslopes
+from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
 from ._quantile import quantile
 
 

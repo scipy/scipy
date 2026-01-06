@@ -4,7 +4,7 @@ from .._lib._bunch import _make_tuple_bunch
 from ._axis_nan_policy import _axis_nan_policy_factory
 from ._stats_pythran import siegelslopes as siegelslopes_pythran
 
-__all__ = ['_find_repeats', 'siegelslopes']
+__all__ = ['_find_repeats']
 
 # This is not a namedtuple for backwards compatibility. See PR #12983
 TheilslopesResult = _make_tuple_bunch('TheilslopesResult',

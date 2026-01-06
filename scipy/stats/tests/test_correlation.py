@@ -229,7 +229,105 @@ class TestSpearmanRho:
             check_nan(res)
 
 
-class TestTheilslopes:
+class RobustSlopesTest:
+    #  'iv, mask, warnings, consistency, gh19678, mstats'
+    def test_input_validation(self):
+        pfun = getattr(stats, self.pfun)
+        other_method = 'joint' if pfun == stats.theilslopes else 'hierarchical'
+        msg = (f"method must be either '{other_method}' or 'separate'. "
+               "'joint_separate' is invalid.")
+        with pytest.raises(ValueError, match=msg):
+            pfun([0, 1, 1], method='joint_separate')
+
+    @skip_xp_invalid_arg
+    @pytest.mark.parametrize("method", ['separate', 'other'])
+    def test_mask(self, method):
+        pfun = getattr(stats, self.pfun)
+        if method == 'other':
+            method = 'joint' if self.pfun =='theilslopes' else 'hierarchical'
+
+        # Test for correct masking.
+        mask = np.asarray([False, False, True, False])
+        y = np.ma.array([0, 1, 100, 1], mask=mask)
+        res = pfun(y, method=method)
+        ref = pfun(y[~mask], method=method)
+
+        assert_allclose(res.slope, ref.slope)
+        assert_allclose(res.intercept, ref.intercept)
+
+    def test_warnings(self):
+        # Test `theilslopes` with degenerate input; see gh-15943
+        pfun = getattr(stats, self.pfun)
+        msg = "All-NaN slice.*|Mean of empty slice|invalid value encountered.*"
+        with pytest.warns(RuntimeWarning, match=msg):
+            res = pfun([0, 1], [0, 0])
+            assert np.all(np.isnan(res))
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered...", RuntimeWarning)
+            res = stats.theilslopes([0, 0, 0], [0, 1, 0])
+            assert_allclose(res, (0, 0, np.nan, np.nan))
+
+    def test_namedtuple_consistency(self):
+        """
+        Simple test to ensure tuple backwards-compatibility of the returned object.
+        """
+        pfun = getattr(stats, self.pfun)
+
+        y = [1, 2, 4]
+        x = [4, 6, 8]
+
+        result = pfun(y, x)
+
+        # note both returned values are distinct here
+        assert_equal(result[0], result.slope)
+        assert_equal(result[1], result.intercept)
+        if pfun == stats.theilslopes:
+            assert_equal(result[2], result.low_slope)
+            assert_equal(result[3], result.high_slope)
+
+    def test_gh19678_uint8(self):
+        # `theilslopes` returned unexpected results when `y` was an unsigned type.
+        # Check that this is resolved.
+        pfun = getattr(stats, self.pfun)
+        rng = np.random.default_rng(2549824598234528)
+        y = rng.integers(0, 255, size=10, dtype=np.uint8)
+        res = pfun(y, y)
+        np.testing.assert_allclose(res.slope, 1)
+
+    @pytest.mark.parametrize("method", ['separate', 'other'])
+    @pytest.mark.parametrize("case_number", [0, 1, 2, 3])
+    def test_against_mstats(self, method, case_number):
+        pfun = getattr(stats, self.pfun)
+        if method == 'other':
+            method = 'joint' if self.pfun =='theilslopes' else 'hierarchical'
+
+        rng = np.random.default_rng(349824598234528554)
+        match case_number:
+            case 0:  # no x
+                x = None
+                y = rng.random(100)
+            case 1:  # no ties
+                x = rng.random(100)
+                y = rng.random(100)
+            case 2:  # no x ties
+                x = rng.random(100)
+                y = rng.integers(50, size=100)
+            case 3:  # ties in x and y
+                x = rng.integers(25, size=100)
+                y = rng.integers(50, size=100)
+        res = pfun(y, x, method=method, axis=-1)
+        ref = pfun(y, x, method=method)
+        assert res.slope != 0  # avoid trivial cases
+        assert_allclose(res.slope, ref.slope)
+        assert_allclose(res.intercept, ref.intercept)
+        if pfun == stats.theilslopes:
+            assert_allclose(res.low_slope, ref.low_slope)
+            assert_allclose(res.high_slope, ref.high_slope)
+
+
+class TestTheilslopes(RobustSlopesTest):
+    pfun = 'theilslopes'
     def test_theilslopes(self):
         # Test for basic slope and intercept.
         slope, intercept, lower, upper = stats.theilslopes([0, 1, 1])
@@ -256,80 +354,33 @@ class TestTheilslopes:
         assert_allclose(upper, 4.38, rtol=5e-3)
         assert_allclose(lower, 3.71, rtol=5e-3)
 
-    def test_input_validation(self):
-        msg = ("method must be either 'joint' or 'separate'."
-               "'joint_separate' is invalid.")
-        with pytest.raises(ValueError, match=msg):
-            stats.theilslopes([0, 1, 1], method='joint_separate')
 
-    @skip_xp_invalid_arg
-    def test_mask(self):
-        # Test for correct masking.
-        y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
-        slope, intercept, lower, upper = stats.theilslopes(y)
-        assert_allclose(slope, 0.5)
-        assert_allclose(intercept, 0.5)
+class TestSiegelslopes(RobustSlopesTest):
+    pfun = 'siegelslopes'
+    def test_siegelslopes(self):
+        # method should be exact for straight line
+        y = 2 * np.arange(10) + 0.5
+        assert_equal(stats.siegelslopes(y), (2.0, 0.5))
+        assert_equal(stats.siegelslopes(y, method='separate'), (2.0, 0.5))
 
-        slope, intercept, lower, upper = stats.theilslopes(y, method='joint')
-        assert_allclose(slope, 0.5)
-        assert_allclose(intercept, 0.0)
+        x = 2 * np.arange(10)
+        y = 5 * x - 3.0
+        assert_equal(stats.siegelslopes(y, x), (5.0, -3.0))
+        assert_equal(stats.siegelslopes(y, x, method='separate'), (5.0, -3.0))
 
-    def test_theilslopes_warnings(self):
-        # Test `theilslopes` with degenerate input; see gh-15943
-        msg = "All-NaN slice.*|Mean of empty slice|invalid value encountered.*"
-        with pytest.warns(RuntimeWarning, match=msg):
-            res = stats.theilslopes([0, 1], [0, 0])
-            assert np.all(np.isnan(res))
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "invalid value encountered...", RuntimeWarning)
-            res = stats.theilslopes([0, 0, 0], [0, 1, 0])
-            assert_allclose(res, (0, 0, np.nan, np.nan))
+        # method is robust to outliers: brekdown point of 50%
+        y[:4] = 1000
+        assert_equal(stats.siegelslopes(y, x), (5.0, -3.0))
 
-    def test_theilslopes_namedtuple_consistency(self):
-        """
-        Simple test to ensure tuple backwards-compatibility of the returned
-        TheilslopesResult object
-        """
-        y = [1, 2, 4]
-        x = [4, 6, 8]
-        slope, intercept, low_slope, high_slope = stats.theilslopes(y, x)
-        result = stats.theilslopes(y, x)
+        # if there are no outliers, results should be comparable to linregress
+        x = np.arange(10)
+        y = -2.3 + 0.3 * x + stats.norm.rvs(size=10, random_state=231)
+        slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)
 
-        # note all four returned values are distinct here
-        assert_equal(slope, result.slope)
-        assert_equal(intercept, result.intercept)
-        assert_equal(low_slope, result.low_slope)
-        assert_equal(high_slope, result.high_slope)
+        slope, intercept = stats.siegelslopes(y, x)
+        assert_allclose(slope, slope_ols, rtol=0.1)
+        assert_allclose(intercept, intercept_ols, rtol=0.1)
 
-    def test_gh19678_uint8(self):
-        # `theilslopes` returned unexpected results when `y` was an unsigned type.
-        # Check that this is resolved.
-        rng = np.random.default_rng(2549824598234528)
-        y = rng.integers(0, 255, size=10, dtype=np.uint8)
-        res = stats.theilslopes(y, y)
-        np.testing.assert_allclose(res.slope, 1)
-
-    @pytest.mark.parametrize("case_number", [0, 1, 2, 3])
-    def test_against_mstats(self, case_number):
-        rng = np.random.default_rng(349824598234528554)
-        match case_number:
-            case 0:  # no x
-                x = None
-                y = rng.random(100)
-            case 1:  # no ties
-                x = rng.random(100)
-                y = rng.random(100)
-            case 2:  # no x ties
-                x = rng.random(100)
-                y = rng.integers(50, size=100)
-            case 3:  # ties in x and y
-                x = rng.integers(25, size=100)
-                y = rng.integers(50, size=100)
-        res = stats.theilslopes(y, x, axis=-1)
-        ref = stats.mstats.theilslopes(y, x)
-        assert res.slope != 0  # avoid trivial cases
-        assert_allclose(res.slope, ref.slope)
-        assert_allclose(res.intercept, ref.intercept)
-        assert_allclose(res.low_slope, ref.low_slope)
-        assert_allclose(res.high_slope, ref.high_slope)
+        slope, intercept = stats.siegelslopes(y, x, method='separate')
+        assert_allclose(slope, slope_ols, rtol=0.1)
+        assert_allclose(intercept, intercept_ols, rtol=0.1)

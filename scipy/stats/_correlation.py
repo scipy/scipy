@@ -6,10 +6,11 @@ from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
-from scipy.stats._stats_mstats_common import TheilslopesResult, _n_samples_optional_x
+from scipy.stats._stats_mstats_common import (TheilslopesResult, _n_samples_optional_x,
+                                              SiegelslopesResult)
 
 
-__all__ = ['chatterjeexi', 'spearmanrho', 'theilslopes']
+__all__ = ['chatterjeexi', 'spearmanrho', 'theilslopes', 'siegelslopes']
 
 
 def _xi_statistic(x, y, y_continuous, xp):
@@ -506,8 +507,22 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     >>> plt.show()
 
     """
-    if method not in ['joint', 'separate']:
-        raise ValueError("method must be either 'joint' or 'separate'."
+    return _robust_slopes(y, x=x, alpha=alpha, method=method, pfun='theilslopes')
+
+
+@xp_capabilities(np_only=True)
+@_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
+                          n_samples=_n_samples_optional_x,
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
+def siegelslopes(y, x=None, method='separate', *, axis=None):
+    return _robust_slopes(y, x=x, method=method, pfun='siegelslopes')
+
+
+def _robust_slopes(y, *, x, alpha=None, method, pfun):
+    other_method = 'joint' if pfun == 'theilslopes' else 'hierarchical'
+    if method not in {other_method, 'separate'}:
+        raise ValueError(f"method must be either '{other_method}' or 'separate'. "
                          f"'{method}' is invalid.")
 
     y, x = xp_promote(y, x, force_floating=True, xp=np)
@@ -520,19 +535,31 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     # Compute sorted slopes only when deltax > 0
     deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
     deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
-    i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
-    # with NumPy:
-    deltax, deltay = deltax[..., i], deltay[..., i]
-    # with array API, mask must be sole index, so we'll need to broadcast it.
-    # indexing will ravel the array, so we'll need to reshape it after
+
+    if pfun == 'theilslopes':
+        i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
+        # with NumPy:
+        deltax, deltay = deltax[..., i], deltay[..., i]
+        # with array API, mask must be sole index, so we'll need to broadcast it.
+        # indexing will ravel the array, so we'll need to reshape it after
+
     deltax[deltax == 0] = np.nan
     slopes = deltay / deltax
-    slopes = np.sort(slopes, axis=-1)
     medslope = np.nanmedian(slopes, axis=-1)
-    if method == 'joint':
-        medinter = np.median(y - medslope * x, axis=-1)
-    else:
+
+    # siegelslope is median of medians rather than grand median
+    finalslope = np.nanmedian(medslope, axis=-1) if pfun == 'siegelslopes' else medslope
+
+    if method in {'joint', 'hierarchical'}:
+        medinter = np.median(y - finalslope[..., np.newaxis] * x, axis=-1)
+    elif pfun == 'theilslopes':
         medinter = np.median(y, axis=-1) - medslope * np.median(x, axis=-1)
+    else:
+        medinter = np.median(y - medslope * x, axis=-1)
+
+    if pfun == 'siegelslopes':
+        return SiegelslopesResult(slope=finalslope[()], intercept=medinter[()])
+
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
@@ -556,9 +583,10 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     Ru = np.minimum(np.round((nt - z*sigma)/2.).astype(np.int64), nt-1)
     Rl = np.maximum(np.round((nt + z*sigma)/2.).astype(np.int64) - 1, 0)
     R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
+    slopes = np.sort(slopes, axis=-1)
     delta = np.take_along_axis(slopes, R, axis=-1)
     i_nan = np.broadcast_to(sigsq < 0, delta.shape)
     delta[i_nan] = np.nan
 
-    return TheilslopesResult(slope=medslope[()], intercept=medinter[()],
+    return TheilslopesResult(slope=finalslope[()], intercept=medinter[()],
                              low_slope=delta[..., 0][()], high_slope=delta[..., 1][()])
