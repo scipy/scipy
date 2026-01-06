@@ -109,11 +109,17 @@ _mode_interp_constant_doc = (
     'grid-wrap' (`a b c d | a b c d | a b c d`)
         The input is extended by wrapping around to the opposite edge.
 
-    'wrap' (`c d b c | a b c d | b c a b`)
+    'wrap' (`b c d b c | a b c d | b c a b c`)
         The input is extended by wrapping around to the opposite edge, but in a
         way such that the last point and initial point exactly overlap. In this
         case it is not well defined which sample will be chosen at the point of
-        overlap.""")
+        overlap.
+
+
+        For the example illustrated above, the edge values ``a`` and ``d`` overlap,
+        while the inner pattern ``b c`` repeats. The example demonstrates one
+        possible output, while ``b c a b c | a b c d | b c d b c`` is another,
+        since either ``a`` or ``d`` may occur at each point of overlap.""")
 _mode_interp_mirror_doc = (
     _mode_interp_constant_doc.replace("Default is 'constant'",
                                       "Default is 'mirror'")
