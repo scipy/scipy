@@ -5,7 +5,7 @@
 #   Rewrote much of chirp()
 #   Added sweep_poly()
 import numpy as np
-from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
+from numpy import asarray, zeros, place, nan, mod, pi, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
 from scipy._lib._array_api import array_namespace, xp_promote
@@ -36,8 +36,9 @@ def sawtooth(t, width=1):
         Width of the rising ramp as a proportion of the total cycle.
         Default is 1, producing a rising ramp, while 0 produces a falling
         ramp.  `width` = 0.5 produces a triangle wave.
-        If an array, causes wave shape to change over time, and must be the
-        same length as t.
+        If an array, causes wave shape to change over time.  Must be
+        broadcastable with t.
+        Where width not in interval [0, 1], output will be NaN.
 
     Returns
     -------
@@ -55,32 +56,40 @@ def sawtooth(t, width=1):
     >>> plt.plot(t, signal.sawtooth(2 * np.pi * 5 * t))
 
     """
-    t, w = asarray(t), asarray(width)
-    w = asarray(w + (t - t))
-    t = asarray(t + (w - w))
+    t, w = np.broadcast_arrays(np.asarray(t), np.asarray(width))
+
     y = zeros(t.shape, dtype="d")
 
     # width must be between 0 and 1 inclusive
-    mask1 = (w > 1) | (w < 0)
-    place(y, mask1, nan)
+    maskbadw = ~((0 <= w)  & (w <= 1))
+    y[maskbadw] = np.nan
 
-    # take t modulo 2*pi
-    tmod = mod(t, 2 * pi)
+    # nonfinite t give NaN tmod
+    with np.errstate(invalid='ignore'):
+        # take t modulo 2*pi.  Use fmod to handle small magnitude negative t.
+        tmod = np.fmod(t, 2 * pi)
+
+    # on the interval -2*pi to -(1-w)*2*pi function is
+    #  (tmod+pi*(2-w)) / (pi*w)
+    mask1 = ~maskbadw & (tmod < -(1-w) * 2 * pi)
+    y[mask1] = (tmod[mask1] + pi * (2 - w[mask1])) / (pi * w[mask1])
+
+    # on the interval -(1-w)*2*pi to 0 function is
+    #  tmod / (pi*(1-w)) - 1
+    mask2 = ~maskbadw & ~mask1 & (tmod < 0)
+    y[mask2] = -tmod[mask2]/(pi * (1 - w[mask2])) - 1
 
     # on the interval 0 to width*2*pi function is
     #  tmod / (pi*w) - 1
-    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    tsub = extract(mask2, tmod)
-    wsub = extract(mask2, w)
-    place(y, mask2, tsub / (pi * wsub) - 1)
+    mask3 = ~maskbadw & ~mask1 & ~mask2 & (tmod < w * 2 * pi)
+    y[mask3] = tmod[mask3] / (pi * w[mask3]) - 1
 
     # on the interval width*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
+    #  mask4 includes NaN values of tmod, which will propagate to y
+    mask4 = ~maskbadw & ~mask1 & ~mask2 & ~mask3
+    y[mask4] = (pi * (w[mask4] + 1) - tmod[mask4]) / (pi * (1 - w[mask4]))
 
-    mask3 = (1 - mask1) & (1 - mask2)
-    tsub = extract(mask3, tmod)
-    wsub = extract(mask3, w)
-    place(y, mask3, (pi * (wsub + 1) - tsub) / (pi * (1 - wsub)))
     return y
 
 
