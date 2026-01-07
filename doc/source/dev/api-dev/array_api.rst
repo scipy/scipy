@@ -539,26 +539,27 @@ GPU.
 
 .. _dev-arrayapi_jax_jit_no_gpu:
 
-.. admonition:: Functions with JAX JIT support but no GPU support
-   :class: dropdown
+.. dropdown:: Functions with JAX JIT support but no GPU support
+  :icon: alert
+  :color: warning
+	      
+  It's possible for a function to be natively available in JAX,
+  support ``jax.jit``, but not be supported on GPU. Thus, it may be
+  possible for JAX delegation to be set up in a function which has
+  not yet received the array API standard compatibility treatment,
+  and for the JIT to be supported but not the GPU.
 
-   It's possible for a function to be natively available in JAX,
-   support ``jax.jit``, but not be supported on GPU. Thus, it may be
-   possible for JAX delegation to be set up in a function which has
-   not yet received the array API standard compatibility treatment,
-   and for the JIT to be supported but not the GPU.
-
-   Because ``exceptions`` does double
-   duty declaring exceptions to ``cpu_only=True`` and ``np_only=True``, it is not
-   possible to express this situation using ``xp_capabilities`` in the way
-   described above. This is not too serious of an issue because the intention is
-   that ``np_only=True`` is only a temporary state. Through the means described
-   above in the section on :ref:`adding array API support <dev-arrayapi_adding_support>`,
-   it is a reasonable goal for all functions in SciPy's public API to at least reach
-   the state ``cpu_only=True``. For functions still waiting in the ``np_only=True`` state,
-   ``xp_capabilities``'s ``skip_backends`` kwarg can be used as an escape hatch to
-   allow more fine grained declaration of capabilities. See the section on
-   :ref:`skip_backends and xfail_backends <dev-arrayapi_skip_xfail_backends>`.
+  Because ``exceptions`` does double
+  duty declaring exceptions to ``cpu_only=True`` and ``np_only=True``, it is not
+  possible to express this situation using ``xp_capabilities`` in the way
+  described above. This is not too serious of an issue because the intention is
+  that ``np_only=True`` is only a temporary state. Through the means described
+  above in the section on :ref:`adding array API support <dev-arrayapi_adding_support>`,
+  it is a reasonable goal for all functions in SciPy's public API to at least reach
+  the state ``cpu_only=True``. For functions still waiting in the ``np_only=True`` state,
+  ``xp_capabilities``'s ``skip_backends`` kwarg can be used as an escape hatch to
+  allow more fine grained declaration of capabilities. See the section on
+  :ref:`skip_backends and xfail_backends <dev-arrayapi_skip_xfail_backends>`.
 
 ``out_of_scope=True`` signals that there is no intention to ever provide array
 API support for a given function. There is not yet a formal policy for which
