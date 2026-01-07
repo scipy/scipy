@@ -180,7 +180,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
 template<typename T>
 int
-_gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
+_gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
     using npy_complex_type = typename type_traits<T>::npy_complex_type;
@@ -207,6 +207,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
     // Output array pointers
     npy_complex_type *ptr_W = (npy_complex_type *)PyArray_DATA(ap_w);
+    T *ptr_beta = (T *)PyArray_DATA(ap_beta);
 
     int compute_vl = (ap_vl != NULL);
     int compute_vr = (ap_vr != NULL);
@@ -284,7 +285,6 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
         copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
 
-
         // compute eigenvalues for the slice
         ggev(&jobvl, &jobvr, &intn, data_A, &lda, data_B, &ldb, alphar, alphai, beta, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
 
@@ -298,16 +298,12 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
         // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
         if constexpr (type_traits<T>::is_complex) {
-            std::complex<real_type> *p_alpha = reinterpret_cast<std::complex<real_type> *>(alphar);
-            std::complex<real_type> *p_beta = reinterpret_cast<std::complex<real_type> *>(beta);
-            std::complex<real_type> val;
-
-            for(npy_intp i=0; i<n; i++) {
-                // XXX edge cases: alpha=0, beta=0 etc
-                val = p_alpha[i] / p_beta[i];
-                ptr_W[i] = cpack(std::real(val), std::imag(val)); //  p_alpha[i] / p_beta[i];
-            }
+            // alphar and beta are complex and compatible with the W array 
+            memcpy(ptr_W, alphar, n*sizeof(T));
             ptr_W += n;
+
+            memcpy(ptr_beta, beta, n*sizeof(T));
+            ptr_beta += n;
 
             if (compute_vl) {
                 copy_slice_F_to_C(ptr_vl, buf_vl, n, n, ldvl);
@@ -321,10 +317,12 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         else {
             // convert alphar,alphai,beta into w
             for(npy_intp i=0; i<n; i++) {
-                // XXX edge cases: alpha=0, beta=0 etc
-                ptr_W[i] = cpack(alphar[i] / beta[i], alphai[i] / beta[i]);
+                ptr_W[i] = cpack(alphar[i], alphai[i]);
             }
             ptr_W += n;
+
+            memcpy(ptr_beta, beta, n*sizeof(T));
+            ptr_beta += n;
 
             if (compute_vl) {
                 transform_eigvecs(ptr_vl, buf_vl, ldvl, n, alphai);
@@ -347,14 +345,19 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
 template<typename T>
 int
-_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
+_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
 {
     int info;
     if (ap_Bm == NULL) {
+        // sanity check: B and beta are either both NULL or both not NULL (for a generalized eig problem) 
+        if (ap_beta != NULL) { return -222; }
+
         info = _reg_eig<T>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
     }
     else {
-        info = _gen_eig<T>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
+        if (ap_beta == NULL) {return -223; }
+
+        info = _gen_eig<T>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
     }
     return info;
 }
