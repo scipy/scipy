@@ -49,9 +49,8 @@ def _make_complex_eigvecs(w, vin, dtype):
 def _make_eigvals(alpha, beta, homogeneous_eigvals):
     if homogeneous_eigvals:
         if beta is None:
-            return np.vstack((alpha, np.ones_like(alpha)))
-        else:
-            return np.vstack((alpha, beta))
+            beta = np.ones_like(alpha)
+        return np.stack((alpha, beta), axis=-2)
     else:
         if beta is None:
             return alpha
@@ -60,7 +59,7 @@ def _make_eigvals(alpha, beta, homogeneous_eigvals):
             alpha_zero = (alpha == 0)
             beta_zero = (beta == 0)
             beta_nonzero = ~beta_zero
-            w[beta_nonzero] = alpha[beta_nonzero]/beta[beta_nonzero]
+            w[beta_nonzero] = alpha[beta_nonzero] / beta[beta_nonzero]
             # Use np.inf for complex values too since
             # 1/np.inf = 0, i.e., it correctly behaves as projective
             # infinity.
@@ -251,12 +250,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     array([[1. + 0.j, 1. + 0.j],
            [0. - 1.j, 0. + 1.j]])
     """
-    #  if b is not None or homogeneous_eigvals:
-    if homogeneous_eigvals:
-        return eig0(a, b, left, right, overwrite_a, overwrite_b,
-                    check_finite, homogeneous_eigvals
-        )
-
     # basic sanity checks of the input matrix
     a1 = _asarray_validated(a, check_finite=check_finite)
 
@@ -309,7 +302,8 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         res = _batched_linalg._eig(a1, left, right)
     else:
         res = _batched_linalg._eig(a1, left, right, b1)
-    w, vl, vr, err_lst = res
+    w, beta, vl, vr, err_lst = res
+    w = _make_eigvals(w, beta, homogeneous_eigvals)
 
     if err_lst:
         # XXX: find a test case to cover this
@@ -335,176 +329,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         if left:
             vl /= np.linalg.vector_norm(vl, axis=-2, keepdims=True)
 
-    if not (left or right):
-        return w
-    if left:
-        if right:
-            return w, vl, vr
-        return w, vl
-    return w, vr
-
-
-@_apply_over_batch(('a', 2), ('b', 2))
-def eig0(a, b=None, left=False, right=True, overwrite_a=False,
-        overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
-    """
-    Solve an ordinary or generalized eigenvalue problem of a square matrix.
-
-    Find eigenvalues w and right or left eigenvectors of a general matrix::
-
-        a   vr[:,i] = w[i]        b   vr[:,i]
-        a.H vl[:,i] = w[i].conj() b.H vl[:,i]
-
-    where ``.H`` is the Hermitian conjugation.
-
-    Parameters
-    ----------
-    a : (M, M) array_like
-        A complex or real matrix whose eigenvalues and eigenvectors
-        will be computed.
-    b : (M, M) array_like, optional
-        Right-hand side matrix in a generalized eigenvalue problem.
-        Default is None, identity matrix is assumed.
-    left : bool, optional
-        Whether to calculate and return left eigenvectors.  Default is False.
-    right : bool, optional
-        Whether to calculate and return right eigenvectors.  Default is True.
-    overwrite_a : bool, optional
-        Whether to overwrite `a`; may improve performance.  Default is False.
-    overwrite_b : bool, optional
-        Whether to overwrite `b`; may improve performance.  Default is False.
-    check_finite : bool, optional
-        Whether to check that the input matrices contain only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    homogeneous_eigvals : bool, optional
-        If True, return the eigenvalues in homogeneous coordinates.
-        In this case ``w`` is a (2, M) array so that::
-
-            w[1,i] a vr[:,i] = w[0,i] b vr[:,i]
-
-        Default is False.
-
-    Returns
-    -------
-    w : (M,) or (2, M) double or complex ndarray
-        The eigenvalues, each repeated according to its
-        multiplicity. The shape is (M,) unless
-        ``homogeneous_eigvals=True``.
-    vl : (M, M) double or complex ndarray
-        The left eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column ``vl[:,i]``. Only returned if ``left=True``.
-        The left eigenvector is not normalized.
-    vr : (M, M) double or complex ndarray
-        The normalized right eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
-
-    Raises
-    ------
-    LinAlgError
-        If eigenvalue computation does not converge.
-
-    See Also
-    --------
-    eigvals : eigenvalues of general arrays
-    eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
-    eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
-        band matrices
-    eigh_tridiagonal : eigenvalues and right eigenvectors for
-        symmetric/Hermitian tridiagonal matrices
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy import linalg
-    >>> a = np.array([[0., -1.], [1., 0.]])
-    >>> linalg.eigvals(a)
-    array([0.+1.j, 0.-1.j])
-
-    >>> b = np.array([[0., 1.], [1., 1.]])
-    >>> linalg.eigvals(a, b)
-    array([ 1.+0.j, -1.+0.j])
-
-    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
-    >>> linalg.eigvals(a, homogeneous_eigvals=True)
-    array([[3.+0.j, 8.+0.j, 7.+0.j],
-           [1.+0.j, 1.+0.j, 1.+0.j]])
-
-    >>> a = np.array([[0., -1.], [1., 0.]])
-    >>> linalg.eigvals(a) == linalg.eig(a)[0]
-    array([ True,  True])
-    >>> linalg.eig(a, left=True, right=False)[1] # normalized left eigenvector
-    array([[-0.70710678+0.j        , -0.70710678-0.j        ],
-           [-0.        +0.70710678j, -0.        -0.70710678j]])
-    >>> linalg.eig(a, left=False, right=True)[1] # normalized right eigenvector
-    array([[0.70710678+0.j        , 0.70710678-0.j        ],
-           [0.        -0.70710678j, 0.        +0.70710678j]])
-
-
-
-    """
-    a1 = _asarray_validated(a, check_finite=check_finite)
-    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
-
-    # accommodate square empty matrices
-    if a1.size == 0:
-        w_n, vr_n = eig(np.eye(2, dtype=a1.dtype))
-        w = np.empty_like(a1, shape=(0,), dtype=w_n.dtype)
-        w = _make_eigvals(w, None, homogeneous_eigvals)
-        vl = np.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
-        vr = np.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
-        if not (left or right):
-            return w
-        if left:
-            if right:
-                return w, vl, vr
-            return w, vl
-        return w, vr
-
-    overwrite_a = overwrite_a or (_datacopied(a1, a))
-    if b is not None:
-        b1 = _asarray_validated(b, check_finite=check_finite)
-        overwrite_b = overwrite_b or _datacopied(b1, b)
-        if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
-            raise ValueError('expected square matrix')
-        if b1.shape != a1.shape:
-            raise ValueError('a and b must have the same shape')
-        return _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
-                       homogeneous_eigvals)
-
-    geev, geev_lwork = get_lapack_funcs(('geev', 'geev_lwork'), (a1,))
-    compute_vl, compute_vr = left, right
-
-    lwork = _compute_lwork(geev_lwork, a1.shape[0],
-                           compute_vl=compute_vl,
-                           compute_vr=compute_vr)
-
-    if geev.typecode in 'cz':
-        w, vl, vr, info = geev(a1, lwork=lwork,
-                               compute_vl=compute_vl,
-                               compute_vr=compute_vr,
-                               overwrite_a=overwrite_a)
-        w = _make_eigvals(w, None, homogeneous_eigvals)
-    else:
-        wr, wi, vl, vr, info = geev(a1, lwork=lwork,
-                                    compute_vl=compute_vl,
-                                    compute_vr=compute_vr,
-                                    overwrite_a=overwrite_a)
-        w = wr + _I * wi
-        w = _make_eigvals(w, None, homogeneous_eigvals)
-
-    _check_info(info, 'eig algorithm (geev)',
-                positive='did not converge (only eigenvalues '
-                         'with order >= %d have converged)')
-
-    only_real = np.all(w.imag == 0.0)
-    if not (geev.typecode in 'cz' or only_real):
-        t = w.dtype.char
-        if left:
-            vl = _make_complex_eigvecs(w, vl, t)
-        if right:
-            vr = _make_complex_eigvecs(w, vr, t)
     if not (left or right):
         return w
     if left:
