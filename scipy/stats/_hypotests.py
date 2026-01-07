@@ -103,6 +103,46 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
+    Examples
+    --------
+    Test whether two samples come from the same distribution.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng()
+
+    Generate two samples from the same normal distribution:
+
+    >>> x = rng.normal(loc=0, scale=1, size=50)
+    >>> y = rng.normal(loc=0, scale=1, size=50)
+    >>> result = stats.epps_singleton_2samp(x, y)
+    >>> result.pvalue > 0.05
+    True
+
+    The large p-value suggests we cannot reject the null hypothesis that
+    the samples come from the same distribution.
+
+    Compare samples from different distributions:
+
+    >>> x = rng.normal(loc=0, scale=1, size=50)
+    >>> y = rng.normal(loc=0.5, scale=1, size=50)  # shifted mean
+    >>> result = stats.epps_singleton_2samp(x, y)
+    >>> result.pvalue < 0.05  # doctest: +SKIP
+    True
+
+    The small p-value suggests the samples likely come from different
+    distributions.
+
+    The ES test works well with discrete data, unlike the KS test.
+    This is useful for analyzing count data from simulations:
+
+    >>> # Number of particles in different states (Monte Carlo simulation)
+    >>> counts_run1 = rng.poisson(lam=5, size=40)
+    >>> counts_run2 = rng.poisson(lam=5, size=40)
+    >>> result = stats.epps_singleton_2samp(counts_run1, counts_run2)
+    >>> isinstance(result.pvalue, float)
+    True
+
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
