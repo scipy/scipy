@@ -28,9 +28,7 @@ from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
-    xp_swapaxes
-
-)
+    xp_promote, xp_swapaxes,)
 from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_extra as xpx
 
@@ -167,11 +165,11 @@ def correlate(in1, in2, mode='full', method='auto'):
 
           z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, 
-    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the 
-    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and 
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``,
+    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the
+    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and
     :math:`y^*` denotes the complex conjugate of :math:`y`.
-    
+
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
@@ -829,7 +827,7 @@ def _split(x, indices_or_sections, axis, xp):
 
     # handle array case.
     Nsections = len(indices_or_sections) + 1
-    div_points = [0] + list(indices_or_sections) + [Ntotal]    
+    div_points = [0] + list(indices_or_sections) + [Ntotal]
 
     sub_arys = []
     sary = xp_swapaxes(x, axis, 0, xp=xp)
@@ -2414,7 +2412,7 @@ def hilbert(x, N=None, axis=-1):
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
-    
+
     The transformation is done along the last axis by default.
 
     For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
@@ -3694,17 +3692,17 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> import numpy as np
     >>> from scipy.fft import fftshift, fftfreq, fft, rfft, irfft
     >>> from scipy.signal import resample, resample_poly
-    ... 
+    ...
     >>> fac, T0, T1 = 8, 1, 1/8  # upsampling factor and sampling intervals
     >>> for n0 in (15, 16):  # number of samples of input signal
     ...     n1 = fac * n0  # number of samples of upsampled signal
     ...     t0, t1 = T0 * np.arange(n0), T1 * np.arange(n1)  # time stamps
     ...     x0 = np.zeros(n0)  # input signal has two non-zero sample values
     ...     x0[n0//2], x0[n0//2+1] = n0 // 2, -(n0 // 2)
-    ... 
+    ...
     ...     x1n = irfft(rfft(x0), n=n1) * n1 / n0  # naive resampling
     ...     x1r = resample(x0, n1)  # resample signal
-    ... 
+    ...
     ...     # Determine magnitude spectrum:
     ...     x0_up = np.zeros_like(x1r)  # upsampling without antialiasing filter
     ...     x0_up[::n1 // n0] = x0
@@ -3712,25 +3710,25 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     ...     XX1 = (fftshift(fft(x_)) / n1 for x_ in (x1n, x1r))
     ...     f0, f1 = fftshift(fftfreq(n0, T0)), fftshift(fftfreq(n1, T1))  # frequencies
     ...     df = f0[1] - f0[0]  # frequency resolution
-    ... 
+    ...
     ...     fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
     ...     ax0.set_title(rf"Upsampling ${fac}\times$ from {n0} to {n1} samples")
-    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", 
+    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$",
     ...             xlim=(0, n1*T1))
-    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2, 
+    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2,
     ...              label="$x_0(t)$ / $X_0(f)$")
     ...     for x_, l_ in zip((x1n, x1r), ('C0--', 'C1-')):
     ...         ax0.plot(t1, x_, l_, alpha=.5, label=None)
     ...     ax0.grid()
-    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)", 
+    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)",
     ...             ylabel="Magnitude $|X(f)|$", xlim=(-0.7, 0.7))
     ...     ax1.axvspan(0.5/T0, f1[-1], color='gray', alpha=.2)
     ...     ax1.axvspan(f1[0], -0.5/T0, color='gray', alpha=.2)
     ...     ax1.plot(f1, abs(X0_up), 'C2-', f0, abs(X0),  'C2o', alpha=.3, linewidth=2)
-    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')): 
+    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')):
     ...         ax1.plot(f1, abs(X_), l_, alpha=.5, label=n_)
     ...     ax1.grid()
-    ...     fig.legend(loc='outside lower center', ncols=4)    
+    ...     fig.legend(loc='outside lower center', ncols=4)
     >>> plt.show()
 
     The first figure shows that upsampling an odd number of samples produces identical
@@ -3747,7 +3745,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     down-sampling: The input signal a non-zero value at :math:`t=0` and is downsampled
     from 19937 to 128 samples. Since 19937 is prime, the FFT is expected to be slow. To
     speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
-    // n1 = 155`` and then pass the result to `resample`. Two parameterization of 
+    // n1 = 155`` and then pass the result to `resample`. Two parameterization of
     `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
     periodic wheras the default parametrization performs zero-padding. The upper
     subplot shows the resulting signals over time whereas the lower subplot depicts the
@@ -3757,31 +3755,31 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> import numpy as np
     >>> from scipy.fft import rfftfreq, rfft
     >>> from scipy.signal import resample, resample_poly
-    ... 
+    ...
     >>> n0 = 19937 # number of input samples - prime
     >>> n1 = 128  # number of output samples - fast FFT length
     >>> T0, T1 = 1/n0, 1/n1  # sampling intervals
     >>> t0, t1 = np.arange(n0)*T0, np.arange(n1)*T1  # time stamps
-    ... 
+    ...
     >>> x0 = np.zeros(n0)  # Input has one non-zero sample
     >>> x0[0] = n0
-    >>> 
+    >>>
     >>> x1r = resample(x0, n1)  # slow due to n0 being prime
     >>> # This is faster:
-    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic 
+    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic
     >>> x2p = resample(resample_poly(x0, 1, n0 // n1), n1)  # with zero-padding
-    ... 
-    >>> X0 = rfft(x0) / n0 
+    ...
+    >>> X0 = rfft(x0) / n0
     >>> X1r, X1p, X2p = rfft(x1r) / n1, rfft(x1p) / n1, rfft(x2p) / n1
     >>> f0, f1 = rfftfreq(n0, T0), rfftfreq(n1, T1)
-    ... 
+    ...
     >>> fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
     >>> ax0.set_title(f"Dowsampled Impulse response (from {n0} to {n1} samples)")
-    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1)) 
+    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1))
     >>> for x_ in (x1r, x1p, x2p):
     ...     ax0.plot(t1, x_, alpha=.5)
     >>> ax0.grid()
-    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)", 
+    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)",
     ...         ylabel="Magnitude $|X(f)|$", xlim=(0, 0.55/T1))
     >>> ax1.axvspan(0.5/T1, f0[-1], color='gray', alpha=.2)
     >>> ax1.plot(f1, abs(X1r), 'C0.-', alpha=.5, label="resample")
@@ -3789,7 +3787,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> ax1.plot(f1, abs(X2p), 'C2x-', alpha=.5, label="resample_poly")
     >>> ax1.grid()
     >>> fig.legend(loc='outside lower center', ncols=2)
-    >>> plt.show()    
+    >>> plt.show()
 
     The plots show that the results of the "pure" `resample` and the usage of the
     default parameters of `resample_poly` agree well.  The periodic padding of
@@ -3801,8 +3799,8 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     antialiasing filter with the maximum bandwidth by default.
 
     Note that the doubled spectral magnitude at the Nyqist frequency of 64 Hz is due the
-    even number of ``n1=128`` output samples, which requires a special treatment as 
-    discussed in the previous example. 
+    even number of ``n1=128`` output samples, which requires a special treatment as
+    discussed in the previous example.
     """
     if domain not in ('time', 'freq'):
         raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
@@ -4310,8 +4308,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
 
 def lfilter_zi(b, a):
-    """
-    Construct initial conditions for lfilter for step response steady-state.
+    r"""Construct initial conditions for `lfilter` for step response steady-state.
 
     Compute an initial state `zi` for the `lfilter` function that corresponds
     to the steady state of the step response.
@@ -4322,14 +4319,23 @@ def lfilter_zi(b, a):
 
     Parameters
     ----------
-    b, a : array_like (1-D)
-        The IIR filter coefficients. See `lfilter` for more
-        information.
+    b : array_like
+        The numerator coefficient vector as a 1-D sequence.
+    a : array_like
+        The denominator coefficient vector as a 1-D sequence.  If ``a[0]``
+        is not 1, then both `a` and `b` are normalized by ``a[0]``.
+        Hence, ``a[0] != 0`` must hold.
 
     Returns
     -------
     zi : 1-D ndarray
         The initial state for the filter.
+
+    Raises
+    ------
+    ValueError
+        If ``a[0] == 0`` (invalid denominator polynomial) or
+        ``sum(a) == 0`` (unstable filter).
 
     See Also
     --------
@@ -4337,116 +4343,103 @@ def lfilter_zi(b, a):
 
     Notes
     -----
-    A linear filter with order m has a state space representation (A, B, C, D),
-    for which the output y of the filter can be expressed as::
+    The parameters `b` and `a` represent a transfer function :math:`H(z) = Y(z)/X(z)`
+    which is defined in the :ref:`tutorial_signal_TransferFunctionRepresentation`
+    section of the :ref:`user_guide`. As discussed in [1]_, the final value of
+    filtering a step response :math:`X(z) = z / (z-1)`, i.e., steady state, is given by
 
-        z(n+1) = A*z(n) + B*x(n)
-        y(n)   = C*z(n) + D*x(n)
+    .. math::
 
-    where z(n) is a vector of length m, A has shape (m, m), B has shape
-    (m, 1), C has shape (1, m) and D has shape (1, 1) (assuming x(n) is
-    a scalar).  lfilter_zi solves::
+        y_\infty := \lim_{k\to\infty} y[k]
+                  =  \lim_{z\to 1}\ (z-1)\, Y(z)
+                  = \frac{\sum_{i=0}^M b_i}{\sum_{j=0}^N a_j} \,.
 
-        zi = A*zi + B
+    If the denominator is zero, :math:`H(z)` has a pole at :math:`z_\infty=1`, which
+    makes the filter unstable. For the transposed Direct Form II, which is implemented
+    in `lfilter`, the initialization values :math:`z_k` for :math:`H(z)` can be
+    determined by the recurrence equation
 
-    In other words, it finds the initial condition for which the response
-    to an input of all ones is a constant.
+    .. math::
 
-    Given the filter coefficients `a` and `b`, the state space matrices
-    for the transposed direct form II implementation of the linear filter,
-    which is the implementation used by scipy.signal.lfilter, are::
+        z_k = z_{k+1} + x[0] \big( b_k - y_\infty a_k \big) \,,
 
-        A = scipy.linalg.companion(a).T
-        B = b[1:] - a[1:]*b[0]
-
-    assuming ``a[0]`` is 1.0; if ``a[0]`` is not 1, `a` and `b` are first
-    divided by a[0].
+    with :math:`x[0]` being the height of the input step function. Note that
+    :math:`a_0=1` is assumed here, which is incorporated into this function by
+    performing a normalization step.
 
     Examples
     --------
-    The following code creates a lowpass Butterworth filter. Then it
-    applies that filter to an array whose values are all 1.0; the
-    output is also all 1.0, as expected for a lowpass filter.  If the
-    `zi` argument of `lfilter` had not been given, the output would have
-    shown the transient signal.
+    The following code creates a lowpass Butterworth filter to filter a signal made up
+    of ones. As expected of a lowpass filter, the output is also all ones. If the `zi`
+    argument of `lfilter` had not been given, a transient signal would have been
+    produced. The second signal illustrates that using the parameter `zi` supresses
+    transients at the beginning of the output signal:
 
-    >>> from numpy import array, ones
+    >>> import numpy as np
     >>> from scipy.signal import lfilter, lfilter_zi, butter
+    ...
     >>> b, a = butter(5, 0.25)
     >>> zi = lfilter_zi(b, a)
-    >>> y, zo = lfilter(b, a, ones(10), zi=zi)
-    >>> y
+    >>> y0, zi0 = lfilter(b, a, np.ones(10), zi=zi)
+    >>> y0
     array([1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.])
-
-    Another example:
-
-    >>> x = array([0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0])
-    >>> y, zf = lfilter(b, a, x, zi=zi*x[0])
-    >>> y
+    >>> # Another signal:
+    >>> x = np.array([0.5, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0])
+    >>> y1, zi1 = lfilter(b, a, x, zi=zi*x[0])
+    >>> y1
     array([ 0.5       ,  0.5       ,  0.5       ,  0.49836039,  0.48610528,
         0.44399389,  0.35505241])
 
-    Note that the `zi` argument to `lfilter` was computed using
-    `lfilter_zi` and scaled by ``x[0]``.  Then the output `y` has no
-    transient until the input drops from 0.5 to 0.0.
+    Note that the `zi` argument to `lfilter` is computed using `lfilter_zi` and scaled
+    by ``x[0]``. As a result, the output `y1` has no transient until the input drops
+    from 0.5 to 0.
 
+    References
+    ----------
+    .. [1] Boris Likhterov and Norman Kopeika. "Hardware-efficient technique for
+           minimizing startup transients in Direct Form II digital filters". In:
+           International Journal of Electronics -- Volume 90(7), July 2003, pp.
+           471--479. :doi:`10.1080/00207210310001612482`
     """
     xp = array_namespace(b, a)
 
-    # FIXME: Can this function be replaced with an appropriate
-    # use of lfiltic?  For example, when b,a = butter(N,Wn),
-    #    lfiltic(b, a, y=numpy.ones_like(a), x=numpy.ones_like(b)).
-    #
+    # Note: As an alternative to this function, using `lfiltic` might work as well.
+    # For example, when b,a = butter(N,Wn), then
+    #    lfiltic(b, a, y=numpy.ones_like(a)*y_inf, x=numpy.ones_like(b)).
+    # should produce the same result. Though, no obvious algorithmic advantages over
+    # this implementation could be identified.
 
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
     # b to be 2D.
-    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
-    if b.ndim != 1:
-        raise ValueError("Numerator b must be 1-D.")
-    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    if a.ndim != 1:
-        raise ValueError("Denominator a must be 1-D.")
+    b, a = xp_promote(b, a, xp=xp, force_floating=True)  # need floats for division
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
 
-    while a.shape[0] > 1 and a[0] == 0.0:
-        a = a[1:]
-    if xp_size(a) < 1:
-        raise ValueError("There must be at least one nonzero `a` coefficient.")
+    if not (b.ndim == a.ndim == 1):
+        raise ValueError("Numerator `b` and Denominator `a` must be 1-D arrays, " +
+                         f"but {b.shape = }, {a.shape = }!")
 
-    if a[0] != 1.0:
-        # Normalize the coefficients so a[0] == 1.
-        b = b / a[0]
-        a = a / a[0]
+    if a[0] == 0:
+        raise ValueError("First coefficient of parameter `a` must be non-zero!")
 
-    n = max(a.shape[0], b.shape[0])
+    if a[0] != 1:  # Normalize the coefficients so a[0] == 1:
+        b, a = b / a[0], a / a[0]
 
-    # Pad a or b with zeros so they are the same length.
-    if a.shape[0] < n:
-        a = xp.concat((a, xp.zeros(n - a.shape[0], dtype=a.dtype)))
-    elif b.shape[0] < n:
-        b = xp.concat((b, xp.zeros(n - b.shape[0], dtype=b.dtype)))
+    if (sum_a := xp.sum(a)) == 0:
+        raise ValueError("Filter not stable due to sum(a) == 0, i.e., " +
+                         "having a pole at z = 1!")
 
-    dt = xp.result_type(a, b)
-    IminusA = np.eye(n - 1) - linalg.companion(a).T
-    IminusA = xp.asarray(IminusA, dtype=dt)
-    B = b[1:] - a[1:] * b[0]
-    # Solve zi = A*zi + B
-    zi = xp.linalg.solve(IminusA, B)
+    y_inf = xp.sum(b) / sum_a  # y[k → ∞] for unit-step input
 
-    # For future reference: we could also use the following
-    # explicit formulas to solve the linear system:
-    #
-    # zi = np.zeros(n - 1)
-    # zi[0] = B.sum() / IminusA[:,0].sum()
-    # asum = 1.0
-    # csum = 0.0
-    # for k in range(1,n-1):
-    #     asum += a[k]
-    #     csum += b[k] - a[k]*b[0]
-    #     zi[k] = asum*zi[0] - csum
-
-    return zi
-
+    # Calculate `zi[k] = zi[k+1] + b - y_inf*a` allowing different length for a, b:
+    n_a, n_b = a.shape[0], b.shape[0]
+    n = max(n_a, n_b)
+    b = xpx.pad(b, (0, n-n_b))
+    a = xpx.pad(a, (0, n-n_a))
+    # `xp.cumulative_sum((b - y_inf*a)[::-1])[-2::-1]` does not work in torch due to
+    # unsupported slicing with a negative step index. Hence, `flip` is used:
+    return xp.flip(xp.cumulative_sum(xp.flip(b - y_inf*a)))[1:]
 
 def sosfilt_zi(sos):
     """
