@@ -18,32 +18,16 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
 
 import numpy as np
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
-                   flatnonzero, conj, asarray, argsort, empty,
-                   iscomplex, zeros, einsum, eye, inf)
+                   asarray, argsort, empty, iscomplex, zeros, einsum, eye, inf)
 # Local imports
 from scipy._lib._util import _asarray_validated, _apply_over_batch
-from ._misc import LinAlgError, _datacopied, norm
+from ._misc import LinAlgError, _datacopied
+from scipy.linalg._misc import norm   # noqa: F401  (backwards compat)
 from .lapack import (
     _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz
 )
 from .lapack import get_lapack_funcs, _compute_lwork
 from . import _batched_linalg
-
-_I = np.array(1j, dtype='F')
-
-
-def _make_complex_eigvecs(w, vin, dtype):
-    """
-    Produce complex-valued eigenvectors from LAPACK DGGEV real-valued output
-    """
-    # - see LAPACK man page DGGEV at ALPHAI
-    v = np.array(vin, dtype=dtype)
-    m = (w.imag > 0)
-    m[:-1] |= (w.imag[1:] < 0)  # workaround for LAPACK bug, cf. ticket #709
-    for i in flatnonzero(m):
-        v.imag[:, i] = vin[:, i+1]
-        conj(v[:, i], v[:, i+1])
-    return v
 
 
 def _make_eigvals(alpha, beta, homogeneous_eigvals):
@@ -71,46 +55,13 @@ def _make_eigvals(alpha, beta, homogeneous_eigvals):
             return w
 
 
-def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
-            homogeneous_eigvals):
-    ggev, = get_lapack_funcs(('ggev',), (a1, b1))
-    cvl, cvr = left, right
-    res = ggev(a1, b1, lwork=-1)
-    lwork = res[-2][0].real.astype(np.int_)
-    if ggev.typecode in 'cz':
-        alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
-                                               overwrite_a, overwrite_b)
-        w = _make_eigvals(alpha, beta, homogeneous_eigvals)
-    else:
-        alphar, alphai, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr,
-                                                        lwork, overwrite_a,
-                                                        overwrite_b)
-        alpha = alphar + _I * alphai
-        w = _make_eigvals(alpha, beta, homogeneous_eigvals)
-    _check_info(info, 'generalized eig algorithm (ggev)')
-
-    only_real = np.all(w.imag == 0.0)
-    if not (ggev.typecode in 'cz' or only_real):
-        t = w.dtype.char
-        if left:
-            vl = _make_complex_eigvecs(w, vl, t)
-        if right:
-            vr = _make_complex_eigvecs(w, vr, t)
-
-    # the eigenvectors returned by the lapack function are NOT normalized
-    for i in range(vr.shape[0]):
-        if right:
-            vr[:, i] /= norm(vr[:, i])
-        if left:
-            vl[:, i] /= norm(vl[:, i])
-
-    if not (left or right):
-        return w
-    if left:
-        if right:
-            return w, vl, vr
-        return w, vl
-    return w, vr
+def _check_format_errors_warnings(routine_name, err_lst):
+    # XXX: find a test case to cover this
+    mesg = (
+        f"Internal {routine_name} return info = {[e['lapack_info'] for e in err_lst]} "
+        f"for slices {[e['num'] for e in err_lst]}."
+    )
+    raise LinAlgError(mesg)
 
 
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
@@ -162,14 +113,14 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     -------
     w : (..., M,) or (..., 2, M) complex ndarray
         The eigenvalues, each repeated according to its
-        multiplicity. The shape is ``(M,)`` unless ``homogeneous_eigvals=True``.
+        multiplicity. The shape is ``(..., M)`` unless ``homogeneous_eigvals=True``.
     vl : (..., M, M) double or complex ndarray
         The left eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vl[:, i]``. Only returned if ``left=True``.
         The left eigenvector is not normalized.
     vr : (..., M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column ``vr[:, i]``.  Only returned if ``right=True``.
+        ``w[i]`` is the column ``vr[:, i]``.  Only returned if ``right=True`` (default).
 
     Raises
     ------
@@ -264,24 +215,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
-    b1 = b
-    if b1 is not None:
-        b1 = _asarray_validated(b, check_finite=check_finite)
-        a1, b1 = _ensure_dtype_cdsz(a1, b1)  # NB: makes a1.dtype == b1.dtype, if needed
-        overwrite_b = overwrite_b or (_datacopied(b1, b))
-        b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
-
-        if len(b1.shape) < 2 or b1.shape[-1] != b1.shape[-2]:
-            raise ValueError('expected square matrix')
-
-        if a1.shape[-1] != b1.shape[-1]:
-            raise ValueError('a and b must have the same shape')
-
-        # broadcast batch dimensions of b1 and a1
-        batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
-
     # accommodate empty arrays
     if a1.shape[-1] == 0 or a1.shape[-2] == 0:
         batch_shape = a1.shape[:-2]
@@ -298,20 +231,41 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             return w, vl
         return w, vr
 
-    if b1 is None:
-        res = _batched_linalg._eig(a1, left, right)
-    else:
-        res = _batched_linalg._eig(a1, left, right, b1)
-    w, beta, vl, vr, err_lst = res
-    w = _make_eigvals(w, beta, homogeneous_eigvals)
+    if b is not None:
+        b1 = _asarray_validated(b, check_finite=check_finite)
+        a1, b1 = _ensure_dtype_cdsz(a1, b1)  # NB: makes a1.dtype == b1.dtype, if needed
+        overwrite_b = overwrite_b or (_datacopied(b1, b))
+        b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
-    if err_lst:
-        # XXX: find a test case to cover this
-        mesg = (
-            f"Internal geev return info = {[e['lapack_info'] for e in err_lst]} for "
-            f"slices {[e['num'] for e in err_lst]}."
-        )
-        raise LinAlgError(mesg)
+        if len(b1.shape) < 2 or b1.shape[-1] != b1.shape[-2]:
+            raise ValueError('expected square matrix')
+
+        if a1.shape[-1] != b1.shape[-1]:
+            raise ValueError('a and b must have the same shape')
+
+        # broadcast batch dimensions of b1 and a1
+        batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
+        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
+        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+
+        w, beta, vl, vr, err_lst = _batched_linalg._eig(a1, left, right, b1)
+
+        if err_lst:
+            _check_format_errors_warnings("ggev", err_lst)
+
+        # eigenvectors returned by ?GGEV are NOT normalized
+        if right:
+            vr /= np.linalg.vector_norm(vr, axis=-2, keepdims=True)
+        if left:
+            vl /= np.linalg.vector_norm(vl, axis=-2, keepdims=True)
+
+    else:
+        w, beta, vl, vr, err_lst  = _batched_linalg._eig(a1, left, right)
+
+        if err_lst:
+            _check_format_errors_warnings("geev", err_lst)
+
+    w = _make_eigvals(w, beta, homogeneous_eigvals)
 
     # backwards compat: make eigvecs real if all eigenvalues have zero imaginary parts
     a_is_real = a1.dtype in (np.float32, np.float64)
@@ -320,13 +274,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             vl = vl.real
         if right:
             vr = vr.real
-
-    # eigenvectors returned by ?GGEV are NOT normalized
-    if b1 is not None:
-        if right:
-            vr /= np.linalg.vector_norm(vr, axis=-2, keepdims=True)
-        if left:
-            vl /= np.linalg.vector_norm(vl, axis=-2, keepdims=True)
 
     if not (left or right):
         return w
@@ -935,7 +882,7 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
     -------
     w : (..., M,) or (..., 2, M) complex ndarray
         The eigenvalues, each repeated according to its multiplicity
-        but not in any specific order. The shape is ``(M,)`` unless
+        but not in any specific order. The shape is ``(..., M)`` unless
         ``homogeneous_eigvals=True``.
 
     Raises
