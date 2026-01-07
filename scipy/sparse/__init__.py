@@ -43,6 +43,7 @@ SciPy 2-D sparse array package for numeric data.
    :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
 
+
 Submodules
 ==========
 
@@ -54,6 +55,12 @@ Submodules
 
 Sparse array classes
 ====================
+
+.. warning::
+
+    :mod:`scipy.sparse` arrays are generally not thread safe, and must be
+    :ref:`term-externally-synchronized`.
+    See :ref:`scipy_thread_safety`.
 
 .. autosummary::
    :toctree: generated/
@@ -122,6 +129,11 @@ Identifying sparse arrays
 
 Sparse matrix classes
 =====================
+
+.. warning::
+
+    :mod:`scipy.sparse` matrices are generally not thread safe, and must be
+    :ref:`term-externally-synchronized`. See :ref:`scipy_thread_safety`.
 
 .. autosummary::
    :toctree: generated/
