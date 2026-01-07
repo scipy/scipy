@@ -1,30 +1,10 @@
 """'Generic' Array API backend for RBF interpolation."""
 from numpy.linalg import LinAlgError
-from ._rbfinterp_common import _monomial_powers_impl
 
+# TODO: rename on build the remove _src; then the import will be identical in _np and _xp
 from ._rbfinterp_pythran_src import (
-    _build_evaluation_coefficients,
-    _build_system,
-    _kernel_matrix_impl,
-    cubic,
-    gaussian,
-    inverse_multiquadric,
-    inverse_quadratic,
-    kernel_matrix,
-    kernel_matrix_at_centers,
-    linear,
-    multiquadric,
-    polynomial_matrix,
-    quintic,
-    thin_plate_spline
+    _build_system, _build_evaluation_coefficients, polynomial_matrix
 )
-
-def _monomial_powers(ndim, degree, xp):
-    out = _monomial_powers_impl(ndim, degree)
-    out = xp.asarray(out)
-    if out.shape[0] == 0:
-        out = xp.reshape(out, (0, ndim))
-    return out
 
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):

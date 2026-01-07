@@ -92,7 +92,6 @@ py3.install_sources([
     '_polyint.py',
     '_rbf.py',
     '_rbfinterp.py',
-    '_rbfinterp_common.py',
     '_rbfinterp_np.py',
     '_rbfinterp_xp.py',
     '_rbfinterp_pythran_src.py',

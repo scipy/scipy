@@ -1,6 +1,8 @@
 """Module for RBF interpolation."""
 import warnings
 from types import GenericAlias
+from itertools import combinations_with_replacement
+from math import comb
 
 import numpy as np
 from scipy.spatial import KDTree
@@ -46,6 +48,44 @@ _NAME_TO_MIN_DEGREE = {
     "cubic": 1,
     "quintic": 2
     }
+
+
+def _monomial_powers_impl(ndim, degree):
+    """Return the powers for each monomial in a polynomial.
+
+    Parameters
+    ----------
+    ndim : int
+        Number of variables in the polynomial.
+    degree : int
+        Degree of the polynomial.
+
+    Returns
+    -------
+    (nmonos, ndim) int ndarray
+        Array where each row contains the powers for each variable in a
+        monomial.
+
+    """
+    nmonos = comb(degree + ndim, ndim)
+    out = [[0]*ndim for _ in range(nmonos)]
+    count = 0
+    for deg in range(degree + 1):
+        for mono in combinations_with_replacement(range(ndim), deg):
+            # `mono` is a tuple of variables in the current monomial with
+            # multiplicity indicating power (e.g., (0, 1, 1) represents x*y**2)
+            for var in mono:
+                out[count][var] += 1
+            count += 1
+    return out
+
+
+def _monomial_powers(ndim, degree, xp):
+    out = _monomial_powers_impl(ndim, degree)
+    out = xp.asarray(out, dtype=xp.int64)
+    if out.shape[0] == 0:
+        out = xp.reshape(out, (0, ndim))
+    return out
 
 
 def _get_backend(xp):
@@ -313,7 +353,7 @@ class RBFInterpolator:
             neighbors = int(min(neighbors, ny))
             nobs = neighbors
 
-        powers = _backend._monomial_powers(ndim, degree, xp)
+        powers = _monomial_powers(ndim, degree, xp)
         # The polynomial matrix must have full column rank in order for the
         # interpolant to be well-posed, which is not possible if there are
         # fewer observations than monomials.

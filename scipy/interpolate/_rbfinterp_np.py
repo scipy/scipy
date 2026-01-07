@@ -2,19 +2,10 @@ import numpy as np
 from scipy import linalg
 from numpy.linalg import LinAlgError
 from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
-from ._rbfinterp_common import _monomial_powers_impl
 
 from ._rbfinterp_pythran import (
     _build_system, _build_evaluation_coefficients, polynomial_matrix
 )
-
-
-def _monomial_powers(ndim, degree, xp):
-    out = _monomial_powers_impl(ndim, degree)
-    out = np.asarray(out, dtype=np.int64)
-    if len(out) == 0:
-        out = out.reshape(0, ndim)
-    return out
 
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
