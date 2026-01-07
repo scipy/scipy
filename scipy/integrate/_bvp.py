@@ -755,6 +755,8 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         present. All arguments are ndarray: ``ya`` and ``yb`` with shape (n,),
         and ``p`` with shape (k,). The return value must be an array with
         shape (n + k,).
+        The order of the returned residuals does not matter, as `solve_bvp`
+        attempts to drive all residuals to zero.
     x : array_like, shape (m,)
         Initial mesh. Must be a strictly increasing sequence of real numbers
         with ``x[0]=a`` and ``x[-1]=b``.
