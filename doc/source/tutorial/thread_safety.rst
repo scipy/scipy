@@ -4,7 +4,8 @@ Thread Safety in SciPy
 ======================
 
 SciPy supports use in a multithreaded context via the `threading` module in
-the standard library. Many SciPy operations release the GIL, as does NumPy (and
+the standard library. Many SciPy operations release the
+:std:term:`GIL <global interpreter lock>`, as does NumPy (and
 a lot of SciPy functionality is implemented as calls to NumPy functions) - so
 unlike many situations in Python, it is possible to improve parallel
 performance by exploiting multithreaded parallelism in Python.
@@ -31,6 +32,40 @@ informative error. For example, `scipy.integrate.ode` may raise an
 ``IntegratorConcurrencyError`` for integration methods that do not support
 parallel execution.
 
+Note that operations that *do not* release the GIL will see no performance
+gains from use of the `threading` module, and instead might be better served
+with `multiprocessing`.
+
+Thread-Safe Operations
+----------------------
+
+The following operations have inherent thread-safety guarantees; see the
+:ref:`terminology <py-free-threading:free-threading-terminology>`. Unless
+specified otherwise safety can be assumed to be achieved using
+:ref:`Thread locals <term-thread-local>` :
+
+Thread local:
+  - :func:`scipy.integrate.ode` with ``method='lsoda'``
+  - :func:`scipy.integrate.solve_ivp` with ``method='LSODA'``
+  - :func:`scipy.sparse.linalg.spsolve` (SuperLU backend)
+
+
+NOT Thread-Safe (Caller Responsibility)
+---------------------------------------
+
+The following operations are **not inherently thread-safe** and should be
+:ref:`term-externally-synchronized`. Caller must ensure proper synchronization:
+
+**Integration**:
+  - :func:`scipy.integrate.ode` with ``method='vode'`` - use separate instance per thread or lock
+
+**File I/O** (protect with `threading.Lock` or use separate file handles per thread):
+  - :func:`scipy.io.netcdf_file`
+  - :func:`scipy.io.loadmat`, :func:`scipy.io.savemat`, :func:`scipy.io.whosmat`
+  - :func:`scipy.io.mmread`, :func:`scipy.io.mmwrite`, :func:`scipy.io.mminfo`
+
+**Data Structures**:
+
 SciPy offers a couple of data structures, namely sparse arrays and matrices in
 `scipy.sparse`, and k-D trees in `scipy.spatial`. These data structures are
 *currently not thread-safe*. Please avoid in particular operations that mutate
@@ -38,10 +73,15 @@ a data structure, like using item or slice assignment on sparse arrays, while
 the data is shared across multiple threads. That may result in data corruption,
 crashes, or other unwanted behavior.
 
-Note that operations that *do not* release the GIL will see no performance
-gains from use of the `threading` module, and instead might be better served
-with `multiprocessing`.
+Per-Thread Behavior
+-------------------
 
+These operations are thread-safe but have per-thread configuration:
+
+  - :func:`scipy.sparse.linalg.use_solver` - sets thread-local solver preference
+  - :func:`scipy.sparse.linalg.spsolve` - respects thread-local preference set by ``use_solver()``
+
+Each thread can independently configure solver preferences without locks or contention.
 
 Free-threaded Python
 --------------------
@@ -50,8 +90,8 @@ Free-threaded Python
 
 Starting with SciPy 1.15.0 and CPython 3.13, SciPy has experimental support
 for Python runtimes with the GIL disabled on all platforms. See
-https://py-free-threading.github.io for more information about installing and
-using free-threaded Python.
+:std:doc:`py-free-threading.github.io <py-free-threading:index>`
+for more information about installing and using free-threaded Python.
 
 Because free-threaded Python does not have a global interpreter lock (GIL) to
 serialize access to Python objects, there are more opportunities for threads to
