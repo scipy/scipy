@@ -50,7 +50,7 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
-def _monomial_powers_impl(ndim, degree):
+def _monomial_powers(ndim, degree, xp):
     """Return the powers for each monomial in a polynomial.
 
     Parameters
@@ -77,11 +77,7 @@ def _monomial_powers_impl(ndim, degree):
             for var in mono:
                 out[count][var] += 1
             count += 1
-    return out
 
-
-def _monomial_powers(ndim, degree, xp):
-    out = _monomial_powers_impl(ndim, degree)
     out = xp.asarray(out, dtype=xp.int64)
     if out.shape[0] == 0:
         out = xp.reshape(out, (0, ndim))
@@ -448,7 +444,8 @@ class RBFInterpolator:
         (Q, S) float ndarray
         Interpolated array
         """
-        _backend = _get_backend(self._xp)
+        _xp = self._xp
+        _backend = _get_backend(_xp)
 
         nx, ndim = x.shape
         if self.neighbors is None:
@@ -460,30 +457,15 @@ class RBFInterpolator:
         if chunksize <= nx:
             out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64)
             for i in range(0, nx, chunksize):
-                chunk = _backend.compute_interpolation(
-                    x[i:i + chunksize, :],
-                    y,
-                    self.kernel,
-                    self.epsilon,
-                    self.powers,
-                    shift,
-                    scale,
-                    coeffs,
-                    self._xp
-                )
+                x_i = x[i:i + chunksize, :]
+                chunk = _backend._build_evaluation_coefficients(
+                    x_i, y, self.kernel, self.epsilon, self.powers, shift, scale, _xp
+                ) @ coeffs
                 out = xpx.at(out, (slice(i, i + chunksize), slice(None,))).set(chunk)
         else:
-            out = _backend.compute_interpolation(
-                x,
-                y,
-                self.kernel,
-                self.epsilon,
-                self.powers,
-                shift,
-                scale,
-                coeffs,
-                self._xp
-            )
+            out = _backend._build_evaluation_coefficients(
+                x, y, self.kernel, self.epsilon, self.powers, shift, scale, _xp
+            ) @ coeffs
         return out
 
     def __call__(self, x):

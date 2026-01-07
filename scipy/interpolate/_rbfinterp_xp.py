@@ -1,7 +1,7 @@
 """'Generic' Array API backend for RBF interpolation."""
 from numpy.linalg import LinAlgError
 
-# TODO: rename on build the remove _src; then the import will be identical in _np and _xp
+# TODO: rename on build the remove _src; the import will be identical in _np and _xp
 from ._rbfinterp_pythran_src import (
     _build_system, _build_evaluation_coefficients, polynomial_matrix
 )
@@ -59,10 +59,3 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
         raise LinAlgError(msg)
 
     return shift, scale, coeffs
-
-
-def compute_interpolation(x, y, kernel, epsilon, powers, shift, scale, coeffs, xp):
-    vec = _build_evaluation_coefficients(
-        x, y, kernel, epsilon, powers, shift, scale, xp
-    )
-    return vec @ coeffs

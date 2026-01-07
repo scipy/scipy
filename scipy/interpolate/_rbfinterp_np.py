@@ -1,5 +1,4 @@
 import numpy as np
-from scipy import linalg
 from numpy.linalg import LinAlgError
 from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
@@ -58,10 +57,3 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
         raise LinAlgError(msg)
 
     return shift, scale, coeffs
-
-
-def compute_interpolation(x, y, kernel, epsilon, powers, shift, scale, coeffs, xp):
-    vec = _build_evaluation_coefficients(
-        x, y, kernel, epsilon, powers, shift, scale, xp
-    )
-    return vec @ coeffs
