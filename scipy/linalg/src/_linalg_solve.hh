@@ -288,10 +288,8 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     using real_type = typename type_traits<T>::real_type;
 
     CBLAS_INT info;
-    npy_intp *kls = NULL;
-    npy_intp *kus = NULL;
+    npy_intp *ks = NULL; // For storage of the bandwidths
     T* buffer = NULL;
-    T* ab = NULL;
 
     // --------------------------------------------------------------------
     // Input Array Attributes, duplicate of `_solve()`
@@ -339,30 +337,27 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // Bandwidth detection per slice
     npy_intp kl_max = 0;
     npy_intp ku_max = 0;
-    kls = (npy_intp *)malloc(outer_size * sizeof(npy_intp));
-    kus = (npy_intp *)malloc(outer_size * sizeof(npy_intp));
+    ks = (npy_intp *)malloc(2 * outer_size * sizeof(npy_intp));
 
-    if (kls == NULL || kus == NULL) {
+    if (ks == NULL) {
         free(ipiv);
         free(irwork);
-        free(kls);
-        free(kus);
+        free(ks);
         info = -102;
         return (int)info;
     }
 
+    npy_intp *kls = &ks[0]; // Lower bandwidths
+    npy_intp *kus = &ks[outer_size]; // Upper bandwidths
     detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &kl_max, &ku_max);
 
-    buffer = (T *)malloc((n * nrhs + 3 * n) * sizeof(T));
-    ab = (T *)malloc(((2 * kl_max + ku_max + 1) * n) * sizeof(T));
+    buffer = (T *)malloc((n * nrhs + 3 * n + (2 * kl_max + ku_max + 1) * n) * sizeof(T));
 
-    if (buffer == NULL || ab == NULL) {
+    if (buffer == NULL) {
         free(ipiv);
         free(irwork);
-        free(kls);
-        free(kus);
+        free(ks);
         free(buffer);
-        free(ab);
         info = -102;
         return int(info);
     }
@@ -370,6 +365,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // Chop up buffer
     T* b_data = &buffer[0];
     T* work2 = &buffer[n * nrhs]; // for `gbcon` call
+    T *ab = &buffer[n * nrhs + 3 * n];
 
     // Main loop traversal, taken from `_solve`
     for (npy_intp idx = 0; idx < outer_size; idx++) {
@@ -414,10 +410,8 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 free_exit_banded:
     free(ipiv);
     free(irwork);
-    free(kls);
-    free(kus);
+    free(ks);
     free(buffer);
-    free(ab);
 
     return 1;
 }
