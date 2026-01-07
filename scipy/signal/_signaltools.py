@@ -727,7 +727,7 @@ def _calc_oa_lens(s1, s2):
     in1_step : int
         The size of each step for the first array.
     in2_step : int
-        The size of each step for the first array.
+        The size of each step for the second array.
 
     """
     # Set up the arguments for the conventional FFT approach.
