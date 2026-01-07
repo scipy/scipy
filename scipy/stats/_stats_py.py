@@ -462,6 +462,11 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
 
+    # Linearized approximation for small p to avoid numerical issues; see gh-23407
+    p_threshold = 2e-6
+    if abs(p) <= p_threshold:
+        return _linearized_pmean(a, p, axis=axis, weights=weights, xp=xp)
+
     with np.errstate(divide='ignore', invalid='ignore'):
         return _xp_mean(a**float(p), axis=axis, weights=weights)**(1/p)
 
@@ -10615,6 +10620,17 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     return LinregressResult(slope=slope[()], intercept=intercept[()], rvalue=r[()],
                             pvalue=prob[()], stderr=slope_stderr[()],
                             intercept_stderr=intercept_stderr[()])
+
+def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
+    # pmean linearized as a function of p about p = 0; see gh-23407
+    M0 = gmean(a, axis=axis, weights=weights)
+
+    loga = xp.log(a)
+
+    ln_avg = _xp_mean(loga, axis=axis, weights=weights)
+    ln2_avg = _xp_mean(loga * loga, axis=axis, weights=weights)
+
+    return M0 * (1 + 0.5 * p * (ln2_avg - ln_avg * ln_avg))
 
 
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
