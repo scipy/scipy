@@ -336,9 +336,9 @@ The Array API Standard allows conforming libraries to have
 for integers and real and complex floating point numbers which differ from the
 ``int64``, ``float64``, ``complex128`` defaults used by NumPy. Our aim is to
 have array API supporting SciPy functions with array inputs have behavior which
-is independent of the default dtype. This means that any when using array
-creation functions from the ``xp`` namespace such as ``xp.zeros`` or
-``xp.arange``, one should take care to explicitly set a dtype with the ``dtype``
+is independent of the default dtype to the extent that this is practical. This means
+that any when using array creation functions from the ``xp`` namespace such as ``xp.zeros``
+or ``xp.arange``, one should take care to explicitly set a dtype with the ``dtype``
 kwarg; otherwise, the result will depend on the default dtype.
 
 Note that SciPy is currently only tested in CI on platforms/backends/backend-configurations
