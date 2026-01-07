@@ -770,7 +770,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
-    """ + (extra_note or "") + "    See :ref:`dev-arrayapi` for more information."
+    """ + (extra_note or "") + "See :ref:`dev-arrayapi` for more information."
 
     return textwrap.dedent(note)
 
