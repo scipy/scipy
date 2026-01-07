@@ -351,12 +351,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         return (int)info;
     }
 
-    // If not F-ordered, the lower and upper bands will be flipped.
-    if (PyArray_IS_F_CONTIGUOUS(ap_Am)) {
-        detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &kl_max, &ku_max);
-    } else {
-        detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kus, kls, &ku_max, &kl_max);
-    }
+    detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &kl_max, &ku_max);
 
     buffer = (T *)malloc((n * nrhs + 3 * n) * sizeof(T));
     ab = (T *)malloc(((2 * kl_max + ku_max + 1) * n) * sizeof(T));

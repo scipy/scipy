@@ -889,6 +889,41 @@ bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper
     *upper_band = ub;
 }
 
+
+/*
+ * Overload of the original `bandwidth` function that allows to take into
+ * account the strides of the matrix to avoid having to explicitly set a
+ * flag regarding the ordering of the matrix.
+ *
+ * The addressing is done using `npy_intp` instead of `Py_ssize_t` for
+ * consistency.
+ */
+template<typename T>
+void
+bandwidth(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy_intp *lower_band, npy_intp *upper_band)
+{
+    using value_type = typename type_traits<T>::value_type;
+    value_type *p_data = reinterpret_cast<value_type *>(data);
+    value_type zero = value_type(0.);
+
+    npy_intp lb = 0, ub = 0;
+    for (npy_intp c = 0; c < m-1; c++) {
+        for (npy_intp r = n-1; r > c + lb; r--) {
+            if (p_data[c * s2 / sizeof(T) + r * s1 / sizeof(T)] != zero) { lb = r - c; break; }
+        }
+        if (c + lb + 1 > m) { break; }
+    }
+    for (npy_intp c = m-1; c > 0; c--) {
+        for (npy_intp r = 0; r < c - ub; r++) {
+            if (p_data[c * s2 / sizeof(T) + r * s1 / sizeof(T)] != zero) { ub = c - r; break; }
+        }
+        if (c <= ub) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
 template<typename T>
 void
 detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *kl_max, npy_intp *ku_max) {
@@ -903,12 +938,11 @@ detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, 
 
         T* slice_ptr = (T *)(data + offset/sizeof(T));
 
-        bandwidth(slice_ptr, shape[ndim-2], shape[ndim-1], &kl[idx], &ku[idx]);
+        bandwidth(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
         if (kl[idx] > *kl_max) {*kl_max = kl[idx];}
         if (ku[idx] > *ku_max) {*ku_max = ku[idx];}
     }
 }
-
 
 
 template<typename T>
