@@ -46,7 +46,6 @@ extensions = [
     'numpydoc',
     'sphinx_copybutton',
     'sphinx_design',
-    "sphinx_togglebutton",
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
