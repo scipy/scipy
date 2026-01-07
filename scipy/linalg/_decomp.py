@@ -287,7 +287,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         batch_shape = a1.shape[:-2]
         w_n, vr_n = eig(np.eye(2, dtype=a1.dtype))
         w = np.empty(batch_shape + (0,), dtype=w_n.dtype)
-        w = _make_eigvals(w, None, homogeneous_eigvals)      # XXX
+        w = _make_eigvals(w, None, homogeneous_eigvals)
         vl = np.empty(batch_shape + (0, 0), dtype=vr_n.dtype)
         vr = np.empty(batch_shape + (0, 0), dtype=vr_n.dtype)
         if not (left or right):
@@ -313,10 +313,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         )
         raise LinAlgError(mesg)
 
-    # backwards compat: cast to reals if all eigenvalues have zero imaginary parts
+    # backwards compat: make eigvecs real if all eigenvalues have zero imaginary parts
     a_is_real = a1.dtype in (np.float32, np.float64)
     if a_is_real and (w.imag == 0).all():
-        w = w.real
         if left:
             vl = vl.real
         if right:
