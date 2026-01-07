@@ -1255,9 +1255,11 @@ class StateSpace(LinearTimeInvariant):
     Notes
     -----
     If the parameter `system` is a tuple (A, B, C, D) with four state space matrices,
-    then those matrices are converted into two-dimensional arrays by calling
-    `abcd_normalize`. Their dtypes will be "complex128" if any of the matrices are
-    complex-valued. Otherwise, they will be of type "float64".
+    then those matrices are converted into two-dimensional arrays of the same dtype
+    by calling `abcd_normalize`. The resulting dtype will be based on NumPy's dtype
+    promotion rules, except in the case where each of `A`, `B`, `C`, and `D` has
+    integer dtype, in which case the resulting dtype will be the default floating point
+    dtype of ``float64``.
 
     Changing the value of properties that are not part of the
     `StateSpace` system representation (such as `zeros` or `poles`) is very
@@ -2733,7 +2735,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     -------
     full_state_feedback : Bunch object
         full_state_feedback is composed of:
-            gain_matrix : 1-D ndarray
+            gain_matrix : 2-D ndarray
                 The closed loop matrix K such as the eigenvalues of ``A-BK``
                 are as close as possible to the requested poles.
             computed_poles : 1-D ndarray
