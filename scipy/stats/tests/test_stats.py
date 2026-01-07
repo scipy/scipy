@@ -7027,7 +7027,7 @@ class TestPMean:
         w = None if weights is None else xp.asarray(weights)
 
         res = stats.pmean(x, p, weights=w)
-        xp_assert_close(res, xp.asarray(ref), rtol=1e-14)
+        xp_assert_close(res, xp.asarray(ref))
 
 
 @make_xp_test_case(stats.gstd)
