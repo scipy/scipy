@@ -468,16 +468,22 @@ fail:
 static PyObject*
 _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
+    PyArrayObject *ap_Bm = NULL;
     PyArrayObject *ap_w = NULL;
+    PyArrayObject *ap_beta = NULL;
     PyArrayObject *ap_vr = NULL;
     PyArrayObject *ap_vl = NULL;
     int compute_vl=0;
     int compute_vr=1;
 
-    PyArrayObject *ap_Bm = NULL; // FIXME
-
     int info = 0;
     SliceStatusVec vec_status;
+
+    // return values
+    PyObject *ret_lst = NULL;
+    PyObject *vl_ret = NULL;
+    PyObject *vr_ret = NULL;
+    PyObject *beta_ret = NULL;
 
     // Get the input array
     if (!PyArg_ParseTuple(args, "O!pp|O!",
@@ -528,42 +534,35 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     else if (typenum == NPY_FLOAT64) { w_typenum = NPY_COMPLEX128; }
 
     ap_w = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, w_typenum);
-    if (ap_w == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+    if (ap_w == NULL) { goto fail; }
+
+    if (ap_Bm != NULL) {
+        ap_beta = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum);
+        if (ap_beta == NULL) { goto fail; }
     }
 
     if (compute_vl) {
         ap_vl = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum);
-        if (ap_vl == NULL) {
-            Py_DECREF(ap_w);
-            PyErr_NoMemory();
-            return NULL;
-        }
+        if (ap_vl == NULL) { goto fail; }
     }
 
     if (compute_vr) {
         ap_vr = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum);
-        if (ap_vr == NULL) {
-            Py_DECREF(ap_w);
-            Py_XDECREF(ap_vl);
-            PyErr_NoMemory();
-            return NULL;
-        }
+        if (ap_vr == NULL) { goto fail; }
     }
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -575,12 +574,21 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    PyObject *ret_lst = convert_vec_status(vec_status);
+    // normal return
+    ret_lst = convert_vec_status(vec_status);
 
-    PyObject *vl_ret = ap_vl == NULL ? Py_None : PyArray_Return(ap_vl);
-    PyObject *vr_ret = ap_vr == NULL ? Py_None : PyArray_Return(ap_vr);
+    vl_ret = (ap_vl == NULL) ? Py_None : PyArray_Return(ap_vl);
+    vr_ret = (ap_vr == NULL) ? Py_None : PyArray_Return(ap_vr);
+    beta_ret = (ap_beta == NULL) ? Py_None : PyArray_Return(ap_beta);
 
-    return Py_BuildValue("NNNN", PyArray_Return(ap_w), vl_ret, vr_ret, ret_lst);
+    return Py_BuildValue("NNNNN", PyArray_Return(ap_w), beta_ret, vl_ret, vr_ret, ret_lst);
+
+fail:
+    Py_DECREF(ap_w);
+    Py_XDECREF(ap_vl);
+    Py_XDECREF(ap_vr);
+    PyErr_NoMemory();
+    return NULL;
 }
 
 
