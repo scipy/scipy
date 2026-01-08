@@ -691,7 +691,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         detrend='constant', return_onesided=True, scaling='density',
         axis=-1, average='mean'):
     r"""
-    Estimate the cross power spectral density, Pxy, using Welch's method.
+    Estimate the cross power spectral density, `Pxy`, using Welch's method.
 
     Parameters
     ----------
@@ -707,33 +707,32 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         passed to `get_window` to generate the window values, which are
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
+        directly as the window and its length must be `nperseg`. Defaults
         to a periodic Hann window.
     nperseg : int, optional
-        Length of each segment. Defaults to None, but if window is str or
-        tuple, is set to 256, and if window is array_like, is set to the
+        Length of each segment. Defaults to None, but if `window` is str or
+        tuple, is set to 256, and if `window` is array_like, is set to the
         length of the window.
     noverlap: int, optional
-        Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // 2``. Defaults to `None` and may
+        Number of points to overlap between segments. If ``None``,
+        ``noverlap = nperseg // 2``. Defaults to ``None`` and may
         not be greater than `nperseg`.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired. If
-        `None`, the FFT length is `nperseg`. Defaults to `None`.
+        ``None``, the FFT length is `nperseg`. Defaults to ``None``.
     detrend : str or function or `False`, optional
-        Specifies how to detrend each segment. If `detrend` is a
-        string, it is passed as the `type` argument to the `detrend`
-        function. If it is a function, it takes a segment and returns a
-        detrended segment. If `detrend` is `False`, no detrending is
+        Specifies how to detrend each segment. If it is a string, it is passed as the
+        `type` argument to the `detrend` function. If it is a function, it takes a
+        segment and returns a detrended segment. If it is `False`, no detrending is
         done. Defaults to 'constant'.
     return_onesided : bool, optional
-        If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for
+        If ``True``, return a one-sided spectrum for real data. If
+        ``False``, return a two-sided spectrum. Defaults to ``True``, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
-        where `Pxy` has units of V**2/Hz and computing the cross spectrum
-        ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
+        where `Pxy` has units of V²/Hz and computing the cross spectrum
+        ('spectrum') where `Pxy` has units of V², if `x` and `y` are
         measured in V and `fs` is measured in Hz. Defaults to 'density'
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the
@@ -750,7 +749,9 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     f : ndarray
         Array of sample frequencies.
     Pxy : ndarray
-        Cross spectral density or cross power spectrum of x,y.
+        Cross spectral density or cross power spectrum of `x` and `y`.
+        A real-valued array with non-negative values is returned if ``x is y``. Else an
+        array with a complex dtype will be returned.
 
     See Also
     --------
@@ -762,8 +763,8 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
 
     Notes
     -----
-    By convention, Pxy is computed with the conjugate FFT of X
-    multiplied by the FFT of Y.
+    By convention, `Pxy` is computed with the conjugate FFT of `x` multiplied by the
+    FFT of `y`.
 
     If the input series differ in length, the shorter series will be
     zero-padded to match.
@@ -858,7 +859,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     True
 
     As discussed in the Notes section, the results of using an approach analogous to
-    the code snippet above and the `csd` function may deviate due to implementation
+    the code snippet above may deviate from `csd` function results due to implementation
     details.
 
     Note that the code snippet above can be easily adapted to determine other
