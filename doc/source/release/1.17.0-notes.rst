@@ -38,8 +38,8 @@ Highlights of this release
 - `scipy.stats` has gained the matrix t and logistic distributions and many
   performance and accuracy improvements.
 - Initial support for 64-bit integer (ILP64) BLAS and LAPACK libraries has
-  been added, including for MKL, Apple Accelerate and OpenBLAS. Please
-  report any issues with ILP64 you encounter.
+  been added, including for MKL and Apple Accelerate. Please report any issues with
+  ILP64 you encounter.
 
 
 
@@ -401,8 +401,7 @@ Other changes
 - Initial support for 64-bit integer (ILP64) BLAS and LAPACK libraries has been
   added. To enable it, build SciPy with ``-Duse-ilp64=true`` meson option, and make
   sure to have a LAPACK library which exposes both LP64 and ILP64 symbols.
-  Currently supported LAPACK libraries are MKL, Apple Accelerate and OpenBLAS
-  through the ``scipy-openblas64`` package. Note that:
+  Currently supported LAPACK libraries are MKL and Apple Accelerate. Note that:
 
   - the ILP64 support is optional, and is in addition to the always-available
     LP64 interface;
