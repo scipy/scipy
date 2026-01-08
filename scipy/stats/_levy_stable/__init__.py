@@ -264,17 +264,18 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
         return g_1 * np.exp(-g_1)
 
     with np.errstate(all="ignore"):
-        peak = optimize.bisect(
-            lambda t: g(t) - 1, -xi, np.pi / 2, xtol=quad_eps
-        )
-
-        # this integrand can be very peaked, so we need to force
-        # QUADPACK to evaluate the function inside its support
-        #
-
-        # Providing points ensures the integral evaluates with enough 
-        # precision to pass tests and is accurate in the tails
-        points = np.linspace(-xi, np.pi/2, num=10)
+        theta = np.linspace(-xi, np.pi/2, 1000, endpoint=True)
+        gvals = np.array([integrand(t) for t in theta])
+        gmax = np.max(gvals)
+        theta_max = theta[np.argmax(gvals)]
+        try:
+            tail_points = [optimize.bisect(lambda t: integrand(t) - gmax / exp_height, -xi, np.pi/2)
+                            for exp_height in [1000, 500, 100, 10, 5]]
+        except:
+            tail_points = np.linspace(-xi, np.pi / 2, 50).tolist()
+            
+        points = tail_points + [0, float(theta_max), -xi]
+    
         intg, *ret = integrate.quad(
             integrand,
             -xi,
@@ -285,7 +286,6 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
             epsabs=0,
             full_output=1,
         )
-
     return c2 * intg
 
 
