@@ -219,13 +219,8 @@ class TestMGCStat:
         # degenerate all-zero distance matrix
         disty = np.zeros((n, n))
 
-        stat, pvalue, _ = stats.multiscale_graphcorr(
-            distx,
-            disty,
-            compute_distance=None,
-            reps=0,
-        )
-
+        stats.multiscale_graphcorr(distx, disty, compute_distance=None)
+    
     @pytest.mark.xslow
     def test_alias(self):
         # generate x and y
