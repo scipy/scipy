@@ -777,9 +777,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         following order:
 
         * df_dy : array_like with shape ``(n, n, m)``, where an element
-            ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d (y_q)_j``.
+          ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d (y_q)_j``.
         * df_dp : array_like with shape ``(n, k, m)``, where an element
-            ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d p_j``.
+          ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d p_j``.
 
         Here q numbers nodes at which x and y are defined, whereas i and j
         number vector components. If the problem is solved without unknown
@@ -793,12 +793,12 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         if parameters are present. The return must contain 2 or 3 elements in
         the following order:
 
-        * dbc_dya : array_like with shape ``(n, n)``, where an element ``(i, j)``
-            equals to ``d bc_i(ya, yb, p) / d ya_j``.
-        * dbc_dyb : array_like with shape ``(n, n)``, where an element ``(i, j)``
-            equals to ``d bc_i(ya, yb, p) / d yb_j``.
-        * dbc_dp : array_like with shape ``(n, k)``, where an element ``(i, j)``
-            equals to ``d bc_i(ya, yb, p) / d p_j``.
+        * ``dbc_dya`` : array_like with shape ``(n, n)``, where an element ``(i, j)``
+          equals to ``d bc_i(ya, yb, p) / d ya_j``.
+        * ``dbc_dyb`` : array_like with shape ``(n, n)``, where an element ``(i, j)``
+          equals to ``d bc_i(ya, yb, p) / d yb_j``.
+        * ``dbc_dp`` : array_like with shape ``(n, k)``, where an element ``(i, j)``
+          equals to ``d bc_i(ya, yb, p) / d p_j``.
 
         If the problem is solved without unknown parameters, dbc_dp should not
         be returned.
