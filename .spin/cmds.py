@@ -638,6 +638,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     ]
     util.run(cmd_check_test_name)
 
+
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):
     """
