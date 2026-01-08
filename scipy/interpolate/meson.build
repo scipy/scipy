@@ -53,8 +53,7 @@ py3.extension_module('_fitpack',
 )
 
 if use_pythran
-  # cannot use pythran_gen: generator does not support renaming the source -> extension
-  # there must be a better way
+  # cannot use pythran_gen: generator does not support renaming source -> extension
   _rbf_src = custom_target('_rbf_src',
      output: '_rbfinterp_pythran.cpp',
      input: '_rbfinterp_pythran_src.py',
@@ -70,11 +69,8 @@ if use_pythran
     subdir: 'scipy/interpolate'
   )
 else
-  # XXX need to rename _rbfinterp_pythran_src.py in the source tree into _rbfinterp_pythran.py
-  py3.install_sources(
-    ['_rbfinterp_pythran.py'],
-    subdir: 'scipy/interpolate'
-  )
+  # Nothing to do: _rbfinterp_pythran_src.py is installed anyway, and it will be used
+  # instead of the AOT compiled _rbfinter_pythran extension.
 endif
 
 py3.install_sources([

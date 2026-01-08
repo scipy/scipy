@@ -9,8 +9,12 @@ from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, RBFInterpolator,
     _get_backend, _monomial_powers,
     )
-from scipy.interpolate import _rbfinterp_pythran
 from scipy._lib._testutils import _run_concurrent_barrier
+
+try:
+    from scipy.interpolate import _rbfinterp_pythran
+except ImportError:
+    from scipy.interpolate import _rbfinterp_pythran_src as _rbfinterp_pythran
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 

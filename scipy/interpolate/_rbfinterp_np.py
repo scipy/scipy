@@ -2,9 +2,15 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
-from ._rbfinterp_pythran import (
-    _build_system, _build_evaluation_coefficients, polynomial_matrix
-)
+try:
+    from ._rbfinterp_pythran import (
+        _build_system, _build_evaluation_coefficients, polynomial_matrix
+    )
+except ImportError:
+    # pythran-accelerated routines are not available, fall back to pure python variants
+    from ._rbfinterp_pythran_src import (
+        _build_system, _build_evaluation_coefficients, polynomial_matrix
+    )
 
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
