@@ -177,7 +177,6 @@ PKG_CONFIG_PATH = "{project}"
   ".spin/cmds.py:test",
   ".spin/cmds.py:mypy",
   ".spin/cmds.py:lint",
-  ".spin/cmds.py:check_xp_untested",
   "spin.cmds.pip.install"
 ]
 "Environments" = [
