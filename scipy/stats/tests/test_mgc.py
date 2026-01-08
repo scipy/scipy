@@ -7,8 +7,6 @@ from numpy.testing import assert_approx_equal, assert_allclose, assert_equal
 from scipy.spatial.distance import cdist
 from scipy import stats
 
-from sklearn.metrics import pairwise_distances
-
 class TestMGCErrorWarnings:
     """ Tests errors and warnings derived from MGC.
     """
