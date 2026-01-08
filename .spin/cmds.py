@@ -639,28 +639,6 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     util.run(cmd_check_test_name)
 
 
-@click.command()
-@click.pass_context
-@meson.build_dir_option
-def check_xp_untested(ctx, build_dir=None):
-    """Check for functions advertising alt backend support without tests."""
-    click.secho(
-        "Invoking `build` prior to running check-xp-untested:",
-        bold=True, fg="bright_green"
-    )
-    ctx.invoke(build)
-
-    build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
-    install_dir = meson._get_site_packages(build_dir)
-
-    cmd = [f'{sys.executable}',
-           os.path.join(root, "tools", "check_xp_untested.py")]
-
-    os.environ["PYTHONPATH"] = install_dir
-    util.run(cmd)
-
-
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):
     """

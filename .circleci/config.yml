@@ -195,25 +195,6 @@ jobs:
           command: |
             spin smoke-tutorials
 
-# Check for functions advertising xp support without xp tests
-  check_xp_untested:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/
-
-      - check-skip
-      - apt-install
-
-      - run:
-          name: check-xp-untested
-          no_output_timeout: 5m
-          command: |
-            pip install -r requirements/test.txt
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            export SCIPY_ARRAY_API=1
-            spin check-xp-untested
-
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
 # https://developer.github.com/guides/managing-deploy-keys/
