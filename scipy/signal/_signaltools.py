@@ -3039,9 +3039,9 @@ def unique_roots(p, tol=1e-3, rtype='min'):
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          - 'max', 'maximum': pick the maximum of those roots
-          - 'min', 'minimum': pick the minimum of those roots
-          - 'avg', 'mean': take the average of those roots
+        - 'max', 'maximum': pick the maximum of those roots
+        - 'min', 'minimum': pick the minimum of those roots
+        - 'avg', 'mean': take the average of those roots
 
         When finding minimum or maximum among complex roots they are compared
         first by the real part and then by the imaginary part.
