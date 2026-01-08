@@ -63,7 +63,9 @@ jobs:
     - name: Install Python packages
       if: matrix.python-version == '3.12'
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin "click<8.3.0"
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 ninja meson pooch hypothesis spin "click<8.3.0"
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
+
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.14-dev' # this run will use python dev versions when available
@@ -186,8 +188,9 @@ jobs:
         # Install build dependencies. Use meson-python from its main branch,
         # most convenient to test in this job because we're using pip without
         # build isolation here.
-        python -m pip install numpy pybind11 pythran cython pytest ninja hypothesis
+        python -m pip install numpy pybind11 cython pytest ninja hypothesis
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
         python -m pip install . -v --no-build-isolation
@@ -257,7 +260,8 @@ jobs:
 
       - name: Setup Python build deps
         run: |
-          pip install build meson-python ninja pythran pybind11 cython numpy
+          pip install build meson-python ninja pybind11 cython numpy
+          pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
 
       - name: Build wheel and install
         run: |
@@ -311,7 +315,8 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install cython pythran ninja meson-python pybind11 spin "click<8.3.0"
+        python -m pip install cython ninja meson-python pybind11 spin "click<8.3.0"
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
@@ -388,7 +393,8 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==2.0.0 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==2.0.0 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pooch meson hypothesis && \
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367 &&\\
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"
@@ -419,7 +425,8 @@ jobs:
 
       - name: Setup Python build deps
         run: |
-          python3.12 -m pip install build pythran pybind11 cython numpy meson-python
+          python3.12 -m pip install build pybind11 cython numpy meson-python
+          python3.12 -m pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
 
       - name: Build wheel and install
         run: |

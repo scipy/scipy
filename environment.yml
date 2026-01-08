@@ -21,7 +21,8 @@ dependencies:
   # scipy.datasets dependency
   - pooch
   # ---
-  - pythran
+  - pip:
+      - git+https://github.com/serge-sans-paille/pythran.git@bug/2367
   # For testing and benchmarking
   - pytest>=8.0.0
   - pytest-cov
