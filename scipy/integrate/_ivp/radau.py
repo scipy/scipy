@@ -225,13 +225,13 @@ class Radau(OdeSolver):
         There are three ways to define the Jacobian:
 
         * If array_like or sparse_matrix, the Jacobian is assumed to
-            be constant.
+          be constant.
         * If callable, the Jacobian is assumed to depend on both
-            t and y; it will be called as ``jac(t, y)`` as necessary.
-            For the 'Radau' and 'BDF' methods, the return value might be a
-            sparse matrix.
+          t and y; it will be called as ``jac(t, y)`` as necessary.
+          For the 'Radau' and 'BDF' methods, the return value might be a
+          sparse matrix.
         * If None (default), the Jacobian will be approximated by
-            finite differences.
+          finite differences.
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
