@@ -391,23 +391,23 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1: (instance of `lti`)
-            * 2: (num, den)
-            * 3: (zeros, poles, gain)
-            * 4: (A, B, C, D)
+        * 1: (instance of `lti`)
+        * 2: (num, den)
+        * 3: (zeros, poles, gain)
+        * 4: (A, B, C, D)
 
     dt : float
         The discretization time step.
     method : str, optional
         Which method to use:
 
-            * gbt: generalized bilinear transformation
-            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
-            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
-            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
-            * zoh: zero-order hold (default)
-            * foh: first-order hold (*versionadded: 1.3.0*)
-            * impulse: equivalent impulse response (*versionadded: 1.3.0*)
+        * gbt: generalized bilinear transformation
+        * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+        * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+        * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+        * zoh: zero-order hold (default)
+        * foh: first-order hold (*versionadded: 1.3.0*)
+        * impulse: equivalent impulse response (*versionadded: 1.3.0*)
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which
