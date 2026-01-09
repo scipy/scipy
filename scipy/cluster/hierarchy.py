@@ -910,7 +910,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
       into a new cluster :math:`u`, the average of centroids s and t
       give the new centroid :math:`u`. This is also known as the
       WPGMC algorithm.
-      * method='ward' uses the Ward variance minimization algorithm.
+    * method='ward' uses the Ward variance minimization algorithm.
       The new entry :math:`d(u,v)` is computed as follows,
 
       .. math::

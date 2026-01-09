@@ -1538,17 +1538,22 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The sort order is also dependent on the `which` variable.
 
         - For which = 'LM' or 'SA':
-            - If `return_eigenvectors` is True, eigenvalues are sorted by
-              algebraic value.
-            - If `return_eigenvectors` is False, eigenvalues are sorted by
-              absolute value.
+
+          - If `return_eigenvectors` is True, eigenvalues are sorted by
+            algebraic value.
+          - If `return_eigenvectors` is False, eigenvalues are sorted by
+            absolute value.
+
         - For which = 'BE' or 'LA':
-            - eigenvalues are always sorted by algebraic value.
+
+          - eigenvalues are always sorted by algebraic value.
+
         - For which = 'SM':
-            - If `return_eigenvectors` is True, eigenvalues are sorted by
-              algebraic value.
-            - If `return_eigenvectors` is False, eigenvalues are sorted by
-              decreasing absolute value.
+
+          - If `return_eigenvectors` is True, eigenvalues are sorted by
+            algebraic value.
+          - If `return_eigenvectors` is False, eigenvalues are sorted by
+            decreasing absolute value.
 
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
@@ -1580,7 +1585,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         The choice of mode will affect which eigenvalues are selected by
         the keyword 'which', and can also impact the stability of
-        convergence (see [2] for a discussion).
+        convergence (see [2]_ for a discussion).
     rng : `numpy.random.Generator`, optional
         Pseudorandom number generator state. When `rng` is None, a new
         `numpy.random.Generator` is created using entropy from the

@@ -87,6 +87,7 @@ class RBFInterpolator:
         squares fit of a polynomial with the specified degree. Default is 0.
     kernel : str, optional
         Type of RBF. This should be one of
+
         - 'linear'               : ``-r``
         - 'thin_plate_spline'    : ``r**2 * log(r)``
         - 'cubic'                : ``r**3``
@@ -106,6 +107,7 @@ class RBFInterpolator:
         Degree of the added polynomial. For some RBFs the interpolant may not
         be well-posed if the polynomial degree is too small. Those RBFs and
         their corresponding minimum degrees are
+
         - 'multiquadric'      : 0
         - 'linear'            : 0
         - 'thin_plate_spline' : 1

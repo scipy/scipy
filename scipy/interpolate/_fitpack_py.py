@@ -37,6 +37,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     u : array_like, optional
         An array of parameter values. If not given, these values are
         calculated automatically as ``M = len(x[0])``, where
+
         - ``v[0] = 0``
         - ``v[i] = v[i-1] + distance(`x[i]`, `x[i-1]`)``
         - ``u[i] = v[i] / v[M-1]``

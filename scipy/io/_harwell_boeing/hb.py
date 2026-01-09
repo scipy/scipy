@@ -478,6 +478,7 @@ def hb_read(path_or_open_file, *, spmatrix=True):
     -----
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
+
     - assembled, non-symmetric, real matrices
     - integer for pointer/indices
     - exponential format for float values, and int format
@@ -533,6 +534,7 @@ def hb_write(path_or_open_file, m, hb_info=None):
     -----
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
+
     - assembled, non-symmetric, real matrices
     - integer for pointer/indices
     - exponential format for float values, and int format

@@ -512,7 +512,7 @@ class TransferFunction(LinearTimeInvariant):
         interpretation:
 
         * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-           `ZerosPolesGain`)
+             `ZerosPolesGain`)
         * 2: array_like: (numerator, denominator)
     dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
@@ -1236,7 +1236,7 @@ class StateSpace(LinearTimeInvariant):
         interpretation:
 
         * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-            `ZerosPolesGain`)
+             `ZerosPolesGain`)
         * 4: array_like: (A, B, C, D)
     dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
@@ -1650,8 +1650,7 @@ class StateSpaceContinuous(StateSpace, lti):
         The following gives the number of input arguments and their
         interpretation:
 
-        * 1: `lti` system: (`StateSpace`, `TransferFunction` or
-            `ZerosPolesGain`)
+        * 1: `lti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
         * 4: array_like: (A, B, C, D)
 
     See Also
@@ -1724,8 +1723,7 @@ class StateSpaceDiscrete(StateSpace, dlti):
         The following gives the number of input arguments and their
         interpretation:
 
-        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
-            `ZerosPolesGain`)
+        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
         * 4: array_like: (A, B, C, D)
     dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`

@@ -1554,30 +1554,24 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
        left with an even number of real poles, complex poles, real zeros,
        and complex zeros for subsequent pairing iterations.
     3. Else:
-        1. If the pole is complex and the zero is the only remaining real
-            zero*, then pair the pole with the *next* closest zero
-            (guaranteed to be complex). This is necessary to ensure that
-            there will be a real zero remaining to eventually create a
-            first-order section (thus keeping the odd order).
 
-        2. Else pair the pole with the closest remaining zero (complex or
-            real).
+       1. If the pole is complex and the zero is the only remaining real
+          zero*, then pair the pole with the *next* closest zero
+          (guaranteed to be complex). This is necessary to ensure that
+          there will be a real zero remaining to eventually create a
+          first-order section (thus keeping the odd order).
+       2. Else pair the pole with the closest remaining zero (complex or real).
+       3. Proceed to complete the second-order section by adding another
+          pole and zero to the current pole and zero in the section:
 
-        3. Proceed to complete the second-order section by adding another
-            pole and zero to the current pole and zero in the section:
-
-            1. If the current pole and zero are both complex, add their
-                conjugates.
-
-            2. Else if the pole is complex and the zero is real, add the
-                conjugate pole and the next closest real zero.
-
-            3. Else if the pole is real and the zero is complex, add the
-                conjugate zero and the real pole closest to those zeros.
-
-            4. Else (we must have a real pole and real zero) add the next
-                real pole closest to the unit circle, and then add the real
-                zero closest to that pole.
+          1. If the current pole and zero are both complex, add their conjugates.
+          2. Else if the pole is complex and the zero is real, add the
+             conjugate pole and the next closest real zero.
+          3. Else if the pole is real and the zero is complex, add the
+             conjugate zero and the real pole closest to those zeros.
+          4. Else (we must have a real pole and real zero) add the next
+             real pole closest to the unit circle, and then add the real
+             zero closest to that pole.
 
     .. [#] This conditional can only be met for specific odd-order inputs
            with the ``pairing = 'keep_odd'`` or ``'minimal'`` methods.
