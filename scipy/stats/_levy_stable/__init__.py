@@ -143,8 +143,8 @@ def _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta):
     # g(theta) here, but it still needs to be used in some extreme cases.
     # Perhaps tol(5) = 0.5e-2 could be reduced for our implementation.
     if np.abs(x0 - zeta) < x_tol_near_zeta * alpha ** (1 / alpha):
-        x0 = zeta
-    return x0
+        return True
+    return False
 
 
 def _nolan_round_difficult_input(
@@ -164,8 +164,8 @@ def _nolan_round_difficult_input(
     #   problems.  The current version sets beta=0."
     # We seem to have addressed this through re-expression of g(theta) here
 
-    x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
-    return x0, alpha, beta
+    need_rounding = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
+    return need_rounding, alpha, beta
 
 
 def _pdf_single_value_piecewise_Z1(x, alpha, beta, **kwds):
@@ -181,14 +181,16 @@ def _pdf_single_value_piecewise_Z1(x, alpha, beta, **kwds):
 def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
 
     quad_eps = kwds.get("quad_eps", _QUAD_EPS)
-    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.005)
+    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.5)
     alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    x0, alpha, beta = _nolan_round_difficult_input(
+    needs_rounding, alpha, beta = _nolan_round_difficult_input(
         x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
     )
-
+    xorig = np.copy(x0)
+    if needs_rounding:
+        x0 = zeta
     # some other known distribution pdfs / analytical cases
     # TODO: add more where possible with test coverage,
     # eg https://en.wikipedia.org/wiki/Stable_distribution#Other_analytic_cases
@@ -216,9 +218,8 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return 1 / (1 + x0 ** 2) / np.pi
 
     return _pdf_single_value_piecewise_post_rounding_Z0(
-        x0, alpha, beta, quad_eps, x_tol_near_zeta
+        xorig, alpha, beta, quad_eps, x_tol_near_zeta
     )
-
 
 def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
                                                  x_tol_near_zeta):
@@ -233,15 +234,24 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
     # round x0 to zeta again if needed. zeta was recomputed and may have
     # changed due to floating point differences.
     # See https://github.com/scipy/scipy/pull/18133
-    x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
+    need_rounding = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     # handle Nolan's initial case logic
-    if x0 == zeta:
-        return (
-            sc.gamma(1 + 1 / alpha)
-            * np.cos(xi)
-            / np.pi
-            / ((1 + zeta ** 2) ** (1 / alpha / 2))
-        )
+    if need_rounding:
+        
+        # This is the Taylor expansion in 
+        # https://arxiv.org/pdf/1607.04247 Eq. (2.18) 
+        running_sum = 0
+        for k in range(0, 16):
+            running_sum += (
+                sc.gamma((k+1) / alpha)
+                / sc.gamma(k+1)
+                * (1+zeta**2)**(-(k+1)/2/alpha)
+                * np.sin((k+1)*(np.pi/2 - xi))
+                * (x0 - zeta)**k
+            )
+        running_sum *= 1 / alpha / np.pi
+        return running_sum
+    
     elif x0 < zeta:
         return _pdf_single_value_piecewise_post_rounding_Z0(
             -x0, alpha, -beta, quad_eps, x_tol_near_zeta
@@ -265,17 +275,19 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
 
     with np.errstate(all="ignore"):
         theta = np.linspace(-xi, np.pi/2, 1000, endpoint=True)
+        # We should probably vectorize the function "g" in levyst.c 
+        # so that this runs faster
         gvals = np.array([integrand(t) for t in theta])
         gmax = np.max(gvals)
-        theta_max = theta[np.argmax(gvals)]
+        peak = theta[np.argmax(gvals)]
         try:
             tail_points = [optimize.bisect(lambda t: integrand(t) - gmax / exp_height, -xi, np.pi/2)
                             for exp_height in [1000, 500, 100, 10, 5]]
         except:
             tail_points = np.linspace(-xi, np.pi / 2, 50).tolist()
             
-        points = tail_points + [0, float(theta_max), -xi]
-    
+        points = tail_points + [0, peak, np.pi/2]
+        
         intg, *ret = integrate.quad(
             integrand,
             -xi,
@@ -286,6 +298,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
             epsabs=0,
             full_output=1,
         )
+
     return c2 * intg
 
 
@@ -306,9 +319,11 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    x0, alpha, beta = _nolan_round_difficult_input(
+    needs_rounding, alpha, beta = _nolan_round_difficult_input(
         x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
     )
+    if needs_rounding:
+        x0 = zeta
 
     # some other known distribution cdfs / analytical cases
     # TODO: add more where possible with test coverage,
@@ -347,7 +362,9 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
     # round x0 to zeta again if needed. zeta was recomputed and may have
     # changed due to floating point differences.
     # See https://github.com/scipy/scipy/pull/18133
-    x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
+    need_rounding = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
+    if need_rounding:
+        x0 = zeta
     # handle Nolan's initial case logic
     if (alpha == 1 and beta < 0) or x0 < zeta:
         # NOTE: Nolan's paper has a typo here!
@@ -802,7 +819,8 @@ class levy_stable_gen(rv_continuous):
     pdf_default_method = "piecewise"
     cdf_default_method = "piecewise"
     quad_eps = _QUAD_EPS
-    piecewise_x_tol_near_zeta = 0.005
+    cdf_piecewise_x_tol_near_zeta = 0.005
+    pdf_piecewise_x_tol_near_zeta = 0.5
     piecewise_alpha_tol_near_one = 0.005
     pdf_fft_min_points_threshold = None
     pdf_fft_grid_spacing = 0.001
@@ -925,7 +943,7 @@ class levy_stable_gen(rv_continuous):
 
         pdf_single_value_kwds = {
             "quad_eps": self.quad_eps,
-            "piecewise_x_tol_near_zeta": self.piecewise_x_tol_near_zeta,
+            "piecewise_x_tol_near_zeta": self.pdf_piecewise_x_tol_near_zeta,
             "piecewise_alpha_tol_near_one": self.piecewise_alpha_tol_near_one,
         }
 
@@ -1065,7 +1083,7 @@ class levy_stable_gen(rv_continuous):
 
         cdf_single_value_kwds = {
             "quad_eps": self.quad_eps,
-            "piecewise_x_tol_near_zeta": self.piecewise_x_tol_near_zeta,
+            "piecewise_x_tol_near_zeta": self.cdf_piecewise_x_tol_near_zeta,
             "piecewise_alpha_tol_near_one": self.piecewise_alpha_tol_near_one,
         }
 
