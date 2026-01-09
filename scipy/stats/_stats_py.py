@@ -3391,7 +3391,7 @@ SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 @xp_capabilities(skip_backends=[('dask.array', "doesn't know array size")],
                  jax_jit=False)
-def sigmaclip(a, low=4., high=4.):
+def sigmaclip(a, low=4., high=4., *, nan_policy='propagate'):
     """Perform iterative sigma-clipping of array elements.
 
     Starting from the full sample, all elements outside the critical range are
@@ -3412,6 +3412,13 @@ def sigmaclip(a, low=4., high=4.):
         Lower bound factor of sigma clipping. Default is 4.
     high : float, optional
         Upper bound factor of sigma clipping. Default is 4.
+    nan_policy:
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the input, the clipped array will be
+          empty, and the upper and lower thresholds will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -3456,6 +3463,15 @@ def sigmaclip(a, low=4., high=4.):
     """
     xp = array_namespace(a)
     c = xp_ravel(xp.asarray(a))
+    contains_nan = _contains_nan(c, nan_policy, xp_omit_okay=True)
+    if contains_nan:
+        if nan_policy == 'propagate':
+            NaN = _get_nan(c, xp=xp)
+            clipped = xp.empty_like(c[0:0])
+            return SigmaclipResult(clipped, NaN, NaN)
+        elif nan_policy == 'omit':
+            c = c[~xp.isnan(c)]
+
     delta = 1
     while delta:
         c_std = xp.std(c)
