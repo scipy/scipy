@@ -351,11 +351,11 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     The limitations for a solution to exist are :
 
-        * All eigenvalues of :math:`A` on the right half plane, should be
-          controllable.
+    * All eigenvalues of :math:`A` on the right half plane, should be
+      controllable.
 
-        * The associated hamiltonian pencil (See Notes), should have
-          eigenvalues sufficiently away from the imaginary axis.
+    * The associated hamiltonian pencil (See Notes), should have
+      eigenvalues sufficiently away from the imaginary axis.
 
     Moreover, if ``e`` or ``s`` is not precisely ``None``, then the
     generalized version of CARE
@@ -566,11 +566,11 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     The limitations for a solution to exist are :
 
-        * All eigenvalues of :math:`A` outside the unit disc, should be
-          controllable.
+    * All eigenvalues of :math:`A` outside the unit disc, should be
+      controllable.
 
-        * The associated symplectic pencil (See Notes), should have
-          eigenvalues sufficiently away from the unit circle.
+    * The associated symplectic pencil (See Notes), should have
+      eigenvalues sufficiently away from the unit circle.
 
     Moreover, if ``e`` and ``s`` are not both precisely ``None``, then the
     generalized version of DARE

@@ -88,14 +88,14 @@ class RBFInterpolator:
     kernel : str, optional
         Type of RBF. This should be one of
 
-            - 'linear'               : ``-r``
-            - 'thin_plate_spline'    : ``r**2 * log(r)``
-            - 'cubic'                : ``r**3``
-            - 'quintic'              : ``-r**5``
-            - 'multiquadric'         : ``-sqrt(1 + r**2)``
-            - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
-            - 'inverse_quadratic'    : ``1/(1 + r**2)``
-            - 'gaussian'             : ``exp(-r**2)``
+        - 'linear'               : ``-r``
+        - 'thin_plate_spline'    : ``r**2 * log(r)``
+        - 'cubic'                : ``r**3``
+        - 'quintic'              : ``-r**5``
+        - 'multiquadric'         : ``-sqrt(1 + r**2)``
+        - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
+        - 'inverse_quadratic'    : ``1/(1 + r**2)``
+        - 'gaussian'             : ``exp(-r**2)``
 
         Default is 'thin_plate_spline'.
     epsilon : float, optional
@@ -108,11 +108,11 @@ class RBFInterpolator:
         be well-posed if the polynomial degree is too small. Those RBFs and
         their corresponding minimum degrees are
 
-            - 'multiquadric'      : 0
-            - 'linear'            : 0
-            - 'thin_plate_spline' : 1
-            - 'cubic'             : 1
-            - 'quintic'           : 2
+        - 'multiquadric'      : 0
+        - 'linear'            : 0
+        - 'thin_plate_spline' : 1
+        - 'cubic'             : 1
+        - 'quintic'           : 2
 
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
@@ -152,14 +152,14 @@ class RBFInterpolator:
     The above system is uniquely solvable if the following requirements are
     met:
 
-        - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
-          column rank when `degree` is -1 or 0. When `degree` is 1,
-          :math:`P(y)` has full column rank if the data point locations are not
-          all collinear (N=2), coplanar (N=3), etc.
-        - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
-          'cubic', or 'quintic', then `degree` must not be lower than the
-          minimum value listed above.
-        - If `smoothing` is 0, then each data point location must be distinct.
+    - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
+      column rank when `degree` is -1 or 0. When `degree` is 1,
+      :math:`P(y)` has full column rank if the data point locations are not
+      all collinear (N=2), coplanar (N=3), etc.
+    - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
+      'cubic', or 'quintic', then `degree` must not be lower than the
+      minimum value listed above.
+    - If `smoothing` is 0, then each data point location must be distinct.
 
     When using an RBF that is not scale invariant ('multiquadric',
     'inverse_multiquadric', 'inverse_quadratic', or 'gaussian'), an appropriate

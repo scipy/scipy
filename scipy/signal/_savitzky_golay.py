@@ -307,15 +307,15 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     -----
     Details on the `mode` options:
 
-        'mirror':
-            Repeats the values at the edges in reverse order. The value
-            closest to the edge is not included.
-        'nearest':
-            The extension contains the nearest input value.
-        'constant':
-            The extension contains the value given by the `cval` argument.
-        'wrap':
-            The extension contains the values from the other end of the array.
+    - 'mirror':
+      Repeats the values at the edges in reverse order. The value
+      closest to the edge is not included.
+    - 'nearest':
+      The extension contains the nearest input value.
+    - 'constant':
+      The extension contains the value given by the `cval` argument.
+    - 'wrap':
+      The extension contains the values from the other end of the array.
 
     For example, if the input is [1, 2, 3, 4, 5, 6, 7, 8], and
     `window_length` is 7, the following shows the extended data for
