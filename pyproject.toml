@@ -198,12 +198,3 @@ PKG_CONFIG_PATH = "{project}"
   ".spin/cmds.py:authors"
 ]
 "Metrics" = [".spin/cmds.py:bench"]
-
-[tool.numpydoc_validation]
-checks = [
-  "SS01"
-]
-
-exclude_files = [
-  '.*test_*',
-]
