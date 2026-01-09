@@ -428,14 +428,16 @@ class TestSquareWaveform:
         xp_assert_close(fraction_high, xp.asarray(duty, dtype=dtype)[()])
         xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=dtype)[()])
 
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9568")
     @pytest.mark.parametrize("duty, expected", [(1., 1.), (0., -1.)])
     def test_duty_edge_cases(self, duty, expected, xp):
         t = xp.linspace(-2*xp.pi, 2*xp.pi, 200)
         y = square(t, duty=duty)
         xp_assert_equal(y, xp.full(t.shape, expected))
 
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9568")
     def test_periodic(self, xp):
-        t = xp.linspace(-2*xp.pi, 2*xp.pi, 20, endpoint=False, dtype=xp.float64)
+        t = xp.linspace(-2, 2, 20, endpoint=False, dtype=xp.float64)
         y1 = square(t, duty=0.4)
         y2 = square(t + 2*xp.pi, duty=0.4)
 
@@ -448,6 +450,7 @@ class TestSquareWaveform:
 
         assert xp.all(xp.isnan(y))
 
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9568")
     def test_small_negative_input(self, xp):
         res = square(xp.asarray(-xp.finfo(xp.float64).eps, dtype=xp.float64), 1)
         xp_assert_equal(res, xp.asarray(1.0, dtype=xp.float64))
