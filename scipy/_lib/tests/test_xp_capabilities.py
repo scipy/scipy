@@ -10,24 +10,15 @@ local_capabilities_table = {}
 # B is a child of A which inherits the method g which is array-agnostic
 # so long as the method f is supported. A.f does not support the JAX jit but
 # B.f does support the JAX jit. Test that this inheritence does not
-# cause problems when testing with JAX jit. For verisimilitude, there is also
-# a method h such that A.h and B.h both support that jit, making it so it
-# makes sense to have both A and B in lazy_xp_modules.
+# cause problems when testing with JAX jit.
 
 @xp_capabilities(
     capabilities_table=local_capabilities_table,
     cpu_only=True,
-    skip_backends=[
-        ("array_api_strict", ""),
-        ("numpy", ""),
-        ("dask.array", ""),
-        ("torch", "")
-    ],
     jax_jit=False,
-    method_capabilities={
-        "h": dict(jax_jit=True, cpu_only=True,
-                  skip_backends=[("dask.array", ""), ("torch", "")]),
-    },
+    skip_backends=[
+        ("dask.array", ""),
+    ],
 )
 class A:
     def __init__(self, x):
@@ -42,22 +33,11 @@ class A:
     def g(self, y, z):
         return self.f(y) + self.f(z)
 
-    def h(self, y):
-        xp = array_namespace(y)
-        y = xp.asarray(y)
-        return xp.matmul(y, y)
-
 
 @xp_capabilities(
     capabilities_table=local_capabilities_table,
     cpu_only=True,
-    skip_backends=[
-        ("array_api_strict", ""),
-        ("cupy", ""),
-        ("numpy", ""),
-        ("dask.array", ""),
-        ("torch", "")
-    ],
+    skip_backends=[("dask.array", "")],
 )
 class B(A):
     def __init__(self, x):
@@ -69,41 +49,21 @@ class B(A):
         return self._xp.matmul(self.x, y)
 
 
-lazy_xp_modules = [A, B]
-
-
 @pytest.mark.parametrize(
     "cls",
     [
-        make_xp_pytest_param(
-            (A, "g"),
-            capabilities_table=local_capabilities_table,
-            additional_marks=pytest.mark.xfail(reason="spooky action at a distance"),
-        ),
+        make_xp_pytest_param((A, "g"), capabilities_table=local_capabilities_table),
         make_xp_pytest_param((B, "g"), capabilities_table=local_capabilities_table),
     ],
 )
 def test_no_spooky_action_at_a_distance(cls, xp):
+    # test that application of lazy_xp_function to a method which is inherited
+    # from a parent class do not propagate to the parent class. Calls to A.g
+    # will raise here if A.g was accidentally jitted.
     x = xp.asarray([1.1, 2.2, 3.3])
     y = xp.asarray([1.0, 2.0, 3.0])
     z = xp.asarray([3.0, 4.0, 5.0])
     foo = cls(x)
     observed = foo.g(y, z)
     expected = xp.asarray(44.0)[()]
-    xp_assert_close(observed, expected)
-
-
-@pytest.mark.parametrize(
-    "cls",
-    [
-        make_xp_pytest_param((A, "h"), capabilities_table=local_capabilities_table),
-        make_xp_pytest_param((B, "h"), capabilities_table=local_capabilities_table),
-    ],
-)
-def test_method_capabilities(cls, xp):
-    x = xp.asarray([1.1, 2.2, 3.3])
-    y = xp.asarray([1.0, 2.0, 3.0])
-    foo = cls(x)
-    observed = foo.h(y)
-    expected = xp.asarray(14.0)[()]
     xp_assert_close(observed, expected)
