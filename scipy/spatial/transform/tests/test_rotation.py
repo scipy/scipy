@@ -29,8 +29,6 @@ import pickle
 import copy
 
 
-lazy_xp_modules = [Rotation, Slerp]
-
 # from_quat and as_quat are used in almost all tests, so we mark them module-wide
 pytestmark = make_xp_pytest_marks((Rotation, "as_quat"), (Rotation, "from_quat"))
 

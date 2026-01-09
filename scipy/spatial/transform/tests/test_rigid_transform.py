@@ -17,8 +17,6 @@ from scipy._lib._array_api import (
 )
 import scipy._lib.array_api_extra as xpx
 
-lazy_xp_modules = [RigidTransform]
-
 
 def rotation_to_xp(r: Rotation, xp):
     dtype = xpx.default_dtype(xp)
