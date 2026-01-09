@@ -1186,11 +1186,6 @@ taken from the class level capabilities, unless a method specific
 override was added in the ``method_capabilities`` kwarg of
 ``xp_capabilities``.
 
-Due to how the lazy backend testing machinery works, to test a method
-``A.f`` on lazy backends, one must add the class ``A`` to the list
-``lazy_xp_modules`` discussed above::
-
-  lazy_xp_modules = [A]
 
 If the capabilities for ``(A, "f")`` have
 ``jax_jit=True` (or if Dask is not in ``skip_backends``) then using
