@@ -191,6 +191,7 @@ class TestTrimmedStats:
 
     @skip_xp_backends(np_only=True,
                       reason="Only NumPy arrays support scalar input/`nan_policy`.")
+    @make_xp_test_case(stats.tmin)
     def test_tmin_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmin(4), 4)
 
@@ -233,6 +234,7 @@ class TestTrimmedStats:
 
     @skip_xp_backends(np_only=True,
                       reason="Only NumPy arrays support scalar input/`nan_policy`.")
+    @make_xp_test_case(stats.tmax)
     def test_tmax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
 
@@ -5039,6 +5041,44 @@ class TestKSTwoSamples:
         assert res.statistic_location == ref_location
         assert res.statistic_sign == ref_sign
 
+@make_xp_test_case(stats.ttest_rel)
+def test_ttest_rel_xp(xp):
+    # stats.ttest_rel had no tests using the xp fixture. As a temporary
+    # measure to get tools/check_xp_untested.py to pass, a portion of
+    # test_ttest_rel has been converted. It might seem unnecessary to
+    # require tests for a trivial wrapper of a well-tested function, but
+    # this seems simpler than having a way to carve out exceptions to
+    # check_xp_untested.
+    tr = xp.asarray(0.81248591389165692, dtype=xp.float64)
+    pr = xp.asarray(0.41846234511362157, dtype=xp.float64)
+
+    rvs1 = xp.linspace(1, 100, 100, dtype=xp.float64)
+    rvs2 = xp.linspace(1.01, 99.989, 100, dtype=xp.float64)
+    rvs1_2D = xp.stack(
+        [
+            xp.linspace(1,100, 100, dtype=xp.float64),
+            xp.linspace(1.01, 99.989, 100, dtype=xp.float64)
+        ]
+    )
+    rvs2_2D = xp.stack(
+        [
+            xp.linspace(1.01, 99.989, 100, dtype=xp.float64),
+            xp.linspace(1, 100, 100, dtype=xp.float64)
+        ]
+    )
+
+    t, p = stats.ttest_rel(rvs1, rvs2, axis=0)
+    xp_assert_close(t, tr)
+    xp_assert_close(p, pr)
+
+    t, p = stats.ttest_rel(rvs1_2D.T, rvs2_2D.T, axis=0)
+    xp_assert_close(t, xp.stack([tr, -tr]))
+    xp_assert_close(p, xp.stack([pr, pr]))
+
+    t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, axis=1)
+    xp_assert_close(t, xp.stack([tr, -tr]))
+    xp_assert_close(p, xp.stack([pr, pr]))
+
 
 def test_ttest_rel():
     # regression test
@@ -5719,6 +5759,7 @@ class Test_ttest_trim:
         assert_allclose(statistic, tr, atol=1e-10)
 
     @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
+    @make_xp_test_case(stats.ttest_ind)
     def test_permutation_not_implement_for_xp(self, xp):
         message = "Use of `trim` is compatible only with NumPy arrays."
         a, b = xp.arange(10), xp.arange(10)+1
@@ -6042,6 +6083,7 @@ class TestTTestIndFromStats:
 @pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
     rng = np.random.default_rng(246834602926842)
@@ -6051,6 +6093,7 @@ def test_ttest_uniform_pvalues(xp):
 
     res = stats.ttest_ind(x, y, equal_var=True, axis=-1)
     pvalue = np.asarray(res.pvalue)
+    # TODO: isolate use of alt backend to ttest_ind
     assert stats.ks_1samp(pvalue, stats.uniform().cdf).pvalue > 0.1
     assert_allclose(np.quantile(pvalue, q), q, atol=1e-2)
 
@@ -6144,6 +6187,7 @@ def test_ttest_1samp_new(xp):
 
 
 @skip_xp_backends(np_only=True, reason="Only NumPy has nan_policy='omit' for now")
+@make_xp_test_case(stats.ttest_1samp)
 def test_ttest_1samp_new_omit(xp):
     rng = np.random.default_rng(4008400329)
     n1, n2, n3 = (5, 10, 15)
@@ -9256,6 +9300,7 @@ class TestLMoment:
         xp_assert_close(res, ref)
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestXP_Mean:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('weights', [None, True])
@@ -9397,6 +9442,7 @@ class TestXP_Mean:
         xp_assert_close(res, xp.asarray(ref))
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])
@@ -9514,6 +9560,7 @@ class TestXP_Var:
         xp_assert_close(res, xp.asarray(ref), check_dtype=False)
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 def test_chk_asarray(xp):
     rng = np.random.default_rng(2348923425434)
     x0 = rng.random(size=(2, 3, 4))

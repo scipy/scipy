@@ -200,35 +200,35 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     method : string or `OdeSolver`, optional
         Integration method to use:
 
-        * 'RK45' (default): Explicit Runge-Kutta method of order 5(4) [1]_.
-            The error is controlled assuming accuracy of the fourth-order
-            method, but steps are taken using the fifth-order accurate
-            formula (local extrapolation is done). A quartic interpolation
-            polynomial is used for the dense output [2]_. Can be applied in
-            the complex domain.
-        * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
-            is controlled assuming accuracy of the second-order method, but
-            steps are taken using the third-order accurate formula (local
-            extrapolation is done). A cubic Hermite polynomial is used for the
-            dense output. Can be applied in the complex domain.
-        * 'DOP853': Explicit Runge-Kutta method of order 8 [13]_.
-            Python implementation of the "DOP853" algorithm originally
-            written in Fortran [14]_. A 7-th order interpolation polynomial
-            accurate to 7-th order is used for the dense output.
-            Can be applied in the complex domain.
-        * 'Radau': Implicit Runge-Kutta method of the Radau IIA family of
-            order 5 [4]_. The error is controlled with a third-order accurate
-            embedded formula. A cubic polynomial which satisfies the
-            collocation conditions is used for the dense output.
-        * 'BDF': Implicit multi-step variable-order (1 to 5) method based
-            on a backward differentiation formula for the derivative
-            approximation [5]_. The implementation follows the one described
-            in [6]_. A quasi-constant step scheme is used and accuracy is
-            enhanced using the NDF modification. Can be applied in the
-            complex domain.
-        * 'LSODA': Adams/BDF method with automatic stiffness detection and
-            switching [7]_, [8]_. This is a wrapper of the Fortran solver
-            from ODEPACK.
+        * **'RK45' (default)**: Explicit Runge-Kutta method of order 5(4) [1]_.
+          The error is controlled assuming accuracy of the fourth-order
+          method, but steps are taken using the fifth-order accurate
+          formula (local extrapolation is done). A quartic interpolation
+          polynomial is used for the dense output [2]_. Can be applied in
+          the complex domain.
+        * **'RK23'**: Explicit Runge-Kutta method of order 3(2) [3]_. The error
+          is controlled assuming accuracy of the second-order method, but
+          steps are taken using the third-order accurate formula (local
+          extrapolation is done). A cubic Hermite polynomial is used for the
+          dense output. Can be applied in the complex domain.
+        * **'DOP853'**: Explicit Runge-Kutta method of order 8 [13]_.
+          Python implementation of the "DOP853" algorithm originally
+          written in Fortran [14]_. A 7-th order interpolation polynomial
+          accurate to 7-th order is used for the dense output.
+          Can be applied in the complex domain.
+        * **'Radau'**: Implicit Runge-Kutta method of the Radau IIA family of
+          order 5 [4]_. The error is controlled with a third-order accurate
+          embedded formula. A cubic polynomial which satisfies the
+          collocation conditions is used for the dense output.
+        * **'BDF'**: Implicit multi-step variable-order (1 to 5) method based
+          on a backward differentiation formula for the derivative
+          approximation [5]_. The implementation follows the one described
+          in [6]_. A quasi-constant step scheme is used and accuracy is
+          enhanced using the NDF modification. Can be applied in the
+          complex domain.
+        * **'LSODA'**: Adams/BDF method with automatic stiffness detection and
+          switching [7]_, [8]_. This is a wrapper of the Fortran solver
+          from ODEPACK.
 
         Explicit Runge-Kutta methods ('RK23', 'RK45', 'DOP853') should be used
         for non-stiff problems and implicit methods ('Radau', 'BDF') for
@@ -326,15 +326,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ``d f_i / d y_j``.  There are three ways to define the Jacobian:
 
         * If array_like or sparse_matrix, the Jacobian is assumed to
-            be constant. Not supported by 'LSODA'.
+          be constant. Not supported by 'LSODA'.
         * If callable, the Jacobian is assumed to depend on both
-            t and y; it will be called as ``jac(t, y)``, as necessary.
-            Additional arguments have to be passed if ``args`` is
-            used (see documentation of ``args`` argument).
-            For 'Radau' and 'BDF' methods, the return value might be a
-            sparse matrix.
+          t and y; it will be called as ``jac(t, y)``, as necessary.
+          Additional arguments have to be passed if ``args`` is
+          used (see documentation of ``args`` argument).
+          For 'Radau' and 'BDF' methods, the return value might be a
+          sparse matrix.
         * If None (default), the Jacobian will be approximated by
-            finite differences.
+          finite differences.
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.

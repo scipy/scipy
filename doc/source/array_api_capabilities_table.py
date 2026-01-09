@@ -82,11 +82,11 @@ class ArrayAPISupportPerModule(SphinxDirective):
         for module in modules:
             label = self.options.get(module)
             module_text = f":ref:`{module} <{label}>`" if label else module
-            info, accurate_count = table_stats[f"scipy.{module}"]
+            info = table_stats[f"scipy.{module}"]
             total = info.pop("total")
             row = [f"{module_text} ({total})"]
             for backend, count in info.items():
-                cell_text = f"{count/total:.0%}{'*' if not accurate_count else ''}"
+                cell_text = f"{count/total:.0%}"
                 row.append(cell_text)
             rows.append(row)
         return _make_reST_table(rows, headers, self.state)

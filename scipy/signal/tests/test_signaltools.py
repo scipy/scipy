@@ -3081,9 +3081,8 @@ def test_choose_conv_method_2(xp):
                 assert choose_conv_method(x, h, mode=mode) == 'direct'
 
 
-@skip_xp_backends(np_only=True)
 @pytest.mark.fail_slow(10)
-def test_filtfilt_gust(xp):
+def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
 
@@ -3792,8 +3791,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 
-    @skip_xp_backends(np_only=True)
-    def test_compute_factors(self, xp):
+    def test_compute_factors(self):
         factors, poly = _compute_factors([1, 2, 3], [3, 2, 1])
         assert len(factors) == 3
         assert_almost_equal(factors[0], np.poly([2, 2, 3]))
@@ -3812,8 +3810,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(factors[5], np.poly([1, 1, 1, 2, 2]))
         assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
 
-    @skip_xp_backends(np_only=True)
-    def test_group_poles(self, xp):
+    def test_group_poles(self):
         unique, multiplicity = _group_poles(
             [1.0, 1.001, 1.003, 2.0, 2.003, 3.0], 0.1, 'min')
         xp_assert_close(unique, [1.0, 2.0, 3.0])
@@ -4447,6 +4444,7 @@ class TestSOSFilt:
         return a, b, sos
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions(self, dt, xp):
         a, b, sos = self._get_ab_sos(xp)
 
@@ -4474,6 +4472,7 @@ class TestSOSFilt:
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_2(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.ones(8, dtype=dt)
@@ -4497,6 +4496,7 @@ class TestSOSFilt:
         xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
 
@@ -4564,6 +4564,7 @@ class TestSOSFilt:
             sosfilt(sos, x, zi=zi, axis=1)
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
         sos = signal.butter(6, 0.2, output='sos')
@@ -4578,6 +4579,7 @@ class TestSOSFilt:
         xp_assert_close(y, ss * xp.ones_like(y), rtol=1e-13)
 
     @skip_xp_backends(np_only=True)
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi_2(self, dt, xp):
         # zi as array-like
         dt = getattr(xp, dt)
