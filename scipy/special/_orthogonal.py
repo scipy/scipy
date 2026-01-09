@@ -2607,6 +2607,7 @@ def sh_legendre(n, monic=False):
 
     This can be easily checked on :math:`[0, 1]`
     for :math:`n = 3`:
+
     >>> x = np.linspace(0.0, 1.0, 101)
     >>> lhs = (3 + 1) * sh_legendre(4)(x)
     >>> rhs = (
@@ -2622,7 +2623,7 @@ def sh_legendre(n, monic=False):
 
     >>> x = np.linspace(0.0, 1.0, 400)
     >>> y = sh_legendre(2)(x) * sh_legendre(3)(x)
-    >>> bool(np.isclose(trapezoid(y, x), 0.0, atol=1e-4))
+    >>> np.isclose(trapezoid(y, x), 0.0, atol=1e-12)
     True
 
     See Also
