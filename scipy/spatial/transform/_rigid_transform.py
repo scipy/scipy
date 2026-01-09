@@ -69,6 +69,10 @@ rigid_transform_extra_note = (
             jax_jit=False,
             skip_backends=[("dask.array", "missing linalg.cross/det functions")],
         ),
+        "from_matrix": dict(
+            jax_jit=False,
+            skip_backends=[("dask.array", "missing linalg.cross/det functions")],
+        ),
         "__getitem__": dict(
             jax_jit=False,
             skip_backends=[
