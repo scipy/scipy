@@ -1199,6 +1199,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         represent a complex Hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
+
         - If `sigma` is None, M is positive definite
         - If `sigma` is specified, M is positive semi-definite
 
@@ -1571,7 +1572,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             B = M,
             w'[i] = 1 / (w[i] - sigma)
 
-        -'buckling'::
+        - 'buckling'::
 
             OP = [A - sigma * M]^-1 @ A,
             B = A,
