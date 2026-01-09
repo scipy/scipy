@@ -152,14 +152,14 @@ class RBFInterpolator:
     The above system is uniquely solvable if the following requirements are
     met:
 
-        - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
-          column rank when `degree` is -1 or 0. When `degree` is 1,
-          :math:`P(y)` has full column rank if the data point locations are not
-          all collinear (N=2), coplanar (N=3), etc.
-        - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
-          'cubic', or 'quintic', then `degree` must not be lower than the
-          minimum value listed above.
-        - If `smoothing` is 0, then each data point location must be distinct.
+    - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
+      column rank when `degree` is -1 or 0. When `degree` is 1,
+      :math:`P(y)` has full column rank if the data point locations are not
+      all collinear (N=2), coplanar (N=3), etc.
+    - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
+      'cubic', or 'quintic', then `degree` must not be lower than the
+      minimum value listed above.
+    - If `smoothing` is 0, then each data point location must be distinct.
 
     When using an RBF that is not scale invariant ('multiquadric',
     'inverse_multiquadric', 'inverse_quadratic', or 'gaussian'), an appropriate
