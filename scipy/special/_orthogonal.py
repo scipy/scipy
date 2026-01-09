@@ -2584,7 +2584,10 @@ def sh_legendre(n, monic=False):
 
     Examples
     --------
-    The shifted Legendre polynomials :math:`P_n^*` are related to the non-shifted polynomials :math:`P_n` by :math:`P_n^*(x) = P_n(2x - 1)`. We can verify this on the interval :math:`[0, 1]`:
+    The shifted Legendre polynomials :math:`P_n^*` are related
+    to the non-shifted polynomials :math:`P_n` by
+    :math:`P_n^*(x) = P_n(2x - 1)`. We can verify this on the
+    interval :math:`[0, 1]`:
 
     >>> import numpy as np
     >>> from scipy.special import sh_legendre, legendre
@@ -2594,20 +2597,28 @@ def sh_legendre(n, monic=False):
     >>> np.allclose(sh_legendre(n)(x), legendre(n)(2*x - 1))
     True
 
-    The polynomials :math:`P_n^*` satisfy a recurrence relation obtained by the change of variables :math:`t = 2x - 1` in the standard Legendre recurrence:
+    The polynomials :math:`P_n^*` satisfy a recurrence
+    relation obtained by the change of variables
+    :math:`t = 2x - 1` in the standard Legendre recurrence:
     
     .. math::
     
         (n+1) P_{n+1}^*(x) = (2n+1)(2x-1)\,P_n^*(x) - n\,P_{n-1}^*(x).
 
-    This can be easily checked on :math:`[0, 1]` for :math:`n = 3`:
+    This can be easily checked on :math:`[0, 1]`
+    for :math:`n = 3`:
     >>> x = np.linspace(0.0, 1.0, 101)
     >>> lhs = (3 + 1) * sh_legendre(4)(x)
-    >>> rhs = (2*3 + 1) * (2*x - 1) * sh_legendre(3)(x) - 3 * sh_legendre(2)(x)
+    >>> rhs = (
+    ...     (2*3 + 1) * (2*x - 1) * sh_legendre(3)(x)
+    ...     - 3 * sh_legendre(2)(x)
+    ... )
     >>> np.allclose(lhs, rhs)
     True
 
-    Orthogonality over :math:`[0,1]` with weight 1 can be checked numerically; for example, :math:`P_2^*` is orthogonal to :math:`P_3^*`:
+    Orthogonality over :math:`[0,1]` with weight 1 can be
+    checked numerically; for example, :math:`P_2^*`
+    is orthogonal to :math:`P_3^*`:
 
     >>> x = np.linspace(0.0, 1.0, 400)
     >>> y = sh_legendre(2)(x) * sh_legendre(3)(x)
