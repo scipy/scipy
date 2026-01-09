@@ -2608,11 +2608,12 @@ def sh_legendre(n, monic=False):
     This can be easily checked on :math:`[0, 1]`
     for :math:`n = 3`:
 
+    >>> n = 3
     >>> x = np.linspace(0.0, 1.0, 101)
-    >>> lhs = (3 + 1) * sh_legendre(4)(x)
+    >>> lhs = (n + 1) * sh_legendre(n + 1)(x)
     >>> rhs = (
-    ...     (2*3 + 1) * (2*x - 1) * sh_legendre(3)(x)
-    ...     - 3 * sh_legendre(2)(x)
+    ...     (2*n + 1) * (2*x - 1) * sh_legendre(n)(x)
+    ...     - n * sh_legendre(n - 1)(x)
     ... )
     >>> np.allclose(lhs, rhs)
     True
