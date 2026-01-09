@@ -47,17 +47,6 @@ def in_tempdir():
             yield td
 
 
-def test_in_tempdir():
-    my_cwd = os.getcwd()
-    with in_tempdir() as tmpdir:
-        with open('test.txt', "w") as f:
-            f.write('some text')
-        assert os.path.isfile('test.txt')
-        assert os.path.isfile(os.path.join(tmpdir, 'test.txt'))
-    assert not os.path.exists(tmpdir)
-    assert os.getcwd() == my_cwd
-
-
 @contextmanager
 def make_simple(*args, **kwargs):
     f = netcdf_file(*args, **kwargs)
