@@ -212,7 +212,6 @@ checks = [
   "SS01",
   "SS02",
   "SS03",
-  "SS04",
   "SS05",
   "SS06",
   "ES01",
@@ -236,5 +235,5 @@ checks = [
   "SA02",
   "SA03",
   "SA04",
-  "EX01",
+  "EX01",  # remove when gh-7168 is resolved
 ]
