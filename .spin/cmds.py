@@ -611,7 +611,7 @@ def authors(ctx_obj, revision_args):
 @click.pass_context
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files, check for disallowed Unicode characters,
-    possibly-invalid test names, and run numpydoc linting on docstrings."""
+    possibly-invalid test names, and numpydoc linting on docstrings."""
     cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [

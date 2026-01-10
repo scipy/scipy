@@ -315,6 +315,7 @@ ruff = "*"
 cython-lint = "*"
 packaging = "*"
 tach = "*"
+numpydoc = "*"
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"

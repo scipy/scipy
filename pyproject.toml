@@ -115,6 +115,7 @@ dev = [
     "pycodestyle",
     "ruff>=0.12.0",
     "cython-lint>=0.12.2",
+    "numpydoc",
 ]
 
 [project.urls]
