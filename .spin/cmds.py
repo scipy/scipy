@@ -610,8 +610,8 @@ def authors(ctx_obj, revision_args):
     help="Do not run cython-lint.")
 @click.pass_context
 def lint(ctx, fix, diff_against, files, all, no_cython):
-    """🔦 Run linter on modified files, check for disallowed Unicode characters,
-    possibly-invalid test names, and run numpydoc linting on docstrings."""
+    """🔦 Run linter on modified files and check for
+    disallowed Unicode characters and possibly-invalid test names."""
     cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
@@ -637,11 +637,6 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         os.path.join('tools', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
-
-    cmd_numpydoc_lint = cmd_prefix + [
-        os.path.join('tools', 'numpydoc_lint.py')
-    ]
-    util.run(cmd_numpydoc_lint)
 
 
 # From scipy: benchmarks/benchmarks/common.py
