@@ -1713,7 +1713,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         Abscissas.
     y : array_like, shape (m, ...)
         Ordinates.
-    t : array_like, shape (n + k + 1,
+    t : array_like, shape (n + k + 1,)
         Knots.
         Knots and data points must satisfy Schoenberg-Whitney conditions.
     k : int, optional
