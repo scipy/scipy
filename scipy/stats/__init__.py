@@ -482,32 +482,27 @@ Random Variables
    exp
    log
 
-Quasi-Monte Carlo
-=================
-
+Other statistical functionality
+===============================
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
    stats.qmc
 
-Contingency Tables
-==================
-
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
    stats.contingency
 
-Masked statistics functions
-===========================
-
 .. toctree::
+   :maxdepth: 1
 
    stats.mstats
 
+.. toctree::
+   :maxdepth: 1
 
-Other statistical functionality
-===============================
+   stats.sampling
 
 Transformations
 ---------------
@@ -538,14 +533,6 @@ Statistical distances
    wasserstein_distance
    wasserstein_distance_nd
    energy_distance
-
-Sampling
---------
-
-.. toctree::
-   :maxdepth: 4
-
-   stats.sampling
 
 Fitting / Survival Analysis
 ---------------------------
