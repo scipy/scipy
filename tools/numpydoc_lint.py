@@ -38,7 +38,7 @@ def main():
             if err[0] in config["checks"]:
                 print(f"{item}: {err}")
                 errors += 1
-    sys.exit(error)
+    sys.exit(errors)
 
 
 if __name__ == '__main__':
