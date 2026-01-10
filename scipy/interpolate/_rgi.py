@@ -106,7 +106,7 @@ class RegularGridInterpolator:
 
         .. versionadded:: 1.13
 
-    solver_args: dict, optional
+    solver_args : dict, optional
         Additional arguments to pass to `solver`, if any.
 
         .. versionadded:: 1.13

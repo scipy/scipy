@@ -713,7 +713,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None` and may
         not be greater than `nperseg`.
@@ -1951,7 +1951,7 @@ def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional

@@ -23,7 +23,7 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
         Coefficient array
     b : (m,) ndarray, float
         Right-hand side vector.
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations, optional. Default value is ``3 * n``.
     atol : float, optional
         .. deprecated:: 1.18.0

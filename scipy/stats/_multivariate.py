@@ -7750,7 +7750,7 @@ class normal_inverse_gamma_gen(multi_rv_generic):
 
     Parameters
     ----------
-    mu, lmbda, a, b  : array_like
+    mu, lmbda, a, b : array_like
         Shape parameters of the distribution. See notes.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.

@@ -2595,7 +2595,7 @@ xp : array_namespace, optional
     Optional array namespace.
     Should be compatible with the array API standard, or supported by array-api-compat.
     Default: ``numpy``
-device: any
+device : any
     optional device specification for output. Should match one of the
     supported device specification in ``xp``.
 """

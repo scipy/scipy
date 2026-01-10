@@ -306,7 +306,7 @@ class dlti(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `dlti` class can be instantiated with either 2, 3 or 4 arguments.
         The following gives the number of arguments and the corresponding
         discrete-time subclass that is created:
@@ -316,7 +316,7 @@ class dlti(LinearTimeInvariant):
         * 4: `StateSpace`:  (A, B, C, D)
 
         Each argument can be an array or a sequence.
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to ``True``
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -506,7 +506,7 @@ class TransferFunction(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
@@ -514,7 +514,7 @@ class TransferFunction(LinearTimeInvariant):
         * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
           `ZerosPolesGain`)
         * 2: array_like: (numerator, denominator)
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -751,7 +751,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
@@ -827,14 +827,14 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
         * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
         * 2: array_like: (numerator, denominator)
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -899,7 +899,7 @@ class ZerosPolesGain(LinearTimeInvariant):
         * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
           `ZerosPolesGain`)
         * 3: array_like: (zeros, poles, gain)
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -1168,7 +1168,7 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
 
         * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
         * 3: array_like: (zeros, poles, gain)
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -1230,7 +1230,7 @@ class StateSpace(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 4 arguments.
         The following gives the number of input arguments and their
         interpretation:
@@ -1238,7 +1238,7 @@ class StateSpace(LinearTimeInvariant):
         * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
           `ZerosPolesGain`)
         * 4: array_like: (A, B, C, D)
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -1645,7 +1645,7 @@ class StateSpaceContinuous(StateSpace, lti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
@@ -1718,14 +1718,14 @@ class StateSpaceDiscrete(StateSpace, dlti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
         * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
         * 4: array_like: (A, B, C, D)
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.

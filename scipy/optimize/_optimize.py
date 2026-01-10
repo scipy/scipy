@@ -1051,8 +1051,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
 
 @_transition_to_rng("seed", position_num=6)
-def check_grad(func, grad, x0, *args, epsilon=_epsilon,
-                direction='all', rng=None):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, direction='all', rng=None):
     r"""Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -1065,7 +1064,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
-    args : \\*args, optional
+    *args : optional
         Extra arguments passed to `func` and `grad`.
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
@@ -2212,7 +2211,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Maximum number of function evaluations allowed.
     full_output : bool, optional
         If True, return optional outputs.
-    disp: int, optional
+    disp : int, optional
         If non-zero, print messages.
 
         ``0`` : no message printing.

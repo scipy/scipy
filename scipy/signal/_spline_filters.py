@@ -443,7 +443,7 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
 
     Parameters
     ----------
-    input : ndarray
+    signal : ndarray
         The input signal.
     lamb : float
         Specifies the amount of smoothing in the transfer function.
@@ -484,7 +484,7 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
 
     Parameters
     ----------
-    input : ndarray
+    signal : ndarray
         The input signal.
     lamb : float
         Specifies the amount of smoothing in the transfer function.

@@ -92,7 +92,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
         - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
         - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
 
-    bracket: A sequence of 2 floats, optional
+    bracket : A sequence of 2 floats, optional
         An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     x0 : float, optional
