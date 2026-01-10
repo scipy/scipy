@@ -7457,11 +7457,15 @@ class TestSigmaClip:
         rng = np.random.default_rng(243587919486245906119)
         x = rng.random(10)
         x[3] = np.nan
-        x = xp.asarray(x, dtype=dtype)
+        x = xp.asarray(x.tolist(), dtype=dtype)
 
         # nan_policy='raise'
-        with pytest.raises(ValueError, match="The input contains nan values"):
-            stats.sigmaclip(x, nan_policy='raise')
+        if not is_lazy_array(x):
+            with pytest.raises(ValueError, match="The input contains nan values"):
+                stats.sigmaclip(x, nan_policy='raise')
+        else:
+            with pytest.raises(TypeError, match="nan_policy='raise' is not supported"):
+                stats.sigmaclip(x, nan_policy='raise')
 
         # nan_policy='propagate'
         res = stats.sigmaclip(x, nan_policy='propagate')
