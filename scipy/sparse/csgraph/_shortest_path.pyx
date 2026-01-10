@@ -40,6 +40,9 @@ DEF DTYPE_EPS = 1E-15
 
 
 class NegativeCycleError(Exception):
+    """
+    Negative cycle in graph.
+    """
     def __init__(self, message=''):
         Exception.__init__(self, message)
 
