@@ -268,6 +268,10 @@ _SEUPD_WHICH = ['LM', 'SM', 'LA', 'SA', 'BE']
 # accepted values of parameter WHICH in _NAUPD
 _NEUPD_WHICH = ['LM', 'SM', 'LR', 'SR', 'LI', 'SI']
 
+# values of WHICH problematic for generalized eigenvalue problems without shift
+# (ARPACK mode=2 does not preserve real/imaginary part ordering)
+_PROBLEMATIC_WHICH_GENERALIZED = ['LR', 'SR', 'LI', 'SI']
+
 # The enum values for the parameter WHICH in _NAUPD and _SEUPD
 WHICH_DICT = {
     'LM': 0, 'SM': 1, 'LR': 2, 'SR': 3, 'LI': 4, 'SI': 5, 'LA': 6, 'SA': 7, 'BE': 8
@@ -749,6 +753,17 @@ class _UnsymmetricArpackParams(_ArpackParams):
         if which not in _NEUPD_WHICH:
             raise ValueError("Parameter which must be one of"
                              f" {' '.join(_NEUPD_WHICH)}")
+        # ARPACK mode=2 (generalized, non–shift-invert) does not preserve
+        # real/imaginary ordering for LR/SR/LI/SI.
+        if mode == 2 and which in _PROBLEMATIC_WHICH_GENERALIZED:
+            raise ValueError(
+                f"which='{which}' for generalized eigenvalue problem "
+                f"(M is specified) without sigma is not reliable. "
+                f"ARPACK's mode=2 finds eigenvalues of the operator M^-1*A, "
+                f"which does not preserve real/imaginary part ordering. "
+                f"Use shift-invert mode by specifying sigma (e.g., sigma=0), "
+                f"or use which='LM' or which='SM' instead."
+            )
         if k >= n - 1:
             raise ValueError(f"k must be less than ndim(A)-1, k={k}")
 
@@ -1258,6 +1273,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
+
+        Note: 'LR', 'SR', 'LI', and 'SI' are not supported for generalized eigenvalue
+        problems (when M is specified) without a shift (sigma=None), as
+        ARPACK's implementation may return incorrect results. Use shift-invert
+        mode (specify sigma) instead.
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
         Default: ``n*10``
