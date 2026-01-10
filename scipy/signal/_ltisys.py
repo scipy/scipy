@@ -1774,7 +1774,7 @@ def lsim(system, U, T, X0=None, interp=True):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -2157,7 +2157,7 @@ def bode(system, w=None, n=100):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -2220,7 +2220,7 @@ def freqresp(system, w=None, n=10000):
 
     Parameters
     ----------
-    system : an instance of the `lti` class or a tuple describing the system.
+    system : an instance of the `lti` class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
