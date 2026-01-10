@@ -17,6 +17,28 @@ from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 
 
+def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
+    rng = np.random.default_rng(rng)
+    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like 
+    max = np.broadcast_to(max, ndim)
+    batch_shape = tuple(rng.integers(min_, max_+1) for min_, max_ in zip(min, max))
+    shapes = np.repeat([batch_shape], nshapes, axis=0)
+
+    # make some elements of some shapes 1 (while preserving overall batch shape)
+    for column in shapes.T:
+        column[rng.integers(1, nshapes):] = 1
+    # permute elements between shapes (while preserving overall batch shape)
+    shapes = list(rng.permuted(shapes, axis=0))
+    # potentially trim some preceeding 1s from shapes
+    for i in range(len(shapes)):
+        shape = shapes[i]
+        j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim
+        shapes[i] = shape if (rng.random() > 0.75) else shape[rng.integers(j+1):]
+
+    assert np.broadcast_shapes(*shapes) == batch_shape
+    return [tuple(int(el) for el in shape) for shape in shapes]
+
+
 class TestLinearOperator:
     def setup_method(self):
         self.A = np.array([[1,2,3],
@@ -290,13 +312,16 @@ class TestDotTests:
         *batch_shape, M, N = op.shape
         
         # TODO: handle empty batches
-        # TODO: test vectors with different but broadcastable batch shapes?
-        # Test `u` and `v` with the same batch shape as `op`
-        u = rng.standard_normal((*batch_shape, N), dtype=dtype)
-        v = rng.standard_normal((*batch_shape, M), dtype=dtype)
+        # Test `u` and `v` with the batch shape of `op` + 3-D broadcast dims
+        # TODO: test `u` and `v` with no batch dims even when `op` is batched?
+        u_broadcast, v_broadcast = generate_broadcastable_shapes(2, ndim=3, min=0, max=5)
+        u_shape = (*u_broadcast, *batch_shape, N)
+        v_shape = (*v_broadcast, *batch_shape, M)
+        u = rng.standard_normal(u_shape, dtype=dtype)
+        v = rng.standard_normal(v_shape, dtype=dtype)
         if complex_data:
-            u = u + (1j * rng.standard_normal((*batch_shape, N), dtype=dtype))
-            v = v + (1j * rng.standard_normal((*batch_shape, M), dtype=dtype))
+            u = u + (1j * rng.standard_normal(u_shape, dtype=dtype))
+            v = v + (1j * rng.standard_normal(v_shape, dtype=dtype))
 
         op_u = op.matvec(u)
         opH_v = op.rmatvec(v)
