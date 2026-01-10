@@ -3975,7 +3975,7 @@ class multinomial_gen(multi_rv_generic):
     >>> # Frozen object with the same methods but holding the given
     >>> # degrees of freedom and scale fixed.
 
-    See also
+    See Also
     --------
     scipy.stats.binom : The binomial distribution.
     numpy.random.Generator.multinomial : Sampling from the multinomial distribution.

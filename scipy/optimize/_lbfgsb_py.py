@@ -187,7 +187,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         * d['funcalls'] is the number of function calls made.
         * d['nit'] is the number of iterations.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'L-BFGS-B' `method` in particular. Note that the

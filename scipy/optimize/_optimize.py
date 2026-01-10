@@ -631,7 +631,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     allvecs : list
         Solution at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Nelder-Mead' `method` in particular.
@@ -1945,7 +1945,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     allvecs : list
         The result at each iteration, if retall is True (see below).
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Newton-CG' `method` in particular.
@@ -2236,7 +2236,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     numfunc : int
         (Optional output) The number of function calls made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Bounded' `method` in particular.
@@ -2656,7 +2656,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Brent' `method` in particular.
@@ -2794,7 +2794,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Golden' `method` in particular.
@@ -3336,7 +3336,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     allvecs : list
         List of solutions at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to unconstrained minimization algorithms for
         multivariate functions. See the 'Powell' method in particular.

@@ -300,7 +300,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     >>> plt.axis("equal")
     >>> plt.show()
 
-    See also
+    See Also
     --------
     griddata :
         Interpolate unstructured D-D data.
@@ -910,7 +910,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> plt.axis("equal")
     >>> plt.show()
 
-    See also
+    See Also
     --------
     griddata :
         Interpolate unstructured D-D data.

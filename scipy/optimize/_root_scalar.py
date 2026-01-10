@@ -129,7 +129,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
         ``flag`` which describes the cause of the termination. See
         `RootResults` for a description of other attributes.
 
-    See also
+    See Also
     --------
     show_options : Additional options accepted by the solvers
     root : Find a root of a vector function.

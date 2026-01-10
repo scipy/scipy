@@ -240,7 +240,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     minimize_scalar : Interface to minimization algorithms for scalar
         univariate functions
@@ -892,7 +892,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     minimize : Interface to minimization algorithms for scalar multivariate
         functions
