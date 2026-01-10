@@ -4280,17 +4280,13 @@ for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
 
 
 class special_ortho_group_gen(multi_rv_generic):
-    r"""A Special Orthogonal matrix (SO(N)) random variable.
+    r"""
+    A Special Orthogonal matrix (SO(N)) random variable.
 
     Return a random rotation matrix, drawn from the Haar distribution
     (the only uniform distribution on SO(N)) with a determinant of +1.
 
     The `dim` keyword specifies the dimension N.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random samples from SO(N).
 
     Parameters
     ----------
@@ -4304,6 +4300,15 @@ class special_ortho_group_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random samples from SO(N).
+
+    See Also
+    --------
+    ortho_group, scipy.spatial.transform.Rotation.random
 
     Notes
     -----
@@ -4339,11 +4344,6 @@ class special_ortho_group_gen(multi_rv_generic):
     >>> rv = special_ortho_group(5)
     >>> # Frozen object with the same methods but holding the
     >>> # dimension parameter fixed.
-
-    See Also
-    --------
-    ortho_group, scipy.spatial.transform.Rotation.random
-
     """
 
     def __init__(self, seed=None):
@@ -4425,17 +4425,13 @@ class special_ortho_group_frozen(multi_rv_frozen):
 
 
 class ortho_group_gen(multi_rv_generic):
-    r"""An Orthogonal matrix (O(N)) random variable.
+    r"""
+    An Orthogonal matrix (O(N)) random variable.
 
     Return a random orthogonal matrix, drawn from the O(N) Haar
     distribution (the only uniform distribution on O(N)).
 
     The `dim` keyword specifies the dimension N.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random samples from O(N).
 
     Parameters
     ----------
@@ -4449,6 +4445,15 @@ class ortho_group_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random samples from O(N).
+
+    See Also
+    --------
+    special_ortho_group
 
     Notes
     -----
@@ -4485,10 +4490,6 @@ class ortho_group_gen(multi_rv_generic):
     >>> rv = ortho_group(5)
     >>> # Frozen object with the same methods but holding the
     >>> # dimension parameter fixed.
-
-    See Also
-    --------
-    special_ortho_group
     """
 
     def __init__(self, seed=None):
@@ -4580,18 +4581,14 @@ class ortho_group_frozen(multi_rv_frozen):
 
 
 class random_correlation_gen(multi_rv_generic):
-    r"""A random correlation matrix.
+    r"""
+    A random correlation matrix.
 
     Return a random correlation matrix, given a vector of eigenvalues.
     The returned matrix is symmetric positive semidefinite with unit diagonal.
 
     The `eigs` keyword specifies the eigenvalues of the correlation matrix,
     and implies the dimension.
-
-    Methods
-    -------
-    rvs(eigs=None, random_state=None)
-        Draw random correlation matrices, all with eigenvalues eigs.
 
     Parameters
     ----------
@@ -4611,17 +4608,22 @@ class random_correlation_gen(multi_rv_generic):
         Tolerance for deviation of the diagonal of the resulting
         matrix. Default: 1e-7
 
-    Raises
-    ------
-    RuntimeError
-        Floating point error prevented generating a valid correlation
-        matrix.
+    Methods
+    -------
+    rvs(eigs=None, random_state=None)
+        Draw random correlation matrices, all with eigenvalues eigs.
 
     Returns
     -------
     rvs : ndarray or scalar
         Random size N-dimensional matrices, dimension (size, dim, dim),
         each having eigenvalues eigs.
+
+    Raises
+    ------
+    RuntimeError
+        Floating point error prevented generating a valid correlation
+        matrix.
 
     Notes
     -----
@@ -4654,7 +4656,6 @@ class random_correlation_gen(multi_rv_generic):
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
     array([ 0.5,  0.8,  1.2,  1.5])
-
     """
 
     def __init__(self, seed=None):
@@ -4851,16 +4852,12 @@ class random_correlation_frozen(multi_rv_frozen):
 
 
 class unitary_group_gen(multi_rv_generic):
-    r"""A matrix-valued U(N) random variable.
+    r"""
+    A matrix-valued U(N) random variable.
 
     Return a random unitary matrix.
 
     The `dim` keyword specifies the dimension N.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random samples from U(N).
 
     Parameters
     ----------
@@ -4874,6 +4871,15 @@ class unitary_group_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random samples from U(N).
+
+    See Also
+    --------
+    ortho_group
 
     Notes
     -----
@@ -4902,11 +4908,6 @@ class unitary_group_gen(multi_rv_generic):
     parameter, return a "frozen" unitary_group random variable:
 
     >>> rv = unitary_group(5)
-
-    See Also
-    --------
-    ortho_group
-
     """
 
     def __init__(self, seed=None):
@@ -6098,7 +6099,8 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
 
 
 class random_table_gen(multi_rv_generic):
-    r"""Contingency tables from independent samples with fixed marginal sums.
+    r"""
+    Contingency tables from independent samples with fixed marginal sums.
 
     This is the distribution of random tables with given row and column vector
     sums. This distribution represents the set of random tables under the null
@@ -6108,6 +6110,11 @@ class random_table_gen(multi_rv_generic):
     Because of assumed independence, the expected frequency of each table
     element can be computed from the row and column sums, so that the
     distribution is completely determined by these two vectors.
+
+    Parameters
+    ----------
+    %(_doc_row_col)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -6119,11 +6126,6 @@ class random_table_gen(multi_rv_generic):
         Mean table.
     rvs(row, col, size=None, method=None, random_state=None)
         Draw random tables with given row and column vector sums.
-
-    Parameters
-    ----------
-    %(_doc_row_col)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -6139,6 +6141,11 @@ class random_table_gen(multi_rv_generic):
     Allowed values are "boyett" and "patefield".
 
     .. versionadded:: 1.10.0
+
+    References
+    ----------
+    .. [1] J. Boyett, AS 144 Appl. Statist. 28 (1979) 329-332
+    .. [2] W.M. Patefield, AS 159 Appl. Statist. 30 (1981) 91-97
 
     Examples
     --------
@@ -6157,11 +6164,6 @@ class random_table_gen(multi_rv_generic):
     >>> dist.rvs(random_state=123)
     array([[1, 0, 0],
            [1, 3, 1]])
-
-    References
-    ----------
-    .. [1] J. Boyett, AS 144 Appl. Statist. 28 (1979) 329-332
-    .. [2] W.M. Patefield, AS 159 Appl. Statist. 30 (1981) 91-97
     """
 
     def __init__(self, seed=None):
@@ -6535,15 +6537,11 @@ for name in ['logpmf', 'pmf', 'mean', 'rvs']:
 
 
 class uniform_direction_gen(multi_rv_generic):
-    r"""A vector-valued uniform direction.
+    r"""
+    A vector-valued uniform direction.
 
     Return a random direction (unit vector). The `dim` keyword specifies
     the dimensionality of the space.
-
-    Methods
-    -------
-    rvs(dim=None, size=1, random_state=None)
-        Draw random directions.
 
     Parameters
     ----------
@@ -6559,6 +6557,11 @@ class uniform_direction_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    rvs(dim=None, size=1, random_state=None)
+        Draw random directions.
 
     Notes
     -----
@@ -7023,23 +7026,11 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov']:
 
 
 class vonmises_fisher_gen(multi_rv_generic):
-    r"""A von Mises-Fisher variable.
+    r"""
+    A von Mises-Fisher variable.
 
     The `mu` keyword specifies the mean direction vector. The `kappa` keyword
     specifies the concentration parameter.
-
-    Methods
-    -------
-    pdf(x, mu=None, kappa=1)
-        Probability density function.
-    logpdf(x, mu=None, kappa=1)
-        Log of the probability density function.
-    rvs(mu=None, kappa=1, size=1, random_state=None)
-        Draw random samples from a von Mises-Fisher distribution.
-    entropy(mu=None, kappa=1)
-        Compute the differential entropy of the von Mises-Fisher distribution.
-    fit(data)
-        Fit a von Mises-Fisher distribution to data.
 
     Parameters
     ----------
@@ -7056,6 +7047,19 @@ class vonmises_fisher_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    pdf(x, mu=None, kappa=1)
+        Probability density function.
+    logpdf(x, mu=None, kappa=1)
+        Log of the probability density function.
+    rvs(mu=None, kappa=1, size=1, random_state=None)
+        Draw random samples from a von Mises-Fisher distribution.
+    entropy(mu=None, kappa=1)
+        Compute the differential entropy of the von Mises-Fisher distribution.
+    fit(data)
+        Fit a von Mises-Fisher distribution to data.
 
     See Also
     --------
@@ -7231,7 +7235,6 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     We see that the estimated parameters `mu_fit` and `kappa_fit` are
     very close to the ground truth parameters.
-
     """
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -7730,23 +7733,11 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
 
 class normal_inverse_gamma_gen(multi_rv_generic):
-    r"""Normal-inverse-gamma distribution.
+    r"""
+    Normal-inverse-gamma distribution.
 
     The normal-inverse-gamma distribution is the conjugate prior of a normal
     distribution with unknown mean and variance.
-
-    Methods
-    -------
-    pdf(x, s2, mu=0, lmbda=1, a=1, b=1)
-        Probability density function.
-    logpdf(x, s2, mu=0, lmbda=1, a=1, b=1)
-        Log of the probability density function.
-    mean(mu=0, lmbda=1, a=1, b=1)
-        Distribution mean.
-    var(mu=0, lmbda=1, a=1, b=1)
-        Distribution variance.
-    rvs(mu=0, lmbda=1, a=1, b=1, size=None, random_state=None)
-        Draw random samples.
 
     Parameters
     ----------
@@ -7760,6 +7751,19 @@ class normal_inverse_gamma_gen(multi_rv_generic):
         If `seed` is already a ``RandomState`` or ``Generator`` instance,
         then that object is used.
         Default is `None`.
+
+    Methods
+    -------
+    pdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Probability density function.
+    logpdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Log of the probability density function.
+    mean(mu=0, lmbda=1, a=1, b=1)
+        Distribution mean.
+    var(mu=0, lmbda=1, a=1, b=1)
+        Distribution variance.
+    rvs(mu=0, lmbda=1, a=1, b=1, size=None, random_state=None)
+        Draw random samples.
 
     See Also
     --------
@@ -7844,7 +7848,6 @@ class normal_inverse_gamma_gen(multi_rv_generic):
     (np.float64(1.0546150578185023), np.float64(0.061829865266330754))
     >>> norm_inv_gamma.var()
     (np.float64(1.0526315789473684), np.float64(0.061557402277623886))
-
     """
     def rvs(self, mu=0, lmbda=1, a=1, b=1, size=None, random_state=None):
         """Draw random samples from the distribution.
