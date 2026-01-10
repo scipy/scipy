@@ -12,16 +12,16 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     """
     Solve ``Ax = b`` with the MINimum RESidual method, for a symmetric `A`.
 
-    MINRES minimizes norm(Ax - b) for a real symmetric matrix A.  Unlike
-    the Conjugate Gradient method, A can be indefinite or singular.
+    MINRES minimizes ``norm(Ax - b)`` for a real symmetric matrix `A`.  Unlike
+    the Conjugate Gradient method, `A` can be indefinite or singular.
 
-    If shift != 0 then the method solves (A - shift*I)x = b
+    If ``shift != 0`` then the method solves ``(A - shift*I)x = b``.
 
     Parameters
     ----------
     A : {sparse array, ndarray, LinearOperator}
         The real symmetric N-by-N matrix of the linear system
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -50,19 +50,31 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        Preconditioner for `A`.  The preconditioner should approximate the
+        inverse of `A`.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     show : bool
         If ``True``, print out a summary and metrics related to the solution
         during iterations. Default is ``False``.
     check : bool
         If ``True``, run additional input validation to check that `A` and
         `M` (if specified) are symmetric. Default is ``False``.
+
+    Notes
+    -----
+    This file is a translation of the MATLAB implementation [2]_.
+
+    References
+    ----------
+    ..[1] Solution of sparse indefinite systems of linear equations,
+          C. C. Paige and M. A. Saunders (1975),
+          SIAM J. Numer. Anal. 12(4), pp. 617-629.
+          https://web.stanford.edu/group/SOL/software/minres/
+    ..[2] https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
 
     Examples
     --------
@@ -77,17 +89,6 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     0
     >>> np.allclose(A.dot(x), b)
     True
-
-    References
-    ----------
-    Solution of sparse indefinite systems of linear equations,
-        C. C. Paige and M. A. Saunders (1975),
-        SIAM J. Numer. Anal. 12(4), pp. 617-629.
-        https://web.stanford.edu/group/SOL/software/minres/
-
-    This file is a translation of the following MATLAB implementation:
-        https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
-
     """
     A, M, x, b = make_system(A, M, x0, b)
 

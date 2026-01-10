@@ -650,6 +650,17 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     converge to the minimum, or how fast it will if it does. Both the ftol and
     xtol criteria must be met for convergence.
 
+    References
+    ----------
+    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
+           minimization", The Computer Journal, 7, pp. 308-313
+
+    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
+           Respectable", in Numerical Analysis 1995, Proceedings of the
+           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
+           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
+           Harlow, UK, pp. 191-208.
+
     Examples
     --------
     >>> def f(x):
@@ -664,18 +675,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
              Function evaluations: 34
     >>> minimum[0]
     -8.8817841970012523e-16
-
-    References
-    ----------
-    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
-           minimization", The Computer Journal, 7, pp. 308-313
-
-    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
-           Respectable", in Numerical Analysis 1995, Proceedings of the
-           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
-           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
-           Harlow, UK, pp. 191-208.
-
     """
     opts = {'xatol': xtol,
             'fatol': ftol,
@@ -1269,6 +1268,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         The value of `xopt` at each iteration. Only returned if `retall` is
         True.
 
+    See Also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See ``method='BFGS'`` in particular.
+
     Notes
     -----
     Optimize the function, `f`, whose gradient is given by `fprime`
@@ -1277,14 +1281,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
-    See Also
-    --------
-    minimize: Interface to minimization algorithms for multivariate
-        functions. See ``method='BFGS'`` in particular.
-
     References
     ----------
-    Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
+    ..[1] Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
 
     Examples
     --------
