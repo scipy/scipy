@@ -11,16 +11,22 @@ from scipy._lib._public_api import PUBLIC_MODULES
 
 def main():
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    # load in numpydoc config
     config = parse_config(root_path)
-    error = 0
     too_check = []
+
+    # get a list of all public objects
     for module in PUBLIC_MODULES:
         mod = importlib.import_module(module)
         try:
             too_check.extend([obj for f in mod.__all__
                               if (obj := f"{module}.{f}") not in PUBLIC_MODULES])
         except AttributeError:
+            # needed for some deprecated modules
             continue
+
+    error = 0
     for item in too_check:
         try:
             res = validate(item)
