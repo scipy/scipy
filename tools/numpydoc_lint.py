@@ -14,20 +14,20 @@ def main():
 
     # load in numpydoc config
     config = parse_config(root_path)
-    too_check = []
+    to_check = []
 
     # get a list of all public objects
     for module in PUBLIC_MODULES:
         mod = importlib.import_module(module)
         try:
-            too_check.extend([obj for f in mod.__all__
-                              if (obj := f"{module}.{f}") not in PUBLIC_MODULES])
+            to_check.extend([obj for f in mod.__all__
+                             if (obj := f"{module}.{f}") not in PUBLIC_MODULES])
         except AttributeError:
             # needed for some deprecated modules
             continue
 
-    error = 0
-    for item in too_check:
+    errors = 0
+    for item in to_check:
         try:
             res = validate(item)
         except AttributeError:
@@ -37,7 +37,7 @@ def main():
         for err in res["errors"]:
             if err[0] in config["checks"]:
                 print(f"{item}: {err}")
-                error += 1
+                errors += 1
     sys.exit(error)
 
 
