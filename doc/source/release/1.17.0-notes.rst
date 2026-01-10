@@ -2,8 +2,6 @@
 SciPy 1.17.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.17.0 is not released yet!
-
 .. contents::
 
 SciPy 1.17.0 is the culmination of 6 months of hard work. It contains
@@ -256,7 +254,7 @@ New features
   and ``fit_result`` attributes.
 - A new ``variant`` parameter of `scipy.stats.anderson_ksamp` allows the user
   to select between three different variants of the statistic, superseding the
-  ``midrank`` parameter which allowed toggling beteen two. The new ``'continuous'``
+  ``midrank`` parameter which allowed toggling between two. The new ``'continuous'``
   variant is equivalent to ``'discrete'`` when there are no ties in the sample, but
   the calculation is faster. The ``variant`` parameter must be passed explicitly to
   avoid a warning about the deprecation of the ``midrank`` attribute and the upcoming
@@ -434,7 +432,7 @@ Authors
 * Matteo Brivio (1) +
 * Dietrich Brunn (34)
 * Johannes Buchner (2) +
-* Evgeni Burovski (290)
+* Evgeni Burovski (292)
 * Nicholas Carlini (1) +
 * Luca Cerina (1) +
 * Christine P. Chai (35)
@@ -455,10 +453,10 @@ Authors
 * Neil Girdhar (1)
 * Ilan Gold (35)
 * Nathan Goldbaum (3) +
-* Ralf Gommers (121)
+* Ralf Gommers (124)
 * Nicolas Guidotti (1) +
 * Geoffrey Gunter (1) +
-* Matt Haberland (181)
+* Matt Haberland (183)
 * Joren Hammudoglu (60)
 * Jacob Hass (2) +
 * Nick Hodgskin (1) +
@@ -497,7 +495,7 @@ Authors
 * Suriyaa MM (1) +
 * Andrew Nelson (72)
 * newyork_loki (2) +
-* Nick ODell (33)
+* Nick ODell (34)
 * Dimitri Papadopoulos Orfanos (2)
 * Drew Parsons (1)
 * Gilles Peiffer (3) +
@@ -510,7 +508,7 @@ Authors
 * Ritesh Rana (1) +
 * Adrian Raso (1) +
 * Dan Raviv (1) +
-* Tyler Reddy (122)
+* Tyler Reddy (136)
 * Lucas Roberts (4)
 * Bernard Roesler (1) +
 * Mikhail Ryazanov (27)
@@ -631,6 +629,7 @@ Issues closed for 1.17.0
 * `#23371 <https://github.com/scipy/scipy/issues/23371>`__: BUG: (interpolate) _dierckx.data_matrix gives ValueError if input...
 * `#23382 <https://github.com/scipy/scipy/issues/23382>`__: BUG: setting with ``sparse.xxx_{matrix,array}`` 2D singleton
 * `#23383 <https://github.com/scipy/scipy/issues/23383>`__: DOC/DEV: correct editable install ``spin`` guidance
+* `#23390 <https://github.com/scipy/scipy/issues/23390>`__: BUG: stats.sampling: segfault in various classes on osx-arm64
 * `#23391 <https://github.com/scipy/scipy/issues/23391>`__: ENH: spatial.transform: array API standard support tracker
 * `#23400 <https://github.com/scipy/scipy/issues/23400>`__: ENH: spatial.geometric_slerp: allow for extrapolation
 * `#23409 <https://github.com/scipy/scipy/issues/23409>`__: BUG: stats.qmc.Sobol: stuck in infinite loop in low_0_bit after...
@@ -687,7 +686,10 @@ Issues closed for 1.17.0
 * `#24052 <https://github.com/scipy/scipy/issues/24052>`__: CI: TypeError: Multiple namespaces for array inputs
 * `#24089 <https://github.com/scipy/scipy/issues/24089>`__: ENH: spatial.transform: Add ``normalize`` argument to ``Rotation.from_matrix``
 * `#24131 <https://github.com/scipy/scipy/issues/24131>`__: BUG: ``1.17.0rc1``\ : ModuleNotFoundError: No module named 'scipy.integrate._lso...
+* `#24152 <https://github.com/scipy/scipy/issues/24152>`__: DOC: 1.17 API changes not mentioned in the 1.17.0rc1 release...
 * `#24212 <https://github.com/scipy/scipy/issues/24212>`__: BENCH, MAINT: (sparse) asv suite compat with NumPy 2.4.0
+* `#24251 <https://github.com/scipy/scipy/issues/24251>`__: CI: linalg: several test failures for ILP64
+* `#24256 <https://github.com/scipy/scipy/issues/24256>`__: DOC: 1.17 API changes not mentioned in the 1.17.0rc2 release...
 
 ************************
 Pull requests for 1.17.0
@@ -1209,9 +1211,15 @@ Pull requests for 1.17.0
 * `#24155 <https://github.com/scipy/scipy/pull/24155>`__: MAINT: bump ``xsf`` to fix ``special.itj0y0`` regression
 * `#24161 <https://github.com/scipy/scipy/pull/24161>`__: BUG:linalg.interpolative: Fix two edge cases for id_dist Cython...
 * `#24174 <https://github.com/scipy/scipy/pull/24174>`__: REV:integrate: Revert the stepsize change in LSODA
+* `#24207 <https://github.com/scipy/scipy/pull/24207>`__: MAINT: backports for SciPy 1.17.0rc2
 * `#24213 <https://github.com/scipy/scipy/pull/24213>`__: TST: fft: Add allow_dask_compute=True to more places in fft
 * `#24214 <https://github.com/scipy/scipy/pull/24214>`__: DOC: update 1.17.0 notes for RBFInterpolator
 * `#24218 <https://github.com/scipy/scipy/pull/24218>`__: BENCH, MAINT: NumPy 2.4.0 bench compat
 * `#24223 <https://github.com/scipy/scipy/pull/24223>`__: BLD: linalg: ``link_language: 'fortran'`` for ``_fblas``
 * `#24239 <https://github.com/scipy/scipy/pull/24239>`__: MAINT: bump array-api-compat for JAX>=0.8.2 compat
 * `#24240 <https://github.com/scipy/scipy/pull/24240>`__: MAINT: bump array-api-compat to 1.13 tag
+* `#24250 <https://github.com/scipy/scipy/pull/24250>`__: BUG: stats._unuran: fix va_args memory corruption bug
+* `#24255 <https://github.com/scipy/scipy/pull/24255>`__: REL: set 1.17.0rc3 unreleased
+* `#24260 <https://github.com/scipy/scipy/pull/24260>`__: DOC: stats.anderson/anderson_ksamp: improve release notes
+* `#24284 <https://github.com/scipy/scipy/pull/24284>`__: CI: fix ILP64 jobs for build failures and unpinned scipy-openblas...
+* `#24304 <https://github.com/scipy/scipy/pull/24304>`__: DOC: clarify ILP64 support caveats in the release notes

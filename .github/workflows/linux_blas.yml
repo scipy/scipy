@@ -57,7 +57,11 @@ jobs:
         sudo apt-get install -y gfortran
         pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
         pip install -r requirements/dev.txt
-        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        # numpy fork of meson with meson v1.8.2 - not public, but works for our
+        # purposes here, we need its BLAS ILP64 support until that is merged
+        # in Meson upstream. Note that a more recent commit on this fork didn't work,
+        # see gh-24251.
+        pip install git+https://github.com/numpy/meson.git@e72c717199fa18d34020c7c97f9de3f388c5e055
         pip install mkl mkl-devel
 
     - name: Build with defaults (LP64)
@@ -92,7 +96,7 @@ jobs:
         sudo apt-get install -y gfortran
         pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
         pip install -r requirements/dev.txt
-        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install git+https://github.com/numpy/meson.git@e72c717199fa18d34020c7c97f9de3f388c5e055
         pip install mkl mkl-devel
 
     - name: Build with ILP64
@@ -126,10 +130,11 @@ jobs:
         sudo apt-get install -y gfortran
         pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
         pip install -r requirements/dev.txt
-        pip install git+https://github.com/numpy/meson.git@main-numpymeson
-        # pin scipy-openblas on release branch--see:
-        # https://github.com/scipy/scipy/pull/24207#issuecomment-3687862055
-        pip install "scipy-openblas32==0.3.30.0.8" "scipy-openblas64==0.3.30.0.8"
+        pip install git+https://github.com/numpy/meson.git@e72c717199fa18d34020c7c97f9de3f388c5e055
+        # Yes, we install both of scipy-openblas32|64, we need both LP64 and
+        # ILP64 (this is obviously a hack, and not supportable outside of SciPy
+        # CI and manual dev env setup; see gh-21889 for details).
+        pip install -r requirements/openblas64.txt
 
     - name: Write out scipy-openblas64.pc
       run: |
