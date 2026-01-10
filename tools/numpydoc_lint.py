@@ -17,7 +17,7 @@ def main():
     for module in PUBLIC_MODULES:
         mod = importlib.import_module(module)
         try:
-            too_check.extend([obj for f in mod.__all__ 
+            too_check.extend([obj for f in mod.__all__
                               if (obj := f"{module}.{f}") not in PUBLIC_MODULES])
         except AttributeError:
             continue
@@ -30,7 +30,7 @@ def main():
             continue
         for err in res["errors"]:
             if err[0] in config["checks"]:
-                print(f"{res["file"]}: {res["file_line"]}: {err}")
+                print(f"{item}: {err}")
                 error += 1
     sys.exit(error)
 
