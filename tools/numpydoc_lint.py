@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 import importlib
-import os
 
 from numpydoc.validate import validate
 
@@ -44,8 +43,6 @@ skip_errors = [
 
 
 def main():
-    root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
     # load in numpydoc config
     to_check = []
 
