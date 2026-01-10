@@ -4,16 +4,49 @@ import importlib
 import os
 
 from numpydoc.validate import validate
-from numpydoc.hooks.validate_docstrings import parse_config
-
 
 from scipy._lib._public_api import PUBLIC_MODULES
+
+
+skip_errors = [
+    "GL01",
+    "GL02",
+    "GL03",
+    "GL05",
+    "GL07",
+    "GL09",
+    "SS02",
+    "SS03",
+    "SS05",
+    "SS06",
+    "ES01",
+    "PR01",
+    "PR02",
+    "PR03",
+    "PR04",
+    "PR06",
+    "PR07",
+    "PR08",
+    "PR09",
+    "PR10",
+    "RT01",
+    "RT02",
+    "RT03",
+    "RT04",
+    "RT05",
+    "YD01",
+    "SA01",
+    "SA02",
+    "SA03",
+    "SA04",
+    "EX01",  # remove when gh-7168 is resolved
+]
+
 
 def main():
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     # load in numpydoc config
-    config = parse_config(root_path)
     to_check = []
 
     # get a list of all public objects
@@ -38,7 +71,7 @@ def main():
         if res["type"] in ("module", "float", "int", "dict"):
             continue
         for err in res["errors"]:
-            if err[0] in config["checks"]:
+            if err[0] not in skip_errors:
                 print(f"{item}: {err}")
                 errors += 1
     sys.exit(errors)
