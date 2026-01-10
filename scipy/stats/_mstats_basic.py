@@ -1998,6 +1998,7 @@ ks_twosamp = ks_2samp
 @_rename_parameter("mode", "method")
 def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     """
+    Performs the Kolmogorov-Smirnov test for goodness of fit.
 
     Parameters
     ----------

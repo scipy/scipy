@@ -18,10 +18,13 @@ def main():
 
     # get a list of all public objects
     for module in PUBLIC_MODULES:
+        if "odr" in module:
+            # skip ODR as deprecated
+            continue
         mod = importlib.import_module(module)
         try:
-            to_check.extend([obj for f in mod.__all__
-                             if (obj := f"{module}.{f}") not in PUBLIC_MODULES])
+            to_check.extend(obj for f in mod.__all__
+                            if (obj := f"{module}.{f}") not in PUBLIC_MODULES)
         except AttributeError:
             # needed for some deprecated modules
             continue
@@ -32,7 +35,7 @@ def main():
             res = validate(item)
         except AttributeError:
             continue
-        if res["type"] == "module":
+        if res["type"] in ("module", "float", "int", "dict"):
             continue
         for err in res["errors"]:
             if err[0] in config["checks"]:
