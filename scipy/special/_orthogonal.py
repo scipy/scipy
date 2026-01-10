@@ -2631,7 +2631,6 @@ def sh_legendre(n, monic=False):
     --------
     scipy.special.legendre
     scipy.special.roots_sh_legendre
-    scipy.integrate.trapezoid
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
