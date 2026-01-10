@@ -1,8 +1,5 @@
 [address]
 
-# from scipy.optimize._minpack._lmdif
-fun:enorm
-
 # from scipy.ndimage._rank_filter_1d.rank_filter
 fun:_Z12_rank_filterIfEiPT_iiiS1_iS0_i
 
