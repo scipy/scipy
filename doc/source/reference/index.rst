@@ -134,6 +134,7 @@ change is made.
 * `scipy.optimize`
 
   - `scipy.optimize.cython_optimize`
+  - `scipy.optimize.elementwise`
 
 * `scipy.signal`
 
