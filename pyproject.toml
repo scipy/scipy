@@ -241,8 +241,3 @@ checks = [
   "SA04",
   "EX01",
 ]
-
-numpydoc_validation_exclude = [
-    '\.undocumented_method$',
-    '\.__repr__$',
-]
