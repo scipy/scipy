@@ -2610,7 +2610,8 @@ wishart_docdict_noparams = {
 
 
 class wishart_gen(multi_rv_generic):
-    r"""A Wishart random variable.
+    r"""
+    A Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
     specifies the scale matrix, which must be symmetric and positive definite.
@@ -2619,6 +2620,11 @@ class wishart_gen(multi_rv_generic):
     matrix). These arguments must satisfy the relationship
     ``df > scale.ndim - 1``, but see notes on using the `rvs` method with
     ``df < scale.ndim``.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -2630,11 +2636,6 @@ class wishart_gen(multi_rv_generic):
         Draw random samples from a Wishart distribution.
     entropy()
         Compute the differential entropy of the Wishart distribution.
-
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Raises
     ------
@@ -2718,7 +2719,6 @@ class wishart_gen(multi_rv_generic):
     >>> rv = wishart(df=1, scale=1)
     >>> # Frozen object with the same methods but holding the given
     >>> # degrees of freedom and scale fixed.
-
     """
 
     def __init__(self, seed=None):
