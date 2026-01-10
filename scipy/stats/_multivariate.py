@@ -344,10 +344,16 @@ mvn_docdict_noparams = {
 
 
 class multivariate_normal_gen(multi_rv_generic):
-    r"""A multivariate normal random variable.
+    r"""
+    A multivariate normal random variable.
 
     The `mean` keyword specifies the mean. The `cov` keyword specifies the
     covariance matrix.
+
+    Parameters
+    ----------
+    %(_mvn_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -367,11 +373,6 @@ class multivariate_normal_gen(multi_rv_generic):
         Return a marginal multivariate normal distribution.
     fit(x, fix_mean=None, fix_cov=None)
         Fit a multivariate normal distribution to data.
-
-    Parameters
-    ----------
-    %(_mvn_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -441,7 +442,6 @@ class multivariate_normal_gen(multi_rv_generic):
     >>> fig2 = plt.figure()
     >>> ax2 = fig2.add_subplot(111)
     >>> ax2.contourf(x, y, rv.pdf(pos))
-
     """  # noqa: E501
 
     def __init__(self, seed=None):
@@ -1111,11 +1111,17 @@ matnorm_docdict_noparams = {
 
 
 class matrix_normal_gen(multi_rv_generic):
-    r"""A matrix normal random variable.
+    r"""
+    A matrix normal random variable.
 
     The `mean` keyword specifies the mean. The `rowcov` keyword specifies the
     among-row covariance matrix. The 'colcov' keyword specifies the
     among-column covariance matrix.
+
+    Parameters
+    ----------
+    %(_matnorm_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -1127,11 +1133,6 @@ class matrix_normal_gen(multi_rv_generic):
         Draw random samples.
     entropy(rowcol=1, colcov=1)
         Differential entropy.
-
-    Parameters
-    ----------
-    %(_matnorm_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -1208,7 +1209,6 @@ class matrix_normal_gen(multi_rv_generic):
     >>> rv = matrix_normal(mean=None, rowcov=1, colcov=1)
     >>> # Frozen object with the same methods but holding the given
     >>> # mean and covariance fixed.
-
     """
 
     def __init__(self, seed=None):
@@ -1577,11 +1577,17 @@ matrix_t_docdict_noparams = {
 
 
 class matrix_t_gen(multi_rv_generic):
-    r"""A matrix t-random variable.
+    r"""
+    A matrix t-random variable.
 
     The `mean` keyword specifies the mean.
     The `row_spread` keyword specifies the row-wise spread matrix.
     The `col_spread` keyword specifies the column-wise spread matrix.
+
+    Parameters
+    ----------
+    %(_matt_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -1591,11 +1597,6 @@ class matrix_t_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mean=None, row_spread=1, col_spread=1, df=1, size=1, random_state=None)
         Draw random samples.
-
-    Parameters
-    ----------
-    %(_matt_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -2258,12 +2259,18 @@ def _lnB(alpha):
 
 
 class dirichlet_gen(multi_rv_generic):
-    r"""A Dirichlet random variable.
+    r"""
+    A Dirichlet random variable.
 
     The ``alpha`` keyword specifies the concentration parameters of the
     distribution.
 
     .. versionadded:: 0.15.0
+
+    Parameters
+    ----------
+    %(_dirichlet_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -2281,11 +2288,6 @@ class dirichlet_gen(multi_rv_generic):
         The covariance of the Dirichlet distribution
     entropy(alpha)
         Compute the differential entropy of the Dirichlet distribution.
-
-    Parameters
-    ----------
-    %(_dirichlet_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -2362,7 +2364,6 @@ class dirichlet_gen(multi_rv_generic):
     >>> rv = dirichlet(alpha)
     >>> # Frozen object with the same methods but holding the given
     >>> # concentration parameters fixed.
-
     """
 
     def __init__(self, seed=None):
@@ -3293,12 +3294,18 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs', 'entropy']:
 
 
 class invwishart_gen(wishart_gen):
-    r"""An inverse Wishart random variable.
+    r"""
+    An inverse Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
     specifies the scale matrix, which must be symmetric and positive definite.
     In this context, the scale matrix is often interpreted in terms of a
     multivariate normal covariance matrix.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -3310,11 +3317,6 @@ class invwishart_gen(wishart_gen):
         Draw random samples from an inverse Wishart distribution.
     entropy(df, scale)
         Differential entropy of the distribution.
-
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Raises
     ------
@@ -3405,7 +3407,6 @@ class invwishart_gen(wishart_gen):
     >>> rv = invwishart(df=1, scale=1)
     >>> # Frozen object with the same methods but holding the given
     >>> # degrees of freedom and scale fixed.
-
     """
 
     def __init__(self, seed=None):
@@ -3879,7 +3880,13 @@ multinomial_docdict_noparams = {
 
 
 class multinomial_gen(multi_rv_generic):
-    r"""A multinomial random variable.
+    r"""
+    A multinomial random variable.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -3894,10 +3901,12 @@ class multinomial_gen(multi_rv_generic):
     cov(n, p)
         Compute the covariance matrix of the multinomial distribution.
 
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
+    See Also
+    --------
+    scipy.stats.binom : The binomial distribution.
+    numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
+    scipy.stats.multivariate_hypergeom :
+        The multivariate hypergeometric distribution.
 
     Notes
     -----
@@ -3974,13 +3983,6 @@ class multinomial_gen(multi_rv_generic):
     >>> rv = multinomial(n=7, p=[.3, .7])
     >>> # Frozen object with the same methods but holding the given
     >>> # degrees of freedom and scale fixed.
-
-    See Also
-    --------
-    scipy.stats.binom : The binomial distribution.
-    numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
-    scipy.stats.multivariate_hypergeom :
-        The multivariate hypergeometric distribution.
     """
 
     def __init__(self, seed=None):
@@ -5035,7 +5037,8 @@ mvt_docdict_noparams = {
 
 
 class multivariate_t_gen(multi_rv_generic):
-    r"""A multivariate t-distributed random variable.
+    r"""
+    A multivariate t-distributed random variable.
 
     The `loc` parameter specifies the location. The `shape` parameter specifies
     the positive semidefinite shape matrix. The `df` parameter specifies the
@@ -5044,6 +5047,11 @@ class multivariate_t_gen(multi_rv_generic):
     In addition to calling the methods below, the object itself may be called
     as a function to fix the location, shape matrix, and degrees of freedom
     parameters, returning a "frozen" multivariate t-distribution random.
+
+    Parameters
+    ----------
+    %(_mvt_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -5060,11 +5068,6 @@ class multivariate_t_gen(multi_rv_generic):
         Differential entropy of a multivariate t-distribution.
     marginal(dimensions, loc=None, shape=1, df=1, allow_singular=False)
         Return a marginal multivariate t-distribution.
-
-    Parameters
-    ----------
-    %(_mvt_doc_default_callparams)s
-    %(_doc_random_state)s
 
     Notes
     -----
@@ -5116,7 +5119,6 @@ class multivariate_t_gen(multi_rv_generic):
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.set_aspect('equal')
     >>> plt.contourf(x, y, rv.pdf(pos))
-
     """
 
     def __init__(self, seed=None):
@@ -5646,7 +5648,13 @@ mhg_docdict_noparams = {
 
 
 class multivariate_hypergeom_gen(multi_rv_generic):
-    r"""A multivariate hypergeometric random variable.
+    r"""
+    A multivariate hypergeometric random variable.
+
+    Parameters
+    ----------
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -5665,10 +5673,10 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         Compute the covariance matrix of the multivariate
         hypergeometric distribution.
 
-    Parameters
-    ----------
-    %(_doc_default_callparams)s
-    %(_doc_random_state)s
+    See Also
+    --------
+    scipy.stats.hypergeom : The hypergeometric distribution.
+    scipy.stats.multinomial : The multinomial distribution.
 
     Notes
     -----
@@ -5689,6 +5697,14 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     from the population.
 
     .. versionadded:: 1.6.0
+
+    References
+    ----------
+    .. [1] The Multivariate Hypergeometric Distribution,
+           http://www.randomservices.org/random/urn/MultiHypergeometric.html
+    .. [2] Thomas J. Sargent and John Stachurski, 2020,
+           Multivariate Hypergeometric Distribution
+           https://python.quantecon.org/multi_hyper.html
 
     Examples
     --------
@@ -5744,19 +5760,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     >>> rv = multivariate_hypergeom(m=[10, 20], n=12)
     >>> rv.pmf(x=[8, 4])
     0.0025207176631464523
-
-    See Also
-    --------
-    scipy.stats.hypergeom : The hypergeometric distribution.
-    scipy.stats.multinomial : The multinomial distribution.
-
-    References
-    ----------
-    .. [1] The Multivariate Hypergeometric Distribution,
-           http://www.randomservices.org/random/urn/MultiHypergeometric.html
-    .. [2] Thomas J. Sargent and John Stachurski, 2020,
-           Multivariate Hypergeometric Distribution
-           https://python.quantecon.org/multi_hyper.html
     """
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -6770,12 +6773,18 @@ def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
 
 
 class dirichlet_multinomial_gen(multi_rv_generic):
-    r"""A Dirichlet multinomial random variable.
+    r"""
+    A Dirichlet multinomial random variable.
 
     The Dirichlet multinomial distribution is a compound probability
     distribution: it is the multinomial distribution with number of trials
     `n` and class probabilities ``p`` randomly sampled from a Dirichlet
     distribution with concentration parameters ``alpha``.
+
+    Parameters
+    ----------
+    %(_dirichlet_mn_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Methods
     -------
@@ -6789,11 +6798,6 @@ class dirichlet_multinomial_gen(multi_rv_generic):
         Variance of the Dirichlet multinomial distribution.
     cov(alpha, n):
         The covariance of the Dirichlet multinomial distribution.
-
-    Parameters
-    ----------
-    %(_dirichlet_mn_doc_default_callparams)s
-    %(_doc_random_state)s
 
     See Also
     --------
@@ -6874,7 +6878,6 @@ class dirichlet_multinomial_gen(multi_rv_generic):
     >>> n = [[6], [7], [8]]
     >>> dirichlet_multinomial.mean(alpha, n).shape
     (3, 4, 2)
-
     """
     def __init__(self, seed=None):
         super().__init__(seed)

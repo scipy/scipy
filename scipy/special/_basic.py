@@ -3095,7 +3095,8 @@ def factorial2(n, exact=False, extend="zero"):
 
 
 def factorialk(n, k, exact=False, extend="zero"):
-    """Multifactorial of n of order k, n(!!...!).
+    """
+    Multifactorial of n of order k, n(!!...!).
 
     This is the multifactorial of n skipping k values.  For example,
 
@@ -3137,18 +3138,6 @@ def factorialk(n, k, exact=False, extend="zero"):
         Multifactorial (order ``k``) of ``n``, as integer, float or complex (depending
         on ``exact`` and ``extend``). Array inputs are returned as arrays.
 
-    Examples
-    --------
-    >>> from scipy.special import factorialk
-    >>> factorialk(5, k=1, exact=True)
-    120
-    >>> factorialk(5, k=3, exact=True)
-    10
-    >>> factorialk([5, 7, 9], k=3, exact=True)
-    array([ 10,  28, 162])
-    >>> factorialk([5, 7, 9], k=3, exact=False)
-    array([ 10.,  28., 162.])
-
     Notes
     -----
     While less straight-forward than for the double-factorial, it's possible to
@@ -3174,6 +3163,18 @@ def factorialk(n, k, exact=False, extend="zero"):
     ----------
     .. [1] Complex extension to multifactorial
             https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
+
+    Examples
+    --------
+    >>> from scipy.special import factorialk
+    >>> factorialk(5, k=1, exact=True)
+    120
+    >>> factorialk(5, k=3, exact=True)
+    10
+    >>> factorialk([5, 7, 9], k=3, exact=True)
+    array([ 10,  28, 162])
+    >>> factorialk([5, 7, 9], k=3, exact=False)
+    array([ 10.,  28., 162.])
     """
     return _factorialx_wrapper("factorialk", n, k=k, exact=exact, extend=extend)
 
