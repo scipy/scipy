@@ -5,7 +5,7 @@
 #   Rewrote much of chirp()
 #   Added sweep_poly()
 import numpy as np
-from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
+from numpy import asarray, zeros, pi, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
 from scipy._lib._array_api import array_namespace, xp_promote
@@ -16,13 +16,13 @@ __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
 
 
-def sawtooth(t, width=1):
+def sawtooth(t, width=1.):
     """
     Return a periodic sawtooth or triangle waveform.
 
     The sawtooth waveform has a period ``2*pi``, rises from -1 to 1 on the
     interval 0 to ``width*2*pi``, then drops from 1 to -1 on the interval
-    ``width*2*pi`` to ``2*pi``. `width` must be in the interval [0, 1].
+    ``width*2*pi`` to ``2*pi``. `width` must be in the interval ``[0, 1]``.
 
     Note that this is not band-limited.  It produces an infinite number
     of harmonics, which are aliased back and forth across the frequency
@@ -35,9 +35,9 @@ def sawtooth(t, width=1):
     width : array_like, optional
         Width of the rising ramp as a proportion of the total cycle.
         Default is 1, producing a rising ramp, while 0 produces a falling
-        ramp.  `width` = 0.5 produces a triangle wave.
+        ramp.  ``width=0.5`` produces a triangle wave.
         If an array, causes wave shape to change over time, and must be the
-        same length as t.
+        same length as `t`.
 
     Returns
     -------
@@ -55,32 +55,26 @@ def sawtooth(t, width=1):
     >>> plt.plot(t, signal.sawtooth(2 * np.pi * 5 * t))
 
     """
-    t, w = asarray(t), asarray(width)
-    w = asarray(w + (t - t))
-    t = asarray(t + (w - w))
-    y = zeros(t.shape, dtype="d")
+    xp = array_namespace(t, width)
+    t, w = xp_promote(t, width, broadcast=True, force_floating=True, xp=xp)
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    place(y, mask1, nan)
+    y = xpx.at(y, mask1).set(xp.nan)
 
     # take t modulo 2*pi
-    tmod = mod(t, 2 * pi)
+    tmod = t % (2*xp.pi)
 
-    # on the interval 0 to width*2*pi function is
-    #  tmod / (pi*w) - 1
-    mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    tsub = extract(mask2, tmod)
-    wsub = extract(mask2, w)
-    place(y, mask2, tsub / (pi * wsub) - 1)
+    # on the interval 0 to width*2*pi function is tmod / (pi*w) - 1
+    mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    y = xpx.at(y, mask2).set(tmod[mask2]/(xp.pi*w[mask2]) - 1)
 
-    # on the interval width*2*pi to 2*pi function is
-    #  (pi*(w+1)-tmod) / (pi*(1-w))
-
-    mask3 = (1 - mask1) & (1 - mask2)
-    tsub = extract(mask3, tmod)
-    wsub = extract(mask3, w)
-    place(y, mask3, (pi * (wsub + 1) - tsub) / (pi * (1 - wsub)))
+    # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
+    mask3 = ~(mask1 | mask2)
+    y = xpx.at(y, mask3).set(
+        (xp.pi*(w[mask3] + 1) - tmod[mask3])/(xp.pi*(1 - w[mask3]))
+    )
     return y
 
 
@@ -136,7 +130,7 @@ def square(t, duty=0.5):
     xp = array_namespace(t, duty)
     t, w = xp_promote(t, duty, xp=xp, force_floating=True, broadcast=True)
 
-    y = xp.zeros(t.shape, dtype=t.dtype)
+    y = xp.zeros_like(t)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
@@ -156,9 +150,9 @@ def square(t, duty=0.5):
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
-    Return a Gaussian modulated sinusoid:
+    Return a Gaussian modulated sinusoid::
 
-        ``exp(-a t^2) exp(1j*2*pi*fc*t).``
+        exp(-a t^2) exp(1j*2*pi*fc*t)
 
     If `retquad` is True, then return the real and imaginary parts
     (in-phase and quadrature).
@@ -488,14 +482,14 @@ def sweep_poly(t, poly, phi=0):
         The desired frequency expressed as a polynomial.  If `poly` is
         a list or ndarray of length n, then the elements of `poly` are
         the coefficients of the polynomial, and the instantaneous
-        frequency is
+        frequency is::
 
-          ``f(t) = poly[0]*t**(n-1) + poly[1]*t**(n-2) + ... + poly[n-1]``
+            f(t) = poly[0]*t**(n-1) + poly[1]*t**(n-2) + ... + poly[n-1]
 
         If `poly` is an instance of numpy.poly1d, then the
-        instantaneous frequency is
+        instantaneous frequency is::
 
-          ``f(t) = poly(t)``
+            f(t) = poly(t)
 
     phi : float, optional
         Phase offset, in degrees, Default: 0.

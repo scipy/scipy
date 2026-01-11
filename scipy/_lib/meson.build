@@ -124,7 +124,6 @@ python_sources = [
   '_public_api.py',
   '_sparse.py',
   '_testutils.py',
-  '_tmpdirs.py',
   '_util.py',
   'deprecation.py',
   'doccer.py',

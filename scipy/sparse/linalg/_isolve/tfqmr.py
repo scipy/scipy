@@ -51,9 +51,9 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     info : int
         Provides convergence information:
 
-            - 0  : successful exit
-            - >0 : convergence to tolerance not achieved, number of iterations
-            - <0 : illegal input or breakdown
+        - 0  : successful exit
+        - >0 : convergence to tolerance not achieved, number of iterations
+        - <0 : illegal input or breakdown
 
     Notes
     -----

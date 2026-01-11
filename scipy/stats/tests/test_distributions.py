@@ -8467,7 +8467,23 @@ class TestTukeyLambda:
         expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
         assert_almost_equal(mv, expected, decimal=10)
 
+    @pytest.mark.xfail(reason="Precision in tail hasn't been fixed in xsf")
+    def test_large_argument_ticket_21370(self):
+        # Check that survival function goes to 0 as x gets large
+        x = [1e4, 1e6, 1e8, 1e10, 1e12, 1e24]
+        lam = -0.5
+        sf = stats.tukeylambda.sf(x, lam)
+        # Check that the sf is 0 for large x
+        assert sf[-1] == 0.0
+        # Check that the sf is always decreasing except when it is 0
+        assert_array_less(np.diff(sf[sf > 0]), 0)
 
+        cdf = stats.tukeylambda.cdf(x, lam)
+        assert cdf[-1] == 1.0
+        # Check that the cdf is always increasing except when it saturates 
+        # to 1.0
+        assert np.all(np.diff(cdf[cdf < 1]) > 0)
+        
 class TestLevy:
 
     def test_levy_cdf_ppf(self):
