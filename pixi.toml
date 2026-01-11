@@ -20,12 +20,12 @@ features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
 solve-group = "default"
 
 [environments.smoke-docs]
-# tasks: smoke-docs
+# tasks: smoke-docs, smoke-tutorials
 features = ["run-deps", "test-deps", "smoke-docs"]
 solve-group = "default"
 
 [environments.docs]
-# tasks: docs
+# tasks: docs, refguide-check
 features = ["docs"]
 solve-group = "default"
 
@@ -35,7 +35,7 @@ features = ["run-deps", "test-deps", "ipython"]
 solve-group = "default"
 
 [environments.bench]
-# tasks: bench
+# tasks: bench, build-bench
 features = ["run-deps", "build-deps", "bench-common", "bench"]
 solve-group = "default"
 
@@ -238,6 +238,11 @@ cmd = "spin smoke-docs --no-build"
 depends-on = "build"
 description = "Run doctests"
 
+[feature.smoke-docs.tasks.smoke-tutorials]
+cmd = "spin smoke-tutorials --no-build"
+depends-on = "build"
+description = "Run doctests on tutorials"
+
 
 ### Type Stubs ###
 
@@ -262,11 +267,17 @@ jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
 scipy-doctest = "*"
 linkify-it-py = "*"
-make = ">=4.4.1,<5"
+make = "*"
+marray-python = "*"
 
 
 [feature.docs.tasks.docs]
 cmd = "spin docs --no-build"
+depends-on = "build"
+description = "Build the documentation"
+
+[feature.docs.tasks.refguide-check]
+cmd = "spin refguide-check --no-build"
 depends-on = "build"
 description = "Build the documentation"
 
@@ -287,6 +298,17 @@ description = "Launch IPython"
 [feature.bench-common.dependencies]
 # https://github.com/airspeed-velocity/asv/issues/1537
 asv = "==0.6.4"
+cffi = "*"
+pyfftw = "*"
+pytest = "*"
+psutil = "*"
+
+# used in .circleci/config.yml
+# which does not yet use `spin bench`
+[feature.bench.tasks.build-bench]
+cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy (benchmarking env)"
 
 [feature.bench.tasks.bench]
 cmd = "spin bench --no-build"
