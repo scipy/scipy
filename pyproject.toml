@@ -17,10 +17,9 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    # The upper bound on meson-python is pre-emptive only; 0.18.0
-    # is working at the time of writing, and chance of breakage
-    # in 0.19/0.20 is low
-    "meson-python>=0.15.0,<0.21.0",
+    # TODO: use an official meson-python version once
+    # https://github.com/mesonbuild/meson-python/pull/824 has been released.
+    "meson-python @ git+https://github.com/mhsmith/meson-python@android",
     # We need at least Cython 3.1.0 for free-threaded CPython;
     # for other CPython versions, the regular pre-emptive
     # Cython version bounds policy applies
@@ -38,7 +37,7 @@ requires = [
     # redistributors can do this by installing the numpy version they like and
     # disabling build isolation.
     # NOTE: need numpy>=2.1.3 for free-threaded CPython support
-    "numpy>=2.0.0,<2.6",
+    "numpy==2.3.2",  # TODO: revert to ">=2.0.0,<2.6" once Android NumPy wheels are on PyPI.
 ]
 
 [project]
@@ -156,6 +155,16 @@ test-requires = [
     "hypothesis",
 ]
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+
+[tool.cibuildwheel.android]
+before-build = "bash {project}/tools/wheels/cibw_before_build_android.sh {project}"
+test-command = 'python -c "import sys; import scipy; sys.exit(not scipy.test())"'
+
+[tool.cibuildwheel.android.environment]
+# Python 3.13 defaults to API level 21, which lacks some required math functions.
+ANDROID_API_LEVEL = "24"
+PKG_CONFIG_PATH = "$(pwd)/.openblas/lib/pkgconfig"
+LD_LIBRARY_PATH = "$(pwd)/.openblas/lib"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
