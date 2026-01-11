@@ -22,7 +22,7 @@ dependencies:
   - pooch
   # ---
   - pip:
-      - git+https://github.com/serge-sans-paille/pythran.git@bug/2367
+      - git+https://github.com/serge-sans-paille/pythran.git
   # For testing and benchmarking
   - pytest>=8.0.0
   - pytest-cov

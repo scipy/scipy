@@ -56,7 +56,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gfortran
         pip install cython numpy pybind11 pytest hypothesis pytest-xdist pooch
-        pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
+        pip install git+https://github.com/serge-sans-paille/pythran.git
         pip install -r requirements/dev.txt
         # numpy fork of meson with meson v1.8.2 - not public, but works for our
         # purposes here, we need its BLAS ILP64 support until that is merged
@@ -96,7 +96,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gfortran
         pip install cython numpy pybind11 pytest hypothesis pytest-xdist pooch
-        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         pip install -r requirements/dev.txt
         pip install git+https://github.com/numpy/meson.git@e72c717199fa18d34020c7c97f9de3f388c5e055
         pip install mkl mkl-devel
@@ -131,7 +131,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gfortran
         pip install cython numpy pybind11 pytest hypothesis pytest-xdist pooch
-        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         pip install -r requirements/dev.txt
         pip install git+https://github.com/numpy/meson.git@e72c717199fa18d34020c7c97f9de3f388c5e055
         # Yes, we install both of scipy-openblas32|64, we need both LP64 and

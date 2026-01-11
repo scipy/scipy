@@ -189,7 +189,7 @@ jobs:
     - name: Install SciPy dependencies from PyPI
       run: |
         pip install pybind11 spin pooch hypothesis pytest pytest-timeout
-        pip install git+https://github.com/serge-sans-paille/pythran.git@bug/2367
+        pip install git+https://github.com/serge-sans-paille/pythran.git
 
     - name: Make gfortran-13 on runner image usable
       run: |
