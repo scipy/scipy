@@ -17,7 +17,8 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import optimize, stats, special
-from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
+from scipy.stats._morestats import (_abw_state, _get_As_weibull, _Avals_weibull,
+                                    _yeojohnson_transform)
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -2313,7 +2314,46 @@ _boxcox_data = [
 ]
 
 
-class TestBoxcox:
+class TransformTest:
+    def test_nan_policy(self):
+        transform = getattr(stats, self.transform)
+        normmax = getattr(stats, f"{self.transform}_normmax")
+        special_transform = getattr(special, self.transform, _yeojohnson_transform)
+
+        rng = np.random.default_rng(5908294582456923546)
+        x = rng.random(10)
+        x[3] = np.nan
+
+        # lmb provided
+        lmb = 1.0
+
+        with pytest.raises(ValueError, match="The input contains nan values"):
+            transform(x, lmb, nan_policy='raise')
+
+        res = transform(x, lmb, nan_policy='propagate')
+        np.testing.assert_allclose(res, special_transform(x, 1.))
+
+        res = transform(x, lmb, nan_policy='omit')
+        np.testing.assert_allclose(res, transform(x, lmb, nan_policy='propagate'))
+
+        # lmb not provided
+        with pytest.raises(ValueError, match="The input contains nan values"):
+            transform(x, nan_policy='raise')
+
+        res = transform(x, nan_policy='propagate')
+        np.testing.assert_equal(res[0], special_transform(x, np.nan))
+        np.testing.assert_equal(res[1], np.nan)
+
+        kwarg = {'method': 'mle'} if transform == stats.boxcox else {}
+        res = transform(x, nan_policy='omit')
+        lmb = normmax(x, nan_policy='omit', **kwarg)
+        ref = transform(x, lmb)
+        np.testing.assert_allclose(res[0], ref)
+        np.testing.assert_allclose(res[1], lmb)
+
+
+class TestBoxcox(TransformTest):
+    transform = 'boxcox'
 
     def test_fixed_lmbda(self):
         x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
@@ -2430,7 +2470,7 @@ class TestBoxcox:
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
 
     @pytest.mark.parametrize(
-            "bad_x", [np.array([1, -42, 12345.6]), np.array([np.nan, 42, 1])]
+            "bad_x", [np.array([1, -42, 12345.6]), np.array([np.inf, 42, 1])]
         )
     def test_negative_x_value_raises_error(self, bad_x):
         """Test boxcox_normmax raises ValueError if x contains non-positive values."""
@@ -2452,8 +2492,45 @@ class TestBoxcox:
             xt_bc, lam_bc = stats.boxcox(x)
             assert np.all(np.isfinite(xt_bc))
 
+    def test_confidence_interval_nan_policy(self):
+        # other outputs with `nan_policy` tested in superclass
+        rng = np.random.default_rng(5908294582456923546)
+        x = rng.random(10)
+        x[3] = np.nan
+        alpha = 0.5
 
-class TestBoxcoxNormmax:
+        with pytest.raises(ValueError, match="The input contains nan values"):
+            stats.boxcox(x, alpha=alpha, nan_policy='raise')
+
+        res = stats.boxcox(x, alpha=alpha, nan_policy='propagate')[2]
+        np.testing.assert_equal(res, (np.nan, np.nan))
+
+        res = stats.boxcox(x, alpha=alpha, nan_policy='omit')[2]
+        ref = stats.boxcox(x[~np.isnan(x)], alpha=alpha)[2]
+        np.testing.assert_allclose(res, ref)
+
+
+class NormmaxTest:
+    def test_nan_policy(self):
+        transform_normmax = getattr(stats, self.transform_normmax)
+        rng = np.random.default_rng(5908294582456923546)
+        x = rng.random(10)
+        x[3] = np.nan
+
+        with pytest.raises(ValueError, match="The input contains nan values"):
+            transform_normmax(x, nan_policy='raise')
+
+        res = transform_normmax(x, nan_policy='propagate')
+        np.testing.assert_equal(res, np.nan)
+
+        res = transform_normmax(x, nan_policy='omit')
+        ref = transform_normmax(x[~np.isnan(x)])
+        np.testing.assert_allclose(res, ref)
+
+
+class TestBoxcoxNormmax(NormmaxTest):
+    transform_normmax = 'boxcox_normmax'
+
     def setup_method(self):
         self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
@@ -2594,6 +2671,22 @@ class TestBoxcoxNormmax:
         lmb_64 = stats.boxcox_normmax(x_64, ymax=np.inf, method=method)
         assert_allclose(lmb_32, lmb_64, rtol=1e-2)
 
+    def test_nan_policy_all(self):
+        # `nan_policy` with other `method`s tested in superclass
+        rng = np.random.default_rng(5908294582456923546)
+        x = rng.random(10)
+        x[3] = np.nan
+
+        with pytest.raises(ValueError, match="The input contains nan values"):
+            stats.boxcox_normmax(x, method='all', nan_policy='raise')
+
+        res = stats.boxcox_normmax(x, method='all', nan_policy='propagate')
+        np.testing.assert_equal(res, (np.nan, np.nan))
+
+        res = stats.boxcox_normmax(x, method='all', nan_policy='omit')
+        ref = stats.boxcox_normmax(x[~np.isnan(x)], method='all')
+        np.testing.assert_allclose(res, ref)
+
 
 class TestBoxcoxNormplot:
     def setup_method(self):
@@ -2670,7 +2763,8 @@ class TestYeojohnson_llf:
                         xp.asarray(12.380287243698629, dtype=xp.float64), rtol=1e-7)
 
 
-class TestYeojohnson:
+class TestYeojohnson(TransformTest):
+    transform = 'yeojohnson'
 
     def test_fixed_lmbda(self):
         rng = np.random.RandomState(12345)
@@ -2797,10 +2891,9 @@ class TestYeojohnson:
         assert_allclose(lam_yeo, lam_box, rtol=1e-6)
 
     @pytest.mark.parametrize('x', [
-        np.array([1.0, float("nan"), 2.0]),
         np.array([1.0, float("inf"), 2.0]),
         np.array([1.0, -float("inf"), 2.0]),
-        np.array([-1.0, float("nan"), float("inf"), -float("inf"), 1.0])
+        np.array([-1.0, float("inf"), -float("inf"), 1.0])
     ])
     def test_nonfinite_input(self, x):
         with pytest.raises(ValueError, match='Yeo-Johnson input must be finite'):
@@ -2870,7 +2963,9 @@ class TestYeojohnson:
             assert np.all(xt_yeo_int == xt_yeo_float)
 
 
-class TestYeojohnsonNormmax:
+class TestYeojohnsonNormmax(NormmaxTest):
+    transform_normmax = 'yeojohnson_normmax'
+
     def setup_method(self):
         self.x = _old_loggamma_rvs(5, size=50, random_state=12345) + 5
 
