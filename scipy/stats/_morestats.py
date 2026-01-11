@@ -1116,11 +1116,11 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None, *, nan_policy='propagate')
         `scipy.optimize.minimize_scalar` for more information.
 
         If `lmbda` is not None, `optimizer` is ignored.
-    nan_policy:
+    nan_policy : {‘propagate’, ‘omit’, ‘raise’}
         Defines how to handle NaNs in `x`.
 
         - ``propagate``: if a NaN is present, all outputs will contain NaNs.
-        - ``omit``: NaNs will be omitted when calculating the optimal `maxlog`
+        - ``omit``: NaNs will be omitted when calculating the optimal `maxlog` and
           confidence interval; NaNs in `x` will remain NaNs in the transformed data.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
@@ -1217,7 +1217,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None, *, nan_policy='propagate')
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
     lmax = boxcox_normmax(x, method='mle', optimizer=optimizer, nan_policy=nan_policy)
-    y = boxcox(x, lmax)
+    y = special.boxcox(x, lmax)
 
     if alpha is None:
         return y, lmax
@@ -1298,7 +1298,7 @@ def boxcox_normmax(
         the maximum value of the input dtype. If set to infinity,
         `boxcox_normmax` returns the unconstrained optimal lambda.
         Ignored when ``method='pearsonr'``.
-    nan_policy:
+    nan_policy : {‘propagate’, ‘omit’, ‘raise’}
         Defines how to handle input NaNs.
 
         - ``propagate``: if a NaN is present in the input, the output will be NaN.
@@ -1607,7 +1607,7 @@ def yeojohnson(x, lmbda=None, *, nan_policy='propagate'):
         If ``lmbda`` is ``None``, find the lambda that maximizes the
         log-likelihood function and return it as the second output argument.
         Otherwise the transformation is done for the given value.
-    nan_policy:
+    nan_policy : {‘propagate’, ‘omit’, ‘raise’}
         Defines how to handle NaNs in `x`.
 
         - ``propagate``: if a NaN is present, all outputs will contain NaNs.
@@ -1686,7 +1686,6 @@ def yeojohnson(x, lmbda=None, *, nan_policy='propagate'):
 
     """
     x = np.asarray(x)
-
     if x.size == 0:
         return x
 
@@ -1912,7 +1911,7 @@ def yeojohnson_normmax(x, brack=None, *, nan_policy='propagate'):
         `optimize.brent`. Note that this is in most cases not critical; the
         final result is allowed to be outside this bracket. If None,
         `optimize.fminbound` is used with bounds that avoid overflow.
-    nan_policy:
+    nan_policy : {‘propagate’, ‘omit’, ‘raise’}
         Defines how to handle input NaNs.
 
         - ``propagate``: if a NaN is present in the input, the output will be NaN.

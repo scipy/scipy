@@ -2317,7 +2317,7 @@ _boxcox_data = [
 class TransformTest:
     def test_nan_policy(self):
         transform = getattr(stats, self.transform)
-        normmax = getattr(stats, self.transform+"_normmax")
+        normmax = getattr(stats, f"{self.transform}_normmax")
         special_transform = getattr(special, self.transform, _yeojohnson_transform)
 
         rng = np.random.default_rng(5908294582456923546)
@@ -2341,7 +2341,7 @@ class TransformTest:
             transform(x, nan_policy='raise')
 
         res = transform(x, nan_policy='propagate')
-        np.testing.assert_allclose(res[0], special_transform(x, np.nan))
+        np.testing.assert_equal(res[0], special_transform(x, np.nan))
         np.testing.assert_equal(res[1], np.nan)
 
         kwarg = {'method': 'mle'} if transform == stats.boxcox else {}
