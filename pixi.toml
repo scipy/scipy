@@ -58,12 +58,12 @@ features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
 solve-group = "default"
 
 [environments.smoke-docs]
-# tasks: smoke-docs
+# tasks: smoke-docs, smoke-tutorials
 features = ["run-deps", "test-deps", "smoke-docs", "default-platforms"]
 solve-group = "default"
 
 [environments.docs]
-# tasks: docs
+# tasks: docs, refguide-check
 features = ["docs", "marray"]
 solve-group = "default"
 
@@ -78,7 +78,7 @@ features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
 solve-group = "default"
 
 [environments.bench]
-# tasks: bench
+# tasks: bench, build-bench
 features = ["run-deps", "build-deps", "bench-common", "bench", "default-platforms"]
 solve-group = "default"
 
@@ -360,6 +360,11 @@ cmd = "spin smoke-docs --no-build"
 depends-on = "build"
 description = "Run doctests"
 
+[feature.smoke-docs.tasks.smoke-tutorials]
+cmd = "spin smoke-tutorials --no-build"
+depends-on = "build"
+description = "Run doctests on tutorials"
+
 
 [feature.fail-slow.dependencies]
 pytest-fail-slow = "*"
@@ -406,7 +411,7 @@ scipy-stubs = "*"
 ### Documentation ###
 
 [feature.docs.dependencies]
-sphinx = "<8.2.0"
+sphinx = "8.2.*"
 intersphinx-registry = "*"
 pydata-sphinx-theme = "*"
 sphinx-copybutton = "*"
@@ -425,6 +430,11 @@ make = "*"
 
 [feature.docs.tasks.docs]
 cmd = "spin docs --no-build"
+depends-on = "build"
+description = "Build the documentation"
+
+[feature.docs.tasks.refguide-check]
+cmd = "spin refguide-check --no-build"
 depends-on = "build"
 description = "Build the documentation"
 
@@ -451,6 +461,17 @@ description = "Launch IPython (array-api-cpu env)"
 [feature.bench-common.dependencies]
 # https://github.com/airspeed-velocity/asv/issues/1537
 asv = "==0.6.4"
+cffi = "*"
+pyfftw = "*"
+pytest = "*"
+psutil = "*"
+
+# used in .circleci/config.yml
+# which does not yet use `spin bench`
+[feature.bench.tasks.build-bench]
+cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy (benchmarking env)"
 
 [feature.bench.tasks.bench]
 cmd = "spin bench --no-build"
