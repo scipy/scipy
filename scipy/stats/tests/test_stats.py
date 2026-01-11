@@ -7451,6 +7451,35 @@ class TestSigmaClip:
         x = xp.ones(10)
         xp_assert_equal(stats.sigmaclip(x)[0], x)
 
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_nan_policy(self, dtype, xp):
+        dtype = None if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(243587919486245906119)
+        x = rng.random(10)
+        x[3] = np.nan
+        x = xp.asarray(x.tolist(), dtype=dtype)
+
+        # nan_policy='raise'
+        if not is_lazy_array(x):
+            with pytest.raises(ValueError, match="The input contains nan values"):
+                stats.sigmaclip(x, nan_policy='raise')
+        else:
+            with pytest.raises(TypeError, match="nan_policy='raise' is not supported"):
+                stats.sigmaclip(x, nan_policy='raise')
+
+        # nan_policy='propagate'
+        res = stats.sigmaclip(x, nan_policy='propagate')
+        xp_assert_equal(res.clipped, xp.asarray([], dtype=dtype))
+        xp_assert_equal(res.lower, xp.asarray(xp.nan, dtype=dtype))
+        xp_assert_equal(res.upper, xp.asarray(xp.nan, dtype=dtype))
+
+        # nan_policy='omit'
+        res = stats.sigmaclip(x, nan_policy='omit')
+        ref = stats.sigmaclip(x[~xp.isnan(x)])
+        xp_assert_equal(res.clipped, ref.clipped)
+        xp_assert_equal(res.lower, ref.lower)
+        xp_assert_equal(res.upper, ref.upper)
+
 
 @make_xp_test_case(stats.alexandergovern)
 class TestAlexanderGovern:
