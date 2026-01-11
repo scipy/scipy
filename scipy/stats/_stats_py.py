@@ -3412,7 +3412,7 @@ def sigmaclip(a, low=4., high=4., *, nan_policy='propagate'):
         Lower bound factor of sigma clipping. Default is 4.
     high : float, optional
         Upper bound factor of sigma clipping. Default is 4.
-    nan_policy:
+    nan_policy : {'propagate', 'raise', 'omit'}
         Defines how to handle input NaNs.
 
         - ``propagate``: if a NaN is present in the input, the clipped array will be
