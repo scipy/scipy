@@ -34,7 +34,8 @@ from scipy import stats
 
 
 # Enable specific Sphinx directives
-from sphinx.directives.other import SeeAlso, Only
+from sphinx.directives.admonitions import SeeAlso
+from sphinx.directives.other import Only
 directives.register_directive('seealso', SeeAlso)
 directives.register_directive('only', Only)
 
