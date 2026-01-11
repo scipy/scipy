@@ -460,10 +460,6 @@ tests) are listed above.
    combine_pvalues
    false_discovery_control
 
-
-The following functions are related to the tests above but do not belong in the
-above categories.
-
 Random Variables
 ================
 
@@ -488,20 +484,8 @@ Other statistical functionality
    :maxdepth: 1
 
    stats.qmc
-
-.. toctree::
-   :maxdepth: 1
-
    stats.contingency
-
-.. toctree::
-   :maxdepth: 1
-
    stats.mstats
-
-.. toctree::
-   :maxdepth: 1
-
    stats.sampling
 
 Transformations
