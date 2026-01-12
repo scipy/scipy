@@ -46,9 +46,19 @@ def use_solver(**kwargs):
 
     Notes
     -----
+    **Thread-safety:** This function uses thread-local storage to maintain
+    per-thread solver preferences. Each thread can independently call
+    ``use_solver()`` to configure its own preferred solver without affecting
+    other threads. This is implemented using `threading.local` and provides
+    thread-safe configuration without requiring locks or synchronization.
+
+    Note that thread-safety of UMFPACK usage also depends on the thread-safety
+    properties of the underlying `scikit-umfpack` package. SuperLU is always
+    available as a thread-safe fallback.
+
     The default sparse solver is UMFPACK when available
     (``scikits.umfpack`` is installed). This can be changed by passing
-    useUmfpack = False, which then causes the always present SuperLU
+    ``useUmfpack=False``, which then causes the always present SuperLU
     based solver to be used.
 
     UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If
@@ -164,6 +174,18 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Notes
     -----
+    **Thread-safety:** This function respects thread-local solver preferences set
+    by ``use_solver()``. Each thread can independently configure its preferred
+    solver (UMFPACK or SuperLU) using ``use_solver(useUmfpack=True/False)``, and
+    subsequent calls to ``spsolve()`` in that thread will use the configured
+    preference. This provides thread-safe configuration without requiring locks.
+
+    Note that when using UMFPACK, thread-safety also depends on the thread-safety
+    properties of the underlying `scikit-umfpack` package. SuperLU is always
+    available as a thread-safe fallback.
+
+    See :ref:`scipy_thread_safety` for more details.
+
     For solving the matrix expression AX = B, this solver assumes the resulting
     matrix X is sparse, as is often the case for very sparse inputs.  If the
     resulting X is dense, the construction of this sparse result will be
@@ -474,7 +496,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Notes
     -----
     When a real array is factorized and the returned SuperLU object's ``solve()`` method
-    is used with complex arguments an error is generated. Instead, cast the initial 
+    is used with complex arguments an error is generated. Instead, cast the initial
     array to complex and then factorize.
 
     To improve the better approximation to the inverse, you may need to

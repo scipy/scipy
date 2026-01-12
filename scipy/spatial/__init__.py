@@ -18,6 +18,11 @@ These are contained in the `scipy.spatial.transform` submodule.
 
 Nearest-neighbor queries
 ========================
+.. warning::
+
+    :class:`KDTree` and :class:`cKDTree` are generally not thread safe, and must
+    be :ref:`term-externally-synchronized`. See :ref:`scipy_thread_safety`.
+
 .. autosummary::
    :toctree: generated/
 
