@@ -70,11 +70,11 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
     References
     ----------
-    ..[1] Solution of sparse indefinite systems of linear equations,
+    .. [1] Solution of sparse indefinite systems of linear equations,
           C. C. Paige and M. A. Saunders (1975),
           SIAM J. Numer. Anal. 12(4), pp. 617-629.
           https://web.stanford.edu/group/SOL/software/minres/
-    ..[2] https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
+    .. [2] https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
 
     Examples
     --------
