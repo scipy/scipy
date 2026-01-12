@@ -261,27 +261,6 @@ class KDTree(cKDTree):
         The minimum value in each dimension of the n data points.
     size : int
         The number of nodes in the tree.
-    Attributes
-    ----------
-    data : ndarray, shape (n,m)
-        The n data points of dimension m to be indexed. This array is
-        not copied unless this is necessary to produce a contiguous
-        array of doubles. The data are also copied if the kd-tree is built
-        with ``copy_data=True``.
-    leafsize : positive int
-        The number of points at which the algorithm switches over to
-        brute-force.
-    m : int
-        The dimension of a single data-point.
-    n : int
-        The number of data points.
-    maxes : ndarray, shape (m,)
-        The maximum value in each dimension of the n data points.
-    mins : ndarray, shape (m,)
-        The minimum value in each dimension of the n data points.
-    size : int
-        The number of nodes in the tree.
-
     Notes
     -----
     The algorithm used is described in [1]_.

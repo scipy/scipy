@@ -1283,7 +1283,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 
     References
     ----------
-    ..[1] Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
+    .. [1] Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
 
     Examples
     --------
