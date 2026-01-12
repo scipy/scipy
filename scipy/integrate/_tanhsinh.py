@@ -1018,12 +1018,12 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         The maximum number of terms to evaluate for direct summation.
         Additional function evaluations may be performed for input
         validation and integral evaluation.
-    atol, rtol : float, optional
-        Absolute termination tolerance (default: 0) and relative termination
-        tolerance (default: ``eps**0.5``, where ``eps`` is the precision of
-        the result dtype), respectively. Must be non-negative
-        and finite if `log` is False, and must be expressed as the log of a
-        non-negative and finite number if `log` is True.
+    tolerances : float, optional
+        Dictionary with recognized keys ``atol`` for absolute termination tolerance
+        (default: 0) and ``rtol`` for relative termination tolerance (default:
+        ``eps**0.5``, where ``eps`` is the precision of the result dtype), respectively.
+        Values must be non-negative and finite if `log` is False, and must be expressed
+        as the log of a non-negative and finite number if `log` is True.
 
     Returns
     -------
