@@ -33,7 +33,6 @@ skip_errors = [
     "RT03",
     "RT04",
     "RT05",
-    "YD01",
     "SA01",
     "SA02",
     "SA03",
