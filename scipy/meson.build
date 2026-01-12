@@ -31,12 +31,9 @@ thread_dep = dependency('threads', required: false)
 
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
-# Will work for numpy>=2.0, hence not required (it'll be a while until 2.0 is
-# our minimum supported version). Using this now to be able to detect the
-# version easily for >=2.0.
-_numpy_dep = dependency('numpy', required: false)
+_numpy_dep = dependency('numpy')
 f2py_freethreading_arg = []
-if _numpy_dep.found() and _numpy_dep.version().version_compare('>=2.1.0')
+if _numpy_dep.version().version_compare('>=2.1.0')
   f2py_freethreading_arg = ['--free-threading']
   message('f2py free-threading enabled')
 else
@@ -672,11 +669,12 @@ else
   use_math_defines = []
 endif
 
-# Determine whether it is necessary to link libatomic. This could be the case
-# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# Determine whether it is necessary to link libatomic (required for HiGHS, see
+# gh-17777) This could be the case on, e.g., 32-bit platforms when atomic
+# operations are used on 64-bit types.
+# We do want this exact logic to minimize the number of cases where we use
+# `-latomic`, we can't switch to the builtin `dependency('atomic')` support.
 # The check is copied from Mesa <https://www.mesa3d.org/>.
-# Note that this dependency is not desired, it came in with a HiGHS update.
-# We should try to get rid of it. For discussion, see gh-17777.
 null_dep = dependency('', required : false)
 atomic_dep = null_dep
 code_non_lockfree = '''
@@ -757,7 +755,7 @@ foreach name, machine : machines
   conf_data.set(name + '_CPU_SYSTEM', machine.system())
 endforeach
 
-conf_data.set('CROSS_COMPILED', meson.is_cross_build())
+conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
 conf_data.set('PYTHON_PATH', py3.full_path())
@@ -766,7 +764,7 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 # Dependencies information
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
-  conf_data.set(name + '_FOUND', dep.found())
+  conf_data.set(name + '_FOUND', dep.found().to_string())
   if dep.found()
     conf_data.set(name + '_VERSION', dep.version())
     conf_data.set(name + '_TYPE_NAME', dep.type_name())
@@ -774,7 +772,7 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
     conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
-    conf_data.set(name + '_HAS_ILP64', use_ilp64)
+    conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach
 

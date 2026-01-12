@@ -122,6 +122,50 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
 
 
+def _validate_marginal_input(dimensions, multivariate_dims):
+    """Determine if input dimensions can be marginalized.
+
+    Parameters
+    ----------
+    dimensions : float, ndarray
+        Input dimensions to be marginalized
+    multivariate_dims : int
+        Number of dimensions of multivariate distribution.
+
+    Returns
+    -------
+    dims : ndarray
+        Array of indices to marginalize
+    """
+    dims = np.copy(dimensions)
+    dims = np.atleast_1d(dims)
+
+    if len(dims) == 0:
+        msg = "Cannot marginalize all dimensions."
+        raise ValueError(msg)
+
+    if not np.issubdtype(dims.dtype, np.integer):
+        msg = ("Elements of `dimensions` must be integers - the indices "
+               "of the marginal variables being retained.")
+        raise ValueError(msg)
+
+    original_dims = np.copy(dims)
+
+    dims[dims < 0] += multivariate_dims
+
+    if len(np.unique(dims)) != len(dims):
+        msg = "All elements of `dimensions` must be unique."
+        raise ValueError(msg)
+
+    i_invalid = (dims < 0) | (dims >= multivariate_dims)
+    if np.any(i_invalid):
+        msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
+               f"for a distribution in {multivariate_dims} dimensions.")
+        raise ValueError(msg)
+
+    return dims
+
+
 class _PSD:
     """
     Compute coordinated functions of a symmetric positive semidefinite matrix.
@@ -319,6 +363,8 @@ class multivariate_normal_gen(multi_rv_generic):
         Draw random samples from a multivariate normal distribution.
     entropy(mean=None, cov=1)
         Compute the differential entropy of the multivariate normal.
+    marginal(dimensions, mean=None, cov=1, allow_singular=False)
+        Return a marginal multivariate normal distribution.
     fit(x, fix_mean=None, fix_cov=None)
         Fit a multivariate normal distribution to data.
 
@@ -877,6 +923,34 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
+    def marginal(self, dimensions, mean=None, cov=1, allow_singular=False):
+        """Return a marginal multivariate normal distribution.
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate distribution corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+        %(_mvn_doc_default_callparams)s
+
+        Returns
+        -------
+        marginal_multivariate_normal : multivariate_normal_frozen
+            An object representing the marginal distribution.
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+        """
+        params = self._process_parameters(mean, cov, allow_singular)
+        n, mean, cov_object = params
+        dims = _validate_marginal_input(dimensions, n)
+
+        mean = mean[dims]
+        cov = cov_object.covariance[np.ix_(dims, dims)]
+
+        return multivariate_normal_frozen(mean, cov, allow_singular)
 
 multivariate_normal = multivariate_normal_gen()
 
@@ -984,6 +1058,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
         rank = self.cov_object.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
+    def marginal(self, dimensions):
+        return self._dist.marginal(dimensions, self.mean,
+                                   self.cov_object, self.allow_singular)
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
@@ -1447,7 +1524,6 @@ class matrix_normal_frozen(multi_rv_frozen):
     def entropy(self):
         return self._dist._entropy(self.dims, self.rowpsd.log_pdet,
                                    self.colpsd.log_pdet)
-
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
@@ -4981,6 +5057,8 @@ class multivariate_t_gen(multi_rv_generic):
         Draw random samples from a multivariate t-distribution.
     entropy(loc=None, shape=1, df=1)
         Differential entropy of a multivariate t-distribution.
+    marginal(dimensions, loc=None, shape=1, df=1, allow_singular=False)
+        Return a marginal multivariate t-distribution.
 
     Parameters
     ----------
@@ -5426,6 +5504,35 @@ class multivariate_t_gen(multi_rv_generic):
 
         return dim, loc, shape, df
 
+    def marginal(self, dimensions, loc=None, shape=1, df=1, allow_singular=False):
+        """Return a marginal multivariate t-distribution.
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate t corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+        %(_mvt_doc_default_callparams)s
+
+        Returns
+        -------
+        marginal_multivariate_t : multivariate_t_frozen
+            An object representing the marginal t-distribution.
+
+        Notes
+        -----
+        %(_mvt_doc_frozen_callparams_note)s
+        """
+        params = self._process_parameters(loc, shape, df)
+        n, loc, shape, df = params
+        dims = _validate_marginal_input(dimensions, n)
+
+        loc = loc[dims]
+        shape = shape[np.ix_(dims, dims)]
+
+        return multivariate_t_frozen(loc, shape, df, allow_singular)
+
 
 class multivariate_t_frozen(multi_rv_frozen):
     __class_getitem__ = None
@@ -5456,6 +5563,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         dim, loc, shape, df = self._dist._process_parameters(loc, shape, df)
         self.dim, self.loc, self.shape, self.df = dim, loc, shape, df
         self.shape_info = _PSD(shape, allow_singular=allow_singular)
+        self.allow_singular = allow_singular
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
@@ -5482,6 +5590,9 @@ class multivariate_t_frozen(multi_rv_frozen):
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.shape)
 
+    def marginal(self, dimensions):
+        return self._dist.marginal(dimensions, self.loc,
+                                   self.shape, self.df, self.allow_singular)
 
 multivariate_t = multivariate_t_gen()
 
@@ -7001,7 +7112,7 @@ class vonmises_fisher_gen(multi_rv_generic):
            https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
     .. [4] Wood, A. Simulation of the von mises fisher distribution.
            Communications in statistics-simulation and computation 23,
-           1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
+           1 (1994), 157-164. :doi:`10.1080/03610919408813161`.
     .. [5] geomstats, Github. MIT License. Accessed: 06.01.2023.
            https://github.com/geomstats/geomstats
     .. [6] Miolane, N. et al. Geomstats:  A Python Package for Riemannian
@@ -7288,7 +7399,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Generate samples from an n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
-        Reference: https://doi.org/10.1080/03610919408813161
+        Reference: :doi:`10.1080/03610919408813161`.
         """
         dim_minus_one = dim - 1
         # calculate number of requested samples

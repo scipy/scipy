@@ -1,11 +1,15 @@
+import numpy as np
 import math
 from scipy import stats
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
-from scipy.stats._stats_py import _SimpleNormal, SignificanceResult, _get_pvalue
+from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
+                                   xp_result_type)
+from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
+                                   _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
+from scipy.stats._stats_mstats_common import TheilslopesResult, _n_samples_optional_x
 
 
-__all__ = ['chatterjeexi']
+__all__ = ['chatterjeexi', 'spearmanrho', 'theilslopes']
 
 
 def _xi_statistic(x, y, y_continuous, xp):
@@ -240,3 +244,321 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     xi = xi[()] if xi.ndim == 0 else xi
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     return SignificanceResult(xi, pvalue)
+
+
+@xp_capabilities(cpu_only=True, exceptions=['jax.numpy'],
+    skip_backends=[('dask.array', 'not supported by rankdata (take_along_axis)')]
+)
+@_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
+                          result_to_tuple=_unpack, n_outputs=2, too_small=1)
+def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
+    r"""Calculate a Spearman rho correlation coefficient with associated p-value.
+
+    The Spearman rank-order correlation coefficient is a nonparametric measure
+    of the monotonicity of the relationship between two datasets.
+    Like other correlation coefficients, it varies between -1 and +1 with 0
+    implying no correlation. Coefficients of -1 or +1 are associated with an exact
+    monotonic relationship.  Positive correlations indicate that as `x` increases,
+    so does `y`; negative correlations indicate that as `x` increases, `y` decreases.
+    The p-value is the probability of an uncorrelated system producing datasets
+    with a Spearman correlation at least as extreme as the one computed from the
+    observed dataset.
+
+    Parameters
+    ----------
+    x, y : array-like
+        The samples: corresponding observations of the independent and
+        dependent variable. The (N-d) arrays must be broadcastable.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+
+    method : ResamplingMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`/`MonteCarloMethod`, the p-value is
+        computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Otherwise, the p-value is computed using an asymptotic approximation of
+        the null distribution.
+    axis : int or None, optional
+        If axis=0 (default), then each column represents a variable, with
+        observations in the rows. If axis=1, the relationship is transposed:
+        each row represents a variable, while the columns contain observations.
+        If axis=None, then both arrays will be raveled.
+        Like other `scipy.stats` functions, `axis` is interpreted after the
+        arrays are broadcasted.
+
+    Returns
+    -------
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : floating point array or NumPy scalar
+            Spearman correlation coefficient
+        pvalue : floating point array NumPy scalar
+            The p-value - the probabilitiy of realizing such an extreme statistic
+            value under the null hypothesis that two samples have no ordinal
+            correlation. See `alternative` above for alternative hypotheses.
+
+    Warns
+    -----
+    `~scipy.stats.ConstantInputWarning`
+        Raised if an input is a constant array.  The correlation coefficient
+        is not defined in this case, so ``np.nan`` is returned.
+
+    Notes
+    -----
+    `spearmanrho` was created to make improvements to SciPy's implementation of
+    the Spearman correlation test without making backward-incompatible changes
+    to `spearmanr`. Advantages of `spearmanrho` over `spearmanr` include:
+
+    - `spearmanrho` follows standard array broadcasting rules.
+    - `spearmanrho` is compatible with some non-NumPy arrays.
+    - `spearmanrho` can compute exact p-values, even in the presence of ties,
+      when an appropriate instance of `PermutationMethod` is provided via the
+      `method` argument.
+
+    References
+    ----------
+    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+       Probability and Statistics Tables and Formulae. Chapman & Hall: New
+       York. 2000.
+       Section  14.7
+    .. [2] Kendall, M. G. and Stuart, A. (1973).
+       The Advanced Theory of Statistics, Volume 2: Inference and Relationship.
+       Griffin. 1973.
+       Section 31.18
+
+    Examples
+    --------
+    Univariate samples, approximate p-value.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> x = [1, 2, 3, 4, 5]
+    >>> y = [5, 6, 7, 8, 7]
+    >>> res = stats.spearmanrho(x, y)
+    >>> res.statistic
+    np.float64(0.8207826816681233)
+    >>> res.pvalue
+    np.float64(0.08858700531354405)
+
+    Univariate samples, exact p-value.
+
+    >>> res = stats.spearmanrho(x, y, method=stats.PermutationMethod())
+    >>> res.statistic
+    np.float64(0.8207826816681233)
+    >>> res.pvalue
+    np.float64(0.13333333333333333)
+
+    Batch of univariate samples, one vectorized call.
+
+    >>> rng = np.random.default_rng(98145152315484)
+    >>> x2 = rng.standard_normal((2, 100))
+    >>> y2 = rng.standard_normal((2, 100))
+    >>> res = stats.spearmanrho(x2, y2, axis=-1)
+    >>> res.statistic
+    array([ 0.16585659, -0.12151215])
+    >>> res.pvalue
+    array([0.0991155 , 0.22846869])
+
+    Bivariate samples using standard broadcasting rules.
+
+    >>> res = stats.spearmanrho(x2[np.newaxis, :], x2[:, np.newaxis], axis=-1)
+    >>> res.statistic
+    array([[ 1.        , -0.14670267],
+           [-0.14670267,  1.        ]])
+    >>> res.pvalue
+    array([[0.        , 0.14526128],
+           [0.14526128, 0.        ]])
+
+    """
+    xp = array_namespace(x, y)
+    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
+    rx = stats.rankdata(x, axis=axis)
+    ry = stats.rankdata(y, axis=axis)
+    rx = xp.astype(rx, dtype, copy=False)
+    ry = xp.astype(ry, dtype, copy=False)
+    res = stats.pearsonr(rx, ry, method=method, alternative=alternative, axis=axis)
+    return SignificanceResult(res.statistic, res.pvalue)
+
+
+@xp_capabilities(np_only=True)
+@_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
+                          n_samples=_n_samples_optional_x,
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
+def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
+    r"""
+    Computes the Theil-Sen estimator for a set of points (x, y).
+
+    `theilslopes` implements a method for robust linear regression.  It
+    computes the slope as the median of all slopes between paired values.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    alpha : float, optional
+        Confidence degree between 0 and 1. Default is 95% confidence.
+        Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
+        interpreted as "find the 90% confidence interval".
+    method : {'joint', 'separate'}, optional
+        Method to be used for computing estimate for intercept.
+        Following methods are supported,
+
+        * 'joint': Uses ``np.median(y - slope * x)`` as intercept.
+        * 'separate': Uses ``np.median(y) - slope * np.median(x)``
+                      as intercept.
+
+        The default is 'separate'.
+
+        .. versionadded:: 1.8.0
+
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+
+    Returns
+    -------
+    result : ``TheilslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        slope : float
+            Theil slope.
+        intercept : float
+            Intercept of the Theil line.
+        low_slope : float
+            Lower bound of the confidence interval on `slope`.
+        high_slope : float
+            Upper bound of the confidence interval on `slope`.
+
+    See Also
+    --------
+    siegelslopes : a similar technique using repeated medians
+
+    Notes
+    -----
+    The implementation of `theilslopes` follows [1]_. The intercept is
+    not defined in [1]_, and here it is defined as ``median(y) -
+    slope*median(x)``, which is given in [3]_. Other definitions of
+    the intercept exist in the literature such as  ``median(y - slope*x)``
+    in [4]_. The approach to compute the intercept can be determined by the
+    parameter ``method``. A confidence interval for the intercept is not
+    given as this question is not addressed in [1]_.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 4, with fields ``slope``, ``intercept``,
+    ``low_slope``, and ``high_slope``, so one can continue to write::
+
+        slope, intercept, low_slope, high_slope = theilslopes(y, x)
+
+    References
+    ----------
+    .. [1] P.K. Sen, "Estimates of the regression coefficient based on
+           Kendall's tau", J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
+    .. [2] H. Theil, "A rank-invariant method of linear and polynomial
+           regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
+           53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
+    .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
+           John Wiley and Sons, New York, pp. 493.
+    .. [4] https://en.wikipedia.org/wiki/Theil%E2%80%93Sen_estimator
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-5, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
+
+    Compute the slope, intercept and 90% confidence interval.  For comparison,
+    also compute the least-squares fit with `linregress`:
+
+    >>> res = stats.theilslopes(y, x, 0.90, method='separate')
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results. The Theil-Sen regression line is shown in red, with the
+    dashed red lines illustrating the confidence interval of the slope (note
+    that the dashed red lines are not the confidence interval of the regression
+    as the confidence interval of the intercept is not included). The green
+    line shows the least-squares fit for comparison.
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, res[1] + res[2] * x, 'r--')
+    >>> ax.plot(x, res[1] + res[3] * x, 'r--')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
+
+    """
+    if method not in ['joint', 'separate']:
+        raise ValueError("method must be either 'joint' or 'separate'."
+                         f"'{method}' is invalid.")
+
+    y, x = xp_promote(y, x, force_floating=True, xp=np)
+    x = np.arange(y.shape[-1], dtype=y.dtype) if x is None else x
+    y, x = np.broadcast_arrays(y, x)
+
+    if x.shape[-1] < 2 or y.shape[-1] < 2:  # only needed by test_axis_nan_policy
+        raise ValueError("`x` and `y` must have length at least 2.")
+
+    # Compute sorted slopes only when deltax > 0
+    deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
+    deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
+    i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
+    # with NumPy:
+    deltax, deltay = deltax[..., i], deltay[..., i]
+    # with array API, mask must be sole index, so we'll need to broadcast it.
+    # indexing will ravel the array, so we'll need to reshape it after
+    deltax[deltax == 0] = np.nan
+    slopes = deltay / deltax
+    slopes = np.sort(slopes, axis=-1)
+    medslope = np.nanmedian(slopes, axis=-1)
+    if method == 'joint':
+        medinter = np.median(y - medslope * x, axis=-1)
+    else:
+        medinter = np.median(y, axis=-1) - medslope * np.median(x, axis=-1)
+    # Now compute confidence intervals
+    if alpha > 0.5:
+        alpha = 1. - alpha
+
+    z = stats.norm.ppf(alpha / 2.)
+    # This implements (2.6) from Sen (1968)
+    # we don't actually need ranks, so an enhancement could be to have
+    # `rankdata` return only the second output. In the meantime, use the
+    # least expensive `method`.
+    _, nxreps = _rankdata(x, method='min', return_ties=True)
+    _, nyreps = _rankdata(y, method='min', return_ties=True)
+    nt = np.count_nonzero(np.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
+    ny = y.shape[-1]                                                    # n in Sen 1968
+    # Equation 2.6 in Sen (1968):
+    sigsq = 1/18. * (
+        ny * (ny-1) * (2*ny+5)
+        - np.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
+        - np.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
+    # Find the confidence interval indices in `slopes`
+    sigma = np.sqrt(np.maximum(sigsq, 0.))
+    Ru = np.minimum(np.round((nt - z*sigma)/2.).astype(np.int64), nt-1)
+    Rl = np.maximum(np.round((nt + z*sigma)/2.).astype(np.int64) - 1, 0)
+    R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
+    delta = np.take_along_axis(slopes, R, axis=-1)
+    i_nan = np.broadcast_to(sigsq < 0, delta.shape)
+    delta[i_nan] = np.nan
+
+    return TheilslopesResult(slope=medslope[()], intercept=medinter[()],
+                             low_slope=delta[..., 0][()], high_slope=delta[..., 1][()])

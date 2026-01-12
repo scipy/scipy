@@ -638,6 +638,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     ]
     util.run(cmd_check_test_name)
 
+
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):
     """
@@ -791,7 +792,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             "Invoking `build` prior to running benchmarks:",
             bold=True, fg="bright_green"
         )
-        ctx.invoke(build)
+        ctx.invoke(build, build_dir=build_dir)
 
         meson._set_pythonpath(build_dir)
 

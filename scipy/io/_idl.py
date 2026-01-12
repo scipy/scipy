@@ -374,7 +374,7 @@ def _read_record(f):
         record['os'] = _read_string(f)
         record['release'] = _read_string(f)
 
-    elif record['rectype'] == "IDENTIFICATON":
+    elif record['rectype'] == "IDENTIFICATION":
 
         record['author'] = _read_string(f)
         record['title'] = _read_string(f)
@@ -878,7 +878,7 @@ def readsav(file_name, idict=None, python_dict=False,
 
         # Print out identification info about the file
         for record in records:
-            if record['rectype'] == "IDENTIFICATON":
+            if record['rectype'] == "IDENTIFICATION":
                 print("-"*50)
                 print(f"Author: {record['author']}")
                 print(f"Title: {record['title']}")

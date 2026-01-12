@@ -1548,39 +1548,30 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     1. Take the (next remaining) pole (complex or real) closest to the
        unit circle (or imaginary axis, for ``analog=True``) to
        begin a new filter section.
-
     2. If the pole is real and there are no other remaining real poles [#]_,
        add the closest real zero to the section and leave it as a first
        order section. Note that after this step we are guaranteed to be
        left with an even number of real poles, complex poles, real zeros,
        and complex zeros for subsequent pairing iterations.
-
     3. Else:
 
-        1. If the pole is complex and the zero is the only remaining real
-           zero*, then pair the pole with the *next* closest zero
-           (guaranteed to be complex). This is necessary to ensure that
-           there will be a real zero remaining to eventually create a
-           first-order section (thus keeping the odd order).
+       1. If the pole is complex and the zero is the only remaining real
+          zero*, then pair the pole with the *next* closest zero
+          (guaranteed to be complex). This is necessary to ensure that
+          there will be a real zero remaining to eventually create a
+          first-order section (thus keeping the odd order).
+       2. Else pair the pole with the closest remaining zero (complex or real).
+       3. Proceed to complete the second-order section by adding another
+          pole and zero to the current pole and zero in the section:
 
-        2. Else pair the pole with the closest remaining zero (complex or
-           real).
-
-        3. Proceed to complete the second-order section by adding another
-           pole and zero to the current pole and zero in the section:
-
-            1. If the current pole and zero are both complex, add their
-               conjugates.
-
-            2. Else if the pole is complex and the zero is real, add the
-               conjugate pole and the next closest real zero.
-
-            3. Else if the pole is real and the zero is complex, add the
-               conjugate zero and the real pole closest to those zeros.
-
-            4. Else (we must have a real pole and real zero) add the next
-               real pole closest to the unit circle, and then add the real
-               zero closest to that pole.
+          1. If the current pole and zero are both complex, add their conjugates.
+          2. Else if the pole is complex and the zero is real, add the
+             conjugate pole and the next closest real zero.
+          3. Else if the pole is real and the zero is complex, add the
+             conjugate zero and the real pole closest to those zeros.
+          4. Else (we must have a real pole and real zero) add the next
+             real pole closest to the unit circle, and then add the real
+             zero closest to that pole.
 
     .. [#] This conditional can only be met for specific odd-order inputs
            with the ``pairing = 'keep_odd'`` or ``'minimal'`` methods.
@@ -1893,7 +1884,7 @@ def normalize(b, a):
     `b` is 0.  In the following example, the result is as expected:
 
     >>> import warnings
-    >>> with warnings.catch_warnings(record=True) as w:
+    >>> with warnings.catch_warnings(record=True, action='always') as w:
     ...     num, den = normalize([0, 3, 6], [2, -5, 4])
 
     >>> num
@@ -2506,10 +2497,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
         where 1 is the Nyquist frequency. For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
         Note, that for bandpass and bandstop filters passband must lie strictly
@@ -2526,17 +2517,17 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     ftype : str, optional
         The type of IIR filter to design:
 
-            - Butterworth   : 'butter'
-            - Chebyshev I   : 'cheby1'
-            - Chebyshev II  : 'cheby2'
-            - Cauer/elliptic: 'ellip'
+        - Butterworth   : 'butter'
+        - Chebyshev I   : 'cheby1'
+        - Chebyshev II  : 'cheby2'
+        - Cauer/elliptic: 'ellip'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
 
-            - second-order sections (recommended): 'sos'
-            - numerator/denominator (default)    : 'ba'
-            - pole-zero                          : 'zpk'
+        - second-order sections (recommended): 'sos'
+        - numerator/denominator (default)    : 'ba'
+        - pole-zero                          : 'zpk'
 
         In general the second-order sections ('sos') form  is
         recommended because inferring the coefficients for the
@@ -2703,18 +2694,18 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     ftype : str, optional
         The type of IIR filter to design:
 
-            - Butterworth   : 'butter'
-            - Chebyshev I   : 'cheby1'
-            - Chebyshev II  : 'cheby2'
-            - Cauer/elliptic: 'ellip'
-            - Bessel/Thomson: 'bessel'
+        - Butterworth   : 'butter'
+        - Chebyshev I   : 'cheby1'
+        - Chebyshev II  : 'cheby2'
+        - Cauer/elliptic: 'ellip'
+        - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
 
-            - second-order sections (recommended): 'sos'
-            - numerator/denominator (default)    : 'ba'
-            - pole-zero                          : 'zpk'
+        - second-order sections (recommended): 'sos'
+        - numerator/denominator (default)    : 'ba'
+        - pole-zero                          : 'zpk'
 
         In general the second-order sections ('sos') form  is
         recommended because inferring the coefficients for the
@@ -4217,10 +4208,10 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.) For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4350,10 +4341,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4446,10 +4437,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4574,10 +4565,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.) For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -5105,12 +5096,14 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
-    >>> from scipy.signal._filter_design import _bessel_poly
-    >>> i = 0
-    >>> for n in range(51):
-    ...     for x in _bessel_poly(n, reverse=True):
-    ...         print(i, x)
-    ...         i += 1
+    .. code_block:: python
+
+        from scipy.signal._filter_design import _bessel_poly
+        i = 0
+        for n in range(51):
+            for x in _bessel_poly(n, reverse=True):
+                print(i, x)
+                i += 1
 
     """
     if abs(int(n)) != n:
@@ -5332,7 +5325,7 @@ def besselap(N, norm='phase', *, xp=None, device=None):
            April 1973
     .. [5] Ehrlich, "A modified Newton method for polynomials", Communications
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
-           :DOI:`10.1145/363067.363115`
+           :doi:`10.1145/363067.363115`.
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html

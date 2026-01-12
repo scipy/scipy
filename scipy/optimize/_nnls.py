@@ -1,14 +1,11 @@
 import numpy as np
 from ._slsqplib import nnls as _nnls
-from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 
 
 __all__ = ['nnls']
 
 
-@_deprecate_positional_args(version='1.18.0',
-                            deprecated_args={'atol'})
-def nnls(A, b, *, maxiter=None, atol=_NoValue):
+def nnls(A, b, *, maxiter=None):
     """
     Solve ``argmin_x || Ax - b ||_2^2`` for ``x>=0``.
 
@@ -25,10 +22,6 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
         Right-hand side vector.
     maxiter: int, optional
         Maximum number of iterations, optional. Default value is ``3 * n``.
-    atol : float, optional
-        .. deprecated:: 1.18.0
-            This parameter is deprecated and will be removed in SciPy 1.18.0.
-            It is not used in the implementation.
 
     Returns
     -------
@@ -44,7 +37,7 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     Notes
     -----
     The code is based on the classical algorithm of [1]_. It utilizes an active
-    set method and solves the KKK (Karush-Kuhn-Tucker) conditions for the
+    set method and solves the KKT (Karush-Kuhn-Tucker) conditions for the
     non-negative least squares problem.
 
     References

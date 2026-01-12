@@ -201,10 +201,10 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         within `bounds`.
 
         ``2`` : Semi-continuous variable; decision variable must be within
-        `bounds` or take value ``0``.
+        `bounds` or ``0``.
 
         ``3`` : Semi-integer variable; decision variable must be an integer
-        within `bounds` or take value ``0``.
+        within `bounds` or ``0``.
 
         By default, all variables are continuous. `integrality` is converted
         to an array of integers before the problem is solved.
@@ -248,6 +248,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
             Termination criterion for MIP solver: solver will terminate when
             the gap between the primal objective value and the dual objective
             bound, scaled by the primal objective value, is <= mip_rel_gap.
+            Default: 0.0001.
 
     Returns
     -------
@@ -304,7 +305,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
            https://highs.dev/
     .. [2] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
-           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+           119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
 
     Examples
     --------
@@ -352,7 +353,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> from scipy.optimize import milp
     >>> res = milp(c=c, constraints=constraints, integrality=integrality)
     >>> res.x
-    [2.0, 2.0]
+    array([1., 2.])
 
     Note that had we solved the relaxed problem (without integrality
     constraints):
@@ -360,7 +361,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> res = milp(c=c, constraints=constraints)  # OR:
     >>> # from scipy.optimize import linprog; res = linprog(c, A, b_u)
     >>> res.x
-    [1.8, 2.8]
+    array([1.8, 2.8])
 
     we would not have obtained the correct solution by rounding to the nearest
     integers.

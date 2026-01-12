@@ -49,7 +49,7 @@ import scipy.stats._stats_py as _stats_py
 
 from ._stats_mstats_common import (
         _find_repeats,
-        theilslopes as stats_theilslopes,
+        TheilslopesResult,
         siegelslopes as stats_siegelslopes
         )
 
@@ -206,12 +206,7 @@ def find_repeats(arr):
     # Make sure we get a copy. ma.compressed promises a "new array", but can
     # actually return a reference.
     compr = np.asarray(ma.compressed(arr), dtype=np.float64)
-    try:
-        need_copy = np.may_share_memory(compr, arr)
-    except AttributeError:
-        # numpy < 1.8.2 bug: np.may_share_memory([], []) raises,
-        # while in numpy 1.8.2 and above it just (correctly) returns False.
-        need_copy = False
+    need_copy = np.may_share_memory(compr, arr)
     if need_copy:
         compr = compr.copy()
     return _find_repeats(compr)
@@ -1186,6 +1181,167 @@ def linregress(x, y=None):
     return result
 
 
+def _theilslopes(y, x=None, alpha=0.95, method='separate'):
+    r"""
+    Computes the Theil-Sen estimator for a set of points (x, y).
+
+    `theilslopes` implements a method for robust linear regression.  It
+    computes the slope as the median of all slopes between paired values.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    alpha : float, optional
+        Confidence degree between 0 and 1. Default is 95% confidence.
+        Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
+        interpreted as "find the 90% confidence interval".
+    method : {'joint', 'separate'}, optional
+        Method to be used for computing estimate for intercept.
+        Following methods are supported,
+
+        * 'joint': Uses np.median(y - slope * x) as intercept.
+        * 'separate': Uses np.median(y) - slope * np.median(x)
+                      as intercept.
+
+        The default is 'separate'.
+
+        .. versionadded:: 1.8.0
+
+    Returns
+    -------
+    result : ``TheilslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        slope : float
+            Theil slope.
+        intercept : float
+            Intercept of the Theil line.
+        low_slope : float
+            Lower bound of the confidence interval on `slope`.
+        high_slope : float
+            Upper bound of the confidence interval on `slope`.
+
+    See Also
+    --------
+    siegelslopes : a similar technique using repeated medians
+
+    Notes
+    -----
+    The implementation of `theilslopes` follows [1]_. The intercept is
+    not defined in [1]_, and here it is defined as ``median(y) -
+    slope*median(x)``, which is given in [3]_. Other definitions of
+    the intercept exist in the literature such as  ``median(y - slope*x)``
+    in [4]_. The approach to compute the intercept can be determined by the
+    parameter ``method``. A confidence interval for the intercept is not
+    given as this question is not addressed in [1]_.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 4, with fields ``slope``, ``intercept``,
+    ``low_slope``, and ``high_slope``, so one can continue to write::
+
+        slope, intercept, low_slope, high_slope = theilslopes(y, x)
+
+    References
+    ----------
+    .. [1] P.K. Sen, "Estimates of the regression coefficient based on
+           Kendall's tau", J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
+    .. [2] H. Theil, "A rank-invariant method of linear and polynomial
+           regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
+           53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
+    .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
+           John Wiley and Sons, New York, pp. 493.
+    .. [4] https://en.wikipedia.org/wiki/Theil%E2%80%93Sen_estimator
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-5, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
+
+    Compute the slope, intercept and 90% confidence interval.  For comparison,
+    also compute the least-squares fit with `linregress`:
+
+    >>> res = stats.theilslopes(y, x, 0.90, method='separate')
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results. The Theil-Sen regression line is shown in red, with the
+    dashed red lines illustrating the confidence interval of the slope (note
+    that the dashed red lines are not the confidence interval of the regression
+    as the confidence interval of the intercept is not included). The green
+    line shows the least-squares fit for comparison.
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, res[1] + res[2] * x, 'r--')
+    >>> ax.plot(x, res[1] + res[3] * x, 'r--')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
+
+    """
+    if method not in ['joint', 'separate']:
+        raise ValueError("method must be either 'joint' or 'separate'."
+                         f"'{method}' is invalid.")
+    # We copy both x and y so we can use _find_repeats.
+    y = np.array(y, dtype=float, copy=True).ravel()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.array(x, dtype=float, copy=True).ravel()
+        if len(x) != len(y):
+            raise ValueError("Array shapes are incompatible for broadcasting.")
+    if len(x) < 2:
+        raise ValueError("`x` and `y` must have length at least 2.")
+
+    # Compute sorted slopes only when deltax > 0
+    deltax = x[:, np.newaxis] - x
+    deltay = y[:, np.newaxis] - y
+    slopes = deltay[deltax > 0] / deltax[deltax > 0]
+    if not slopes.size:
+        msg = "All `x` coordinates are identical."
+        warnings.warn(msg, RuntimeWarning, stacklevel=2)
+    slopes.sort()
+    medslope = np.median(slopes)
+    if method == 'joint':
+        medinter = np.median(y - medslope * x)
+    else:
+        medinter = np.median(y) - medslope * np.median(x)
+    # Now compute confidence intervals
+    if alpha > 0.5:
+        alpha = 1. - alpha
+
+    z = distributions.norm.ppf(alpha / 2.)
+    # This implements (2.6) from Sen (1968)
+    _, nxreps = _find_repeats(x)
+    _, nyreps = _find_repeats(y)
+    nt = len(slopes)       # N in Sen (1968)
+    ny = len(y)            # n in Sen (1968)
+    # Equation 2.6 in Sen (1968):
+    sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
+                     sum(k * (k-1) * (2*k + 5) for k in nxreps) -
+                     sum(k * (k-1) * (2*k + 5) for k in nyreps))
+    # Find the confidence interval indices in `slopes`
+    try:
+        sigma = np.sqrt(sigsq)
+        Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
+        Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
+        delta = slopes[[Rl, Ru]]
+    except (ValueError, IndexError):
+        delta = (np.nan, np.nan)
+
+    return TheilslopesResult(slope=medslope, intercept=medinter,
+                             low_slope=delta[0], high_slope=delta[1])
+
+
 def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
@@ -1207,9 +1363,9 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
         Method to be used for computing estimate for intercept.
         Following methods are supported,
 
-            * 'joint': Uses np.median(y - slope * x) as intercept.
-            * 'separate': Uses np.median(y) - slope * np.median(x)
-                          as intercept.
+        * 'joint': Uses np.median(y - slope * x) as intercept.
+        * 'separate': Uses np.median(y) - slope * np.median(x)
+                      as intercept.
 
         The default is 'separate'.
 
@@ -1253,7 +1409,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `scipy.stats.theilslopes`
-    return stats_theilslopes(y, x, alpha=alpha, method=method)
+    return _theilslopes(y, x, alpha=alpha, method=method)
 
 
 def siegelslopes(y, x=None, method="hierarchical"):
@@ -1777,9 +1933,9 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
-          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
-          * 'asymp' : use asymptotic distribution of test statistic
+        * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+        * 'exact' : use approximation to exact distribution of test statistic
+        * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -1814,9 +1970,9 @@ def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
-          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
-          * 'asymp' : use asymptotic distribution of test statistic
+        * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+        * 'exact' : use approximation to exact distribution of test statistic
+        * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -2588,9 +2744,9 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': allows nan values and may overwrite or propagate them
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': allows nan values and may overwrite or propagate them
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     Notes
     -----
@@ -3173,7 +3329,7 @@ def normaltest(a, axis=0):
         ``s^2 + k^2``, where ``s`` is the z-score returned by `skewtest` and
         ``k`` is the z-score returned by `kurtosistest`.
     pvalue : float or array
-       A 2-sided chi squared probability for the hypothesis test.
+         A 2-sided chi squared probability for the hypothesis test.
 
     Notes
     -----
@@ -3202,24 +3358,25 @@ def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
     equation: ``p(k) = (k - alphap)/(n + 1 - alphap - betap)``
 
     Typical values of (alphap,betap) are:
-        - (0,1)    : ``p(k) = k/n`` : linear interpolation of cdf
-          (**R** type 4)
-        - (.5,.5)  : ``p(k) = (k - 1/2.)/n`` : piecewise linear function
-          (**R** type 5)
-        - (0,0)    : ``p(k) = k/(n+1)`` :
-          (**R** type 6)
-        - (1,1)    : ``p(k) = (k-1)/(n-1)``: p(k) = mode[F(x[k])].
-          (**R** type 7, **R** default)
-        - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``: Then p(k) ~ median[F(x[k])].
-          The resulting quantile estimates are approximately median-unbiased
-          regardless of the distribution of x.
-          (**R** type 8)
-        - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``: Blom.
-          The resulting quantile estimates are approximately unbiased
-          if x is normally distributed
-          (**R** type 9)
-        - (.4,.4)  : approximately quantile unbiased (Cunnane)
-        - (.35,.35): APL, used with PWM
+
+    - (0,1)    : ``p(k) = k/n`` : linear interpolation of cdf
+      (**R** type 4)
+    - (.5,.5)  : ``p(k) = (k - 1/2.)/n`` : piecewise linear function
+      (**R** type 5)
+    - (0,0)    : ``p(k) = k/(n+1)`` :
+      (**R** type 6)
+    - (1,1)    : ``p(k) = (k-1)/(n-1)``: p(k) = mode[F(x[k])].
+      (**R** type 7, **R** default)
+    - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``: Then p(k) ~ median[F(x[k])].
+      The resulting quantile estimates are approximately median-unbiased
+      regardless of the distribution of x.
+      (**R** type 8)
+    - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``: Blom.
+      The resulting quantile estimates are approximately unbiased
+      if x is normally distributed
+      (**R** type 9)
+    - (.4,.4)  : approximately quantile unbiased (Cunnane)
+    - (.35,.35): APL, used with PWM
 
     Parameters
     ----------
@@ -3336,27 +3493,29 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     Returns plotting positions (or empirical percentile points) for the data.
 
     Plotting positions are defined as ``(i-alpha)/(n+1-alpha-beta)``, where:
-        - i is the rank order statistics
-        - n is the number of unmasked values along the given axis
-        - `alpha` and `beta` are two parameters.
+
+    - i is the rank order statistics
+    - n is the number of unmasked values along the given axis
+    - `alpha` and `beta` are two parameters.
 
     Typical values for `alpha` and `beta` are:
-        - (0,1)    : ``p(k) = k/n``, linear interpolation of cdf (R, type 4)
-        - (.5,.5)  : ``p(k) = (k-1/2.)/n``, piecewise linear function
-          (R, type 5)
-        - (0,0)    : ``p(k) = k/(n+1)``, Weibull (R type 6)
-        - (1,1)    : ``p(k) = (k-1)/(n-1)``, in this case,
-          ``p(k) = mode[F(x[k])]``. That's R default (R type 7)
-        - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``, then
-          ``p(k) ~ median[F(x[k])]``.
-          The resulting quantile estimates are approximately median-unbiased
-          regardless of the distribution of x. (R type 8)
-        - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``, Blom.
-          The resulting quantile estimates are approximately unbiased
-          if x is normally distributed (R type 9)
-        - (.4,.4)  : approximately quantile unbiased (Cunnane)
-        - (.35,.35): APL, used with PWM
-        - (.3175, .3175): used in scipy.stats.probplot
+
+    - (0,1)    : ``p(k) = k/n``, linear interpolation of cdf (R, type 4)
+    - (.5,.5)  : ``p(k) = (k-1/2.)/n``, piecewise linear function
+      (R, type 5)
+    - (0,0)    : ``p(k) = k/(n+1)``, Weibull (R type 6)
+    - (1,1)    : ``p(k) = (k-1)/(n-1)``, in this case,
+      ``p(k) = mode[F(x[k])]``. That's R default (R type 7)
+    - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``, then
+      ``p(k) ~ median[F(x[k])]``.
+      The resulting quantile estimates are approximately median-unbiased
+      regardless of the distribution of x. (R type 8)
+    - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``, Blom.
+      The resulting quantile estimates are approximately unbiased
+      if x is normally distributed (R type 9)
+    - (.4,.4)  : approximately quantile unbiased (Cunnane)
+    - (.35,.35): APL, used with PWM
+    - (.3175, .3175): used in scipy.stats.probplot
 
     Parameters
     ----------

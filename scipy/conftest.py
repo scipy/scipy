@@ -63,6 +63,12 @@ def pytest_configure(config):
         ("xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
          "eager_only=False, exceptions=None): mark the desired xfail configuration " +
          "for the `xfail_xp_backends` fixture"))
+    config.addinivalue_line("markers",
+                            ("uses_xp_capabilities(status, funcs=None, " +
+                             "reason=None): mark " +
+                            "whether pytest markers for array API backends are " +
+                            " generated from the xp_capabilities entries for one or "
+                             " more functions"))
 
     try:
         import pytest_timeout  # noqa:F401
@@ -80,7 +86,7 @@ def pytest_configure(config):
     if not PARALLEL_RUN_AVAILABLE:
         config.addinivalue_line(
             'markers',
-            'parallel_threads(n): run the given test function in parallel '
+            'parallel_threads_limit(n): run the given test function in parallel '
             'using `n` threads.')
         config.addinivalue_line(
             "markers",
@@ -91,7 +97,7 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
-    if os.name == 'posix' and sys.version_info < (3, 14):
+    if os.name == 'posix' and sys.version_info < (3, 14) and sys.platform != "cygwin":
         # On POSIX, Python 3.13 and older uses the 'fork' context by
         # default. Calling fork() from multiple threads leads to
         # deadlocks. This has been changed in 3.14 to 'forkserver'.
@@ -309,6 +315,20 @@ def xp(request):
     # Read all @pytest.marks.xfail_xp_backends markers that decorate the test,
     # if any, and raise pytest.xfail() if the current xp is in the list.
     skip_or_xfail_xp_backends(request, "xfail")
+
+    # Check if ``uses_xp_capabilities`` mark is present.
+    # ``scipy._lib._array_api.make_xp_pytest_marks``, which draws from
+    # ``xp_capabilities``, will set ``pytest.mark.uses_xp_capabilities(True)``.
+    # Tests which are unconverted or which are for private functions without
+    # ``xp_capabilities`` entries should have
+    # ``pytest.mark.uses_xp_capabilities(False)`` explicitly set.
+    if request.node.get_closest_marker("uses_xp_capabilities") is None:
+        warnings.warn(
+            "test uses `xp` fixture without drawing from `xp_capabilities` "
+            " but is not explicitly marked with"
+            " ``pytest.mark.uses_xp_capabilities(False)``",
+            stacklevel=0,
+        )
 
     xp = request.param
     # Potentially wrap namespace with array_api_compat
@@ -606,6 +626,7 @@ if HAVE_SCPDT:
                     yield
                 else:
                     warnings.simplefilter('error', Warning)
+                    warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
     dt_config.user_context_mgr = warnings_errors_and_rng
@@ -627,28 +648,6 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabFunction.strides',
         'scipy.io.matlab.MatlabFunction.dtype'
     ])
-
-    # these are affected by NumPy 2.0 scalar repr: rely on string comparison
-    if np.__version__ < "2":
-        dt_config.skiplist.update(set([
-            'scipy.io.hb_read',
-            'scipy.io.hb_write',
-            'scipy.sparse.csgraph.connected_components',
-            'scipy.sparse.csgraph.depth_first_order',
-            'scipy.sparse.csgraph.shortest_path',
-            'scipy.sparse.csgraph.floyd_warshall',
-            'scipy.sparse.csgraph.dijkstra',
-            'scipy.sparse.csgraph.bellman_ford',
-            'scipy.sparse.csgraph.johnson',
-            'scipy.sparse.csgraph.yen',
-            'scipy.sparse.csgraph.breadth_first_order',
-            'scipy.sparse.csgraph.reverse_cuthill_mckee',
-            'scipy.sparse.csgraph.structural_rank',
-            'scipy.sparse.csgraph.construct_dist_matrix',
-            'scipy.sparse.csgraph.reconstruct_path',
-            'scipy.ndimage.value_indices',
-            'scipy.stats.mstats.describe',
-    ]))
 
     # help pytest collection a bit: these names are either private
     # (distributions), or just do not need doctesting.

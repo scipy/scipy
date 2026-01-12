@@ -48,7 +48,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
             if arg1.ndim == 1:
                 if dtype is not None:
-                    arg1 = arg1.astype(dtype)
+                    arg1 = arg1.astype(dtype, copy=False)
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
                 self.dtype = getdtype(arg1.dtype)
             else:
