@@ -49,11 +49,6 @@ Thread local:
   - :func:`scipy.integrate.solve_ivp` with ``method='LSODA'``
   - :func:`scipy.sparse.linalg.spsolve` (SuperLU backend)
 
-Independent Concurrent Operations:
-  - :func:`scipy.optimize.fmin_cobyla`
-  - :func:`scipy.optimize.minimize` with ``method='COBYLA'``
-
-
 
 NOT Thread-Safe (Caller Responsibility)
 ---------------------------------------
