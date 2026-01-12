@@ -136,7 +136,7 @@ def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     null_distribution : ndarray
         The values of the test statistic generated under the null hypothesis.
 
-    See also
+    See Also
     --------
     scipy.stats.wilcoxon, scipy.stats.mannwhitneyu, scipy.stats.ttest_ind
 

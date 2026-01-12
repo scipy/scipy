@@ -349,7 +349,7 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
     ----------
     x : array_like
         Input array.
-    a,b : float
+    a, b : float
         Defines the parameters of the sinh/cosh pseudo-differential
         operator.
     period : float, optional
@@ -404,7 +404,7 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
     ----------
     x : array_like
         The array to take the pseudo-derivative from.
-    a,b
+    a, b
         Defines the parameters of the sinh/sinh pseudo-differential
         operator.
     period : float, optional
@@ -457,7 +457,7 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
     ----------
     x : array_like
         The array to take the pseudo-derivative from.
-    a,b : float
+    a, b : float
         Defines the parameters of the sinh/sinh pseudo-differential
         operator.
     period : float, optional

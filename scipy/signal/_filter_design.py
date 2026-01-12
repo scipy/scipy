@@ -1848,18 +1848,18 @@ def normalize(b, a):
 
     Parameters
     ----------
-    b: array_like
+    b : array_like
         Numerator of the transfer function. Can be a 2-D array to normalize
         multiple transfer functions.
-    a: array_like
+    a : array_like
         Denominator of the transfer function. At most 1-D.
 
     Returns
     -------
-    num: array
+    num : array
         The numerator of the normalized transfer function. At least a 1-D
         array. A 2-D array if the input `num` is a 2-D array.
-    den: 1-D array
+    den : 1-D array
         The denominator of the normalized transfer function.
 
     Notes
@@ -4695,7 +4695,7 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     ----------
     N : int
         The order of the filter
-    rp: float
+    rp : float
         The ripple intensity
     %(xp_device_snippet)s
 
@@ -6078,7 +6078,7 @@ xp : array_namespace, optional
     Optional array namespace.
     Should be compatible with the array API standard, or supported by array-api-compat.
     Default: ``numpy``
-device: any
+device : any
     optional device specification for output. Should match one of the
     supported device specification in ``xp``.
 """

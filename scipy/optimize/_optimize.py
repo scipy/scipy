@@ -631,7 +631,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     allvecs : list
         Solution at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Nelder-Mead' `method` in particular.
@@ -1051,8 +1051,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
 
 @_transition_to_rng("seed", position_num=6)
-def check_grad(func, grad, x0, *args, epsilon=_epsilon,
-                direction='all', rng=None):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, direction='all', rng=None):
     r"""Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -1065,7 +1064,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
-    args : \\*args, optional
+    *args : optional
         Extra arguments passed to `func` and `grad`.
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
@@ -1945,7 +1944,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     allvecs : list
         The result at each iteration, if retall is True (see below).
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Newton-CG' `method` in particular.
@@ -2212,7 +2211,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Maximum number of function evaluations allowed.
     full_output : bool, optional
         If True, return optional outputs.
-    disp: int, optional
+    disp : int, optional
         If non-zero, print messages.
 
         ``0`` : no message printing.
@@ -2236,7 +2235,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     numfunc : int
         (Optional output) The number of function calls made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Bounded' `method` in particular.
@@ -2656,7 +2655,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Brent' `method` in particular.
@@ -2794,7 +2793,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Golden' `method` in particular.
@@ -3336,7 +3335,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     allvecs : list
         List of solutions at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to unconstrained minimization algorithms for
         multivariate functions. See the 'Powell' method in particular.

@@ -3320,7 +3320,7 @@ def zeta(x, q=None, out=None):
 
     Parameters
     ----------
-    x : array_like of float or complex.
+    x : array_like of float or complex
         Input data
     q : array_like of float, optional
         Input data, must be real.  Defaults to Riemann zeta. When `q` is

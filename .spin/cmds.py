@@ -496,6 +496,11 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
     os.environ['PYTHONPATH'] = install_dir
     util.run(cmd)
 
+    cmd_numpydoc_lint =  [f'{sys.executable}',
+        os.path.join('tools', 'numpydoc_lint.py')
+    ]
+    util.run(cmd_numpydoc_lint)
+
 @click.command()
 @click.argument(
     'pytest_args', nargs=-1, metavar='PYTEST-ARGS', required=False

@@ -7705,9 +7705,9 @@ add_newdoc("owens_t",
 
     Parameters
     ----------
-    h: array_like
+    h : array_like
         Input value.
-    a: array_like
+    a : array_like
         Input value.
     out : ndarray, optional
         Optional output array for the function results

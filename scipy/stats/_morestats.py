@@ -2339,7 +2339,7 @@ def anderson(x, dist='norm', *, method=None):
             An object containing the results of fitting the distribution to
             the data.
 
-        .. deprecated :: 1.17.0
+        .. deprecated:: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
             ``critical_values``, ``significance_level``, and ``fit_result`` are
             deprecated. Beginning in SciPy 1.19.0, these features will no longer be
@@ -2686,7 +2686,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
         discrete populations. If False, the right side empirical
         distribution is used.
 
-        .. deprecated::1.17.0
+        .. deprecated:: 1.17.0
             Use parameter `variant` instead.
     variant : {'midrank', 'right', 'continuous'}
         Variant of Anderson-Darling test to be computed. ``'midrank'`` is applicable
@@ -2713,7 +2713,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
 
-            .. deprecated::1.17.0
+            .. deprecated:: 1.17.0
                  Present only when `variant` is unspecified.
 
         pvalue : float
@@ -4591,7 +4591,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         of the data is a vector observation.
     axis : int, default: 0
         Axis along which the directional mean is computed.
-    normalize: boolean, default: True
+    normalize : boolean, default: True
         If True, normalize the input to ensure that each observation is a
         unit vector. It the observations are already unit vectors, consider
         setting this to False to avoid unnecessary computation.

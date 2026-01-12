@@ -189,7 +189,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     ----------
     k1 : int
         Number of events observed from distribution 1.
-    n1: float
+    n1 : float
         Size of sample from distribution 1.
     k2 : int
         Number of events observed from distribution 2.
@@ -1973,7 +1973,7 @@ def tukey_hsd(*args, equal_var=True):
     sample1, sample2, ... : array_like
         The sample measurements for each group. There must be at least
         two arguments.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If True (default) and equal sample size, perform Tukey-HSD test [6].
         If True and unequal sample size, perform Tukey-Kramer test [4]_.
         If False, perform Games-Howell test [7]_, which does not assume equal variances.

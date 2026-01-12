@@ -49,7 +49,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Boolean array of the same shape as `data` that is True at an extrema,
         False otherwise.
 
-    See also
+    See Also
     --------
     argrelmax, argrelmin
 

@@ -125,7 +125,7 @@ class ode:
     y : ndarray
         Current variable values.
 
-    See also
+    See Also
     --------
     odeint : an integrator with a simpler interface based on lsoda from ODEPACK
     quad : for finding the area under a curve

@@ -366,7 +366,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     invA : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
-    See also
+    See Also
     --------
     spilu : incomplete LU decomposition
 
@@ -467,7 +467,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     invA_approx : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
-    See also
+    See Also
     --------
     splu : complete LU decomposition
 
