@@ -1,4 +1,6 @@
 """Docstring components common to several ndimage functions."""
+from typing import Final
+
 from scipy._lib import doccer
 
 __all__ = ['docfiller']
@@ -15,6 +17,9 @@ _output_doc = (
     The array in which to place the output, or the dtype of the
     returned array. By default an array of the same dtype as input
     will be created.""")
+_nan_doc = (
+"""The behavior of this function with NaN elements is undefined. To control
+behavior in the presence of NaNs, consider using `vectorized_filter`.""")
 _size_foot_doc = (
 """size : scalar or tuple, optional
     See footprint, below. Ignored if footprint is given.
@@ -104,11 +109,17 @@ _mode_interp_constant_doc = (
     'grid-wrap' (`a b c d | a b c d | a b c d`)
         The input is extended by wrapping around to the opposite edge.
 
-    'wrap' (`d b c d | a b c d | b c a b`)
+    'wrap' (`b c d b c | a b c d | b c a b c`)
         The input is extended by wrapping around to the opposite edge, but in a
         way such that the last point and initial point exactly overlap. In this
         case it is not well defined which sample will be chosen at the point of
-        overlap.""")
+        overlap.
+
+
+        For the example illustrated above, the edge values ``a`` and ``d`` overlap,
+        while the inner pattern ``b c`` repeats. The example demonstrates one
+        possible output, while ``b c a b c | a b c d | b c d b c`` is another,
+        since either ``a`` or ``d`` may occur at each point of overlap.""")
 _mode_interp_mirror_doc = (
     _mode_interp_constant_doc.replace("Default is 'constant'",
                                       "Default is 'mirror'")
@@ -202,7 +213,8 @@ docdict = {
     'origin_multiple': _origin_multiple_doc,
     'extra_arguments': _extra_arguments_doc,
     'extra_keywords': _extra_keywords_doc,
-    'prefilter': _prefilter_doc
+    'prefilter': _prefilter_doc,
+    'nan': _nan_doc,
     }
 
-docfiller = doccer.filldoc(docdict)
+docfiller: Final = doccer.filldoc(docdict)

@@ -59,6 +59,8 @@ mid-year release of SciPy.
     ================  =======================================================================
      Date             Pythons supported
     ================  =======================================================================
+     2026              Py3.12+
+     2025              Py3.11+
      2024              Py3.10+
      2023              Py3.9+
      2022              Py3.8+
@@ -80,13 +82,17 @@ needs to be written using what is common in all of those 4 `NumPy releases`_.
 
 .. dropdown:: Python and NumPy version support per SciPy version
 
-    The table shows the NumPy versions suitable for each major Python version.
-    This table does not distinguish SciPy patch versions (e.g. when a new Python
-    version is released, SciPy will generally issue a compatible patch version).
+    The table shows the NumPy and Python versions suitable for each minor SciPy
+    version. Note that not all patch versions for a particular minor version of
+    SciPy support all listed versions of Python. Only the most recent patch version
+    within each minor version is guaranteed to support all listed Python versions.
 
     =================  ========================    =======================
      SciPy version      Python versions             NumPy versions
     =================  ========================    =======================
+     1.16               >=3.11, <3.14               >=1.25.2, <2.6.0
+     1.15               >=3.10, <3.14               >=1.23.5, <2.5.0
+     1.14               >=3.10, <3.14               >=1.23.5, <2.3.0
      1.13               >=3.9, <3.13                >=1.22.4, <2.3.0
      1.12               >=3.9, <3.13                >=1.22.4, <2.0.0
      1.11               >=3.9, <3.13                >=1.21.6, <1.27.0
@@ -476,7 +482,7 @@ Sphinx-Design                 Whatever recent versions work. >= 0.4.0.
 numpydoc                      Whatever recent versions work. >= 1.5.0.
 matplotlib                    Generally suggest >= 3.5.
 MyST-NB                       Whatever recent versions work. >= 0.17.1
-jupyterlite-sphinx            Whatever recent versions work. >= 0.13.1
+jupyterlite-sphinx            Whatever recent versions work. >= 0.17.1
 jupyterlite-pyodide-kernel    Whatever recent versions work. >= 0.1.0
 ============================  =================================================
 

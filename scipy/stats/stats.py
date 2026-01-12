@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
+    'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
     'tmin', 'tmax', 'tstd', 'tsem', 'moment',
     'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
     'normaltest', 'jarque_bera',
@@ -36,6 +36,8 @@ def __dir__():
 
 
 def __getattr__(name):
-    return _sub_module_deprecation(sub_package="stats", module="stats",
-                                   private_modules=["_stats_py", "_mgc"], all=__all__,
-                                   attribute=name)
+    return _sub_module_deprecation(
+        sub_package="stats", module="stats",
+        private_modules=["_stats_py", "_mgc", "_correlation"],
+        all=__all__,
+        attribute=name)

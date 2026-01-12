@@ -103,7 +103,7 @@ def newer(dst, src):
     both exist and 'dst' is the same age or younger than 'src'.
     """
     if not os.path.exists(dst):
-        raise ValueError("file '%s' does not exist" % os.path.abspath(dst))
+        raise ValueError(f"file '{os.path.abspath(dst)}' does not exist")
     if not os.path.exists(src):
         return 1
 

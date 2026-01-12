@@ -20,46 +20,50 @@ Mathematical constants
 
 Physical constants
 ==================
+The following physical constants are available as attributes of `scipy.constants`.
+All units are `SI <https://en.wikipedia.org/wiki/International_System_of_Units>`_.
 
-===========================  =================================================================
-``c``                        speed of light in vacuum
-``speed_of_light``           speed of light in vacuum
-``mu_0``                     the magnetic constant :math:`\mu_0`
-``epsilon_0``                the electric constant (vacuum permittivity), :math:`\epsilon_0`
-``h``                        the Planck constant :math:`h`
-``Planck``                   the Planck constant :math:`h`
-``hbar``                     :math:`\hbar = h/(2\pi)`
-``G``                        Newtonian constant of gravitation
-``gravitational_constant``   Newtonian constant of gravitation
-``g``                        standard acceleration of gravity
-``e``                        elementary charge
-``elementary_charge``        elementary charge
-``R``                        molar gas constant
-``gas_constant``             molar gas constant
-``alpha``                    fine-structure constant
-``fine_structure``           fine-structure constant
-``N_A``                      Avogadro constant
-``Avogadro``                 Avogadro constant
-``k``                        Boltzmann constant
-``Boltzmann``                Boltzmann constant
-``sigma``                    Stefan-Boltzmann constant :math:`\sigma`
-``Stefan_Boltzmann``         Stefan-Boltzmann constant :math:`\sigma`
-``Wien``                     Wien displacement law constant
-``Rydberg``                  Rydberg constant
-``m_e``                      electron mass
-``electron_mass``            electron mass
-``m_p``                      proton mass
-``proton_mass``              proton mass
-``m_n``                      neutron mass
-``neutron_mass``             neutron mass
-===========================  =================================================================
+===========================  ================================================================  ===============
+Attribute                    Quantity                                                          Units
+===========================  ================================================================  ===============
+``c``                        speed of light in vacuum                                          m s^-1
+``speed_of_light``           speed of light in vacuum                                          m s^-1
+``mu_0``                     the magnetic constant :math:`\mu_0`                               N A^-2
+``epsilon_0``                the electric constant (vacuum permittivity), :math:`\epsilon_0`   F m^-1
+``h``                        the Planck constant :math:`h`                                     J Hz^-1
+``Planck``                   the Planck constant :math:`h`                                     J Hz^-1
+``hbar``                     the reduced Planck constant, :math:`\hbar = h/(2\pi)`             J s
+``G``                        Newtonian constant of gravitation                                 m^3 kg^-1 s^-2
+``gravitational_constant``   Newtonian constant of gravitation                                 m^3 kg^-1 s^-2
+``g``                        standard acceleration of gravity                                  m s^-2
+``e``                        elementary charge                                                 C
+``elementary_charge``        elementary charge                                                 C
+``R``                        molar gas constant                                                J mol^-1 K^-1
+``gas_constant``             molar gas constant                                                J mol^-1 K^-1
+``alpha``                    fine-structure constant                                           (unitless)
+``fine_structure``           fine-structure constant                                           (unitless)
+``N_A``                      Avogadro constant                                                 mol^-1
+``Avogadro``                 Avogadro constant                                                 mol^-1
+``k``                        Boltzmann constant                                                J K^-1
+``Boltzmann``                Boltzmann constant                                                J K^-1
+``sigma``                    Stefan-Boltzmann constant :math:`\sigma`                          W m^-2 K^-4
+``Stefan_Boltzmann``         Stefan-Boltzmann constant :math:`\sigma`                          W m^-2 K^-4
+``Wien``                     Wien wavelength displacement law constant                         m K
+``Rydberg``                  Rydberg constant                                                  m^-1
+``m_e``                      electron mass                                                     kg
+``electron_mass``            electron mass                                                     kg
+``m_p``                      proton mass                                                       kg
+``proton_mass``              proton mass                                                       kg
+``m_n``                      neutron mass                                                      kg
+``neutron_mass``             neutron mass                                                      kg
+===========================  ================================================================  ===============
 
 
 Constants database
 ------------------
 
 In addition to the above variables, :mod:`scipy.constants` also contains the
-2018 CODATA recommended values [CODATA2018]_ database containing more physical
+2022 CODATA recommended values [CODATA2022]_ database containing more physical
 constants.
 
 .. autosummary::
@@ -75,6 +79,13 @@ constants.
 
    Dictionary of physical constants, of the format
    ``physical_constants[name] = (value, unit, uncertainty)``.
+   The CODATA database uses ellipses to indicate that a value is defined
+   (exactly) in terms of others but cannot be represented exactly with the
+   allocated number of digits. In these cases, SciPy calculates the derived
+   value and reports it to the full precision of a Python ``float``. Although 
+   ``physical_constants`` lists the uncertainty as ``0.0`` to indicate that
+   the CODATA value is exact, the value in ``physical_constants`` is still
+   subject to the truncation error inherent in double-precision representation.
 
 Available constants:
 
@@ -314,8 +325,8 @@ Optics
 References
 ==========
 
-.. [CODATA2018] CODATA Recommended Values of the Fundamental
-   Physical Constants 2018.
+.. [CODATA2022] CODATA Recommended Values of the Fundamental
+   Physical Constants 2022.
 
    https://physics.nist.gov/cuu/Constants/
 

@@ -6,8 +6,10 @@ from numpy.testing import (assert_, assert_array_almost_equal,
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
+import scipy
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
+from scipy.optimize import (fmin_slsqp, minimize, Bounds, NonlinearConstraint,
+                            OptimizeResult)
 
 
 class MyCallBack:
@@ -20,8 +22,18 @@ class MyCallBack:
         self.ncalls = 0
 
     def __call__(self, x):
+        assert not isinstance(x, OptimizeResult)
         self.been_called = True
         self.ncalls += 1
+
+    def callback2(self, intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        self.been_called = True
+        self.ncalls += 1
+
+    def callback3(self, intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        raise StopIteration
 
 
 class TestSLSQP:
@@ -357,9 +369,32 @@ class TestSLSQP:
         callback = MyCallBack()
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        method='SLSQP', callback=callback, options=self.opts)
-        assert_(res['success'], res['message'])
-        assert_(callback.been_called)
+        assert res.success
+        assert res.message
+        assert callback.been_called
         assert_equal(callback.ncalls, res['nit'])
+
+        res = minimize(
+            self.fun,
+            [-1.0, 1.0],
+            args=(-1.0, ),
+            method='SLSQP',
+            callback=callback.callback2,
+            options=self.opts
+        )
+        assert res.success
+        assert callback.been_called
+
+        res = minimize(
+            self.fun,
+            [-1.0, 1.0],
+            args=(-1.0, ),
+            method='SLSQP',
+            callback=callback.callback3,
+            options=self.opts
+        )
+        assert not res.success
+        assert res.message.startswith("`callback` raised `StopIteration`")
 
     def test_inconsistent_linearization(self):
         # SLSQP must be able to solve this problem, even if the
@@ -489,6 +524,9 @@ class TestSLSQP:
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    @pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name']
+                       == "intel-llvm",
+                       reason="Runtime warning due to floating point issues, not logic")
     def test_inconsistent_inequalities(self):
         # gh-7618
 
@@ -574,7 +612,6 @@ class TestSLSQP:
         assert res.success
 
     def test_gh9640(self):
-        np.random.seed(10)
         cons = ({'type': 'ineq', 'fun': lambda x: -x[0] - x[1] - 3},
                 {'type': 'ineq', 'fun': lambda x: x[1] + x[2] - 2})
         bnds = ((-2, 2), (-2, 2), (-2, 2))
@@ -593,16 +630,50 @@ class TestSLSQP:
         # outside one of the lower/upper bounds. When this happens
         # approx_derivative complains because it's being asked to evaluate
         # a gradient outside its domain.
-        np.random.seed(1)
+
+        # gh21872, removal of random initial position, replacing with specific
+        # starting point, because success/fail depends on the seed used.
         bounds = Bounds(np.array([0.1]), np.array([1.0]))
-        n_inputs = len(bounds.lb)
         x0 = np.array(bounds.lb + (bounds.ub - bounds.lb) *
-                      np.random.random(n_inputs))
+                      0.417022004702574)
 
         def f(x):
             assert (x >= bounds.lb).all()
             return np.linalg.norm(x)
+        # The following should not raise any warnings which was the case, with the
+        # old Fortran code.
+        res = minimize(f, x0, method='SLSQP', bounds=bounds)
+        assert res.success
 
-        with pytest.warns(RuntimeWarning, match='x were outside bounds'):
-            res = minimize(f, x0, method='SLSQP', bounds=bounds)
-            assert res.success
+
+def test_slsqp_segfault_wrong_workspace_computation():
+    # See gh-14915
+    # This problem is not well-defined, however should not cause a segfault.
+    # The previous F77 workspace computation did not handle only equality-
+    # constrained problems correctly.
+    rng = np.random.default_rng(1742651087222879)
+    x = rng.uniform(size=[22,365])
+    target = np.linspace(0.9, 4.0, 50)
+
+    def metric(v, weights):
+        return [[0, 0],[1, 1]]
+
+    def efficient_metric(v, target):
+        def metric_a(weights):
+            return metric(v, weights)[1][0]
+
+        def metric_b(weights, v):
+            return metric(v, weights)[0][0]
+
+        constraints = ({'type': 'eq', 'fun': lambda x: metric_a(x) - target},
+                       {'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+        weights = np.array([len(v)*[1./len(v)]])[0]
+        result = minimize(metric_b,
+                          weights,
+                          args=(v,),
+                          method='SLSQP',
+                          constraints=constraints)
+        return result
+
+    efficient_metric(x, target)
+

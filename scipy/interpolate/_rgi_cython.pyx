@@ -25,31 +25,29 @@ def evaluate_linear_2d(const double_or_complex[:, :] values, # cannot declare as
         long num_points = indices.shape[1]      # XXX: npy_intp?
         long i0, i1, point
         double_or_complex y0, y1, result
-    assert out.shape[0] == num_points
 
-    if grid[1].shape[0] == 1:
-        # linear interpolation along axis=0
+    if grid[0].shape[0] == grid[1].shape[0] == 1:
+        # single grid point along both axes: no interpolation
+        for point in range(num_points):
+            out[point] = values[0, 0]
+    elif grid[1].shape[0] == 1:
+        # single grid line along axis=1: linear interpolation along axis=0 alone
         for point in range(num_points):
             i0 = indices[0, point]
             if i0 >= 0:
                 y0 = norm_distances[0, point]
                 result = values[i0, 0]*(1 - y0) + values[i0+1, 0]*y0
                 out[point] = result
-            else:
-                # xi was nan: find_interval returns -1
-                out[point] = NAN
     elif grid[0].shape[0] == 1:
-        # linear interpolation along axis=1
+        # single grid line along axis=0: linear interpolation along axis=1 alone
         for point in range(num_points):
             i1 = indices[1, point]
             if i1 >= 0:
                 y1 = norm_distances[1, point]
                 result = values[0, i1]*(1 - y1) + values[0, i1+1]*y1
                 out[point] = result
-            else:
-                # xi was nan: find_interval returns -1
-                out[point] = NAN
     else:
+        # linear interpolation along both axes
         for point in range(num_points):
             i0, i1 = indices[0, point], indices[1, point]
             if i0 >=0 and i1 >=0:
@@ -61,9 +59,6 @@ def evaluate_linear_2d(const double_or_complex[:, :] values, # cannot declare as
                 result = result + values[i0+1, i1] * y0 * (1 - y1)
                 result = result + values[i0+1, i1+1] * y0 * y1
                 out[point] = result
-            else:
-                # xi was nan
-                out[point] = NAN
 
     return np.asarray(out)
 

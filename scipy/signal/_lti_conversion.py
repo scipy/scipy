@@ -8,6 +8,9 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, zeros, array, outer)
 from scipy import linalg
 
+from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
+                                   xp_result_type)
+import scipy._lib.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
 
@@ -112,83 +115,117 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
-def _none_to_empty_2d(arg):
-    if arg is None:
-        return zeros((0, 0))
-    else:
-        return arg
-
-
-def _atleast_2d_or_none(arg):
-    if arg is not None:
-        return atleast_2d(arg)
-
-
-def _shape_or_none(M):
-    if M is not None:
-        return M.shape
-    else:
-        return (None,) * 2
-
-
-def _choice_not_none(*args):
-    for arg in args:
-        if arg is not None:
-            return arg
-
-
-def _restore(M, shape):
-    if M.shape == (0, 0):
-        return zeros(shape)
-    else:
-        if M.shape != shape:
-            raise ValueError("The input arrays have incompatible shapes.")
-        return M
-
-
 def abcd_normalize(A=None, B=None, C=None, D=None):
-    """Check state-space matrices and ensure they are 2-D.
+    r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
-    If enough information on the system is provided, that is, enough
-    properly-shaped arrays are passed to the function, the missing ones
-    are built from this information, ensuring the correct number of
-    rows and columns. Otherwise a ValueError is raised.
+    First, the input matrices are converted into two-dimensional arrays with
+    appropriate dtype as needed. Then the dimensions n, q, p are determined by
+    investigating the array shapes. If an input is ``None``, or has size zero, it is
+    set to an array of zeros of compatible shape. Finally, it is verified that all
+    parameter shapes are compatible with each other. If that fails, a ``ValueError`` is
+    raised. Note that the dimensions n, q, p are allowed to be zero.
 
     Parameters
     ----------
-    A, B, C, D : array_like, optional
-        State-space matrices. All of them are None (missing) by default.
-        See `ss2tf` for format.
+    A : array_like, optional
+        Two-dimensional array of shape (n, n).
+    B : array_like, optional
+        Two-dimensional array of shape (n, p).
+    C : array_like, optional
+        Two-dimensional array of shape (q, n).
+    D : array_like, optional
+        Two-dimensional array of shape (q, p).
 
     Returns
     -------
     A, B, C, D : array
-        Properly shaped state-space matrices.
+        State-space matrices as two-dimensional arrays with identical dtype.
+        The result dtype is determined based on the standard
+        `dtype promotion rules <https://numpy.org/doc/2.3/reference/arrays.promotion.html>`_
+        except for when the inputs are all of integer dtype, in which case the returned
+        arrays will have the default floating point dtype of ``float64``.
 
     Raises
     ------
     ValueError
-        If not enough information on the system was provided.
+        If the dimensions n, q, or p could not be determined or if the shapes are
+        incompatible with each other.
+
+    Notes
+    -----
+    If a matrix is not modified, the original matrix (not a copy) is returned.
+
+    The :ref:`tutorial_signal_state_space_representation` section of the
+    :ref:`user_guide` presents the corresponding definitions of continuous-time and
+    disrcete time state space systems.
+
+    See Also
+    --------
+    StateSpace: Linear Time Invariant system in state-space form.
+    dlti: Discrete-time linear time invariant system base class.
+    tf2ss: Transfer function to state-space representation.
+    ss2tf: State-space to transfer function.
+    ss2zpk: State-space representation to zero-pole-gain representation.
+    cont2discrete: Transform a continuous to a discrete state-space system.
+
+    Examples
+    --------
+    The following example demonstrates that the passed lists are converted into
+    two-dimensional arrays:
+
+    >>> from scipy.signal import abcd_normalize
+    >>> AA, BB, CC, DD = abcd_normalize(A=[[1, 2], [3, 4]], B=[[-1], [5]],
+    ...                                 C=[[4, 5]], D=2.5)
+    >>> AA.shape, BB.shape, CC.shape, DD.shape
+    ((2, 2), (2, 1), (1, 2), (1, 1))
+
+    In the following, the missing parameter C is assumed to be an array of zeros
+    with shape (1, 2):
+
+    >>> from scipy.signal import abcd_normalize
+    >>> AA, BB, CC, DD = abcd_normalize(A=[[1, 2], [3, 4]], B=[[-1], [5]], D=2.5)
+    >>> AA.shape, BB.shape, CC.shape, DD.shape
+    ((2, 2), (2, 1), (1, 2), (1, 1))
+    >>> CC
+    array([[0., 0.]])
 
     """
-    A, B, C, D = map(_atleast_2d_or_none, (A, B, C, D))
+    if A is None and B is None and C is None:
+        raise ValueError("Dimension n is undefined for parameters A = B = C = None!")
+    if B is None and D is None:
+        raise ValueError("Dimension p is undefined for parameters B = D = None!")
+    if C is None and D is None:
+        raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
-    MA, NA = _shape_or_none(A)
-    MB, NB = _shape_or_none(B)
-    MC, NC = _shape_or_none(C)
-    MD, ND = _shape_or_none(D)
+    xp = array_namespace(A, B, C, D)
+    A, B, C, D = xp_promote(A, B, C, D, xp=xp, force_floating=True)
+    dtype = xp_result_type(A, B, C, D, xp=xp)
 
-    p = _choice_not_none(MA, MB, NC)
-    q = _choice_not_none(NB, ND)
-    r = _choice_not_none(MC, MD)
-    if p is None or q is None or r is None:
-        raise ValueError("Not enough information on the system.")
+    # convert inputs into 2d arrays (zero-size 2d array if None):
+    A, B, C, D = (
+        xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
+        if M_ is not None else xp.zeros((0, 0), dtype=dtype)
+        for M_ in (A, B, C, D)
+    )
 
-    A, B, C, D = map(_none_to_empty_2d, (A, B, C, D))
-    A = _restore(A, (p, p))
-    B = _restore(B, (p, q))
-    C = _restore(C, (r, p))
-    D = _restore(D, (r, q))
+    n = A.shape[0] or B.shape[0] or C.shape[1] # try finding non-zero dimensions
+    p = B.shape[1] or D.shape[1]
+    q = C.shape[0] or D.shape[0]
+
+    # Create zero matrices as needed:
+    A = xp.zeros((n, n), dtype=dtype) if xp_size(A) == 0 else A
+    B = xp.zeros((n, p), dtype=dtype) if xp_size(B) == 0 else B
+    C = xp.zeros((q, n), dtype=dtype) if xp_size(C) == 0 else C
+    D = xp.zeros((q, p), dtype=dtype) if xp_size(D) == 0 else D
+
+    if A.shape != (n, n):
+        raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")
+    if B.shape != (n, p):
+        raise ValueError(f"Parameter B has shape {B.shape} but should be ({n}, {p})!")
+    if C.shape != (q, n):
+        raise ValueError(f"Parameter C has shape {C.shape} but should be ({q}, {n})!")
+    if D.shape != (q, p):
+        raise ValueError(f"Parameter D has shape {D.shape} but should be ({q}, {p})!")
 
     return A, B, C, D
 
@@ -222,6 +259,18 @@ def ss2tf(A, B, C, D, input=0):
         Denominator of the resulting transfer function(s). `den` is a sequence
         representation of the denominator polynomial.
 
+    Notes
+    -----
+    Before calculating `num` and `den`, the function `abcd_normalize` is called to
+    convert the parameters `A`, `B`, `C`, `D` into two-dimesional arrays of the
+    same dtype. The resulting dtype will be based on NumPy's dtype promotion rules,
+    except in the case where each of `A`, `B`, `C`, and `D` has integer dtype, in which
+    case the resulting dtype will be the default floating point dtype of ``float64``.
+
+    The :ref:`tutorial_signal_state_space_representation` section of the
+    :ref:`user_guide` presents the corresponding definitions of continuous-time and
+    disrcete time state space systems.
+
     Examples
     --------
     Convert the state-space representation:
@@ -250,7 +299,7 @@ def ss2tf(A, B, C, D, input=0):
     """
     # transfer function is C (sI - A)**(-1) B + D
 
-    # Check consistency and make them all rank-2 arrays
+    # Check consistency and make them all floating point 2d arrays:
     A, B, C, D = abcd_normalize(A, B, C, D)
 
     nout, nin = D.shape
@@ -342,23 +391,23 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1: (instance of `lti`)
-            * 2: (num, den)
-            * 3: (zeros, poles, gain)
-            * 4: (A, B, C, D)
+        * 1: (instance of `lti`)
+        * 2: (num, den)
+        * 3: (zeros, poles, gain)
+        * 4: (A, B, C, D)
 
     dt : float
         The discretization time step.
     method : str, optional
         Which method to use:
 
-            * gbt: generalized bilinear transformation
-            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
-            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
-            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
-            * zoh: zero-order hold (default)
-            * foh: first-order hold (*versionadded: 1.3.0*)
-            * impulse: equivalent impulse response (*versionadded: 1.3.0*)
+        * gbt: generalized bilinear transformation
+        * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+        * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+        * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+        * zoh: zero-order hold (default)
+        * foh: first-order hold (*versionadded: 1.3.0*)
+        * impulse: equivalent impulse response (*versionadded: 1.3.0*)
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which
@@ -431,8 +480,9 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     >>> plt.show()
 
     """
-    if len(system) == 1:
-        return system.to_discrete()
+    if hasattr(system, 'to_discrete') and callable(system.to_discrete):
+        return system.to_discrete(dt=dt, method=method, alpha=alpha)
+
     if len(system) == 2:
         sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,
                              alpha=alpha)
@@ -528,6 +578,6 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         dd = c @ b * dt
 
     else:
-        raise ValueError("Unknown transformation method '%s'" % method)
+        raise ValueError(f"Unknown transformation method '{method}'")
 
     return ad, bd, cd, dd, dt

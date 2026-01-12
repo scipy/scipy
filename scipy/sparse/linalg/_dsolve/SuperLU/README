@@ -79,14 +79,8 @@ are described below.
    To install the library, type:
         make install
 
-   To run the installation test, type:
+   To run the regression tests, type:
    	make test (or: ctest)
-
-   	The test results are in the files below:
-       	    build/TESTING/s_test.out   # single precision, real
-       	    build/TESTING/d_test.out   # double precision, real
-       	    build/TESTING/c_test.out   # single precision, complex
-       	    build/TESTING/z_test.out   # double precision, complex
 
 
 2. Manual installation with makefile.      

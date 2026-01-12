@@ -10,7 +10,7 @@ import numpy.ma.testutils as ma_npt
 from scipy._lib._util import (
     getfullargspec_no_self as _getfullargspec, np_long
 )
-from scipy._lib._array_api import xp_assert_equal
+from scipy._lib._array_api_no_0d import xp_assert_equal
 from scipy import stats
 
 
@@ -50,7 +50,7 @@ def check_moment(distfn, arg, m, v, msg):
                                 err_msg=msg + ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
-                    msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+                    msg + f' - 1st moment -infinite, m1={str(m1)}')
 
     if not np.isinf(v):
         npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10,
@@ -197,12 +197,8 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 def check_random_state_property(distfn, args):
     # check the random_state attribute of a distribution *instance*
 
-    # This test fiddles with distfn.random_state. This breaks other tests,
-    # hence need to save it and then restore.
-    rndm = distfn.random_state
-
     # baseline: this relies on the global state
-    np.random.seed(1234)
+    np.random.seed(1234)  # valid use of np.random.seed
     distfn.random_state = None
     r0 = distfn.rvs(*args, size=8)
 
@@ -230,9 +226,6 @@ def check_random_state_property(distfn, args):
 
     # ... and that does not alter the instance-level random_state!
     npt.assert_equal(distfn.random_state.get_state(), orig_state)
-
-    # finally, restore the random_state
-    distfn.random_state = rndm
 
 
 def check_meth_dtype(distfn, arg, meths):
@@ -344,11 +337,13 @@ def check_freezing(distfn, args):
 
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
-    np.random.seed(123)
-    sample = distfunc.rvs(*allargs)
-    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+    rng = np.random.RandomState(123)
+    sample = distfunc.rvs(*allargs, random_state=rng)
+    assert_equal(sample.shape, shape, f"{distname}: rvs failed to broadcast")
     if not shape_only:
-        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
-        np.random.seed(123)
+        rvs = np.vectorize(
+            lambda *allargs: distfunc.rvs(*allargs, random_state=rng),
+            otypes=otype)
+        rng = np.random.RandomState(123)
         expected = rvs(*allargs)
         assert_allclose(sample, expected, rtol=1e-13)

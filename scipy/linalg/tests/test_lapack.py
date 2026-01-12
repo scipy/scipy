@@ -3,6 +3,7 @@
 #
 
 from functools import reduce
+import sysconfig
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -14,19 +15,13 @@ import numpy as np
 from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
-from numpy.random import rand, randint, seed
-
 from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
                           solve, ldl, norm, block_diag, qr, eigh, qz)
-
+from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
 import scipy.sparse as sps
-try:
-    from scipy.__config__ import CONFIG
-except ImportError:
-    CONFIG = None
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -35,22 +30,22 @@ except ImportError:
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
+from scipy.__config__ import CONFIG
+blas_provider = blas_version = None
+blas_provider = CONFIG['Build Dependencies']['blas']['name']
+blas_version = CONFIG['Build Dependencies']['blas']['version']
+
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
-blas_provider = blas_version = None
-if CONFIG is not None:
-    blas_provider = CONFIG['Build Dependencies']['blas']['name']
-    blas_version = CONFIG['Build Dependencies']['blas']['version']
 
-
-def generate_random_dtype_array(shape, dtype):
+def generate_random_dtype_array(shape, dtype, rng):
     # generates a random matrix of desired data type of shape
     if dtype in COMPLEX_DTYPES:
-        return (np.random.rand(*shape)
-                + np.random.rand(*shape)*1.0j).astype(dtype)
-    return np.random.rand(*shape).astype(dtype)
+        return (rng.rand(*shape)
+                + rng.rand(*shape)*1.0j).astype(dtype)
+    return rng.rand(*shape).astype(dtype)
 
 
 def test_lapack_documented():
@@ -74,6 +69,12 @@ def test_lapack_documented():
                 name not in names):
             missing.append(name)
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
+
+
+def test_ilp64_blas_lapack_both_or_none():
+    from scipy.linalg.blas import HAS_ILP64 as blas_has_ilp64
+    from scipy.linalg.lapack import HAS_ILP64 as lapack_has_ilp64
+    assert blas_has_ilp64 == lapack_has_ilp64
 
 
 class TestFlapackSimple:
@@ -188,14 +189,14 @@ class TestLapack:
 class TestLeastSquaresSolvers:
 
     def test_gels(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         # Test fat/tall matrix argument handling - gh-issue #8329
         for ind, dtype in enumerate(DTYPES):
             m = 10
             n = 20
             nrhs = 1
-            a1 = rand(m, n).astype(dtype)
-            b1 = rand(n).astype(dtype)
+            a1 = rng.random((m, n)).astype(dtype)
+            b1 = rng.random(n).astype(dtype)
             gls, glslw = get_lapack_funcs(('gels', 'gels_lwork'), dtype=dtype)
 
             # Request of sizes
@@ -459,23 +460,23 @@ class TestRegression:
 
 
 class TestDpotr:
-    def test_gh_2691(self):
-        # 'lower' argument of dportf/dpotri
-        for lower in [True, False]:
-            for clean in [True, False]:
-                np.random.seed(42)
-                x = np.random.normal(size=(3, 3))
-                a = x.dot(x.T)
+    # 'lower' argument of dportf/dpotri
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("clean", [True, False])
+    def test_gh_2691(self, lower, clean):
+        rng = np.random.default_rng(42)
+        x = rng.normal(size=(3, 3))
+        a = x.dot(x.T)
 
-                dpotrf, dpotri = get_lapack_funcs(("potrf", "potri"), (a, ))
+        dpotrf, dpotri = get_lapack_funcs(("potrf", "potri"), (a, ))
 
-                c, info = dpotrf(a, lower, clean=clean)
-                dpt = dpotri(c, lower)[0]
+        c, _ = dpotrf(a, lower, clean=clean)
+        dpt = dpotri(c, lower)[0]
 
-                if lower:
-                    assert_allclose(np.tril(dpt), np.tril(inv(a)))
-                else:
-                    assert_allclose(np.triu(dpt), np.triu(inv(a)))
+        if lower:
+            assert_allclose(np.tril(dpt), np.tril(inv(a)))
+        else:
+            assert_allclose(np.triu(dpt), np.triu(inv(a)))
 
 
 class TestDlasd4:
@@ -501,8 +502,10 @@ class TestDlasd4:
             res = lasd4(i, sgm, mvc)
             roots.append(res[1])
 
-            assert_((res[3] <= 0), "LAPACK root finding dlasd4 failed to find \
-                                    the singular value %i" % i)
+            assert_(
+                (res[3] <= 0),
+                f"LAPACK root finding dlasd4 failed to find the singular value {i}"
+            )
         roots = np.array(roots)[::-1]
 
         assert_((not np.any(np.isnan(roots)), "There are NaN roots"))
@@ -565,7 +568,8 @@ class TestTbtrs:
     @pytest.mark.parametrize('uplo', ['U', 'L'])
     @pytest.mark.parametrize('diag', ['N', 'U'])
     def test_random_matrices(self, dtype, trans, uplo, diag):
-        seed(1724)
+        rng = np.random.RandomState(1724)
+
         # n, nrhs, kd are used to specify A and b.
         # A is of shape n x n with kd super/sub-diagonals
         # b is of shape n x nrhs matrix
@@ -580,7 +584,7 @@ class TestTbtrs:
         # the corresponding offsets.
         band_offsets = range(ku, -kl - 1, -1)
         band_widths = [n - abs(x) for x in band_offsets]
-        bands = [generate_random_dtype_array((width,), dtype)
+        bands = [generate_random_dtype_array((width,), dtype, rng)
                  for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
@@ -595,7 +599,7 @@ class TestTbtrs:
             ab[row, max(k, 0):min(n+k, n)] = a.diagonal(k)
 
         # The RHS values.
-        b = generate_random_dtype_array((n, nrhs), dtype)
+        b = generate_random_dtype_array((n, nrhs), dtype, rng)
 
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
@@ -618,8 +622,9 @@ class TestTbtrs:
         # Argument checks occur independently of used datatype.
         # This mean we must not parameterize all available datatypes.
         tbtrs = get_lapack_funcs('tbtrs', dtype=np.float64)
-        ab = rand(4, 2)
-        b = rand(2, 4)
+        rng = np.random.default_rng(1234)
+        ab = rng.random((4, 2))
+        b = rng.random((2, 4))
         assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
 
     def test_zero_element_in_diagonal(self):
@@ -648,6 +653,47 @@ class TestTbtrs:
         b = np.ones((ldb, nrhs), dtype=float)
         tbtrs = get_lapack_funcs('tbtrs', dtype=float)
         assert_raises(Exception, tbtrs, ab, b)
+
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['I', '1', 'O'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_trcon(dtype, norm, uplo, diag, n):
+    # Simple way to get deterministic (unlike `hash`) seed based on arguments
+    seed = list(f"{dtype}{norm}{uplo}{diag}{n}".encode())
+    rng = np.random.default_rng(seed)
+
+    A = rng.random(size=(n, n)) + rng.random(size=(n, n))*1j
+    # make the condition numbers more interesting
+    offset = rng.permuted(np.logspace(0, rng.integers(0, 10), n))
+    A += offset
+    A = A.real if np.issubdtype(dtype, np.floating) else A
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        A /= np.diag(A)[:, np.newaxis]
+    A = A.astype(dtype)
+
+    trcon = get_lapack_funcs('trcon', (A,))
+    res, _ = trcon(A, norm=norm, uplo=uplo, diag=diag)
+
+    if norm == 'I':
+        norm_A = np.linalg.norm(A, ord=np.inf)
+        norm_inv_A = np.linalg.norm(np.linalg.inv(A), ord=np.inf)
+        ref = 1 / (norm_A * norm_inv_A)
+    else:
+        anorm = np.linalg.norm(A, ord=1)
+        gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+        lu, ipvt, info = getrf(A)
+        ref, _ = gecon(lu, anorm, norm=norm)
+
+    # This is an estimate of reciprocal condition number; we just need order of
+    # magnitude. In testing, we observed that much smaller rtol is OK in almost
+    # all cases... but sometimes it isn't.
+    rtol = 1  # np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
 
 
 def test_lartg():
@@ -716,11 +762,11 @@ def test_rot():
 
 
 def test_larfg_larf():
-    np.random.seed(1234)
-    a0 = np.random.random((4, 4))
+    rng = np.random.default_rng(1234)
+    a0 = rng.random((4, 4))
     a0 = a0.T.dot(a0)
 
-    a0j = np.random.random((4, 4)) + 1j*np.random.random((4, 4))
+    a0j = rng.random((4, 4)) + 1j*rng.random((4, 4))
     a0j = a0j.T.conj().dot(a0j)
 
     # our test here will be to do one step of reducing a hermetian matrix to
@@ -982,7 +1028,7 @@ def test_gglse():
 
 
 def test_sycon_hecon():
-    seed(1234)
+    rng = np.random.default_rng(1234)
     for ind, dtype in enumerate(DTYPES+COMPLEX_DTYPES):
         # DTYPES + COMPLEX DTYPES = <s,d,c,z> sycon + <c,z>hecon
         n = 10
@@ -990,12 +1036,12 @@ def test_sycon_hecon():
         if ind < 4:
             func_lwork = get_lapack_funcs('sytrf_lwork', dtype=dtype)
             funcon, functrf = get_lapack_funcs(('sycon', 'sytrf'), dtype=dtype)
-            A = (rand(n, n)).astype(dtype)
+            A = (rng.random((n, n))).astype(dtype)
         # For <c,z>hecon
         else:
             func_lwork = get_lapack_funcs('hetrf_lwork', dtype=dtype)
             funcon, functrf = get_lapack_funcs(('hecon', 'hetrf'), dtype=dtype)
-            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = (rng.random((n, n)) + rng.random((n, n))*1j).astype(dtype)
 
         # Since sycon only refers to upper/lower part, conj() is safe here.
         A = (A + A.conj().T)/2 + 2*np.eye(n, dtype=dtype)
@@ -1009,7 +1055,7 @@ def test_sycon_hecon():
 
 
 def test_sygst():
-    seed(1234)
+    rng = np.random.default_rng(1234)
     for ind, dtype in enumerate(REAL_DTYPES):
         # DTYPES = <s,d> sygst
         n = 10
@@ -1018,10 +1064,10 @@ def test_sygst():
                                                        'syevd', 'sygvd'),
                                                       dtype=dtype)
 
-        A = rand(n, n).astype(dtype)
+        A = rng.random((n, n)).astype(dtype)
         A = (A + A.T)/2
         # B must be positive definite
-        B = rand(n, n).astype(dtype)
+        B = rng.random((n, n)).astype(dtype)
         B = (B + B.T)/2 + 2 * np.eye(n, dtype=dtype)
 
         # Perform eig (sygvd)
@@ -1040,7 +1086,7 @@ def test_sygst():
 
 
 def test_hegst():
-    seed(1234)
+    rng = np.random.default_rng(1234)
     for ind, dtype in enumerate(COMPLEX_DTYPES):
         # DTYPES = <c,z> hegst
         n = 10
@@ -1049,10 +1095,10 @@ def test_hegst():
                                                        'heevd', 'hegvd'),
                                                       dtype=dtype)
 
-        A = rand(n, n).astype(dtype) + 1j * rand(n, n).astype(dtype)
+        A = rng.random((n, n)).astype(dtype) + 1j * rng.random((n, n)).astype(dtype)
         A = (A + A.conj().T)/2
         # B must be positive definite
-        B = rand(n, n).astype(dtype) + 1j * rand(n, n).astype(dtype)
+        B = rng.random((n, n)).astype(dtype) + 1j * rng.random((n, n)).astype(dtype)
         B = (B + B.conj().T)/2 + 2 * np.eye(n, dtype=dtype)
 
         # Perform eig (hegvd)
@@ -1076,7 +1122,7 @@ def test_tzrzf():
     array M (m <= n) is factorized as M = [R 0] * Z where R is upper triangular
     and Z is unitary.
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     m, n = 10, 15
     for ind, dtype in enumerate(DTYPES):
         tzrzf, tzrzf_lw = get_lapack_funcs(('tzrzf', 'tzrzf_lwork'),
@@ -1084,9 +1130,9 @@ def test_tzrzf():
         lwork = _compute_lwork(tzrzf_lw, m, n)
 
         if ind < 2:
-            A = triu(rand(m, n).astype(dtype))
+            A = triu(rng.rand(m, n).astype(dtype))
         else:
-            A = triu((rand(m, n) + rand(m, n)*1j).astype(dtype))
+            A = triu((rng.rand(m, n) + rng.rand(m, n)*1j).astype(dtype))
 
         # assert wrong shape arg, f2py returns generic error
         assert_raises(Exception, tzrzf, A.T)
@@ -1109,21 +1155,21 @@ def test_tfsm():
     Test for solving a linear system with the coefficient matrix is a
     triangular array stored in Full Packed (RFP) format.
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 20
         if ind > 1:
-            A = triu(rand(n, n) + rand(n, n)*1j + eye(n)).astype(dtype)
+            A = triu(rng.rand(n, n) + rng.rand(n, n)*1j + eye(n)).astype(dtype)
             trans = 'C'
         else:
-            A = triu(rand(n, n) + eye(n)).astype(dtype)
+            A = triu(rng.rand(n, n) + eye(n)).astype(dtype)
             trans = 'T'
 
         trttf, tfttr, tfsm = get_lapack_funcs(('trttf', 'tfttr', 'tfsm'),
                                               dtype=dtype)
 
         Afp, _ = trttf(A)
-        B = rand(n, 2).astype(dtype)
+        B = rng.rand(n, 2).astype(dtype)
         soln = tfsm(-1, Afp, B)
         assert_array_almost_equal(soln, solve(-A, B),
                                   decimal=4 if ind % 2 == 0 else 6)
@@ -1139,7 +1185,7 @@ def test_tfsm():
                                   decimal=4 if ind % 2 == 0 else 6)
 
         # Change side
-        B2 = rand(3, n).astype(dtype)
+        B2 = rng.rand(3, n).astype(dtype)
         soln = tfsm(-1, Afp, B2, trans=trans, diag='U', side='R')
         assert_array_almost_equal(soln, solve(-A, B2.T).conj().T,
                                   decimal=4 if ind % 2 == 0 else 6)
@@ -1152,7 +1198,7 @@ def test_ormrz_unmrz():
     is encoded in the rectangular part of A which is obtained from ?TZRZF. Q
     size is inferred by m, n, side keywords.
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     qm, qn, cn = 10, 15, 15
     for ind, dtype in enumerate(DTYPES):
         tzrzf, tzrzf_lw = get_lapack_funcs(('tzrzf', 'tzrzf_lwork'),
@@ -1160,13 +1206,13 @@ def test_ormrz_unmrz():
         lwork_rz = _compute_lwork(tzrzf_lw, qm, qn)
 
         if ind < 2:
-            A = triu(rand(qm, qn).astype(dtype))
-            C = rand(cn, cn).astype(dtype)
+            A = triu(rng.random((qm, qn)).astype(dtype))
+            C = rng.random((cn, cn)).astype(dtype)
             orun_mrz, orun_mrz_lw = get_lapack_funcs(('ormrz', 'ormrz_lwork'),
                                                      dtype=dtype)
         else:
-            A = triu((rand(qm, qn) + rand(qm, qn)*1j).astype(dtype))
-            C = (rand(cn, cn) + rand(cn, cn)*1j).astype(dtype)
+            A = triu((rng.random((qm, qn)) + rng.random((qm, qn))*1j).astype(dtype))
+            C = (rng.random((cn, cn)) + rng.random((cn, cn))*1j).astype(dtype)
             orun_mrz, orun_mrz_lw = get_lapack_funcs(('unmrz', 'unmrz_lwork'),
                                                      dtype=dtype)
 
@@ -1205,17 +1251,17 @@ def test_ormrz_unmrz():
 
 def test_tfttr_trttf():
     """
-    Test conversion routines between the Rectengular Full Packed (RFP) format
+    Test conversion routines between the Rectangular Full Packed (RFP) format
     and Standard Triangular Array (TR)
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 20
         if ind > 1:
-            A_full = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A_full = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
             transr = 'C'
         else:
-            A_full = (rand(n, n)).astype(dtype)
+            A_full = (rng.rand(n, n)).astype(dtype)
             transr = 'T'
 
         trttf, tfttr = get_lapack_funcs(('trttf', 'tfttr'), dtype=dtype)
@@ -1263,16 +1309,16 @@ def test_tfttr_trttf():
 
 def test_tpttr_trttp():
     """
-    Test conversion routines between the Rectengular Full Packed (RFP) format
+    Test conversion routines between the Rectangular Full Packed (RFP) format
     and Standard Triangular Array (TR)
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 20
         if ind > 1:
-            A_full = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A_full = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
         else:
-            A_full = (rand(n, n)).astype(dtype)
+            A_full = (rng.rand(n, n)).astype(dtype)
 
         trttp, tpttr = get_lapack_funcs(('trttp', 'tpttr'), dtype=dtype)
         A_tp_U, info = trttp(A_full)
@@ -1304,17 +1350,17 @@ def test_tpttr_trttp():
 
 def test_pftrf():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 20
         if ind > 1:
-            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
             A = A + A.conj().T + n*eye(n)
         else:
-            A = (rand(n, n)).astype(dtype)
+            A = (rng.rand(n, n)).astype(dtype)
             A = A + A.T + n*eye(n)
 
         pftrf, trttf, tfttr = get_lapack_funcs(('pftrf', 'trttf', 'tfttr'),
@@ -1331,17 +1377,17 @@ def test_pftrf():
 
 def test_pftri():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array to find its inverse
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 20
         if ind > 1:
-            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
             A = A + A.conj().T + n*eye(n)
         else:
-            A = (rand(n, n)).astype(dtype)
+            A = (rng.rand(n, n)).astype(dtype)
             A = A + A.T + n*eye(n)
 
         pftri, pftrf, trttf, tfttr = get_lapack_funcs(('pftri',
@@ -1363,17 +1409,17 @@ def test_pftri():
 
 def test_pftrs():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array and solve a linear system
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 20
         if ind > 1:
-            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
             A = A + A.conj().T + n*eye(n)
         else:
-            A = (rand(n, n)).astype(dtype)
+            A = (rng.rand(n, n)).astype(dtype)
             A = A + A.T + n*eye(n)
 
         B = ones((n, 3), dtype=dtype)
@@ -1402,14 +1448,14 @@ def test_sfrk_hfrk():
     """
     Test for performing a symmetric rank-k operation for matrix in RFP format.
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 20
         if ind > 1:
-            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
             A = A + A.conj().T + n*eye(n)
         else:
-            A = (rand(n, n)).astype(dtype)
+            A = (rng.rand(n, n)).astype(dtype)
             A = A + A.T + n*eye(n)
 
         prefix = 's'if ind < 2 else 'h'
@@ -1417,7 +1463,7 @@ def test_sfrk_hfrk():
                                                dtype=dtype)
 
         Afp, _ = trttf(A)
-        C = np.random.rand(n, 2).astype(dtype)
+        C = rng.rand(n, 2).astype(dtype)
         Afp_out = shfrk(n, 2, -1, C, 2, Afp)
         A_out, _ = tfttr(n, Afp_out)
         assert_array_almost_equal(A_out, triu(-C.dot(C.conj().T) + 2*A),
@@ -1429,17 +1475,17 @@ def test_syconv():
     Test for going back and forth between the returned format of he/sytrf to
     L and D factors/permutations.
     """
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 10
 
         if ind > 1:
-            A = (randint(-30, 30, (n, n)) +
-                 randint(-30, 30, (n, n))*1j).astype(dtype)
+            A = (rng.randint(-30, 30, (n, n)) +
+                 rng.randint(-30, 30, (n, n))*1j).astype(dtype)
 
             A = A + A.conj().T
         else:
-            A = randint(-30, 30, (n, n)).astype(dtype)
+            A = rng.randint(-30, 30, (n, n)).astype(dtype)
             A = A + A.T + n*eye(n)
 
         tol = 100*np.spacing(dtype(1.0).real)
@@ -1466,14 +1512,14 @@ class TestBlockedQR:
     """
 
     def test_geqrt_gemqrt(self):
-        seed(1234)
+        rng = np.random.RandomState(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 20
 
             if ind > 1:
-                A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                A = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
             else:
-                A = (rand(n, n)).astype(dtype)
+                A = (rng.rand(n, n)).astype(dtype)
 
             tol = 100*np.spacing(dtype(1.0).real)
             geqrt, gemqrt = get_lapack_funcs(('geqrt', 'gemqrt'), dtype=dtype)
@@ -1494,10 +1540,10 @@ class TestBlockedQR:
             assert_allclose(Q @ R, A, atol=tol, rtol=0.)
 
             if ind > 1:
-                C = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                C = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
                 transpose = 'C'
             else:
-                C = (rand(n, n)).astype(dtype)
+                C = (rng.rand(n, n)).astype(dtype)
                 transpose = 'T'
 
             for side in ('L', 'R'):
@@ -1528,16 +1574,16 @@ class TestBlockedQR:
             assert_raises(Exception, gemqrt, a, t, C, trans='A')
 
     def test_tpqrt_tpmqrt(self):
-        seed(1234)
+        rng = np.random.RandomState(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 20
 
             if ind > 1:
-                A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
-                B = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                A = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
+                B = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
             else:
-                A = (rand(n, n)).astype(dtype)
-                B = (rand(n, n)).astype(dtype)
+                A = (rng.rand(n, n)).astype(dtype)
+                B = (rng.rand(n, n)).astype(dtype)
 
             tol = 100*np.spacing(dtype(1.0).real)
             tpqrt, tpmqrt = get_lapack_funcs(('tpqrt', 'tpmqrt'), dtype=dtype)
@@ -1570,12 +1616,12 @@ class TestBlockedQR:
                                 atol=tol, rtol=0.)
 
                 if ind > 1:
-                    C = (rand(n, n) + rand(n, n)*1j).astype(dtype)
-                    D = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                    C = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
+                    D = (rng.rand(n, n) + rng.rand(n, n)*1j).astype(dtype)
                     transpose = 'C'
                 else:
-                    C = (rand(n, n)).astype(dtype)
-                    D = (rand(n, n)).astype(dtype)
+                    C = (rng.rand(n, n)).astype(dtype)
+                    D = (rng.rand(n, n)).astype(dtype)
                     transpose = 'T'
 
                 for side in ('L', 'R'):
@@ -1612,7 +1658,7 @@ class TestBlockedQR:
 
 
 def test_pstrf():
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         # DTYPES = <s, d, c, z> pstrf
         n = 10
@@ -1621,10 +1667,10 @@ def test_pstrf():
 
         # Create positive semidefinite A
         if ind > 1:
-            A = rand(n, n-r).astype(dtype) + 1j * rand(n, n-r).astype(dtype)
+            A = rng.rand(n, n-r).astype(dtype) + 1j * rng.rand(n, n-r).astype(dtype)
             A = A @ A.conj().T
         else:
-            A = rand(n, n-r).astype(dtype)
+            A = rng.rand(n, n-r).astype(dtype)
             A = A @ A.T
 
         c, piv, r_c, info = pstrf(A)
@@ -1652,7 +1698,7 @@ def test_pstrf():
 
 
 def test_pstf2():
-    seed(1234)
+    rng = np.random.RandomState(1234)
     for ind, dtype in enumerate(DTYPES):
         # DTYPES = <s, d, c, z> pstf2
         n = 10
@@ -1661,10 +1707,10 @@ def test_pstf2():
 
         # Create positive semidefinite A
         if ind > 1:
-            A = rand(n, n-r).astype(dtype) + 1j * rand(n, n-r).astype(dtype)
+            A = rng.rand(n, n-r).astype(dtype) + 1j * rng.rand(n, n-r).astype(dtype)
             A = A @ A.conj().T
         else:
-            A = rand(n, n-r).astype(dtype)
+            A = rng.rand(n, n-r).astype(dtype)
             A = A @ A.T
 
         c, piv, r_c, info = pstf2(A)
@@ -1772,19 +1818,19 @@ def test_heequb():
 
 
 def test_getc2_gesc2():
-    np.random.seed(42)
+    rng = np.random.RandomState(42)
     n = 10
-    desired_real = np.random.rand(n)
-    desired_cplx = np.random.rand(n) + np.random.rand(n)*1j
+    desired_real = rng.rand(n)
+    desired_cplx = rng.rand(n) + rng.rand(n)*1j
 
     for ind, dtype in enumerate(DTYPES):
         if ind < 2:
-            A = np.random.rand(n, n)
+            A = rng.rand(n, n)
             A = A.astype(dtype)
             b = A @ desired_real
             b = b.astype(dtype)
         else:
-            A = np.random.rand(n, n) + np.random.rand(n, n)*1j
+            A = rng.rand(n, n) + rng.rand(n, n)*1j
             A = A.astype(dtype)
             b = A @ desired_cplx
             b = b.astype(dtype)
@@ -1835,12 +1881,12 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobp, jobt=0):
     jobt is, as of v3.9.0, still experimental and removed to cut down number of
     test cases. However keyword itself is tested externally.
     """
-    seed(42)
+    rng = np.random.RandomState(42)
 
     # Define some constants for later use:
     m, n = size
     atol = 100 * np.finfo(dtype).eps
-    A = generate_random_dtype_array(size, dtype)
+    A = generate_random_dtype_array(size, dtype, rng)
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
 
     # Set up checks for invalid job? combinations
@@ -2003,19 +2049,19 @@ def test_gttrf_gttrs(dtype):
     # incompatible matrix shapes raise an error, and singular matrices return
     # non zero info.
 
-    seed(42)
+    rng = np.random.RandomState(42)
     n = 10
     atol = 100 * np.finfo(dtype).eps
 
     # create the matrix in accordance with the data type
-    du = generate_random_dtype_array((n-1,), dtype=dtype)
-    d = generate_random_dtype_array((n,), dtype=dtype)
-    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
+    d = generate_random_dtype_array((n,), dtype=dtype, rng=rng)
+    dl = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
 
     diag_cpy = [dl.copy(), d.copy(), du.copy()]
 
     A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
-    x = np.random.rand(n)
+    x = rng.random(n)
     b = A @ x
 
     gttrf, gttrs = get_lapack_funcs(('gttrf', 'gttrs'), dtype=dtype)
@@ -2076,7 +2122,7 @@ def test_gttrf_gttrs(dtype):
         gttrf(dl, d, du[:-1])
 
     # test that matrix of size n=2 raises exception
-    with assert_raises(Exception):
+    with assert_raises(ValueError):
         gttrf(dl[0], d[:1], du[0])
 
     # test that singular (row of all zeroes) matrix fails via info
@@ -2151,6 +2197,34 @@ def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['1', 'I', 'O'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_gtcon(dtype, norm, n):
+    rng = np.random.default_rng(23498324)
+
+    d = rng.random(n) + rng.random(n)*1j
+    dl = rng.random(n - 1) + rng.random(n - 1)*1j
+    du = rng.random(n - 1) + rng.random(n - 1)*1j
+    A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
+    if np.issubdtype(dtype, np.floating):
+        A, d, dl, du = A.real, d.real, dl.real, du.real
+    A, d, dl, du = A.astype(dtype), d.astype(dtype), dl.astype(dtype), du.astype(dtype)
+
+    anorm = np.linalg.norm(A, ord=np.inf if norm == 'I' else 1)
+
+    gttrf, gtcon = get_lapack_funcs(('gttrf', 'gtcon'), (A,))
+    dl, d, du, du2, ipiv, info = gttrf(dl, d, du)
+    res, _ = gtcon(dl, d, du, du2, ipiv, anorm, norm=norm)
+
+    gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+    lu, ipvt, info = getrf(A)
+    ref, _ = gecon(lu, anorm, norm=norm)
+
+    rtol = np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('shape', [(3, 7), (7, 3), (2**18, 2**18)])
 def test_geqrfp_lwork(dtype, shape):
     geqrfp_lwork = get_lapack_funcs(('geqrfp_lwork'), dtype=dtype)
@@ -2162,7 +2236,7 @@ def test_geqrfp_lwork(dtype, shape):
 @pytest.mark.parametrize("ddtype,dtype",
                          zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
 def test_pttrf_pttrs(ddtype, dtype):
-    seed(42)
+    rng = np.random.RandomState(42)
     # set test tolerance appropriate for dtype
     atol = 100*np.finfo(dtype).eps
     # n is the length diagonal of A
@@ -2171,9 +2245,9 @@ def test_pttrf_pttrs(ddtype, dtype):
 
     # diagonal d should always be real.
     # add 4 to d so it will be dominant for all dtypes
-    d = generate_random_dtype_array((n,), ddtype) + 4
+    d = generate_random_dtype_array((n,), ddtype, rng) + 4
     # diagonal e may be real or complex.
-    e = generate_random_dtype_array((n-1,), dtype)
+    e = generate_random_dtype_array((n-1,), dtype, rng)
 
     # assemble diagonals together into matrix
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
@@ -2195,7 +2269,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     assert_allclose(A, L@D@L.conjugate().T, atol=atol)
 
     # generate random solution x
-    x = generate_random_dtype_array((n,), dtype)
+    x = generate_random_dtype_array((n,), dtype, rng)
     # determine accompanying b to get soln x
     b = A@x
 
@@ -2212,9 +2286,10 @@ def test_pttrf_pttrs(ddtype, dtype):
                          zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
 def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
     n = 10
+    rng = np.random.RandomState(1234)
     pttrf = get_lapack_funcs('pttrf', dtype=dtype)
-    d = generate_random_dtype_array((n,), ddtype) + 2
-    e = generate_random_dtype_array((n-1,), dtype)
+    d = generate_random_dtype_array((n,), ddtype, rng) + 2
+    e = generate_random_dtype_array((n-1,), dtype, rng)
     # test that ValueError is raised with incompatible matrix shapes
     assert_raises(ValueError, pttrf, d[:-1], e)
     assert_raises(ValueError, pttrf, d, e[:-1])
@@ -2224,9 +2299,10 @@ def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
                          zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
 def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     n = 10
+    rng = np.random.RandomState(42)
     pttrf = get_lapack_funcs('pttrf', dtype=dtype)
-    d = generate_random_dtype_array((n,), ddtype) + 2
-    e = generate_random_dtype_array((n-1,), dtype)
+    d = generate_random_dtype_array((n,), ddtype, rng) + 2
+    e = generate_random_dtype_array((n-1,), dtype, rng)
     # test that singular (row of all zeroes) matrix fails via info
     d[0] = 0
     e[0] = 0
@@ -2235,7 +2311,7 @@ def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
                  f"?pttrf: _d[info-1] is {_d[info - 1]}, not the illegal value :0.")
 
     # test with non-spd matrix
-    d = generate_random_dtype_array((n,), ddtype)
+    d = generate_random_dtype_array((n,), ddtype, rng)
     _d, _e, info = pttrf(d, e)
     assert_(info != 0, "?pttrf should fail with non-spd matrix, but didn't")
 
@@ -2285,16 +2361,17 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
 def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
     # used by ?pteqr tests to build parameters
     # returns tuple of (d, e, A, z)
+    rng = np.random.RandomState(42)
     if compute_z == 1:
         # build Hermitian A from Q**T * tri * Q = A by creating Q and tri
-        A_eig = generate_random_dtype_array((n, n), dtype)
+        A_eig = generate_random_dtype_array((n, n), dtype, rng)
         A_eig = A_eig + np.diag(np.zeros(n) + 4*n)
         A_eig = (A_eig + A_eig.conj().T) / 2
         # obtain right eigenvectors (orthogonal)
         vr = eigh(A_eig)[1]
         # create tridiagonal matrix
-        d = generate_random_dtype_array((n,), realtype) + 4
-        e = generate_random_dtype_array((n-1,), realtype)
+        d = generate_random_dtype_array((n,), realtype, rng) + 4
+        e = generate_random_dtype_array((n-1,), realtype, rng)
         tri = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
         # Build A using these factors that sytrd would: (Q**T * tri * Q = A)
         A = vr @ tri @ vr.conj().T
@@ -2303,8 +2380,8 @@ def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
 
     else:
         # d and e are always real per lapack docs.
-        d = generate_random_dtype_array((n,), realtype)
-        e = generate_random_dtype_array((n-1,), realtype)
+        d = generate_random_dtype_array((n,), realtype, rng)
+        e = generate_random_dtype_array((n-1,), realtype, rng)
 
         # make SPD
         d = d + 4
@@ -2323,7 +2400,6 @@ def test_pteqr(dtype, realtype, compute_z):
     correct eigenvalues with scipy.linalg.eig. With applicable compute_z=2 it
     tests that z can reform A.
     '''
-    seed(42)
     atol = 1000*np.finfo(dtype).eps
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
@@ -2350,7 +2426,6 @@ def test_pteqr(dtype, realtype, compute_z):
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 @pytest.mark.parametrize("compute_z", range(3))
 def test_pteqr_error_non_spd(dtype, realtype, compute_z):
-    seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
     n = 10
@@ -2365,7 +2440,6 @@ def test_pteqr_error_non_spd(dtype, realtype, compute_z):
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 @pytest.mark.parametrize("compute_z", range(3))
 def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
-    seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
@@ -2380,7 +2454,6 @@ def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 @pytest.mark.parametrize("compute_z", range(3))
 def test_pteqr_error_singular(dtype, realtype, compute_z):
-    seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
@@ -2427,7 +2500,7 @@ def test_geqrfp(dtype, matrix_size):
     # negative diagonals, and for error messaging.
 
     # set test tolerance appropriate for dtype
-    np.random.seed(42)
+    rng = np.random.RandomState(42)
     rtol = 250*np.finfo(dtype).eps
     atol = 100*np.finfo(dtype).eps
     # get appropriate ?geqrfp for dtype
@@ -2437,7 +2510,7 @@ def test_geqrfp(dtype, matrix_size):
     m, n = matrix_size
 
     # create random matrix of dimensions m x n
-    A = generate_random_dtype_array((m, n), dtype=dtype)
+    A = generate_random_dtype_array((m, n), dtype=dtype, rng=rng)
     # create qr matrix using geqrfp
     qr_A, tau, info = geqrfp(A)
 
@@ -2473,7 +2546,7 @@ def test_geqrfp(dtype, matrix_size):
 
     # test that this routine gives r diagonals that are positive for a
     # matrix that returns negatives in the diagonal with scipy.linalg.rq
-    A_negative = generate_random_dtype_array((n, m), dtype=dtype) * -1
+    A_negative = generate_random_dtype_array((n, m), dtype=dtype, rng=rng) * -1
     r_rq_neg, q_rq_neg = qr(A_negative)
     rq_A_neg, tau_neg, info_neg = geqrfp(A_negative)
     # assert that any of the entries on the diagonal from linalg.qr
@@ -2521,8 +2594,8 @@ def test_generalized_eigh_lworks(pfx, driver):
 @pytest.mark.parametrize("dtype_", DTYPES)
 @pytest.mark.parametrize("m", [1, 10, 100, 1000])
 def test_orcsd_uncsd_lwork(dtype_, m):
-    seed(1234)
-    p = randint(0, m)
+    rng = np.random.default_rng(1234)
+    p = rng.integers(0, m)
     q = m - p
     pfx = 'or' if dtype_ in REAL_DTYPES else 'un'
     dlw = pfx + 'csd_lwork'
@@ -2590,19 +2663,19 @@ def test_gtsvx(dtype, trans_bool, fact):
     singular factorizations. It parametrizes DTYPES and the 'fact' value along
     with the fact related inputs.
     """
-    seed(42)
+    rng = np.random.RandomState(42)
     # set test tolerance appropriate for dtype
     atol = 100 * np.finfo(dtype).eps
     # obtain routine
     gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
     # Generate random tridiagonal matrix A
     n = 10
-    dl = generate_random_dtype_array((n-1,), dtype=dtype)
-    d = generate_random_dtype_array((n,), dtype=dtype)
-    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    dl = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
+    d = generate_random_dtype_array((n,), dtype=dtype, rng=rng)
+    du = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
     A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
     # generate random solution x
-    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    x = generate_random_dtype_array((n, 2), dtype=dtype, rng=rng)
     # create b from x for equation Ax=b
     trans = ("T" if dtype in REAL_DTYPES else "C") if trans_bool else "N"
     b = (A.conj().T if trans_bool else A) @ x
@@ -2644,17 +2717,17 @@ def test_gtsvx(dtype, trans_bool, fact):
 @pytest.mark.parametrize("trans_bool", [0, 1])
 @pytest.mark.parametrize("fact", ["F", "N"])
 def test_gtsvx_error_singular(dtype, trans_bool, fact):
-    seed(42)
+    rng = np.random.RandomState(42)
     # obtain routine
     gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
     # Generate random tridiagonal matrix A
     n = 10
-    dl = generate_random_dtype_array((n-1,), dtype=dtype)
-    d = generate_random_dtype_array((n,), dtype=dtype)
-    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    dl = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
+    d = generate_random_dtype_array((n,), dtype=dtype, rng=rng)
+    du = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
     A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
     # generate random solution x
-    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    x = generate_random_dtype_array((n, 2), dtype=dtype, rng=rng)
     # create b from x for equation Ax=b
     trans = "T" if dtype in REAL_DTYPES else "C"
     b = (A.conj().T if trans_bool else A) @ x
@@ -2695,17 +2768,17 @@ def test_gtsvx_error_singular(dtype, trans_bool, fact):
 @pytest.mark.parametrize("trans_bool", [False, True])
 @pytest.mark.parametrize("fact", ["F", "N"])
 def test_gtsvx_error_incompatible_size(dtype, trans_bool, fact):
-    seed(42)
+    rng = np.random.RandomState(42)
     # obtain routine
     gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
     # Generate random tridiagonal matrix A
     n = 10
-    dl = generate_random_dtype_array((n-1,), dtype=dtype)
-    d = generate_random_dtype_array((n,), dtype=dtype)
-    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    dl = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
+    d = generate_random_dtype_array((n,), dtype=dtype, rng=rng)
+    du = generate_random_dtype_array((n-1,), dtype=dtype, rng=rng)
     A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
     # generate random solution x
-    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    x = generate_random_dtype_array((n, 2), dtype=dtype, rng=rng)
     # create b from x for equation Ax=b
     trans = "T" if dtype in REAL_DTYPES else "C"
     b = (A.conj().T if trans_bool else A) @ x
@@ -2787,16 +2860,16 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     input parameters, fact options, incompatible matrix shapes raise an error,
     and singular matrices return info of illegal value.
     '''
-    seed(42)
+    rng = np.random.RandomState(42)
     # set test tolerance appropriate for dtype
     atol = 100 * np.finfo(dtype).eps
     ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
     n = 5
     # create diagonals according to size and dtype
-    d = generate_random_dtype_array((n,), realtype) + 4
-    e = generate_random_dtype_array((n-1,), dtype)
+    d = generate_random_dtype_array((n,), realtype, rng) + 4
+    e = generate_random_dtype_array((n-1,), dtype, rng)
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
-    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype, rng=rng)
     b = A @ x_soln
 
     # use lambda to determine what df, ef are
@@ -2840,14 +2913,14 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
                                                          dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
-    seed(42)
+    rng = np.random.RandomState(42)
     ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
     n = 5
     # create diagonals according to size and dtype
-    d = generate_random_dtype_array((n,), realtype) + 4
-    e = generate_random_dtype_array((n-1,), dtype)
+    d = generate_random_dtype_array((n,), realtype, rng) + 4
+    e = generate_random_dtype_array((n-1,), dtype, rng)
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
-    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype, rng=rng)
     b = A @ x_soln
 
     # use lambda to determine what df, ef are
@@ -2867,14 +2940,14 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
                                                          dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
-    seed(42)
+    rng = np.random.RandomState(42)
     ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
     n = 5
     # create diagonals according to size and dtype
-    d = generate_random_dtype_array((n,), realtype) + 4
-    e = generate_random_dtype_array((n-1,), dtype)
+    d = generate_random_dtype_array((n,), realtype, rng) + 4
+    e = generate_random_dtype_array((n-1,), dtype, rng)
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
-    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype, rng=rng)
     b = A @ x_soln
 
     # use lambda to determine what df, ef are
@@ -2890,7 +2963,7 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
         assert info > 0 and info <= n
 
         # non SPD matrix
-        d = generate_random_dtype_array((n,), realtype)
+        d = generate_random_dtype_array((n,), realtype, rng)
         df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b)
         assert info > 0 and info <= n
     else:
@@ -2922,7 +2995,7 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
                                      [1 - 1j, 2 + 1j]]))])
 def test_ptsvx_NAG(d, e, b, x):
     # test to assure that wrapper is consistent with NAG Manual Mark 26
-    # example problemss: f07jbf, f07jpf
+    # example problems: f07jbf, f07jpf
     # (Links expire, so please search for "NAG Library Manual Mark 26" online)
 
     # obtain routine with correct type based on e.dtype
@@ -2936,12 +3009,12 @@ def test_ptsvx_NAG(d, e, b, x):
 @pytest.mark.parametrize('lower', [False, True])
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
-    seed(1234)
+    rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
     # Manual conversion to/from packed format is feasible here.
     n, nrhs = 10, 4
-    a = generate_random_dtype_array([n, n], dtype=dtype)
-    b = generate_random_dtype_array([n, nrhs], dtype=dtype)
+    a = generate_random_dtype_array([n, n], dtype=dtype, rng=rng)
+    b = generate_random_dtype_array([n, nrhs], dtype=dtype, rng=rng)
 
     a = a.conj().T + a + np.eye(n, dtype=dtype) * dtype(5.)
     if lower:
@@ -2983,11 +3056,11 @@ def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gees_trexc(dtype):
-    seed(1234)
+    rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
 
     n = 10
-    a = generate_random_dtype_array([n, n], dtype=dtype)
+    a = generate_random_dtype_array([n, n], dtype=dtype, rng=rng)
 
     gees, trexc = get_lapack_funcs(('gees', 'trexc'), dtype=dtype)
 
@@ -3060,12 +3133,12 @@ def test_trexc_NAG(t, ifst, ilst, expect):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
-    seed(1234)
+    rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
 
     n = 10
-    a = generate_random_dtype_array([n, n], dtype=dtype)
-    b = generate_random_dtype_array([n, n], dtype=dtype)
+    a = generate_random_dtype_array([n, n], dtype=dtype, rng=rng)
+    b = generate_random_dtype_array([n, n], dtype=dtype, rng=rng)
 
     gges, tgexc = get_lapack_funcs(('gges', 'tgexc'), dtype=dtype)
 
@@ -3108,11 +3181,11 @@ def test_gges_tgexc(dtype):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gees_trsen(dtype):
-    seed(1234)
+    rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
 
     n = 10
-    a = generate_random_dtype_array([n, n], dtype=dtype)
+    a = generate_random_dtype_array([n, n], dtype=dtype, rng=rng)
 
     gees, trsen, trsen_lwork = get_lapack_funcs(
         ('gees', 'trsen', 'trsen_lwork'), dtype=dtype)
@@ -3229,12 +3302,12 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
-    seed(1234)
+    rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
 
     n = 10
-    a = generate_random_dtype_array([n, n], dtype=dtype)
-    b = generate_random_dtype_array([n, n], dtype=dtype)
+    a = generate_random_dtype_array([n, n], dtype=dtype, rng=rng)
+    b = generate_random_dtype_array([n, n], dtype=dtype, rng=rng)
 
     gges, tgsen, tgsen_lwork = get_lapack_funcs(
         ('gges', 'tgsen', 'tgsen_lwork'), dtype=dtype)
@@ -3385,3 +3458,159 @@ def test_tgsyl(dtype, trans, ijob):
                         err_msg='lhs1 and rhs1 do not match')
         assert_allclose(lhs2, rhs2, atol=atol, rtol=0.,
                         err_msg='lhs2 and rhs2 do not match')
+
+
+@pytest.mark.parametrize('mtype', ['sy', 'he'])  # matrix type
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('lower', (0, 1))
+def test_sy_hetrs(mtype, dtype, lower):
+    if mtype == 'he' and dtype in REAL_DTYPES:
+        pytest.skip("hetrs not for real dtypes.")
+    rng = np.random.default_rng(1723059677121834)
+    n, nrhs = 20, 5
+    if dtype in COMPLEX_DTYPES:
+        A = (rng.uniform(size=(n, n)) + rng.uniform(size=(n, n))*1j).astype(dtype)
+    else:
+        A = rng.uniform(size=(n, n)).astype(dtype)
+
+    A = A + A.T if mtype == 'sy' else A + A.conj().T
+    b = rng.uniform(size=(n, nrhs)).astype(dtype)
+    names = f'{mtype}trf', f'{mtype}trf_lwork', f'{mtype}trs'
+    trf, trf_lwork, trs = get_lapack_funcs(names, dtype=dtype)
+    lwork = trf_lwork(n, lower=lower)
+    ldu, ipiv, info = trf(A, lwork=lwork, lower=lower)
+    assert info == 0
+    x, info = trs(a=ldu, ipiv=ipiv, b=b, lower=lower)
+    assert info == 0
+    eps = np.finfo(dtype).eps
+    assert_allclose(A@x, b, atol=100*n*eps)
+
+
+@pytest.mark.parametrize('mtype', ['sy', 'he'])  # matrix type
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('lower', (0, 1))
+def test_sy_he_tri(dtype, lower, mtype):
+    if mtype == 'he' and dtype in REAL_DTYPES:
+        pytest.skip("hetri not for real dtypes.")
+    if sysconfig.get_platform() == 'win-arm64' and dtype in COMPLEX_DTYPES:
+        pytest.skip("Test segfaulting on win-arm64 in CI, see gh-23133")
+
+    rng = np.random.default_rng(1723059677121834)
+    n = 20
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A = A + A.T if mtype == 'sy' else A + A.conj().T
+    names = f'{mtype}trf', f'{mtype}tri'
+    trf, tri = get_lapack_funcs(names, dtype=dtype)
+    ldu, ipiv, info = trf(A, lower=lower)
+    assert info == 0
+    A_inv, info = tri(a=ldu, ipiv=ipiv, lower=lower)
+    assert info == 0
+    eps = np.finfo(dtype).eps
+    ref = np.linalg.inv(A)
+    if lower:
+        assert_allclose(np.tril(A_inv), np.tril(ref), atol=100*n*eps)
+    else:
+        assert_allclose(np.triu(A_inv), np.triu(ref), atol=100*n*eps)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('uplo, m, n', [('U', 5, 10), ('U', 10, 10),
+                                        ('L', 10, 5), ('L', 10, 10)])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_lantr(norm, uplo, m, n, diag, dtype):
+    rng = np.random.default_rng(98426598246982456)
+    A = rng.random(size=(m, n)).astype(dtype)
+    lantr, lange = get_lapack_funcs(('lantr', 'lange'), (A,))
+    res = lantr(norm, A, uplo=uplo, diag=diag)
+
+    # now modify the matrix according to assumptions made by `lantr`
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        i = np.arange(min(m, n))
+        A[i, i] = 1
+    ref = lange(norm, A)
+
+    assert_allclose(res, ref, rtol=2e-6)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['1', 'I', 'O'])
+def test_gbcon(dtype, norm):
+    rng = np.random.default_rng(17273783424)
+
+    # A is of shape n x n with ku/kl super/sub-diagonals
+    n, ku, kl = 10, 2, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    # make the condition numbers more interesting
+    offset = rng.permuted(np.logspace(0, rng.integers(0, 10), n))
+    A += offset
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, ku + 1)] = 0
+    A[np.tril_indices(n, -kl - 1)] = 0
+
+    # construct banded form
+    tmp = _to_banded(kl, ku, A)
+    # add rows required by ?gbtrf
+    LDAB = 2*kl + ku + 1
+    ab = np.zeros((LDAB, n), dtype=dtype)
+    ab[kl:, :] = tmp
+
+    anorm = np.linalg.norm(A, ord=np.inf if norm == 'I' else 1)
+    gbcon, gbtrf = get_lapack_funcs(("gbcon", "gbtrf"), (ab,))
+    lu_band, ipiv, _ = gbtrf(ab, kl, ku)
+    res = gbcon(norm=norm, kl=kl, ku=ku, ab=lu_band, ipiv=ipiv,
+                anorm=anorm)[0]
+
+    gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+    lu = getrf(A)[0]
+    ref = gecon(lu, anorm, norm=norm)[0]
+    # This is an estimate of reciprocal condition number; we just need order of
+    # magnitude.
+    assert_allclose(res, ref, rtol=1)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_langb(dtype, norm):
+    rng = np.random.default_rng(17273783424)
+
+    # A is of shape n x n with ku/kl super/sub-diagonals
+    n, ku, kl = 10, 2, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, ku + 1)] = 0
+    A[np.tril_indices(n, -kl - 1)] = 0
+    ab = _to_banded(kl, ku, A)
+
+    langb, lange = get_lapack_funcs(('langb', 'lange'), (A,))
+    ref = lange(norm, A)
+    res = langb(norm, kl, ku, ab)
+    assert_allclose(res, ref, rtol=2e-6)
+
+
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('compute_v', (0, 1))
+def test_stevd(dtype, compute_v):
+    rng = np.random.default_rng(266474747488348746)
+    n = 10
+    d = rng.random(n, dtype=dtype)
+    e = rng.random(n - 1, dtype=dtype)
+    A = np.diag(e, -1) + np.diag(d) + np.diag(e, 1)
+    ref = np.linalg.eigvalsh(A)
+
+    stevd = get_lapack_funcs('stevd')
+    U, V, info = stevd(d, e, compute_v=compute_v)
+    assert info == 0
+    assert_allclose(np.sort(U), np.sort(ref))
+    if compute_v:
+        eps = np.finfo(dtype).eps
+        assert_allclose(V @ np.diag(U) @ V.T, A, atol=eps**0.8)
+

@@ -7,8 +7,9 @@ from numpy import (atleast_1d, triu, shape, transpose, zeros, prod, greater,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
-from scipy._lib._util import _asarray_validated, _lazywhere, _contains_nan
+from scipy._lib._util import _asarray_validated, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
+import scipy._lib.array_api_extra as xpx
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
@@ -30,7 +31,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                   f"shape of the '{argname}' argument"
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
-                msg += " '%s'." % func_name
+                msg += f" '{func_name}'."
             else:
                 msg += "."
             msg += f'Shape should be {output_shape} but it is {shape(res)}.'
@@ -212,10 +213,10 @@ def _root_hybr(func, x0, args=(), jac=None,
     band : tuple
         If set to a two-sequence containing the number of sub- and
         super-diagonals within the band of the Jacobi matrix, the
-        Jacobi matrix is considered banded (only for ``fprime=None``).
+        Jacobi matrix is considered banded (only for ``jac=None``).
     eps : float
         A suitable step length for the forward-difference
-        approximation of the Jacobian (for ``fprime=None``). If
+        approximation of the Jacobian (for ``jac=None``). If
         `eps` is less than the machine precision, it is assumed
         that the relative errors in the functions are of the order of
         the machine precision.
@@ -260,15 +261,14 @@ def _root_hybr(func, x0, args=(), jac=None,
     errors = {0: "Improper input parameters were entered.",
               1: "The solution converged.",
               2: "The number of calls to function has "
-                  "reached maxfev = %d." % maxfev,
-              3: "xtol=%f is too small, no further improvement "
-                  "in the approximate\n  solution "
-                  "is possible." % xtol,
+                 f"reached maxfev = {maxfev}.",
+              3: f"xtol={xtol:f} is too small, no further improvement "
+                  "in the approximate\n solution is possible.",
               4: "The iteration is not making good progress, as measured "
-                  "by the \n  improvement from the last five "
+                  "by the \n improvement from the last five "
                   "Jacobian evaluations.",
               5: "The iteration is not making good progress, "
-                  "as measured by the \n  improvement from the last "
+                  "as measured by the \n improvement from the last "
                   "ten iterations.",
               'unknown': "An error occurred."}
 
@@ -451,27 +451,26 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
 
     errors = {0: ["Improper input parameters.", TypeError],
               1: ["Both actual and predicted relative reductions "
-                  "in the sum of squares\n  are at most %f" % ftol, None],
+                  f"in the sum of squares\n  are at most {ftol:f}", None],
               2: ["The relative error between two consecutive "
-                  "iterates is at most %f" % xtol, None],
+                  f"iterates is at most {xtol:f}", None],
               3: ["Both actual and predicted relative reductions in "
                   f"the sum of squares\n  are at most {ftol:f} and the "
                   "relative error between two consecutive "
                   f"iterates is at \n  most {xtol:f}", None],
               4: ["The cosine of the angle between func(x) and any "
-                  "column of the\n  Jacobian is at most %f in "
-                  "absolute value" % gtol, None],
+                  f"column of the\n  Jacobian is at most {gtol:f} in "
+                  "absolute value", None],
               5: ["Number of calls to function has reached "
-                  "maxfev = %d." % maxfev, ValueError],
-              6: ["ftol=%f is too small, no further reduction "
-                  "in the sum of squares\n  is possible." % ftol,
+                  f"maxfev = {maxfev}.", ValueError],
+              6: [f"ftol={ftol:f} is too small, no further reduction "
+                  "in the sum of squares\n  is possible.",
                   ValueError],
-              7: ["xtol=%f is too small, no further improvement in "
-                  "the approximate\n  solution is possible." % xtol,
+              7: [f"xtol={xtol:f} is too small, no further improvement in "
+                  "the approximate\n  solution is possible.",
                   ValueError],
-              8: ["gtol=%f is too small, func(x) is orthogonal to the "
-                  "columns of\n  the Jacobian to machine "
-                  "precision." % gtol, ValueError]}
+              8: [f"gtol={gtol:f} is too small, func(x) is orthogonal to the "
+                  "columns of\n  the Jacobian to machine precision.", ValueError]}
 
     # The FORTRAN return value (possible return values are >= 0 and <= 8)
     info = retval[-1]
@@ -486,7 +485,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
             # cov_x = inv(dot(transpose(R), R))
             # but the explicit dot product was not necessary and sometimes
             # the result was not symmetric positive definite. See gh-4555.
-            perm = retval[1]['ipvt'] - 1
+            perm = retval[1]['ipvt']
             n = len(perm)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             inv_triu = linalg.get_lapack_funcs('trtri', (r,))
@@ -620,15 +619,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
         depends on its number of dimensions:
 
-            - A scalar or 1-D `sigma` should contain values of standard deviations of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = sum((r / sigma) ** 2)``.
+        - A scalar or 1-D `sigma` should contain values of standard deviations of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = sum((r / sigma) ** 2)``.
 
-            - A 2-D `sigma` should contain the covariance matrix of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = r.T @ inv(sigma) @ r``.
+        - A 2-D `sigma` should contain the covariance matrix of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = r.T @ inv(sigma) @ r``.
 
-              .. versionadded:: 0.19
+          .. versionadded:: 0.19
 
         None (default) is equivalent of 1-D `sigma` filled with ones.
     absolute_sigma : bool, optional
@@ -653,13 +652,13 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
 
-            - Instance of `Bounds` class.
+        - Instance of `Bounds` class.
 
-            - 2-tuple of array_like: Each element of the tuple must be either
-              an array with the length equal to the number of parameters, or a
-              scalar (in which case the bound is taken to be the same for all
-              parameters). Use ``np.inf`` with an appropriate sign to disable
-              bounds on all or some parameters.
+        - 2-tuple of array_like: Each element of the tuple must be either
+          an array with the length equal to the number of parameters, or a
+          scalar (in which case the bound is taken to be the same for all
+          parameters). Use ``np.inf`` with an appropriate sign to disable
+          bounds on all or some parameters.
 
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization. See `least_squares` for more details.
@@ -679,7 +678,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
         .. versionadded:: 0.18
     full_output : boolean, optional
-        If True, this function returns additioal information: `infodict`,
+        If True, this function returns additional information: `infodict`,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
@@ -687,11 +686,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Defines how to handle when input contains nan.
         The following options are available (default is None):
 
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
-          * None: no special handling of NaNs is performed
-            (except what is done by check_finite); the behavior when NaNs
-            are present is implementation-dependent and may change.
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
+        * None: no special handling of NaNs is performed
+          (except what is done by check_finite); the behavior when NaNs
+          are present is implementation-dependent and may change.
 
         Note that if this value is specified explicitly (not None),
         `check_finite` will be set as False.
@@ -712,7 +711,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         deviation errors on the parameters, use
         ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
         `cov` and parameter error estimates is derived based on a linear
-        approximation to the model function around the optimum [1].
+        approximation to the model function around the optimum [1]_.
         When this approximation becomes inaccurate, `cov` may not provide an
         accurate measure of uncertainty.
 
@@ -801,11 +800,16 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     'dogbox' methods, the `x_scale` keyword argument can be used to scale
     the parameters.
 
+    `curve_fit` is for local optimization of parameters to minimize the sum of squares
+    of residuals. For global optimization, other choices of objective function, and
+    other advanced features, consider using SciPy's :ref:`tutorial_optimize_global`
+    tools or the `LMFIT <https://lmfit.github.io/lmfit-py/index.html>`_ package.
+
     References
     ----------
-    [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
-        regression in groundwater flow: Three case studies. Water Resources
-        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
+    .. [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
+           regression in groundwater flow: Three case studies. Water Resources
+           Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
 
     Examples
     --------
@@ -933,7 +937,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     else:
         ydata = np.asarray(ydata, float)
 
-    if isinstance(xdata, (list, tuple, np.ndarray)):
+    if isinstance(xdata, list | tuple | np.ndarray):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
         if check_finite:
@@ -948,14 +952,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     # the x-y data are already checked, and they don't contain nans.
     if not check_finite and nan_policy is not None:
         if nan_policy == "propagate":
-            raise ValueError("`nan_policy='propagate'` is not supported "
-                             "by this function.")
+            msg = "`nan_policy='propagate'` is not supported by this function."
+            raise ValueError(msg)
+        if nan_policy not in ("raise", "omit"):
+            # Override error message raised by _contains_nan
+            msg = "nan_policy must be one of {None, 'raise', 'omit'}"
+            raise ValueError(msg)
 
-        policies = [None, 'raise', 'omit']
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
-                                                   policies=policies)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
-                                                   policies=policies)
+        x_contains_nan = _contains_nan(xdata, nan_policy)
+        y_contains_nan = _contains_nan(ydata, nan_policy)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays
@@ -966,12 +971,21 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             xdata = xdata[..., ~has_nan]
             ydata = ydata[~has_nan]
 
+            # Also omit the corresponding entries from sigma
+            if sigma is not None:
+                sigma = np.asarray(sigma)
+                if sigma.ndim == 1:
+                    sigma = sigma[~has_nan]
+                elif sigma.ndim == 2:
+                    sigma = sigma[~has_nan, :]
+                    sigma = sigma[:, ~has_nan]
+
     # Determine type of sigma
     if sigma is not None:
         sigma = np.asarray(sigma)
 
         # if 1-D or a scalar, sigma are errors, define transform = 1/sigma
-        if sigma.size == 1 or sigma.shape == (ydata.size, ):
+        if sigma.size == 1 or sigma.shape == (ydata.size,):
             transform = 1.0 / sigma
         # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C
@@ -1106,14 +1120,14 @@ def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
         if use_accel:
             p2 = func(p1, *args)
             d = p2 - 2.0 * p1 + p0
-            p = _lazywhere(d != 0, (p0, p1, d), f=_del2, fillvalue=p2)
+            p = xpx.apply_where(d != 0, (p0, p1, d), _del2, fill_value=p2)
         else:
             p = p1
-        relerr = _lazywhere(p0 != 0, (p, p0), f=_relerr, fillvalue=p)
+        relerr = xpx.apply_where(p0 != 0, (p, p0), _relerr, fill_value=p)
         if np.all(np.abs(relerr) < xtol):
             return p
         p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    msg = f"Failed to converge after {maxiter} iterations, value is {p}"
     raise RuntimeError(msg)
 
 

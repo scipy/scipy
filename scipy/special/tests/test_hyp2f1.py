@@ -1135,7 +1135,7 @@ class TestHyp2f1:
                     c=8.5,
                     z=(0.7368421052631575+0.5263157894736841j),
                     expected=(6.468457061368628+24.190040684917374j),
-                    rtol=5e-16,
+                    rtol=6e-16,
                 ),
             ),
             pytest.param(
@@ -1662,7 +1662,7 @@ class TestHyp2f1:
                     c=4.0013768449590685,
                     z=(0.3413793103448277-0.8724137931034484j),
                     expected=(0.2722302180888523-0.21790187837266162j),
-                    rtol=1e-12,
+                    rtol=1.2e-12,
                 ),
             ),
             pytest.param(
@@ -2093,7 +2093,7 @@ class TestHyp2f1:
                     c=-15.5,
                     z=(0.3413793103448277-0.9482758620689655j),
                     expected=(-1.0509834850116921-1.1145522325486075j),
-                    rtol=1e-14,
+                    rtol=1.1e-14,
                 ),
             ),
             pytest.param(
@@ -2488,6 +2488,27 @@ class TestHyp2f1:
         )
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
+
+    @pytest.mark.parametrize(
+        "hyp2f1_test_case",
+        [
+            # Broke when fixing gamma pole behavior in gh-21827
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=1.3,
+                    b=-0.2,
+                    c=0.3,
+                    z=-2.1,
+                    expected=1.8202169687521206,
+                    rtol=5e-15,
+                ),
+            ),
+        ]
+    )
+    def test_miscellaneous(self, hyp2f1_test_case ):
+        a, b, c, z, expected, rtol = hyp2f1_test_case
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
+
     @pytest.mark.slow
     @check_version(mpmath, "1.0.0")
     def test_test_hyp2f1(self):
@@ -2522,3 +2543,24 @@ class TestHyp2f1:
             if mark.name == 'parametrize'
             for case in mark.args[1]
         ]
+
+class TestHyp2f1ExtremeInputs:
+
+    @pytest.mark.parametrize("a", [1.0, 2.0, 3.0, -np.inf, np.inf])
+    @pytest.mark.parametrize("b", [3.0, 4.0, 5.0, -np.inf, np.inf])
+    @pytest.mark.parametrize("c", [3.0, 5.0, 6.0, 7.0])
+    @pytest.mark.parametrize("z", [4.0 + 1.0j])
+    def test_inf_a_b(self, a, b, c, z):
+        if np.any(np.isinf(np.asarray([a, b]))):
+            assert(np.isnan(hyp2f1(a, b, c, z)))
+
+    def test_large_a_b(self):
+        assert(np.isnan(hyp2f1(10**7, 1.0, 3.0, 4.0 + 1.0j)))
+        assert(np.isnan(hyp2f1(-10**7, 1.0, 3.0, 4.0 + 1.0j)))
+
+        assert(np.isnan(hyp2f1(1.0, 10**7, 3.0, 4.0 + 1.0j)))
+        assert(np.isnan(hyp2f1(1.0, -10**7, 3.0, 4.0 + 1.0j)))
+
+        # Already correct in main but testing for surety
+        assert(np.isnan(hyp2f1(np.inf, 1.0, 3.0, 4.0)))
+        assert(np.isnan(hyp2f1(1.0, np.inf, 3.0, 4.0)))

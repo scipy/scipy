@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 """Generate requirements/*.txt files from pyproject.toml."""
 
-import sys
 from pathlib import Path
 
-try:  # standard module since Python 3.11
-    import tomllib as toml
-except ImportError:
-    try:  # available for older Python via pip
-        import tomli as toml
-    except ImportError:
-        sys.exit("Please install `tomli` first: `{mamba, pip} install tomli`")
+import tomllib as toml
 
 script_pth = Path(__file__)
 repo_dir = script_pth.parent.parent
@@ -29,13 +22,16 @@ def generate_requirement_file(name, req_list, *, extra_list=None):
     comment = "# scikit-umfpack  # circular dependency issues"
     req_list = [comment if x == "scikit-umfpack" else x for x in req_list]
 
-    # remove once gmpy2 supports Python 3.12
-    comment = "# gymp2  # does not yet support Python 3.12"
-    req_list = [comment if x == "gmpy2" else x for x in req_list]
-
     if name == "build":
         req_list = [x for x in req_list if "numpy" not in x]
         req_list.append("ninja")
+
+    if name == "test":
+        req_list = [
+            f'{x}; sys_platform != "win32" or platform_machine != "ARM64"' 
+            if x == "gmpy2" else x 
+            for x in req_list
+        ]
 
     if extra_list:
         req_list += extra_list

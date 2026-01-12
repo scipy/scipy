@@ -26,17 +26,31 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 
 #define CBLAS_INDEX size_t  /* this may vary between platforms */
 
+#ifdef ACCELERATE_NEW_LAPACK
+    #if __MAC_OS_X_VERSION_MAX_ALLOWED < 130300
+        #ifdef HAVE_BLAS_ILP64
+            #error "Accelerate ILP64 support is only available with macOS 13.3 SDK or later"
+        #endif
+    #else
+        /* New Accelerate suffix is always $NEWLAPACK or $NEWLAPACK$ILP64 (no underscore appended) */
+        #ifdef HAVE_BLAS_ILP64
+            #define BLAS_SYMBOL_SUFFIX $NEWLAPACK$ILP64
+        #else
+            #define BLAS_SYMBOL_SUFFIX $NEWLAPACK
+        #endif
+    #endif
+#endif
+
 #ifdef NO_APPEND_FORTRAN
 #define BLAS_FORTRAN_SUFFIX
 #else
 #define BLAS_FORTRAN_SUFFIX _
 #endif
 
-// New Accelerate suffix is always $NEWLAPACK (no underscore)
+/* Accelerate doesn't use an underscore as suffix, so fix that up here */
 #ifdef ACCELERATE_NEW_LAPACK
 #undef BLAS_FORTRAN_SUFFIX
 #define BLAS_FORTRAN_SUFFIX
-#define BLAS_SYMBOL_SUFFIX $NEWLAPACK
 #endif
 
 #ifndef BLAS_SYMBOL_PREFIX
@@ -50,7 +64,6 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #define BLAS_FUNC_CONCAT(name,prefix,suffix,suffix2) prefix ## name ## suffix ## suffix2
 #define BLAS_FUNC_EXPAND(name,prefix,suffix,suffix2) BLAS_FUNC_CONCAT(name,prefix,suffix,suffix2)
 
-#define CBLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,,BLAS_SYMBOL_SUFFIX)
 /*
  * Use either the OpenBLAS scheme with the `64_` suffix behind the Fortran
  * compiler symbol mangling, or the MKL scheme (and upcoming
@@ -61,6 +74,12 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #else
 #define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,BLAS_SYMBOL_SUFFIX,BLAS_FORTRAN_SUFFIX)
 #endif
+
+/*
+ * Note that CBLAS doesn't include Fortran compiler symbol mangling, so ends up
+ * being the same in both schemes
+ */
+#define CBLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,,BLAS_SYMBOL_SUFFIX)
 
 #ifdef HAVE_BLAS_ILP64
 #define CBLAS_INT npy_int64

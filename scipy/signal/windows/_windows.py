@@ -1,10 +1,16 @@
 """The suite of window functions."""
 
+import math
+import numbers
 import operator
 import warnings
+from scipy._lib import doccer
 
-import numpy as np
 from scipy import linalg, special, fft as sp_fft
+from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._lib._array_api import array_namespace, xp_device
+from scipy._lib._array_api import xp_capabilities
+from scipy._lib import array_api_extra as xpx
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -37,6 +43,29 @@ def _truncate(w, needed):
         return w
 
 
+def _namespace(xp):
+    """A shim for the `device` arg of `np.asarray(x, device=device)` and acos/arccos.
+
+    Will be able to replace with `np_compat if xp is None else xp` when we drop
+    support for numpy 1.x and cupy 13.x
+    """
+    return np_compat if xp is None else array_namespace(xp.empty(0))
+
+
+def _general_cosine_impl(M, a, xp, device, sym=True):
+    if _len_guards(M):
+        return xp.ones(M, dtype=xp.float64, device=device)
+    M, needs_trunc = _extend(M, sym)
+
+    fac = xp.linspace(-xp.pi, xp.pi, M, dtype=xp.float64, device=device)
+    w = xp.zeros(M, dtype=xp.float64, device=device)
+    for k in range(a.shape[0]):
+        w += a[k] * xp.cos(k * fac)
+
+    return _truncate(w, needs_trunc)
+
+
+@xp_capabilities()
 def general_cosine(M, a, sym=True):
     r"""
     Generic weighted sum of cosine terms window
@@ -113,19 +142,14 @@ def general_cosine(M, a, sym=True):
     >>> plt.axhline(-90.2, color='red')
     >>> plt.show()
     """
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    fac = np.linspace(-np.pi, np.pi, M)
-    w = np.zeros(M)
-    for k in range(len(a)):
-        w += a[k] * np.cos(k * fac)
-
-    return _truncate(w, needs_trunc)
+    xp = array_namespace(a)
+    a = xp.asarray(a)
+    device = xp_device(a)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
-def boxcar(M, sym=True):
+@xp_capabilities()
+def boxcar(M, sym=True, *, xp=None, device=None):
     """Return a boxcar or rectangular window.
 
     Also known as a rectangular window or Dirichlet window, this is equivalent
@@ -138,6 +162,7 @@ def boxcar(M, sym=True):
         is returned. An exception is thrown when it is negative.
     sym : bool, optional
         Whether the window is symmetric. (Has no effect for boxcar.)
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -170,16 +195,19 @@ def boxcar(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    w = np.ones(M, float)
+    w = xp.ones(M, dtype=xp.float64, device=device)
 
     return _truncate(w, needs_trunc)
 
 
-def triang(M, sym=True):
+@xp_capabilities()
+def triang(M, sym=True, *, xp=None, device=None):
     """Return a triangular window.
 
     Parameters
@@ -191,6 +219,7 @@ def triang(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -229,22 +258,25 @@ def triang(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(1, (M + 1) // 2 + 1)
+    n = xp.arange(1, (M + 1) // 2 + 1, dtype=xp.float64, device=device)
     if M % 2 == 0:
         w = (2 * n - 1.0) / M
-        w = np.r_[w, w[::-1]]
+        w = xp.concat([w, xp.flip(w)])
     else:
         w = 2 * n / (M + 1.0)
-        w = np.r_[w, w[-2::-1]]
+        w = xp.concat([w, xp.flip(w[:-1])])
 
     return _truncate(w, needs_trunc)
 
 
-def parzen(M, sym=True):
+@xp_capabilities()
+def parzen(M, sym=True, *, xp=None, device=None):
     """Return a Parzen window.
 
     Parameters
@@ -256,6 +288,7 @@ def parzen(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -294,22 +327,23 @@ def parzen(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0)
-    na = np.extract(n < -(M - 1) / 4.0, n)
-    nb = np.extract(abs(n) <= (M - 1) / 4.0, n)
-    wa = 2 * (1 - np.abs(na) / (M / 2.0)) ** 3.0
-    wb = (1 - 6 * (np.abs(nb) / (M / 2.0)) ** 2.0 +
-          6 * (np.abs(nb) / (M / 2.0)) ** 3.0)
-    w = np.r_[wa, wb, wa[::-1]]
-
+    n = xp.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0,
+                  dtype=xp.float64, device=device)
+    w = xp.where(abs(n) <= (M - 1) / 4.0,
+                 (1 - 6 * (abs(n) / (M / 2.0)) ** 2.0 +
+                  6 * (abs(n) / (M / 2.0)) ** 3.0),
+                 2 * (1 - abs(n) / (M / 2.0)) ** 3.0)
     return _truncate(w, needs_trunc)
 
 
-def bohman(M, sym=True):
+@xp_capabilities()
+def bohman(M, sym=True, *, xp=None, device=None):
     """Return a Bohman window.
 
     Parameters
@@ -321,6 +355,7 @@ def bohman(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -354,18 +389,22 @@ def bohman(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    fac = np.abs(np.linspace(-1, 1, M)[1:-1])
-    w = (1 - fac) * np.cos(np.pi * fac) + 1.0 / np.pi * np.sin(np.pi * fac)
-    w = np.r_[0, w, 0]
+    fac = abs(xp.linspace(-1, 1, M, dtype=xp.float64, device=device)[1:-1])
+    w = (1 - fac) * xp.cos(xp.pi * fac) + 1.0 / xp.pi * xp.sin(xp.pi * fac)
+    one = xp.zeros(1, dtype=xp.float64, device=device)
+    w = xp.concat([one, w, one])
 
     return _truncate(w, needs_trunc)
 
 
-def blackman(M, sym=True):
+@xp_capabilities()
+def blackman(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Blackman window.
 
@@ -383,6 +422,7 @@ def blackman(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -448,10 +488,14 @@ def blackman(M, sym=True):
 
     """
     # Docstring adapted from NumPy's blackman function
-    return general_cosine(M, [0.42, 0.50, 0.08], sym)
+    xp = _namespace(xp)
+    a = xp.asarray([0.42, 0.50, 0.08], dtype=xp.float64, device=device)
+    device = xp_device(a)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
-def nuttall(M, sym=True):
+@xp_capabilities()
+def nuttall(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window according to Nuttall.
 
     This variation is called "Nuttall4c" by Heinzel. [2]_
@@ -465,6 +509,7 @@ def nuttall(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -508,10 +553,16 @@ def nuttall(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    return general_cosine(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411], sym)
+    xp = _namespace(xp)
+    a = xp.asarray(
+        [0.3635819, 0.4891775, 0.1365995, 0.0106411], dtype=xp.float64, device=device
+    )
+    device = xp_device(a)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
-def blackmanharris(M, sym=True):
+@xp_capabilities()
+def blackmanharris(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window.
 
     Parameters
@@ -523,6 +574,7 @@ def blackmanharris(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -556,10 +608,16 @@ def blackmanharris(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    return general_cosine(M, [0.35875, 0.48829, 0.14128, 0.01168], sym)
+    xp = _namespace(xp)
+    a = xp.asarray(
+        [0.35875, 0.48829, 0.14128, 0.01168], dtype=xp.float64, device=device
+    )
+    device = xp_device(a)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
-def flattop(M, sym=True):
+@xp_capabilities()
+def flattop(M, sym=True, *, xp=None, device=None):
     """Return a flat top window.
 
     Parameters
@@ -571,6 +629,7 @@ def flattop(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -618,11 +677,17 @@ def flattop(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    a = [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368]
-    return general_cosine(M, a, sym)
+    xp = _namespace(xp)
+    a = xp.asarray(
+        [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368],
+        dtype=xp.float64, device=device
+    )
+    device = xp_device(a)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
-def bartlett(M, sym=True):
+@xp_capabilities()
+def bartlett(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Bartlett window.
 
@@ -640,6 +705,7 @@ def bartlett(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -710,18 +776,23 @@ def bartlett(M, sym=True):
 
     """
     # Docstring adapted from NumPy's bartlett function
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    w = np.where(np.less_equal(n, (M - 1) / 2.0),
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
+
+    # cf https://github.com/data-apis/array-api-strict/issues/77
+    w = xp.where(n <= (M - 1) / 2.0,
                  2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
 
     return _truncate(w, needs_trunc)
 
 
-def hann(M, sym=True):
+@xp_capabilities()
+def hann(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Hann window.
 
@@ -737,6 +808,7 @@ def hann(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -801,10 +873,11 @@ def hann(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hanning function
-    return general_hamming(M, 0.5, sym)
+    return general_hamming(M, 0.5, sym, xp=xp, device=device)
 
 
-def tukey(M, alpha=0.5, sym=True):
+@xp_capabilities()
+def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     r"""Return a Tukey window, also known as a tapered cosine window.
 
     Parameters
@@ -821,6 +894,7 @@ def tukey(M, alpha=0.5, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -863,32 +937,35 @@ def tukey(M, alpha=0.5, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
 
     if alpha <= 0:
-        return np.ones(M, 'd')
+        return xp.ones(M, dtype=xp.float64, device=device)
     elif alpha >= 1.0:
-        return hann(M, sym=sym)
+        return hann(M, sym=sym, xp=xp, device=device)
 
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    width = int(np.floor(alpha*(M-1)/2.0))
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
+    width = int(math.floor(alpha*(M-1)/2.0))
     n1 = n[0:width+1]
     n2 = n[width+1:M-width-1]
     n3 = n[M-width-1:]
 
-    w1 = 0.5 * (1 + np.cos(np.pi * (-1 + 2.0*n1/alpha/(M-1))))
-    w2 = np.ones(n2.shape)
-    w3 = 0.5 * (1 + np.cos(np.pi * (-2.0/alpha + 1 + 2.0*n3/alpha/(M-1))))
+    w1 = 0.5 * (1 + xp.cos(xp.pi * (-1 + 2.0*n1/alpha/(M-1))))
+    w2 = xp.ones(n2.shape, device=device)
+    w3 = 0.5 * (1 + xp.cos(xp.pi * (-2.0/alpha + 1 + 2.0*n3/alpha/(M-1))))
 
-    w = np.concatenate((w1, w2, w3))
+    w = xp.concat((w1, w2, w3))
 
     return _truncate(w, needs_trunc)
 
 
-def barthann(M, sym=True):
+@xp_capabilities()
+def barthann(M, sym=True, *, xp=None, device=None):
     """Return a modified Bartlett-Hann window.
 
     Parameters
@@ -900,6 +977,7 @@ def barthann(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -933,18 +1011,21 @@ def barthann(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    fac = np.abs(n / (M - 1.0) - 0.5)
-    w = 0.62 - 0.48 * fac + 0.38 * np.cos(2 * np.pi * fac)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
+    fac = abs(n / (M - 1.0) - 0.5)
+    w = 0.62 - 0.48 * fac + 0.38 * xp.cos(2 * xp.pi * fac)
 
     return _truncate(w, needs_trunc)
 
 
-def general_hamming(M, alpha, sym=True):
+@xp_capabilities()
+def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     r"""Return a generalized Hamming window.
 
     The generalized Hamming window is constructed by multiplying a rectangular
@@ -961,6 +1042,7 @@ def general_hamming(M, alpha, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1030,10 +1112,14 @@ def general_hamming(M, alpha, sym=True):
     >>> spatial_plot.legend(loc="upper right")
 
     """
-    return general_cosine(M, [alpha, 1. - alpha], sym)
+    xp = _namespace(xp)
+    a = xp.asarray([alpha, 1. - alpha], dtype=xp.float64, device=device)
+    device = xp_device(a)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
-def hamming(M, sym=True):
+@xp_capabilities()
+def hamming(M, sym=True, *, xp=None, device=None):
     r"""Return a Hamming window.
 
     The Hamming window is a taper formed by using a raised cosine with
@@ -1048,6 +1134,7 @@ def hamming(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1109,10 +1196,11 @@ def hamming(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hamming function
-    return general_hamming(M, 0.54, sym)
+    return general_hamming(M, 0.54, sym, xp=xp, device=device)
 
 
-def kaiser(M, beta, sym=True):
+@xp_capabilities()
+def kaiser(M, beta, sym=True, *, xp=None, device=None):
     r"""Return a Kaiser window.
 
     The Kaiser window is a taper formed by using a Bessel function.
@@ -1129,6 +1217,7 @@ def kaiser(M, beta, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1151,8 +1240,8 @@ def kaiser(M, beta, sym=True):
 
     The Kaiser was named for Jim Kaiser, who discovered a simple approximation
     to the DPSS window based on Bessel functions.
-    The Kaiser window is a very good approximation to the Digital Prolate
-    Spheroidal Sequence, or Slepian window, which is the transform which
+    The Kaiser window is a very good approximation to the discrete prolate
+    spheroidal sequence, or Slepian window, which is the transform which
     maximizes the energy in the main lobe of the window relative to total
     energy.
 
@@ -1218,20 +1307,23 @@ def kaiser(M, beta, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     # Docstring adapted from NumPy's kaiser function
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
     alpha = (M - 1) / 2.0
-    w = (special.i0(beta * np.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
-         special.i0(beta))
+    w = (special.i0(beta * xp.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
+         special.i0(xp.asarray(beta, dtype=xp.float64)))
 
     return _truncate(w, needs_trunc)
 
 
-def kaiser_bessel_derived(M, beta, *, sym=True):
+@xp_capabilities()
+def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     """Return a Kaiser-Bessel derived window.
 
     Parameters
@@ -1248,6 +1340,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
         the other window functions and to be callable by `get_window`.
         When True (default), generates a symmetric window, for use in filter
         design.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1297,27 +1390,30 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     >>> fig.tight_layout()
     >>> fig.show()
     """
+    xp = _namespace(xp)
+
     if not sym:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for symmetric "
             "shapes"
         )
     elif M < 1:
-        return np.array([])
+        return xp.asarray([])
     elif M % 2:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for even number "
             "of points"
         )
 
-    kaiser_window = kaiser(M // 2 + 1, beta)
-    csum = np.cumsum(kaiser_window)
-    half_window = np.sqrt(csum[:-1] / csum[-1])
-    w = np.concatenate((half_window, half_window[::-1]), axis=0)
-    return w
+    kaiser_window = kaiser(M // 2 + 1, beta, xp=xp, device=device)
+    csum = xp.cumulative_sum(kaiser_window)
+    half_window = xp.sqrt(csum[:-1] / csum[-1])
+    w = xp.concat((half_window, xp.flip(half_window)), axis=0)
+    return xp.asarray(w, device=device)
 
 
-def gaussian(M, std, sym=True):
+@xp_capabilities()
+def gaussian(M, std, sym=True, *, xp=None, device=None):
     r"""Return a Gaussian window.
 
     Parameters
@@ -1331,6 +1427,7 @@ def gaussian(M, std, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1370,18 +1467,21 @@ def gaussian(M, std, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M) - (M - 1.0) / 2.0
+    n = xp.arange(0, M, dtype=xp.float64, device=device) - (M - 1.0) / 2.0
     sig2 = 2 * std * std
-    w = np.exp(-n ** 2 / sig2)
+    w = xp.exp(-n ** 2 / sig2)
 
     return _truncate(w, needs_trunc)
 
 
-def general_gaussian(M, p, sig, sym=True):
+@xp_capabilities()
+def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     r"""Return a window with a generalized Gaussian shape.
 
     Parameters
@@ -1398,6 +1498,7 @@ def general_gaussian(M, p, sig, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1442,18 +1543,22 @@ def general_gaussian(M, p, sig, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M) - (M - 1.0) / 2.0
-    w = np.exp(-0.5 * np.abs(n / sig) ** (2 * p))
+    n = xp.arange(0, M, dtype=xp.float64, device=device) - (M - 1.0) / 2.0
+    w = xp.exp(-0.5 * abs(n / sig) ** (2 * p))
 
     return _truncate(w, needs_trunc)
 
 
 # `chebwin` contributed by Kumar Appaiah.
-def chebwin(M, at, sym=True):
+@xp_capabilities(skip_backends=(("jax.numpy", "item assignment"),
+                                ("dask.array", "data-dependent output shapes")))
+def chebwin(M, at, sym=True, *, xp=None, device=None):
     r"""Return a Dolph-Chebyshev window.
 
     Parameters
@@ -1467,6 +1572,7 @@ def chebwin(M, at, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1539,7 +1645,9 @@ def chebwin(M, at, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if np.abs(at) < 45:
+    xp = _namespace(xp)
+
+    if abs(at) < 45:
         warnings.warn("This window is not suitable for spectral analysis "
                       "for attenuation values lower than about 45dB because "
                       "the equivalent noise bandwidth of a Chebyshev window "
@@ -1548,40 +1656,42 @@ def chebwin(M, at, sym=True):
                       "about 45 dB.",
                       stacklevel=2)
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     # compute the parameter beta
     order = M - 1.0
-    beta = np.cosh(1.0 / order * np.arccosh(10 ** (np.abs(at) / 20.)))
-    k = np.r_[0:M] * 1.0
-    x = beta * np.cos(np.pi * k / M)
+    _val = xp.asarray(10 ** (abs(at) / 20.), dtype=xp.float64, device=device)
+    beta = xp.cosh(1.0 / order * xp.acosh(_val))
+    k = xp.arange(M, dtype=xp.float64, device=device)
+    x = beta * xp.cos(xp.pi * k / M)
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
     # from scipy.special. Using the expansion in scipy.special leads to errors.
-    p = np.zeros(x.shape)
-    p[x > 1] = np.cosh(order * np.arccosh(x[x > 1]))
-    p[x < -1] = (2 * (M % 2) - 1) * np.cosh(order * np.arccosh(-x[x < -1]))
-    p[np.abs(x) <= 1] = np.cos(order * np.arccos(x[np.abs(x) <= 1]))
+    p = xp.zeros_like(x)
+    p[x > 1] = xp.cosh(order * xp.acosh(x[x > 1]))
+    p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(-x[x < -1]))
+    p[abs(x) <= 1] = xp.cos(order * xp.acos(x[abs(x) <= 1]))
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
     if M % 2:
-        w = np.real(sp_fft.fft(p))
+        w = xp.real(sp_fft.fft(p))
         n = (M + 1) // 2
         w = w[:n]
-        w = np.concatenate((w[n - 1:0:-1], w))
+        w = xp.concat((xp.flip(w[1:n]), w))
     else:
-        p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
-        w = np.real(sp_fft.fft(p))
+        p = p * xp.exp(1j * xp.pi / M * xp.arange(M, dtype=xp.float64, device=device))
+        w = xp.real(sp_fft.fft(p))
         n = M // 2 + 1
-        w = np.concatenate((w[n - 1:0:-1], w[1:n]))
-    w = w / max(w)
+        w = xp.concat((xp.flip(w[1:n]), w[1:n]))
+    w = w / xp.max(w)
 
     return _truncate(w, needs_trunc)
 
 
-def cosine(M, sym=True):
+@xp_capabilities()
+def cosine(M, sym=True, *, xp=None, device=None):
     """Return a window with a simple cosine shape.
 
     Parameters
@@ -1593,6 +1703,7 @@ def cosine(M, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1632,16 +1743,19 @@ def cosine(M, sym=True):
     >>> plt.show()
 
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    w = np.sin(np.pi / M * (np.arange(0, M) + .5))
+    w = xp.sin(xp.pi / M * (xp.arange(M, dtype=xp.float64, device=device) + .5))
 
     return _truncate(w, needs_trunc)
 
 
-def exponential(M, center=None, tau=1., sym=True):
+@xp_capabilities()
+def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     r"""Return an exponential (or Poisson) window.
 
     Parameters
@@ -1661,6 +1775,7 @@ def exponential(M, center=None, tau=1., sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1715,22 +1830,25 @@ def exponential(M, center=None, tau=1., sym=True):
     >>> plt.ylabel("Amplitude")
     >>> plt.xlabel("Sample")
     """
+    xp = _namespace(xp)
+
     if sym and center is not None:
         raise ValueError("If sym==True, center must be None.")
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     if center is None:
         center = (M-1) / 2
 
-    n = np.arange(0, M)
-    w = np.exp(-np.abs(n-center) / tau)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
+    w = xp.exp(-abs(n-center) / tau)
 
     return _truncate(w, needs_trunc)
 
 
-def taylor(M, nbar=4, sll=30, norm=True, sym=True):
+@xp_capabilities(skip_backends=[("jax.numpy", "item assignment")])
+def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     """
     Return a Taylor window.
 
@@ -1763,6 +1881,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1810,33 +1929,35 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """  # noqa: E501
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     # Original text uses a negative sidelobe level parameter and then negates
     # it in the calculation of B. To keep consistent with other methods we
     # assume the sidelobe level parameter to be positive.
-    B = 10**(sll / 20)
-    A = np.arccosh(B) / np.pi
+    B = xp.asarray(10**(sll / 20), device=device)
+    A = xp.acosh(B) / xp.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
-    ma = np.arange(1, nbar)
+    ma = xp.arange(1, nbar, dtype=xp.float64, device=device)
 
-    Fm = np.empty(nbar-1)
-    signs = np.empty_like(ma)
+    Fm = xp.empty(nbar - 1, dtype=xp.float64, device=device)
+    signs = xp.empty_like(ma)
     signs[::2] = 1
     signs[1::2] = -1
     m2 = ma*ma
     for mi, m in enumerate(ma):
-        numer = signs[mi] * np.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
-        denom = 2 * np.prod(1 - m2[mi]/m2[:mi]) * np.prod(1 - m2[mi]/m2[mi+1:])
+        numer = signs[mi] * xp.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
+        denom = 2 * xp.prod(1 - m2[mi]/m2[:mi]) * xp.prod(1 - m2[mi]/m2[mi+1:])
         Fm[mi] = numer / denom
 
     def W(n):
-        return 1 + 2*np.dot(Fm, np.cos(
-            2*np.pi*ma[:, np.newaxis]*(n-M/2.+0.5)/M))
+        return 1 + 2*xp.matmul(Fm, xp.cos(
+            2*xp.pi*ma[:, xp.newaxis]*(n-M/2.+0.5)/M))
 
-    w = W(np.arange(M))
+    w = W(xp.arange(M, dtype=xp.float64, device=device))
 
     # normalize (Note that this is not described in the original text [1])
     if norm:
@@ -1846,7 +1967,9 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     return _truncate(w, needs_trunc)
 
 
-def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
+@xp_capabilities(np_only=True, reason='banded linear algebra is numpy-only')
+def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
+         *, xp=None, device=None):
     """
     Compute the Discrete Prolate Spheroidal Sequences (DPSS).
 
@@ -1880,6 +2003,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     return_ratios : bool, optional
         If True, also return the concentration ratios in addition to the
         windows.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1937,12 +2061,12 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     ...     for win, c in ((win_dpss, 'k'), (win_kaiser, 'r')):
     ...         win /= win.sum()
     ...         axes[ai, 0].plot(win, color=c, lw=1.)
-    ...         axes[ai, 0].set(xlim=[0, M-1], title=r'$\\alpha$ = %s' % alpha,
+    ...         axes[ai, 0].set(xlim=[0, M-1], title=rf'$\\alpha$ = {alpha}',
     ...                         ylabel='Amplitude')
     ...         w, h = freqz(win)
     ...         axes[ai, 1].plot(w, 20 * np.log10(np.abs(h)), color=c, lw=1.)
     ...         axes[ai, 1].set(xlim=[0, np.pi],
-    ...                         title=r'$\\beta$ = %0.2f' % beta,
+    ...                         title=rf'$\\beta$ = {beta:0.2f}',
     ...                         ylabel='Magnitude (dB)')
     >>> for ax in axes.ravel():
     ...     ax.grid(True)
@@ -1959,8 +2083,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     >>> fig, ax = plt.subplots(1)
     >>> ax.plot(win.T, linewidth=1.)
     >>> ax.set(xlim=[0, M-1], ylim=[-0.1, 0.1], xlabel='Samples',
-    ...        title='DPSS, M=%d, NW=%0.1f' % (M, NW))
-    >>> ax.legend(['win[%d] (%0.4f)' % (ii, ratio)
+    ...        title=f'DPSS, {M:d}, {NW:0.1f}')
+    >>> ax.legend([f'win[{ii}] ({ratio:0.4f})'
     ...            for ii, ratio in enumerate(eigvals)])
     >>> fig.tight_layout()
     >>> plt.show()
@@ -2009,8 +2133,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     >>> fig.tight_layout()
 
     """
-    if _len_guards(M):
-        return np.ones(M)
+    xp = _namespace(xp)
+
     if norm is None:
         norm = 'approximate' if Kmax is None else 2
     known_norms = (2, 'approximate', 'subsample')
@@ -2021,6 +2145,13 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
         Kmax = 1
     else:
         singleton = False
+    if _len_guards(M):
+        if not return_ratios:
+            return xp.ones(M, dtype=xp.float64)
+        elif singleton:
+            return xp.ones(M, dtype=xp.float64), 1.
+        else:
+            return xp.ones(M, dtype=xp.float64), xp.ones(1, dtype=xp.float64)
     Kmax = operator.index(Kmax)
     if not 0 < Kmax <= M:
         raise ValueError('Kmax must be greater than 0 and less than M')
@@ -2030,7 +2161,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
         raise ValueError('NW must be positive')
     M, needs_trunc = _extend(M, sym)
     W = float(NW) / M
-    nidx = np.arange(M)
+    nidx = xp.arange(M, dtype=xp.float64, device=device)
 
     # Here we want to set up an optimization problem to find a sequence
     # whose energy is maximally concentrated within band [-W,W].
@@ -2050,7 +2181,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     # the main diagonal = ([M-1-2*t]/2)**2 cos(2PIW), t=[0,1,2,...,M-1]
     # and the first off-diagonal = t(M-t)/2, t=[1,2,...,M-1]
     # [see Percival and Walden, 1993]
-    d = ((M - 1 - 2 * nidx) / 2.) ** 2 * np.cos(2 * np.pi * W)
+    d = ((M - 1 - 2 * nidx) / 2.) ** 2 * xp.cos(xp.asarray(2 * xp.pi * W))
     e = nidx[1:] * (M - nidx[1:]) / 2.
 
     # only calculate the highest Kmax eigenvalues
@@ -2061,7 +2192,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
 
     # By convention (Percival and Walden, 1993 pg 379)
     # * symmetric tapers (k=0,2,4,...) should have a positive average.
-    fix_even = (windows[::2].sum(axis=1) < 0)
+    fix_even = (windows[::2, ...].sum(axis=1) < 0)
     for i, f in enumerate(fix_even):
         if f:
             windows[2 * i] *= -1
@@ -2072,19 +2203,20 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     #   algorithm that uses max(abs(w)), which is susceptible to numerical
     #   noise problems)
     thresh = max(1e-7, 1. / M)
-    for i, w in enumerate(windows[1::2]):
+    for i, w in enumerate(windows[1::2, ...]):
         if w[w * w > thresh][0] < 0:
             windows[2 * i + 1] *= -1
 
     # Now find the eigenvalues of the original spectral concentration problem
     # Use the autocorr sequence technique from Percival and Walden, 1993 pg 390
     if return_ratios:
-        dpss_rxx = _fftautocorr(windows)
-        r = 4 * W * np.sinc(2 * W * nidx)
+        dpss_rxx = _fftautocorr(xp.asarray(windows))
+        r = 4 * W * xpx.sinc(xp.asarray(2 * W * nidx), xp=xp)
         r[0] = 2 * W
-        ratios = np.dot(dpss_rxx, r)
+        ratios = xp.matmul(dpss_rxx, r)
         if singleton:
             ratios = ratios[0]
+        ratios = xp.asarray(ratios, device=device)
     # Deal with sym and Kmax=None
     if norm != 2:
         windows /= windows.max()
@@ -2093,8 +2225,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
                 correction = M**2 / float(M**2 + NW)
             else:
                 s = sp_fft.rfft(windows[0])
-                shift = -(1 - 1./M) * np.arange(1, M//2 + 1)
-                s[1:] *= 2 * np.exp(-1j * np.pi * shift)
+                shift = -(1 - 1./M) * xp.arange(1, M//2 + 1, dtype=xp.float64)
+                s[1:] *= 2 * xp.exp(-1j * xp.pi * shift)
                 correction = M / s.real.sum()
             windows *= correction
     # else we're already l2 normed, so do nothing
@@ -2102,10 +2234,12 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
         windows = windows[:, :-1]
     if singleton:
         windows = windows[0]
+    windows = xp.asarray(windows, device=device)
     return (windows, ratios) if return_ratios else windows
 
 
-def lanczos(M, *, sym=True):
+@xp_capabilities()
+def lanczos(M, *, sym=True, xp=None, device=None):
     r"""Return a Lanczos window also known as a sinc window.
 
     Parameters
@@ -2117,6 +2251,7 @@ def lanczos(M, *, sym=True):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -2183,22 +2318,24 @@ def lanczos(M, *, sym=True):
     >>> fig.tight_layout()
     >>> plt.show()
     """
+    xp = _namespace(xp)
+
     if _len_guards(M):
-        return np.ones(M)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     # To make sure that the window is symmetric, we concatenate the right hand
     # half of the window and the flipped one which is the left hand half of
     # the window.
     def _calc_right_side_lanczos(n, m):
-        return np.sinc(2. * np.arange(n, m) / (m - 1) - 1.0)
+        return xpx.sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
 
     if M % 2 == 0:
         wh = _calc_right_side_lanczos(M/2, M)
-        w = np.r_[np.flip(wh), wh]
+        w = xp.concat([xp.flip(wh), wh])
     else:
         wh = _calc_right_side_lanczos((M+1)/2, M)
-        w = np.r_[np.flip(wh), 1.0, wh]
+        w = xp.concat([xp.flip(wh), xp.ones(1), wh])
 
     return _truncate(w, needs_trunc)
 
@@ -2210,165 +2347,262 @@ def _fftautocorr(x):
     x_fft = sp_fft.rfft(x, use_N, axis=-1)
     cxy = sp_fft.irfft(x_fft * x_fft.conj(), n=use_N)[:, :N]
     # Or equivalently (but in most cases slower):
-    # cxy = np.array([np.convolve(xx, yy[::-1], mode='full')
-    #                 for xx, yy in zip(x, x)])[:, N-1:2*N-1]
+    # cxy = xp.asarray([xp.convolve(xx, yy[::-1], mode='full')
+    #                   for xx, yy in zip(x, x)])[:, N-1:2*N-1]
     return cxy
 
-
-_win_equiv_raw = {
+_WIN_FUNC_DATA = { # Format: {(name0, name1, ...): (function, needs parameters)
     ('barthann', 'brthan', 'bth'): (barthann, False),
     ('bartlett', 'bart', 'brt'): (bartlett, False),
     ('blackman', 'black', 'blk'): (blackman, False),
     ('blackmanharris', 'blackharr', 'bkh'): (blackmanharris, False),
     ('bohman', 'bman', 'bmn'): (bohman, False),
-    ('boxcar', 'box', 'ones',
-        'rect', 'rectangular'): (boxcar, False),
+    ('boxcar', 'box', 'ones', 'rect', 'rectangular'): (boxcar, False),
     ('chebwin', 'cheb'): (chebwin, True),
     ('cosine', 'halfcosine'): (cosine, False),
     ('dpss',): (dpss, True),
-    ('exponential', 'poisson'): (exponential, False),
+    ('exponential', 'poisson'): (exponential, 'OPTIONAL'),
     ('flattop', 'flat', 'flt'): (flattop, False),
     ('gaussian', 'gauss', 'gss'): (gaussian, True),
     ('general cosine', 'general_cosine'): (general_cosine, True),
-    ('general gaussian', 'general_gaussian',
-        'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
+    ('general gaussian', 'general_gaussian', 'general gauss',
+     'general_gauss', 'ggs'): (general_gaussian, True),
     ('general hamming', 'general_hamming'): (general_hamming, True),
     ('hamming', 'hamm', 'ham'): (hamming, False),
     ('hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
-    ('kaiser bessel derived', 'kbd'): (kaiser_bessel_derived, True),
+    ('kaiser bessel derived', 'kaiser_bessel_derived',
+     'kbd'): (kaiser_bessel_derived, True),
     ('lanczos', 'sinc'): (lanczos, False),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
-    ('taylor', 'taylorwin'): (taylor, False),
+    ('taylor', 'taylorwin'): (taylor, 'OPTIONAL'),
     ('triangle', 'triang', 'tri'): (triang, False),
-    ('tukey', 'tuk'): (tukey, False),
-}
-
-# Fill dict with all valid window name strings
-_win_equiv = {}
-for k, v in _win_equiv_raw.items():
-    for key in k:
-        _win_equiv[key] = v[0]
-
-# Keep track of which windows need additional parameters
-_needs_param = set()
-for k, v in _win_equiv_raw.items():
-    if v[1]:
-        _needs_param.update(k)
+    ('tukey', 'tuk'): (tukey, 'OPTIONAL'), }
+_WIN_FUNCS = dict()
+for nn_, v_ in _WIN_FUNC_DATA.items():
+    _WIN_FUNCS.update({n_: v_ for n_ in nn_})
 
 
-def get_window(window, Nx, fftbins=True):
-    """
-    Return a window of a given length and type.
+@xp_capabilities()
+def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
+    r"""Convenience function for creating various windows.
+
+    This function is a wrapper for the window functions provided in the
+    `scipy.signal.windows` namespace.
 
     Parameters
     ----------
-    window : string, float, or tuple
-        The type of window to create. See below for more details.
+    window : str | tuple | float
+        Either a string with the window name or a tuple consisting of window name and
+        window parameters. If it is a float, a `~scipy.singal.kaiser` window is
+        created with `window` being the shape parameter. Consult the Notes below for
+        more details.
     Nx : int
         The number of samples in the window.
     fftbins : bool, optional
-        If True (default), create a "periodic" window, ready to use with
-        `ifftshift` and be multiplied by the result of an FFT (see also
-        :func:`~scipy.fft.fftfreq`).
-        If False, create a "symmetric" window, for use in filter design.
+        If ``True`` (default), create a periodic window, ready to use with `ifftshift`
+        and be multiplied by the result of an FFT (see also
+        :func:`~scipy.fft.fftfreq`). If ``False``, create a symmetric window, for use
+        in filter design. This parameter is ignored, if the window name in the
+        `window` parameter has a suffix ``'_periodic'`` or ``'_symmetric'`` appended to
+        it (e.g., ``'hann_symmetric'``).
+    %(xp_device_snippet)s
 
     Returns
     -------
     get_window : ndarray
-        Returns a window of length `Nx` and type `window`
+        Returns the created window as a one-dimensional array made of `Nx` samples.
+
+    Raises
+    ------
+    ValueError
+        If the provided parameters do not allow to choose a valid window function
+        with valid parameters.
 
     Notes
     -----
-    Window types:
+    Note that by default this function returns a periodic window, whereas the wrapped
+    window functions return a symmetric window by default. This is caused by the
+    `fftbins` parameter having the inverse meaning of the `sym` parameter of the
+    wrapped function, which are both ``True`` by default.
 
-    - `~scipy.signal.windows.boxcar`
-    - `~scipy.signal.windows.triang`
-    - `~scipy.signal.windows.blackman`
-    - `~scipy.signal.windows.hamming`
-    - `~scipy.signal.windows.hann`
-    - `~scipy.signal.windows.bartlett`
-    - `~scipy.signal.windows.flattop`
-    - `~scipy.signal.windows.parzen`
-    - `~scipy.signal.windows.bohman`
-    - `~scipy.signal.windows.blackmanharris`
-    - `~scipy.signal.windows.nuttall`
-    - `~scipy.signal.windows.barthann`
-    - `~scipy.signal.windows.cosine`
-    - `~scipy.signal.windows.exponential`
-    - `~scipy.signal.windows.tukey`
-    - `~scipy.signal.windows.taylor`
-    - `~scipy.signal.windows.lanczos`
-    - `~scipy.signal.windows.kaiser` (needs beta)
-    - `~scipy.signal.windows.kaiser_bessel_derived` (needs beta)
-    - `~scipy.signal.windows.gaussian` (needs standard deviation)
-    - `~scipy.signal.windows.general_cosine` (needs weighting coefficients)
-    - `~scipy.signal.windows.general_gaussian` (needs power, width)
-    - `~scipy.signal.windows.general_hamming` (needs window coefficient)
-    - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
-    - `~scipy.signal.windows.chebwin` (needs attenuation)
+    .. currentmodule:: scipy.signal.windows
 
+    The following list shows the wrapped window functions with the respective settings
+    of the `window` parameter followed by a short description. Aliases for alternative
+    window names are given in parenthesis.
 
-    If the window requires no parameters, then `window` can be a string.
+    `barthann` / ``'barthann'``:
+        Modified Bartlett-Hann window (aliases: ``'brthan', 'bth'``)
+    `bartlett` / ``'bartlett'``:
+        Bartlett window (aliases: ``'bart', 'brt'``)
+    `blackman`/ ``'blackman'``:
+        Blackman window (aliases: ``'black', 'blk'``)
+    `blackmanharris` / ``'blackmanharris'``:
+        4-term Blackman-Harris window (aliases: ``'blackharr', 'bkh'``)
+    `bohman` / ``'bohman'``:
+        Bohman window (aliases: ``'bman', 'bmn'``)
+    `boxcar` / ``'boxcar'``:
+        Rectangular window (aliases: ``'box', 'ones', 'rect', 'rectangular'``)
+    `chebwin` / ``('chebwin', at)``:
+        Dolph-Chebyshev window with `at` dB attenuation (aliases: ``'cheb'``)
+    `cosine` / ``'cosine'``:
+        Cosine window (aliases: ``'halfcosine'``)
+    `dpss` / ``('dpss', NW)``:
+        First window of discrete prolate spheroidal sequence with standardized half
+        bandwidth ``NW`` and "approximate" norm.
+    `exponential` / ``'exponential'`` / ``('exponential', center, tau)``:
+        Exponential / Poisson window centered at ``center`` (default: ``None``) with
+        deacy ``tau`` (default: ``1``) (aliases: ``'poisson'``)
+    `flattop`/ ``'flattop'``:
+        Flat top window (aliases: ``'flat', 'flt'``)
+    `gaussian` / ``('gaussian', std)``:
+        Gaussian with standard deviation `std` (aliases: ``'gauss', 'gss'``)
+    `general_cosine` / ``('general cosine', a)``:
+        Generic weighted sum of cosine terms with weighting coefficients ``a``
+        (aliases: ``'general_cosine'``)
+    `general_gaussian` / ``('general gaussian', p, sig)``:
+        Generalized Gaussian with shape parameter ``p`` and standard deviation ``sig``
+        (aliases: ``'general_gaussian', 'general gauss', 'general_gauss', 'ggs'``)
+    `general_hamming` / ``('general hamming', alpha)``:
+        Generalized Hamming window with coefficent ``alpha``
+        (aliases: ``'general_hamming'``)
+    `hamming` / ``'hamming'``:
+        Hamming window (aliases: ``'hamm', 'ham'``)
+    `hann` / ``'hann'``:
+        Hann window (aliases: ``'han'``)
+    `kaiser` / ``('kaiser', beta)``:
+        Kaiser window with shape parameter ``beta`` (aliases: ``'ksr'``)
+    `kaiser_bessel_derived` / ``('kaiser bessel derived', beta)``:
+        Kaiser-Bessel derived window with shape parameter ``beta``
+        (aliases: ``'kaiser_bessel_derived', 'kbd'``)
+    `lanczos` / ``'lanczos'``:
+        Lanczos / sinc window (aliases: ``'sinc'``)
+    `nuttall`/ ``'nuttall'``:
+        Minimum 4-term Blackman-Harris window according to Nuttall
+        (aliases: ``'nutl', 'nut'``)
+    `parzen` / ``'parzen'``:
+        Parzen window (aliases: ``'parz', 'par'``)
+    `taylor` / ``'taylor'`` / (``'taylor', nbar, sll, norm)``:
+        Taylor window with ``nbar`` adjascent sidelobes (default: ``4``)), ``sll`` dB
+        suppression level (default: ``30``) and boolean value ``norm``
+        (default: ``True``) (aliases: ``taylorwin``)
+    `triang`/ ``'triangle'``:
+        Triangle window (aliases: ``'triang', 'tri'``)
+    `tukey` / ``'tukey'`` / ``('tukey', alpha)``:
+        Tukey window with shape parameter ``alpha`` (default: ``0.5``)
+        (aliases: ``'tuk'``)
 
-    If the window requires parameters, then `window` must be a tuple
-    with the first argument the string name of the window, and the next
-    arguments the needed parameters.
-
-    If `window` is a floating point number, it is interpreted as the beta
-    parameter of the `~scipy.signal.windows.kaiser` window.
-
-    Each of the window types listed above is also the name of
-    a function that can be called directly to create a window of
-    that type.
 
     Examples
     --------
-    >>> from scipy import signal
-    >>> signal.get_window('triang', 7)
+    This example shows different usages of the `window` parameter:
+
+    >>> from scipy.signal import get_window
+    >>> get_window('triang', 7)
     array([ 0.125,  0.375,  0.625,  0.875,  0.875,  0.625,  0.375])
-    >>> signal.get_window(('kaiser', 4.0), 9)
-    array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
-            0.97885093,  0.82160913,  0.56437221,  0.29425961])
-    >>> signal.get_window(('exponential', None, 1.), 9)
+    >>> get_window(('exponential', None, 1.), 9)
     array([ 0.011109  ,  0.03019738,  0.082085  ,  0.22313016,  0.60653066,
             0.60653066,  0.22313016,  0.082085  ,  0.03019738])
-    >>> signal.get_window(4.0, 9)
+    >>> get_window(('kaiser', 4.0), 9)
+    array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
+            0.97885093,  0.82160913,  0.56437221,  0.29425961])
+    >>> get_window(4.0, 9)  # same as previous call
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
 
+    The following snippet shows different ways to create identical symmetric and
+    periodic Bartlett windows:
+
+    >>> from scipy.signal import get_window, windows
+    >>> # Symmetric window:
+    >>> windows.bartlett(5)  # Parameter `sym` defaults to True
+    array([0. , 0.5, 1. , 0.5, 0. ])
+    >>> get_window('bartlett', 5, fftbins=False)
+    array([0. , 0.5, 1. , 0.5, 0. ])
+    >>> get_window('bartlett_symmetric', 5)
+    array([0. , 0.5, 1. , 0.5, 0. ])
+    >>> # Periodic window:
+    >>> windows.bartlett(4, sym=False)
+    array([0. , 0.5, 1. , 0.5])
+    >>> get_window('bartlett', 4)  # Parameter `fftbins` defaults to True
+    array([0. , 0.5, 1. , 0.5])
+    >>> get_window('bartlett_periodic', 4)
+    array([0. , 0.5, 1. , 0.5])
+    >>> # `_periodic' suffix overrides `fftbins` parameter:
+    >>> get_window('bartlett_periodic', 4, fftbins=False)
+    array([0. , 0.5, 1. , 0.5])
+
+    Note that a periodic window can be created out of a symmetric window by discarding
+    the last sample.
     """
+    if not (Nx > 0 and isinstance(Nx, numbers.Integral)):
+        raise ValueError(f"Parameter {Nx=} is not a positive integer")
+    if not isinstance(fftbins, bool):
+        raise ValueError(f"Parameter {fftbins=} is not of type bool!")
+
+    if not isinstance(window, str | tuple):
+        try: # if parameter window can be converted to a float, return kaiser window:
+            beta = float(window)
+        except Exception as float_exception:
+            err_msg = f"Parameter {window=} must be a tuple, a string or a float!"
+            raise ValueError(err_msg) from float_exception
+        return kaiser(Nx, beta, not fftbins, xp=xp, device=device)
+
+    if isinstance(window, tuple) and not isinstance(window[0], str):
+        raise ValueError(f"First tuple entry of parameter {window=} is not a str!")
+
     sym = not fftbins
-    try:
-        beta = float(window)
-    except (TypeError, ValueError) as e:
-        args = ()
-        if isinstance(window, tuple):
-            winstr = window[0]
-            if len(window) > 1:
-                args = window[1:]
-        elif isinstance(window, str):
-            if window in _needs_param:
-                raise ValueError("The '" + window + "' window needs one or "
-                                 "more parameters -- pass a tuple.") from e
-            else:
-                winstr = window
-        else:
-            raise ValueError("%s as window type is not supported." %
-                             str(type(window))) from e
+    win_name = window if isinstance(window, str) else window[0]
+    if win_name.endswith('_symmetric'):  # overwrite `fftbins` / `sym` if needed
+        sym, win_name = True, win_name[:-10]  # remove '_symmetric' from `win_name`
+    elif win_name.endswith('_periodic'):
+        sym, win_name = False, win_name[:-9]  # remove '_periodic' from `win_name`
 
-        try:
-            winfunc = _win_equiv[winstr]
-        except KeyError as e:
-            raise ValueError("Unknown window type.") from e
+    if win_name not in _WIN_FUNCS:
+        raise ValueError(f"Invalid window name '{win_name}' in parameter {window=}!")
 
-        if winfunc is dpss:
-            params = (Nx,) + args + (None,)
-        else:
-            params = (Nx,) + args
-    else:
-        winfunc = kaiser
-        params = (Nx, beta)
+    func, has_args = _WIN_FUNCS[win_name]
+    args = window[1:] if isinstance(window, tuple) else tuple()
+    if len(args) > 0 and has_args is False:
+        raise ValueError(f"'{win_name}' does not allow parameters, but {window=}!")
+    if len(args) == 0 and has_args is True:
+        raise ValueError(f"'{win_name}' must have parameters, but {window=}!")
+    # has_args == 'OPTIONAL' allows len(args) == 0 as well as len(args) > 0
 
-    return winfunc(*params, sym=sym)
+    if not has_args:
+        return func(Nx, sym=sym, xp=xp, device=device)
+
+    # special cases taken from original implementation:
+    if func is dpss:
+        if len(args) != 1:
+            raise ValueError(f"Window {win_name} must have one parameter but {window=}")
+        return dpss(Nx, args[0], Kmax=None, sym=sym, xp=xp, device=device)
+    if func is general_cosine:
+        if not (xp is None and device is None):
+            raise ValueError("'general_cosine' does not accept the parameters xp " +
+                             "and device not being None!")
+        return general_cosine(Nx, *args, sym=sym)
+
+    return func(Nx, *args, sym=sym, xp=xp, device=device)
+
+
+########## complete the docstrings, on import
+_xp_device_snippet = {'xp_device_snippet':
+"""\
+xp : array_namespace, optional
+    Optional array namespace.
+    Should be compatible with the array API standard, or supported by array-api-compat.
+    Default: ``numpy``
+device: any
+    optional device specification for output. Should match one of the
+    supported device specification in ``xp``.
+"""
+}
+
+
+_names = [x for x in __all__ if x != 'general_cosine']
+for name in _names:
+    window = vars()[name]
+    window.__doc__ = doccer.docformat(window.__doc__, _xp_device_snippet)

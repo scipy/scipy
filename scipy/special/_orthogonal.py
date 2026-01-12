@@ -78,7 +78,6 @@ References
 import numpy as np
 from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
-from scipy import linalg
 from scipy.special import airy
 
 # Local imports.
@@ -172,6 +171,8 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     mu ( = h_0 )        is the integral of the weight over the orthogonal
                         interval
     """
+    # lazy import to prevent to prevent linalg dependency for whole module (gh-23420)
+    from scipy import linalg
     k = np.arange(n, dtype='d')
     c = np.zeros((2, n))
     c[0,1:] = bn_func(k[1:])
@@ -220,22 +221,22 @@ def roots_jacobi(n, alpha, beta, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        Quadrature order.
     alpha : float
         alpha must be > -1
     beta : float
         beta must be > -1
     mu : bool, optional
-        If True, return the sum of the weights, optional.
+        If True, return the sum of the weights in addition to sample points and weights.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
-    mu : float
-        Sum of the weights
+        Weights.
+    mu : float, optional
+        Sum of the weights, only returned if `mu=True`.
 
     See Also
     --------
@@ -247,7 +248,20 @@ def roots_jacobi(n, alpha, beta, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_jacobi
+    >>> x, w = roots_jacobi(3, 0.5, 0.5)
+    >>> x
+    array([-0.70710678,  0.        ,  0.70710678])
+    >>> w
+    array([0.39269908, 0.78539816, 0.39269908])
+
+    >>> x, w, mu = roots_jacobi(3, 0.5, 0.5, mu=True)
+    >>> mu
+    1.5707963267948966  # Sum of weights, equals pi/2 for alpha = beta = 0.5
     """
+
     m = int(n)
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
@@ -1616,8 +1630,10 @@ def gegenbauer(n, alpha, monic=False):
     >>> plt.show()
 
     """
+    if not np.isfinite(alpha) or alpha <= -0.5 :
+        raise ValueError("`alpha` must be a finite number greater than -1/2")
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
-    if monic:
+    if monic or n == 0:
         return base
     #  Abrahmowitz and Stegan 22.5.20
     factor = (_gam(2*alpha + n) * _gam(alpha + 0.5) /
@@ -2397,7 +2413,7 @@ def roots_legendre(n, mu=False):
 
     with inverse::
 
-        t = (b - a)/2 * x + (a + 2)/2
+        t = (b - a)/2 * x + (a + b)/2
 
     Then::
 
@@ -2566,6 +2582,55 @@ def sh_legendre(n, monic=False):
     The polynomials :math:`P^*_n` are orthogonal over :math:`[0, 1]`
     with weight function 1.
 
+    Examples
+    --------
+    The shifted Legendre polynomials :math:`P_n^*` are related
+    to the non-shifted polynomials :math:`P_n` by
+    :math:`P_n^*(x) = P_n(2x - 1)`. We can verify this on the
+    interval :math:`[0, 1]`:
+
+    >>> import numpy as np
+    >>> from scipy.special import sh_legendre, legendre
+    >>> from scipy.integrate import trapezoid
+    >>> x = np.arange(0.0, 1.0, 0.01)
+    >>> n = 3
+    >>> np.allclose(sh_legendre(n)(x), legendre(n)(2*x - 1))
+    True
+
+    The polynomials :math:`P_n^*` satisfy a recurrence
+    relation obtained by the change of variables
+    :math:`t = 2x - 1` in the standard Legendre recurrence:
+    
+    .. math::
+    
+        (n+1) P_{n+1}^*(x) = (2n+1)(2x-1)\,P_n^*(x) - n\,P_{n-1}^*(x).
+
+    This can be easily checked on :math:`[0, 1]`
+    for :math:`n = 3`:
+
+    >>> n = 3
+    >>> x = np.linspace(0.0, 1.0, 101)
+    >>> lhs = (n + 1) * sh_legendre(n + 1)(x)
+    >>> rhs = (
+    ...     (2*n + 1) * (2*x - 1) * sh_legendre(n)(x)
+    ...     - n * sh_legendre(n - 1)(x)
+    ... )
+    >>> np.allclose(lhs, rhs)
+    True
+
+    Orthogonality over :math:`[0,1]` with weight 1 can be
+    checked numerically; for example, :math:`P_2^*`
+    is orthogonal to :math:`P_3^*`:
+
+    >>> x = np.linspace(0.0, 1.0, 400)
+    >>> y = sh_legendre(2)(x) * sh_legendre(3)(x)
+    >>> np.isclose(trapezoid(y, x), 0.0, atol=1e-12)
+    True
+
+    See Also
+    --------
+    scipy.special.legendre
+    scipy.special.roots_sh_legendre
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")

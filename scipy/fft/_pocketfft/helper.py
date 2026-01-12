@@ -7,6 +7,7 @@ import contextlib
 import numpy as np
 
 from scipy._lib._util import copy_if_needed
+from scipy._lib._array_api import xp_capabilities
 
 # good_size is exposed (and used) from this import
 from .pypocketfft import good_size, prev_good_size
@@ -44,7 +45,35 @@ def _iterable_of_int(x, name=None):
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
-    """Handles shape and axes arguments for nd transforms"""
+    """
+    Handle shape and axes arguments for N-D transforms.
+
+    Returns the shape and axes in a standard form, taking into account negative
+    values and checking for various potential errors.
+
+    Parameters
+    ----------
+    x : ndarray
+        The input array.
+    shape : int or array_like of ints or None
+        The shape of the result. If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
+        If `shape` is -1, the size of the corresponding dimension of `x` is
+        used.
+    axes : int or array_like of ints or None
+        Axes along which the calculation is computed.
+        The default is over all axes.
+        Negative indices are automatically converted to their positive
+        counterparts.
+
+    Returns
+    -------
+    shape : tuple
+        The shape of the result as a tuple of integers.
+    axes : list
+        Axes along which the calculation is computed, as a list of integers.
+    """
     noshape = shape is None
     noaxes = axes is None
 
@@ -179,6 +208,7 @@ def _workers(workers):
     return workers
 
 
+@xp_capabilities(out_of_scope=True)
 @contextlib.contextmanager
 def set_workers(workers):
     """Context manager for the default number of workers used in `scipy.fft`
@@ -206,6 +236,7 @@ def set_workers(workers):
         _config.default_workers = old_workers
 
 
+@xp_capabilities(out_of_scope=True)
 def get_workers():
     """Returns the default number of workers within the current context
 

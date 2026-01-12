@@ -1,6 +1,6 @@
 .. _qhulltutorial:
 
-Spatial data structures and algorithms (`scipy.spatial`)
+Spatial Data Structures and Algorithms (`scipy.spatial`)
 ========================================================
 
 .. currentmodule:: scipy.spatial

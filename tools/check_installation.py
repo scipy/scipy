@@ -7,7 +7,7 @@ Examples::
 
         install_directory_name:
             the relative path from the root of the repo to the directory where
-            SciPy is installed (for dev.py usually "build-install")
+            SciPy is installed (for `spin` usually "build-install")
 
 Notes
 =====
@@ -21,6 +21,7 @@ meant for use in CI so it's not like many files will be missing at once.
 import os
 import glob
 import sys
+from get_submodule_paths import get_submodule_paths
 
 
 CUR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
@@ -28,30 +29,14 @@ ROOT_DIR = os.path.dirname(CUR_DIR)
 SCIPY_DIR = os.path.join(ROOT_DIR, 'scipy')
 
 
+submodule_paths = get_submodule_paths()
+
+
 # Files whose installation path will be different from original one
 changed_installed_path = {
     'scipy/_build_utils/tests/test_scipy_version.py':
         'scipy/_lib/tests/test_scipy_version.py'
 }
-
-# We do not want the following tests to be checked.
-# Note: only 3 subdirs are listed here, due to how `get_test_files` is
-# implemented.
-# If this list gets too annoying, we should implement excluding directories
-# rather than (or in addition to) files.
-exception_list_test_files = [
-    "_lib/array_api_compat/tests/test_all.py",
-    "_lib/array_api_compat/tests/test_array_namespace.py",
-    "_lib/array_api_compat/tests/test_common.py",
-    "_lib/array_api_compat/tests/test_isdtype.py",
-    "_lib/array_api_compat/tests/test_vendoring.py",
-    "_lib/array_api_compat/tests/test_array_namespace.py",
-    "cobyqa/cobyqa/tests/test_main.py",
-    "cobyqa/cobyqa/tests/test_models.py",
-    "cobyqa/cobyqa/tests/test_problem.py",
-    "cobyqa/utils/tests/test_exceptions.py",
-    "cobyqa/utils/tests/test_math.py",
-]
 
 
 def main(install_dir, no_tests):
@@ -76,9 +61,6 @@ def main(install_dir, no_tests):
 
     # Check test files detected in repo are installed
     for test_file in scipy_test_files.keys():
-        if test_file in exception_list_test_files:
-            continue
-
         if no_tests:
             if test_file in installed_test_files:
                 raise Exception(f"{test_file} should not be installed but "
@@ -103,7 +85,7 @@ def main(install_dir, no_tests):
         if pyi_file not in installed_pyi_files.keys():
             if no_tests and "test" in scipy_pyi_files[pyi_file]:
                 continue
-            raise Exception("%s is not installed" % scipy_pyi_files[pyi_file])
+            raise Exception(f"{scipy_pyi_files[pyi_file]} is not installed")
 
     print("----------- All the necessary .pyi files were installed --------------")
 
@@ -120,10 +102,11 @@ def get_test_files(dir, ext="py"):
     test_files = dict()
     underscore = "_" if ext == "so" else ""
     for path in glob.glob(f'{dir}/**/{underscore}test_*.{ext}', recursive=True):
+        if any(submodule_path in path for submodule_path in submodule_paths):
+            continue
         suffix_path = get_suffix_path(path, 3)
         suffix_path = changed_installed_path.get(suffix_path, suffix_path)
-        if "highspy" not in suffix_path:
-            test_files[suffix_path] = path
+        test_files[suffix_path] = path
 
     return test_files
 

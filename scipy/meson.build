@@ -1,3 +1,5 @@
+fs = import('fs')
+
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
 if is_mingw and ff.get_id() != 'gcc'
@@ -26,6 +28,18 @@ if is_mingw
 endif
 
 thread_dep = dependency('threads', required: false)
+
+
+# Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
+_numpy_dep = dependency('numpy')
+f2py_freethreading_arg = []
+if _numpy_dep.version().version_compare('>=2.1.0')
+  f2py_freethreading_arg = ['--free-threading']
+  message('f2py free-threading enabled')
+else
+  message('f2py free-threading disabled; need numpy >=2.1.0.')
+  message('See https://github.com/mesonbuild/meson/issues/14651')
+endif
 
 # NumPy include directory - needed in all submodules
 # The chdir is needed because within numpy there's an `import signal`
@@ -83,7 +97,7 @@ fortranobject_c = incdir_f2py / 'fortranobject.c'
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.12.0')
+pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -134,11 +148,51 @@ fortranobject_dep = declare_dependency(
   link_with: fortranobject_lib,
   include_directories: [inc_np, inc_f2py],
 )
-# Workaround for numpy#24761 on numpy<1.26.1 (see also gh-20515)
-_f2py_c_args = []
-if is_mingw
-  _f2py_c_args = '-DNPY_OS_MINGW'
+
+cdata = configuration_data()
+
+# Test variable attribute to use for thread-local storage;
+# Adapted from `numpy/_core/meson.build`.
+check_tls_attrs = [
+  ['thread_local', 'HAVE_THREAD_LOCAL'],    # C23
+  ['_Thread_local', 'HAVE__THREAD_LOCAL'],  # C11/C17
+  ['__thread', 'HAVE__THREAD'],
+]
+if is_windows and not is_mingw
+  check_tls_attrs += ['__declspec(thread)', 'HAVE___DECLSPEC_THREAD_']
 endif
+f2py_tls_define = ''
+foreach tls_attrs: check_tls_attrs
+  attr = tls_attrs[0]
+  code = f'''
+    #pragma GCC diagnostic error "-Wattributes"
+    #pragma clang diagnostic error "-Wattributes"
+
+    int @attr@ foo;
+  '''
+  code += '''
+    int
+    main()
+    {
+      return 0;
+    }
+  '''
+  if cc.compiles(code, name: tls_attrs[0])
+    cdata.set10(tls_attrs[1], true)
+    f2py_tls_define = tls_attrs[0]
+  endif
+endforeach
+
+# Contains only TLS check results for now - name chosen for when more compiler
+# checks need adding in the future.
+scipy_config_h = configure_file(
+  input: 'scipy_config.h.in',
+  output: 'scipy_config.h',
+  configuration: cdata,
+  install: false
+)
+
+_f2py_c_args = [f'-DF2PY_THREAD_LOCAL_DECL=@f2py_tls_define@']
 fortranobject_dep = declare_dependency(
   dependencies: fortranobject_dep,
   compile_args: _f2py_c_args,
@@ -158,27 +212,35 @@ if f2py_version.version_compare('<'+min_numpy_version)
   error(f'Found f2py executable is too old: @f2py_version@')
 endif
 
-# Note: this generato cannot handle:
+# Note: this generator cannot handle:
 # 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
 f2py_gen = generator(generate_f2pymod,
-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@', '@EXTRA_ARGS@'] + f2py_freethreading_arg,
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
 )
 
 
-# TODO: 64-bit BLAS and LAPACK
-#
-# Note that this works as long as BLAS and LAPACK are detected properly via
-# pkg-config. By default we look for OpenBLAS, other libraries can be configured via
-# `meson configure -Dblas=blas -Dlapack=lapack` (example to build with Netlib
-# BLAS and LAPACK).
-# For MKL and for auto-detecting one of multiple libs, we'll need a custom
-# dependency in Meson (like is done for scalapack) - see
-# https://github.com/mesonbuild/meson/issues/2835
+# Start of BLAS/LAPACK detection
+
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
+blas_symbol_suffix = get_option('blas-symbol-suffix')
+use_ilp64 = get_option('use-ilp64')
+
+# MKL-specific options
+_threading_opt = get_option('mkl-threading')
+if _threading_opt == 'auto'
+  # Switch default to iomp once conda-forge missing openmp.pc issue is fixed
+  mkl_opts = ['threading: seq']
+else
+  mkl_opts = ['threading: ' + _threading_opt]
+endif
+blas_opts = {'mkl': mkl_opts}
+mkl_version_req = '>=2023.0'  # see gh-24824
+mkl_may_use_sdl = not use_ilp64 and _threading_opt in ['auto', 'iomp']
+
 
 macOS13_3_or_later = false
 if host_machine.system() == 'darwin'
@@ -195,6 +257,9 @@ if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
   endif
+  if cc.get_id() != 'clang'
+    warning('accelerate may not be properly detected with non-native Apple compiler due to https://github.com/mesonbuild/meson/issues/13608')
+  endif
   _args_blas_lapack += ['-DACCELERATE_NEW_LAPACK']
   generate_blas_wrappers = true
   accelerate_flag = '-a'
@@ -210,6 +275,7 @@ if blas_name == 'openblas' or blas_name == 'auto'
   endif
 endif
 
+# Try any other openblas 
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
@@ -217,10 +283,7 @@ if blas_name == 'openblas'
 elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
-blas_dep = declare_dependency(
-  dependencies: blas,
-  compile_args: _args_blas_lapack
-)
+
 if blas_name == 'blas'
   # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
   # ABI wrappers, so detect it and error out if we cannot find it.
@@ -232,7 +295,30 @@ else
   cblas = []
 endif
 
-if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
+if blas_name == 'mkl'
+  blas = dependency('mkl',
+    modules: ['interface: lp64'] + mkl_opts,
+    required: false,  # may be required, but we need to emit a custom error message
+    version: mkl_version_req,
+  )
+  # Insert a second try with MKL, because we may be rejecting older versions
+  # or missing it because no pkg-config installed. If so, we need to retry
+  # with MKL SDL, and drop the version constraint (this always worked).
+  if not blas.found() and mkl_may_use_sdl
+    blas = dependency('mkl', modules: ['sdl: true'], required: false)
+  endif
+endif
+
+blas_lp64_dep = declare_dependency(
+  dependencies: blas,
+  compile_args: _args_blas_lapack
+)
+
+if not blas.found()
+  error('No BLAS library detected! SciPy needs one, please install it.')
+endif
+
+if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
   lapack = blas
@@ -241,8 +327,13 @@ elif lapack_name == 'openblas'
 else
   lapack = dependency(lapack_name)
 endif
-lapack_dep = declare_dependency(
-  dependencies: lapack,
+
+if not lapack.found()
+  error('No LAPACK library detected! SciPy needs one, please install it.')
+endif
+
+lapack_lp64_dep = declare_dependency(
+  dependencies: [lapack, blas_lp64_dep],
   compile_args: _args_blas_lapack
 )
 
@@ -252,54 +343,145 @@ dependency_map = {
   'PYBIND11': pybind11_dep,
 }
 
-# FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
-#        This needs work on gh-16200 to make MKL robust. We should be
-#        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
-#        in general to enable the ILP64 interface (also for OpenBLAS).
-uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
-uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
+# NB: from this point on blas_name is e.g. 'mkl-lp64-dynamic-seq'
+blas_name = blas.name()
+lapack_name = lapack.name()
+uses_mkl = blas_name.to_lower().startswith('mkl')
+uses_accelerate = blas_name.to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
   g77_abi_wrappers = static_library(
     'g77_abi_wrappers',
     ['_build_utils/src/wrap_g77_abi.c'],
-    dependencies: [py3_dep, cblas, blas_dep, np_dep],
+    dependencies: [py3_dep, cblas, blas_lp64_dep, np_dep],
     gnu_symbol_visibility: 'hidden',
   )
 else
   g77_abi_wrappers = static_library(
     'dummy_g77_abi_wrappers',
     ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    dependencies: [py3_dep, blas_dep, np_dep],
+    dependencies: [py3_dep, blas_lp64_dep, np_dep],
     gnu_symbol_visibility: 'hidden',
   )
 endif
 
+# Run ILP64 BLAS detection, if asked
+if use_ilp64
+  # Okay, we need ILP64 BLAS and LAPACK *in addition to LP64*. So we need to
+  # detect the ILP64 variants of the found LP64 libraries now.
+  _args_blas_ilp64 = ['-DHAVE_BLAS_ILP64']
+  c_flags_ilp64 = ['-DHAVE_BLAS_ILP64']
+  blas_interface = ['interface: ilp64']
+
+  if 'openblas' in blas_name
+    _args_blas_ilp64 += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
+  endif
+
+  # Run the detection
+  if uses_mkl
+    mkl_uses_sdl = false   # FIXME, why
+    if mkl_uses_sdl
+      mkl_opts = ['sdl: true']
+    endif
+    blas_ilp64 = dependency('mkl', modules: ['interface: ilp64'] + mkl_opts)
+    lapack_ilp64 = blas_ilp64
+
+    _args_blas_ilp64 += [
+       '-DBLAS_SYMBOL_SUFFIX=_64',
+       '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
+     ]
+     c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
+elif uses_accelerate
+    blas_ilp64 = dependency('accelerate')
+    lapack_ilp64 = blas_ilp64
+    _args_blas_ilp64 += ['-DACCELERATE_NEW_LAPACK']
+  elif blas_name == 'scipy-openblas'
+      # scipy_openblas64, a separate library
+      blas_ilp64 = dependency('scipy-openblas64')
+      lapack_ilp64 = blas_ilp64
+
+  else
+    # XXX: ILP64 detection has only been tested for MKL and scipy-openblas64
+    if blas_name == 'openblas'
+      # We cannot allow plain openblas here, that's already the LP64 library and
+      # will lead to problems (there is, as of now, no combined OpenBLAS build
+      # with 32 and 64 bit symbols)
+      blas_name = ['openblas64', 'openblas_ilp64']
+    endif
+
+    blas_ilp64 = dependency(blas_name, modules: blas_interface)
+    lapack_ilp64 = dependency(lapack_name, modules: ['lapack'] + blas_interface)
+  endif
+
+  # Pick up the symbol suffix, it may be auto-detected by Meson and different from LP64
+  if blas_symbol_suffix == 'auto'
+    if blas_name == 'scipy-openblas'
+      blas_symbol_suffix = '64_'
+    else
+      blas_symbol_suffix = blas_ilp64.get_variable('symbol_suffix', default_value: '')
+    endif
+    message(f'BLAS symbol suffix (ILP64): @blas_symbol_suffix@')
+  endif
+  _blas_incdir = []
+  if blas_symbol_suffix != ''
+    _args_blas_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+    _blas_incdir = ['.']
+  endif
+
+  blas_dep = declare_dependency(
+    dependencies: [blas_ilp64],
+    compile_args: _args_blas_ilp64,
+    include_directories: _blas_incdir,
+  )
+  lapack_dep = declare_dependency(dependencies: [lapack_ilp64, blas_dep])
+
+  g77_abi_wrappers_ilp64 = static_library(
+    'g77_abi_wrappers_ilp64',
+     ['_build_utils/src/wrap_g77_abi.c'],
+     dependencies: [py3_dep, blas_dep, np_dep],
+     c_args: _args_blas_ilp64,
+     gnu_symbol_visibility: 'hidden',
+   )
+else
+  # we're not using ILP64; user code will link to the always-available LP64 blas/lapack
+  # (all users must use preprocessor macros BLAS_NAME to handle the two options)
+  blas_dep = blas
+  lapack_dep = lapack
+  c_flags_ilp64 = []
+endif
+
+# End of BLAS/LAPACK handling
+
+
 scipy_dir = py3.get_install_dir() / 'scipy'
 
-version_utils = find_program('../tools/version_utils.py')
-generate_version = custom_target(
-  'generate-version',
-  install: true,
-  build_always_stale: true,
-  build_by_default: true,
-  output: 'version.py',
-  input: '../tools/version_utils.py',
-  command: [version_utils, '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir,
-  install_tag: 'python-runtime',
+# Generate version.py for sdist
+meson.add_dist_script(
+   ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
 )
+if not fs.exists('version.py')
+  generate_version = custom_target(
+    'generate-version',
+    install: true,
+    build_always_stale: true,
+    build_by_default: true,
+    output: 'version.py',
+    input: '../tools/gitversion.py',
+    command: ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
+    install_dir: scipy_dir,
+    install_tag: 'python-runtime',
+  )
+else
+  # When building from sdist, version.py exists and should be included
+  py3.install_sources(['version.py'], subdir : 'scipy')
+endif
 
 python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'linalg.pxd',
-  'optimize.pxd',
-  'special.pxd',
 ]
 
-fs = import('fs')
 if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif
@@ -309,41 +491,59 @@ py3.install_sources(
   subdir: 'scipy'
 )
 
-# Copy the main __init__.py and pxd files to the build dir.
+# Copy the main __init__.py to the build dir.
+# Some submodules (linalg, special, optimize) add pxd files to this.
 # Needed to trick Cython, it won't do a relative import outside a package
 #_cython_tree = declare_dependency(sources: [
-_cython_tree = [
-  fs.copyfile('__init__.py'),
-  fs.copyfile('linalg.pxd'),
-  fs.copyfile('optimize.pxd'),
-  fs.copyfile('special.pxd'),
-]
+_cython_tree = [fs.copyfile('__init__.py')]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+if cy.version().version_compare('>=3.1.0')
+  cython_args += ['-Xfreethreading_compatible=True']
+
+  cython_shared_src = custom_target(
+    install: false,
+    output: '_cyutility.c',
+    command: [
+      cython, '-3', '--fast-fail', '-Xfreethreading_compatible=True',
+      '--generate-shared=' + meson.current_build_dir()/'_cyutility.c'
+    ],
+  )
+
+  cython_shared_module = py3.extension_module('_cyutility',
+    cython_shared_src,
+    subdir: 'scipy',
+    cython_args: cython_args,
+    install: true,
+    install_tag: 'python-runtime',
+  )
+
+  cython_args += ['--shared=scipy._cyutility']
+else
+  cython_shared_module = []
+endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : _cython_tree)
+  depends : [_cython_tree, cython_shared_module]
+)
 
 cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree])
+  depends : [_cython_tree, cython_shared_module]
+)
 
 if use_pythran
+  # TODO: add argument to mark extension modules as safe to run without the GIL,
+  #       once pythran supports that.
   pythran_gen = generator(pythran,
     arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',
   )
 endif
-
-# Used for templated C code (not Cython code since Cython is path-dependent)
-tempita_gen = generator(tempita,
-  arguments : ['@INPUT@', '--outfile', '@OUTPUT@'],
-  output : '@BASENAME@',
-)
 
 # Check if compiler flags are supported. This is necessary to ensure that SciPy
 # can be built with any supported compiler. We need so many warning flags
@@ -368,6 +568,7 @@ Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
+Wno_unused_but_set_variable = cc.get_supported_arguments('-Wno-unused-but-set-variable')
 
 # C++ warning flags
 _cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
@@ -376,6 +577,7 @@ _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
 _cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
+_cpp_Wno_maybe_uninitialized = cpp.get_supported_arguments('-Wno-maybe-uninitialized')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
 _cpp_Wno_switch = cpp.get_supported_arguments('-Wno-switch')
@@ -421,13 +623,41 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
-_fflag_fpp = []
-if ff.get_id() in ['intel-cl', 'intel-llvm-cl']
-  if is_windows
-    _fflag_fpp = ff.get_supported_arguments('/fpp')
+
+# Gfortran does run the preprocessor for .F files, and PROPACK is the only
+# component which needs the preprocessor (unless we need symbol renaming for
+# blas_symbol_suffix).
+_fflag_preprocess = []
+_gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
+if ff.has_multi_arguments(_gfortran_preprocess)
+  _fflag_preprocess = _gfortran_preprocess
+else
+  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
+endif
+
+_fflag_ilp64 = []
+f2py_ilp64_opts = []
+if use_ilp64
+  # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
+  # default, all other known compilers use `-i8`
+  _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
+
+  # Write out a mapping file for f2py for defaulting to ILP64
+  conf_data = configuration_data()
+  if cc.sizeof('long') == 8
+    conf_data.set('int64_name', 'long')
+  elif cc.sizeof('long long') == 8
+    conf_data.set('int64_name', 'long long')
   else
-    _fflag_fpp = ff.get_supported_arguments('-fpp')
+    error('Neither `long` nor `long long` is 64-bit, giving up.')
   endif
+  int64_f2cmap = configure_file(
+    input: '_build_utils/int64.f2cmap.in',
+    output: 'int64.f2cmap',
+    configuration: conf_data,
+    install: false,
+  )
+  f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
 endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
@@ -439,11 +669,12 @@ else
   use_math_defines = []
 endif
 
-# Determine whether it is necessary to link libatomic. This could be the case
-# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# Determine whether it is necessary to link libatomic (required for HiGHS, see
+# gh-17777) This could be the case on, e.g., 32-bit platforms when atomic
+# operations are used on 64-bit types.
+# We do want this exact logic to minimize the number of cases where we use
+# `-latomic`, we can't switch to the builtin `dependency('atomic')` support.
 # The check is copied from Mesa <https://www.mesa3d.org/>.
-# Note that this dependency is not desired, it came in with a HiGHS update.
-# We should try to get rid of it. For discussion, see gh-17777.
 null_dep = dependency('', required : false)
 atomic_dep = null_dep
 code_non_lockfree = '''
@@ -524,7 +755,7 @@ foreach name, machine : machines
   conf_data.set(name + '_CPU_SYSTEM', machine.system())
 endforeach
 
-conf_data.set('CROSS_COMPILED', meson.is_cross_build())
+conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
 conf_data.set('PYTHON_PATH', py3.full_path())
@@ -533,7 +764,7 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 # Dependencies information
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
-  conf_data.set(name + '_FOUND', dep.found())
+  conf_data.set(name + '_FOUND', dep.found().to_string())
   if dep.found()
     conf_data.set(name + '_VERSION', dep.version())
     conf_data.set(name + '_TYPE_NAME', dep.type_name())
@@ -541,8 +772,10 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
     conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
+    conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach
+
 
 configure_file(
   input: '__config__.py.in',
@@ -558,14 +791,43 @@ configure_file(
 # better)
 subdir('_build_utils')
 # Update BLAS/LAPACK dependencies to include wrapper libs
-blas_dep = declare_dependency(
-  dependencies: blas_dep,
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+#
+# NB:
+#  - lapack_lp64_dep is LP64, which is always available
+#  - lapack_dep is ILP64 if available, and LP64 otherwise
+#
+# An extensions should declare `lapack_dep` as a dependency if it is ready to build-time
+# switch between LP64 and ILP64 variants; otherwise, it should depend on lapack_lp64_dep.
+#
+# Also note that lapack_*_dep includes blas_*dep, so there is no need to explicitly
+# depend on blas_*_dep.
+#
+# Also note that {blas,lapack}_*_dep objects do not include compile flags for Fortran.
+# This is because we expect that the need for Fortran code is limited. If desired,
+# can create the _fortran variants of the _dep objects to include
+# `compile_args: [_fflag_{lp64,ilp64}]`
+#
+blas_lp64_dep = declare_dependency(
+  dependencies: blas_lp64_dep,
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
 )
-lapack_dep = declare_dependency(
-  dependencies: lapack_dep,
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+lapack_lp64_dep = declare_dependency(
+  dependencies: [lapack_lp64_dep, blas_lp64_dep],
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
 )
+
+if use_ilp64
+  blas_dep = declare_dependency(
+    dependencies: blas_dep,
+    link_with: [g77_abi_wrappers_ilp64],
+    compile_args: [c_flags_ilp64]
+  )
+  lapack_dep = declare_dependency(
+    dependencies: [lapack_dep, blas_dep],
+    link_with: [g77_abi_wrappers_ilp64],
+    compile_args: [c_flags_ilp64]
+  )
+endif
 
 subdir('_lib')
 subdir('special')
@@ -574,15 +836,16 @@ subdir('sparse')
 subdir('stats')
 subdir('fft')
 subdir('io')
+subdir('optimize')
 subdir('spatial')
 subdir('cluster')
 subdir('constants')
 subdir('fftpack')
 subdir('integrate')
+subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')
 subdir('odr')
-subdir('optimize')
 subdir('datasets')
 subdir('misc')

@@ -104,6 +104,64 @@ controlled by the ``fill_value`` keyword parameter:
     numerical artifacts. Consider rescaling the data before interpolating.
 
 
+
+.. _tutorial-interpolate_RGI_batching:
+
+
+Batch dimensions of ``values``
+==============================
+
+Suppose you have a vector function :math:`f(x) = y`, where :math:`x` and :math:`y` are
+vectors, potentially of different lengths, and you want to sample the function on a grid
+of :math:`x` values. One way to address this is to use the fact that `RegularGridInterpolator`
+allows ``values`` with *trailing* dimensions.
+
+In accordance with how :ref:`1D interpolators
+interpret multidimensional arrays <tutorial-interpolate_batching>`, the interpretation is
+that the first :math:`N` dimensions of the ``values`` arrays are data dimensions
+(i.e. they correspond to the points defined by the ``grid`` argument), and the *trailing*
+dimensions are batch axes. Note that this disagrees with a usual NumPy broadcasting
+conventions, where broadcasting proceeds along the *leading* dimensions.
+
+To illustrate:
+
+    >>> n = 5   # the number of batch components
+
+    >>> # make a 3D grid
+    >>> x1 = np.linspace(-np.pi, np.pi, 10)
+    >>> x2 = np.linspace(0.0, np.pi, 15)
+    >>> x3 = np.linspace(0.0, np.pi/2, 20)
+    >>> points = (x1, x2, x3)
+    >>>
+    >>> # define a function and sample it on the grid
+    >>> def f(x1, x2, x3, n):
+    ...     lst = [np.sin(np.pi*x1/2) * np.exp(x2/2) + x3 + i for i in range(n)]
+    ...     return np.asarray(lst)
+    >>>
+    >>> X1, X2, X3 = np.meshgrid(x1, x2, x3, indexing="ij")
+    >>> values = f(X1, X2, X3, n)
+    >>> values.shape
+    (5, 10, 15, 20)
+    >>> 
+    >>> # prepare the data and construct the interpolator
+    >>> values = np.moveaxis(values, 0, -1)
+    >>> values.shape
+    (10, 15, 20, 5)     # the batch dimension is 5
+    >>> rgi = RegularGridInterpolator(points, values)
+    >>>
+    >>> # Coordinates to compute the interpolation at
+    >>> x = np.asarray([0.2, np.pi/2.1, np.pi/4.1])
+    >>>
+    # evaluate
+    >>> rgi(x).shape
+    (1, 5)
+
+In this example, we evaluated a batch of :math:`n=5` functions on a
+three-dimensional grid. In general, multiple batching dimensions are allowed, and the
+shape of the result follows by appending the batching shape (in this example, ``(5,)``)
+to the shape of the input ``x`` (in this example, `(1,)``).
+
+
 .. _tutorial-interpolate_cartesian-grids:
 
 Uniformly spaced data
@@ -155,6 +213,7 @@ This wrapper can be used as a(n almost) drop-in replacement for the
     >>> rgi([[1.5, 1.5], [3.5, 2.6]])
     array([ 9. , 64.9])
     >>> cgi = CartesianGridInterpolator((x, y), values, method='linear')
+    >>> cgi([[1.5, 1.5], [3.5, 2.6]])
     array([ 9. , 64.9])
 
 Note that the example above uses the ``map_coordinates`` boundary conditions.

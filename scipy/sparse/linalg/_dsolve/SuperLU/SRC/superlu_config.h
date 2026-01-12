@@ -3,7 +3,7 @@
 #define SUPERLU_CONFIG_H
 
 /* Enable metis */
-/* #undef HAVE_METIS */
+/*#define HAVE_METIS FALSE */
 
 /* Enable colamd */
 /* #undef HAVE_COLAMD */
@@ -12,7 +12,7 @@
 /* #undef XSDK_INDEX_SIZE */
 
 /* Integer type for indexing sparse matrix meta structure */
-#if (XSDK_INDEX_SIZE == 64)
+#if defined(XSDK_INDEX_SIZE) && (XSDK_INDEX_SIZE == 64)
 #include <stdint.h>
 #define _LONGINT 1
 typedef int64_t int_t;

@@ -221,8 +221,7 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto arr_shape = arr.shape();
     desc.shape.assign(arr_shape, arr_shape + ndim);
 
-    // TODO: Replace the following with `arr.itemsize()` this is a temporary workaround:
-    desc.element_size = PyArray_ITEMSIZE(reinterpret_cast<PyArrayObject *>(arr.ptr()));
+    desc.element_size = arr.itemsize();
     const auto arr_strides = arr.strides();
     desc.strides.assign(arr_strides, arr_strides + ndim);
     for (intptr_t i = 0; i < ndim; ++i) {
@@ -548,7 +547,7 @@ py::array cdist(const py::object& out_obj, const py::object& x_obj,
     return out;
 }
 
-PYBIND11_MODULE(_distance_pybind, m) {
+PYBIND11_MODULE(_distance_pybind, m, py::mod_gil_not_used()) {
     if (_import_array() != 0) {
         throw py::error_already_set();
     }
@@ -573,11 +572,6 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return pdist(out, x, w, JaccardDistance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
-    m.def("pdist_kulczynski1",
-          [](py::object x, py::object w, py::object out) {
-              return pdist(out, x, w, Kulczynski1Distance{});
-          },
-          "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_rogerstanimoto",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, RogerstanimotoDistance{});
@@ -588,11 +582,7 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return pdist(out, x, w, RussellRaoDistance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
-    m.def("pdist_sokalmichener",
-          [](py::object x, py::object w, py::object out) {
-              return pdist(out, x, w, SokalmichenerDistance{});
-          },
-          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+
     m.def("pdist_sokalsneath",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, SokalsneathDistance{});
@@ -656,11 +646,6 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return cdist(out, x, y, w, JaccardDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
-    m.def("cdist_kulczynski1",
-          [](py::object x, py::object y, py::object w, py::object out) {
-              return cdist(out, x, y, w, Kulczynski1Distance{});
-          },
-          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_hamming",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, HammingDistance{});
@@ -674,11 +659,6 @@ PYBIND11_MODULE(_distance_pybind, m) {
     m.def("cdist_russellrao",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, RussellRaoDistance{});
-          },
-          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
-    m.def("cdist_sokalmichener",
-          [](py::object x, py::object y, py::object w, py::object out) {
-              return cdist(out, x, y, w, SokalmichenerDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_sokalsneath",

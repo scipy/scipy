@@ -1,14 +1,17 @@
-from numpy.testing import (assert_array_equal, assert_array_almost_equal)
+import numpy as np
 from scipy.interpolate import pade
+from scipy._lib._array_api import (
+    xp_assert_equal, assert_array_almost_equal
+)
 
 def test_pade_trivial():
     nump, denomp = pade([1.0], 0)
-    assert_array_equal(nump.c, [1.0])
-    assert_array_equal(denomp.c, [1.0])
+    xp_assert_equal(nump.c, np.asarray([1.0]))
+    xp_assert_equal(denomp.c, np.asarray([1.0]))
 
     nump, denomp = pade([1.0], 0, 0)
-    assert_array_equal(nump.c, [1.0])
-    assert_array_equal(denomp.c, [1.0])
+    xp_assert_equal(nump.c, np.asarray([1.0]))
+    xp_assert_equal(denomp.c, np.asarray([1.0]))
 
 
 def test_pade_4term_exp():
@@ -77,8 +80,8 @@ def test_pade_ints():
             nump_flt, denomp_flt = pade(an_flt, i, j)
 
             # Check that they are the same.
-            assert_array_equal(nump_int.c, nump_flt.c)
-            assert_array_equal(denomp_int.c, denomp_flt.c)
+            xp_assert_equal(nump_int.c, nump_flt.c)
+            xp_assert_equal(denomp_int.c, denomp_flt.c)
 
 
 def test_pade_complex():

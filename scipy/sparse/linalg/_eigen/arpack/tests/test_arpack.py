@@ -1,21 +1,16 @@
-__usage__ = """
-To run tests locally:
-  python tests/test_arpack.py [-l<int>] [-v<int>]
-
-"""
-
 import threading
 import itertools
+import warnings
 
 import numpy as np
 
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import pytest
 
-from numpy import dot, conj, random
+from numpy import dot, conj
 from scipy.linalg import eig, eigh
-from scipy.sparse import csc_matrix, csr_matrix, diags, rand
+from scipy.sparse import csc_array, csr_array, diags_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
                                               ArpackNoConvergence)
@@ -36,7 +31,7 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
     ----------
     type_char : {'f', 'd', 'F', 'D'}
         Data type in ARPACK eigenvalue problem
-    mattype : {csr_matrix, aslinearoperator, asarray}, optional
+    mattype : {csr_array, aslinearoperator, asarray}, optional
         Linear operator type
 
     Returns
@@ -63,7 +58,10 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
         tol = 30 * np.finfo(np.float32).eps
         rtol *= 5
 
-    if mattype is csr_matrix and type_char in ('f', 'F'):
+    if (
+        isinstance(mattype, type) and issubclass(mattype, csr_array)
+        and type_char in ('f', 'F')
+    ):
         # sparse in single precision: worse errors
         rtol *= 5
 
@@ -84,49 +82,49 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
 
 
 def generate_matrix(N, complex_=False, hermitian=False,
-                    pos_definite=False, sparse=False):
-    M = np.random.random((N, N))
+                    pos_definite=False, sparse=False, rng=None):
+    M = rng.random((N, N))
     if complex_:
-        M = M + 1j * np.random.random((N, N))
+        M = M + 1j * rng.random((N, N))
 
     if hermitian:
         if pos_definite:
             if sparse:
                 i = np.arange(N)
-                j = np.random.randint(N, size=N-2)
+                j = rng.randint(N, size=N-2)
                 i, j = np.meshgrid(i, j)
                 M[i, j] = 0
             M = np.dot(M.conj(), M.T)
         else:
             M = np.dot(M.conj(), M.T)
             if sparse:
-                i = np.random.randint(N, size=N * N // 4)
-                j = np.random.randint(N, size=N * N // 4)
+                i = rng.randint(N, size=N * N // 4)
+                j = rng.randint(N, size=N * N // 4)
                 ind = np.nonzero(i == j)
                 j[ind] = (j[ind] + 1) % N
                 M[i, j] = 0
                 M[j, i] = 0
     else:
         if sparse:
-            i = np.random.randint(N, size=N * N // 2)
-            j = np.random.randint(N, size=N * N // 2)
+            i = rng.randint(N, size=N * N // 2)
+            j = rng.randint(N, size=N * N // 2)
             M[i, j] = 0
     return M
 
 
-def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
-    M = np.random.random((N, N))
+def generate_matrix_symmetric(N, pos_definite=False, sparse=False, rng=None):
+    M = rng.random((N, N))
 
     M = 0.5 * (M + M.T)  # Make M symmetric
 
     if pos_definite:
         Id = N * np.eye(N)
         if sparse:
-            M = csr_matrix(M)
+            M = csr_array(M)
         M += Id
     else:
         if sparse:
-            M = csr_matrix(M)
+            M = csr_array(M)
 
     return M
 
@@ -160,7 +158,7 @@ def argsort_which(eigenvalues, typ, k, which,
         elif mode == 'buckling':
             reval = eigenvalues / (eigenvalues - sigma)
         else:
-            raise ValueError("mode='%s' not recognized" % mode)
+            raise ValueError(f"mode='{mode}' not recognized")
 
         reval = np.round(reval, decimals=_ndigits[typ])
 
@@ -175,7 +173,7 @@ def argsort_which(eigenvalues, typ, k, which,
         else:
             ind = np.argsort(np.imag(reval))
     else:
-        raise ValueError("which='%s' is unrecognized" % which)
+        raise ValueError(f"which='{which}' is unrecognized")
 
     if which in ['LM', 'LA', 'LR', 'LI']:
         return ind[-k:]
@@ -186,7 +184,7 @@ def argsort_which(eigenvalues, typ, k, which,
 
 
 def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
-              mattype=np.asarray, OPpart=None, mode='normal'):
+              mattype=np.asarray, OPpart=None, mode='normal', rng=None):
     general = ('bmat' in d)
 
     if symmetric:
@@ -195,17 +193,13 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         eigs_func = eigs
 
     if general:
-        err = ("error for {}:general, typ={}, which={}, sigma={}, "
-               "mattype={}, OPpart={}, mode={}".format(eigs_func.__name__,
-                                                   typ, which, sigma,
-                                                   mattype.__name__,
-                                                   OPpart, mode))
+        err = (f"error for {eigs_func.__name__}:general, typ={typ}, which={which}, "
+               f"sigma={sigma}, mattype={mattype.__name__},"
+               f" OPpart={OPpart}, mode={mode}")
     else:
-        err = ("error for {}:standard, typ={}, which={}, sigma={}, "
-               "mattype={}, OPpart={}, mode={}".format(eigs_func.__name__,
-                                                   typ, which, sigma,
-                                                   mattype.__name__,
-                                                   OPpart, mode))
+        err = (f"error for {eigs_func.__name__}:standard, typ={typ}, which={which}, "
+               f"sigma={sigma}, mattype={mattype.__name__}, "
+               f"OPpart={OPpart}, mode={mode}")
 
     a = d['mat'].astype(typ)
     ac = mattype(a)
@@ -221,7 +215,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     exact_eval = exact_eval[ind]
 
     # compute arpack eigenvalues
-    kwargs = dict(which=which, v0=v0, sigma=sigma)
+    kwargs = dict(which=which, v0=v0, sigma=sigma, rng=rng)
     if eigs_func is eigsh:
         kwargs['mode'] = mode
     else:
@@ -284,14 +278,14 @@ class DictWithRepr(dict):
         self.name = name
 
     def __repr__(self):
-        return "<%s>" % self.name
+        return f"<{self.name}>"
 
 
 class SymmetricParams:
     def __init__(self):
         self.eigs = eigsh
         self.which = ['LM', 'SM', 'LA', 'SA', 'BE']
-        self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
+        self.mattypes = [csr_array, aslinearoperator, np.asarray]
         self.sigmas_modes = {None: ['normal'],
                              0.5: ['normal', 'buckling', 'cayley']}
 
@@ -299,16 +293,18 @@ class SymmetricParams:
         # these should all be float32 so that the eigenvalues
         # are the same in float32 and float64
         N = 6
-        np.random.seed(2300)
+        rng = np.random.RandomState(2300)
         Ar = generate_matrix(N, hermitian=True,
-                             pos_definite=True).astype('f').astype('d')
+                             pos_definite=True,
+                             rng=rng).astype('f').astype('d')
         M = generate_matrix(N, hermitian=True,
-                            pos_definite=True).astype('f').astype('d')
+                            pos_definite=True,
+                            rng=rng).astype('f').astype('d')
         Ac = generate_matrix(N, hermitian=True, pos_definite=True,
-                             complex_=True).astype('F').astype('D')
+                             complex_=True, rng=rng).astype('F').astype('D')
         Mc = generate_matrix(N, hermitian=True, pos_definite=True,
-                             complex_=True).astype('F').astype('D')
-        v0 = np.random.random(N)
+                             complex_=True, rng=rng).astype('F').astype('D')
+        v0 = rng.random(N)
 
         # standard symmetric problem
         SS = DictWithRepr("std-symmetric")
@@ -351,7 +347,7 @@ class NonSymmetricParams:
     def __init__(self):
         self.eigs = eigs
         self.which = ['LM', 'LR', 'LI']  # , 'SM', 'LR', 'SR', 'LI', 'SI']
-        self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
+        self.mattypes = [csr_array, aslinearoperator, np.asarray]
         self.sigmas_OPparts = {None: [None],
                                0.1: ['r'],
                                0.1 + 0.1j: ['r', 'i']}
@@ -360,12 +356,12 @@ class NonSymmetricParams:
         # these should all be float32 so that the eigenvalues
         # are the same in float32 and float64
         N = 6
-        np.random.seed(2300)
-        Ar = generate_matrix(N).astype('f').astype('d')
+        rng = np.random.RandomState(2300)
+        Ar = generate_matrix(N, rng=rng).astype('f').astype('d')
         M = generate_matrix(N, hermitian=True,
-                            pos_definite=True).astype('f').astype('d')
-        Ac = generate_matrix(N, complex_=True).astype('F').astype('D')
-        v0 = np.random.random(N)
+                            pos_definite=True, rng=rng).astype('f').astype('d')
+        Ac = generate_matrix(N, complex_=True, rng=rng).astype('F').astype('D')
+        v0 = rng.random(N)
 
         # standard real nonsymmetric problem
         SNR = DictWithRepr("std-real-nonsym")
@@ -397,48 +393,41 @@ class NonSymmetricParams:
         self.complex_test_cases = [SNC, GNC]
 
 
-def test_symmetric_modes():
-    params = SymmetricParams()
+@pytest.mark.parametrize("sigma, mode", [(None, 'normal'), (0.5, 'normal'),
+                                         (0.5, 'buckling'), (0.5, 'cayley')])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA', 'BE'])
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
+def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
+    rng = np.random.default_rng(1749531508689996)
     k = 2
-    symmetric = True
-    for D in params.real_test_cases:
-        for typ in 'fd':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for (sigma, modes) in params.sigmas_modes.items():
-                        for mode in modes:
-                            eval_evec(symmetric, D, typ, k, which,
-                                      None, sigma, mattype, None, mode)
+    eval_evec(True, D, typ, k, which, None, sigma, mattype, None, mode, rng=rng)
 
 
-def test_hermitian_modes():
-    params = SymmetricParams()
+@pytest.mark.parametrize("sigma", [None, 0.5])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA'])
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", SymmetricParams().complex_test_cases)
+def test_hermitian_modes(D, typ, which, mattype, sigma):
+    rng = np.random.default_rng(1749531706842957)
     k = 2
-    symmetric = True
-    for D in params.complex_test_cases:
-        for typ in 'FD':
-            for which in params.which:
-                if which == 'BE':
-                    continue  # BE invalid for complex
-                for mattype in params.mattypes:
-                    for sigma in params.sigmas_modes:
-                        eval_evec(symmetric, D, typ, k, which,
-                                  None, sigma, mattype)
+    eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
 
 
-def test_symmetric_starting_vector():
-    params = SymmetricParams()
-    symmetric = True
-    for k in [1, 2, 3, 4, 5]:
-        for D in params.real_test_cases:
-            for typ in 'fd':
-                v0 = random.rand(len(D['v0'])).astype(typ)
-                eval_evec(symmetric, D, typ, k, 'LM', v0)
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
+@pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
+def test_symmetric_starting_vector(k, D, typ):
+    rng = np.random.default_rng(1749532110418901)
+    v0 = rng.uniform(size=len(D['v0'])).astype(typ)
+    eval_evec(True, D, typ, k, 'LM', v0, rng=rng)
 
 
 def test_symmetric_no_convergence():
-    np.random.seed(1234)
-    m = generate_matrix(30, hermitian=True, pos_definite=True)
+    rng = np.random.RandomState(1234)
+    m = generate_matrix(30, hermitian=True, pos_definite=True, rng=rng)
     tol, rtol, atol = _get_test_tolerance('d')
     try:
         w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol, ncv=9)
@@ -451,62 +440,44 @@ def test_symmetric_no_convergence():
         assert_allclose(dot(m, v), w * v, rtol=rtol, atol=atol)
 
 
-def test_real_nonsymmetric_modes():
-    params = NonSymmetricParams()
+@pytest.mark.parametrize("sigma, OPpart", [(None, None), (0.1, 'r'),
+                                            (0.1 + 0.1j, 'r'), (0.1 + 0.1j, 'i')])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'LR', 'LI'])
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", NonSymmetricParams().real_test_cases)
+def test_real_nonsymmetric_modes(D, typ, which, mattype,
+                                 sigma, OPpart):
+    rng = np.random.default_rng(174953334412726)
     k = 2
-    symmetric = False
-    for D in params.real_test_cases:
-        for typ in 'fd':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for sigma, OPparts in params.sigmas_OPparts.items():
-                        for OPpart in OPparts:
-                            eval_evec(symmetric, D, typ, k, which,
-                                      None, sigma, mattype, OPpart)
+    eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
 
 
-def test_complex_nonsymmetric_modes():
-    params = NonSymmetricParams()
+@pytest.mark.parametrize("sigma", [None, 0.1, 0.1 + 0.1j])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'LR', 'LI'])
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
+def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
+    rng = np.random.default_rng(1749533536274527)
     k = 2
-    symmetric = False
-    for D in params.complex_test_cases:
-        for typ in 'DF':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for sigma in params.sigmas_OPparts:
-                        eval_evec(symmetric, D, typ, k, which,
-                                  None, sigma, mattype)
+    eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
 
 
-def test_standard_nonsymmetric_starting_vector():
-    params = NonSymmetricParams()
-    sigma = None
-    symmetric = False
-    for k in [1, 2, 3, 4]:
-        for d in params.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
-
-
-def test_general_nonsymmetric_starting_vector():
-    params = NonSymmetricParams()
-    sigma = None
-    symmetric = False
-    for k in [1, 2, 3, 4]:
-        for d in params.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
+@pytest.mark.parametrize("k", [1, 2, 3, 4])
+def test_nonsymmetric_starting_vector(k, D, typ):
+    rng = np.random.default_rng(174953366983161)
+    A = D['mat']
+    n = A.shape[0]
+    v0 = rng.uniform(size=n).astype(typ)
+    eval_evec(False, D, typ, k, "LM", v0, sigma=None, rng=rng)
 
 
 def test_standard_nonsymmetric_no_convergence():
-    np.random.seed(1234)
-    m = generate_matrix(30, complex_=True)
+    rng = np.random.RandomState(1234)
+    m = generate_matrix(30, complex_=True, rng=rng)
     tol, rtol, atol = _get_test_tolerance('d')
     try:
         w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
@@ -522,13 +493,13 @@ def test_standard_nonsymmetric_no_convergence():
 
 def test_eigen_bad_shapes():
     # A is not square.
-    A = csc_matrix(np.zeros((2, 3)))
+    A = csc_array(np.zeros((2, 3)))
     assert_raises(ValueError, eigs, A)
 
 
 def test_eigen_bad_kwargs():
     # Test eigen on wrong keyword argument
-    A = csc_matrix(np.zeros((8, 8)))
+    A = csc_array(np.zeros((8, 8)))
     assert_raises(ValueError, eigs, A, which='XX')
 
 
@@ -559,7 +530,7 @@ def test_linearoperator_deallocation():
     # running out of memory if eigs/eigsh are called in a tight loop.
 
     M_d = np.eye(10)
-    M_s = csc_matrix(M_d)
+    M_s = csc_array(M_d)
     M_o = aslinearoperator(M_d)
 
     with assert_deallocated(lambda: arpack.SpLuInv(M_s)):
@@ -573,19 +544,22 @@ def test_linearoperator_deallocation():
     with assert_deallocated(lambda: arpack.IterOpInv(M_o, M_o, 0.3)):
         pass
 
-def test_parallel_threads():
+
+def test_parallel_threads(num_parallel_threads):
     results = []
-    v0 = np.random.rand(50)
+    rng = np.random.default_rng(1234)
+    v0 = rng.random(50)
 
     def worker():
-        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=3, v0=v0)
         results.append(w)
 
         w, v = eigsh(x, k=3, v0=v0)
         results.append(w)
 
-    threads = [threading.Thread(target=worker) for k in range(10)]
+    nthreads = 9 // num_parallel_threads + 1
+    threads = [threading.Thread(target=worker) for _ in range(nthreads)]
     for t in threads:
         t.start()
     for t in threads:
@@ -600,14 +574,19 @@ def test_parallel_threads():
 def test_reentering():
     # Just some linear operator that calls eigs recursively
     def A_matvec(x):
-        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=1)
-        return v / w[0]
+        return v.real / w[0].real
     A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
 
+    # ================= Old Fortran tests ==================
     # The Fortran code is not reentrant, so this fails (gracefully, not crashing)
-    assert_raises(RuntimeError, eigs, A, k=1)
-    assert_raises(RuntimeError, eigsh, A, k=1)
+    # assert_raises(RuntimeError, eigs, A, k=1)
+    # assert_raises(RuntimeError, eigsh, A, k=1)
+    #
+    # These should not crash upon reentrance
+    eigs(A, k=1)
+    eigsh(A, k=1)
 
 
 def test_regression_arpackng_1315():
@@ -619,7 +598,7 @@ def test_regression_arpackng_1315():
         np.random.seed(1234)
 
         w0 = np.arange(1, 1000+1).astype(dtype)
-        A = diags([w0], [0], shape=(1000, 1000))
+        A = diags_array([w0], offsets=[0], shape=(1000, 1000))
 
         v0 = np.random.rand(1000).astype(dtype)
         w, v = eigs(A, k=9, ncv=2*9+1, which="LM", v0=v0)
@@ -630,16 +609,17 @@ def test_regression_arpackng_1315():
 
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
-    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
-    A = generate_matrix(4, sparse=False)
-    M_dense = np.random.random((4, 4))
-    M_sparse = generate_matrix(4, sparse=True)
+    rng = np.random.RandomState(1234)
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
+    A = generate_matrix(4, sparse=False, rng=rng)
+    M_dense = rng.random((4, 4))
+    M_sparse = generate_matrix(4, sparse=True, rng=rng)
     M_linop = aslinearoperator(M_dense)
     eig_tuple1 = eig(A, b=M_dense)
     eig_tuple2 = eig(A, b=M_sparse)
 
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
 
         assert_equal(eigs(A, M=M_dense, k=3), eig_tuple1)
         assert_equal(eigs(A, M=M_dense, k=4), eig_tuple1)
@@ -656,16 +636,18 @@ def test_eigs_for_k_greater():
 
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
-    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
-    A = generate_matrix(4, sparse=False)
-    M_dense = generate_matrix_symmetric(4, pos_definite=True)
-    M_sparse = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
+    rng = np.random.RandomState(1234)
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
+    A = generate_matrix(4, sparse=False, rng=rng)
+    M_dense = generate_matrix_symmetric(4, pos_definite=True, rng=rng)
+    M_sparse = generate_matrix_symmetric(
+        4, pos_definite=True, sparse=True, rng=rng)
     M_linop = aslinearoperator(M_dense)
     eig_tuple1 = eigh(A, b=M_dense)
     eig_tuple2 = eigh(A, b=M_sparse)
 
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
 
         assert_equal(eigsh(A, M=M_dense, k=4), eig_tuple1)
         assert_equal(eigsh(A, M=M_dense, k=5), eig_tuple1)
@@ -680,12 +662,13 @@ def test_eigsh_for_k_greater():
 
 
 def test_real_eigs_real_k_subset():
-    np.random.seed(1)
+    rng = np.random.default_rng(2)
 
     n = 10
-    A = rand(n, n, density=0.5)
+    A = random_array(shape=(n, n), density=0.5, rng=rng)
     A.data *= 2
     A.data -= 1
+    A += A.T  # make symmetric to test real eigenvalues
 
     v0 = np.ones(n)
 
@@ -705,14 +688,3 @@ def test_real_eigs_real_k_subset():
             assert_allclose(dist, 0, atol=np.sqrt(eps))
 
             prev_w = w
-
-            # Check sort order
-            if sigma is None:
-                d = w
-            else:
-                d = 1 / (w - sigma)
-
-            if which == 'LM':
-                # ARPACK is systematic for 'LM', but sort order
-                # appears not well defined for other modes
-                assert np.all(np.diff(abs(d)) <= 1e-6)

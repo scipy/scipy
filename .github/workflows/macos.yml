@@ -10,7 +10,7 @@ on:
       - maintenance/**
 
 permissions:
-   contents: read  # to fetch code (actions/checkout)
+  contents: read # to fetch code (actions/checkout)
 
 env:
   INSTALLDIR: "build-install"
@@ -26,122 +26,43 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, dev.py
+    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, spin
     needs: get_commit_message
-    # If using act to run CI locally the github object does not exist and
-    # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: macos-latest
-    strategy:
-      matrix:
-        python-version: ["3.11"]
-
     steps:
-    - uses: actions/checkout@v4.1.1
-      with:
-        submodules: recursive
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
 
-    - name: Install Ccache
-      run: |
-        brew install ccache
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.55.0
+          cache: false
+          environments: py312-system-libs-osx
 
-    - name:  Prepare compiler cache
-      id:    prep-ccache
-      shell: bash -l {0}
-      run: |
-        mkdir -p "${CCACHE_DIR}"
-        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
-        NOW=$(date -u +"%F-%T")
-        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
 
-    - name: Setup compiler cache
-      uses:  actions/cache@v4
-      id:    cache-ccache
-      # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
-      # NOTE: The caching strategy is modeled in a way that it will always have
-      # a unique cache key for each workflow run (even if the same workflow is
-      # run multiple times). The restore keys are not unique and for a partial
-      # match, they will return the most recently created cache entry,
-      # according to the GitHub Action Docs.
-      with:
-        path: ${{ steps.prep-ccache.outputs.dir }}
-        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `macOS Tests-3.10-ccache-macos-` which is not
-        # unique. As the CI matrix is expanded, this will need to be updated to
-        # be unique so that the cache is not restored from a different job altogether.
-        restore-keys: |
-          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-
+      - name: Test SciPy
+        shell: bash -l {0}
+        run: |
+          rm -rf ../../subprojects/boost_math  # so will fail if system boost doesn't work
+          rm -rf ../../subprojects/qhull_r  # so will fail if system qhull doesn't work
+          export OMP_NUM_THREADS=2
+          pixi run test-system-libs -j2
 
-    - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-        channels: conda-forge
-        channel-priority: true
-        activate-environment: scipy-dev
-        use-only-tar-bz2: false
-        miniforge-variant: Mambaforge
-        miniforge-version: latest
-        use-mamba: true
-
-    - name: Get Date
-      id: get-date
-      run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: Cache conda
-      uses: actions/cache@v4
-      env:
-        # Increase this value to reset cache if environment.yml has not changed
-        CACHE_NUMBER: 1
-      with:
-        path: ${{ env.CONDA }}/envs/scipy-dev
-        key:
-          ${{ runner.os }}--${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
-      id: envcache
-
-    - name: Update Conda Environment
-      run: mamba env update -n scipy-dev -f environment.yml
-      if: steps.envcache.outputs.cache-hit != 'true'
-
-    - name: Build and Install SciPy
-      shell: bash -l {0}
-      run: |
-        conda activate scipy-dev
-        mamba install python=${{ matrix.python-version}}
-
-        # optional test dependencies
-        mamba install scikit-umfpack scikit-sparse
-
-        # Python.org installers still use 10.9, so let's use that too. Note
-        # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
-        # this number in the future (if needed) should not be a problem.
-        # Conda-forge is still at 10.9, see:
-        # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
-        export MACOSX_DEPLOYMENT_TARGET=10.9
-        export MACOSX_SDK_VERSION=10.9
-        CC="ccache $CC" python dev.py build
-
-    - name: Test SciPy
-      shell: bash -l {0}
-      run: |
-        conda activate scipy-dev
-        export OMP_NUM_THREADS=2
-        python dev.py -n test -j2
-
-    - name: Ccache statistics
-      shell: bash -l {0}
-      run: |
-        ccache -s
-
+      - name: Ccache statistics
+        shell: bash -l {0}
+        run: pixi exec ccache -s
 
   test_scipy_openblas:
-    name: M1 & OpenBLAS, fast, py3.11/npAny, dev.py
+    name: M1 & OpenBLAS, fast, py3.11/npAny, spin
     needs: get_commit_message
-    # If using act to run CI locally the github object does not exist and
-    # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
@@ -151,76 +72,141 @@ jobs:
         python-version: ["3.11"]
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.55.0
+          cache: false
+          environments: scipy-openblas
 
-    - name: Build and Install SciPy
-      run: |
-        sudo xcode-select -s /Applications/Xcode_15.2.app
-        
-        git submodule update --init
-        GFORTRAN_LOC=$(which gfortran-13)
-        ln -s $GFORTRAN_LOC gfortran
-        export PATH=$PWD:$PATH
+      - name: Test with scipy-openblas32
+        run: pixi run test-scipy-openblas
 
-        # Ensure we have gfortran dylib
-        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
-        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
-    
-        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        pip install -r requirements/openblas.txt
-        python dev.py build --with-scipy-openblas
-
-        pip install pooch pytest hypothesis
-        python dev.py -n test 
-
-
-  test_meson_accelerate:
-    name: Accelerate, fast, py3.11/npAny, dev.py
+  test_accelerate:
+    name: Accelerate, full, py3.13/npAny, spin
     needs: get_commit_message
-    # If using act to run CI locally the github object does not exist and
-    # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
-        python-version: ["3.11"]
-
+        environment: [accelerate-lp64, accelerate-ilp64]
     steps:
-    - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.55.0
+          cache: false
+          environments: ${{ matrix.environment }}
+
+      - name: Test SciPy
+        # mpmath tests are too slow for CI
+        run: pixi run test-${{ matrix.environment }} -m full -- -k "not mpmath"
+
+
+  test_macos_x86_64_accelerate:
+    name: macos15, x86_64, accelerate
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+          allow-prereleases: true
+
+      - name: Test SciPy
+        run: |
+          export FC=gfortran-13
+          pip install -r requirements/build.txt
+          pip install -r requirements/dev.txt
+          spin build --with-accelerate
+          pip install -r requirements/test.txt
+          spin test
+
+
+  clang_ASAN:
+    name: Test under AddressSanitizer
+    runs-on: macos-15
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
+        fetch-tags: true
+        persist-credentials: false
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-
-    - name: Build and Install SciPy
+    - name: Set up pyenv
       run: |
-        sudo xcode-select -s /Applications/Xcode_15.2.app
+        git clone https://github.com/pyenv/pyenv.git "$HOME/.pyenv"
+        PYENV_ROOT="$HOME/.pyenv"
+        PYENV_BIN="$PYENV_ROOT/bin"
+        PYENV_SHIMS="$PYENV_ROOT/shims"
+        echo "$PYENV_BIN" >> $GITHUB_PATH
+        echo "$PYENV_SHIMS" >> $GITHUB_PATH
+        echo "PYENV_ROOT=$PYENV_ROOT" >> $GITHUB_ENV
 
-        git submodule update --init
-        GFORTRAN_LOC=$(which gfortran-13)
-        ln -s $GFORTRAN_LOC gfortran
-        export PATH=$PWD:$PATH
+    - name: Set up LLVM
+      run: |
+        brew install llvm@19
+        LLVM_PREFIX=$(brew --prefix llvm@19)
+        echo CC="$LLVM_PREFIX/bin/clang" >> $GITHUB_ENV
+        echo CXX="$LLVM_PREFIX/bin/clang++" >> $GITHUB_ENV
+        echo LDFLAGS="-L$LLVM_PREFIX/lib" >> $GITHUB_ENV
+        echo CPPFLAGS="-I$LLVM_PREFIX/include" >> $GITHUB_ENV
 
-        # Ensure we have gfortran dylib
-        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
-        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
+    - name: Build Python with AddressSanitizer
+      run: |
+        CONFIGURE_OPTS="--with-address-sanitizer" pyenv install 3.14t
+        pyenv global 3.14t
 
-        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build --with-accelerate
+    - name: Install NumPy dependencies from PyPI
+      run: |
+        pip install meson-python ninja cython
 
-        pip install pooch pytest hypothesis
-        python dev.py -n test
+    - name: Build NumPy with ASan
+      run:
+        pip install numpy --no-binary numpy --no-build-isolation -Csetup-args="-Db_sanitize=address" -v
+
+    - name: Install SciPy dependencies from PyPI
+      run: |
+        pip install pybind11 pythran spin pooch hypothesis pytest pytest-timeout
+
+    - name: Make gfortran-13 on runner image usable
+      run: |
+        # Ensure we use gfortran-13 and that its runtime is on the library search path
+        FC=$(which gfortran-13)
+        GFORTRAN_LIB=$(dirname `$FC --print-file-name libgfortran.dylib`)
+        echo DYLD_LIBRARY_PATH=$GFORTRAN_LIB >> "$GITHUB_ENV"
+        echo FC=$FC >> "$GITHUB_ENV"
+
+    - name: Build SciPy with ASan
+      run: |
+        # Can't use Meson's `-Db_sanitize=address` because gfortran-13 will choke on it
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        spin build -S-Dblas=accelerate
+
+    - name: Test
+      run: |
+        # pass -s to pytest to see ASAN errors and warnings, otherwise pytest captures them
+        ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0 \
+        spin test -- -v -s --timeout=600 --durations=10 -m 'not fail_asan'

@@ -6,23 +6,9 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'bsr_matmat',
     'bsr_matrix',
-    'bsr_matvec',
-    'bsr_matvecs',
-    'bsr_sort_indices',
-    'bsr_tocsr',
-    'bsr_transpose',
-    'check_shape',
-    'csr_matmat_maxnnz',
-    'getdata',
-    'getdtype',
-    'isshape',
     'isspmatrix_bsr',
     'spmatrix',
-    'to_native',
-    'upcast',
-    'warn',
 ]
 
 

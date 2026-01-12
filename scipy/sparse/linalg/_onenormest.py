@@ -10,7 +10,7 @@ __all__ = ['onenormest']
 
 def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     """
-    Compute a lower bound of the 1-norm of a sparse matrix.
+    Compute a lower bound of the 1-norm of a sparse array.
 
     Parameters
     ----------
@@ -32,7 +32,7 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     Returns
     -------
     est : float
-        An underestimate of the 1-norm of the sparse matrix.
+        An underestimate of the 1-norm of the sparse array.
     v : ndarray, optional
         The vector such that ||Av||_1 == est*||v||_1.
         It can be thought of as an input to the linear operator
@@ -44,9 +44,9 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
 
     Notes
     -----
-    This is algorithm 2.4 of [1].
+    This is algorithm 2.4 of [1]_.
 
-    In [2] it is described as follows.
+    In [2]_ it is described as follows.
     "This algorithm typically requires the evaluation of
     about 4t matrix-vector products and almost invariably
     produces a norm estimate (which is, in fact, a lower
@@ -68,9 +68,9 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import onenormest
-    >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
+    >>> A = csc_array([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
     >>> A.toarray()
     array([[ 1.,  0.,  0.],
            [ 5.,  8.,  2.],
@@ -218,112 +218,9 @@ def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
 
-def _algorithm_2_2(A, AT, t):
-    """
-    This is Algorithm 2.2.
-
-    Parameters
-    ----------
-    A : ndarray or other linear operator
-        A linear operator that can produce matrix products.
-    AT : ndarray or other linear operator
-        The transpose of A.
-    t : int, optional
-        A positive parameter controlling the tradeoff between
-        accuracy versus time and memory usage.
-
-    Returns
-    -------
-    g : sequence
-        A non-negative decreasing vector
-        such that g[j] is a lower bound for the 1-norm
-        of the column of A of jth largest 1-norm.
-        The first entry of this vector is therefore a lower bound
-        on the 1-norm of the linear operator A.
-        This sequence has length t.
-    ind : sequence
-        The ith entry of ind is the index of the column A whose 1-norm
-        is given by g[i].
-        This sequence of indices has length t, and its entries are
-        chosen from range(n), possibly with repetition,
-        where n is the order of the operator A.
-
-    Notes
-    -----
-    This algorithm is mainly for testing.
-    It uses the 'ind' array in a way that is similar to
-    its usage in algorithm 2.4. This algorithm 2.2 may be easier to test,
-    so it gives a chance of uncovering bugs related to indexing
-    which could have propagated less noticeably to algorithm 2.4.
-
-    """
-    A_linear_operator = aslinearoperator(A)
-    AT_linear_operator = aslinearoperator(AT)
-    n = A_linear_operator.shape[0]
-
-    # Initialize the X block with columns of unit 1-norm.
-    X = np.ones((n, t))
-    if t > 1:
-        X[:, 1:] = np.random.randint(0, 2, size=(n, t-1))*2 - 1
-    X /= float(n)
-
-    # Iteratively improve the lower bounds.
-    # Track extra things, to assert invariants for debugging.
-    g_prev = None
-    h_prev = None
-    k = 1
-    ind = range(t)
-    while True:
-        Y = np.asarray(A_linear_operator.matmat(X))
-        g = _sum_abs_axis0(Y)
-        best_j = np.argmax(g)
-        g.sort()
-        g = g[::-1]
-        S = sign_round_up(Y)
-        Z = np.asarray(AT_linear_operator.matmat(S))
-        h = _max_abs_axis1(Z)
-
-        # If this algorithm runs for fewer than two iterations,
-        # then its return values do not have the properties indicated
-        # in the description of the algorithm.
-        # In particular, the entries of g are not 1-norms of any
-        # column of A until the second iteration.
-        # Therefore we will require the algorithm to run for at least
-        # two iterations, even though this requirement is not stated
-        # in the description of the algorithm.
-        if k >= 2:
-            if less_than_or_close(max(h), np.dot(Z[:, best_j], X[:, best_j])):
-                break
-        ind = np.argsort(h)[::-1][:t]
-        h = h[ind]
-        for j in range(t):
-            X[:, j] = elementary_vector(n, ind[j])
-
-        # Check invariant (2.2).
-        if k >= 2:
-            if not less_than_or_close(g_prev[0], h_prev[0]):
-                raise Exception('invariant (2.2) is violated')
-            if not less_than_or_close(h_prev[0], g[0]):
-                raise Exception('invariant (2.2) is violated')
-
-        # Check invariant (2.3).
-        if k >= 3:
-            for j in range(t):
-                if not less_than_or_close(g[j], g_prev[j]):
-                    raise Exception('invariant (2.3) is violated')
-
-        # Update for the next iteration.
-        g_prev = g
-        h_prev = h
-        k += 1
-
-    # Return the lower bounds and the corresponding column indices.
-    return g, ind
-
-
 def _onenormest_core(A, AT, t, itmax):
     """
-    Compute a lower bound of the 1-norm of a sparse matrix.
+    Compute a lower bound of the 1-norm of a sparse array.
 
     Parameters
     ----------
@@ -340,7 +237,7 @@ def _onenormest_core(A, AT, t, itmax):
     Returns
     -------
     est : float
-        An underestimate of the 1-norm of the sparse matrix.
+        An underestimate of the 1-norm of the sparse array.
     v : ndarray, optional
         The vector such that ||Av||_1 == est*||v||_1.
         It can be thought of as an input to the linear operator

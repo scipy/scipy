@@ -1,11 +1,10 @@
-from __future__ import annotations
 from typing import (
     Any,
-    Callable,
     Literal,
     Optional,
     overload,
 )
+from collections.abc import Callable
 
 import numpy as np
 
@@ -277,7 +276,7 @@ class orthopoly1d(np.poly1d):
             weights: np.typing.ArrayLike | None,
             hn: float = ...,
             kn: float = ...,
-            wfunc = Optional[Callable[[float], float]],  # noqa: UP007
+            wfunc = Optional[Callable[[float], float]],  # noqa: UP045
             limits = tuple[float, float] | None,
             monic: bool = ...,
             eval_func: np.ufunc = ...,

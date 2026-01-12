@@ -1,50 +1,32 @@
-"""
-Python wrapper for PROPACK
---------------------------
-
-PROPACK is a collection of Fortran routines for iterative computation
-of partial SVDs of large matrices or linear operators.
-
-Based on BSD licensed pypropack project:
-  http://github.com/jakevdp/pypropack
-  Author: Jake Vanderplas <vanderplas@astro.washington.edu>
-
-PROPACK source is BSD licensed, and available at
-  http://soi.stanford.edu/~rmunk/PROPACK/
-"""
-
 __all__ = ['_svdp']
 
 import numpy as np
 
-from scipy._lib._util import check_random_state
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
-from ._propack import _spropack  # type: ignore[attr-defined]
-from ._propack import _dpropack  # type: ignore[attr-defined]
-from ._propack import _cpropack  # type: ignore[attr-defined]
-from ._propack import _zpropack  # type: ignore[attr-defined]
+from . import _propack  # type: ignore[attr-defined]
 
 
 _lansvd_dict = {
-    'f': _spropack.slansvd,
-    'd': _dpropack.dlansvd,
-    'F': _cpropack.clansvd,
-    'D': _zpropack.zlansvd,
+    'f': _propack.slansvd,
+    'd': _propack.dlansvd,
+    'F': _propack.clansvd,
+    'D': _propack.zlansvd,
 }
 
 
 _lansvd_irl_dict = {
-    'f': _spropack.slansvd_irl,
-    'd': _dpropack.dlansvd_irl,
-    'F': _cpropack.clansvd_irl,
-    'D': _zpropack.zlansvd_irl,
+    'f': _propack.slansvd_irl,
+    'd': _propack.dlansvd_irl,
+    'F': _propack.clansvd_irl,
+    'D': _propack.zlansvd_irl,
 }
 
+
 _which_converter = {
-    'LM': 'L',
-    'SM': 'S',
+    'LM': 1,
+    'SM': 0,
 }
 
 
@@ -61,8 +43,8 @@ class _AProd:
         except TypeError:
             self.A = aslinearoperator(np.asarray(A))
 
-    def __call__(self, transa, m, n, x, y, sparm, iparm):
-        if transa == 'n':
+    def __call__(self, transa, m, n, x, y):
+        if transa == 0:
             y[:] = self.A.matvec(x)
         else:
             y[:] = self.A.rmatvec(x)
@@ -82,7 +64,7 @@ class _AProd:
 def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
           compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
           delta=None, eta=None, anorm=0, cgs=False, elr=True,
-          min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
+          min_relgap=0.002, shifts=None, maxiter=None, rng=None):
     """
     Compute the singular value decomposition of a linear operator using PROPACK
 
@@ -145,17 +127,11 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     maxiter : int, optional
         Maximum number of restarts in IRL mode.  Default is ``1000``.
         Accessed only if ``irl_mode=True``.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -174,7 +150,8 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         ``full_output=True``.
 
     """
-    random_state = check_random_state(random_state)
+    if rng is None:
+        raise ValueError("`rng` must be a normalized numpy.random.Generator instance")
 
     which = which.upper()
     if which not in {'LM', 'SM'}:
@@ -191,9 +168,9 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     except KeyError:
         # work with non-supported types using native system precision
         if np.iscomplexobj(np.empty(0, dtype=typ)):
-            typ = np.dtype(complex).char
+            typ = 'D'
         else:
-            typ = np.dtype(float).char
+            typ = 'd'
         lansvd_irl = _lansvd_irl_dict[typ]
         lansvd = _lansvd_dict[typ]
 
@@ -214,20 +191,22 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
             f"but kmax ({kmax}) < k ({k})")
 
     # convert python args to fortran args
-    jobu = 'y' if compute_u else 'n'
-    jobv = 'y' if compute_v else 'n'
+    jobu = 1 if compute_u else 0
+    jobv = 1 if compute_v else 0
 
     # these will be the output arrays
     u = np.zeros((m, kmax + 1), order='F', dtype=typ)
     v = np.zeros((n, kmax), order='F', dtype=typ)
+    sigma = np.zeros(k, order='F', dtype=typ.lower())
+    bnd = np.zeros(k, order='F', dtype=typ.lower())
 
     # Specify the starting vector.  if v0 is all zero, PROPACK will generate
     # a random starting vector: the random seed cannot be controlled in that
     # case, so we'll instead use numpy to generate a random vector
     if v0 is None:
-        u[:, 0] = random_state.uniform(size=m)
+        u[:, 0] = rng.uniform(size=m)
         if np.iscomplexobj(np.empty(0, dtype=typ)):  # complex type
-            u[:, 0] += 1j * random_state.uniform(size=m)
+            u[:, 0] += 1j * rng.uniform(size=m)
     else:
         try:
             u[:, 0] = v0
@@ -257,25 +236,21 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
 
     ioption = np.array((int(bool(cgs)), int(bool(elr))), dtype='i')
 
-    # If computing `u` or `v` (left and right singular vectors,
-    # respectively), `blocksize` controls how large a fraction of the
-    # work is done via fast BLAS level 3 operations.  A larger blocksize
-    # may lead to faster computation at the expense of greater memory
-    # consumption.  `blocksize` must be ``>= 1``.  Choosing blocksize
-    # of 16, but docs don't specify; it's almost surely a
-    # power of 2.
-    blocksize = 16
+    # PROPACK uses a few LAPACK functions that require sufficiently large
+    # work arrays to utilize BLAS level 3 operations. In almost all relevant
+    # architectures, the blocksize is 32 or 64. We use 32 here to be on
+    # the conservative side.
+    NB = 32
 
     # Determine lwork & liwork:
     # the required lengths are specified in the PROPACK documentation
     if compute_u or compute_v:
-        lwork = m + n + 9*kmax + 5*kmax*kmax + 4 + max(
-            3*kmax*kmax + 4*kmax + 4,
-            blocksize*max(m, n))
+        lwork = m + n + 5*kmax**2 + 9*kmax + 4
+        lwork += max(3*kmax**2 + 4*kmax + 4, NB*max(m, n))
         liwork = 8*kmax
     else:
-        lwork = m + n + 9*kmax + 2*kmax*kmax + 4 + max(m + n, 4*kmax + 4)
-        liwork = 2*kmax + 1
+        lwork = m + n + 9*kmax + 2*kmax**2 + 4 + max(m + n, 4*kmax + 4)
+        liwork = 2*kmax + 2
     work = np.empty(lwork, dtype=typ.lower())
     iwork = np.empty(liwork, dtype=np.int32)
 
@@ -284,22 +259,23 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     iparm = np.empty(1, dtype=np.int32)
 
     if typ.isupper():
-        # PROPACK documentation is unclear on the required length of zwork.
-        # Use the same length Julia's wrapper uses
-        # see https://github.com/JuliaSmoothOptimizers/PROPACK.jl/
-        zwork = np.empty(m + n + 32*m, dtype=typ)
+        zwork = np.empty(m + n + kmax, dtype=typ)
         works = work, zwork, iwork
     else:
         works = work, iwork
 
+    # Generate the seed for the PROPACK random float generator.
+    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max,
+                             size=4, dtype=np.uint64)
+
     if irl_mode:
-        u, sigma, bnd, v, info = lansvd_irl(_which_converter[which], jobu,
-                                            jobv, m, n, shifts, k, maxiter,
-                                            aprod, u, v, tol, *works, doption,
-                                            ioption, dparm, iparm)
+        info = lansvd_irl(_which_converter[which], jobu,
+                          jobv, m, n, shifts, k, maxiter, tol,
+                          aprod, u, sigma, bnd, v, *works, doption,
+                          ioption, dparm, iparm, rng_state)
     else:
-        u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v, tol,
-                                        *works, doption, ioption, dparm, iparm)
+        info = lansvd(jobu, jobv, m, n, k, kmax, tol, aprod, u, sigma, bnd, v,
+                      *works, doption, ioption, dparm, iparm, rng_state)
 
     if info > 0:
         raise LinAlgError(

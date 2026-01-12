@@ -1,7 +1,9 @@
+import math
 import numpy as np
-from numpy.testing import \
-                          assert_array_almost_equal, assert_almost_equal, \
-                          assert_allclose, assert_equal
+from scipy._lib._array_api import (
+    assert_array_almost_equal, xp_assert_close,
+    make_xp_test_case
+)
 
 import pytest
 from scipy.signal import cont2discrete as c2d
@@ -11,16 +13,19 @@ from scipy.signal import tf2ss, impulse, dimpulse, step, dstep
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # March 29, 2011
 
+skip_xp_backends = pytest.mark.skip_xp_backends
 
+
+@make_xp_test_case(c2d)
 class TestC2D:
-    def test_zoh(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
-        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
-        dc = np.array([[0.0], [0.0], [-0.33]])
+    def test_zoh(self, xp):
+        ac = xp.eye(2, dtype=xp.float64)
+        bc = xp.full((2, 1), 0.5, dtype=xp.float64)
+        cc = xp.asarray([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = xp.asarray([[0.0], [0.0], [-0.33]])
 
-        ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = np.full((2, 1), 0.324360635350064)
+        ad_truth = 1.648721270700128 * xp.eye(2)
+        bd_truth = xp.full((2, 1), 0.324360635350064)
         # c and d in discrete should be equal to their continuous counterparts
         dt_requested = 0.5
 
@@ -30,21 +35,21 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cc, cd)
         assert_array_almost_equal(dc, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
-    def test_foh(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
-        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
-        dc = np.array([[0.0], [0.0], [-0.33]])
+    def test_foh(self, xp):
+        ac = xp.eye(2)
+        bc = xp.full((2, 1), 0.5)
+        cc = xp.asarray([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = xp.asarray([[0.0], [0.0], [-0.33]])
 
         # True values are verified with Matlab
-        ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = np.full((2, 1), 0.420839287058789)
+        ad_truth = 1.648721270700128 * xp.eye(2)
+        bd_truth = xp.full((2, 1), 0.420839287058789)
         cd_truth = cc
-        dd_truth = np.array([[0.260262223725224],
-                             [0.297442541400256],
-                             [-0.144098411624840]])
+        dd_truth = xp.asarray([[0.260262223725224],
+                              [0.297442541400256],
+                              [-0.144098411624840]])
         dt_requested = 0.5
 
         ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested, method='foh')
@@ -53,19 +58,19 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
-    def test_impulse(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
-        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
-        dc = np.array([[0.0], [0.0], [0.0]])
+    def test_impulse(self, xp):
+        ac = xp.eye(2)
+        bc = xp.full((2, 1), 0.5)
+        cc = xp.asarray([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = xp.asarray([[0.0], [0.0], [0.0]])
 
         # True values are verified with Matlab
-        ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = np.full((2, 1), 0.412180317675032)
+        ad_truth = 1.648721270700128 * xp.eye(2)
+        bd_truth = xp.full((2, 1), 0.412180317675032)
         cd_truth = cc
-        dd_truth = np.array([[0.4375], [0.5], [0.3125]])
+        dd_truth = xp.asarray([[0.4375], [0.5], [0.3125]])
         dt_requested = 0.5
 
         ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
@@ -75,25 +80,25 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
-    def test_gbt(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
-        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
-        dc = np.array([[0.0], [0.0], [-0.33]])
+    def test_gbt(self, xp):
+        ac = xp.eye(2)
+        bc = xp.full((2, 1), 0.5)
+        cc = xp.asarray([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = xp.asarray([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
         alpha = 1.0 / 3.0
 
-        ad_truth = 1.6 * np.eye(2)
-        bd_truth = np.full((2, 1), 0.3)
-        cd_truth = np.array([[0.9, 1.2],
-                             [1.2, 1.2],
-                             [1.2, 0.3]])
-        dd_truth = np.array([[0.175],
-                             [0.2],
-                             [-0.205]])
+        ad_truth = 1.6 * xp.eye(2)
+        bd_truth = xp.full((2, 1), 0.3)
+        cd_truth = xp.asarray([[0.9, 1.2],
+                               [1.2, 1.2],
+                               [1.2, 0.3]])
+        dd_truth = xp.asarray([[0.175],
+                               [0.2],
+                               [-0.205]])
 
         ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
                                  method='gbt', alpha=alpha)
@@ -103,19 +108,19 @@ class TestC2D:
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
 
-    def test_euler(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
-        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
-        dc = np.array([[0.0], [0.0], [-0.33]])
+    def test_euler(self, xp):
+        ac = xp.eye(2)
+        bc = xp.full((2, 1), 0.5)
+        cc = xp.asarray([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = xp.asarray([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
-        ad_truth = 1.5 * np.eye(2)
-        bd_truth = np.full((2, 1), 0.25)
-        cd_truth = np.array([[0.75, 1.0],
-                             [1.0, 1.0],
-                             [1.0, 0.25]])
+        ad_truth = 1.5 * xp.eye(2)
+        bd_truth = xp.full((2, 1), 0.25)
+        cd_truth = xp.asarray([[0.75, 1.0],
+                               [1.0, 1.0],
+                               [1.0, 0.25]])
         dd_truth = dc
 
         ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
@@ -125,24 +130,24 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
-    def test_backward_diff(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
-        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
-        dc = np.array([[0.0], [0.0], [-0.33]])
+    def test_backward_diff(self, xp):
+        ac = xp.eye(2)
+        bc = xp.full((2, 1), 0.5)
+        cc = xp.asarray([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = xp.asarray([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
-        ad_truth = 2.0 * np.eye(2)
-        bd_truth = np.full((2, 1), 0.5)
-        cd_truth = np.array([[1.5, 2.0],
-                             [2.0, 2.0],
-                             [2.0, 0.5]])
-        dd_truth = np.array([[0.875],
-                             [1.0],
-                             [0.295]])
+        ad_truth = 2.0 * xp.eye(2)
+        bd_truth = xp.full((2, 1), 0.5)
+        cd_truth = xp.asarray([[1.5, 2.0],
+                               [2.0, 2.0],
+                               [2.0, 0.5]])
+        dd_truth = xp.asarray([[0.875],
+                               [1.0],
+                               [0.295]])
 
         ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
                                  method='backward_diff')
@@ -152,22 +157,22 @@ class TestC2D:
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
 
-    def test_bilinear(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
-        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
-        dc = np.array([[0.0], [0.0], [-0.33]])
+    def test_bilinear(self, xp):
+        ac = xp.eye(2)
+        bc = xp.full((2, 1), 0.5)
+        cc = xp.asarray([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = xp.asarray([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
-        ad_truth = (5.0 / 3.0) * np.eye(2)
-        bd_truth = np.full((2, 1), 1.0 / 3.0)
-        cd_truth = np.array([[1.0, 4.0 / 3.0],
-                             [4.0 / 3.0, 4.0 / 3.0],
-                             [4.0 / 3.0, 1.0 / 3.0]])
-        dd_truth = np.array([[0.291666666666667],
-                             [1.0 / 3.0],
-                             [-0.121666666666667]])
+        ad_truth = (5.0 / 3.0) * xp.eye(2)
+        bd_truth = xp.full((2, 1), 1.0 / 3.0)
+        cd_truth = xp.asarray([[1.0, 4.0 / 3.0],
+                               [4.0 / 3.0, 4.0 / 3.0],
+                               [4.0 / 3.0, 1.0 / 3.0]])
+        dd_truth = xp.asarray([[0.291666666666667],
+                               [1.0 / 3.0],
+                               [-0.121666666666667]])
 
         ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
                                  method='bilinear')
@@ -176,14 +181,14 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
         # Same continuous system again, but change sampling rate
 
-        ad_truth = 1.4 * np.eye(2)
-        bd_truth = np.full((2, 1), 0.2)
-        cd_truth = np.array([[0.9, 1.2], [1.2, 1.2], [1.2, 0.3]])
-        dd_truth = np.array([[0.175], [0.2], [-0.205]])
+        ad_truth = 1.4 * xp.eye(2)
+        bd_truth = xp.full((2, 1), 0.2)
+        cd_truth = xp.asarray([[0.9, 1.2], [1.2, 1.2], [1.2, 0.3]])
+        dd_truth = xp.asarray([[0.175], [0.2], [-0.205]])
 
         dt_requested = 1.0 / 3.0
 
@@ -194,14 +199,14 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt_requested, dt)
 
-    def test_transferfunction(self):
-        numc = np.array([0.25, 0.25, 0.5])
-        denc = np.array([0.75, 0.75, 1.0])
+    def test_transferfunction(self, xp):
+        numc = xp.asarray([0.25, 0.25, 0.5])
+        denc = xp.asarray([0.75, 0.75, 1.0])
 
-        numd = np.array([[1.0 / 3.0, -0.427419169438754, 0.221654141101125]])
-        dend = np.array([1.0, -1.351394049721225, 0.606530659712634])
+        numd = xp.asarray([[1.0 / 3.0, -0.427419169438754, 0.221654141101125]])
+        dend = xp.asarray([1.0, -1.351394049721225, 0.606530659712634])
 
         dt_requested = 0.5
 
@@ -209,16 +214,16 @@ class TestC2D:
 
         assert_array_almost_equal(numd, num)
         assert_array_almost_equal(dend, den)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt_requested, dt)
 
-    def test_zerospolesgain(self):
-        zeros_c = np.array([0.5, -0.5])
-        poles_c = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
+    def test_zerospolesgain(self, xp):
+        zeros_c = xp.array([0.5, -0.5])
+        poles_c = xp.array([1.j / xp.sqrt(2), -1.j / xp.sqrt(2)])
         k_c = 1.0
 
-        zeros_d = [1.23371727305860, 0.735356894461267]
-        polls_d = [0.938148335039729 + 0.346233593780536j,
-                   0.938148335039729 - 0.346233593780536j]
+        zeros_d = xp.asarray([1.23371727305860, 0.735356894461267])
+        polls_d = xp.asarray([0.938148335039729 + 0.346233593780536j,
+                              0.938148335039729 - 0.346233593780536j])
         k_d = 1.0
 
         dt_requested = 0.5
@@ -228,10 +233,11 @@ class TestC2D:
 
         assert_array_almost_equal(zeros_d, zeros)
         assert_array_almost_equal(polls_d, poles)
-        assert_almost_equal(k_d, k)
-        assert_almost_equal(dt_requested, dt)
+        assert math.isclose(k_d, k)
+        assert math.isclose(dt_requested, dt)
 
-    def test_gbt_with_sio_tf_and_zpk(self):
+    @skip_xp_backends(np_only=True)
+    def test_gbt_with_sio_tf_and_zpk(self, xp):
         """Test method='gbt' with alpha=0.25 for tf and zpk cases."""
         # State space coefficients for the continuous SIO system.
         A = -1.0
@@ -260,8 +266,8 @@ class TestC2D:
         # Compute the discrete tf using cont2discrete.
         c2dnum, c2dden, dt = c2d((cnum, cden), h, method='gbt', alpha=alpha)
 
-        assert_allclose(dnum, c2dnum)
-        assert_allclose(dden, c2dden)
+        xp_assert_close(dnum, c2dnum)
+        xp_assert_close(dden, c2dden)
 
         # Convert explicit solution to zpk.
         dz, dp, dk = ss2zpk(Ad, Bd, Cd, Dd)
@@ -269,11 +275,11 @@ class TestC2D:
         # Compute the discrete zpk using cont2discrete.
         c2dz, c2dp, c2dk, dt = c2d((cz, cp, ck), h, method='gbt', alpha=alpha)
 
-        assert_allclose(dz, c2dz)
-        assert_allclose(dp, c2dp)
-        assert_allclose(dk, c2dk)
+        xp_assert_close(dz, c2dz)
+        xp_assert_close(dp, c2dp)
+        xp_assert_close(dk, c2dk)
 
-    def test_discrete_approx(self):
+    def test_discrete_approx(self, xp):
         """
         Test that the solution to the discrete approximation of a continuous
         system actually approximates the solution to the continuous system.
@@ -282,15 +288,15 @@ class TestC2D:
         """
 
         def u(t):
-            return np.sin(2.5 * t)
+            return xp.sin(2.5 * t)
 
-        a = np.array([[-0.01]])
-        b = np.array([[1.0]])
-        c = np.array([[1.0]])
-        d = np.array([[0.2]])
+        a = xp.asarray([[-0.01]])
+        b = xp.asarray([[1.0]])
+        c = xp.asarray([[1.0]])
+        d = xp.asarray([[0.2]])
         x0 = 1.0
 
-        t = np.linspace(0, 10.0, 101)
+        t = xp.linspace(0, 10.0, 101)
         dt = t[1] - t[0]
         u1 = u(t)
 
@@ -311,17 +317,19 @@ class TestC2D:
         # actually approximates.
         ymid = 0.5 * (yout[:-1] + yout[1:])
 
-        assert_allclose(yd2.ravel(), ymid, rtol=1e-4)
+        xp_assert_close(yd2.ravel(), ymid, rtol=1e-4)
 
+    @skip_xp_backends(np_only=True)
     def test_simo_tf(self):
         # See gh-5753
         tf = ([[1, 0], [1, 1]], [1, 1])
         num, den, dt = c2d(tf, 0.01)
 
-        assert_equal(dt, 0.01)  # sanity check
-        assert_allclose(den, [1, -0.990404983], rtol=1e-3)
-        assert_allclose(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
+        assert dt == 0.01  # sanity check
+        xp_assert_close(den, [1, -0.990404983], rtol=1e-3)
+        xp_assert_close(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
 
+    @skip_xp_backends(np_only=True)
     def test_multioutput(self):
         ts = 0.01  # time step
 
@@ -335,16 +343,17 @@ class TestC2D:
         num2, den2, dt2 = c2d(tf2, ts)
 
         # Sanity checks
-        assert_equal(dt, dt1)
-        assert_equal(dt, dt2)
+        assert dt == dt1
+        assert dt == dt2
 
         # Check that we get the same results
-        assert_allclose(num, np.vstack((num1, num2)), rtol=1e-13)
+        xp_assert_close(num, np.vstack((num1, num2)), rtol=1e-13)
 
         # Single input, so the denominator should
         # not be multidimensional like the numerator
-        assert_allclose(den, den1, rtol=1e-13)
-        assert_allclose(den, den2, rtol=1e-13)
+        xp_assert_close(den, den1, rtol=1e-13)
+        xp_assert_close(den, den2, rtol=1e-13)
+
 
 class TestC2dLti:
     def test_c2d_ss(self):
@@ -353,18 +362,27 @@ class TestC2dLti:
         B = np.array([[0], [1]])
         C = np.array([[1, 0]])
         D = 0
+        dt = 0.05
 
         A_res = np.array([[0.985136404135682, 0.004876671474795],
                           [0.009753342949590, 0.965629718236502]])
         B_res = np.array([[0.000122937599964], [0.049135527547844]])
+        C_res = np.astype(C, np.float64)
 
         sys_ssc = lti(A, B, C, D)
-        sys_ssd = sys_ssc.to_discrete(0.05)
+        sys_ssd = sys_ssc.to_discrete(dt=dt)
 
-        assert_allclose(sys_ssd.A, A_res)
-        assert_allclose(sys_ssd.B, B_res)
-        assert_allclose(sys_ssd.C, C)
-        assert_allclose(sys_ssd.D, D)
+        xp_assert_close(sys_ssd.A, A_res)
+        xp_assert_close(sys_ssd.B, B_res)
+        xp_assert_close(sys_ssd.C, C_res)
+        xp_assert_close(sys_ssd.D, np.zeros_like(sys_ssd.D))
+
+        sys_ssd2 = c2d(sys_ssc, dt=dt)
+
+        xp_assert_close(sys_ssd2.A, A_res)
+        xp_assert_close(sys_ssd2.B, B_res)
+        xp_assert_close(sys_ssd2.C, C_res)
+        xp_assert_close(sys_ssd2.D, np.zeros_like(sys_ssd.D))
 
     def test_c2d_tf(self):
 
@@ -376,10 +394,11 @@ class TestC2dLti:
         den_res = np.array([1.0, -0.980198673306755])
 
         # Somehow a lot of numerical errors
-        assert_allclose(sys.den, den_res, atol=0.02)
-        assert_allclose(sys.num, num_res, atol=0.02)
+        xp_assert_close(sys.den, den_res, atol=0.02)
+        xp_assert_close(sys.num, num_res, atol=0.02)
 
 
+@make_xp_test_case(c2d)
 class TestC2dInvariants:
     # Some test cases for checking the invariances.
     # Array of triplets: (system, sample time, number of samples)
@@ -391,26 +410,30 @@ class TestC2dInvariants:
 
     # Check that systems discretized with the impulse-invariant
     # method really hold the invariant
+    @make_xp_test_case(impulse, dimpulse)
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
-    def test_impulse_invariant(self, sys, sample_time, samples_number):
-        time = np.arange(samples_number) * sample_time
+    def test_impulse_invariant(self, xp, sys, sample_time, samples_number):
+        sys = tuple(map(xp.asarray, sys))
+        time = xp.arange(samples_number) * sample_time
         _, yout_cont = impulse(sys, T=time)
         _, yout_disc = dimpulse(c2d(sys, sample_time, method='impulse'),
                                 n=len(time))
-        assert_allclose(sample_time * yout_cont.ravel(), yout_disc[0].ravel())
+        xp_assert_close(sample_time * yout_cont.ravel(), yout_disc[0].ravel())
 
     # Step invariant should hold for ZOH discretized systems
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
-    def test_step_invariant(self, sys, sample_time, samples_number):
-        time = np.arange(samples_number) * sample_time
+    def test_step_invariant(self, xp, sys, sample_time, samples_number):
+        sys = tuple(map(xp.asarray, sys))
+        time = xp.arange(samples_number) * sample_time
         _, yout_cont = step(sys, T=time)
         _, yout_disc = dstep(c2d(sys, sample_time, method='zoh'), n=len(time))
-        assert_allclose(yout_cont.ravel(), yout_disc[0].ravel())
+        xp_assert_close(yout_cont.ravel(), yout_disc[0].ravel())
 
     # Linear invariant should hold for FOH discretized systems
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
-    def test_linear_invariant(self, sys, sample_time, samples_number):
-        time = np.arange(samples_number) * sample_time
+    def test_linear_invariant(self, xp, sys, sample_time, samples_number):
+        sys = tuple(map(xp.asarray, sys))
+        time = xp.arange(samples_number) * sample_time
         _, yout_cont, _ = lsim(sys, T=time, U=time)
         _, yout_disc, _ = dlsim(c2d(sys, sample_time, method='foh'), u=time)
-        assert_allclose(yout_cont.ravel(), yout_disc.ravel())
+        xp_assert_close(yout_cont.ravel(), yout_disc.ravel())

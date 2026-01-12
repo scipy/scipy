@@ -9,6 +9,7 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
    :hidden:
 
    spatial.distance
+   spatial.transform
 
 Spatial transformations
 =======================
@@ -108,7 +109,7 @@ Warnings / Errors used in :mod:`scipy.spatial`
 """  # noqa: E501
 
 from ._kdtree import *
-from ._ckdtree import *
+from ._ckdtree import *  # type: ignore[import-not-found]
 from ._qhull import *
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *

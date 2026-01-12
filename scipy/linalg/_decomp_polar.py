@@ -1,10 +1,12 @@
 import numpy as np
+from scipy._lib._util import _apply_over_batch
 from scipy.linalg import svd
 
 
 __all__ = ['polar']
 
 
+@_apply_over_batch(('a', 2))
 def polar(a, side="right"):
     """
     Compute the polar decomposition.
@@ -29,7 +31,7 @@ def polar(a, side="right"):
     -------
     u : (m, n) ndarray
         If `a` is square, then `u` is unitary. If m > n, then the columns
-        of `a` are orthonormal, and if m < n, then the rows of `u` are
+        of `u` are orthonormal, and if m < n, then the rows of `u` are
         orthonormal.
     p : ndarray
         `p` is Hermitian positive semidefinite. If `a` is nonsingular, `p`

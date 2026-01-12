@@ -1,9 +1,5 @@
 import sys
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_equal, assert_allclose,
@@ -15,6 +11,8 @@ from scipy.special import erf
 from scipy.integrate._bvp import (modify_mesh, estimate_fun_jac,
                                   estimate_bc_jac, compute_jac_indices,
                                   construct_global_jac, solve_bvp)
+
+import pytest
 
 
 def exp_fun(x, y):
@@ -689,6 +687,7 @@ def test_nonlin_bc():
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
+@pytest.mark.thread_unsafe(reason="multithreaded sys.stdout parsing is not thread-safe")
 def test_verbose():
     # Smoke test that checks the printing does something and does not crash
     x = np.linspace(0, 1, 5)

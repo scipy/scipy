@@ -32,7 +32,7 @@ class BarrierSubproblem:
                  constr, jac, barrier_parameter, tolerance,
                  enforce_feasibility, global_stop_criteria,
                  xtol, fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0,
-                 jac_eq0):
+                 jac_eq0, finite_diff_bounds):
         # Store parameters
         self.n_vars = n_vars
         self.x0 = x0
@@ -54,6 +54,8 @@ class BarrierSubproblem:
         self.constr0 = self._compute_constr(constr_ineq0, constr_eq0, s0)
         self.jac0 = self._compute_jacobian(jac_eq0, jac_ineq0, s0)
         self.terminate = False
+        self.lb = finite_diff_bounds[0]
+        self.ub = finite_diff_bounds[1]
 
     def update(self, barrier_parameter, tolerance):
         self.barrier_parameter = barrier_parameter
@@ -78,9 +80,21 @@ class BarrierSubproblem:
         # Get variables and slack variables
         x = self.get_variables(z)
         s = self.get_slack(z)
-        # Compute function and constraints
-        f = self.fun(x)
-        c_eq, c_ineq = self.constr(x)
+
+        # Compute function and constraints,
+        # making sure x is within any strict bounds
+        if np.any((x < self.lb) | (x > self.ub)):
+            # If x is out of the strict bounds, set f = inf,
+            # and just set both equality and inequality
+            # constraints to 0 since we can't evaluate
+            # them separately.
+            f = np.inf
+            c_eq = np.full(self.n_eq, 0.)
+            c_ineq = np.full(self.n_ineq, 0.)
+        else:
+            f = self.fun(x)
+            c_eq, c_ineq = self.constr(x)
+
         # Return objective function and constraints
         return (self._compute_function(f, c_ineq, s),
                 self._compute_constr(c_ineq, c_eq, s))
@@ -144,11 +158,11 @@ class BarrierSubproblem:
         else:
             if sps.issparse(J_eq) or sps.issparse(J_ineq):
                 # It is expected that J_eq and J_ineq
-                # are already `csr_matrix` because of
+                # are already `csr_array` because of
                 # the way ``BoxConstraint``, ``NonlinearConstraint``
                 # and ``LinearConstraint`` are defined.
-                J_eq = sps.csr_matrix(J_eq)
-                J_ineq = sps.csr_matrix(J_ineq)
+                J_eq = sps.csr_array(J_eq)
+                J_ineq = sps.csr_array(J_ineq)
                 return self._assemble_sparse_jacobian(J_eq, J_ineq, s)
             else:
                 S = np.diag(s)
@@ -189,8 +203,8 @@ class BarrierSubproblem:
         new_indices[~mask] = indices
         new_data[mask] = s
         new_data[~mask] = data
-        J = sps.csr_matrix((new_data, new_indices, new_indptr),
-                           (n_eq + n_ineq, n_vars + n_ineq))
+        J = sps.csr_array((new_data, new_indices, new_indptr),
+                          (n_eq + n_ineq, n_vars + n_ineq))
         return J
 
     def lagrangian_hessian_x(self, z, v):
@@ -272,7 +286,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
                       initial_tolerance,
                       initial_penalty,
                       initial_trust_radius,
-                      factorization_method):
+                      factorization_method,
+                      finite_diff_bounds):
     """Trust-region interior points method.
 
     Solve problem:
@@ -285,7 +300,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     # variables. Represents ``tau`` from [1]_ p.885, formula (3.18).
     BOUNDARY_PARAMETER = 0.995
     # BARRIER_DECAY_RATIO controls the decay of the barrier parameter
-    # and of the subproblem toloerance. Represents ``theta`` from [1]_ p.879.
+    # and of the subproblem tolerance. Represents ``theta`` from [1]_ p.879.
     BARRIER_DECAY_RATIO = 0.2
     # TRUST_ENLARGEMENT controls the enlargement on trust radius
     # after each iteration
@@ -305,7 +320,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
         x0, s0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq, constr, jac,
         barrier_parameter, tolerance, enforce_feasibility,
         stop_criteria, xtol, fun0, grad0, constr_ineq0, jac_ineq0,
-        constr_eq0, jac_eq0)
+        constr_eq0, jac_eq0, finite_diff_bounds)
     # Define initial parameter for the first iteration.
     z = np.hstack((x0, s0))
     fun0_subprob, constr0_subprob = subprob.fun0, subprob.constr0

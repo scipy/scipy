@@ -60,10 +60,10 @@ def test_backend_call(func, np_func, mock):
     assert_allclose(func(x), answer, atol=1e-10)
 
     with set_backend(mock_backend, only=True):
-        mock.number_calls = 0
+        mock.number_calls.c = 0
         y = func(x)
         assert_equal(y, mock.return_value)
-        assert_equal(mock.number_calls, 1)
+        assert_equal(mock.number_calls.c, 1)
 
     assert_allclose(func(x), answer, atol=1e-10)
 
@@ -91,8 +91,8 @@ def test_backend_plan(func, mock):
         func(x, plan='foo')
 
     with set_backend(mock_backend, only=True):
-        mock.number_calls = 0
+        mock.number_calls.c = 0
         y = func(x, plan='foo')
         assert_equal(y, mock.return_value)
-        assert_equal(mock.number_calls, 1)
-        assert_equal(mock.last_args[1]['plan'], 'foo')
+        assert_equal(mock.number_calls.c, 1)
+        assert_equal(mock.last_args.l[1]['plan'], 'foo')

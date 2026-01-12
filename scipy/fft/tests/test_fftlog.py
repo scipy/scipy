@@ -1,16 +1,20 @@
 import warnings
+import math
+
 import numpy as np
 import pytest
 
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import (
+    xp_assert_close, xp_assert_less, make_xp_test_case, make_xp_pytest_param
+)
 
-pytestmark = array_api_compatible
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@make_xp_test_case(fht, fhtoffset)
 def test_fht_agrees_with_fftlog(xp):
     # check that fht numerically agrees with the output from Fortran FFTLog,
     # the results were generated with the provided `fftlogtest` program,
@@ -22,7 +26,7 @@ def test_fht_agrees_with_fftlog(xp):
 
     r = np.logspace(-4, 4, 16)
 
-    dln = np.log(r[1]/r[0])
+    dln = math.log(r[1]/r[0])
     mu = 0.3
     offset = 0.0
     bias = 0.0
@@ -59,6 +63,10 @@ def test_fht_agrees_with_fftlog(xp):
     # test 3: positive bias
     bias = 0.8
     offset = fhtoffset(dln, mu, bias=bias)
+    # offset is a np.float64, which array-api-strict disallows
+    # even if it's technically a subclass of float
+    offset = float(offset)
+
     ours = fht(a, dln, mu, offset=offset, bias=bias)
     theirs = [-7.3436673558316850E+00, +0.1710271207817100E+00,
               +0.1065374386206564E+00, -0.5121739602708132E-01,
@@ -74,6 +82,8 @@ def test_fht_agrees_with_fftlog(xp):
     # test 4: negative bias
     bias = -0.8
     offset = fhtoffset(dln, mu, bias=bias)
+    offset = float(offset)
+
     ours = fht(a, dln, mu, offset=offset, bias=bias)
     theirs = [+0.8985777068568745E-05, +0.4074898209936099E-04,
               +0.2123969254700955E-03, +0.1009558244834628E-02,
@@ -91,6 +101,7 @@ def test_fht_agrees_with_fftlog(xp):
 @pytest.mark.parametrize('offset', [0.0, 1.0, -1.0])
 @pytest.mark.parametrize('bias', [0, 0.1, -0.1])
 @pytest.mark.parametrize('n', [64, 63])
+@make_xp_test_case(fhtoffset, fht, ifht)
 def test_fht_identity(n, bias, offset, optimal, xp):
     rng = np.random.RandomState(3491349965)
 
@@ -100,6 +111,9 @@ def test_fht_identity(n, bias, offset, optimal, xp):
 
     if optimal:
         offset = fhtoffset(dln, mu, initial=offset, bias=bias)
+        # offset is a np.float64, which array-api-strict disallows
+        # even if it's technically a subclass of float
+        offset = float(offset)
 
     A = fht(a, dln, mu, offset=offset, bias=bias)
     a_ = ifht(A, dln, mu, offset=offset, bias=bias)
@@ -107,6 +121,7 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     xp_assert_close(a_, a, rtol=1.5e-7)
 
 
+@make_xp_test_case(fht, ifht)
 def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
 
@@ -127,12 +142,14 @@ def test_fht_special_cases(xp):
         fht(a, dln, mu, bias=bias)
         assert not record, 'fht warned about a well-defined transform'
 
+    # with fht_lock:
     # case 3: x in M, y not in M => singular transform
     mu, bias = -3.5, 0.5
     with pytest.warns(Warning) as record:
         fht(a, dln, mu, bias=bias)
         assert record, 'fht did not warn about a singular transform'
 
+    # with fht_lock:
     # case 4: x not in M, y in M => singular inverse transform
     mu, bias = -2.5, 0.5
     with pytest.warns(Warning) as record:
@@ -141,6 +158,7 @@ def test_fht_special_cases(xp):
 
 
 @pytest.mark.parametrize('n', [64, 63])
+@make_xp_test_case(fht)
 def test_fht_exact(n, xp):
     rng = np.random.RandomState(3491349965)
 
@@ -155,9 +173,12 @@ def test_fht_exact(n, xp):
     r = np.logspace(-2, 2, n)
     a = xp.asarray(r**gamma)
 
-    dln = np.log(r[1]/r[0])
+    dln = math.log(r[1]/r[0])
 
     offset = fhtoffset(dln, mu, initial=0.0, bias=gamma)
+    # offset is a np.float64, which array-api-strict disallows
+    # even if it's technically a subclass of float
+    offset = float(offset)
 
     A = fht(a, dln, mu, offset=offset, bias=gamma)
 
@@ -167,3 +188,34 @@ def test_fht_exact(n, xp):
     At = xp.asarray((2/k)**gamma * poch((mu+1-gamma)/2, gamma))
 
     xp_assert_close(A, At)
+
+@skip_xp_backends(np_only=True,
+                  reason='array-likes only supported for NumPy backend')
+@pytest.mark.parametrize(
+    "op", [make_xp_pytest_param(fht), make_xp_pytest_param(ifht)]
+)
+def test_array_like(xp, op):
+    x = [[[1.0, 1.0], [1.0, 1.0]],
+         [[1.0, 1.0], [1.0, 1.0]],
+         [[1.0, 1.0], [1.0, 1.0]]]
+    xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
+
+@pytest.mark.parametrize('n', [128, 129])
+@make_xp_test_case(fhtoffset, fht)
+def test_gh_21661(xp, n):
+    one = xp.asarray(1.0)
+    mu = 0.0
+    r = np.logspace(-7, 1, n)
+    dln = math.log(r[1] / r[0])
+    offset = fhtoffset(dln, initial=-6 * np.log(10), mu=mu)
+    r = xp.asarray(r, dtype=one.dtype)
+    k = math.exp(offset) / xp.flip(r, axis=-1)
+
+    def f(x, mu):
+        return x**(mu + 1)*xp.exp(-x**2/2)
+
+    a_r = f(r, mu)
+    fht_val = fht(a_r, dln, mu=mu, offset=offset)
+    a_k = f(k, mu)
+    rel_err = xp.max(xp.abs((fht_val - a_k) / a_k))
+    xp_assert_less(rel_err, xp.asarray(7.28e+16)[()])

@@ -11,7 +11,7 @@ runtime dependency - and we support a significant number of BLAS/LAPACK
 libraries.
 
 This document aims to provide guidance about how to go about debugging linear
-algebra issues. 
+algebra issues.
 
 If there is a real bug, it can be in one of three places:
 
@@ -46,10 +46,10 @@ and LAPACK. E.g.::
     found:  True
     version:  0.3.23
     detection method:  pkgconfig
-    include directory:  /home/user/mambaforge/envs/scipy-dev/include
-    lib directory:  /home/user/mambaforge/envs/scipy-dev/lib
+    include directory:  /home/user/miniforge/envs/scipy-dev/include
+    lib directory:  /home/user/miniforge/envs/scipy-dev/lib
     openblas configuration:  USE_64BITINT=0 DYNAMIC_ARCH=1 DYNAMIC_OLDER= NO_CBLAS= NO_LAPACK=0 NO_LAPACKE= NO_AFFINITY=1 USE_OPENMP=0 PRESCOTT MAX_THREADS=128
-    pc file directory:  /home/user/mambaforge/envs/scipy-dev/lib/pkgconfig
+    pc file directory:  /home/user/miniforge/envs/scipy-dev/lib/pkgconfig
 
 This method will be correct for SciPy wheels and for local dev builds. It *may*
 be correct for other installs, however keep in mind that distros like
@@ -68,7 +68,7 @@ on plain Netlib BLAS, see
         "user_api": "blas",
         "internal_api": "openblas",
         "prefix": "libopenblas",
-        "filepath": "/home/user/mambaforge/envs/dev/lib/libopenblasp-r0.3.21.so",
+        "filepath": "/home/user/miniforge/envs/dev/lib/libopenblasp-r0.3.21.so",
         "version": "0.3.21",
         "threading_layer": "pthreads",
         "architecture": "SkylakeX",
@@ -89,7 +89,7 @@ Other ways of introspecting that can be helpful in local dev environments includ
 
        $ ldd build/scipy/linalg/_fblas.cpython-*.so
        ...
-       libopenblas.so.0 => /home/user/mambaforge/envs/scipy-dev/lib/libopenblas.so.0 (0x0000780d6d000000)
+       libopenblas.so.0 => /home/user/miniforge/envs/scipy-dev/lib/libopenblas.so.0 (0x0000780d6d000000)
 
   .. tab-item:: macOS
     :sync: macos
@@ -112,7 +112,7 @@ Other ways of introspecting that can be helpful in local dev environments includ
 
     ::
 
-        $ nm -gD ~/mambaforge/envs/scipy-dev/lib/libblas.so | rg openblas_set_num_threads
+        $ nm -gD ~/miniforge/envs/scipy-dev/lib/libblas.so | rg openblas_set_num_threads
         0000000000362990 T openblas_set_num_threads
 
   .. tab-item:: macOS
@@ -120,7 +120,7 @@ Other ways of introspecting that can be helpful in local dev environments includ
 
     ::
 
-        % nm ~/mambaforge/envs/scipy-dev/lib/libblas.3.dylib | rg openblas_set_num_threads
+        % nm ~/miniforge/envs/scipy-dev/lib/libblas.3.dylib | rg openblas_set_num_threads
         000000000015b6b0 T _openblas_set_num_threads
 
 
@@ -150,7 +150,7 @@ MKL is as simple as::
       libblas                         3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
       libcblas                        3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
       liblapack                       3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
-    
+
     $ mamba install "libblas=*=*mkl"
     ...
       libblas                           3.9.0-5_h92ddd45_netlib --> 3.9.0-21_linux64_mkl
@@ -162,7 +162,7 @@ MKL is as simple as::
       "user_api": "blas",
       "internal_api": "mkl",
 
-This can be done for development builds as well, when building via ``dev.py``
+This can be done for development builds as well, when building via ``spin``
 in the exact same way as in `SciPy's conda-forge build recipe
 <https://github.com/conda-forge/scipy-feedstock/blob/main/recipe/build.sh>`__
 (outputs omitted for brevity, they're similar to the ones above)::
@@ -170,10 +170,10 @@ in the exact same way as in `SciPy's conda-forge build recipe
     $ mamba env create -f environment.yml
     $ mamba activate scipy-dev
     $ mamba install "libblas=*=*netlib"  # necessary, we need to build against blas/lapack
-    $ python dev.py build -C-Dblas=blas -C-Dlapack=lapack -C-Duse-g77-abi=true
-    $ python dev.py test -s linalg  # run tests to verify
+    $ spin build -S-Dblas=blas -S-Dlapack=lapack -S-Duse-g77-abi=true
+    $ spin test -s linalg  # run tests to verify
     $ mamba install "libblas=*=*mkl"
-    $ python dev.py test -s linalg
+    $ spin test -s linalg
     $ mamba install "libblas=*=*openblas"
 
 
@@ -222,9 +222,9 @@ source.
 
 Once you have everything set up, the development experience is::
 
-    $ python dev.py build -C-Dblas=flexiblas -C-Dlapack=flexiblas
-    $ FLEXIBLAS=NETLIB python dev.py test -s linalg
-    $ FLEXIBLAS=OpenBLAS python dev.py test -s linalg
+    $ spin build -S-Dblas=flexiblas -S-Dlapack=flexiblas
+    $ FLEXIBLAS=NETLIB spin test -s linalg
+    $ FLEXIBLAS=OpenBLAS spin test -s linalg
     # Or export the environment variable to make the selection stick:
     $ export FLEXIBLAS=OpenBLAS
 
@@ -277,7 +277,7 @@ We're now ready to build SciPy against FlexiBLAS::
 
     $ export PKG_CONFIG_PATH=$PWD/flexiblas-setup/built-libs/lib/pkgconfig/
     $ cd scipy
-    $ python dev.py build -C-Dblas=flexiblas -C-Dlapack=flexiblas
+    $ spin build -S-Dblas=flexiblas -S-Dlapack=flexiblas
     ...
     Run-time dependency flexiblas found: YES 3.4.2
 
@@ -285,9 +285,9 @@ Now we can run the tests. Note that the ``NETLIB`` option is built without
 having to specify it; it's the default in FlexiBLAS and sources are included in
 its repository::
 
-    $ FLEXIBLAS=OpenBLAS python dev.py test -s linalg
-    $ FLEXIBLAS=NETLIB python dev.py test -s linalg
-    $ python dev.py test -s linalg  # uses the default (NETLIB)
+    $ FLEXIBLAS=OpenBLAS spin test -s linalg
+    $ FLEXIBLAS=NETLIB spin test -s linalg
+    $ spin test -s linalg  # uses the default (NETLIB)
 
 This backend switching can also be done inside a Python interpreter with
 ``threadpoolctl`` (see `its README
@@ -442,7 +442,7 @@ file to automate this and avoid the manual paths:
         $ ./build/repro_c  # output may vary
 
         info = 0
-        Re(eigv) = 4.000000 , 8.000000 , inf , -inf , 
+        Re(eigv) = 4.000000 , 8.000000 , inf , -inf ,
         Im(eigv = 0.000000 , 0.000000 , -nan , -nan ,
 
   .. tab-item:: Fortran
@@ -464,8 +464,8 @@ file to automate this and avoid the manual paths:
 
         info =            0
         alphar =    1.0204501477442456        11.707793036240817        3.7423579363517347E-014  -1.1492523608519701E-014
-        alphai =    0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000     
-        beta =   0.25511253693606051        1.4634741295300704        0.0000000000000000        0.0000000000000000     
+        alphai =    0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000
+        beta =   0.25511253693606051        1.4634741295300704        0.0000000000000000        0.0000000000000000
 
         Re(eigv) =    4.0000000000000142        8.0000000000001741                       Infinity                 -Infinity
         Im(eigv) =    0.0000000000000000        0.0000000000000000                            NaN                       NaN
@@ -527,11 +527,11 @@ Here is an example ``gdb`` session::
     (Pdb) c     # continue execution until the C breakpoint
 
     Thread 1 "python" hit Breakpoint 1, 0x00007ffff4c48820 in dpotrf_ ()
-       from /home/br/mambaforge/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/../../../../libcblas.so.3
+       from /home/br/miniforge/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/../../../../libcblas.so.3
     (gdb) s     # step through the C function
     Single stepping until exit from function dpotrf_,
     which has no line number information.
-    f2py_rout__flapack_dpotrf (capi_self=<optimized out>, capi_args=<optimized out>, 
+    f2py_rout__flapack_dpotrf (capi_self=<optimized out>, capi_args=<optimized out>,
         capi_keywds=<optimized out>, f2py_func=0x7ffff4c48820 <dpotrf_>)
         at scipy/linalg/_flapackmodule.c:63281
     ....

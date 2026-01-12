@@ -2,17 +2,19 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
+from functools import partial
 import warnings
 
 import numpy as np
-from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize._optimize import _status_message, _wrap_callback
-from scipy._lib._util import (check_random_state, MapWrapper, _FunctionWrapper,
-                              rng_integers)
 
+from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
-from scipy.sparse import issparse
+from scipy.optimize._optimize import _status_message, _wrap_callback
+from scipy._lib._util import (check_random_state, MapWrapper, _FunctionWrapper,
+                              rng_integers, _transition_to_rng)
+from scipy._lib._sparse import issparse
+
 
 __all__ = ['differential_evolution']
 
@@ -20,14 +22,15 @@ __all__ = ['differential_evolution']
 _MACHEPS = np.finfo(np.float64).eps
 
 
+@_transition_to_rng("seed", position_num=9)
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
-                           mutation=(0.5, 1), recombination=0.7, seed=None,
+                           mutation=(0.5, 1), recombination=0.7, rng=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
                            integrality=None, vectorized=False):
-    """Finds the global minimum of a multivariate function.
+    r"""Finds the global minimum of a multivariate function.
 
     The differential evolution method [1]_ is stochastic in nature. It does
     not use gradient methods to find the minimum, and can search large areas
@@ -47,10 +50,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
 
-            1. Instance of `Bounds` class.
-            2. ``(min, max)`` pairs for each element in ``x``, defining the
-               finite lower and upper bounds for the optimizing argument of
-               `func`.
+        1. Instance of `Bounds` class.
+        2. ``(min, max)`` pairs for each element in ``x``, defining the
+           finite lower and upper bounds for the optimizing argument of
+           `func`.
 
         The total number of bounds is used to determine the number of
         parameters, N. If there are parameters whose bounds are equal the total
@@ -62,18 +65,18 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     strategy : {str, callable}, optional
         The differential evolution strategy to use. Should be one of:
 
-            - 'best1bin'
-            - 'best1exp'
-            - 'rand1bin'
-            - 'rand1exp'
-            - 'rand2bin'
-            - 'rand2exp'
-            - 'randtobest1bin'
-            - 'randtobest1exp'
-            - 'currenttobest1bin'
-            - 'currenttobest1exp'
-            - 'best2exp'
-            - 'best2bin'
+        - 'best1bin'
+        - 'best1exp'
+        - 'rand1bin'
+        - 'rand1exp'
+        - 'rand2bin'
+        - 'rand2exp'
+        - 'randtobest1bin'
+        - 'randtobest1exp'
+        - 'currenttobest1bin'
+        - 'currenttobest1exp'
+        - 'best2exp'
+        - 'best2bin'
 
         The default is 'best1bin'. Strategies that may be implemented are
         outlined in 'Notes'.
@@ -110,8 +113,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         respectively.
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
-        differential weight, being denoted by F.
-        If specified as a float it should be in the range [0, 2].
+        differential weight, being denoted by :math:`F`.
+        If specified as a float it should be in the range [0, 2).
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
         basis. The mutation constant for that generation is taken from
@@ -124,20 +127,17 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for repeatable minimizations.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
-        A callable called after each iteration. Has the signature:
+        A callable called after each iteration. Has the signature::
 
-            ``callback(intermediate_result: OptimizeResult)``
+            callback(intermediate_result: OptimizeResult)
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
@@ -145,9 +145,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         of the parameter must be ``intermediate_result`` for the callback
         to be passed an `OptimizeResult`.
 
-        The callback also supports a signature like:
+        The callback also supports a signature like::
 
-            ``callback(x, convergence: float=val)``
+            callback(x, convergence: float=val)
 
         ``val`` represents the fractional value of the population convergence.
         When ``val`` is greater than ``1.0``, the function halts.
@@ -160,25 +160,46 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         .. versionchanged:: 1.12.0
             callback accepts the ``intermediate_result`` keyword.
 
-    polish : bool, optional
+    polish : {bool, callable}, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
         being studied then the `trust-constr` method is used instead. For large
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
+        Alternatively supply a callable that has a `minimize`-like signature,
+        ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
+        allows the user to have fine control over how the polishing occurs.
+        `bounds` and `constraints` will be present in ``kwds``. Extra keywords
+        could be supplied to `polish_func` using `functools.partial`. It is the
+        user's responsibility to ensure that the polishing function obeys
+        bounds, any constraints (including integrality constraints), and that
+        appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
+        ``x``, ``nfev``, ``jac``.
+
+        .. versionchanged:: 1.15.0
+            If `workers` is specified then the map-like callable that wraps
+            `func` is supplied to `minimize` instead of it using `func`
+            directly. This allows the caller to control how and where the
+            invocations actually run.
+
+        .. versionchanged:: 1.17.0
+            A callable obeying the `minimize` signature can be supplied to
+            polish the best population member.
+
     init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
 
-            - 'latinhypercube'
-            - 'sobol'
-            - 'halton'
-            - 'random'
-            - array specifying the initial population. The array should have
-              shape ``(S, N)``, where S is the total population size and N is
-              the number of parameters.
-              `init` is clipped to `bounds` before use.
+        - 'latinhypercube'
+        - 'sobol'
+        - 'halton'
+        - 'random'
+        - array specifying the initial population. The array should have
+          shape ``(S, N)``, where S is the total population size and N is
+          the number of parameters.
+
+        `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
         maximize coverage of the available parameter space.
@@ -197,7 +218,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     updating : {'immediate', 'deferred'}, optional
@@ -302,39 +323,33 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     .. math::
 
-        b' = x_0 + mutation * (x_{r_0} - x_{r_1})
+        b' = x_0 + F \cdot (x_{r_0} - x_{r_1})
 
+    where :math:`F` is the `mutation` parameter.
     A trial vector is then constructed. Starting with a randomly chosen ith
     parameter the trial is sequentially filled (in modulo) with parameters
     from ``b'`` or the original candidate. The choice of whether to use ``b'``
     or the original candidate is made with a binomial distribution (the 'bin'
     in 'best1bin') - a random number in [0, 1) is generated. If this number is
     less than the `recombination` constant then the parameter is loaded from
-    ``b'``, otherwise it is loaded from the original candidate. The final
-    parameter is always loaded from ``b'``. Once the trial candidate is built
-    its fitness is assessed. If the trial is better than the original candidate
-    then it takes its place. If it is also better than the best overall
-    candidate it also replaces that.
+    ``b'``, otherwise it is loaded from the original candidate. A randomly
+    selected parameter is always loaded from ``b'``. For binomial crossover,
+    this is a single random parameter. For exponential crossover, this is the
+    starting point of a consecutive sequence of parameters from ``b'``. Once
+    the trial candidate is built its fitness is assessed. If the trial is
+    better than the original candidate then it takes its place. If it is
+    also better than the best overall candidate it also replaces that.
 
     The other strategies available are outlined in Qiang and
     Mitchell (2014) [3]_.
 
-    .. math::
-            rand1* : b' = x_{r_0} + mutation*(x_{r_1} - x_{r_2})
 
-            rand2* : b' = x_{r_0} + mutation*(x_{r_1} + x_{r_2}
-                                                - x_{r_3} - x_{r_4})
-
-            best1* : b' = x_0 + mutation*(x_{r_0} - x_{r_1})
-
-            best2* : b' = x_0 + mutation*(x_{r_0} + x_{r_1}
-                                            - x_{r_2} - x_{r_3})
-
-            currenttobest1* : b' = x_i + mutation*(x_0 - x_i
-                                                     + x_{r_0} - x_{r_1})
-
-            randtobest1* : b' = x_{r_0} + mutation*(x_0 - x_{r_0}
-                                                      + x_{r_1} - x_{r_2})
+    - ``rand1`` : :math:`b' = x_{r_0} + F \cdot (x_{r_1} - x_{r_2})`
+    - ``rand2`` : :math:`b' = x_{r_0} + F \cdot (x_{r_1} + x_{r_2} - x_{r_3} - x_{r_4})`
+    - ``best1`` : :math:`b' = x_0 + F \cdot (x_{r_0} - x_{r_1})`
+    - ``best2`` : :math:`b' = x_0 + F \cdot (x_{r_0} + x_{r_1} - x_{r_2} - x_{r_3})`
+    - ``currenttobest1`` : :math:`b' = x_i + F \cdot (x_0 - x_i + x_{r_0} - x_{r_1})`
+    - ``randtobest1`` : :math:`b' = x_{r_0} + F \cdot (x_0 - x_{r_0} + x_{r_1} - x_{r_2})`
 
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
     from the interval [0, NP) with `NP` being the total population size and
@@ -388,7 +403,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            2002.
     .. [6] https://mpi4py.readthedocs.io/en/stable/
     .. [7] https://schwimmbad.readthedocs.io/en/latest/
- 
+
 
     Examples
     --------
@@ -424,7 +439,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     >>> bounds = Bounds([0., 0.], [2., 2.])
     >>> result = differential_evolution(rosen, bounds, constraints=lc,
-    ...                                 seed=1)
+    ...                                 rng=1)
     >>> result.x, result.fun
     (array([0.96632622, 0.93367155]), 0.0011352416852625719)
 
@@ -436,7 +451,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
     ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
     >>> bounds = [(-5, 5), (-5, 5)]
-    >>> result = differential_evolution(ackley, bounds, seed=1)
+    >>> result = differential_evolution(ackley, bounds, rng=1)
     >>> result.x, result.fun
     (array([0., 0.]), 4.440892098500626e-16)
 
@@ -445,7 +460,22 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     function evaluations.
 
     >>> result = differential_evolution(
-    ...     ackley, bounds, vectorized=True, updating='deferred', seed=1
+    ...     ackley, bounds, vectorized=True, updating='deferred', rng=1
+    ... )
+    >>> result.x, result.fun
+    (array([0., 0.]), 4.440892098500626e-16)
+
+    The final polishing step can be customised by providing a callable that
+    mimics the `minimize` interface. The user is responsible for ensuring that
+    the minimizer obeys any bounds and constraints.
+
+    >>> from functools import partial
+    >>> from scipy.optimize import minimize
+    >>> # supply extra parameters to the polishing function using partial
+    >>> polish_func = partial(minimize, method="SLSQP")
+    >>> result = differential_evolution(
+    ...     ackley, bounds, vectorized=True, updating='deferred', rng=1,
+    ...     polish=polish_func
     ... )
     >>> result.x, result.fun
     (array([0., 0.]), 4.440892098500626e-16)
@@ -453,7 +483,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     The following custom strategy function mimics 'best1bin':
 
     >>> def custom_strategy_fn(candidate, population, rng=None):
-    ...     parameter_count = population.shape(-1)
+    ...     parameter_count = population.shape[-1]
     ...     mutation, recombination = 0.7, 0.9
     ...     trial = np.copy(population[candidate])
     ...     fill_point = rng.choice(parameter_count)
@@ -491,7 +521,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      popsize=popsize, tol=tol,
                                      mutation=mutation,
                                      recombination=recombination,
-                                     seed=seed, polish=polish,
+                                     rng=rng, polish=polish,
                                      callback=callback,
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
@@ -594,14 +624,33 @@ class DifferentialEvolutionSolver:
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for repeatable minimizations.
+
+    rng : {None, int, `numpy.random.Generator`}, optional
+
+        ..versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
+            For an interim period both keywords will continue to work (only specify
+            one of them). After the interim period using the `seed` keyword will emit
+            warnings. The behavior of the `seed` and `rng` keywords is outlined below.
+
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        If `rng` is already a `Generator` instance, then the provided instance is
+        used.
+
+        If this argument is passed by position or `seed` is passed by keyword, the
+        behavior is:
+
+        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `seed` is an int, a new `RandomState` instance is used,
+          seeded with `seed`.
+        - If `seed` is already a `Generator` or `RandomState` instance then
+          that instance is used.
+
+        Specify `seed`/`rng` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
@@ -630,13 +679,22 @@ class DifferentialEvolutionSolver:
         .. versionchanged:: 1.12.0
             callback accepts the ``intermediate_result`` keyword.
 
-    polish : bool, optional
+    polish : {bool, callable}, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
         being studied then the `trust-constr` method is used instead. For large
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
+        Alternatively supply a callable that has a `minimize`-like signature,
+        ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
+        allows the user to have fine control over how the polishing occurs.
+        `bounds` and `constraints` will be present in ``kwds``. Extra keywords
+        could be supplied to `polish_func` using `functools.partial`. It is the
+        user's responsibility to ensure that the polishing function obeys
+        bounds, any constraints (including integrality constraints), and that
+        appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
+        ```x``, ``nfev``, ``jac``.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -738,6 +796,7 @@ class DifferentialEvolutionSolver:
                     'currenttobest1exp': '_currenttobest1',
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
+    __combined = _binomial | _exponential
 
     __init_error_msg = ("The population initialization method must be one of "
                         "'latinhypercube' or 'random', or an array of shape "
@@ -745,7 +804,7 @@ class DifferentialEvolutionSolver:
 
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
-                 tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
+                 tol=0.01, mutation=(0.5, 1), recombination=0.7, rng=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None, *, integrality=None,
@@ -754,11 +813,7 @@ class DifferentialEvolutionSolver:
         if callable(strategy):
             # a callable strategy is going to be stored in self.strategy anyway
             pass
-        elif strategy in self._binomial:
-            self.mutation_func = getattr(self, self._binomial[strategy])
-        elif strategy in self._exponential:
-            self.mutation_func = getattr(self, self._exponential[strategy])
-        else:
+        elif strategy not in self.__combined:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
 
@@ -822,6 +877,7 @@ class DifferentialEvolutionSolver:
 
         # we create a wrapped function to allow the use of map (and Pool.map
         # in the future)
+        self.original_func = func
         self.func = _FunctionWrapper(func, args)
         self.args = args
 
@@ -864,7 +920,7 @@ class DifferentialEvolutionSolver:
 
         self.parameter_count = np.size(self.limits, 1)
 
-        self.random_number_generator = check_random_state(seed)
+        self.random_number_generator = check_random_state(rng)
 
         # Which parameters are going to be integers?
         if np.any(integrality):
@@ -968,6 +1024,10 @@ class DifferentialEvolutionSolver:
         # rather than repeatedly creating it in _select_samples.
         self._random_population_index = np.arange(self.num_population_members)
         self.disp = disp
+
+    @property
+    def mutation_func(self):
+        return getattr(self, self.__combined[self.strategy])
 
     def init_population_lhs(self):
         """
@@ -1225,15 +1285,31 @@ class DifferentialEvolutionSolver:
                                   "attempting to polish from the least "
                                   "infeasible solution",
                                   UserWarning, stacklevel=2)
-            if self.disp:
-                print(f"Polishing solution with '{polish_method}'")
-            result = minimize(self.func,
-                              np.copy(DE_result.x),
-                              method=polish_method,
-                              bounds=self.limits.T,
-                              constraints=self.constraints)
 
-            self._nfev += result.nfev
+            pf = self.polish
+            _f = self.original_func
+            if not callable(pf):
+                pf = partial(minimize, method=polish_method)
+                def _f(x):
+                    return list(self._mapwrapper(self.func, np.atleast_2d(x)))[0]
+
+                if self.disp:
+                    print(f"Polishing solution with '{polish_method}'")
+
+            result = pf(
+                _f,
+                np.copy(DE_result.x),
+                bounds=Bounds(lb=self.limits[0], ub=self.limits[1]),
+                constraints=self.constraints
+            )
+
+            if not isinstance(result, OptimizeResult):
+                raise ValueError(
+                    "The result from a user defined polishing function "
+                     "should return an OptimizeResult."
+                )
+
+            self._nfev += result.get("nfev", 0)
             DE_result.nfev = self._nfev
 
             # Polishing solution is only accepted if there is an improvement in
@@ -1245,7 +1321,7 @@ class DifferentialEvolutionSolver:
                     np.all(self.limits[0] <= result.x)):
                 DE_result.fun = result.fun
                 DE_result.x = result.x
-                DE_result.jac = result.jac
+                DE_result.jac = result.get("jac", None)
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
@@ -1710,16 +1786,21 @@ class DifferentialEvolutionSolver:
         crossovers = rng.uniform(size=(S, self.parameter_count))
         crossovers = crossovers < self.cross_over_probability
         if self.strategy in self._binomial:
-            # the last one is always from the bprime vector for binomial
-            # If you fill in modulo with a loop you have to set the last one to
-            # true. If you don't use a loop then you can have any random entry
-            # be True.
+            # A randomly selected parameter is always from the bprime vector for
+            # binomial crossover. The fill_point ensures at least one parameter
+            # comes from bprime, preventing the possibility of no mutation
+            # influence in the trial vector.
             i = np.arange(S)
             crossovers[i, fill_point[i]] = True
             trial = np.where(crossovers, bprime, trial)
             return trial
 
         elif self.strategy in self._exponential:
+            # For exponential crossover, fill_point determines the starting index
+            # for a consecutive sequence of parameters from bprime. The sequence
+            # continues until a crossover probability check fails. The starting
+            # index is always from the bprime vector ensuring at least one
+            # parameter comes from bprime.
             crossovers[..., 0] = True
             for j in range(S):
                 i = 0
@@ -1751,15 +1832,20 @@ class DifferentialEvolutionSolver:
         crossovers = rng.uniform(size=self.parameter_count)
         crossovers = crossovers < self.cross_over_probability
         if self.strategy in self._binomial:
-            # the last one is always from the bprime vector for binomial
-            # If you fill in modulo with a loop you have to set the last one to
-            # true. If you don't use a loop then you can have any random entry
-            # be True.
+            # A randomly selected parameter is always from the bprime vector for
+            # binomial crossover. The fill_point ensures at least one parameter
+            # comes from bprime, preventing the possibility of no mutation
+            # influence in the trial vector.
             crossovers[fill_point] = True
             trial = np.where(crossovers, bprime, trial)
             return trial
 
         elif self.strategy in self._exponential:
+            # For exponential crossover, fill_point determines the starting index
+            # for a consecutive sequence of parameters from bprime. The sequence
+            # continues until a crossover probability check fails. The starting
+            # index is always from the bprime vector ensuring at least one
+            # parameter comes from bprime.
             i = 0
             crossovers[0] = True
             while i < self.parameter_count and crossovers[i]:

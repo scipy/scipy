@@ -1,31 +1,28 @@
 import sys
 import threading
+import warnings
 
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot
-import numpy.random as random
+from numpy.exceptions import ComplexWarning
 from numpy.testing import (
         assert_array_almost_equal, assert_almost_equal,
-        assert_equal, assert_array_equal, assert_, assert_allclose,
-        assert_warns, suppress_warnings)
+        assert_equal, assert_array_equal, assert_, assert_allclose)
 import pytest
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns as assert_warns
 
 import scipy.linalg
 from scipy.linalg import norm, inv
-from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
-        csr_matrix, identity, issparse, dok_matrix, lil_matrix, bsr_matrix)
+from scipy.sparse import (dia_array, SparseEfficiencyWarning, csc_array,
+        csr_array, eye_array, issparse, dok_array, lil_array, bsr_array, kron)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
-        MatrixRankWarning, _superlu, spsolve_triangular, factorized)
+        MatrixRankWarning, _superlu, spsolve_triangular, factorized,
+        is_sptriangular, spbandwidth)
 import scipy.sparse
 
 from scipy._lib._testutils import check_free_memory
-from scipy._lib._util import ComplexWarning
 
-
-sup_sparse_efficiency = suppress_warnings()
-sup_sparse_efficiency.filter(SparseEfficiencyWarning)
 
 # scikits.umfpack is not a SciPy dependency but it is optionally used in
 # dsolve, so check whether it's available
@@ -45,12 +42,11 @@ def toarray(a):
 def setup_bug_8278():
     N = 2 ** 6
     h = 1/N
-    Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
-                              shape=(N-1, N-1))/(h**2)
-    eyeN = scipy.sparse.eye(N - 1)
-    A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
-         + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
-         + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
+    Ah1D = dia_array(([-1, 2, -1], [-1, 0, 1]), shape=(N-1, N-1))/(h**2)
+    eyeN = eye_array(N - 1)
+    A = (kron(eyeN, kron(eyeN, Ah1D))
+         + kron(eyeN, kron(Ah1D, eyeN))
+         + kron(Ah1D, kron(eyeN, eyeN)))
     b = np.random.rand((N-1)**3)
     return A, b
 
@@ -60,18 +56,18 @@ class TestFactorized:
         n = 5
         d = arange(n) + 1
         self.n = n
-        self.A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n).tocsc()
-        random.seed(1234)
+        self.A = dia_array(((d, 2*d, d[::-1]), (-3, 0, 5)), shape=(n,n)).tocsc()
 
     def _check_singular(self):
-        A = csc_matrix((5,5), dtype='d')
+        A = csc_array((5,5), dtype='d')
         b = ones(5)
         assert_array_almost_equal(0. * b, factorized(A)(b))
 
     def _check_non_singular(self):
         # Make a diagonal dominant, to make sure it is not singular
         n = 5
-        a = csc_matrix(random.rand(n, n))
+        rng = np.random.default_rng(14332)
+        a = csc_array(rng.random((n, n)))
         b = ones(n)
 
         expected = splu(a).solve(b)
@@ -85,8 +81,9 @@ class TestFactorized:
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_singular_with_umfpack(self):
         use_solver(useUmfpack=True)
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "divide by zero encountered in double_scalars")
+        with warnings.catch_warnings():
+            msg = "divide by zero encountered in double_scalars"
+            warnings.filterwarnings("ignore", msg, RuntimeWarning)
             assert_warns(umfpack.UmfpackWarning, self._check_singular)
 
     def test_non_singular_without_umfpack(self):
@@ -113,9 +110,11 @@ class TestFactorized:
     def test_call_with_incorrectly_sized_matrix_without_umfpack(self):
         use_solver(useUmfpack=False)
         solve = factorized(self.A)
-        b = random.rand(4)
-        B = random.rand(4, 3)
-        BB = random.rand(self.n, 3, 9)
+
+        rng = np.random.default_rng(230498)
+        b = rng.random(4)
+        B = rng.random((4, 3))
+        BB = rng.random((self.n, 3, 9))
 
         with assert_raises(ValueError, match="is of incompatible size"):
             solve(b)
@@ -129,9 +128,11 @@ class TestFactorized:
     def test_call_with_incorrectly_sized_matrix_with_umfpack(self):
         use_solver(useUmfpack=True)
         solve = factorized(self.A)
-        b = random.rand(4)
-        B = random.rand(4, 3)
-        BB = random.rand(self.n, 3, 9)
+
+        rng = np.random.default_rng(643095823)
+        b = rng.random(4)
+        B = rng.random((4, 3))
+        BB = rng.random((self.n, 3, 9))
 
         # does not raise
         solve(b)
@@ -144,7 +145,8 @@ class TestFactorized:
     def test_call_with_cast_to_complex_without_umfpack(self):
         use_solver(useUmfpack=False)
         solve = factorized(self.A)
-        b = random.rand(4)
+        rng = np.random.default_rng(23454)
+        b = rng.random(4)
         for t in [np.complex64, np.complex128]:
             with assert_raises(TypeError, match="Cannot cast array data"):
                 solve(b.astype(t))
@@ -153,7 +155,8 @@ class TestFactorized:
     def test_call_with_cast_to_complex_with_umfpack(self):
         use_solver(useUmfpack=True)
         solve = factorized(self.A)
-        b = random.rand(4)
+        rng = np.random.default_rng(23454)
+        b = rng.random(4)
         for t in [np.complex64, np.complex128]:
             assert_warns(ComplexWarning, solve, b.astype(t))
 
@@ -163,7 +166,7 @@ class TestFactorized:
         unsorted_inds = np.array([2, 0, 1, 0])
         data = np.array([10, 16, 5, 0.4])
         indptr = np.array([0, 1, 2, 4])
-        A = csc_matrix((data, unsorted_inds, indptr), (3, 3))
+        A = csc_array((data, unsorted_inds, indptr), (3, 3))
         b = ones(3)
 
         # should raise when incorrectly assuming indices are sorted
@@ -196,10 +199,11 @@ class TestLinsolve:
         use_solver(useUmfpack=False)
 
     def test_singular(self):
-        A = csc_matrix((5,5), dtype='d')
+        A = csc_array((5,5), dtype='d')
         b = array([1, 2, 3, 4, 5],dtype='d')
-        with suppress_warnings() as sup:
-            sup.filter(MatrixRankWarning, "Matrix is exactly singular")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Matrix is exactly singular", MatrixRankWarning)
             x = spsolve(A, b)
         assert_(not np.isfinite(x).any())
 
@@ -208,14 +212,15 @@ class TestLinsolve:
         # arguments. Check that it fails moderately gracefully.
         ij = np.array([(17, 0), (17, 6), (17, 12), (10, 13)], dtype=np.int32)
         v = np.array([0.284213, 0.94933781, 0.15767017, 0.38797296])
-        A = csc_matrix((v, ij.T), shape=(20, 20))
+        A = csc_array((v, ij.T), shape=(20, 20))
         b = np.arange(20)
 
         try:
             # should either raise a runtime error or return value
             # appropriate for singular input (which yields the warning)
-            with suppress_warnings() as sup:
-                sup.filter(MatrixRankWarning, "Matrix is exactly singular")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", "Matrix is exactly singular", MatrixRankWarning)
                 x = spsolve(A, b)
             assert not np.isfinite(x).any()
         except RuntimeError:
@@ -224,8 +229,8 @@ class TestLinsolve:
     @pytest.mark.parametrize('format', ['csc', 'csr'])
     @pytest.mark.parametrize('idx_dtype', [np.int32, np.int64])
     def test_twodiags(self, format: str, idx_dtype: np.dtype):
-        A = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5,
-                    format=format)
+        A = dia_array(([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1]),
+                        shape=(5, 5)).asformat(format)
         b = array([1, 2, 3, 4, 5])
 
         # condition number of A
@@ -245,9 +250,9 @@ class TestLinsolve:
         Adense = array([[0., 1., 1.],
                         [1., 0., 1.],
                         [0., 0., 1.]])
-        As = csc_matrix(Adense)
-        random.seed(1234)
-        x = random.randn(3)
+        As = csc_array(Adense)
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal(3)
         b = As@x
         x2 = spsolve(As, b)
 
@@ -257,68 +262,71 @@ class TestLinsolve:
         Adense = array([[0., 1., 1.],
                         [1., 0., 1.],
                         [0., 0., 1.]])
-        As = csc_matrix(Adense)
-        random.seed(1234)
-        x = random.randn(3, 4)
+        As = csc_array(Adense)
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal((3, 4))
         Bdense = As.dot(x)
-        Bs = csc_matrix(Bdense)
+        Bs = csc_array(Bdense)
         x2 = spsolve(As, Bs)
         assert_array_almost_equal(x, x2.toarray())
 
-    @sup_sparse_efficiency
     def test_non_square(self):
-        # A is not square.
-        A = ones((3, 4))
-        b = ones((4, 1))
-        assert_raises(ValueError, spsolve, A, b)
-        # A2 and b2 have incompatible shapes.
-        A2 = csc_matrix(eye(3))
-        b2 = array([1.0, 2.0])
-        assert_raises(ValueError, spsolve, A2, b2)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SparseEfficiencyWarning)
+            # A is not square.
+            A = ones((3, 4))
+            b = ones((4, 1))
+            assert_raises(ValueError, spsolve, A, b)
+            # A2 and b2 have incompatible shapes.
+            A2 = csc_array(eye(3))
+            b2 = array([1.0, 2.0])
+            assert_raises(ValueError, spsolve, A2, b2)
 
-    @sup_sparse_efficiency
     def test_example_comparison(self):
-        row = array([0,0,1,2,2,2])
-        col = array([0,2,2,0,1,2])
-        data = array([1,2,3,-4,5,6])
-        sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
-        M = sM.toarray()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SparseEfficiencyWarning)
+            row = array([0,0,1,2,2,2])
+            col = array([0,2,2,0,1,2])
+            data = array([1,2,3,-4,5,6])
+            sM = csr_array((data,(row,col)), shape=(3,3), dtype=float)
+            M = sM.toarray()
 
-        row = array([0,0,1,1,0,0])
-        col = array([0,2,1,1,0,0])
-        data = array([1,1,1,1,1,1])
-        sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
-        N = sN.toarray()
+            row = array([0,0,1,1,0,0])
+            col = array([0,2,1,1,0,0])
+            data = array([1,1,1,1,1,1])
+            sN = csr_array((data, (row,col)), shape=(3,3), dtype=float)
+            N = sN.toarray()
 
-        sX = spsolve(sM, sN)
-        X = scipy.linalg.solve(M, N)
+            sX = spsolve(sM, sN)
+            X = scipy.linalg.solve(M, N)
 
-        assert_array_almost_equal(X, sX.toarray())
+            assert_array_almost_equal(X, sX.toarray())
 
-    @sup_sparse_efficiency
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_shape_compatibility(self):
-        use_solver(useUmfpack=True)
-        A = csc_matrix([[1., 0], [0, 2]])
-        bs = [
-            [1, 6],
-            array([1, 6]),
-            [[1], [6]],
-            array([[1], [6]]),
-            csc_matrix([[1], [6]]),
-            csr_matrix([[1], [6]]),
-            dok_matrix([[1], [6]]),
-            bsr_matrix([[1], [6]]),
-            array([[1., 2., 3.], [6., 8., 10.]]),
-            csc_matrix([[1., 2., 3.], [6., 8., 10.]]),
-            csr_matrix([[1., 2., 3.], [6., 8., 10.]]),
-            dok_matrix([[1., 2., 3.], [6., 8., 10.]]),
-            bsr_matrix([[1., 2., 3.], [6., 8., 10.]]),
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SparseEfficiencyWarning)
+            use_solver(useUmfpack=True)
+            A = csc_array([[1., 0], [0, 2]])
+            bs = [
+                [1, 6],
+                array([1, 6]),
+                [[1], [6]],
+                array([[1], [6]]),
+                csc_array([[1], [6]]),
+                csr_array([[1], [6]]),
+                dok_array([[1], [6]]),
+                bsr_array([[1], [6]]),
+                array([[1., 2., 3.], [6., 8., 10.]]),
+                csc_array([[1., 2., 3.], [6., 8., 10.]]),
+                csr_array([[1., 2., 3.], [6., 8., 10.]]),
+                dok_array([[1., 2., 3.], [6., 8., 10.]]),
+                bsr_array([[1., 2., 3.], [6., 8., 10.]]),
             ]
 
         for b in bs:
             x = np.linalg.solve(A.toarray(), toarray(b))
-            for spmattype in [csc_matrix, csr_matrix, dok_matrix, lil_matrix]:
+            for spmattype in [csc_array, csr_array, dok_array, lil_array]:
                 x1 = spsolve(spmattype(A), b, use_umfpack=True)
                 x2 = spsolve(spmattype(A), b, use_umfpack=False)
 
@@ -350,25 +358,26 @@ class TestLinsolve:
                     assert_equal(x1.shape, x.shape)
                     assert_equal(x2.shape, x.shape)
 
-        A = csc_matrix((3, 3))
-        b = csc_matrix((1, 3))
+        A = csc_array((3, 3))
+        b = csc_array((1, 3))
         assert_raises(ValueError, spsolve, A, b)
 
-    @sup_sparse_efficiency
     def test_ndarray_support(self):
-        A = array([[1., 2.], [2., 0.]])
-        x = array([[1., 1.], [0.5, -0.5]])
-        b = array([[2., 0.], [2., 2.]])
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SparseEfficiencyWarning)
+            A = array([[1., 2.], [2., 0.]])
+            x = array([[1., 1.], [0.5, -0.5]])
+            b = array([[2., 0.], [2., 2.]])
 
-        assert_array_almost_equal(x, spsolve(A, b))
+            assert_array_almost_equal(x, spsolve(A, b))
 
     def test_gssv_badinput(self):
         N = 10
         d = arange(N) + 1.0
-        A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), N, N)
+        A = dia_array(((d, 2*d, d[::-1]), (-3, 0, 5)), shape=(N, N))
 
-        for spmatrix in (csc_matrix, csr_matrix):
-            A = spmatrix(A)
+        for container in (csc_array, csr_array):
+            A = container(A)
             b = np.arange(N)
 
             def not_c_contig(x):
@@ -386,24 +395,24 @@ class TestLinsolve:
             badops = [not_c_contig, not_1dim, bad_type, too_short]
 
             for badop in badops:
-                msg = f"{spmatrix!r} {badop!r}"
+                msg = f"{container!r} {badop!r}"
                 # Not C-contiguous
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, badop(A.data), A.indices, A.indptr,
-                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                              b, int(A.format == 'csc'), err_msg=msg)
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, A.data, badop(A.indices), A.indptr,
-                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                              b, int(A.format == 'csc'), err_msg=msg)
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, A.data, A.indices, badop(A.indptr),
-                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                              b, int(A.format == 'csc'), err_msg=msg)
 
     def test_sparsity_preservation(self):
-        ident = csc_matrix([
+        ident = csc_array([
             [1, 0, 0],
             [0, 1, 0],
             [0, 0, 1]])
-        b = csc_matrix([
+        b = csc_array([
             [0, 1],
             [1, 0],
             [0, 0]])
@@ -414,10 +423,10 @@ class TestLinsolve:
         assert_allclose(x.toarray(), b.toarray(), atol=1e-12, rtol=1e-12)
 
     def test_dtype_cast(self):
-        A_real = scipy.sparse.csr_matrix([[1, 2, 0],
+        A_real = scipy.sparse.csr_array([[1, 2, 0],
                                           [0, 0, 3],
                                           [4, 0, 5]])
-        A_complex = scipy.sparse.csr_matrix([[1, 2, 0],
+        A_complex = scipy.sparse.csr_array([[1, 2, 0],
                                              [0, 0, 3],
                                              [4, 0, 5 + 1j]])
         b_real = np.array([1,1,1])
@@ -447,8 +456,7 @@ class TestSplu:
         n = 40
         d = arange(n) + 1
         self.n = n
-        self.A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n, format='csc')
-        random.seed(1234)
+        self.A = dia_array(((d, 2*d, d[::-1]), (-3, 0, 5)), shape=(n, n)).tocsc()
 
     def _smoketest(self, spxlu, check, dtype, idx_dtype):
         if np.issubdtype(dtype, np.complexfloating):
@@ -461,7 +469,7 @@ class TestSplu:
         A.indptr = A.indptr.astype(idx_dtype, copy=False)
         lu = spxlu(A)
 
-        rng = random.RandomState(1234)
+        rng = np.random.RandomState(1234)
 
         # Input shapes
         for k in [None, 1, 2, self.n, self.n+2]:
@@ -485,9 +493,10 @@ class TestSplu:
             x = lu.solve(b, 'H')
             check(A.T.conj(), b, x, msg)
 
-    @sup_sparse_efficiency
     def test_splu_smoketest(self):
-        self._internal_test_splu_smoketest()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            self._internal_test_splu_smoketest()
 
     def _internal_test_splu_smoketest(self):
         # Check that splu works at all
@@ -500,9 +509,10 @@ class TestSplu:
             for idx_dtype in [np.int32, np.int64]:
                 self._smoketest(splu, check, dtype, idx_dtype)
 
-    @sup_sparse_efficiency
     def test_spilu_smoketest(self):
-        self._internal_test_spilu_smoketest()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            self._internal_test_spilu_smoketest()
 
     def _internal_test_spilu_smoketest(self):
         errors = []
@@ -520,43 +530,44 @@ class TestSplu:
 
         assert_(max(errors) > 1e-5)
 
-    @sup_sparse_efficiency
     def test_spilu_drop_rule(self):
-        # Test passing in the drop_rule argument to spilu.
-        A = identity(2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            # Test passing in the drop_rule argument to spilu.
+            A = eye_array(2)
 
-        rules = [
-            b'basic,area'.decode('ascii'),  # unicode
-            b'basic,area',  # ascii
-            [b'basic', b'area'.decode('ascii')]
-        ]
-        for rule in rules:
-            # Argument should be accepted
-            assert_(isinstance(spilu(A, drop_rule=rule), SuperLU))
+            rules = [
+                b'basic,area'.decode('ascii'),  # unicode
+                b'basic,area',  # ascii
+                [b'basic', b'area'.decode('ascii')]
+            ]
+            for rule in rules:
+                # Argument should be accepted
+                assert_(isinstance(spilu(A, drop_rule=rule), SuperLU))
 
     def test_splu_nnz0(self):
-        A = csc_matrix((5,5), dtype='d')
+        A = csc_array((5,5), dtype='d')
         assert_raises(RuntimeError, splu, A)
 
     def test_spilu_nnz0(self):
-        A = csc_matrix((5,5), dtype='d')
+        A = csc_array((5,5), dtype='d')
         assert_raises(RuntimeError, spilu, A)
 
     def test_splu_basic(self):
         # Test basic splu functionality.
         n = 30
-        rng = random.RandomState(12)
+        rng = np.random.RandomState(12)
         a = rng.rand(n, n)
         a[a < 0.95] = 0
         # First test with a singular matrix
         a[:, 0] = 0
-        a_ = csc_matrix(a)
+        a_ = csc_array(a)
         # Matrix is exactly singular
         assert_raises(RuntimeError, splu, a_)
 
         # Make a diagonal dominant, to make sure it is not singular
         a += 4*eye(n)
-        a_ = csc_matrix(a)
+        a_ = csc_array(a)
         lu = splu(a_)
         b = ones(n)
         x = lu.solve(b)
@@ -565,11 +576,12 @@ class TestSplu:
     def test_splu_perm(self):
         # Test the permutation vectors exposed by splu.
         n = 30
-        a = random.random((n, n))
+        rng = np.random.default_rng(1342354)
+        a = rng.random((n, n))
         a[a < 0.95] = 0
         # Make a diagonal dominant, to make sure it is not singular
         a += 4*eye(n)
-        a_ = csc_matrix(a)
+        a_ = csc_array(a)
         lu = splu(a_)
         # Check that the permutation indices do belong to [0, n-1].
         for perm in (lu.perm_r, lu.perm_c):
@@ -581,21 +593,21 @@ class TestSplu:
         # the same
         # Note: a += a.T relies on undefined behavior.
         a = a + a.T
-        a_ = csc_matrix(a)
+        a_ = csc_array(a)
         lu = splu(a_)
         assert_array_equal(lu.perm_r, lu.perm_c)
 
     @pytest.mark.parametrize("splu_fun, rtol", [(splu, 1e-7), (spilu, 1e-1)])
     def test_natural_permc(self, splu_fun, rtol):
         # Test that the "NATURAL" permc_spec does not permute the matrix
-        np.random.seed(42)
+        rng = np.random.RandomState(42)
         n = 500
         p = 0.01
-        A = scipy.sparse.random(n, n, p)
-        x = np.random.rand(n)
+        A = scipy.sparse.random(n, n, p, random_state=rng)
+        x = rng.rand(n)
         # Make A diagonal dominant to make sure it is not singular
-        A += (n+1)*scipy.sparse.identity(n)
-        A_ = csc_matrix(A)
+        A += (n+1)*scipy.sparse.eye_array(n)
+        A_ = csc_array(A)
         b = A_ @ x
 
         # without permc_spec, permutation is not identity
@@ -614,11 +626,12 @@ class TestSplu:
     def test_lu_refcount(self):
         # Test that we are keeping track of the reference count with splu.
         n = 30
-        a = random.random((n, n))
+        rng = np.random.default_rng(1342354)
+        a = rng.random((n, n))
         a[a < 0.95] = 0
         # Make a diagonal dominant, to make sure it is not singular
         a += 4*eye(n)
-        a_ = csc_matrix(a)
+        a_ = csc_array(a)
         lu = splu(a_)
 
         # And now test that we don't have a refcount bug
@@ -631,14 +644,15 @@ class TestSplu:
 
     def test_bad_inputs(self):
         A = self.A.tocsc()
+        rng = np.random.default_rng(235634)
 
         assert_raises(ValueError, splu, A[:,:4])
         assert_raises(ValueError, spilu, A[:,:4])
 
         for lu in [splu(A), spilu(A)]:
-            b = random.rand(42)
-            B = random.rand(42, 3)
-            BB = random.rand(self.n, 3, 9)
+            b = rng.random(42)
+            B = rng.random((42, 3))
+            BB = rng.random((self.n, 3, 9))
             assert_raises(ValueError, lu.solve, b)
             assert_raises(ValueError, lu.solve, B)
             assert_raises(ValueError, lu.solve, BB)
@@ -647,50 +661,52 @@ class TestSplu:
             assert_raises(TypeError, lu.solve,
                           b.astype(np.complex128))
 
-    @sup_sparse_efficiency
     def test_superlu_dlamch_i386_nan(self):
-        # SuperLU 4.3 calls some functions returning floats without
-        # declaring them. On i386@linux call convention, this fails to
-        # clear floating point registers after call. As a result, NaN
-        # can appear in the next floating point operation made.
-        #
-        # Here's a test case that triggered the issue.
-        n = 8
-        d = np.arange(n) + 1
-        A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n)
-        A = A.astype(np.float32)
-        spilu(A)
-        A = A + 1j*A
-        B = A.toarray()
-        assert_(not np.isnan(B).any())
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            # SuperLU 4.3 calls some functions returning floats without
+            # declaring them. On i386@linux call convention, this fails to
+            # clear floating point registers after call. As a result, NaN
+            # can appear in the next floating point operation made.
+            #
+            # Here's a test case that triggered the issue.
+            n = 8
+            d = np.arange(n) + 1
+            A = dia_array(((d, 2*d, d[::-1]), (-3, 0, 5)), shape=(n, n))
+            A = A.astype(np.float32)
+            spilu(A)
+            A = A + 1j*A
+            B = A.toarray()
+            assert_(not np.isnan(B).any())
 
-    @sup_sparse_efficiency
     def test_lu_attr(self):
-
         def check(dtype, complex_2=False):
-            A = self.A.astype(dtype)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
 
-            if complex_2:
-                A = A + 1j*A.T
+                A = self.A.astype(dtype)
 
-            n = A.shape[0]
-            lu = splu(A)
+                if complex_2:
+                    A = A + 1j*A.T
 
-            # Check that the decomposition is as advertised
+                n = A.shape[0]
+                lu = splu(A)
 
-            Pc = np.zeros((n, n))
-            Pc[np.arange(n), lu.perm_c] = 1
+                # Check that the decomposition is as advertised
 
-            Pr = np.zeros((n, n))
-            Pr[lu.perm_r, np.arange(n)] = 1
+                Pc = np.zeros((n, n))
+                Pc[np.arange(n), lu.perm_c] = 1
 
-            Ad = A.toarray()
-            lhs = Pr.dot(Ad).dot(Pc)
-            rhs = (lu.L @ lu.U).toarray()
+                Pr = np.zeros((n, n))
+                Pr[lu.perm_r, np.arange(n)] = 1
 
-            eps = np.finfo(dtype).eps
+                Ad = A.toarray()
+                lhs = Pr.dot(Ad).dot(Pc)
+                rhs = (lu.L @ lu.U).toarray()
 
-            assert_allclose(lhs, rhs, atol=100*eps)
+                eps = np.finfo(dtype).eps
+
+                assert_allclose(lhs, rhs, atol=100*eps)
 
         check(np.float32)
         check(np.float64)
@@ -700,27 +716,39 @@ class TestSplu:
         check(np.complex128, True)
 
     @pytest.mark.slow
-    @sup_sparse_efficiency
     def test_threads_parallel(self):
-        oks = []
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            oks = []
 
-        def worker():
-            try:
-                self.test_splu_basic()
-                self._internal_test_splu_smoketest()
-                self._internal_test_spilu_smoketest()
-                oks.append(True)
-            except Exception:
-                pass
+            def worker():
+                try:
+                    self.test_splu_basic()
+                    self._internal_test_splu_smoketest()
+                    self._internal_test_spilu_smoketest()
+                    oks.append(True)
+                except Exception:
+                    pass
 
-        threads = [threading.Thread(target=worker)
-                   for k in range(20)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+            threads = [threading.Thread(target=worker)
+                       for k in range(20)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
 
-        assert_equal(len(oks), 20)
+            assert_equal(len(oks), 20)
+
+    def test_singular_matrix(self):
+        # Test that SuperLU does not print to stdout when a singular matrix is
+        # passed. See gh-20993.
+        A = eye_array(10, format='csr')
+        A[-1, -1] = 0
+        b = np.zeros(10)
+        with pytest.warns(MatrixRankWarning):
+            res = spsolve(A, b)
+            assert np.isnan(res).all()
+
 
 class TestGstrsErrors:
     def setup_method(self):
@@ -746,7 +774,7 @@ class TestGstrsErrors:
         U = scipy.sparse.triu(self.A, k=1, format='csc')
         with assert_raises(ValueError, match="right hand side array has invalid shape"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
-                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, 
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr,
                                 self.b[0:2])
 
     def test_types_differ(self):
@@ -761,7 +789,7 @@ class TestGstrsErrors:
         U = scipy.sparse.triu(self.A.astype(np.uint8), k=1, format='csc')
         with assert_raises(TypeError, match="nzvals is not of a type supported"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
-                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, 
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr,
                                 self.b.astype(np.uint8))
 
 class TestSpsolveTriangular:
@@ -784,43 +812,45 @@ class TestSpsolveTriangular:
         # Regression test from gh-15199
         A = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float64)
         b = np.array([1., 2., 3.])
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "CSC or CSR matrix format is")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "CSC or CSR matrix format is", SparseEfficiencyWarning)
             spsolve_triangular(A, b, unit_diagonal=True)
 
     @pytest.mark.parametrize("fmt",["csr","csc"])
     def test_singular(self,fmt):
         n = 5
         if fmt == "csr":
-            A = csr_matrix((n, n))
+            A = csr_array((n, n))
         else:
-            A = csc_matrix((n, n))
+            A = csc_array((n, n))
         b = np.arange(n)
         for lower in (True, False):
             assert_raises(scipy.linalg.LinAlgError,
                           spsolve_triangular, A, b, lower=lower)
 
-    @sup_sparse_efficiency
     def test_bad_shape(self):
-        # A is not square.
-        A = np.zeros((3, 4))
-        b = ones((4, 1))
-        assert_raises(ValueError, spsolve_triangular, A, b)
-        # A2 and b2 have incompatible shapes.
-        A2 = csr_matrix(eye(3))
-        b2 = array([1.0, 2.0])
-        assert_raises(ValueError, spsolve_triangular, A2, b2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            # A is not square.
+            A = np.zeros((3, 4))
+            b = ones((4, 1))
+            assert_raises(ValueError, spsolve_triangular, A, b)
+            # A2 and b2 have incompatible shapes.
+            A2 = csr_array(eye(3))
+            b2 = array([1.0, 2.0])
+            assert_raises(ValueError, spsolve_triangular, A2, b2)
 
-    @sup_sparse_efficiency
     def test_input_types(self):
-        A = array([[1., 0.], [1., 2.]])
-        b = array([[2., 0.], [2., 2.]])
-        for matrix_type in (array, csc_matrix, csr_matrix):
-            x = spsolve_triangular(matrix_type(A), b, lower=True)
-            assert_array_almost_equal(A.dot(x), b)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            A = array([[1., 0.], [1., 2.]])
+            b = array([[2., 0.], [2., 2.]])
+            for matrix_type in (array, csc_array, csr_array):
+                x = spsolve_triangular(matrix_type(A), b, lower=True)
+                assert_array_almost_equal(A.dot(x), b)
 
     @pytest.mark.slow
-    @sup_sparse_efficiency
     @pytest.mark.parametrize("n", [10, 10**2, 10**3])
     @pytest.mark.parametrize("m", [1, 10])
     @pytest.mark.parametrize("lower", [True, False])
@@ -829,44 +859,70 @@ class TestSpsolveTriangular:
     @pytest.mark.parametrize("choice_of_A", ["real", "complex"])
     @pytest.mark.parametrize("choice_of_b", ["floats", "ints", "complexints"])
     def test_random(self, n, m, lower, format, unit_diagonal, choice_of_A, choice_of_b):
-        def random_triangle_matrix(n, lower=True, format="csr", choice_of_A="real"):
-            if choice_of_A == "real":
-                dtype = np.float64
-            elif choice_of_A == "complex":
-                dtype = np.complex128
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SparseEfficiencyWarning)
+            def random_triangle_matrix(n, lower=True, format="csr", choice_of_A="real"):
+                if choice_of_A == "real":
+                    dtype = np.float64
+                elif choice_of_A == "complex":
+                    dtype = np.complex128
+                else:
+                    raise ValueError("choice_of_A must be 'real' or 'complex'.")
+                rng = np.random.default_rng(789002319)
+                rvs = rng.random
+                A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype,
+                                        random_state=rng, data_rvs=rvs)
+                if lower:
+                    A = scipy.sparse.tril(A, format="lil")
+                else:
+                    A = scipy.sparse.triu(A, format="lil")
+                for i in range(n):
+                    A[i, i] = np.random.rand() + 1
+                if format == "csc":
+                    A = A.tocsc(copy=False)
+                else:
+                    A = A.tocsr(copy=False)
+                return A
+
+            rng = np.random.default_rng(1234)
+            A = random_triangle_matrix(n, lower=lower)
+            if choice_of_b == "floats":
+                b = rng.random((n, m))
+            elif choice_of_b == "ints":
+                b = rng.integers(-9, 9, (n, m))
+            elif choice_of_b == "complexints":
+                b = rng.integers(-9, 9, (n, m)) + rng.integers(-9, 9, (n, m)) * 1j
             else:
-                raise ValueError("choice_of_A must be 'real' or 'complex'.")
-            rng = np.random.default_rng(789002319)
-            rvs = rng.random
-            A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype,
-                    random_state=rng, data_rvs=rvs)
-            if lower:
-                A = scipy.sparse.tril(A, format="lil")
-            else:
-                A = scipy.sparse.triu(A, format="lil")
-            for i in range(n):
-                A[i, i] = np.random.rand() + 1
-            if format == "csc":
-                A = A.tocsc(copy=False)
-            else:
-                A = A.tocsr(copy=False)
-            return A
-
-        np.random.seed(1234)
-        A = random_triangle_matrix(n, lower=lower)
-        if choice_of_b == "floats":
-            b = np.random.rand(n, m)
-        elif choice_of_b == "ints":
-            b = np.random.randint(-9, 9, (n, m))
-        elif choice_of_b == "complexints":
-            b = np.random.randint(-9, 9, (n, m)) + np.random.randint(-9, 9, (n, m)) * 1j
-        else:
-            raise ValueError(
-                "choice_of_b must be 'floats', 'ints', or 'complexints'.")
-        x = spsolve_triangular(A, b, lower=lower, unit_diagonal=unit_diagonal)
-        if unit_diagonal:
-            A.setdiag(1)
-        assert_allclose(A.dot(x), b, atol=1.5e-6)
+                raise ValueError(
+                    "choice_of_b must be 'floats', 'ints', or 'complexints'.")
+            x = spsolve_triangular(A, b, lower=lower, unit_diagonal=unit_diagonal)
+            if unit_diagonal:
+                A.setdiag(1)
+            assert_allclose(A.dot(x), b, atol=1.5e-6)
 
 
+@pytest.mark.parametrize("nnz", [10, 10**2, 10**3])
+@pytest.mark.parametrize("fmt", ["csr", "csc", "coo", "dia", "dok", "lil"])
+def test_is_sptriangular_and_spbandwidth(nnz, fmt):
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+        rng = np.random.default_rng(42)
 
+        N = nnz // 2
+        dens = 0.1
+        A = scipy.sparse.random_array((N, N), density=dens, format="csr", rng=rng)
+        A[1, 3] = A[3, 1] = 22  # ensure not upper or lower
+        A = A.asformat(fmt)
+        AU = scipy.sparse.triu(A, format=fmt)
+        AL = scipy.sparse.tril(A, format=fmt)
+        D = 0.1 * scipy.sparse.eye_array(N, format=fmt)
+
+        assert is_sptriangular(A) == (False, False)
+        assert is_sptriangular(AL) == (True, False)
+        assert is_sptriangular(AU) == (False, True)
+        assert is_sptriangular(D) == (True, True)
+
+        assert spbandwidth(A) == scipy.linalg.bandwidth(A.toarray())
+        assert spbandwidth(AU) == scipy.linalg.bandwidth(AU.toarray())
+        assert spbandwidth(AL) == scipy.linalg.bandwidth(AL.toarray())
+        assert spbandwidth(D) == scipy.linalg.bandwidth(D.toarray())

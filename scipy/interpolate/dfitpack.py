@@ -6,31 +6,11 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'bispeu',
-    'bispev',
-    'curfit',
-    'dblint',
-    'fpchec',
-    'fpcurf0',
-    'fpcurf1',
-    'fpcurfm1',
-    'parcur',
-    'parder',
-    'pardeu',
-    'pardtc',
-    'percur',
-    'regrid_smth',
-    'regrid_smth_spher',
     'spalde',
-    'spherfit_lsq',
-    'spherfit_smth',
     'splder',
     'splev',
     'splint',
     'sproot',
-    'surfit_lsq',
-    'surfit_smth',
-    'types',
 ]
 
 
@@ -40,5 +20,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="interpolate", module="dfitpack",
-                                   private_modules=["_dfitpack"], all=__all__,
+                                   private_modules=["_fitpack"], all=__all__,
                                    attribute=name)

@@ -17,13 +17,22 @@ working knowledge of this package. We refer to the
 Note: This documentation is work in progress.
 
 .. toctree::
+   :caption: Contents
    :maxdepth: 2
 
    stats/probability_distributions
-   stats/hypothesis_tests
+   stats/rv_infrastructure
    stats/sampling
    stats/kernel_density_estimation
    stats/multiscale_graphcorr
    stats/quasi_monte_carlo
+   stats/outliers
 
+.. toctree::
+    :caption: Sample statistics and hypothesis tests
+    :maxdepth: 2
 
+    stats/analysing_one_sample
+    stats/comparing_two_samples
+    stats/resampling
+    stats/hypothesis_tests

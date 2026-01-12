@@ -3,7 +3,6 @@ import threading
 import time
 
 import numpy as np
-from numpy.testing import assert_equal
 import pytest
 import scipy.interpolate
 
@@ -55,11 +54,11 @@ class TestGIL:
             time.sleep(0.5)
             self.log('working')
         worker_thread.join()
-        assert_equal(self.messages, [
+        assert self.messages == [
             'interpolation started',
             'working',
             'working',
             'working',
             'interpolation complete',
-        ])
+        ]
 

@@ -798,7 +798,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         * 'prominences', 'right_bases', 'left_bases'
               If `prominence` is given, these keys are accessible. See
               `peak_prominences` for a description of their content.
-        * 'width_heights', 'left_ips', 'right_ips'
+        * 'widths', 'width_heights', 'left_ips', 'right_ips'
               If `width` is given, these keys are accessible. See `peak_widths`
               for a description of their content.
         * 'plateau_sizes', left_edges', 'right_edges'
@@ -1225,13 +1225,13 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         Default is the ricker wavelet.
     max_distances : ndarray, optional
         At each row, a ridge line is only connected if the relative max at
-        row[n] is within ``max_distances[n]`` from the relative max at
+        ``row[n]`` is within ``max_distances[n]`` from the relative max at
         ``row[n+1]``.  Default value is ``widths/4``.
     gap_thresh : float, optional
         If a relative maximum is not found within `max_distances`,
         there will be a gap. A ridge line is discontinued if there are more
         than `gap_thresh` points without connecting a new relative maximum.
-        Default is the first value of the widths array i.e. widths[0].
+        Default is the first value of the widths array i.e. ``widths[0]``.
     min_length : int, optional
         Minimum length a ridge line needs to be acceptable.
         Default is ``cwt.shape[0] / 4``, ie 1/4-th the number of widths.
@@ -1267,12 +1267,10 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     The algorithm is as follows:
      1. Perform a continuous wavelet transform on `vector`, for the supplied
         `widths`. This is a convolution of `vector` with `wavelet(width)` for
-        each width in `widths`. See `cwt`.
+        each width in `widths`.
      2. Identify "ridge lines" in the cwt matrix. These are relative maxima
         at each row, connected across adjacent rows. See identify_ridge_lines
      3. Filter the ridge_lines using filter_ridge_lines.
-
-    .. versionadded:: 0.11.0
 
     References
     ----------

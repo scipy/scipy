@@ -1,10 +1,12 @@
 import os
 import sys
-from io import BytesIO
+from io import (BytesIO, UnsupportedOperation)
+import threading
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           break_cycles, suppress_warnings, IS_PYPY)
+                           break_cycles, IS_PYPY)
 import pytest
 from pytest import raises, warns
 
@@ -57,9 +59,12 @@ def test_read_3():
 def test_read_4():
     # Contains unsupported 'PEAK' chunk
     for mmap in [False, True]:
-        with suppress_warnings() as sup:
-            sup.filter(wavfile.WavFileWarning,
-                       "Chunk .non-data. not understood, skipping it")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Chunk .non-data. not understood, skipping it",
+                wavfile.WavFileWarning
+            )
             filename = 'test-48000Hz-2ch-64bit-float-le-wavex.wav'
             rate, data = wavfile.read(datafile(filename), mmap=mmap)
 
@@ -156,7 +161,7 @@ def test_24_bit_odd_size_with_pad():
 def test_20_bit_extra_data():
     # 20-bit, 3 B container, 1 channel, 10 samples, 30 B data chunk
     # with extra data filling container beyond the bit depth
-    filename = 'test-8000Hz-le-1ch-10S-20bit-extra.wav'
+    filename = 'test-1234Hz-le-1ch-10S-20bit-extra.wav'
     rate, data = wavfile.read(datafile(filename), mmap=False)
 
     assert_equal(rate, 1234)
@@ -259,7 +264,7 @@ def test_64_bit_even_size():
     # 64-bit, 8 B container, 3 channels, 5 samples, 120 B data chunk
     for mmap in [False, True]:
         filename = 'test-8000Hz-le-3ch-5S-64bit.wav'
-        rate, data = wavfile.read(datafile(filename), mmap=False)
+        rate, data = wavfile.read(datafile(filename), mmap=mmap)
 
         assert_equal(rate, 8000)
         assert_(np.issubdtype(data.dtype, np.int64))
@@ -285,7 +290,7 @@ def test_unsupported_mmap():
                      'test-8000Hz-le-3ch-5S-36bit.wav',
                      'test-8000Hz-le-3ch-5S-45bit.wav',
                      'test-8000Hz-le-3ch-5S-53bit.wav',
-                     'test-8000Hz-le-1ch-10S-20bit-extra.wav'}:
+                     'test-1234Hz-le-1ch-10S-20bit-extra.wav'}:
         with raises(ValueError, match="mmap.*not compatible"):
             rate, data = wavfile.read(datafile(filename), mmap=True)
 
@@ -331,6 +336,47 @@ def test_write_roundtrip_rf64(tmpdir):
     assert_array_equal(data, data2)
     # also test writing (gh-12176)
     data2[0] = 0
+
+
+# Fake a non-seekable file-like object without resorting to subprocesses.
+class Nonseekable:
+    def __init__(self, fp):
+        self.fp = fp
+
+    def seekable(self):
+        return False
+    
+    def read(self, size=-1, /):
+        return self.fp.read(size)
+    
+    def close(self):
+        self.fp.close()
+
+
+def test_streams():
+    for filename in ['test-44100Hz-le-1ch-4bytes.wav',
+                     'test-8000Hz-le-2ch-1byteu.wav',
+                     'test-44100Hz-2ch-32bit-float-le.wav',
+                     'test-44100Hz-2ch-32bit-float-be.wav',
+                     'test-8000Hz-le-5ch-9S-5bit.wav',
+                     'test-8000Hz-le-4ch-9S-12bit.wav',
+                     'test-8000Hz-le-3ch-5S-24bit.wav',
+                     'test-1234Hz-le-1ch-10S-20bit-extra.wav',
+                     'test-8000Hz-le-3ch-5S-36bit.wav',
+                     'test-8000Hz-le-3ch-5S-45bit.wav',
+                     'test-8000Hz-le-3ch-5S-53bit.wav',
+                     'test-8000Hz-le-3ch-5S-64bit.wav',
+                     'test-44100Hz-be-1ch-4bytes.wav', # RIFX
+                     'test-44100Hz-le-1ch-4bytes-rf64.wav']:
+        dfname = datafile(filename)
+        with open(dfname, 'rb') as fp1, open(dfname, 'rb') as fp2:
+            rate1, data1 = wavfile.read(fp1)
+            rate2, data2 = wavfile.read(Nonseekable(fp2))
+            rate3, data3 = wavfile.read(dfname, mmap=False)
+            assert_equal(rate1, rate3)
+            assert_equal(rate2, rate3)
+            assert_equal(data1, data3)
+            assert_equal(data2, data3)
 
 
 def test_read_unknown_filetype_fail():
@@ -414,7 +460,8 @@ def test_read_inconsistent_header():
 def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
     dtype = np.dtype(dt_str)
     if realfile:
-        tmpfile = str(tmpdir.join('temp.wav'))
+        tmpfile = str(tmpdir.join(str(threading.get_native_id()), 'temp.wav'))
+        os.makedirs(os.path.dirname(tmpfile), exist_ok=True)
     else:
         tmpfile = BytesIO()
     data = np.random.rand(100, channels)
@@ -455,3 +502,19 @@ def test_wavfile_dtype_unsupported(tmpdir, dtype):
     rate = 8000
     with pytest.raises(ValueError, match="Unsupported"):
         wavfile.write(tmpfile, rate, data)
+
+def test_seek_emulating_reader_invalid_seek():
+    # Dummy data for the reader
+    reader = wavfile.SeekEmulatingReader(BytesIO(b'\x00\x00'))
+    
+    # Test SEEK_END with an invalid whence value
+    with pytest.raises(UnsupportedOperation):
+        reader.seek(0, 5)  # Invalid whence value
+    
+    # Test with negative seek value
+    with pytest.raises(UnsupportedOperation):
+        reader.seek(-1, 0)  # Negative position with SEEK_SET
+    
+    # Test SEEK_END with valid parameters (should not raise)
+    pos = reader.seek(0, os.SEEK_END)  # Valid usage
+    assert pos == 2, f"Failed to seek to end, got position {pos}"

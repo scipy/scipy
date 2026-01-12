@@ -5,8 +5,8 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.linalg import cho_factor, cho_solve, LinAlgError
-from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy._lib._sparse import issparse
 
 
 EPS = np.finfo(float).eps
@@ -258,7 +258,7 @@ def build_quadratic_1d(J, g, s, diag=None, s0=None):
 
     Parameters
     ----------
-    J : ndarray, sparse matrix or LinearOperator shape (m, n)
+    J : ndarray, sparse array or LinearOperator shape (m, n)
         Jacobian matrix, affects the quadratic term.
     g : ndarray, shape (n,)
         Gradient, defines the linear term.
@@ -329,7 +329,7 @@ def evaluate_quadratic(J, g, s, diag=None):
 
     Parameters
     ----------
-    J : ndarray, sparse matrix or LinearOperator, shape (m, n)
+    J : ndarray, sparse array or LinearOperator, shape (m, n)
         Jacobian matrix, affects the quadratic term.
     g : ndarray, shape (n,)
         Gradient, defines the linear term.
@@ -560,9 +560,7 @@ def print_iteration_nonlinear(iteration, nfev, cost, cost_reduction,
     else:
         step_norm = f"{step_norm:^15.2e}"
 
-    print("{:^15}{:^15}{:^15.4e}{}{}{:^15.2e}"
-          .format(iteration, nfev, cost, cost_reduction,
-                  step_norm, optimality))
+    print(f"{iteration:^15}{nfev:^15}{cost:^15.4e}{cost_reduction}{step_norm}{optimality:^15.2e}")
 
 
 def print_header_linear():

@@ -19,6 +19,9 @@
 .. image:: https://img.shields.io/badge/DOI-10.1038%2Fs41592--019--0686--2-blue.svg
   :target: https://www.nature.com/articles/s41592-019-0686-2
 
+.. image:: https://insights.linuxfoundation.org/api/badge/health-score?project=scipy
+  :target: https://insights.linuxfoundation.org/project/scipy
+
 SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
 science, and engineering. It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
@@ -27,7 +30,8 @@ ODE solvers, and more.
 - **Website:** https://scipy.org
 - **Documentation:** https://docs.scipy.org/doc/scipy/
 - **Development version of the documentation:** https://scipy.github.io/devdocs
-- **SciPy development forum:** https://discuss.scientific-python.org/c/contributor/scipy 
+- **SciPy development forum:** https://discuss.scientific-python.org/c/contributor/scipy
+- **Stack Overflow:** https://stackoverflow.com/questions/tagged/scipy
 - **Source code:** https://github.com/scipy/scipy
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues

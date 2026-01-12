@@ -17,6 +17,7 @@ from ._compressed import _cs_matrix
 
 class _csr_base(_cs_matrix):
     _format = 'csr'
+    _allow_nd = (1, 2)
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
@@ -59,6 +60,16 @@ class _csr_base(_cs_matrix):
 
     tocsr.__doc__ = _spbase.tocsr.__doc__
 
+    def tocoo(self, copy=False):
+        A = super().tocoo(copy=copy)
+        # CSR-to-COO conversion always preserves [non-]canonicity
+        # (indices sorting, presense of duplicate elements).
+        # Handled here instead of _cs_matrix because CSC-to-COO generally does not.
+        A.has_canonical_format = self.has_canonical_format
+        return A
+
+    tocoo.__doc__ = _spbase.tocoo.__doc__
+
     def tocsc(self, copy=False):
         if self.ndim != 2:
             raise ValueError("Cannot convert a 1d sparse array to csc format")
@@ -70,8 +81,8 @@ class _csr_base(_cs_matrix):
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(M, N,
-                  self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
+                  self.indptr.astype(idx_dtype, copy=False),
+                  self.indices.astype(idx_dtype, copy=False),
                   self.data,
                   indptr,
                   indices,
@@ -110,8 +121,8 @@ class _csr_base(_cs_matrix):
             data = np.zeros((blks,R,C), dtype=self.dtype)
 
             csr_tobsr(M, N, R, C,
-                      self.indptr.astype(idx_dtype),
-                      self.indices.astype(idx_dtype),
+                      self.indptr.astype(idx_dtype, copy=False),
+                      self.indices.astype(idx_dtype, copy=False),
                       self.data,
                       indptr, indices, data.ravel())
 
@@ -167,7 +178,7 @@ class _csr_base(_cs_matrix):
         if i < 0:
             i += M
         if i < 0 or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, i, i + 1, 0, N)
         return self.__class__((data, indices, indptr), shape=(1, N),
@@ -183,7 +194,7 @@ class _csr_base(_cs_matrix):
         if i < 0:
             i += N
         if i < 0 or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, 0, M, i, i + 1)
         return self.__class__((data, indices, indptr), shape=(M, 1),
@@ -264,7 +275,10 @@ class _csr_base(_cs_matrix):
         return self._major_slice(row)._minor_index_fancy(col)
 
     def _get_arrayXint(self, row, col):
-        return self._major_index_fancy(row)._get_submatrix(minor=col)
+        res = self._major_index_fancy(row)._get_submatrix(minor=col)
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_arrayXslice(self, row, col):
         if col.step not in (1, None):

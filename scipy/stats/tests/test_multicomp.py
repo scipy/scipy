@@ -220,7 +220,7 @@ class TestDunnett:
     def test_basic(self, samples, control, pvalue, statistic):
         rng = np.random.default_rng(11681140010308601919115036826969764808)
 
-        res = stats.dunnett(*samples, control=control, random_state=rng)
+        res = stats.dunnett(*samples, control=control, rng=rng)
 
         assert isinstance(res, DunnettResult)
         assert_allclose(res.statistic, statistic, rtol=5e-5)
@@ -239,13 +239,14 @@ class TestDunnett:
             sample = rng.integers(-100, 100, size=(10,))
             control = rng.integers(-100, 100, size=(10,))
 
+            # preserve use of old random_state during SPEC 7 transition
             res = stats.dunnett(
                 sample, control=control,
                 alternative=alternative, random_state=rng
             )
             ref = stats.ttest_ind(
                 sample, control,
-                alternative=alternative, random_state=rng
+                alternative=alternative
             )
 
             assert_allclose(res.statistic, ref.statistic, rtol=1e-3, atol=1e-5)
@@ -270,7 +271,7 @@ class TestDunnett:
 
         res = stats.dunnett(
             sample_less, sample_greater, control=control,
-            alternative=alternative, random_state=rng
+            alternative=alternative, rng=rng
         )
         assert_allclose(res.pvalue, pvalue, atol=1e-7)
 
@@ -301,7 +302,7 @@ class TestDunnett:
         p_ref = case['pvalues'][alternative.replace('-', '')]
 
         res = stats.dunnett(*samples, control=control, alternative=alternative,
-                            random_state=rng)
+                            rng=rng)
         # atol can't be tighter because R reports some pvalues as "< 1e-4"
         assert_allclose(res.pvalue, p_ref, rtol=5e-3, atol=1e-4)
 
@@ -328,7 +329,7 @@ class TestDunnett:
 
         res = stats.dunnett(
             *self.samples_3, control=self.control_3, alternative=alternative,
-            random_state=rng
+            rng=rng
         )
 
         # check some str output
@@ -350,7 +351,7 @@ class TestDunnett:
         rng = np.random.default_rng(189117774084579816190295271136455278291)
 
         res = stats.dunnett(
-            *self.samples_3, control=self.control_3, random_state=rng
+            *self.samples_3, control=self.control_3, rng=rng
         )
         msg = r"Computation of the confidence interval did not converge"
         with pytest.warns(UserWarning, match=msg):
@@ -396,7 +397,7 @@ class TestDunnett:
         rng = np.random.default_rng(689448934110805334)
         samples = rng.normal(size=(n_samples, 10))
         control = rng.normal(size=10)
-        res = stats.dunnett(*samples, control=control, random_state=rng)
+        res = stats.dunnett(*samples, control=control, rng=rng)
         assert res.statistic.shape == (n_samples,)
         assert res.pvalue.shape == (n_samples,)
         ci = res.confidence_interval()

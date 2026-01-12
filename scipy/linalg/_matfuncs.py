@@ -1,21 +1,23 @@
 #
 # Author: Travis Oliphant, March 2002
 #
-from itertools import product
+import warnings
 
 import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports
-from scipy.linalg import LinAlgError, bandwidth
+from scipy.linalg import LinAlgError, LinAlgWarning
 from ._misc import norm
 from ._basic import solve, inv
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
-from ._matfuncs_sqrtm import sqrtm
-from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
+from ._internal_matfuncs import recursive_schur_sqrtm, matrix_exponential
+from ._linalg_pythran import _funm_loops  # type: ignore[import-not-found]
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
@@ -93,6 +95,7 @@ def _maybe_real(A, B, tol=None):
 # Matrix functions.
 
 
+@_apply_over_batch(('A', 2))
 def fractional_matrix_power(A, t):
     """
     Compute the fractional power of a matrix.
@@ -113,10 +116,11 @@ def fractional_matrix_power(A, t):
 
     References
     ----------
-    .. [1] Nicholas J. Higham and Lijing lin (2011)
+    .. [1] Nicholas J. Higham and Lijing Lin (2011)
            "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
            SIAM Journal on Matrix Analysis and Applications,
-           32 (3). pp. 1056-1078. ISSN 0895-4798
+           32 (3). pp. 1056-1078. ISSN 0895-4798.
+           :doi:`10.1137/10081232X`
 
     Examples
     --------
@@ -139,7 +143,8 @@ def fractional_matrix_power(A, t):
     return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
-def logm(A, disp=True):
+@_apply_over_batch(('A', 2))
+def logm(A):
     """
     Compute matrix logarithm.
 
@@ -150,18 +155,11 @@ def logm(A, disp=True):
     ----------
     A : (N, N) array_like
         Matrix whose logarithm to evaluate
-    disp : bool, optional
-        Print warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
 
     Returns
     -------
     logm : (N, N) ndarray
         Matrix logarithm of `A`
-    errest : float
-        (if disp == False)
-
-        1-norm of the estimated error, ||err||_1 / ||A||_1
 
     References
     ----------
@@ -194,24 +192,27 @@ def logm(A, disp=True):
            [ 1.,  4.]])
 
     """
-    A = _asarray_square(A)
+    A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     F = _maybe_real(A, F)
     errtol = 1000*eps
     # TODO use a better error approximation
-    errest = norm(expm(F)-A, 1) / norm(A, 1)
-    if disp:
-        if not isfinite(errest) or errest >= errtol:
-            print("logm result may be inaccurate, approximate err =", errest)
-        return F
-    else:
-        return F, errest
+    with np.errstate(divide='ignore', invalid='ignore'):
+        errest = norm(expm(F)-A, 1) / np.asarray(norm(A, 1), dtype=A.dtype).real[()]
+    if not isfinite(errest) or errest >= errtol:
+        message = f"logm result may be inaccurate, approximate err = {errest}"
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+    return F
 
 
 def expm(A):
     """Compute the matrix exponential of an array.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -225,7 +226,7 @@ def expm(A):
 
     Notes
     -----
-    Implements the algorithm given in [1], which is essentially a Pade
+    Implements the algorithm given in [1]_, which is essentially a Pade
     approximation with a variable order that is decided based on the array
     data.
 
@@ -235,7 +236,7 @@ def expm(A):
 
     For cases ``n >= 400``, the exact 1-norm computation cost, breaks even with
     1-norm estimation and from that point on the estimation scheme given in
-    [2] is used to decide on the approximation order.
+    [2]_ is used to decide on the approximation order.
 
     References
     ----------
@@ -285,10 +286,11 @@ def expm(A):
         raise LinAlgError('The input array must be at least two-dimensional')
     if a.shape[-1] != a.shape[-2]:
         raise LinAlgError('Last 2 dimensions of the array must be square')
-    n = a.shape[-1]
+
     # Empty array
     if min(*a.shape) == 0:
-        return np.empty_like(a)
+        dtype = expm(np.eye(2, dtype=a.dtype)).dtype
+        return np.empty_like(a, dtype=dtype)
 
     # Scalar case
     if a.shape[-2:] == (1, 1):
@@ -299,80 +301,137 @@ def expm(A):
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
+    # An explicit formula for 2x2 case exists (formula (2.2) in [1]_). However, without
     # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
     # here until we have a more stable implementation.
 
-    n = a.shape[-1]
-    eA = np.empty(a.shape, dtype=a.dtype)
-    # working memory to hold intermediate arrays
-    Am = np.empty((5, n, n), dtype=a.dtype)
-
-    # Main loop to go through the slices of an ndarray and passing to expm
-    for ind in product(*[range(x) for x in a.shape[:-2]]):
-        aw = a[ind]
-
-        lu = bandwidth(aw)
-        if not any(lu):  # a is diagonal?
-            eA[ind] = np.diag(np.exp(np.diag(aw)))
-            continue
-
-        # Generic/triangular case; copy the slice into scratch and send.
-        # Am will be mutated by pick_pade_structure
-        Am[0, :, :] = aw
-        m, s = pick_pade_structure(Am)
-
-        if s != 0:  # scaling needed
-            Am[:4] *= [[[2**(-s)]], [[4**(-s)]], [[16**(-s)]], [[64**(-s)]]]
-
-        pade_UV_calc(Am, n, m)
-        eAw = Am[0]
-
-        if s != 0:  # squaring needed
-
-            if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
-                # This branch implements Code Fragment 2.1 of [1]
-
-                diag_aw = np.diag(aw)
-                # einsum returns a writable view
-                np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-s))
-                # super/sub diagonal
-                sd = np.diag(aw, k=-1 if lu[1] == 0 else 1)
-
-                for i in range(s-1, -1, -1):
-                    eAw = eAw @ eAw
-
-                    # diagonal
-                    np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2.**(-i))
-                    exp_sd = _exp_sinch(diag_aw * (2.**(-i))) * (sd * 2**(-i))
-                    if lu[1] == 0:  # lower
-                        np.einsum('ii->i', eAw[1:, :-1])[:] = exp_sd
-                    else:  # upper
-                        np.einsum('ii->i', eAw[:-1, 1:])[:] = exp_sd
-
-            else:  # generic
-                for _ in range(s):
-                    eAw = eAw @ eAw
-
-        # Zero out the entries from np.empty in case of triangular input
-        if (lu[0] == 0) or (lu[1] == 0):
-            eA[ind] = np.triu(eAw) if lu[0] == 0 else np.tril(eAw)
+    eA, info = matrix_exponential(a)
+    if info != 0:
+        if info <= -11:
+            # We raise it from failed mallocs; negative LAPACK codes > -7
+            raise MemoryError("scipy.linalg.expm could not allocate "
+                            "sufficient memory while trying to compute the "
+                            f"exponential (error code {info}).")
         else:
-            eA[ind] = eAw
-
+            # LAPACK wrong argument error or exact singularity.
+            # Neither should happen.
+            raise RuntimeError("scipy.linalg.expm: Internal LAPACK "
+                                "error during the exponential computation "
+                                f"(error code {info})")
     return eA
 
 
-def _exp_sinch(x):
-    # Higham's formula (10.42), might overflow, see GH-11839
-    lexp_diff = np.diff(np.exp(x))
-    l_diff = np.diff(x)
-    mask_z = l_diff == 0.
-    lexp_diff[~mask_z] /= l_diff[~mask_z]
-    lexp_diff[mask_z] = np.exp(x[:-1][mask_z])
-    return lexp_diff
+def sqrtm(A):
+    """
+    Compute, if exists, the matrix square root.
+
+    The matrix square root of ``A`` is a matrix ``X`` such that ``X @ X = A``.
+    Every square matrix is not guaranteed to have a matrix square root, for
+    example, the array ``[[0, 1], [0, 0]]`` does not have a square root.
+
+    Moreover, not every real matrix has a real square root. Hence, for
+    real-valued matrices the return type can be complex if, numerically, there
+    is an eigenvalue on the negative real axis.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
+    Parameters
+    ----------
+    A : ndarray
+        Input with last two dimensions are square ``(..., n, n)``.
+
+    Returns
+    -------
+    sqrtm : ndarray
+        Computed matrix squareroot of `A` with same size ``(..., n, n)``.
+
+    Notes
+    -----
+    This function uses the Schur decomposition method to compute the matrix
+    square root following [1]_ and for real matrices [2]_. Moreover, note
+    that, there exist matrices that have square roots that are not polynomials
+    in ``A``. For a classical example from [2]_, the matrix satisfies::
+
+            [ a, a**2 + 1]**2     [-1,  0]
+            [-1,       -a]     =  [ 0, -1]
+
+    for any scalar ``a`` but it is not a polynomial in ``-I``. Thus, they will
+    not be found by this function.
+
+    References
+    ----------
+    .. [1] Edvin Deadman, Nicholas J. Higham, Rui Ralha (2013)
+           "Blocked Schur Algorithms for Computing the Matrix Square Root,
+           Lecture Notes in Computer Science, 7782. pp. 171-182.
+           :doi:`10.1016/0024-3795(87)90118-2`
+    .. [2] Nicholas J. Higham (1987) "Computing real square roots of a real
+           matrix", Linear Algebra and its Applications, 88/89:405-430.
+           :doi:`10.1016/0024-3795(87)90118-2`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import sqrtm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> r = sqrtm(a)
+    >>> r
+    array([[ 0.75592895,  1.13389342],
+           [ 0.37796447,  1.88982237]])
+    >>> r.dot(r)
+    array([[ 1.,  3.],
+           [ 1.,  4.]])
+
+    """
+    a = np.asarray(A)
+    if a.size == 1 and a.ndim < 2:
+        return np.array([[np.exp(a.item())]])
+
+    if a.ndim < 2:
+        raise LinAlgError('The input array must be at least two-dimensional')
+    if a.shape[-1] != a.shape[-2]:
+        raise LinAlgError('Last 2 dimensions of the array must be square')
+
+    # Empty array
+    if min(*a.shape) == 0:
+        dtype = sqrtm(np.eye(2, dtype=a.dtype)).dtype
+        return np.empty_like(a, dtype=dtype)
+
+    # Scalar case
+    if a.shape[-2:] == (1, 1):
+        return np.emath.sqrt(a)
+
+    if not np.issubdtype(a.dtype, np.inexact):
+        a = a.astype(np.float64)
+    elif a.dtype == np.float16:
+        a = a.astype(np.float32)
+    elif a.dtype.char in 'G':
+        a = a.astype(np.complex128)
+    elif a.dtype.char in 'g':
+        a = a.astype(np.float64)
+
+    if a.dtype.char not in 'fdFD':
+        raise TypeError("scipy.linalg.sqrtm is not supported for the data type"
+                        f" {a.dtype}")
+
+    res, isIllconditioned, isSingular, info = recursive_schur_sqrtm(a)
+    if info < 0:
+        raise LinAlgError(f"Internal error in scipy.linalg.sqrtm: {info}")
+
+    if isSingular or isIllconditioned:
+        if isSingular:
+            msg = ("Matrix is singular. The result might be inaccurate or the"
+                   " array might not have a square root.")
+        else:
+            msg = ("Matrix is ill-conditioned. The result might be inaccurate"
+                   " or the array might not have a square root.")
+        warnings.warn(msg, LinAlgWarning, stacklevel=2)
+
+    return res
 
 
+@_apply_over_batch(('A', 2))
 def cosm(A):
     """
     Compute the matrix cosine.
@@ -413,6 +472,7 @@ def cosm(A):
         return expm(1j*A).real
 
 
+@_apply_over_batch(('A', 2))
 def sinm(A):
     """
     Compute the matrix sine.
@@ -453,6 +513,7 @@ def sinm(A):
         return expm(1j*A).imag
 
 
+@_apply_over_batch(('A', 2))
 def tanm(A):
     """
     Compute the matrix tangent.
@@ -492,6 +553,7 @@ def tanm(A):
     return _maybe_real(A, solve(cosm(A), sinm(A)))
 
 
+@_apply_over_batch(('A', 2))
 def coshm(A):
     """
     Compute the hyperbolic matrix cosine.
@@ -531,6 +593,7 @@ def coshm(A):
     return _maybe_real(A, 0.5 * (expm(A) + expm(-A)))
 
 
+@_apply_over_batch(('A', 2))
 def sinhm(A):
     """
     Compute the hyperbolic matrix sine.
@@ -570,6 +633,7 @@ def sinhm(A):
     return _maybe_real(A, 0.5 * (expm(A) - expm(-A)))
 
 
+@_apply_over_batch(('A', 2))
 def tanhm(A):
     """
     Compute the hyperbolic matrix tangent.
@@ -609,6 +673,7 @@ def tanhm(A):
     return _maybe_real(A, solve(coshm(A), sinhm(A)))
 
 
+@_apply_over_batch(('A', 2))
 def funm(A, func, disp=True):
     """
     Evaluate a matrix function specified by a callable.
@@ -684,18 +749,7 @@ def funm(A, func, disp=True):
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
     #                 "matrix Computations."
-    for p in range(1, n):
-        for i in range(1, n-p+1):
-            j = i + p
-            s = T[i-1, j-1] * (F[j-1, j-1] - F[i-1, i-1])
-            ksl = slice(i, j-1)
-            val = dot(T[i-1, ksl], F[ksl, j-1]) - dot(F[i-1, ksl], T[ksl, j-1])
-            s = s + val
-            den = T[j-1, j-1] - T[i-1, i-1]
-            if den != 0.0:
-                s = s / den
-            F[i-1, j-1] = s
-            minden = min(minden, abs(den))
+    F, minden = _funm_loops(F, T, n, minden)
 
     F = dot(dot(Z, F), transpose(conjugate(Z)))
     F = _maybe_real(A, F)
@@ -714,7 +768,8 @@ def funm(A, func, disp=True):
         return F, err
 
 
-def signm(A, disp=True):
+@_apply_over_batch(('A', 2))
+def signm(A):
     """
     Matrix sign function.
 
@@ -724,18 +779,11 @@ def signm(A, disp=True):
     ----------
     A : (N, N) array_like
         Matrix at which to evaluate the sign function
-    disp : bool, optional
-        Print warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
 
     Returns
     -------
     signm : (N, N) ndarray
         Value of the sign function at `A`
-    errest : float
-        (if disp == False)
-
-        1-norm of the estimated error, ||err||_1 / ||A||_1
 
     Examples
     --------
@@ -786,17 +834,15 @@ def signm(A, disp=True):
         if errest < errtol or prev_errest == errest:
             break
         prev_errest = errest
-    if disp:
-        if not isfinite(errest) or errest >= errtol:
-            print("signm result may be inaccurate, approximate err =", errest)
-        return S0
-    else:
-        return S0, errest
+    if not isfinite(errest) or errest >= errtol:
+        print("signm result may be inaccurate, approximate err =", errest)
+    return S0
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def khatri_rao(a, b):
     r"""
-    Khatri-rao product
+    Khatri-Rao product of two matrices.
 
     A column-wise Kronecker product of two matrices
 
@@ -811,10 +857,6 @@ def khatri_rao(a, b):
     -------
     c:  (n*m, k) ndarray
         Khatri-rao product of `a` and `b`.
-
-    See Also
-    --------
-    kron : Kronecker product
 
     Notes
     -----

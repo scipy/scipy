@@ -30,6 +30,11 @@ at the top-level directory.
 
 typedef struct { float r, i; } singlecomplex;
 
+#if defined(SUPERLU_TYPEDEF_COMPLEX) || DOXYGEN
+//! \brief backward compatibility with older versions of SuperLU
+//! Add -D enable_compatibility_complex=ON to your CMake call
+typedef singlecomplex complex;
+#endif
 
 /* Macro definitions */
 

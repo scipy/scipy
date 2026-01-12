@@ -353,6 +353,8 @@ int tnc(int n, double x[], double *f, double g[], tnc_function * function,
             xscale[i] = fabs(scale[i]);
             if (xscale[i] == 0.0) {
                 xoffset[i] = low[i] = up[i] = x[i];
+            } else {
+                xoffset[i] = x[i];
             }
         } else if (low[i] != -HUGE_VAL && up[i] != HUGE_VAL) {
             xscale[i] = up[i] - low[i];
@@ -508,7 +510,7 @@ static void setConstraints(int n, double x[], int pivot[], double xscale[],
  * the truncated-newton method is preconditioned by a limited-memory
  * quasi-newton method (this preconditioning strategy is developed
  * in this routine) with a further diagonal scaling
- * (see routine diagonalscaling).
+ * (see routine diagonalScaling).
  */
 static tnc_rc tnc_minimize(int n, double x[],
                            double *f, double gfull[],

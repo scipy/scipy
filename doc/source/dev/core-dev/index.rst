@@ -20,4 +20,6 @@ SciPy Core Developer Guide
 
 .. include:: distributing.rst.inc
 
+.. include:: interactive_examples.rst.inc
+
 .. include:: releasing.rst.inc

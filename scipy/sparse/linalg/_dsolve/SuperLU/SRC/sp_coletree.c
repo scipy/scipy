@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -8,10 +8,7 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file sp_coletree.c
- * \brief Tree layout and computation routines
- *
- *<pre>
+/*
  * -- SuperLU routine (version 3.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
@@ -27,8 +24,12 @@ at the top-level directory.
  * Permission to modify the code and to distribute modified code is
  * granted, provided the above notices are retained, and a notice that
  * the code was modified is included with the above copyright notice.
- * </pre>
 */
+/*! \file
+ * \brief Tree layout and computation routines
+ *
+ * \ingroup Common
+ */
 
 /*  Elimination tree computation and layout routines */
 

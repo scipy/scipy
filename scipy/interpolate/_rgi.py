@@ -1,12 +1,15 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
 import itertools
+from types import GenericAlias
 
 import numpy as np
 
 import scipy.sparse.linalg as ssl
+from scipy._lib._array_api import array_namespace, xp_capabilities
+from scipy._lib.array_api_compat import is_array_api_obj
 
-from .interpnd import _ndim_coords_from_arrays
+from ._interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
 from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
@@ -28,8 +31,9 @@ def _check_points(points):
                 p = np.flip(p)
             else:
                 raise ValueError(
-                    "The points in dimension %d must be strictly "
-                    "ascending or descending" % i)
+                    f"The points in dimension {i} must be strictly ascending or "
+                    f"descending"
+                )
         # see https://github.com/scipy/scipy/issues/17716
         p = np.ascontiguousarray(p)
         grid.append(p)
@@ -38,20 +42,29 @@ def _check_points(points):
 
 def _check_dimensionality(points, values):
     if len(points) > values.ndim:
-        raise ValueError("There are %d point arrays, but values has %d "
-                         "dimensions" % (len(points), values.ndim))
+        raise ValueError(
+            f"There are {len(points)} point arrays, but values has "
+            f"{values.ndim} dimensions"
+        )
     for i, p in enumerate(points):
         if not np.asarray(p).ndim == 1:
-            raise ValueError("The points in dimension %d must be "
-                             "1-dimensional" % i)
+            raise ValueError(f"The points in dimension {i} must be 1-dimensional")
         if not values.shape[i] == len(p):
-            raise ValueError("There are %d points and %d values in "
-                             "dimension %d" % (len(p), values.shape[i], i))
+            raise ValueError(
+                f"There are {len(p)} points and {values.shape[i]} values in "
+                f"dimension {i}"
+            )
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class RegularGridInterpolator:
-    """
-    Interpolator on a regular or rectilinear grid in arbitrary dimensions.
+    """Interpolator of specified order on a rectilinear grid in N ≥ 1 dimensions.
 
     The data must be defined on a rectilinear grid; that is, a rectangular
     grid with even or uneven spacing. Linear, nearest-neighbor, spline
@@ -153,6 +166,11 @@ class RegularGridInterpolator:
     Alternatively, you may instead use the legacy methods, "slinear_legacy",
     "cubic_legacy" and "quintic_legacy". These methods allow faster construction
     but evaluations will be much slower.
+
+    **Rounding rule at half points with `nearest` method**
+
+    The rounding rule with the `nearest` method at half points is rounding *down*.
+
 
     Examples
     --------
@@ -264,21 +282,42 @@ class RegularGridInterpolator:
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, *, solver=None, solver_args=None):
         if method not in self._ALL_METHODS:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
         elif method in self._SPLINE_METHODS:
-            self._validate_grid_dimensions(points, method)
+            self._validate_grid_dimensions(points, method)   # NB: uses np.atleast_1d
+
+        try:
+            xp = array_namespace(*points, values)
+        except Exception as e:
+            # either "duck-type" values or a user error?
+            xp = array_namespace(*points) # still forbid mixed namespaces in `points`
+            try:
+                xp_v = array_namespace(values)
+            except Exception:
+                # "duck-type" values indeed, continue with `xp` as the namespace
+                pass
+            else:
+                # both `points` and `values` are array API objects, check consistency
+                if xp_v != xp:
+                    raise e
+
+        self._asarray = xp.asarray
         self.method = method
+        self._spline = None
         self.bounds_error = bounds_error
-        self.grid, self._descending_dimensions = _check_points(points)
-        self.values = self._check_values(values)
-        self._check_dimensionality(self.grid, self.values)
-        self.fill_value = self._check_fill_value(self.values, fill_value)
+        self._grid, self._descending_dimensions = _check_points(points)
+        self._values = self._check_values(values)
+        self._check_dimensionality(self._grid, self._values)
+        self.fill_value = self._check_fill_value(self._values, fill_value)
         if self._descending_dimensions:
-            self.values = np.flip(values, axis=self._descending_dimensions)
-        if self.method == "pchip" and np.iscomplexobj(self.values):
+            self._values = np.flip(values, axis=self._descending_dimensions)
+        if self.method == "pchip" and np.iscomplexobj(self._values):
             msg = ("`PchipInterpolator` only works with real values. If you are trying "
                    "to use the real components of the passed array, use `np.real` on "
                    "the array before passing to `RegularGridInterpolator`.")
@@ -298,7 +337,7 @@ class RegularGridInterpolator:
         if solver is None:
             solver = ssl.gcrotmk
         spl = make_ndbspl(
-                self.grid, self.values, self._SPLINE_DEGREE_MAP[method],
+                self._grid, self._values, self._SPLINE_DEGREE_MAP[method],
                 solver=solver, **solver_args
               )
         return spl
@@ -310,6 +349,9 @@ class RegularGridInterpolator:
         return _check_points(points)
 
     def _check_values(self, values):
+        if is_array_api_obj(values):
+            values = np.asarray(values)
+
         if not hasattr(values, 'ndim'):
             # allow reasonable duck-typed values
             values = np.asarray(values)
@@ -387,12 +429,13 @@ class RegularGridInterpolator:
         >>> interp([[1.5, 1.3], [0.3, 4.5]], method='linear')
         array([ 4.7, 24.3])
         """
+        _spline = self._spline
         method = self.method if method is None else method
         is_method_changed = self.method != method
         if method not in self._ALL_METHODS:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
         if is_method_changed and method in self._SPLINE_METHODS_ndbspl:
-            self._spline = self._construct_spline(method)
+            _spline = self._construct_spline(method)
 
         if nu is not None and method not in self._SPLINE_METHODS_ndbspl:
             raise ValueError(
@@ -404,18 +447,18 @@ class RegularGridInterpolator:
 
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
-            if (ndim == 2 and hasattr(self.values, 'dtype') and
-                    self.values.ndim == 2 and self.values.flags.writeable and
-                    self.values.dtype in (np.float64, np.complex128) and
-                    self.values.dtype.byteorder == '='):
+            if (ndim == 2 and hasattr(self._values, 'dtype') and
+                    self._values.ndim == 2 and self._values.flags.writeable and
+                    self._values.dtype in (np.float64, np.complex128) and
+                    self._values.dtype.byteorder == '='):
                 # until cython supports const fused types, the fast path
                 # cannot support non-writeable values
                 # a fast path
-                out = np.empty(indices.shape[1], dtype=self.values.dtype)
-                result = evaluate_linear_2d(self.values,
+                out = np.empty(indices.shape[1], dtype=self._values.dtype)
+                result = evaluate_linear_2d(self._values,
                                             indices,
                                             norm_distances,
-                                            self.grid,
+                                            self._grid,
                                             out)
             else:
                 result = self._evaluate_linear(indices, norm_distances)
@@ -424,11 +467,11 @@ class RegularGridInterpolator:
             result = self._evaluate_nearest(indices, norm_distances)
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
-                self._validate_grid_dimensions(self.grid, method)
+                self._validate_grid_dimensions(self._grid, method)
             if method in self._SPLINE_METHODS_recursive:
                 result = self._evaluate_spline(xi, method)
             else:
-                result = self._spline(xi, nu=nu)
+                result = _spline(xi, nu=nu)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -436,12 +479,20 @@ class RegularGridInterpolator:
         # f(nan) = nan, if any
         if np.any(nans):
             result[nans] = np.nan
-        return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
+        return self._asarray(result.reshape(xi_shape[:-1] + self._values.shape[ndim:]))
+
+    @property
+    def grid(self):
+        return tuple(self._asarray(p) for p in self._grid)
+
+    @property
+    def values(self):
+        return self._asarray(self._values)
 
     def _prepare_xi(self, xi):
-        ndim = len(self.grid)
+        ndim = len(self._grid)
         xi = _ndim_coords_from_arrays(xi, ndim=ndim)
-        if xi.shape[-1] != len(self.grid):
+        if xi.shape[-1] != ndim:
             raise ValueError("The requested sample points xi have dimension "
                              f"{xi.shape[-1]} but this "
                              f"RegularGridInterpolator has dimension {ndim}")
@@ -455,10 +506,11 @@ class RegularGridInterpolator:
 
         if self.bounds_error:
             for i, p in enumerate(xi.T):
-                if not np.logical_and(np.all(self.grid[i][0] <= p),
-                                      np.all(p <= self.grid[i][-1])):
-                    raise ValueError("One of the requested xi is out of bounds "
-                                     "in dimension %d" % i)
+                if not np.logical_and(np.all(self._grid[i][0] <= p),
+                                      np.all(p <= self._grid[i][-1])):
+                    raise ValueError(
+                        f"One of the requested xi is out of bounds in dimension {i}"
+                    )
             out_of_bounds = None
         else:
             out_of_bounds = self._find_out_of_bounds(xi.T)
@@ -466,18 +518,18 @@ class RegularGridInterpolator:
         return xi, xi_shape, ndim, nans, out_of_bounds
 
     def _evaluate_linear(self, indices, norm_distances):
-        # slice for broadcasting over trailing dimensions in self.values
-        vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
+        # slice for broadcasting over trailing dimensions in self._values
+        vslice = (slice(None),) + (None,)*(self._values.ndim - len(indices))
 
         # Compute shifting up front before zipping everything together
         shift_norm_distances = [1 - yi for yi in norm_distances]
         shift_indices = [i + 1 for i in indices]
 
         # The formula for linear interpolation in 2d takes the form:
-        # values = self.values[(i0, i1)] * (1 - y0) * (1 - y1) + \
-        #          self.values[(i0, i1 + 1)] * (1 - y0) * y1 + \
-        #          self.values[(i0 + 1, i1)] * y0 * (1 - y1) + \
-        #          self.values[(i0 + 1, i1 + 1)] * y0 * y1
+        # values = self._values[(i0, i1)] * (1 - y0) * (1 - y1) + \
+        #          self._values[(i0, i1 + 1)] * (1 - y0) * y1 + \
+        #          self._values[(i0 + 1, i1)] * y0 * (1 - y1) + \
+        #          self._values[(i0 + 1, i1 + 1)] * y0 * y1
         # We pair i with 1 - yi (zipped1) and i + 1 with yi (zipped2)
         zipped1 = zip(indices, shift_norm_distances)
         zipped2 = zip(shift_indices, norm_distances)
@@ -492,14 +544,14 @@ class RegularGridInterpolator:
             weight = np.array([1.])
             for w in weights:
                 weight = weight * w
-            term = np.asarray(self.values[edge_indices]) * weight[vslice]
+            term = np.asarray(self._values[edge_indices]) * weight[vslice]
             value = value + term   # cannot use += because broadcasting
         return value
 
     def _evaluate_nearest(self, indices, norm_distances):
         idx_res = [np.where(yi <= .5, i, i + 1)
                    for i, yi in zip(indices, norm_distances)]
-        return self.values[tuple(idx_res)]
+        return self._values[tuple(idx_res)]
 
     def _validate_grid_dimensions(self, points, method):
         k = self._SPLINE_DEGREE_MAP[method]
@@ -513,7 +565,7 @@ class RegularGridInterpolator:
     def _evaluate_spline(self, xi, method):
         # ensure xi is 2D list of points to evaluate (`m` is the number of
         # points and `n` is the number of interpolation dimensions,
-        # ``n == len(self.grid)``.)
+        # ``n == len(self._grid)``.)
         if xi.ndim == 1:
             xi = xi.reshape((1, xi.size))
         m, n = xi.shape
@@ -524,9 +576,9 @@ class RegularGridInterpolator:
         # the 0th axis of its argument array (for 1D routine it's its ``y``
         # array). Thus permute the interpolation axes of `values` *and keep
         # trailing dimensions trailing*.
-        axes = tuple(range(self.values.ndim))
+        axes = tuple(range(self._values.ndim))
         axx = axes[:n][::-1] + axes[n:]
-        values = self.values.transpose(axx)
+        values = self._values.transpose(axx)
 
         if method == 'pchip':
             _eval_func = self._do_pchip
@@ -541,14 +593,14 @@ class RegularGridInterpolator:
         # can at least vectorize the first pass across all points in the
         # last variable of xi.
         last_dim = n - 1
-        first_values = _eval_func(self.grid[last_dim],
+        first_values = _eval_func(self._grid[last_dim],
                                   values,
                                   xi[:, last_dim],
                                   k)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
-        shape = (m, *self.values.shape[n:])
-        result = np.empty(shape, dtype=self.values.dtype)
+        shape = (m, *self._values.shape[n:])
+        result = np.empty(shape, dtype=self._values.dtype)
         for j in range(m):
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension.
@@ -557,7 +609,7 @@ class RegularGridInterpolator:
             for i in range(last_dim-1, -1, -1):
                 # Interpolate for each 1D from the last dimensions.
                 # This collapses each 1D sequence into a scalar.
-                folded_values = _eval_func(self.grid[i],
+                folded_values = _eval_func(self._grid[i],
                                            folded_values,
                                            xi[j, i],
                                            k)
@@ -578,13 +630,13 @@ class RegularGridInterpolator:
         return values
 
     def _find_indices(self, xi):
-        return find_indices(self.grid, xi)
+        return find_indices(self._grid, xi)
 
     def _find_out_of_bounds(self, xi):
         # check for out of bounds xi
         out_of_bounds = np.zeros((xi.shape[1]), dtype=bool)
         # iterate through dimensions
-        for x, grid in zip(xi, self.grid):
+        for x, grid in zip(xi, self._grid):
             out_of_bounds += x < grid[0]
             out_of_bounds += x > grid[-1]
         return out_of_bounds
@@ -609,13 +661,6 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data is
         accepted.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated with ``method="pchip"`` and will raise an
-            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
-            works with real values. If you are trying to use the real components of
-            the passed array, use ``np.real`` on ``values``.
-
     xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at
 
@@ -687,6 +732,13 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> print(interpn(points, values, point))
     [12.63]
 
+    Compare with value at point by function
+
+    >>> value_func_3d(*point)
+    12.63 # up to rounding
+
+    Since the function is linear, the interpolation is exact using linear method.
+
     """
     # sanity check 'method' kwarg
     if method not in ["linear", "nearest", "cubic", "quintic", "pchip",
@@ -708,8 +760,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
-        raise ValueError("There are %d point arrays, but values has %d "
-                         "dimensions" % (len(points), ndim))
+        raise ValueError(
+            f"There are {len(points)} point arrays, but values has {ndim} dimensions"
+        )
     if len(points) != ndim and method == 'splinef2d':
         raise ValueError("The method splinef2d can only be used for "
                          "scalar data with one point per coordinate")
@@ -720,16 +773,18 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     # sanity check requested xi
     xi = _ndim_coords_from_arrays(xi, ndim=len(grid))
     if xi.shape[-1] != len(grid):
-        raise ValueError("The requested sample points xi have dimension "
-                         "%d, but this RegularGridInterpolator has "
-                         "dimension %d" % (xi.shape[-1], len(grid)))
+        raise ValueError(
+            f"The requested sample points xi have dimension {xi.shape[-1]}, "
+            f"but this RegularGridInterpolator has dimension {len(grid)}"
+        )
 
     if bounds_error:
         for i, p in enumerate(xi.T):
             if not np.logical_and(np.all(grid[i][0] <= p),
                                   np.all(p <= grid[i][-1])):
-                raise ValueError("One of the requested xi is out of bounds "
-                                 "in dimension %d" % i)
+                raise ValueError(
+                    f"One of the requested xi is out of bounds in dimension {i}"
+                )
 
     # perform interpolation
     if method in RegularGridInterpolator._ALL_METHODS:

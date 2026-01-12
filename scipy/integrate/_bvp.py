@@ -7,6 +7,7 @@ from numpy.linalg import pinv
 from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
 from scipy.optimize import OptimizeResult
+from scipy._lib._array_api import xp_capabilities
 
 
 EPS = np.finfo(float).eps
@@ -402,7 +403,9 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
     References
     ----------
     .. [1]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
-       Boundary Value Problems for Ordinary Differential Equations"
+       Boundary Value Problems for Ordinary Differential Equations",
+       Philidelphia, PA: Society for Industrial and Applied Mathematics,
+       1995.
     """
     # We know that the solution residuals at the middle points of the mesh
     # are connected with collocation residuals  r_middle = 1.5 * col_res / h.
@@ -500,15 +503,14 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
 
 
 def print_iteration_header():
-    print("{:^15}{:^15}{:^15}{:^15}{:^15}".format(
-        "Iteration", "Max residual", "Max BC residual", "Total nodes",
-        "Nodes added"))
+    print(f"{'Iteration':^15}{'Max residual':^15}{'Max BC residual':^15}"
+          f"{'Total nodes':^15}{'Nodes added':^15}")
 
 
 def print_iteration_progress(iteration, residual, bc_residual, total_nodes,
                              nodes_added):
-    print("{:^15}{:^15.2e}{:^15.2e}{:^15}{:^15}".format(
-        iteration, residual, bc_residual, total_nodes, nodes_added))
+    print(f"{iteration:^15}{residual:^15.2e}{bc_residual:^15.2e}"
+          f"{total_nodes:^15}{nodes_added:^15}")
 
 
 class BVPResult(OptimizeResult):
@@ -707,6 +709,7 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
     return fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped
 
 
+@xp_capabilities(np_only=True)
 def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
               tol=1e-3, max_nodes=1000, verbose=0, bc_tol=None):
     """Solve a boundary value problem for a system of ODEs.
@@ -717,7 +720,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         dy / dx = f(x, y, p) + S * y / (x - a), a <= x <= b
         bc(y(a), y(b), p) = 0
 
-    Here x is a 1-D independent variable, y(x) is an N-D
+    Here x is a 1-D independent variable, y(x) is an n-D
     vector-valued function and p is a k-D vector of unknown
     parameters which is to be found along with y(x). For the problem to be
     determined, there must be n + k boundary conditions, i.e., bc must be an
@@ -752,6 +755,8 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         present. All arguments are ndarray: ``ya`` and ``yb`` with shape (n,),
         and ``p`` with shape (k,). The return value must be an array with
         shape (n + k,).
+        The order of the returned residuals does not matter, as `solve_bvp`
+        attempts to drive all residuals to zero.
     x : array_like, shape (m,)
         Initial mesh. Must be a strictly increasing sequence of real numbers
         with ``x[0]=a`` and ``x[-1]=b``.
@@ -771,10 +776,10 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         parameters are present. The return must contain 1 or 2 elements in the
         following order:
 
-            * df_dy : array_like with shape (n, n, m), where an element
-              (i, j, q) equals to d f_i(x_q, y_q, p) / d (y_q)_j.
-            * df_dp : array_like with shape (n, k, m), where an element
-              (i, j, q) equals to d f_i(x_q, y_q, p) / d p_j.
+        * df_dy : array_like with shape ``(n, n, m)``, where an element
+          ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d (y_q)_j``.
+        * df_dp : array_like with shape ``(n, k, m)``, where an element
+          ``(i, j, q)`` equals to ``d f_i(x_q, y_q, p) / d p_j``.
 
         Here q numbers nodes at which x and y are defined, whereas i and j
         number vector components. If the problem is solved without unknown
@@ -788,12 +793,12 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         if parameters are present. The return must contain 2 or 3 elements in
         the following order:
 
-            * dbc_dya : array_like with shape (n, n), where an element (i, j)
-              equals to d bc_i(ya, yb, p) / d ya_j.
-            * dbc_dyb : array_like with shape (n, n), where an element (i, j)
-              equals to d bc_i(ya, yb, p) / d yb_j.
-            * dbc_dp : array_like with shape (n, k), where an element (i, j)
-              equals to d bc_i(ya, yb, p) / d p_j.
+        * ``dbc_dya`` : array_like with shape ``(n, n)``, where an element ``(i, j)``
+          equals to ``d bc_i(ya, yb, p) / d ya_j``.
+        * ``dbc_dyb`` : array_like with shape ``(n, n)``, where an element ``(i, j)``
+          equals to ``d bc_i(ya, yb, p) / d yb_j``.
+        * ``dbc_dp`` : array_like with shape ``(n, k)``, where an element ``(i, j)``
+          equals to ``d bc_i(ya, yb, p) / d p_j``.
 
         If the problem is solved without unknown parameters, dbc_dp should not
         be returned.
@@ -812,9 +817,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
-            * 0 (default) : work silently.
-            * 1 : display a termination report.
-            * 2 : display progress during iterations.
+        * 0 (default) : work silently.
+        * 1 : display a termination report.
+        * 2 : display progress during iterations.
     bc_tol : float, optional
         Desired absolute tolerance for the boundary condition residuals: `bc`
         value should satisfy ``abs(bc) < bc_tol`` component-wise.
@@ -844,10 +849,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     status : int
         Reason for algorithm termination:
 
-            * 0: The algorithm converged to the desired accuracy.
-            * 1: The maximum number of mesh nodes is exceeded.
-            * 2: A singular Jacobian encountered when solving the collocation
-              system.
+        * 0: The algorithm converged to the desired accuracy.
+        * 1: The maximum number of mesh nodes is exceeded.
+        * 2: A singular Jacobian encountered when solving the collocation system.
 
     message : string
         Verbal description of the termination reason.
@@ -873,9 +877,13 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
            Control and the Maltab PSE", ACM Trans. Math. Softw., Vol. 27,
            Number 3, pp. 299-316, 2001.
     .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
-           Solver".
+           Solver", J. Numer. Anal., Ind. Appl. Math. (JNAIAM), Vol. 1, 
+           Number 2, pp. 201-217, 2006.
     .. [3] U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
-           Boundary Value Problems for Ordinary Differential Equations".
+           Boundary Value Problems for Ordinary Differential Equations",
+           Philidelphia, PA: Society for Industrial and Applied Mathematics,
+           1995.
+           :doi:`10.1137/1.9781611971231`
     .. [4] `Cauchy-Riemann equations
             <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
             Wikipedia.

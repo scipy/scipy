@@ -522,8 +522,10 @@ class FastGeneratorInversion:
     antithetic variates are be used ([2]_).
 
     In addition, inversion makes it possible to
+
     - to use a QMC generator from `scipy.stats.qmc` (method `qrvs`),
     - to generate random variates truncated to an interval. For example, if
+
     one aims to sample standard normal random variates from
     the interval (2, 4), this can be easily achieved by using the parameter
     `domain`.
@@ -1028,7 +1030,7 @@ class FastGeneratorInversion:
         4.507068014335139e-07  # may vary
 
         """
-        if not isinstance(size, (numbers.Integral, np.integer)):
+        if not isinstance(size, numbers.Integral | np.integer):
             raise ValueError("size must be an integer.")
         # urng will be used to draw the samples for testing the error
         # it must not interfere with self.random_state. therefore, do not
@@ -1246,14 +1248,14 @@ class RatioUniforms:
     0.21121052054580314
 
     """
-    
+
     def __init__(self, pdf, *, umax, vmin, vmax, c=0, random_state=None):
         if vmin >= vmax:
             raise ValueError("vmin must be smaller than vmax.")
 
         if umax <= 0:
             raise ValueError("umax must be positive.")
-        
+
         self._pdf = pdf
         self._umax = umax
         self._vmin = vmin

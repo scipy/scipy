@@ -1,5 +1,6 @@
 import logging
 import sys
+import warnings
 
 import numpy as np
 import time
@@ -8,9 +9,10 @@ from numpy.testing import assert_allclose, IS_PYPY
 import pytest
 from pytest import raises as assert_raises, warns
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
-                            rosen_der, rosen_hess, NonlinearConstraint)
+                            rosen_der, rosen_hess, NonlinearConstraint, OptimizeWarning)
 from scipy.optimize._constraints import new_constraint_to_old
 from scipy.optimize._shgo import SHGO
+from scipy.optimize.tests.test_minimize_constrained import MaratosTestArgs
 
 
 class StructTestFunction:
@@ -26,7 +28,7 @@ class StructTestFunction:
 def wrap_constraints(g):
     cons = []
     if g is not None:
-        if not isinstance(g, (tuple, list)):
+        if not isinstance(g, tuple | list):
             g = (g,)
         else:
             pass
@@ -472,7 +474,7 @@ class TestShgoSimplicialTestFunctions:
 
     @pytest.mark.fail_slow(10)
     def test_f5_3_cons_symmetry(self):
-        """Assymmetrically constrained test function"""
+        """Asymmetrically constrained test function"""
         options = {'symmetry': [0, 0, 0, 3],
                    'disp': True}
 
@@ -568,6 +570,64 @@ class TestShgoArguments:
         ref = shgo(func=lambda x: 2 * x + 1, bounds=[(0, 3)])
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x)
+
+    def test_args_gh23517(self):
+        """
+        Checks that using `args` for func, jac and hess works
+        """
+        obj = MaratosTestArgs("a", 234)
+        obj.bounds = Bounds([-5, -5], [5, 5])
+        res2 = minimize(
+            obj.fun,
+            [4.0, 4.0],
+            constraints=obj.constr,
+            bounds=obj.bounds,
+            method='trust-constr',
+            args=("a", 234),
+            jac=obj.grad
+        )
+        assert_allclose(res2.x, obj.x_opt, atol=1e-6)
+
+        obj = MaratosTestArgs("a", 234)
+        obj.bounds = Bounds([-10., -10.], [10., 10.])
+        with warnings.catch_warnings():
+            # warnings are from initialization of NonlinearConstraint and
+            # poor initialization of the constraint by shgo
+            warnings.simplefilter(
+                "ignore",
+                (OptimizeWarning, RuntimeWarning)
+            )
+            res = shgo(
+                func=obj.fun,
+                bounds=obj.bounds,
+                args=("a", 234),
+                minimizer_kwargs={
+                    "method": 'trust-constr',
+                    "constraints": obj.constr,
+                    "bounds": obj.bounds,
+                    "jac": obj.grad,
+                    "args": ("a", 234),
+                },
+                constraints=obj.constr,
+                sampling_method='sobol',
+            )
+            assert_allclose(res.x, obj.x_opt, atol=1e-6)
+
+            res = shgo(
+                func=obj.fun,
+                bounds=obj.bounds,
+                args=("a", 234),
+                minimizer_kwargs={
+                    "method": 'trust-constr',
+                    "constraints": obj.constr,
+                    "bounds": obj.bounds,
+                    "jac": obj.grad,
+                    "hess": obj.hess,
+                },
+                constraints=obj.constr,
+                sampling_method='sobol',
+            )
+            assert_allclose(res.x, obj.x_opt, atol=1e-6)
 
     @pytest.mark.slow
     def test_4_1_known_f_min(self):
@@ -834,13 +894,18 @@ class TestShgoArguments:
         def func(x):
             return np.sum(np.power(x, 2)), 2 * x
 
+        min_kwds = {"method": "SLSQP", "jac": True}
+        opt_kwds = {"jac": True}
         shgo(
             func,
             bounds=[[-1, 1], [1, 2]],
             n=100, iters=5,
             sampling_method="sobol",
-            minimizer_kwargs={'method': 'SLSQP', 'jac': True}
+            minimizer_kwargs=min_kwds,
+            options=opt_kwds
         )
+        assert min_kwds['jac'] is True
+        assert "jac" in opt_kwds
 
         # new
         def func(x):
@@ -852,6 +917,14 @@ class TestShgoArguments:
                    minimizer_kwargs={'method': 'SLSQP', 'jac': True})
         ref = minimize(func, x0=[1, 1, 1, 1, 1], bounds=bounds,
                        jac=True)
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x, atol=1e-15)
+
+        # Testing the passing of jac via options dict
+        res = shgo(func, bounds=bounds, sampling_method="sobol",
+                   minimizer_kwargs={'method': 'SLSQP'},
+                   options={'jac': True})
         assert res.success
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x, atol=1e-15)
