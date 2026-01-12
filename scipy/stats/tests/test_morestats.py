@@ -773,7 +773,6 @@ class TestAnsari:
         xp_assert_close(W, xp.asarray(10.0))
         xp_assert_close(pval, xp.asarray(0.533333333333333333))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='no _axis_nan_policy decorator')
     @pytest.mark.parametrize('args', [([], [1.]), ([1.], [])])
     def test_bad_arg(self, args, xp):
         args = [xp.asarray(arg) for arg in args]
@@ -1300,7 +1299,6 @@ class TestFligner:
         with pytest.raises(ValueError, match=message):
             stats.fligner(xp.asarray([1, 2]))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     def test_empty_arg(self, xp):
         x = xp.arange(5.)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
