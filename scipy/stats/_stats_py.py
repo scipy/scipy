@@ -72,6 +72,7 @@ from scipy._lib._array_api import (
     is_numpy,
     is_cupy,
     is_marray,
+    SCIPY_ARRAY_API,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -2569,6 +2570,19 @@ def obrientransform(*samples):
     that the variances are different.
 
     """
+    # Decided to split the implementations for two reasons:
+    # - The original returns an object array in some circumstances; the SCIPY_ARRAY_API
+    #   version shouldn't do that. Branching based on the environment variable allows
+    #   us to move forward while the old behavior is deprecated.
+    # - The separate, new SCIPY_ARRAY_API implementation can be tested against the
+    #   original.
+    if SCIPY_ARRAY_API:
+        return _xp_obrientransform(*samples)
+    else:
+        return _obrientransform(*samples)
+
+
+def _xp_obrientransform(*samples):
     xp = array_namespace(*samples)
 
     # `arrays` will hold the transformed arguments.
@@ -2611,6 +2625,39 @@ def obrientransform(*samples):
                 else:
                     return arrays
     return xp.stack(arrays)
+
+
+def _obrientransform(*samples):
+    TINY = np.sqrt(np.finfo(float).eps)
+
+    # `arrays` will hold the transformed arguments.
+    arrays = []
+    sLast = None
+
+    for sample in samples:
+        a = np.asarray(sample)
+        n = len(a)
+        mu = np.mean(a)
+        sq = (a - mu)**2
+        sumsq = sq.sum()
+
+        # The O'Brien transform.
+        t = ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
+
+        # Check that the mean of the transformed data is equal to the
+        # original variance.
+        var = sumsq / (n - 1)
+        if abs(var - np.mean(t)) > TINY:
+            raise ValueError('Lack of convergence in obrientransform.')
+
+        arrays.append(t)
+        sLast = a.shape
+
+    if sLast:
+        for arr in arrays[:-1]:
+            if sLast != arr.shape:
+                return np.array(arrays, dtype=object)
+    return np.array(arrays)
 
 
 @xp_capabilities(jax_jit=False, allow_dask_compute=True)

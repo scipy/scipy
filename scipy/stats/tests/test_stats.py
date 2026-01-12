@@ -6603,7 +6603,7 @@ def test_pointbiserial():
     assert_equal(res.correlation, res.statistic)
 
 
-@array_api_compatible
+@make_xp_test_case(stats.obrientransform)
 def test_obrientransform(xp):
     # A couple tests calculated by hand.
     x1 = xp.asarray([0, 2, 4])
