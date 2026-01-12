@@ -49,19 +49,16 @@ def use_solver(**kwargs):
     **Thread-safety:** This function uses thread-local storage to maintain
     per-thread solver preferences. Each thread can independently call
     ``use_solver()`` to configure its own preferred solver without affecting
-    other threads. This is implemented using ``threading.local()`` and provides
+    other threads. This is implemented using `threading.local` and provides
     thread-safe configuration without requiring locks or synchronization.
 
     Note that thread-safety of UMFPACK usage also depends on the thread-safety
-    properties of the underlying ``scikit-umfpack`` package. SuperLU (always
-    available as a fallback) is thread-safe through **isolated state design
-    combined with GIL release** - each call maintains its own independent state,
-    and the Python GIL is released during computation (see ``PyEval_SaveThread``
-    in the C extension), allowing true parallelism from multiple threads.
+    properties of the underlying `scikit-umfpack` package. SuperLU is always
+    available as a thread-safe fallback.
 
     The default sparse solver is UMFPACK when available
     (``scikits.umfpack`` is installed). This can be changed by passing
-    useUmfpack = False, which then causes the always present SuperLU
+    ``useUmfpack=False``, which then causes the always present SuperLU
     based solver to be used.
 
     UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If
@@ -184,11 +181,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     preference. This provides thread-safe configuration without requiring locks.
 
     Note that when using UMFPACK, thread-safety also depends on the thread-safety
-    properties of the underlying ``scikit-umfpack`` package. SuperLU (always
-    available as a fallback) is thread-safe through **isolated state design
-    combined with GIL release** - each call maintains independent state and the
-    Python GIL is released during computation (via ``PyEval_SaveThread`` in the
-    C extension), allowing true parallelism from multiple threads.
+    properties of the underlying `scikit-umfpack` package. SuperLU is always
+    available as a thread-safe fallback.
 
     See :ref:`scipy_thread_safety` for more details.
 

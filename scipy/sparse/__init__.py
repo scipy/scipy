@@ -43,7 +43,6 @@ SciPy 2-D sparse array package for numeric data.
    :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
 
-
 Submodules
 ==========
 
