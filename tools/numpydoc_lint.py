@@ -11,7 +11,6 @@ skip_errors = [
     "GL01",
     "GL02",
     "GL03",
-    "GL07",
     "GL09",
     "SS02",
     "SS03",

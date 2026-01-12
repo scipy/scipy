@@ -20,10 +20,6 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 class NearestNDInterpolator(NDInterpolatorBase):
     """Nearest-neighbor interpolator in N > 1 dimensions.
 
-    Methods
-    -------
-    __call__
-
     Parameters
     ----------
     x : (npoints, ndims) 2-D ndarray of floats
@@ -41,6 +37,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Options passed to the underlying ``KDTree``.
 
         .. versionadded:: 0.17.0
+
+    Methods
+    -------
+    __call__
 
     See Also
     --------
@@ -83,7 +83,6 @@ class NearestNDInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
-
     """
 
     def __init__(self, x, y, rescale=False, tree_options=None):

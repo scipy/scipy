@@ -6247,6 +6247,12 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
     Notes
     -----
     This function relies on the ``gamma_q_inva`` function from the Boost
@@ -6255,12 +6261,6 @@ add_newdoc("pdtrik",
     References
     ----------
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrc : Poisson survival function
-    pdtri : inverse of `pdtr` with respect to `m`
 
     Examples
     --------
