@@ -3792,7 +3792,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     axis : int, optional
         Axis of the input arrays along which the test is applied.
         Default is 0.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If True (default), perform a standard one-way ANOVA test that
         assumes equal population variances [2]_.
         If False, perform Welch's ANOVA test, which does not assume

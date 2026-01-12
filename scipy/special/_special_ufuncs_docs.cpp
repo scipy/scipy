@@ -752,7 +752,7 @@ const char *binom_doc = R"(
 
     Parameters
     ----------
-    x, y: array_like
+    x, y : array_like
        Real arguments to :math:`\binom{x}{y}`.
     out : ndarray, optional
         Optional output array for the function values
@@ -1535,7 +1535,7 @@ const char *exp1_doc = R"(
 
     Parameters
     ----------
-    z: array_like
+    z : array_like
         Real or complex argument.
     out : ndarray, optional
         Optional output array for the function results
