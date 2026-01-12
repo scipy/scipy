@@ -2709,19 +2709,19 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     poles : array_like
         Desired real poles and/or complex conjugates poles.
         Complex poles are only supported with ``method="YT"`` (default).
-    method: {'YT', 'KNV0'}, optional
+    method : {'YT', 'KNV0'}, optional
         Which method to choose to find the gain matrix K. One of:
 
         - 'YT': Yang Tits
         - 'KNV0': Kautsky, Nichols, Van Dooren update method 0
 
         See References and Notes for details on the algorithms.
-    rtol: float, optional
+    rtol : float, optional
         After each iteration the determinant of the eigenvectors of
         ``A - B*K`` is compared to its previous value, when the relative
         error between these two values becomes lower than `rtol` the algorithm
         stops.  Default is 1e-3.
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations to compute the gain matrix.
         Default is 30.
 

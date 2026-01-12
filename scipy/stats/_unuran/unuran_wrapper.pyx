@@ -2464,7 +2464,7 @@ cdef class DiscreteGuideTable(Method):
           is used to relocate the distribution from ``(0, len(pv))`` to
           ``(domain[0], domain[0]+len(pv))`` and ``domain[1]`` is ignored. See Notes
           and tutorial for a more detailed explanation.
-    guide_factor: int, optional
+    guide_factor : int, optional
         Size of the guide table relative to length of PV. Larger guide tables
         result in faster generation time but require a more expensive setup.
         Sizes larger than 3 are not recommended. If the relative size is set to

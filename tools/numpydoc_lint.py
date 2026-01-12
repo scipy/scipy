@@ -26,7 +26,6 @@ skip_errors = [
     "PR07",
     "PR08",
     "PR09",
-    "PR10",
     "RT01",
     "RT02",
     "RT03",
