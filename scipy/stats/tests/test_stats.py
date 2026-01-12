@@ -6604,51 +6604,54 @@ def test_pointbiserial():
 
 
 @make_xp_test_case(stats.obrientransform)
-def test_obrientransform(xp):
-    # A couple tests calculated by hand.
-    x1 = xp.asarray([0, 2, 4])
-    t1 = stats.obrientransform(x1)
-    expected = xp.asarray([7., -2., 7.])
-    xp_assert_close(t1[0, :], expected)
+class TestObrientransform:
+    def test_basic(self, xp):
+        # A couple tests calculated by hand.
+        x1 = xp.asarray([0, 2, 4])
+        t1 = stats.obrientransform(x1)
+        expected = xp.asarray([7., -2., 7.])
+        xp_assert_close(t1[0, :], expected)
 
-    x2 = xp.asarray([0, 3, 6, 9])
-    t2 = stats.obrientransform(x2)
-    expected = xp.asarray([30., 0., 0., 30.])
-    xp_assert_close(t2[0, :], expected)
+        x2 = xp.asarray([0, 3, 6, 9])
+        t2 = stats.obrientransform(x2)
+        expected = xp.asarray([30., 0., 0., 30.])
+        xp_assert_close(t2[0, :], expected)
 
-    # Test two arguments.
-    a, b = stats.obrientransform(x1, x2)
-    xp_assert_close(a, t1[0, :])
-    xp_assert_close(b, t2[0, :])
+        # Test two arguments.
+        a, b = stats.obrientransform(x1, x2)
+        xp_assert_close(a, t1[0, :])
+        xp_assert_close(b, t2[0, :])
 
-    # Test three arguments.
-    a, b, c = stats.obrientransform(x1, x2, x1)
-    xp_assert_close(a, t1[0, :])
-    xp_assert_close(b, t2[0, :])
-    xp_assert_close(c, t1[0, :])
+        # Test three arguments.
+        a, b, c = stats.obrientransform(x1, x2, x1)
+        xp_assert_close(a, t1[0, :])
+        xp_assert_close(b, t2[0, :])
+        xp_assert_close(c, t1[0, :])
 
-    # This is a regression test to check np.var replacement.
-    # The author of this test didn't separately verify the numbers.
-    x1 = xp.arange(5)
-    result = xp.asarray(
-      [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
-       [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
-    xp_assert_close(stats.obrientransform(x1, 2*x1), result)
+    def test_something(self, xp):
+        # This is a regression test to check np.var replacement.
+        # The author of this test didn't separately verify the numbers.
+        x1 = xp.arange(5)
+        result = xp.asarray(
+          [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
+           [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
+        xp_assert_close(stats.obrientransform(x1, 2*x1), result)
 
-    # Example from "O'Brien Test for Homogeneity of Variance"
-    # by Herve Abdi.
-    values = range(5, 11)
-    reps = xp.asarray([5, 11, 9, 3, 2, 2])
-    xp_test = array_namespace(reps)
-    # replace with xp.repeat when in the compat library
-    data = xp_test.concat([xp.asarray([values[i] for _ in range (rep)])
-                           for i, rep in enumerate(reps)])
-    transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
-                                     1.6086, 5.2817, 11.0538])
-    expected = xp_test.concat([xp.asarray([transformed_values[i] for _ in range (rep)])
+    def test_reference(selfs, xp):
+        # Example from "O'Brien Test for Homogeneity of Variance"
+        # by Herve Abdi.
+        values = range(5, 11)
+        reps = xp.asarray([5, 11, 9, 3, 2, 2])
+        xp_test = array_namespace(reps)
+        # replace with xp.repeat when in the compat library
+        data = xp_test.concat([xp.asarray([values[i] for _ in range (rep)])
                                for i, rep in enumerate(reps)])
-    result = stats.obrientransform(data)
-    xp_assert_close(result[0, :], expected, rtol=1e-3)
+        transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
+                                         1.6086, 5.2817, 11.0538])
+        expected = xp_test.concat([xp.asarray([transformed_values[i] for _ in range (rep)])
+                                   for i, rep in enumerate(reps)])
+        result = stats.obrientransform(data)
+        xp_assert_close(result[0, :], expected, rtol=1e-3)
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
