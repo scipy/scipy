@@ -39,9 +39,12 @@ with `multiprocessing`.
 Thread-Safe Operations
 ----------------------
 
-The following operations have inherent thread-safety guarantees:
+The following operations have inherent thread-safety guarantees; see the
+:ref:`terminology <py-free-threading:free-threading-terminology>`. Unless
+specified otherwise safety can be assumed to be achieved using
+:ref:`Thread locals <term-thread-local>` :
 
-GIL Release + :ref:`term-thread-local`:
+Thread local:
   - :func:`scipy.integrate.ode` with ``method='lsoda'``
   - :func:`scipy.integrate.solve_ivp` with ``method='LSODA'``
   - :func:`scipy.sparse.linalg.spsolve` (SuperLU backend)
