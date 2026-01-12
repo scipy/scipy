@@ -34,7 +34,8 @@ def calculate_solid_angles(R):
 
 
 class SphericalVoronoi:
-    """ Voronoi diagrams on the surface of a sphere.
+    """
+    Voronoi diagrams on the surface of a sphere.
 
     .. versionadded:: 0.18.0
 
@@ -80,6 +81,10 @@ class SphericalVoronoi:
         If there are duplicates in `points`.
         If the provided `radius` is not consistent with `points`.
 
+    See Also
+    --------
+    Voronoi : Conventional Voronoi diagrams in N dimensions.
+
     Notes
     -----
     The spherical Voronoi diagram algorithm proceeds as follows. The Convex
@@ -102,10 +107,6 @@ class SphericalVoronoi:
     .. [VanOosterom] Van Oosterom and Strackee. The solid angle of a plane
                      triangle. IEEE Transactions on Biomedical Engineering,
                      2, 1983, pp 125--126.
-
-    See Also
-    --------
-    Voronoi : Conventional Voronoi diagrams in N dimensions.
 
     Examples
     --------
@@ -162,7 +163,6 @@ class SphericalVoronoi:
     >>> _ = ax.set_zticks([])
     >>> fig.set_size_inches(4, 4)
     >>> plt.show()
-
     """
     def __init__(self, points, radius=1, center=None, threshold=1e-06):
 

@@ -236,18 +236,17 @@ def spdiags(data, diags, m=None, n=None, format=None):
     new_matrix : sparse matrix
         `dia_matrix` format with values in ``data`` on diagonals from ``diags``.
 
-    Notes
-    -----
-    This function can be replaced by an equivalent call to `dia_matrix`
-    as::
-
-        dia_matrix((data, diags), shape=(m, n)).asformat(format)
-
     See Also
     --------
-    diags_array : more convenient form of this function
-    diags : matrix version of diags_array
+    diags_array : more convenient form of this function.
+    diags : matrix version of diags_array.
     dia_matrix : the sparse DIAgonal format.
+
+    Notes
+    -----
+    This function can be replaced by an equivalent call to `dia_matrix` as::
+
+        dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
     Examples
     --------
@@ -260,7 +259,6 @@ def spdiags(data, diags, m=None, n=None, format=None):
            [1, 2, 0, 4],
            [0, 2, 3, 0],
            [0, 0, 3, 4]])
-
     """
     if m is None and n is None:
         m = n = len(data[0])
@@ -300,13 +298,17 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
         behavior is deprecated, and in SciPy 1.19, the default behavior
         will be changed to return an array with the same data type as the
         input diagonals.  To adopt this behavior before version 1.19, use
-        `dtype=None`.
+        ``dtype=None``.
 
     Returns
     -------
     new_array : dia_array
         `dia_array` holding the values in `diagonals` offset from the main diagonal
         as indicated in `offsets`.
+
+    See Also
+    --------
+    dia_array : constructor for the sparse DIAgonal format.
 
     Notes
     -----
@@ -325,10 +327,6 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
     Each value in the input `diagonals` is used.
 
     .. versionadded:: 1.11
-
-    See Also
-    --------
-    dia_array : constructor for the sparse DIAgonal format.
 
     Examples
     --------
@@ -358,7 +356,6 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
-
     """
     # if offsets is not a sequence, assume that there's only one diagonal
     if isscalarlike(offsets):
@@ -475,6 +472,11 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
         `dia_matrix` holding the values in `diagonals` offset from the main diagonal
         as indicated in `offsets`.
 
+    See Also
+    --------
+    spdiags : construct matrix from diagonals
+    diags_array : construct sparse array instead of sparse matrix
+
     Notes
     -----
     Repeated diagonal offsets are disallowed.
@@ -492,11 +494,6 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
     Each value in the input `diagonals` is used.
 
     .. versionadded:: 0.11
-
-    See Also
-    --------
-    spdiags : construct matrix from diagonals
-    diags_array : construct sparse array instead of sparse matrix
 
     Examples
     --------
@@ -526,7 +523,6 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
-
     """
     A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
     return dia_matrix(A).asformat(format)
@@ -1319,15 +1315,15 @@ def block_diag(mats, format=None, dtype=None):
         If at least one input is a sparse array, the output is a sparse array.
         Otherwise the output is a sparse matrix.
 
-    Notes
-    -----
-
-    .. versionadded:: 0.11.0
-
     See Also
     --------
     block_array
     diags_array
+
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -1341,7 +1337,6 @@ def block_diag(mats, format=None, dtype=None):
            [0, 0, 5, 0],
            [0, 0, 6, 0],
            [0, 0, 0, 7]])
-
     """
     if any(isinstance(a, sparray) for a in mats):
         container = coo_array

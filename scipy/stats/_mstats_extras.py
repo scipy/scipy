@@ -416,6 +416,12 @@ def compare_medians_ms(group_1, group_2, axis=None):
         ndarray of floats with a length equal to the length of `group_1`
         along `axis`.
 
+    References
+    ----------
+    .. [1] McKean, Joseph W., and Ronald M. Schrader. "A comparison of methods
+       for studentizing the sample median." Communications in
+       Statistics-Simulation and Computation 13.6 (1984): 751-773.
+
     Examples
     --------
 
@@ -433,13 +439,6 @@ def compare_medians_ms(group_1, group_2, axis=None):
     >>> y = rng.random(size=(3, 8))
     >>> stats.mstats.compare_medians_ms(x, y, axis=1)
     array([0.36908985, 0.36092538, 0.2765313 ])
-
-    References
-    ----------
-    .. [1] McKean, Joseph W., and Ronald M. Schrader. "A comparison of methods
-       for studentizing the sample median." Communications in
-       Statistics-Simulation and Computation 13.6 (1984): 751-773.
-
     """
     (med_1, med_2) = (ma.median(group_1,axis=axis), ma.median(group_2,axis=axis))
     (std_1, std_2) = (mstats.stde_median(group_1, axis=axis),

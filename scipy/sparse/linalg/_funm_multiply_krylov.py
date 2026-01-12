@@ -155,34 +155,27 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     ----------
     f : callable
         Callable object that computes the matrix function ``F = f(X)``.
-
     A : {sparse array, ndarray, LinearOperator}
         A real or complex N-by-N matrix.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g., ``scipy.sparse.linalg.LinearOperator``.
-
     b : ndarray
         A vector to multiply the ``f(tA)`` with.
-
     assume_a : string, optional
         Indicate the structure of ``A``. The algorithm will use this information
         to select the appropriated code path. The available options are
         'hermitian'/'her' and 'general'/'gen'. If ommited, then it is assumed
         that ``A`` has a 'general' structure.
-
     t : float, optional
         The value to scale the matrix ``A`` with. The default is ``t = 1.0``
-
     atol, rtol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(||y_k - y_k-1||) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-6``.
-
     restart_every_m : integer
         If the iteration number reaches this value a restart is triggered.
         Larger values increase iteration cost but may be necessary for convergence.
         If omitted, ``min(20, n)`` is used.
-
     max_restarts : int, optional
         Maximum number of restart cycles. The algorithm will stop
         after max_restarts cycles even if the specified tolerance has not been
@@ -199,6 +192,22 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     of ``A`` and the function ``f``. With restarting, there are only formal
     proofs for functions of order 1 (e.g., ``exp``, ``sin``, ``cos``) and
     Stieltjes functions [2]_ [3]_, while the general case remains an open problem.
+
+    References
+    ----------
+    .. [1] M. Afanasjew, M. Eiermann, O. G. Ernst, and S. Güttel,
+           "Implementation of a restarted Krylov subspace method for the
+           evaluation of matrix functions," Linear Algebra and its Applications,
+           vol. 429, no. 10, pp. 2293-2314, Nov. 2008, :doi:`10.1016/j.laa.2008.06.029`.
+
+    .. [2] M. Eiermann and O. G. Ernst, "A Restarted Krylov Subspace Method
+           for the Evaluation of Matrix Functions," SIAM J. Numer. Anal., vol. 44,
+           no. 6, pp. 2481-2504, Jan. 2006, :doi:`10.1137/050633846`.
+
+    .. [3] A. Frommer, S. Güttel, and M. Schweitzer, "Convergence of Restarted
+           Krylov Subspace Methods for Stieltjes Functions of Matrices," SIAM J.
+           Matrix Anal. Appl., vol. 35, no. 4, pp. 1602-1624,
+           Jan. 2014, :doi:`10.1137/140973463`.
 
     Examples
     --------
@@ -245,23 +254,6 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     >>> err = y - ref
     >>> err
     array([ 0.00000000e+00 , 8.88178420e-16 , -4.60742555e-15])
-
-    References
-    ----------
-    .. [1] M. Afanasjew, M. Eiermann, O. G. Ernst, and S. Güttel,
-          "Implementation of a restarted Krylov subspace method for the
-          evaluation of matrix functions," Linear Algebra and its Applications,
-          vol. 429, no. 10, pp. 2293-2314, Nov. 2008, :doi:`10.1016/j.laa.2008.06.029`.
-
-    .. [2] M. Eiermann and O. G. Ernst, "A Restarted Krylov Subspace Method
-           for the Evaluation of Matrix Functions," SIAM J. Numer. Anal., vol. 44,
-           no. 6, pp. 2481-2504, Jan. 2006, :doi:`10.1137/050633846`.
-
-    .. [3] A. Frommer, S. Güttel, and M. Schweitzer, "Convergence of Restarted
-           Krylov Subspace Methods for Stieltjes Functions of Matrices," SIAM J.
-           Matrix Anal. Appl., vol. 35, no. 4, pp. 1602-1624,
-           Jan. 2014, :doi:`10.1137/140973463`.
-
     """
 
     if assume_a not in {'hermitian', 'general', 'her', 'gen'}:

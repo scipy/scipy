@@ -2559,7 +2559,8 @@ def roots_sh_legendre(n, mu=False):
 
 
 def sh_legendre(n, monic=False):
-    r"""Shifted Legendre polynomial.
+    r"""
+    Shifted Legendre polynomial.
 
     Defined as :math:`P^*_n(x) = P_n(2x - 1)` for :math:`P_n` the nth
     Legendre polynomial.
@@ -2576,6 +2577,11 @@ def sh_legendre(n, monic=False):
     -------
     P : orthopoly1d
         Shifted Legendre polynomial.
+
+    See Also
+    --------
+    scipy.special.legendre
+    scipy.special.roots_sh_legendre
 
     Notes
     -----
@@ -2600,9 +2606,9 @@ def sh_legendre(n, monic=False):
     The polynomials :math:`P_n^*` satisfy a recurrence
     relation obtained by the change of variables
     :math:`t = 2x - 1` in the standard Legendre recurrence:
-    
+
     .. math::
-    
+
         (n+1) P_{n+1}^*(x) = (2n+1)(2x-1)\,P_n^*(x) - n\,P_{n-1}^*(x).
 
     This can be easily checked on :math:`[0, 1]`
@@ -2626,11 +2632,6 @@ def sh_legendre(n, monic=False):
     >>> y = sh_legendre(2)(x) * sh_legendre(3)(x)
     >>> np.isclose(trapezoid(y, x), 0.0, atol=1e-12)
     True
-
-    See Also
-    --------
-    scipy.special.legendre
-    scipy.special.roots_sh_legendre
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")

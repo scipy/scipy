@@ -248,10 +248,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     .. versionadded:: 0.9
 
-    Methods
-    -------
-    __call__
-
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
@@ -269,6 +265,20 @@ class LinearNDInterpolator(NDInterpolatorBase):
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
 
+    Methods
+    -------
+    __call__
+
+    See Also
+    --------
+    griddata : Interpolate unstructured D-D data.
+    NearestNDInterpolator : Nearest-neighbor interpolator in N dimensions.
+    CloughTocher2DInterpolator : Piecewise cubic, C1 smooth, curvature-minimizing
+                                 interpolator in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this class).
+
     Notes
     -----
     The interpolant is constructed by triangulating the input data
@@ -276,6 +286,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
     barycentric interpolation.
 
     .. note:: For data on a regular grid use `interpn` instead.
+
+    References
+    ----------
+    .. [1] http://www.qhull.org/
 
     Examples
     --------
@@ -299,24 +313,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
-
-    See Also
-    --------
-    griddata :
-        Interpolate unstructured D-D data.
-    NearestNDInterpolator :
-        Nearest-neighbor interpolator in N dimensions.
-    CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
-    interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
-                              in arbitrary dimensions (`interpn` wraps this
-                              class).
-
-    References
-    ----------
-    .. [1] http://www.qhull.org/
-
     """
 
     def __init__(self, points, values, fill_value=np.nan, rescale=False):
@@ -843,13 +839,10 @@ cdef double_or_complex _clough_tocher_2d_single(const qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """Piecewise cubic, C1 smooth, curvature-minimizing interpolator in N=2 dimensions.
+    """
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in N=2 dimensions.
 
     .. versionadded:: 0.9
-
-    Methods
-    -------
-    __call__
 
     Parameters
     ----------
@@ -872,6 +865,19 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
 
+    Methods
+    -------
+    __call__
+
+    See Also
+    --------
+    griddata : Interpolate unstructured D-D data.
+    LinearNDInterpolator : Piecewise linear interpolator in N > 1 dimensions.
+    NearestNDInterpolator : Nearest-neighbor interpolator in N > 1 dimensions.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps thisclass).
+
     Notes
     -----
     The interpolant is constructed by triangulating the input data
@@ -886,6 +892,24 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     algorithm described in [Nielson83]_ and [Renka84]_.
 
     .. note:: For data on a regular grid use `interpn` instead.
+
+    References
+    ----------
+    .. [1] http://www.qhull.org/
+    .. [CT] See, for example,
+       P. Alfeld,
+       ''A trivariate Clough-Tocher scheme for tetrahedral data''.
+       Computer Aided Geometric Design, 1, 169 (1984);
+       G. Farin,
+       ''Triangular Bernstein-Bezier patches''.
+       Computer Aided Geometric Design, 3, 83 (1986).
+    .. [Nielson83] G. Nielson,
+       ''A method for interpolating scattered data based upon a minimum norm
+       network''.
+       Math. Comp., 40, 253 (1983).
+    .. [Renka84] R. J. Renka and A. K. Cline.
+       ''A Triangle-based C1 interpolation method.'',
+       Rocky Mountain J. Math., 14, 223 (1984).
 
     Examples
     --------
@@ -909,41 +933,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
-
-    See Also
-    --------
-    griddata :
-        Interpolate unstructured D-D data.
-    LinearNDInterpolator :
-        Piecewise linear interpolator in N > 1 dimensions.
-    NearestNDInterpolator :
-        Nearest-neighbor interpolator in N > 1 dimensions.
-    interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
-                              in arbitrary dimensions (`interpn` wraps this
-                              class).
-
-    References
-    ----------
-    .. [1] http://www.qhull.org/
-
-    .. [CT] See, for example,
-       P. Alfeld,
-       ''A trivariate Clough-Tocher scheme for tetrahedral data''.
-       Computer Aided Geometric Design, 1, 169 (1984);
-       G. Farin,
-       ''Triangular Bernstein-Bezier patches''.
-       Computer Aided Geometric Design, 3, 83 (1986).
-
-    .. [Nielson83] G. Nielson,
-       ''A method for interpolating scattered data based upon a minimum norm
-       network''.
-       Math. Comp., 40, 253 (1983).
-
-    .. [Renka84] R. J. Renka and A. K. Cline.
-       ''A Triangle-based C1 interpolation method.'',
-       Rocky Mountain J. Math., 14, 223 (1984).
-
     """
 
     def __init__(self, points, values, fill_value=np.nan,
