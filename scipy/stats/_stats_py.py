@@ -2512,7 +2512,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def obrientransform(*samples):
     """Compute the O'Brien transform on input data (any number of arrays).
 
@@ -2572,7 +2572,7 @@ def obrientransform(*samples):
     """
     # Decided to split the implementations for two reasons:
     # - The original returns an object array in some circumstances; the SCIPY_ARRAY_API
-    #   version shouldn't do that. Branching based on the environment variable allows
+    #   version can't do that. Branching based on the environment variable allows
     #   us to move forward while the old behavior is deprecated.
     # - The separate, new SCIPY_ARRAY_API implementation can be tested against the
     #   original.
@@ -2584,47 +2584,18 @@ def obrientransform(*samples):
 
 def _xp_obrientransform(*samples):
     xp = array_namespace(*samples)
+    n_samples = len(samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    samples = (samples,) if n_samples == 1 else samples
+    return [_xp_obrientransform_one_sample(sample, xp=xp) for sample in samples]
 
-    # `arrays` will hold the transformed arguments.
-    arrays = []
-    sLast = None
-    dtype = None
 
-    for sample in samples:
-        a = xp.asarray(sample)
-        if xp.isdtype(a.dtype, 'integral'):
-            default_float = xp.asarray(1.).dtype
-            a = xp.asarray(a, dtype=default_float)
-        n = xp_size(a)
-        mu = xp.mean(a)
-        sq = (a - mu)**2
-        sumsq = xp.sum(sq)
-
-        # The O'Brien transform.
-        t = ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
-
-        # Check that the mean of the transformed data is equal to the
-        # original variance.
-        var = sumsq / (n - 1)
-        difference = var - xp.mean(t)
-        # avoid recomputing `TINY` if not required
-        if dtype is None or xp.isdtype(difference.dtype, dtype):
-            dtype = difference.dtype
-            TINY = math.sqrt(xp.finfo(dtype).eps)
-        if abs(difference) > TINY:
-            raise ValueError('Lack of convergence in obrientransform.')
-
-        arrays.append(t)
-        sLast = a.shape
-
-    if sLast:
-        for arr in arrays[:-1]:
-            if sLast != arr.shape:
-                if is_numpy(xp):
-                    return xp.array(arrays, dtype=object)
-                else:
-                    return arrays
-    return xp.stack(arrays)
+def _xp_obrientransform_one_sample(a, *, xp):
+    n = xp_size(a)
+    mu = xp.mean(a)
+    sq = (a - mu)**2
+    sumsq = xp.sum(sq)
+    return ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
 
 
 def _obrientransform(*samples):

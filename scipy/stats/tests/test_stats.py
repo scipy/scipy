@@ -34,7 +34,7 @@ from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy.stats._stats_py import (_chk_asarray, _moment,
+from scipy.stats._stats_py import (_chk_asarray, _moment, _obrientransform,
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
@@ -6610,34 +6610,36 @@ class TestObrientransform:
         x1 = xp.asarray([0, 2, 4])
         t1 = stats.obrientransform(x1)
         expected = xp.asarray([7., -2., 7.])
-        xp_assert_close(t1[0, :], expected)
+        xp_assert_close(t1[0][:], expected)
 
         x2 = xp.asarray([0, 3, 6, 9])
         t2 = stats.obrientransform(x2)
         expected = xp.asarray([30., 0., 0., 30.])
-        xp_assert_close(t2[0, :], expected)
+        xp_assert_close(t2[0][:], expected)
 
         # Test two arguments.
         a, b = stats.obrientransform(x1, x2)
-        xp_assert_close(a, t1[0, :])
-        xp_assert_close(b, t2[0, :])
+        xp_assert_close(a, t1[0][:])
+        xp_assert_close(b, t2[0][:])
 
         # Test three arguments.
         a, b, c = stats.obrientransform(x1, x2, x1)
-        xp_assert_close(a, t1[0, :])
-        xp_assert_close(b, t2[0, :])
-        xp_assert_close(c, t1[0, :])
+        xp_assert_close(a, t1[0][:])
+        xp_assert_close(b, t2[0][:])
+        xp_assert_close(c, t1[0][:])
 
     def test_something(self, xp):
         # This is a regression test to check np.var replacement.
         # The author of this test didn't separately verify the numbers.
         x1 = xp.arange(5)
-        result = xp.asarray(
+        ref = xp.asarray(
           [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
            [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
-        xp_assert_close(stats.obrientransform(x1, 2*x1), result)
+        res = stats.obrientransform(x1, 2*x1)
+        xp_assert_close(res[0], ref[0, ...])
+        xp_assert_close(res[1], ref[1, ...])
 
-    def test_reference(selfs, xp):
+    def test_reference(self, xp):
         # Example from "O'Brien Test for Homogeneity of Variance"
         # by Herve Abdi.
         values = range(5, 11)
@@ -6648,10 +6650,19 @@ class TestObrientransform:
                                for i, rep in enumerate(reps)])
         transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
                                          1.6086, 5.2817, 11.0538])
-        expected = xp_test.concat([xp.asarray([transformed_values[i] for _ in range (rep)])
+        expected = xp_test.concat([xp.stack([transformed_values[i] for _ in range (rep)])
                                    for i, rep in enumerate(reps)])
         result = stats.obrientransform(data)
-        xp_assert_close(result[0, :], expected, rtol=1e-3)
+        xp_assert_close(result[0][:], expected, rtol=1e-3)
+
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_new_vs_old(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(4284359689201882838835)
+        x = rng.random(10)
+        res = stats.obrientransform(xp.asarray(x.tolist(), dtype=dtype))
+        ref = _obrientransform(x)
+        xp_assert_close(res[0], xp.asarray(ref[0], dtype=dtype))
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
