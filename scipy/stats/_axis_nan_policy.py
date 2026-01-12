@@ -566,6 +566,13 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     # Behave as though there are no NaNs (even if there are)
                     contains_nan = [False] * len(samples)
 
+                # To give JAX most benefits of the `_axis_nan_policy` decorator without
+                # value-dependent branching, the decorator will always treat JAX arrays
+                # as if there are no NaNs. Typically, this means that NaNs will
+                # multidimensional naturally. However, there may be cases in which this
+                # doesn't produce the desired result, so for now, JAX users should
+                # treat all functions as though there is no explicit`nan_policy`.
+                # Future work tracked in gh-14651.
                 any_contains_nan = not is_jax(xp) and any(contains_nan)
                 # Addresses nan_policy == "propagate"
                 if any_contains_nan and (nan_policy == 'propagate'
