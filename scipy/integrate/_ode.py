@@ -180,9 +180,9 @@ class ode:
         **Thread-safety:** The VODE integrator is NOT thread-safe. Do not share
         a single integrator instance across multiple threads. Instead, use one of:
         (1) Create separate integrator instances in each thread
-        :std:`term-thread-local`
-        or (2) use :std:`term-externally-synchronized` shared integrator
-        synchronization (e.g., ``threading.Lock``). See :ref:`scipy_thread_safety`
+        :ref:`term-thread-local`
+        or (2) use :ref:`term-externally-synchronized` shared integrator
+        synchronization (e.g., `threading.Lock`). See :ref:`scipy_thread_safety`
         for more details.
 
     "zvode"
