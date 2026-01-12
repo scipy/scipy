@@ -227,7 +227,7 @@ def set_workers(workers):
     >>> with fft.set_workers(4):
     ...     y = signal.fftconvolve(x, x)
 
-    """
+    """  # numpydoc ignore=YD01
     old_workers = get_workers()
     _config.default_workers = _workers(operator.index(workers))
     try:
