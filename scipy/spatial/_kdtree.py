@@ -261,6 +261,7 @@ class KDTree(cKDTree):
         The minimum value in each dimension of the n data points.
     size : int
         The number of nodes in the tree.
+
     Notes
     -----
     The algorithm used is described in [1]_.
