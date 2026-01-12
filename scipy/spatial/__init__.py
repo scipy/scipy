@@ -20,7 +20,7 @@ Nearest-neighbor queries
 ========================
 .. warning::
 
-    :py:class:`KDTree` and :py:class:`cKDTree` are generally not thread safe, and must
+    :class:`KDTree` and :class:`cKDTree` are generally not thread safe, and must
     be :ref:`term-externally-synchronized`. See :ref:`scipy_thread_safety`.
 
 .. autosummary::
