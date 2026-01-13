@@ -83,8 +83,23 @@ op_sym = {operator.eq: '==', operator.ge: '>=', operator.le: '<=',
 # via `scipy._lib._sparse.issparse`, without introducing
 # an import dependency on `scipy.sparse`.
 class _spbase(SparseABC):
-    """ This class provides a base class for all sparse arrays.  It
-    cannot be instantiated.  Most of the work is provided by subclasses.
+    """
+    Base class for sparse arrays.
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the array.
+    shape : tuple
+        Shape of the array.
+    ndim : int
+        Number of dimensions.
+    nnz : int
+        Number of stored values.
+    size : int
+        Number of elements in the array.
+    format : str
+        Sparse storage format of the array (e.g. 'csr', 'csc', 'coo', 'dia').
     """
 
     __array_priority__ = 10.1
