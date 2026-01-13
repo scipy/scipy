@@ -14,7 +14,6 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
-  INSTALLDIR: "build-install"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
