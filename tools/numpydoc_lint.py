@@ -12,7 +12,6 @@ skip_errors = [
     "GL02",  # inconsistent standards; see gh-24348
     "GL03",  # overlaps with GL02; see gh-24348
     "GL09",
-    "SS02",
     "SS03",
     "SS05",  # inconsistent standards; see gh-24348
     "SS06",
@@ -37,6 +36,11 @@ skip_errors = [
 ]
 
 
+skip_items = [
+    "scipy.spatial.cKDTree"  # numpydoc ignore comment removed during compilation?
+]
+
+
 def main():
     # load in numpydoc config
     to_check = []
@@ -56,6 +60,8 @@ def main():
 
     errors = 0
     for item in to_check:
+        if str(item) in skip_items:
+            continue
         try:
             res = validate(item)
         except AttributeError:
