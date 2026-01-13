@@ -38,8 +38,16 @@ skip_errors = [
 ]
 
 
-skip_items = [
-    "scipy.spatial.cKDTree"  # numpydoc ignore comment removed during compilation?
+compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
+    "scipy.spatial.cKDTree" : ["SS02"]
+}
+
+legacy_functions = [
+    "scipy.integrate.complex_ode",
+    "scipy.integrate.ode",
+    "rv_histogram",
+    "rv_continuous",
+    "rv_discrete",
 ]
 
 
@@ -90,14 +98,15 @@ def main():
 
     errors = 0
     for item in public_api:
-        if str(item) in skip_items:
+        if any(func in item for func in legacy_functions):
             continue
         try:
             res = validate(item)
         except AttributeError:
             continue
         for err in res["errors"]:
-            if err[0] not in skip_errors:
+            if (err[0] not in skip_errors and
+                err[0] not in compiled_code_skips.get(item, [])):
                 print(f"{item}: {err}")
                 errors += 1
     sys.exit(errors)

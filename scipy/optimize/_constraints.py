@@ -214,7 +214,7 @@ class LinearConstraint:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns

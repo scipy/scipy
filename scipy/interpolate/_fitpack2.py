@@ -957,14 +957,14 @@ class UnivariateSpline:
             Spline of order k2=k+n representing the antiderivative of this
             spline.
 
+        See Also
+        --------
+        splantider, derivative
+
         Notes
         -----
 
         .. versionadded:: 0.13.0
-
-        See Also
-        --------
-        splantider, derivative
 
         Examples
         --------

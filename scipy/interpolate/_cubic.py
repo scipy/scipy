@@ -601,6 +601,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         self.axis = axis
 
     def extend(self, c, x, right=True):
+        """Extending a 1-D Akima interpolator is not yet implemented."""
         raise NotImplementedError("Extending a 1-D Akima interpolator is not "
                                   "yet implemented")
 

@@ -634,16 +634,16 @@ class BSpline:
         b : `BSpline` object
             A new instance representing the antiderivative.
 
+        See Also
+        --------
+        splder, splantider
+
         Notes
         -----
         If antiderivative is computed and ``self.extrapolate='periodic'``,
         it will be set to False for the returned instance. This is done because
         the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
-
-        See Also
-        --------
-        splder, splantider
 
         """
         c = self._asarray(self.c, copy=True)
@@ -920,6 +920,10 @@ class BSpline:
         spl : `BSpline` object
             A new `BSpline` object with the new knot inserted.
 
+        See Also
+        --------
+        scipy.interpolate.insert
+
         Notes
         -----
         Based on algorithms from [1]_ and [2]_.
@@ -940,10 +944,6 @@ class BSpline:
             :doi:`10.1016/0010-4485(80)90154-2`.
         .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
             Numerical Analysis", Oxford University Press, 1993.
-
-        See Also
-        --------
-        scipy.interpolate.insert
 
         Examples
         --------

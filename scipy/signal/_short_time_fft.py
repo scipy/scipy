@@ -651,7 +651,7 @@ class ShortTimeFFT:
         fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
             Mode of FFT to be used (default 'onesided').
             See property `fft_mode` for details.
-        mfft: int | None
+        mfft : int | None
             Length of the FFT used, if a zero padded FFT is desired.
             If ``None`` (default), the length of the window `win` is used.
         scale_to : 'magnitude' | 'psd' | 'unitary' | None
@@ -1203,7 +1203,7 @@ class ShortTimeFFT:
             last value of `x` is used. 'even' pads by reflecting the
             signal on the first or last sample and 'odd' additionally
             multiplies it with -1.
-        axis: int
+        axis : int
             The axis of `x` over which to compute the STFT.
             If not given, the last axis is used.
 
@@ -1769,6 +1769,16 @@ class ShortTimeFFT:
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
 
+        Parameters
+        ----------
+        n : int
+            Number of samples of input signal
+
+        Returns
+        -------
+        p_num : int
+            Number of time slices for input signal with `n` samples.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1914,11 +1924,6 @@ class ShortTimeFFT:
         p1_ : int
             End of interval (last value is p1-1).
 
-        Notes
-        -----
-        A ``ValueError`` is raised if ``p_min <= p0 < p1 <= p_max(n)`` does not
-        hold.
-
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1929,6 +1934,11 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         upper_border_begin: Where post-padding effects start.
         ShortTimeFFT: Class this property belongs to.
+
+        Notes
+        -----
+        A ``ValueError`` is raised if ``p_min <= p0 < p1 <= p_max(n)`` does not
+        hold.
         """
         p_max = self.p_max(n)  # shorthand
         p0_ = self.p_min if p0 is None else p0
@@ -1949,21 +1959,16 @@ class ShortTimeFFT:
 
         Parameters
         ----------
-        n
+        n : int
             Number of sample of the input signal.
-        p0
+        p0 : int or None
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
             slice.
-        p1
+        p1 : int or None
             The end of the array. If ``None`` then `p_max(n)` is used.
-        k_offset
+        k_offset : int
             Index of first sample (t = 0) in `x`.
-
-        Notes
-        -----
-        Note that the returned array is cached together with the method's call
-        parameters to avoid unnecessary recalculations.
 
         See Also
         --------
@@ -1973,6 +1978,15 @@ class ShortTimeFFT:
         T: Sampling interval of input signal and of the window (``1/fs``).
         fs: Sampling frequency (being ``1/T``)
         ShortTimeFFT: Class this method belongs to.
+
+        Returns
+        -------
+        t : ndarray
+
+        Notes
+        -----
+        Note that the returned array is cached together with the method's call
+        parameters to avoid unnecessary recalculations.
         """
         if not (n > 0 and isinstance(n, int | np.integer)):
             raise ValueError(f"Parameter {n=} is not a positive integer!")
