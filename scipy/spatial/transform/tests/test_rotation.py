@@ -3149,3 +3149,9 @@ def test_rotation_shape(xp, ndim: int):
     quat = xp.ones(shape + (4,))
     r = Rotation.from_quat(quat)
     assert r.shape == shape, f"Got {r.shape}, expected {shape}"
+
+
+def test_non_writeable():
+    q = np.array([0, 0, 0, 1.0])
+    q.flags.writeable = False
+    Rotation.from_quat(q)  # Regression test against gh-24354, should not raise

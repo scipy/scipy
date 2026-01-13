@@ -393,22 +393,25 @@ cdef double[:, :] _elementary_quat_compose(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_quat(double[:, :] quat, bint normalize=True, bint copy=True, bint scalar_first=False):
+def from_quat(const double[:, :] quat, bint normalize=True, bint copy=True, bint scalar_first=False):
     if quat.ndim != 2 or quat.shape[1] != 4:
         raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
+    cdef double[:, :] _quat  # Non-const to enable in-place normalization
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
     if num_rotations > 0:  # Avoid 0-sized axis errors
         if scalar_first:
-            quat = np.roll(quat, -1, axis=1)
+            _quat = np.roll(quat, -1, axis=1)
         elif normalize or copy:
-            quat = quat.copy()
+            _quat = quat.copy()
 
         if normalize:
             for ind in range(num_rotations):
-                if isnan(_normalize4(quat[ind, :])):
+                if isnan(_normalize4(_quat[ind, :])):
                     raise ValueError("Found zero norm quaternions in `quat`.")
+
+        return np.asarray(_quat, dtype=float)
 
     return np.asarray(quat, dtype=float)
 
