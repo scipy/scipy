@@ -501,7 +501,7 @@ cdef class cKDTree:
     .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
            nearest neighbor searching with clustered point sets,"
            Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
-    """
+    """  # numpydoc ignore=SS02 - not ignoring, so special-case in numpydoc_lint.py
     cdef:
         ckdtree * cself
         object                   _python_tree
