@@ -2013,7 +2013,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     -------
     tuple of (K-S statistic, probability)
 
-    """
+    """  # numpydoc ignore=RT03
     return scipy.stats._stats_py.kstest(data1, data2, args,
                                         alternative=alternative, method=method)
 
@@ -2375,7 +2375,7 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     -------
     trimmed_stde : scalar or ndarray
 
-    """
+    """  # numpydoc ignore=RT03
     def _trimmed_stde_1D(a, low_limit, up_limit, low_inclusive, up_inclusive):
         "Returns the standard error of the trimmed mean for a 1D input data."
         n = a.count()
@@ -2517,7 +2517,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
                  mask=[False, False, False, False],
            fill_value=1e+20)
 
-    """
+    """  # numpydoc ignore=RT03
     return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
 
 
@@ -2608,7 +2608,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
                  mask=[False, False, False,  True],
            fill_value=999999)
 
-    """
+    """  # numpydoc ignore=RT03
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
@@ -2660,7 +2660,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
                  mask=[False,  True, False, False],
            fill_value=999999)
 
-    """
+    """  # numpydoc ignore=RT03
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
@@ -2700,7 +2700,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     -----
     For more details on `tsem`, see `scipy.stats.tsem`.
 
-    """
+    """  # numpydoc ignore=RT03
     a = ma.asarray(a).ravel()
     if limits is None:
         n = float(a.count())

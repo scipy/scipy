@@ -1172,6 +1172,7 @@ def block_array(blocks, *, format=None, dtype=None):
     Returns
     -------
     block : sparse array
+        Block array formed from specified blocks.
 
     See Also
     --------
@@ -1417,6 +1418,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     Returns
     -------
     res : sparse array
+        Random sparse array.
 
     Examples
     --------
@@ -1573,6 +1575,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Returns
     -------
     res : sparse matrix
+        Random sparse matrix.
 
     See Also
     --------
@@ -1666,6 +1669,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     Returns
     -------
     res : sparse matrix
+        Random sparse matrix.
 
     Notes
     -----

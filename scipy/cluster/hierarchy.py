@@ -3060,10 +3060,6 @@ def set_link_color_palette(palette):
         If ``None``, resets the palette to its default (which are matplotlib
         default colors C1 to C9).
 
-    Returns
-    -------
-    None
-
     See Also
     --------
     dendrogram

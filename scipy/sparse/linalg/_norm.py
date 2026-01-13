@@ -41,6 +41,7 @@ def norm(x, ord=None, axis=None):
     Returns
     -------
     n : float or ndarray
+        The selected norm of `x`
 
     Notes
     -----
