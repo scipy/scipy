@@ -25,7 +25,6 @@ skip_errors = [
     "PR08",
     "PR09",
     "RT02",  # questionable rule; see gh-24348
-    "RT03",
     "RT04",
     "RT05",
     "SA01",  # questionable rule; see gh-24348
