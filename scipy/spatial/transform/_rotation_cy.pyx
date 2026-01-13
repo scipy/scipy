@@ -397,23 +397,24 @@ def from_quat(const double[:, :] quat, bint normalize=True, bint copy=True, bint
     if quat.ndim != 2 or quat.shape[1] != 4:
         raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
-    cdef double[:, :] _quat  # Non-const to enable in-place normalization
+    cdef double[:, :] quat_mut  # Non-const to enable in-place normalization
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
     if num_rotations > 0:  # Avoid 0-sized axis errors
         if scalar_first:
-            _quat = np.roll(quat, -1, axis=1)
+            quat_mut = np.roll(quat, -1, axis=1)
         elif normalize or copy:
-            _quat = quat.copy()
-        else:
+            quat_mut = quat.copy()
+        else:  
+            # quat is not altered, so we return directly using quat instead of quat_mut
             return np.asarray(quat, dtype=float)
 
         if normalize:
             for ind in range(num_rotations):
-                if isnan(_normalize4(_quat[ind, :])):
+                if isnan(_normalize4(quat_mut[ind, :])):
                     raise ValueError("Found zero norm quaternions in `quat`.")
 
-        return np.asarray(_quat, dtype=float)
+        return np.asarray(quat_mut, dtype=float)
 
     return np.asarray(quat, dtype=float)
 
