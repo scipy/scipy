@@ -405,6 +405,8 @@ def from_quat(const double[:, :] quat, bint normalize=True, bint copy=True, bint
             _quat = np.roll(quat, -1, axis=1)
         elif normalize or copy:
             _quat = quat.copy()
+        else:
+            return np.asarray(quat, dtype=float)
 
         if normalize:
             for ind in range(num_rotations):
