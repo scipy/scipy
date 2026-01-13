@@ -642,6 +642,14 @@ combined calls to ``dask.compute`` and ``dask.persist`` that are allowed. If a f
 is not array-agnostic, then it will typically be the case that
 ``allow_dask_compute=True`` should be set, unless Dask specific codepaths have been added.
 
+Dask support is currently deprioritized due to structural barriers
+that make the development of meaningful Dask support particularly challenging. At present,
+developers should feel free to reflexively add ``skip_backends=[("dask.array", "deprioritized")]``
+to the ``xp_capabilities`` entry of any function they are working on. Reprioritization may
+be considered in the future if a champion emerges and the structural outlook improves.
+See `RFC: Should Dask support remain a priority? #24205 <https://github.com/scipy/scipy/issues/24205>`_
+for relevant discussion.
+
 .. _dev-arrayapi_extra_note:
 
 ``extra_note``
