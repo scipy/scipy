@@ -976,7 +976,7 @@ def sosfreqz(*args, **kwargs):
         New code should use the function :func:`scipy.signal.freqz_sos`.
         This function became obsolete from version 1.15.0.
 
-    """
+    """  # numpydoc ignore=RT01
     return freqz_sos(*args, **kwargs)
 
 

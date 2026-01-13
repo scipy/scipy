@@ -240,6 +240,11 @@ def set_workers(workers):
 def get_workers():
     """Returns the default number of workers within the current context
 
+    Returns
+    -------
+    n_workers : int
+        The default number of workers
+
     Examples
     --------
     >>> from scipy import fft
