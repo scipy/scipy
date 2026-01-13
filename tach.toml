@@ -15,6 +15,10 @@ path = "scipy"
 depends_on = ["scipy._lib"]
 
 [[modules]]
+path = "scipy._external"
+depends_on = []
+
+[[modules]]
 path = "scipy._lib"
 depends_on = ["scipy"]
 

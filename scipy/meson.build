@@ -829,6 +829,7 @@ if use_ilp64
   )
 endif
 
+subdir('_external')
 subdir('_lib')
 subdir('special')
 subdir('linalg')

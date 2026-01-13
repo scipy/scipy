@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -1812,7 +1812,7 @@ class TestSystematic:
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
+        if version.parse(mpmath.__version__) >= version.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:
