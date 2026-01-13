@@ -307,5 +307,61 @@ def test_jacobi_alpha_minus_one_beta_plus_one(n, expected):
     # gh-7001 - expected values were computed with mathematica
     x = np.linspace(-1.0, 1.0, 11)
     a, b = -1, 1  # alpha, beta
-    assert_allclose(_ufuncs.eval_jacobi(n, a, b, x), expected)
-    assert_allclose(_ufuncs.eval_jacobi(float(n), a, b, x), expected)
+    assert_allclose(_ufuncs.eval_jacobi(n, a, b, x), expected, rtol=1e-10, atol=1e-14)
+    assert_allclose(
+        _ufuncs.eval_jacobi(float(n), a, b, x), expected, rtol=1e-10, atol=1e-14
+    )
+
+
+@pytest.mark.parametrize(
+    "n, expected",
+    [
+        (0, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+        (1, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        (2, [0.0, -0.09, -0.16, -0.21, -0.24, -0.25, -0.24, -0.21, -0.16, -0.09, 0.0]),
+        (
+            3,
+            [0.0, 0.144, 0.192, 0.168, 0.096, 0.0, -0.096, -0.168, -0.192, -0.144, 0.0],
+        ),
+        (
+            4,
+            [
+                0.0,
+                -0.1485,
+                -0.096,
+                0.0315,
+                0.144,
+                0.1875,
+                0.144,
+                0.0315,
+                -0.096,
+                -0.1485,
+                0.0,
+            ],
+        ),
+        (
+            5,
+            [
+                0.0,
+                0.10656,
+                -0.04608,
+                -0.15792,
+                -0.13056,
+                0.0,
+                0.13056,
+                0.15792,
+                0.04608,
+                -0.10656,
+                0.0,
+            ],
+        ),
+    ],
+)
+def test_jacobi_alpha_minus_one_beta_minus_one(n, expected):
+    # gh-7001 - expected values were computed with mathematica
+    x = np.linspace(-1.0, 1.0, 11)
+    a, b = -1, -1  # alpha, beta
+    assert_allclose(_ufuncs.eval_jacobi(n, a, b, x), expected, rtol=1e-10, atol=1e-14)
+    assert_allclose(
+        _ufuncs.eval_jacobi(float(n), a, b, x), expected, rtol=1e-10, atol=1e-14
+    )
