@@ -1434,6 +1434,28 @@ class TestInv:
             b = a + a.T.conj() + np.eye(3)
             assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
 
+    def test_pos_fails_sym_complex(self):
+        # regression test for gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+
+        ainv = inv(a)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = inv(a, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" directly calls LAPACK routines, zportf and zpotri
+        # Since zportf(a) does not error out, neither does inv
+        ainv_chol = inv(a, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returns nonsense.
+        # This is at least consistent with solve.
+        ainv_slv = solve(a, np.eye(2), assume_a="pos")
+        assert_allclose(ainv_chol, ainv_slv, atol=1e-14)
+
     @pytest.mark.parametrize('complex_', [False, True])
     @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
     def test_sym_her(self, complex_, sym_herm):
