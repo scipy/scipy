@@ -24,7 +24,7 @@ static PyObject* arpack_error_obj;
                                X(shift) X(getv0_first) X(getv0_iter) X(getv0_itry) X(getv0_orth) \
                                X(aitr_iter) X(aitr_j) X(aitr_orth1) X(aitr_orth2) X(aitr_restart) \
                                X(aitr_step3) X(aitr_step4) X(aitr_ierr) X(aup2_initv) X(aup2_iter) \
-                               X(aup2_getv0) X(aup2_cnorm) X(aup2_kplusp) X(aup2_nev0) X(aup2_np0) \
+                               X(aup2_getv0) X(aup2_cnorm) X(aup2_kplusp) X(aup2_nev) X(aup2_nev0) X(aup2_np0) \
                                X(aup2_numcnv) X(aup2_update) X(aup2_ushift)
 #define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_INEXACT_FIELD_NAMES
 
