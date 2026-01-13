@@ -58,7 +58,7 @@ def spherical_jn(n, z, derivative=False):
     Returns
     -------
     jn : ndarray
-        Value or derivative of spherical Bessel function of the first kind
+        Value or derivative of spherical Bessel function of the first kind.
 
     Notes
     -----
@@ -149,7 +149,7 @@ def spherical_yn(n, z, derivative=False):
     Returns
     -------
     yn : ndarray
-        Value or derivative of spherical Bessel function of the second kind
+        Value or derivative of spherical Bessel function of the second kind.
 
     Notes
     -----
@@ -239,7 +239,7 @@ def spherical_in(n, z, derivative=False):
     Returns
     -------
     in : ndarray
-        Value or derivative of modified spherical Bessel function of the first kind
+        Value or derivative of modified spherical Bessel function of the first kind.
 
     Notes
     -----
@@ -335,7 +335,7 @@ def spherical_kn(n, z, derivative=False):
     Returns
     -------
     kn : ndarray
-        Value or derivative of modified spherical Bessel function of the second kind
+        Value or derivative of modified spherical Bessel function of the second kind.
 
     Notes
     -----

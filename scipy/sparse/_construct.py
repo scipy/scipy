@@ -1172,7 +1172,7 @@ def block_array(blocks, *, format=None, dtype=None):
     Returns
     -------
     block : sparse array
-        Block array formed from specified blocks.
+        Sparse array formed from specified blocks.
 
     See Also
     --------

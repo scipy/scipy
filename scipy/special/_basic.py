@@ -109,7 +109,7 @@ def diric(x, n):
     Returns
     -------
     diric : ndarray
-        Value of periodic sinc function
+        Value of periodic sinc function.
 
     Examples
     --------
