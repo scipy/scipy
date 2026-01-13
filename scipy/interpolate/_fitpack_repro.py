@@ -1059,11 +1059,6 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         The actual number of knots returned by this routine may be slightly
         larger than `nest`.
         Default is None (no limit, add up to ``m + k + 1`` knots).
-    periodic : bool, optional
-        If True, data points are considered periodic with period ``x[m-1]`` -
-        ``x[0]`` and a smooth periodic spline approximation is returned. Values of
-        ``y[m-1]`` and ``w[m-1]`` are not used.
-        The default is False, corresponding to boundary condition 'not-a-knot'.
     bc_type : str, optional
         Boundary conditions.
         Default is `"not-a-knot"`.
