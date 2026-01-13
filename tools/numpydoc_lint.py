@@ -8,13 +8,13 @@ from scipy._lib._public_api import PUBLIC_MODULES
 
 
 skip_errors = [
-    "GL01",
-    "GL02",
-    "GL03",
+    "GL01",  # inconsistent standards; see gh-24348
+    "GL02",  # inconsistent standards; see gh-24348
+    "GL03",  # overlaps with GL02; see gh-24348
     "GL09",
     "SS02",
     "SS03",
-    "SS05",
+    "SS05",  # inconsistent standards; see gh-24348
     "SS06",
     "ES01",
     "PR01",
@@ -25,12 +25,11 @@ skip_errors = [
     "PR07",
     "PR08",
     "PR09",
-    "RT01",
-    "RT02",
+    "RT02",  # questionable rule; see gh-24348
     "RT03",
     "RT04",
     "RT05",
-    "SA01",
+    "SA01",  # questionable rule; see gh-24348
     "SA02",
     "SA03",
     "SA04",

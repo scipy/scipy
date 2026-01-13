@@ -276,7 +276,7 @@ def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
-    """
+    """  # numpydoc ignore=RT01
     def _mjci_1D(data, p):
         data = np.sort(data.compressed())
         n = data.size
@@ -502,7 +502,7 @@ def rsh(data, points=None):
         Sequence of points where to evaluate Rosenblatt shifted histogram.
         If None, use the data.
 
-    """
+    """  # numpydoc ignore=RT01
     data = ma.array(data, copy=False)
     if points is None:
         points = data
