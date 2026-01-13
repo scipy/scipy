@@ -1203,7 +1203,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         the dimensionality of the function domain) and `n_points` is the number
         of quadrature points, and return an array of shape ``(n_points,)``,
         the integrand at each quadrature point.
-    a, b : array-like
+    a, b : scalar or 1-d array-like
         One-dimensional arrays specifying the lower and upper integration
         limits, respectively, of each of the ``d`` variables.
     n_estimates, n_points : int, optional
