@@ -986,6 +986,26 @@ functions without explicitly setting the dtype. At the time of writing, there ar
 tests in the test suite which do not follow this practice, and this could be a good source
 of first issues for new contributors.
 
+Tests are not optional
+``````````````````````
+
+It is not permitted for a function ``f`` to have an ``xp_capabilities``
+entry advertising some level of alternative backend support if there are
+no tests in the test suite for ``f`` that use the ``xp`` fixture along with
+``make_xp_test_case(f)`` or one of its equivalents. All documented alternative
+backend support must be tested and the only valid ``xp_capabilities`` entries
+for a function without tests of the form described above are ``np_only=True``
+with no ``exceptions``, or ``out_of_scope=True``.
+
+The command::
+
+  spin check --xp-markers
+
+can be used to check that all functions advertising alternative backend
+support have at least one test using the ``xp`` fixture that draws from
+``xp_capabilities`` through ``make_xp_test_case`` or one of its equivalents.
+This check is run in CI.
+
 .. _dev-arrayapi_backend_isolation:
 
 Backend isolation in tests
