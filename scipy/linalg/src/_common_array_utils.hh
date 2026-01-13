@@ -784,32 +784,6 @@ bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper
 }
 
 
-
-
-template<typename T>
-std::tuple<bool, bool>
-is_sym_herm(const T *data, npy_intp n) {
-    // Return a pair of (is_symmetric_or_hermitian, is_symmetric_not_hermitian)
-    using value_type = typename type_traits<T>::value_type;
-    const value_type *p_data = reinterpret_cast<const value_type *>(data);
-    bool all_sym = true, all_herm = true;
-
-    for (npy_intp i=0; i < n; i++) {
-        for (npy_intp j=0; j < n; j++) {
-            value_type elem1 = p_data[i*n + j];
-            value_type elem2 = p_data[i + j*n];
-            all_sym = all_sym && (elem1 == elem2);
-            all_herm = all_herm && (elem1 == std::conj(elem2));
-            if(!(all_sym || all_herm)) {
-                // short-circuit : it's neither symmetric not hermitian
-                return std::make_tuple(false, false);
-            }
-        }
-    }
-    return std::make_tuple(true, all_sym ? true : false);
-}
-
-
 template<typename T>
 std::tuple<bool, bool>
 is_sym_or_herm(const T *data, npy_intp n) {

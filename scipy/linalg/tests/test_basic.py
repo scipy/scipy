@@ -1012,6 +1012,30 @@ class TestSolve:
         out = solve(a.T, b, assume_a='pos', lower=False)
         assert_allclose(out, result_np, atol=1e-15)
 
+    def test_pos_fails_sym_complex(self):
+        # regression test for the `solve` analog of gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+        b = np.eye(2)
+
+        ainv = solve(a, b)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = solve(a, b, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does solve.
+        ainv_chol = solve(a, b, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with inv.
+        ainv_inv = inv(a, assume_a="pos")
+        assert_allclose(ainv_chol, ainv_inv, atol=1e-14)
+
     def test_readonly(self):
         a = np.eye(3)
         a.flags.writeable = False
@@ -1446,12 +1470,13 @@ class TestInv:
         ainv_sym = inv(a, assume_a="sym")
         assert_allclose(ainv_sym, ainv, atol=1e-14)
 
-        # Specifying assume_a="pos" directly calls LAPACK routines, zportf and zpotri
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
         # Since zportf(a) does not error out, neither does inv
         ainv_chol = inv(a, assume_a="pos")
         assert not np.allclose(ainv, ainv_chol, atol=1e-14)
 
-        # Setting assume_a="pos" with a non-pos def matrix returns nonsense.
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
         # This is at least consistent with solve.
         ainv_slv = solve(a, np.eye(2), assume_a="pos")
         assert_allclose(ainv_chol, ainv_slv, atol=1e-14)
