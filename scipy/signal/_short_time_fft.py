@@ -2180,7 +2180,7 @@ class ShortTimeFFT:
             Number of samples in input signal.
         axes_seq : {'tf', 'ft'}
             Return time extent first and then frequency extent or vice versa.
-        center_bins: bool
+        center_bins : bool
             If set (default ``False``), the values of the time slots and
             frequency bins are moved from the side the middle. This is useful,
             when plotting the `~ShortTimeFFT.stft` values as step functions,

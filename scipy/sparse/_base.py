@@ -1427,6 +1427,11 @@ class _spbase(SparseABC):
 
             .. versionadded:: 1.0
 
+        Returns
+        -------
+        d : ndarray
+            The specified diagonal of the array/matrix.
+
         See Also
         --------
         numpy.diagonal : Equivalent numpy function.

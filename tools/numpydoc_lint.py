@@ -50,7 +50,17 @@ legacy_functions = [
     "rv_discrete",
     "scipy.interpolate.InterpolatedUnivariateSpline",
     "scipy.interpolate.LSQUnivariateSpline",
-    "scipy.interpolate.UnivariateSpline"
+    "scipy.interpolate.UnivariateSpline",
+    "scipy.sparse.lil_matrix",
+    "scipy.sparse.dok_matrix",
+    "scipy.sparse.dia_matrix",
+    "scipy.sparse.csc_matrix",
+    "scipy.sparse.csr_matrix",
+    "scipy.sparse.coo_matrix",
+    "scipy.sparse.bsr_matrix",
+    "scipy.sparse.spmatrix",
+    "scipy.optimize.BroydenFirst",
+    "scipy.optimize.KrylovJacobian"
 ]
 
 
