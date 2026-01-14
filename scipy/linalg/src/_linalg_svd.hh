@@ -1,3 +1,4 @@
+#pragma once
 #include "npy_cblas.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
@@ -124,7 +125,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     }
 
     // rwork
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         // assume LAPACK > 3.6 (cf LAPACK docs on netlib.org)
         npy_intp lrwork = std::max(
             5*min_mn*min_mn + 5*min_mn,
@@ -161,13 +162,16 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         }
 
         // copy-and-tranpose U and Vh slices from temp buffers to the output;
-        // S slice is filled in in-place already; 
-        copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
-        copy_slice_F_to_C(ptr_Vh, buf_Vh, vh_shape0, vh_shape1);
+        // Also advance the output pointers: U, S, Vh are C-contiguous by construction
+        if (jobz != 'N') {
+            copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
+            ptr_U += u_shape0 * u_shape1;
 
-        // advance the output pointers: U, S, Vh are C-contiguous by construction
-        ptr_U += u_shape0 * u_shape1;
-        ptr_Vh += vh_shape0 * vh_shape1;
+            copy_slice_F_to_C(ptr_Vh, buf_Vh, vh_shape0, vh_shape1);
+            ptr_Vh += vh_shape0 * vh_shape1;
+        }
+
+        // S slice has been filled in-place already
         ptr_S += min_mn;
     }
 
@@ -251,13 +255,14 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         buf_Vh = &buf[m*n + lwork + u_shape0*u_shape1];
     }
 
-    CBLAS_INT *iwork = NULL;
     real_type *rwork = NULL;
-    rwork = (real_type *)malloc(5*min_mn*sizeof(real_type));
-    if (rwork == NULL) {
-        free(buf);
-        info = -103;
-        return (int)info;
+    if constexpr (type_traits<T>::is_complex) {
+        rwork = (real_type *)malloc(5*min_mn*sizeof(real_type));
+        if (rwork == NULL) {
+            free(buf);
+            info = -103;
+            return (int)info;
+        }
     }
 
     // --------------------------------------------------------------------
@@ -282,19 +287,21 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         }
 
         // copy-and-tranpose U and Vh slices from temp buffers to the output;
-        // S slice is filled in in-place already; 
-        copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
-        copy_slice_F_to_C(ptr_Vh, buf_Vh, vh_shape0, vh_shape1);
+        // Also advance the output pointers: U, S, Vh are C-contiguous by construction
+        if (jobz != 'N') {
+            copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
+            ptr_U += u_shape0 * u_shape1;
 
-        // advance the output pointers: U, S, Vh are C-contiguous by construction
-        ptr_U += u_shape0 * u_shape1;
-        ptr_Vh += vh_shape0 * vh_shape1;
+            copy_slice_F_to_C(ptr_Vh, buf_Vh, vh_shape0, vh_shape1);
+            ptr_Vh += vh_shape0 * vh_shape1;
+        }
+
+        // S slice has been filled in-place already;
         ptr_S += min_mn;
     }
 
  done:
     free(buf);
-    free(iwork);
     free(rwork);
     return 0;
 }

@@ -1,6 +1,3 @@
-#ifndef _LINALG_INV_H
-#define _LINALG_INV_H
-
 #include <cstring>
 
 #include "_linalg_inv.hh"
@@ -200,6 +197,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int compute_uv = 1;
     int full_matrices = 1;
     PyArrayObject *ap_S = NULL, *ap_U = NULL, *ap_Vh = NULL;
+    PyObject *ret_lst;
 
     int info = 0;
     SliceStatusVec vec_status;
@@ -225,6 +223,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     if (ndim < 2) {
         PyErr_SetString(PyExc_ValueError, "Expected at least a 2D array.");
+        return NULL;
     }
 
     npy_intp m = shape[ndim - 2];
@@ -263,9 +262,8 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         ap_U = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
         if (!ap_U) {
-            Py_DECREF(ap_S);
             PyErr_NoMemory();
-            return NULL;
+            goto fail;
         }
 
         shape_1[ndim-2] = vh_shape0;
@@ -273,10 +271,8 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         ap_Vh = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
         if (!ap_Vh) {
-            Py_DECREF(ap_S);
-            Py_DECREF(ap_U);
             PyErr_NoMemory();
-            return NULL;
+            goto fail;
         }
     }
 
@@ -295,18 +291,16 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
+            goto fail;
     }
 
     if (info < 0) {
         // Either OOM or internal LAPACK error.
-        Py_DECREF(ap_S);
-        Py_DECREF(ap_U);
-        Py_DECREF(ap_Vh);
         PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.svd.");
-        return NULL;
+        goto fail;
     }
 
-    PyObject *ret_lst = convert_vec_status(vec_status);
+    ret_lst = convert_vec_status(vec_status);
 
     if (compute_uv){
         return Py_BuildValue("NNNN", PyArray_Return(ap_U), PyArray_Return(ap_S), PyArray_Return(ap_Vh), ret_lst);
@@ -314,6 +308,11 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return Py_BuildValue("NN", PyArray_Return(ap_S), ret_lst);
     }
 
+fail:
+    Py_DECREF(ap_S);
+    Py_XDECREF(ap_U);
+    Py_XDECREF(ap_Vh);
+    return NULL;
 }
 
 
@@ -403,7 +402,3 @@ PyInit__batched_linalg(void)
 
     return module;
 }
-
-
-
-#endif // _LINALG_INV_H
