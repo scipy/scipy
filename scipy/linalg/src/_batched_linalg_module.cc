@@ -528,7 +528,10 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     else if (typenum == NPY_FLOAT64) { w_typenum = NPY_COMPLEX128; }
 
     ap_w = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, w_typenum);
-    if (ap_w == NULL) { goto fail; }
+    if (ap_w == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     if (ap_Bm != NULL) {
         ap_beta = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum);
@@ -560,12 +563,13 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
+            goto fail;
     }
 
     if (info < 0) {
         // Either OOM or internal LAPACK error.
         PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.eig.");
-        return NULL;
+        goto fail;
     }
 
     // normal return
@@ -579,6 +583,7 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
 fail:
     Py_DECREF(ap_w);
+    Py_XDECREF(ap_beta);
     Py_XDECREF(ap_vl);
     Py_XDECREF(ap_vr);
     PyErr_NoMemory();
