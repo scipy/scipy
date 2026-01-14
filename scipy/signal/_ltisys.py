@@ -400,7 +400,8 @@ class lti(LinearTimeInvariant):
 
         Returns
         -------
-        sys: instance of `dlti`
+        sys: dlti
+            Discrete version of the current system.
         """
         raise NotImplementedError('to_discrete is not implemented for this '
                                   'system class.')

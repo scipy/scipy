@@ -517,7 +517,9 @@ class gaussian_kde:
 
         Returns
         -------
-        factor : float"""
+        factor : float
+            The bandwidth factor.
+        """
 
     def set_bandwidth(self, bw_method=None):
         """Compute the bandwidth factor with given method.

@@ -404,6 +404,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         When copy=False the data array will be shared between
         this array/matrix and the resultant coo_array/coo_matrix.
+
+        Returns
+        -------
+        coo array/matrix
+            The converted array/matrix in COO format.
         """
 
         M,N = self.shape

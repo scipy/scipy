@@ -1033,7 +1033,8 @@ class _spbase(SparseABC):
 
         Returns
         -------
-        p : `self` with the dimensions reversed.
+        p : sparse array/matrix
+            The transpose of the array/matrix.
 
         See Also
         --------
@@ -1059,8 +1060,8 @@ class _spbase(SparseABC):
 
         Returns
         -------
-        A : The element-wise complex conjugate.
-
+        A : sparse array/matrix
+            The element-wise complex conjugate.
         """
         if np.issubdtype(self.dtype, np.complexfloating):
             return self.tocsr(copy=copy).conjugate(copy=False)
@@ -1227,6 +1228,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant csr_array/matrix.
+
+        Returns
+        -------
+        csr array/matrix
+            The converted array/matrix in CSR format.
         """
         return self.tocoo(copy=copy).tocsr(copy=False)
 
@@ -1235,6 +1241,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant dok_array/matrix.
+
+        Returns
+        -------
+        dok array/matrix
+            The converted array/matrix in DOK format.
         """
         return self.tocoo(copy=copy).todok(copy=False)
 
@@ -1243,6 +1254,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant coo_array/matrix.
+
+        Returns
+        -------
+        coo array/matrix
+            The converted array/matrix in COO format.
         """
         return self.tocsr(copy=False).tocoo(copy=copy)
 
@@ -1251,6 +1267,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant lil_array/matrix.
+
+        Returns
+        -------
+        lil array/matrix
+            The converted array/matrix in LIL format.
         """
         return self.tocsr(copy=False).tolil(copy=copy)
 
@@ -1259,6 +1280,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant dia_array/matrix.
+
+        Returns
+        -------
+        dia array/matrix
+            The converted array/matrix in DIA format.
         """
         return self.tocoo(copy=copy).todia(copy=False)
 
@@ -1270,6 +1296,11 @@ class _spbase(SparseABC):
 
         When blocksize=(R, C) is provided, it will be used for construction of
         the bsr_array/matrix.
+
+        Returns
+        -------
+        bsr array/matrix
+            The converted array/matrix in BSR format.
         """
         return self.tocsr(copy=False).tobsr(blocksize=blocksize, copy=copy)
 
@@ -1278,6 +1309,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant csc_array/matrix.
+
+        Returns
+        -------
+        csc array/matrix
+            The converted array/matrix in CSC format.
         """
         return self.tocsr(copy=copy).tocsc(copy=False)
 

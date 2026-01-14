@@ -110,7 +110,13 @@ class Rectangle:
         return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
-        """Total volume."""
+        """Compute the total volume of the hyperrectangle.
+
+        Returns
+        -------
+        vol : float
+            Volume of the hyperrectangle.
+        """
         return np.prod(self.maxes-self.mins)
 
     def split(self, d, split):
