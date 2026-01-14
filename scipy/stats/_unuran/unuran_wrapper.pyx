@@ -380,7 +380,7 @@ cdef class Method:
       method. As it uses MessageStream, the call must be protected under
       the module-level lock.
     * `_check_errorcode` must be called after calling a UNU.RAN function
-      that returns a error code. It raises an error if an error has
+      that returns an error code. It raises an error if an error has
       occurred in UNU.RAN.
     * It implements the `rvs` public method for sampling. No child class
       should override this method.
@@ -2464,7 +2464,7 @@ cdef class DiscreteGuideTable(Method):
           is used to relocate the distribution from ``(0, len(pv))`` to
           ``(domain[0], domain[0]+len(pv))`` and ``domain[1]`` is ignored. See Notes
           and tutorial for a more detailed explanation.
-    guide_factor: int, optional
+    guide_factor : int, optional
         Size of the guide table relative to length of PV. Larger guide tables
         result in faster generation time but require a more expensive setup.
         Sizes larger than 3 are not recommended. If the relative size is set to

@@ -275,7 +275,7 @@ class _spbase(SparseABC):
         else:
             for fp_type in fp_types:
                 if self.dtype <= np.dtype(fp_type):
-                    return self.astype(fp_type)
+                    return self.astype(fp_type, copy=False)
 
             raise TypeError(
                 f'cannot upcast [{self.dtype.name}] to a floating point format'
@@ -355,7 +355,7 @@ class _spbase(SparseABC):
         axis : {-2, -1, 0, 1, None} optional
             Report stored values for the whole array, or along a specified axis.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero entries
         """
@@ -366,7 +366,7 @@ class _spbase(SparseABC):
     def nnz(self) -> int:
         """Number of stored values, including explicit zeros.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero entries
         """
@@ -376,7 +376,7 @@ class _spbase(SparseABC):
     def size(self) -> int:
         """Number of stored values.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero values.
         """
@@ -555,16 +555,20 @@ class _spbase(SparseABC):
                      " dense matrix.", SparseEfficiencyWarning, stacklevel=3)
                 return self.__class__(np_op(self.toarray(), other))
             else:
-                csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                if self.ndim < 3:
+                    cs_self = self if self.format in ('csr', 'csc') else self.tocsr()
+                    return cs_self._scalar_binopt(other, np_op)
+                csr_self = self.reshape(1, -1).tocsr()
                 result = csr_self._scalar_binopt(other, np_op)
-                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+                return result.tocoo().reshape(self.shape)
         elif isdense(other):
             return np_op(self.todense(), other)
         elif issparse(other):
             if self.shape != other.shape:
                 raise ValueError(f"inconsistent shapes {self.shape=} {other.shape=}")
             if self.ndim < 3:  # shape is same so other.ndim < 3
-                return self.tocsr()._binopt(other, f'_{np_op.__name__}_')
+                cs_self = self if self.format in ('csr', 'csc') else self.tocsr()
+                return cs_self._binopt(other, f'_{np_op.__name__}_')
             csr_self = self.reshape(1, -1).tocsr()
             csr_other = other.reshape(1, -1).tocsr()
             result = csr_self._binopt(csr_other, f'_{np_op.__name__}_')
@@ -632,10 +636,12 @@ class _spbase(SparseABC):
             if not op(0, other):
                 if np.isnan(other):  # op is not `ne`, so results are all False.
                     return self.__class__(self.shape, dtype=np.bool_)
-                else:
-                    csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
-                    res = csr_self._scalar_binopt(other, op)
-                    return res if self.ndim < 3 else res.tocoo().reshape(self.shape)
+                if self.ndim < 3:
+                    cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                    return cs_self._scalar_binopt(other, op)
+                csr_self = self.reshape(1, -1).tocsr()
+                result = csr_self._scalar_binopt(other, op)
+                return result.tocoo().reshape(self.shape)
             else:
                 warn(f"Comparing a sparse matrix with {other} using {op_sym[op]} "
                      f"is inefficient. Try using {op_sym[op_neg[op]]} instead.",
@@ -645,11 +651,17 @@ class _spbase(SparseABC):
                     return self.__class__(np.ones(self.shape, dtype=np.bool_))
 
                 # op is eq, le, or ge. Use negated op and then negate.
-                csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                if self.ndim < 3:
+                    cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                    inv = cs_self._scalar_binopt(other, op_neg[op])
+                    all_true = cs_self.__class__(np.ones(cs_self.shape, dtype=np.bool_))
+                    return all_true - inv
+
+                csr_self = self.reshape(1, -1).tocsr()
                 inv = csr_self._scalar_binopt(other, op_neg[op])
                 all_true = csr_self.__class__(np.ones(csr_self.shape, dtype=np.bool_))
                 result = all_true - inv
-                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+                return result.tocoo().reshape(self.shape)
 
         elif isdense(other):
             return op(self.todense(), other)
@@ -663,18 +675,22 @@ class _spbase(SparseABC):
                     return op is operator.ne
                 raise ValueError("inconsistent shape")
 
-            csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
-            csr_other = (other if other.ndim < 3 else other.reshape(1, -1)).tocsr()
+            if self.ndim < 3:
+                cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                cs_other = other
+            else:
+                cs_self = self.reshape(1, -1).tocsr()
+                cs_other = other.reshape(1, -1).tocsr()
             if not op(0, 0):
-                result = csr_self._binopt(csr_other, f'_{op.__name__}_')
+                result = cs_self._binopt(cs_other, f'_{op.__name__}_')
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
             else:
                 # result will not be sparse. Use negated op and then negate.
                 warn(f"Comparing two sparse matrices using {op_sym[op]} "
                      f"is inefficient. Try using {op_sym[op_neg[op]]} instead.",
                      SparseEfficiencyWarning, stacklevel=3)
-                inv = csr_self._binopt(csr_other, f'_{op_neg[op].__name__}_')
-                all_true = csr_self.__class__(np.ones(csr_self.shape, dtype=np.bool_))
+                inv = cs_self._binopt(cs_other, f'_{op_neg[op].__name__}_')
+                all_true = cs_self.__class__(np.ones(cs_self.shape, dtype=np.bool_))
                 result = all_true - inv
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
         else:
@@ -936,14 +952,14 @@ class _spbase(SparseABC):
                 return np.divide(other, self.todense())
 
             if np.can_cast(self.dtype, np.float64):
-                return self.astype(np.float64)._mul_scalar(1 / other)
+                return self.astype(np.float64, copy=False)._mul_scalar(1 / other)
             else:
                 r = self._mul_scalar(1 / other)
 
                 scalar_dtype = np.asarray(other).dtype
                 if (np.issubdtype(self.dtype, np.integer) and
                         np.issubdtype(scalar_dtype, np.integer)):
-                    return r.astype(self.dtype)
+                    return r.astype(self.dtype, copy=False)
                 else:
                     return r
 
@@ -960,9 +976,8 @@ class _spbase(SparseABC):
             csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
             csr_other = (other if self.ndim < 3 else other.reshape(1, -1)).tocsr()
             if np.can_cast(self.dtype, np.float64):
-                result = csr_self.astype(np.float64)._divide_sparse(csr_other)
-            else:
-                result = csr_self._divide_sparse(csr_other)
+                csr_self = csr_self.astype(np.float64, copy=False)
+            result = csr_self._divide_sparse(csr_other)
             return result if self.ndim < 3 else result.reshape(self.shape)
         else:
             # not scalar, dense or sparse. Return NotImplemented so
@@ -1389,7 +1404,7 @@ class _spbase(SparseABC):
 
         # intermediate dtype for summation
         inter_dtype = np.float64 if integral else self.dtype
-        inter_self = self.astype(inter_dtype)
+        inter_self = self.astype(inter_dtype, copy=False)
 
         if axis is None:
             denom = math.prod(self.shape)
@@ -1412,7 +1427,7 @@ class _spbase(SparseABC):
 
             .. versionadded:: 1.0
 
-        See also
+        See Also
         --------
         numpy.diagonal : Equivalent numpy function.
 

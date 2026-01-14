@@ -620,6 +620,8 @@ Filter coefficients can be stored in several different formats:
 
 Functions, such as :func:`tf2zpk` and :func:`zpk2ss`, can convert between them.
 
+.. _tutorial_signal_TransferFunctionRepresentation:
+
 Transfer function representation
 ********************************
 

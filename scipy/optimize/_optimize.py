@@ -28,7 +28,6 @@ __docformat__ = "restructuredtext en"
 import math
 import warnings
 import sys
-import inspect
 from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
@@ -39,7 +38,8 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
-                              _call_callback_maybe_halt, _transition_to_rng)
+                              _call_callback_maybe_halt, _transition_to_rng,
+                              wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
 from scipy._lib import array_api_extra as xpx
@@ -90,7 +90,7 @@ def _wrap_callback(callback, method=None):
     if callback is None or method in {'tnc', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
-    sig = inspect.signature(callback)
+    sig = wrapped_inspect_signature(callback)
 
     if set(sig.parameters) == {'intermediate_result'}:
         def wrapped_callback(res):
@@ -215,7 +215,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an 1-D array with shape (n,) and ``args``
+        where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -531,8 +531,9 @@ def _wrap_scalar_function(function, args):
         # Ideally, we'd like to a have a true scalar returned from f(x). For
         # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.float64)
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError("The user-provided objective function "
                                  "must return a scalar value.") from e
@@ -562,8 +563,9 @@ def _wrap_scalar_function_maxfun_validation(function, args, maxfun):
         # backwards-compatibility, also allow np.array([1.3]),
         # np.array([[1.3]]) etc.
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError("The user-provided objective function "
                                  "must return a scalar value.") from e
@@ -629,7 +631,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     allvecs : list
         Solution at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Nelder-Mead' `method` in particular.
@@ -648,6 +650,17 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     converge to the minimum, or how fast it will if it does. Both the ftol and
     xtol criteria must be met for convergence.
 
+    References
+    ----------
+    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
+           minimization", The Computer Journal, 7, pp. 308-313
+
+    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
+           Respectable", in Numerical Analysis 1995, Proceedings of the
+           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
+           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
+           Harlow, UK, pp. 191-208.
+
     Examples
     --------
     >>> def f(x):
@@ -662,18 +675,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
              Function evaluations: 34
     >>> minimum[0]
     -8.8817841970012523e-16
-
-    References
-    ----------
-    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
-           minimization", The Computer Journal, 7, pp. 308-313
-
-    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
-           Respectable", in Numerical Analysis 1995, Proceedings of the
-           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
-           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
-           Harlow, UK, pp. 191-208.
-
     """
     opts = {'xatol': xtol,
             'fatol': ftol,
@@ -1049,8 +1050,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
 
 @_transition_to_rng("seed", position_num=6)
-def check_grad(func, grad, x0, *args, epsilon=_epsilon,
-                direction='all', rng=None):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, direction='all', rng=None):
     r"""Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -1063,7 +1063,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
-    args : \\*args, optional
+    *args : optional
         Extra arguments passed to `func` and `grad`.
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
@@ -1268,6 +1268,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         The value of `xopt` at each iteration. Only returned if `retall` is
         True.
 
+    See Also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See ``method='BFGS'`` in particular.
+
     Notes
     -----
     Optimize the function, `f`, whose gradient is given by `fprime`
@@ -1276,14 +1281,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
-    See Also
-    --------
-    minimize: Interface to minimization algorithms for multivariate
-        functions. See ``method='BFGS'`` in particular.
-
     References
     ----------
-    Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
+    .. [1] Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
 
     Examples
     --------
@@ -1943,7 +1943,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     allvecs : list
         The result at each iteration, if retall is True (see below).
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Newton-CG' `method` in particular.
@@ -2210,7 +2210,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Maximum number of function evaluations allowed.
     full_output : bool, optional
         If True, return optional outputs.
-    disp: int, optional
+    disp : int, optional
         If non-zero, print messages.
 
         ``0`` : no message printing.
@@ -2234,7 +2234,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     numfunc : int
         (Optional output) The number of function calls made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Bounded' `method` in particular.
@@ -2654,7 +2654,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Brent' `method` in particular.
@@ -2792,7 +2792,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Golden' `method` in particular.
@@ -3334,7 +3334,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     allvecs : list
         List of solutions at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to unconstrained minimization algorithms for
         multivariate functions. See the 'Powell' method in particular.

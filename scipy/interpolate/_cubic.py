@@ -169,13 +169,17 @@ class CubicHermiteSpline(PPoly):
         self.axis = axis
 
 
-@xp_capabilities(
-    cpu_only=True, jax_jit=False,
-    skip_backends=[
-        ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
-    ]
-)
+# The commented out xp_capabilities below are probably right but since
+# this is untested, mark as np_only. TODO: convert the tests.
+#
+# @xp_capabilities(
+#     cpu_only=True, jax_jit=False,
+#     skip_backends=[
+#         ("dask.array",
+#          "https://github.com/data-apis/array-api-extra/issues/488")
+#     ]
+# )
+@xp_capabilities(np_only=True, reason="not tested")
 class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP shape-preserving interpolator (C1 smooth).
 
@@ -190,7 +194,7 @@ class PchipInterpolator(CubicHermiteSpline):
         A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
     y : ndarray, shape (..., npoints, ...)
-        A N-D array of real values. ``y``'s length along the interpolation
+        An N-D array of real values. ``y``'s length along the interpolation
         axis must be equal to the length of ``x``. Use the ``axis``
         parameter to select the interpolation axis.
     axis : int, optional

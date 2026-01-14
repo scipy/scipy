@@ -192,7 +192,7 @@ class interp1d(_Interpolator1D):
     x : (npoints, ) array_like
         A 1-D array of real values.
     y : (..., npoints, ...) array_like
-        A N-D array of real values. The length of `y` along the interpolation
+        An N-D array of real values. The length of `y` along the interpolation
         axis must be equal to the length of `x`. Use the ``axis`` parameter
         to select correct axis. Unlike other interpolators, the default
         interpolation axis is the last axis of `y`.
@@ -894,7 +894,7 @@ class PPoly(_PPolyBase):
     from_bernstein_basis
     construct_fast
 
-    See also
+    See Also
     --------
     BPoly : piecewise polynomials in the Bernstein basis
 
@@ -1371,7 +1371,7 @@ class BPoly(_PPolyBase):
     from_power_basis
     from_derivatives
 
-    See also
+    See Also
     --------
     PPoly : piecewise polynomials in the power basis
 
@@ -1931,7 +1931,7 @@ class NdPPoly:
     integrate_1d
     construct_fast
 
-    See also
+    See Also
     --------
     PPoly : piecewise polynomials in 1D
 

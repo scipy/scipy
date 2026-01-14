@@ -32,4 +32,4 @@ class Logm(Benchmark):
         self.A = A
 
     def time_logm(self, dtype, n, structure):
-        scipy.linalg.logm(self.A, disp=False)
+        scipy.linalg.logm(self.A)

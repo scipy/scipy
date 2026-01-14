@@ -5,15 +5,15 @@ import os
 
 from itertools import product
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
-    is_cupy, scipy_namespace_for, xp_assert_close_nulp,
-    _xp_copy_to_numpy
+    make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
+    _xp_copy_to_numpy, xp_assert_close_nulp
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -21,7 +21,7 @@ from numpy import array, spacing, sin, pi
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
                           buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
-                          firwin, freqs_zpk, freqs, freqz, freqz_zpk,
+                          findfreqs, firwin, freqs_zpk, freqs, freqz, freqz_zpk,
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
                           iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
                           sos2tf, sos2zpk, sosfreqz, freqz_sos, tf2sos, tf2zpk, zpk2sos,
@@ -48,7 +48,7 @@ except ImportError:
 def mpmath_check(min_ver):
     return pytest.mark.skipif(
         mpmath is None
-        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        or version.parse(mpmath.__version__) < version.Version(min_ver),
         reason=f"mpmath version >= {min_ver} required",
     )
 
@@ -175,15 +175,13 @@ class TestCplxReal:
 
     def test_real_integer_input(self):
         zc, zr = _cplxreal([2, 0, 1, 4])
-        xp_assert_equal(zc, [])
+        xp_assert_equal(zc, np.asarray([]))
         xp_assert_equal(zr, [0, 1, 2, 4])
 
 
+@make_xp_test_case(tf2zpk)
 class TestTf2zpk:
 
-    @skip_xp_backends(
-        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
-    )
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
     @pytest.mark.parametrize('dt', ('float64', 'complex128'))
     def test_simple(self, dt, xp):
@@ -217,9 +215,8 @@ class TestTf2zpk:
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
 
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="zpk2sos is numpy only"
-)
+
+@make_xp_test_case(zpk2tf)
 class TestZpk2Tf:
 
     def test_identity(self, xp):
@@ -240,7 +237,6 @@ class TestZpk2Tf:
             assert isinstance(a, np.ndarray)
 
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_conj_pair(self, xp):
         # conjugate pairs give real-coeff num & den
         z = xp.asarray([1j, -1j, 2j, -2j])
@@ -248,6 +244,7 @@ class TestZpk2Tf:
         # shouldn't need elements of pairs to be adjacent
         p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
         p_np = _xp_copy_to_numpy(p)
+
         k = 23
 
         # np.poly should do the right thing, but be explicit about
@@ -258,7 +255,8 @@ class TestZpk2Tf:
 
         bp, ap = zpk2tf(z, p, k)
 
-        xp_assert_close(b, bp)
+        atol = 5e-13 if is_cupy(xp) else 0.0
+        xp_assert_close(b, bp, atol=atol)
         xp_assert_close(a, ap)
 
         assert xp.isdtype(bp.dtype, 'real floating')
@@ -275,10 +273,11 @@ class TestZpk2Tf:
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
-    
-    @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
-    @skip_xp_backends("jax.numpy", 
+
+    @skip_xp_backends("jax.numpy",
                       reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
     def test_zpk2tf_with_multi_dimensional_array(self, xp):
         z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
         p = xp.asarray([1, 2])
@@ -290,10 +289,11 @@ class TestZpk2Tf:
         xp_assert_close(a, a_ref, check_dtype=False)
 
 
-@skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
+@make_xp_test_case(sos2zpk)
 class TestSos2Zpk:
 
     @skip_xp_backends("dask.array", reason="it https://github.com/dask/dask/issues/11883")
+    @xfail_xp_backends("jax.numpy", reason="inaccurate with jax")
     def test_basic(self, xp):
         sos = [[1, 0, 1, 1, 0, -0.81],
                [1, 0, 0, 1, 0, +0.49]]
@@ -352,9 +352,7 @@ class TestSos2Zpk:
         assert p.shape[0] == 24
 
 
-@skip_xp_backends(
-    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
-)
+@make_xp_test_case(sos2tf)
 class TestSos2Tf:
 
     def test_basic(self, xp):
@@ -366,7 +364,7 @@ class TestSos2Tf:
         assert_array_almost_equal(a, xp.asarray([1.0, 10, 0, -10, -1]))
 
 
-@skip_xp_backends(cpu_only=True, reason="XXX zpk2sos is numpy-only")
+@make_xp_test_case(tf2sos)
 class TestTf2Sos:
 
     def test_basic(self, xp):
@@ -395,15 +393,14 @@ class TestTf2Sos:
                               ([1.0], [1., 0., -1.01, 0, 0.01], True,
                                [[0., 0., 1., 1., 0., -1],
                                 [0., 0., 1., 1., 0., -0.01]])])
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9376")
     def test_analog(self, b, a, analog, sos, xp):
         b, a, sos = map(xp.asarray, (b, a, sos))
         sos2 = tf2sos(b, a, analog=analog)
         assert_array_almost_equal(sos, sos2, decimal=4)
 
 
-@skip_xp_backends(
-    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
-)
+@make_xp_test_case(zpk2sos)
 class TestZpk2Sos:
 
 #    @pytest.mark.parametrize('dt', 'fdgFDG')
@@ -626,6 +623,7 @@ class TestZpk2Sos:
             zpk2sos([1], [2], k=1j)
 
 
+@make_xp_test_case(freqs)
 class TestFreqs:
 
     def test_basic(self, xp):
@@ -643,7 +641,6 @@ class TestFreqs:
         assert_array_almost_equal(xp.real(H), xp.real(expected))
         assert_array_almost_equal(xp.imag(H), xp.imag(expected))
 
-    @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
     def test_freq_range(self, xp):
         # Test that freqresp() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
@@ -687,6 +684,7 @@ class TestFreqs:
             assert_array_almost_equal(h, [1])
 
 
+@make_xp_test_case(freqs_zpk)
 class TestFreqs_zpk:
 
     def test_basic(self, xp):
@@ -753,6 +751,7 @@ class TestFreqs_zpk:
             assert_array_almost_equal(h, [1])
 
 
+@make_xp_test_case(freqz)
 class TestFreqz:
 
     def test_ticket1441(self, xp):
@@ -797,10 +796,11 @@ class TestFreqz:
             assert_array_almost_equal(w, expected_w)
             assert_array_almost_equal(h, h_whole)
 
-            # simultaneously check int-like support
-            w, h = freqz(b, a, worN=np.int32(4), whole=True)
-            assert_array_almost_equal(w, expected_w)
-            assert_array_almost_equal(h, h_whole)
+            if is_numpy(xp):
+                # simultaneously check int-like support
+                w, h = freqz(b, a, worN=np.int32(4), whole=True)
+                assert_array_almost_equal(w, expected_w)
+                assert_array_almost_equal(h, h_whole)
 
             w, h = freqz(b, a, worN=w, whole=True)
             assert_array_almost_equal(w, expected_w)
@@ -1018,13 +1018,14 @@ class TestFreqz:
         xp_assert_close(h1, h2)
         xp_assert_close(w1, xp.linspace(0, fs, 5, endpoint=False))
 
-        # w is an array_like
-        for w in ([123], (123,), xp.asarray([123]), (50, 123, 230),
-                  xp.asarray([50, 123, 230])):
-            w1, h1 = freqz(b, a, w, fs=fs)
-            w2, h2 = freqz(b, a, 2*pi*xp.asarray(w, dtype=xp.float64)/ fs)
-            xp_assert_close(h1, h2)
-            xp_assert_close(w1, xp.asarray(w), check_dtype=False)
+        if is_numpy(xp):
+            # w is an array_like
+            for w in ([123], (123,), xp.asarray([123]), (50, 123, 230),
+                      xp.asarray([50, 123, 230])):
+                w1, h1 = freqz(b, a, w, fs=fs)
+                w2, h2 = freqz(b, a, 2*pi*xp.asarray(w, dtype=xp.float64)/ fs)
+                xp_assert_close(h1, h2)
+                xp_assert_close(w1, xp.asarray(w), check_dtype=False)
 
     def test_w_or_N_types(self):
         # Measure at 7 (polyval) or 8 (fft) equally-spaced points
@@ -1079,6 +1080,8 @@ class TestFreqz:
                               (False, True, 257),
                               (True, False, 257),
                               (True, True, 257)])
+    
+    @xfail_xp_backends("cupy", reason="XXX: CuPy's version suspect")
     def test_17289(self, whole, nyquist, worN, xp):
         d = xp.asarray([0.0, 1.0])
         w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
@@ -1093,7 +1096,8 @@ class TestFreqz:
             freqz([1.0], fs=None)
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy", "torch"])
+
+@make_xp_test_case(freqz_sos)
 class TestFreqz_sos:
 
     def test_freqz_sos_basic(self, xp):
@@ -1124,6 +1128,7 @@ class TestFreqz_sos:
         with assert_raises(ValueError):
             freqz_sos(sos[:0, ...])
 
+    @make_xp_test_case(sosfreqz)
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
         N = 500
@@ -1132,14 +1137,15 @@ class TestFreqz_sos:
         w2, h2 = sosfreqz(sos, worN=N)
         sos, w2, h2 = map(xp.asarray, (sos, w2, h2))
         w1, h1 = freqz_sos(sos, worN=N)
-
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
-    @skip_xp_backends("dask.array", reason="float cannot be interpreted as in integer")
+    @skip_xp_backends("dask.array", reason="float cannot be interpreted as an integer")
     def test_freqz_sos_design(self, xp):
         # Compare freqz_sos output against expected values for different
         # filter types
+        # TODO: split into multiple tests, or parameterize across filter types
+        # in some way.
 
         # from cheb2ord
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
@@ -1367,6 +1373,7 @@ class TestFreqz_sos:
             freqz_sos(sos, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(freqz_zpk)
 class TestFreqz_zpk:
 
     def test_ticket1441(self, xp):
@@ -1487,6 +1494,7 @@ class TestFreqz_zpk:
             freqz_zpk([1.0], [1.0], [1.0], fs=None)
 
 
+@make_xp_test_case(normalize)
 class TestNormalize:
 
     def test_allclose(self, xp):
@@ -1547,6 +1555,7 @@ class TestNormalize:
         assert_raises(ValueError, normalize, [[[1, 2]]], 1)
 
 
+@make_xp_test_case(lp2lp)
 class TestLp2lp:
 
     def test_basic(self, xp):
@@ -1557,9 +1566,9 @@ class TestLp2lp:
         assert_array_almost_equal(a_lp, xp.asarray([1, 0.5455, 0.1488]), decimal=4)
 
 
+@make_xp_test_case(lp2hp)
 class TestLp2hp:
 
-    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([0.25059432325190018])
         a = xp.asarray(
@@ -1572,9 +1581,9 @@ class TestLp2hp:
         )
 
 
+@make_xp_test_case(lp2bp)
 class TestLp2bp:
 
-    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 2, 2, 1])
@@ -1587,9 +1596,9 @@ class TestLp2bp:
         )
 
 
+@make_xp_test_case(lp2bs)
 class TestLp2bs:
 
-    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 1])
@@ -1598,9 +1607,7 @@ class TestLp2bs:
         assert_array_almost_equal(a_bs, xp.asarray([1, 0.18461, 0.17407]), decimal=5)
 
 
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="uses np.polynomial.Polynomial"
-)
+@make_xp_test_case(bilinear)
 class TestBilinear:
     """Tests for function `signal.bilinear`. """
 
@@ -1690,6 +1697,7 @@ class TestBilinear:
         a_zref = [(1+0j),
                   (-1.8839476369292854-0.606808151331815j),
                   (0.7954687330018285+0.5717459398142481j)]
+
         b_zref, a_zref = map(xp.asarray, (b_zref, a_zref))
 
         b_z, a_z = bilinear(b, a, fs)
@@ -1708,6 +1716,7 @@ class TestBilinear:
             bilinear(b, a, fs=None)
 
 
+@make_xp_test_case(lp2lp_zpk)
 class TestLp2lp_zpk:
 
     @xfail_xp_backends(
@@ -1747,6 +1756,7 @@ class TestLp2lp_zpk:
             bilinear_zpk(z, p, k, fs=None)
 
 
+@make_xp_test_case(lp2hp_zpk)
 class TestLp2hp_zpk:
 
     @xfail_xp_backends(
@@ -1775,6 +1785,7 @@ class TestLp2hp_zpk:
         assert k_hp == 32.0
 
 
+@make_xp_test_case(lp2bp_zpk)
 class TestLp2bp_zpk:
 
     @xfail_xp_backends(
@@ -1801,6 +1812,7 @@ class TestLp2bp_zpk:
         assert math.isclose(k_bp, 24.0)
 
 
+@make_xp_test_case(lp2bs_zpk)
 class TestLp2bs_zpk:
 
     @xfail_xp_backends(
@@ -1834,6 +1846,7 @@ class TestLp2bs_zpk:
         assert math.isclose(k_bs, 32.0)
 
 
+@make_xp_test_case(bilinear_zpk)
 class TestBilinear_zpk:
 
     @xfail_xp_backends(
@@ -1876,14 +1889,16 @@ class TestPrototypeType:
                 assert isinstance(p, np.ndarray)
 
     @pytest.mark.parametrize(
-        'func', [buttap, besselap,
-                 lambda N, xp: cheb1ap(N, 1, xp=xp),
-                 lambda N, xp: cheb2ap(N, 20, xp=xp),
-                 lambda N, xp: ellipap(N, 1, 20, xp=xp)
-                ],
+        'base_func,func', [
+            make_xp_pytest_param(buttap, buttap),
+            make_xp_pytest_param(besselap, besselap),
+            make_xp_pytest_param(cheb1ap, lambda N, xp: cheb1ap(N, 1, xp=xp)),
+            make_xp_pytest_param(cheb2ap, lambda N, xp: cheb2ap(N, 20, xp=xp)),
+            make_xp_pytest_param(ellipap, lambda N, xp: ellipap(N, 1, 20, xp=xp)),
+        ],
         ids=['butter', 'bessel', 'cheb1', 'cheb2', 'ellip']
     )
-    def test_with_xp(self, func, xp):
+    def test_with_xp(self, base_func, func, xp):
         func(7, xp=xp)
 
 
@@ -1895,6 +1910,7 @@ def dB(x):
     return 20 * xp.log10(xp.maximum(xp.abs(x), tiny))
 
 
+@make_xp_test_case(buttord)
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestButtord:
@@ -1948,7 +1964,7 @@ class TestButtord:
         assert N == 18
         xp_assert_close(
             Wn, xp.asarray([1.9998742411409134e-01, 5.0002139595676276e-01]),
-            rtol=1e-15
+            rtol=1e-15,
         )
 
     @skip_xp_backends(
@@ -1989,7 +2005,7 @@ class TestButtord:
             Wn, xp.asarray(2.0006785355671877e+02), rtol=1e-15, check_0d=False
         )
 
-        n, Wn = buttord(1, xp.asarray(550/450), 1, 26, analog=True)
+        n, Wn = buttord(1., xp.asarray(550/450), 1, 26, analog=True)
         assert n == 19
         xp_assert_close(
             Wn, xp.asarray(1.0361980524629517), rtol=1e-15, check_0d=False
@@ -2049,6 +2065,7 @@ class TestButtord:
             buttord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(cheb1ord)
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb1ord:
 
@@ -2130,8 +2147,8 @@ class TestCheb1ord:
 
         assert N == 4
         assert math.isclose(Wn, 700.0, rel_tol=1e-15)
-
-        assert cheb1ord(1, 1.2, 1, 80, analog=True)[0] == 17
+        assert array_namespace(Wn) == xp
+        assert cheb1ord(xp.asarray(1), 1.2, 1, 80, analog=True)[0] == 17
 
     @xfail_xp_backends("torch", reason="accuracy issues")
     def test_fs_param(self, xp):
@@ -2148,6 +2165,7 @@ class TestCheb1ord:
 
         assert N == 8
         assert math.isclose(Wn, 4800.0, rel_tol=1e-15)
+        assert array_namespace(Wn) == xp
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -2182,6 +2200,7 @@ class TestCheb1ord:
             cheb1ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(cheb2ord)
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb2ord:
@@ -2280,6 +2299,7 @@ class TestCheb2ord:
 
         assert N == 9
         assert math.isclose(Wn, 103.4874609145164, rel_tol=1e-15)
+        assert array_namespace(Wn) == xp
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -2314,9 +2334,9 @@ class TestCheb2ord:
             cheb2ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(ellipord)
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True,  reason="special.ellipk")
 class TestEllipord:
 
     def test_lowpass(self, xp):
@@ -2332,7 +2352,7 @@ class TestEllipord:
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 5
-        assert math.isclose(Wn, 0.2, rel_tol=1e-15)
+        xp_assert_close(Wn, xp.asarray(0.2), rtol=1e-15, check_0d=False)
 
     def test_lowpass_1000dB(self, xp):
         # failed when ellipkm1 wasn't used in ellipord and ellipap
@@ -2346,6 +2366,7 @@ class TestEllipord:
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[w <= wp]))
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
+        assert array_namespace(Wn) == xp
 
     def test_highpass(self, xp):
         wp = 0.3
@@ -2360,7 +2381,8 @@ class TestEllipord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 6
-        assert math.isclose(Wn, 0.3, rel_tol=1e-15)
+        xp_assert_close(Wn, xp.asarray(0.3), rtol=1e-15, check_0d=False)
+        assert array_namespace(Wn) == xp
 
     def test_bandpass(self, xp):
         wp = [0.2, 0.5]
@@ -2377,6 +2399,9 @@ class TestEllipord:
         assert N == 6
         xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=1e-15)
 
+    @skip_xp_backends(
+        cpu_only=True, exceptions=["cupy"], reason="optimize.fminbound"
+    )
     def test_bandstop(self, xp):
         wp = [0.1, 0.6]
         ws = [0.2, 0.5]
@@ -2406,7 +2431,7 @@ class TestEllipord:
         assert N == 8
         xp_assert_close(Wn, xp.asarray([1666.6666, 6000]))
 
-        assert ellipord(1, 1.2, 1, 80, analog=True)[0] == 9
+        assert ellipord(xp.asarray(1), 1.2, 1, 80, analog=True)[0] == 9
 
     def test_fs_param(self, xp):
         wp = [400.0, 2400]
@@ -2440,7 +2465,8 @@ class TestEllipord:
         # The purpose of the test is to compare to some known output from past
         # scipy versions. The values to compare to are generated with scipy
         # 1.9.1 (there is nothing special about this particular version though)
-        n, wn = ellipord(xp.asarray([0.1, 0.6]), xp.asarray([0.2, 0.5]), 3, 60)
+        n, Wn = ellipord(xp.asarray([0.1, 0.6]), xp.asarray([0.2, 0.5]), 3, 60)
+        assert array_namespace(Wn) == xp
         assert n == 5
 
     def test_fs_validation(self):
@@ -2453,33 +2479,47 @@ class TestEllipord:
             ellipord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
+# Currently the filter functions tested below (bessel, butter, cheby1, cheby2,
+# and ellip) all return float64 (or complex128) output regardless of input
+# dtype. Therefore reference arrays in these tests are all given an explicit 64
+# bit dtype, because the output will not match the xp_default_dtype when the
+# default dtype is float32. Although the output arrays and all internal
+# calculations are in 64 bit precision, tolerances are still loosened for the
+# float32 case when results are impacted by reduced precision in the inputs.
+
+
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(bessel)
 class TestBessel:
 
     def test_degenerate(self, xp):
         for norm in ('delay', 'phase', 'mag'):
             # 0-order filter is just a passthrough
             b, a = bessel(0, xp.asarray(1), analog=True, norm=norm)
-            xp_assert_equal(b, xp.asarray([1.0]))
-            xp_assert_equal(a, xp.asarray([1.0]))
+            xp_assert_equal(b, xp.asarray([1.0], dtype=xp.float64))
+            xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
             # 1-order filter is same for all types
             b, a = bessel(1, xp.asarray(1.), analog=True, norm=norm)
-            xp_assert_close(b, xp.asarray([1.0]), rtol=1e-15)
-            xp_assert_close(a, xp.asarray([1.0, 1]), rtol=1e-15)
+
+            xp_assert_close(b, xp.asarray([1.0], dtype=xp.float64), rtol=1e-15)
+            xp_assert_close(a, xp.asarray([1.0, 1], dtype=xp.float64), rtol=1e-15)
 
             z, p, k = bessel(1, xp.asarray(0.3), analog=True, output='zpk', norm=norm)
-            xp_assert_equal(z, xp.asarray([]))
-            xp_assert_close(p, xp.asarray([-0.3+0j]), rtol=1e-14)
-            assert math.isclose(k, 0.3, rel_tol=1e-14)
+            xp_assert_equal(z, xp.asarray([], dtype=xp.float64))
+            xp_assert_close(
+                p, xp.asarray([-0.3+0j], dtype=xp.complex128),
+                rtol=1e-14 if not DEFAULT_F32 else 1e-7
+            )
+            assert math.isclose(
+                k, 0.3, rel_tol=1e-14 if not DEFAULT_F32 else 1e-6
+            )
 
     @pytest.mark.xfail(reason="Failing in mypy workflow - see gh-23902")
     def test_high_order(self, xp):
         # high even order, 'phase'
         z, p, k = bessel(24, xp.asarray(100), analog=True, output='zpk')
-        z2 = xp.asarray([])
+        z2 = xp.asarray([], dtype=xp.float64)
         p2 = [
              -9.055312334014323e+01 + 4.844005815403969e+00j,
              -8.983105162681878e+01 + 1.454056170018573e+01j,
@@ -2494,8 +2534,9 @@ class TestBessel:
              -4.027853855197555e+01 + 1.074195196518679e+02j,
              -2.433481337524861e+01 + 1.207298683731973e+02j,
              ]
+
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.999999999999989e+47
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp=xp),
@@ -2504,7 +2545,7 @@ class TestBessel:
 
         # high odd order, 'phase'
         z, p, k = bessel(23, xp.asarray(1000.), analog=True, output='zpk')
-        z2 = xp.asarray([])
+        z2 = xp.asarray([], dtype=xp.float64)
         p2 = [
              -2.497697202208956e+02 + 1.202813187870698e+03j,
              -4.126986617510172e+02 + 1.065328794475509e+03j,
@@ -2519,7 +2560,7 @@ class TestBessel:
              -6.225903228776276e+02 + 8.301558302815096e+02j,
              -9.066732476324988e+02]
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.999999999999983e+68
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp=xp),
@@ -2547,7 +2588,7 @@ class TestBessel:
               - 4.792045 + 28.406037j,
               ]
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         xp_assert_close(_sort_cmplx(p, xp=xp),
                         _sort_cmplx(p2, xp=xp))
 
@@ -2570,15 +2611,15 @@ class TestBessel:
               - 4.734679 + 27.435615j,
               ]
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         xp_assert_close(_sort_cmplx(p, xp=xp),
                         _sort_cmplx(p2, xp=xp))
 
     def test_refs(self, xp):
         # Compare to http://www.crbond.com/papers/bsf2.pdf
         # "Delay Normalized Bessel Polynomial Coefficients"
-        bond_b = xp.asarray([10395.0])
-        bond_a = xp.asarray([1.0, 21, 210, 1260, 4725, 10395, 10395])
+        bond_b = xp.asarray([10395.0], dtype=xp.float64)
+        bond_a = xp.asarray([1.0, 21, 210, 1260, 4725, 10395, 10395], dtype=xp.float64)
         b, a = bessel(6, xp.asarray(1.0), norm='delay', analog=True)
         xp_assert_close(b, bond_b)
         xp_assert_close(a, bond_a)
@@ -2610,7 +2651,7 @@ class TestBessel:
             z, p, k = besselap(N, 'delay', xp=xp)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
-            assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
+            assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
 
         # "Frequency Normalized Bessel Pole Locations"
         bond_poles = {
@@ -2639,35 +2680,35 @@ class TestBessel:
             z, p, k = besselap(N, 'mag', xp=xp)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
-            assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
+            assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
 
         # Compare to https://www.ranecommercial.com/legacy/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
-        a = xp.asarray([1, 1, 1/3])
+        a = xp.asarray([1, 1, 1/3], dtype=xp.float64)
         b2, a2 = bessel(2, xp.asarray(1.), norm='delay', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
-        a = xp.asarray([1, 1, 2/5, 1/15])
+        a = xp.asarray([1, 1, 2/5, 1/15], dtype=xp.float64)
         b2, a2 = bessel(3, xp.asarray(1.), norm='delay', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
-        a = xp.asarray([1, 1, 9/21, 2/21, 1/105])
+        a = xp.asarray([1, 1, 9/21, 2/21, 1/105], dtype=xp.float64)
         b2, a2 = bessel(4, xp.asarray(1.), norm='delay', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
-        a = xp.asarray([1, math.sqrt(3), 1])
+        a = xp.asarray([1, math.sqrt(3), 1], dtype=xp.float64)
         b2, a2 = bessel(2, xp.asarray(1.), norm='phase', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        a = xp.asarray([1, 2.481, 2.463, 1.018])
+        a = xp.asarray([1, 2.481, 2.463, 1.018], dtype=xp.float64)
         b2, a2 = bessel(3, xp.asarray(1.), norm='phase', analog=True)
-        assert_array_almost_equal(xp.flip(a), a2/b2, decimal=1)
+        assert_array_almost_equal(a2/b2, xp.flip(a), decimal=1)
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        a = xp.asarray([1, 3.240, 4.5, 3.240, 1.050])
+        a = xp.asarray([1, 3.240, 4.5, 3.240, 1.050], dtype=xp.float64)
         b2, a2 = bessel(4, xp.asarray(1.), norm='phase', analog=True)
-        assert_array_almost_equal(xp.flip(a), a2/b2, decimal=1)
+        assert_array_almost_equal(a2/b2, xp.flip(a), decimal=1)
 
         # Table of -3 dB factors:
         N, scale = 2, xp.asarray([1.272, 1.272], dtype=xp.complex128)
@@ -2682,7 +2723,7 @@ class TestBessel:
         # TODO: Why so inaccurate?  Is reference flawed?
         N, scale = 4, xp.asarray([1.533]*4, dtype=xp.complex128)
         scale2 = besselap(N, 'mag', xp=xp)[1] / besselap(N, 'phase', xp=xp)[1]
-        assert_array_almost_equal(scale, scale2, decimal=1)
+        assert_array_almost_equal(scale2, scale, decimal=1)
 
     @pytest.mark.xfail(reason="Failing in mypy workflow - see gh-23902")
     def test_hardcoded(self, xp):
@@ -2860,14 +2901,19 @@ class TestBessel:
                  -.2373280669322028974199184 + 1.211476658382565356579418j],
             }
         for N in originals:
-            p1 = xp.asarray(np.union1d(originals[N], np.conj(originals[N])))
+            p1 = xp.asarray(
+                np.union1d(originals[N], np.conj(originals[N])),
+                dtype=xp.complex128
+            )
             p2 = besselap(N, xp=xp)[1]
-            xp_assert_close(_sort_cmplx(p1, xp=xp),
-                            _sort_cmplx(p2, xp=xp), rtol=1e-14, check_dtype=False)
+            xp_assert_close(_sort_cmplx(p2, xp=xp),
+                            _sort_cmplx(p1, xp=xp), rtol=1e-14)
 
     def test_norm_phase(self, xp):
         # Test some orders and frequencies and see that they have the right
         # phase at w0
+        if is_torch(xp) and DEFAULT_F32:
+            pytest.xfail(reason="inaccurate on torch with float32")
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='phase')
@@ -2876,12 +2922,15 @@ class TestBessel:
                 w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
                 phase = np.unwrap(np.angle(h))
                 xp_assert_close(
-                    xp.asarray(phase[[0, -1]]), xp.asarray([0, -N*xp.pi/4]), rtol=1e-1
+                    xp.asarray(phase[[0, -1]], dtype=xp.float64),
+                    xp.asarray([0, -N*xp.pi/4], dtype=xp.float64), rtol=1e-1
                 )
 
     def test_norm_mag(self, xp):
         # Test some orders and frequencies and see that they have the right
         # mag at w0
+        if DEFAULT_F32 and is_torch(xp):
+            pytest.skip(reason="overflow occurs with float32 on torch")
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='mag')
@@ -2889,11 +2938,15 @@ class TestBessel:
                 w = [0.0, w0]
                 w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
                 mag = np.abs(h)
-                xp_assert_close(xp.asarray(mag), xp.asarray([1, 1/math.sqrt(2)]))
+                xp_assert_close(
+                    xp.asarray(mag), xp.asarray([1, 1/math.sqrt(2)], dtype=xp.float64)
+                )
 
     def test_norm_delay(self, xp):
         # Test some orders and frequencies and see that they have the right
         # delay at DC
+        if DEFAULT_F32 and is_torch(xp):
+            pytest.skip(reason="overflow occurs with float32 on torch")
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='delay')
@@ -2921,7 +2974,7 @@ class TestBessel:
             }
         for N in mpmath_values:
             z, p, k = besselap(N, 'delay')
-            xp_assert_close(mpmath_values[N], _norm_factor(p, k), rtol=1e-13)
+            xp_assert_close(_norm_factor(p, k), mpmath_values[N], rtol=1e-13)
 
     def test_bessel_poly(self):
         xp_assert_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
@@ -2958,86 +3011,103 @@ class TestBessel:
                                     xp_assert_close(ba1_, ba2_)
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(butter)
 class TestButter:
 
     def test_degenerate(self, xp):
         # 0-order filter is just a passthrough
         b, a = butter(0, xp.asarray(1), analog=True)
-        xp_assert_equal(b, xp.asarray([1.0]))
-        xp_assert_equal(a, xp.asarray([1.0]))
+        xp_assert_equal(b, xp.asarray([1.0], dtype=xp.float64))
+        xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
         # 1-order filter is same for all types
         b, a = butter(1, xp.asarray(1), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1.0]))
-        assert_array_almost_equal(a, xp.asarray([1.0, 1.0]))
+        assert_array_almost_equal(b, xp.asarray([1.0], dtype=xp.float64))
+        assert_array_almost_equal(a, xp.asarray([1.0, 1.0], dtype=xp.float64))
 
         z, p, k = butter(1, xp.asarray(0.3), output='zpk')
-        xp_assert_equal(z, xp.asarray([-1.0]))
-        xp_assert_close(p, xp.asarray([3.249196962329063e-01 + 0j]), rtol=1e-14)
-        assert math.isclose(k, 3.375401518835469e-01, rel_tol=1e-14)
+        xp_assert_equal(z, xp.asarray([-1.0], dtype=xp.float64))
+        xp_assert_close(
+            p,
+            xp.asarray([3.249196962329063e-01 + 0j], dtype=xp.complex128),
+            rtol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(
+            k, 3.375401518835469e-01, rel_tol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
 
     def test_basic(self, xp):
         # analog s-plane
         for N in range(25):
             wn = 0.01
             z, p, k = butter(N, xp.asarray(wn), 'low', analog=True, output='zpk')
-            assert_array_almost_equal(z, xp.asarray([]))
+            assert_array_almost_equal(z, xp.asarray([], dtype=xp.float64))
             assert p.shape[0] == N
             # All poles should be at distance wn from origin
-            assert_array_almost_equal(xp.abs(p), xp.asarray(wn))
+            assert_array_almost_equal(xp.abs(p), xp.asarray(wn, dtype=xp.float64))
             assert all(xp.real(p) <= 0)  # No poles in right half of S-plane
-            assert math.isclose(k, wn**N)
+            assert math.isclose(k, wn**N, rel_tol=1e-9 if not DEFAULT_F32 else 1e-6)
 
         # digital z-plane
         for N in range(25):
             wn = 0.01
             z, p, k = butter(N, xp.asarray(wn), 'high', analog=False, output='zpk')
-            xp_assert_equal(z, xp.ones(N))  # All zeros exactly at DC
+            xp_assert_equal(z, xp.ones(N, dtype=xp.float64))  # All zeros exactly at DC
             assert xp.all(xp.abs(p) <= 1)  # No poles outside unit circle
 
         b1, a1 = butter(2, xp.asarray(1), analog=True)
-        assert_array_almost_equal(b1, xp.asarray([1.0]))
-        assert_array_almost_equal(a1, xp.asarray([1, math.sqrt(2), 1]))
+        assert_array_almost_equal(b1, xp.asarray([1.0], dtype=xp.float64))
+        assert_array_almost_equal(
+            a1, xp.asarray([1, math.sqrt(2), 1], dtype=xp.float64)
+        )
 
         b2, a2 = butter(5, xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b2, xp.asarray([1]))
-        assert_array_almost_equal(a2, xp.asarray([1, 3.2361, 5.2361,
-                                                  5.2361, 3.2361, 1]), decimal=4)
+        assert_array_almost_equal(b2, xp.asarray([1], dtype=xp.float64))
+        assert_array_almost_equal(
+            a2, xp.asarray([1, 3.2361, 5.2361,
+                            5.2361, 3.2361, 1], dtype=xp.float64),
+            decimal=4
+        )
 
         b3, a3 = butter(10, xp.asarray(1.0), analog=True)
-        assert_array_almost_equal(b3, xp.asarray([1.0]))
+        assert_array_almost_equal(b3, xp.asarray([1.0], dtype=xp.float64))
         assert_array_almost_equal(
             a3, xp.asarray([1, 6.3925, 20.4317, 42.8021, 64.8824,
                             74.2334, 64.8824, 42.8021, 20.4317,
-                            6.3925, 1]),
+                            6.3925, 1], dtype=xp.float64),
             decimal=4
         )
 
         b2, a2 = butter(19, xp.asarray(1.0441379169150726), analog=True)
-        assert_array_almost_equal(b2, xp.asarray([2.2720]), decimal=4)
-        assert_array_almost_equal(a2, 1.0e+004 * xp.asarray([
-                        0.0001, 0.0013, 0.0080, 0.0335, 0.1045, 0.2570,
-                        0.5164, 0.8669, 1.2338, 1.5010, 1.5672, 1.4044,
-                        1.0759, 0.6986, 0.3791, 0.1681, 0.0588, 0.0153,
-                        0.0026, 0.0002]), decimal=0)
+        assert_array_almost_equal(
+            b2, xp.asarray([2.2720], dtype=xp.float64), decimal=4
+        )
+        assert_array_almost_equal(
+            a2, 1.0e+004 * xp.asarray([
+                0.0001, 0.0013, 0.0080, 0.0335, 0.1045, 0.2570,
+                0.5164, 0.8669, 1.2338, 1.5010, 1.5672, 1.4044,
+                1.0759, 0.6986, 0.3791, 0.1681, 0.0588, 0.0153,
+                0.0026, 0.0002], dtype=xp.float64),
+            decimal=0
+        )
 
         b, a = butter(5, xp.asarray(0.4))
         assert_array_almost_equal(
             b, xp.asarray([0.0219, 0.1097, 0.2194,
-                           0.2194, 0.1097, 0.0219]), decimal=4
+                           0.2194, 0.1097, 0.0219], dtype=xp.float64),
+            decimal=4
         )
         assert_array_almost_equal(
             a, xp.asarray([1.0000, -0.9853, 0.9738,
-                          -0.3864, 0.1112, -0.0113]), decimal=4
+                           -0.3864, 0.1112, -0.0113], dtype=xp.float64),
+            decimal=4
         )
 
     def test_highpass(self, xp):
         # highpass, high even order
         z, p, k = butter(28, xp.asarray(0.43), 'high', output='zpk')
-        z2 = xp.ones(28)
+        z2 = xp.ones(28, dtype=xp.float64)
         p2 = [
             2.068257195514592e-01 + 9.238294351481734e-01j,
             2.068257195514592e-01 - 9.238294351481734e-01j,
@@ -3068,15 +3138,15 @@ class TestButter:
             1.176516491045901e-01 + 2.546021573417188e-01j,
             1.176516491045901e-01 - 2.546021573417188e-01j,
             ]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 1.446671081817286e-06
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), rtol=1e-7)
-        assert math.isclose(k, k2, rel_tol=1e-10)
+        assert math.isclose(k, k2, rel_tol=1e-10 if not DEFAULT_F32 else 1e-6)
 
         # highpass, high odd order
         z, p, k = butter(27, xp.asarray(0.56), 'high', output='zpk')
-        z2 = xp.ones(27)
+        z2 = xp.ones(27, dtype=xp.float64)
         p2 = [
             -1.772572785680147e-01 + 9.276431102995948e-01j,
             -1.772572785680147e-01 - 9.276431102995948e-01j,
@@ -3106,15 +3176,18 @@ class TestButter:
             -9.484562207782568e-02 - 5.772118357151691e-02j,
             -9.452783117928215e-02
             ]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.585686688851069e-09
         xp_assert_equal(z, z2)
-        xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), rtol=1e-8)
+        xp_assert_close(
+            _sort_cmplx(p, xp), _sort_cmplx(p2, xp),
+            rtol=1e-8 if not DEFAULT_F32 else 1e-6
+        )
         assert math.isclose(k, k2, abs_tol=1e-13)
 
     def test_bandpass(self, xp):
         z, p, k = butter(8, xp.asarray([0.25, 0.33]), 'band', output='zpk')
-        z2 = [1, 1, 1, 1, 1, 1, 1, 1,
+        z2 = [1 + 0j, 1, 1, 1, 1, 1, 1, 1,
               -1, -1, -1, -1, -1, -1, -1, -1]
         p2 = [
             4.979909925436156e-01 + 8.367609424799387e-01j,
@@ -3134,16 +3207,19 @@ class TestButter:
             6.521767004237027e-01 + 6.744414640183752e-01j,
             6.521767004237027e-01 - 6.744414640183752e-01j,
             ]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 3.398854055800844e-08
         xp_assert_equal(z, z2, check_dtype=False)
-        xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=1e-13)
+        xp_assert_close(
+            _sort_cmplx(p, xp), _sort_cmplx(p2, xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(k, k2, rel_tol=1e-13 if not DEFAULT_F32 else 1e-5)
 
         # bandpass analog
         z, p, k = butter(4, xp.asarray([90.5, 110.5]), 'bp', analog=True, output='zpk')
-        z2 = xp.zeros(4, dtype=z.dtype)
+        z2 = xp.zeros(4, dtype=xp.complex128)
         p2 = [
             -4.179137760733086e+00 + 1.095935899082837e+02j,
             -4.179137760733086e+00 - 1.095935899082837e+02j,
@@ -3154,7 +3230,7 @@ class TestButter:
             -3.474530886568715e+00 + 9.111599925805801e+01j,
             -3.474530886568715e+00 - 9.111599925805801e+01j,
             ]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 1.600000000000001e+05
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp))
@@ -3190,13 +3266,14 @@ class TestButter:
                5.238812787110331e-02 - 8.524011102699969e-01j,
               -1.357545000491310e-02 + 8.382287744986582e-01j,
               -1.357545000491310e-02 - 8.382287744986582e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 4.577122512960063e-01
         xp_assert_close(_sort_cmplx(z, xp), _sort_cmplx(z2, xp))
         xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp))
-        assert math.isclose(k, k2, rel_tol=1e-14)
+        assert math.isclose(k, k2, rel_tol=1e-14 if not DEFAULT_F32 else 1e-6)
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         b, a = butter(4, xp.asarray([100, 300]), 'bandpass', analog=True)
         b2 = [1.6e+09, 0, 0, 0, 0]
@@ -3205,8 +3282,8 @@ class TestButter:
               1.519411254969542e+10, 2.038238225207147e+12,
               2.309116882454312e+14, 1.411088002066486e+16,
               8.099999999999991e+17]
-        b2 = xp.asarray(b2)
-        a2 = xp.asarray(a2)
+        b2 = xp.asarray(b2, dtype=xp.float64)
+        a2 = xp.asarray(a2, dtype=xp.float64)
         xp_assert_close(b, b2, rtol=1e-14)
         xp_assert_close(a, a2, rtol=1e-14)
 
@@ -3229,97 +3306,134 @@ class TestButter:
                                 xp_assert_close(ba1_, ba2_)
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(cheby1)
 class TestCheby1:
 
     def test_degenerate(self, xp):
         # 0-order filter is just a passthrough
         # Even-order filters have DC gain of -rp dB
         b, a = cheby1(0, 10*math.log10(2), xp.asarray(1), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1 / math.sqrt(2)]))
-        xp_assert_equal(a, xp.asarray([1.0]))
+        assert_array_almost_equal(
+            b, xp.asarray([1 / math.sqrt(2)], dtype=xp.float64)
+        )
+        xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
         # 1-order filter is same for all types
         b, a = cheby1(1, 10*math.log10(2), xp.asarray(1), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1.]))
-        assert_array_almost_equal(a, xp.asarray([1., 1]))
+        assert_array_almost_equal(b, xp.asarray([1.], dtype=xp.float64))
+        assert_array_almost_equal(a, xp.asarray([1., 1], dtype=xp.float64))
 
         z, p, k = cheby1(1, 0.1, xp.asarray(0.3), output='zpk')
-        xp_assert_equal(z, xp.asarray([-1.0]))
-        xp_assert_close(p, xp.asarray([-5.390126972799615e-01 + 0j]), rtol=1e-14)
-        assert math.isclose(k, 7.695063486399808e-01, rel_tol=1e-14)
+        xp_assert_equal(z, xp.asarray([-1.0], dtype=xp.float64))
+        xp_assert_close(
+            p, xp.asarray([-5.390126972799615e-01 + 0j], dtype=xp.complex128),
+            rtol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(
+            k, 7.695063486399808e-01, rel_tol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
 
     def test_basic(self, xp):
         for N in range(25):
             wn = xp.asarray(0.01)
             z, p, k = cheby1(N, 1, wn, 'low', analog=True, output='zpk')
-            assert_array_almost_equal(z, xp.asarray([]))
+            assert_array_almost_equal(z, xp.asarray([], dtype=xp.float64))
             assert p.shape[0] == N
             assert xp.all(xp.real(p) <= 0)  # No poles in right half of S-plane
 
         for N in range(25):
             wn = xp.asarray(0.01)
             z, p, k = cheby1(N, 1, wn, 'high', analog=False, output='zpk')
-            xp_assert_equal(z, xp.ones(N))  # All zeros exactly at DC
+            xp_assert_equal(z, xp.ones(N, dtype=xp.float64))  # All zeros exactly at DC
             assert xp.all(xp.abs(p) <= 1)  # No poles outside unit circle
 
         # Same test as TestNormalize
         b, a = cheby1(8, 0.5, xp.asarray(0.048))
-        xp_assert_close(b, xp.asarray([2.150733144728282e-11, 1.720586515782626e-10,
-                            6.022052805239190e-10, 1.204410561047838e-09,
-                            1.505513201309798e-09, 1.204410561047838e-09,
-                            6.022052805239190e-10, 1.720586515782626e-10,
-                            2.150733144728282e-11]),
-                        rtol=0, atol=1.5e-14)
-        xp_assert_close(a, xp.asarray([1.000000000000000e+00, -7.782402035027959e+00,
-                            2.654354569747454e+01, -5.182182531666387e+01,
-                            6.334127355102684e+01, -4.963358186631157e+01,
-                            2.434862182949389e+01, -6.836925348604676e+00,
-                            8.412934944449140e-01]),
-                        rtol=0, atol=5e-14)
+        xp_assert_close(
+            b, xp.asarray([2.150733144728282e-11, 1.720586515782626e-10,
+                           6.022052805239190e-10, 1.204410561047838e-09,
+                           1.505513201309798e-09, 1.204410561047838e-09,
+                           6.022052805239190e-10, 1.720586515782626e-10,
+                           2.150733144728282e-11], dtype=xp.float64),
+            rtol=0, atol=1.5e-14
+        )
+        xp_assert_close(
+            a, xp.asarray([1.000000000000000e+00, -7.782402035027959e+00,
+                           2.654354569747454e+01, -5.182182531666387e+01,
+                           6.334127355102684e+01, -4.963358186631157e+01,
+                           2.434862182949389e+01, -6.836925348604676e+00,
+                           8.412934944449140e-01], dtype=xp.float64),
+            rtol=0, atol=5e-14 if not DEFAULT_F32 else 1e-7
+        )
 
         b, a = cheby1(4, 1, xp.asarray([0.4, 0.7]), btype='band')
-        assert_array_almost_equal(b, xp.asarray([0.0084, 0, -0.0335, 0, 0.0502, 0,
-                                      -0.0335, 0, 0.0084]), decimal=4)
-        assert_array_almost_equal(a, xp.asarray([1.0, 1.1191, 2.862, 2.2986, 3.4137,
-                                      1.8653, 1.8982, 0.5676, 0.4103]),
-                                  decimal=4)
+        assert_array_almost_equal(
+            b, xp.asarray([0.0084, 0, -0.0335, 0, 0.0502, 0,
+                           -0.0335, 0, 0.0084], dtype=xp.float64),
+            decimal=4
+        )
+        assert_array_almost_equal(
+            a, xp.asarray([1.0, 1.1191, 2.862, 2.2986, 3.4137,
+                           1.8653, 1.8982, 0.5676, 0.4103], dtype=xp.float64),
+            decimal=4
+        )
 
         b2, a2 = cheby1(5, 3, xp.asarray(1), analog=True)
-        assert_array_almost_equal(b2, xp.asarray([0.0626]), decimal=4)
-        assert_array_almost_equal(a2, xp.asarray([1, 0.5745, 1.4150, 0.5489, 0.4080,
-                                       0.0626]), decimal=4)
+        assert_array_almost_equal(
+            b2, xp.asarray([0.0626], dtype=xp.float64), decimal=4
+        )
+        assert_array_almost_equal(
+            a2, xp.asarray([1, 0.5745, 1.4150, 0.5489, 0.4080,
+                            0.0626], dtype=xp.float64),
+            decimal=4)
 
         b, a = cheby1(8, 0.5, xp.asarray(0.1))
-        assert_array_almost_equal(b, 1.0e-006 * xp.asarray([
-            0.00703924326028, 0.05631394608227, 0.19709881128793,
-            0.39419762257586, 0.49274702821983, 0.39419762257586,
-            0.19709881128793, 0.05631394608227, 0.00703924326028]),
-            decimal=13)
-        assert_array_almost_equal(a, xp.asarray([
-              1.00000000000000, -7.44912258934158, 24.46749067762108,
-              -46.27560200466141, 55.11160187999928, -42.31640010161038,
-              20.45543300484147, -5.69110270561444, 0.69770374759022]),
-            decimal=13)
+        assert_array_almost_equal(
+            b,
+            1.0e-006 * xp.asarray(
+                [0.00703924326028, 0.05631394608227, 0.19709881128793,
+                 0.39419762257586, 0.49274702821983, 0.39419762257586,
+                 0.19709881128793, 0.05631394608227, 0.00703924326028
+                ], dtype=xp.float64
+            ),
+            decimal=13
+        )
+        assert_array_almost_equal(
+            a, xp.asarray(
+                [1.00000000000000, -7.44912258934158, 24.46749067762108,
+                 -46.27560200466141, 55.11160187999928, -42.31640010161038,
+                 20.45543300484147, -5.69110270561444, 0.69770374759022
+                ], dtype=xp.float64
+            ),
+            decimal=13 if not DEFAULT_F32 else 6
+        )
 
         b, a = cheby1(8, 0.5, xp.asarray(0.25))
-        assert_array_almost_equal(b, 1.0e-003 * xp.asarray([
-            0.00895261138923, 0.07162089111382, 0.25067311889837,
-            0.50134623779673, 0.62668279724591, 0.50134623779673,
-            0.25067311889837, 0.07162089111382, 0.00895261138923]),
+        assert_array_almost_equal(
+            b,
+            1.0e-003 * xp.asarray(
+                [0.00895261138923, 0.07162089111382, 0.25067311889837,
+                 0.50134623779673, 0.62668279724591, 0.50134623779673,
+                 0.25067311889837, 0.07162089111382, 0.00895261138923
+                ], dtype=xp.float64
+            ),
             decimal=13)
-        assert_array_almost_equal(a, xp.asarray([1.00000000000000, -5.97529229188545,
-                                      16.58122329202101, -27.71423273542923,
-                                      30.39509758355313, -22.34729670426879,
-                                      10.74509800434910, -3.08924633697497,
-                                      0.40707685889802]), decimal=13)
+        assert_array_almost_equal(
+            a,
+            xp.asarray(
+                [1.00000000000000, -5.97529229188545,
+                 16.58122329202101, -27.71423273542923,
+                 30.39509758355313, -22.34729670426879,
+                 10.74509800434910, -3.08924633697497,
+                 0.40707685889802
+                 ], dtype=xp.float64
+            ), decimal=13)
 
     def test_highpass(self, xp):
         # high even order
         z, p, k = cheby1(24, 0.7, xp.asarray(0.2), 'high', output='zpk')
-        z2 = xp.ones(24)
+        z2 = xp.ones(24, dtype=xp.float64)
         p2 = [-6.136558509657073e-01 + 2.700091504942893e-01j,
               -6.136558509657073e-01 - 2.700091504942893e-01j,
               -3.303348340927516e-01 + 6.659400861114254e-01j,
@@ -3344,15 +3458,18 @@ class TestCheby1:
               7.967253874772997e-01 - 5.911966597313203e-01j,
               8.069756417293870e-01 + 5.862214589217275e-01j,
               8.069756417293870e-01 - 5.862214589217275e-01j]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 6.190427617192018e-04
         xp_assert_equal(z, z2)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-10)
-        assert math.isclose(k, k2, rel_tol=1e-10)
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-10 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(k, k2, rel_tol=1e-10 if not DEFAULT_F32 else 1e-6)
 
         # high odd order
         z, p, k = cheby1(23, 0.8, xp.asarray(0.3), 'high', output='zpk')
-        z2 = xp.ones(23)
+        z2 = xp.ones(23, dtype=xp.float64)
         p2 = [-7.676400532011010e-01,
               -6.754621070166477e-01 + 3.970502605619561e-01j,
               -6.754621070166477e-01 - 3.970502605619561e-01j,
@@ -3376,14 +3493,19 @@ class TestCheby1:
               5.855636993537203e-01 - 8.060680937701062e-01j,
               5.688812849391721e-01 + 8.086497795114683e-01j,
               5.688812849391721e-01 - 8.086497795114683e-01j]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 1.941697029206324e-05
         xp_assert_equal(z, z2)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-10)
-        assert math.isclose(k, k2, rel_tol=1e-10)
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-10 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(
+            k, k2, rel_tol=1e-10 if not DEFAULT_F32 else 1e-6
+        )
 
         z, p, k = cheby1(10, 1, xp.asarray(1000), 'high', analog=True, output='zpk')
-        z2 = xp.zeros(10)
+        z2 = xp.zeros(10, dtype=xp.float64)
         p2 = [-3.144743169501551e+03 + 3.511680029092744e+03j,
               -3.144743169501551e+03 - 3.511680029092744e+03j,
               -5.633065604514602e+02 + 2.023615191183945e+03j,
@@ -3394,7 +3516,7 @@ class TestCheby1:
               -7.987162953085479e+01 - 1.105207708045358e+03j,
               -2.250315039031946e+01 + 1.001723931471477e+03j,
               -2.250315039031946e+01 - 1.001723931471477e+03j]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 8.912509381337453e-01
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-13)
@@ -3419,12 +3541,15 @@ class TestCheby1:
               5.844717632289875e-01 - 8.052901363500210e-01j,
               5.615189063336070e-01 + 8.100667803850766e-01j,
               5.615189063336070e-01 - 8.100667803850766e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.float64)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 5.007028718074307e-09
         xp_assert_equal(z, z2, check_dtype=False)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=1e-13)
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(k, k2, rel_tol=1e-13 if not DEFAULT_F32 else 1e-6)
 
     def test_bandstop(self, xp):
         z, p, k = cheby1(7, 1, xp.asarray([0.5, 0.6]), 'stop', output='zpk')
@@ -3456,13 +3581,22 @@ class TestCheby1:
               -3.307805547127368e-01 - 9.133455018206508e-01j,
               -3.072658345097743e-01 + 9.443589759799366e-01j,
               -3.072658345097743e-01 - 9.443589759799366e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 3.619438310405028e-01
-        xp_assert_close(_sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp), rtol=1e-13)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=0, abs_tol=5e-16)
+        xp_assert_close(
+            _sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        assert math.isclose(
+            k, k2, rel_tol=0, abs_tol=5e-16 if not DEFAULT_F32 else 1e-7
+        )
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         # with transfer function conversion,  without digital conversion
         b, a = cheby1(5, 0.9, xp.asarray([210, 310.0]), 'stop', analog=True)
@@ -3480,9 +3614,9 @@ class TestCheby1:
               1.114411200988328e+20, 8.316815934908471e+21,
               1.169243442282517e+24
               ]
-        b2, a2 = map(xp.asarray, (b2, a2))
-        xp_assert_close(b, b2, rtol=1e-14)
-        xp_assert_close(a, a2, rtol=1e-14)
+        b2, a2 = map(lambda t: xp.asarray(t, dtype=xp.float64), (b2, a2))
+        xp_assert_close(b, b2, rtol=1e-14 if not DEFAULT_F32 else 1e-7)
+        xp_assert_close(a, a2, rtol=1e-14 if not DEFAULT_F32 else 1e-7)
 
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
@@ -3503,27 +3637,31 @@ class TestCheby1:
                                 xp_assert_close(ba1_, ba2_)
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(cheby2)
 class TestCheby2:
 
     def test_degenerate(self, xp):
         # 0-order filter is just a passthrough
         # Stopband ripple factor doesn't matter
         b, a = cheby2(0, 123.456, xp.asarray(1), analog=True)
-        xp_assert_equal(b, xp.asarray([1.0]))
-        xp_assert_equal(a, xp.asarray([1.0]))
+        xp_assert_equal(b, xp.asarray([1.0], dtype=xp.float64))
+        xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
         # 1-order filter is same for all types
         b, a = cheby2(1, 10*math.log10(2), xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1]))
-        assert_array_almost_equal(a, xp.asarray([1, 1]))
+        assert_array_almost_equal(b, xp.asarray([1], dtype=xp.float64))
+        assert_array_almost_equal(a, xp.asarray([1, 1], dtype=xp.float64))
 
         z, p, k = cheby2(1, 50, xp.asarray(0.3), output='zpk')
         xp_assert_equal(z, xp.asarray([-1], dtype=xp.complex128))
-        xp_assert_close(p, xp.asarray([9.967826460175649e-01 + 0j]), rtol=1e-14)
-        assert math.isclose(k, 1.608676991217512e-03, rel_tol=1e-14)
+        xp_assert_close(
+            p, xp.asarray([9.967826460175649e-01 + 0j], dtype=xp.complex128),
+            rtol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(
+            k, 1.608676991217512e-03, rel_tol=1e-14 if not DEFAULT_F32 else 1e-6
+        )
 
     def test_basic(self, xp):
         for N in range(25):
@@ -3538,22 +3676,28 @@ class TestCheby2:
             assert all(xp.abs(p) <= 1)  # No poles outside unit circle
 
         B, A = cheby2(18, 100, xp.asarray(0.5))
-        assert_array_almost_equal(B, xp.asarray([
-            0.00167583914216, 0.01249479541868, 0.05282702120282,
-            0.15939804265706, 0.37690207631117, 0.73227013789108,
-            1.20191856962356, 1.69522872823393, 2.07598674519837,
-            2.21972389625291, 2.07598674519838, 1.69522872823395,
-            1.20191856962359, 0.73227013789110, 0.37690207631118,
-            0.15939804265707, 0.05282702120282, 0.01249479541868,
-            0.00167583914216]), decimal=13)
-        assert_array_almost_equal(A, xp.asarray([
-            1.00000000000000, -0.27631970006174, 3.19751214254060,
-            -0.15685969461355, 4.13926117356269, 0.60689917820044,
-            2.95082770636540, 0.89016501910416, 1.32135245849798,
-            0.51502467236824, 0.38906643866660, 0.15367372690642,
-            0.07255803834919, 0.02422454070134, 0.00756108751837,
-            0.00179848550988, 0.00033713574499, 0.00004258794833,
-            0.00000281030149]), decimal=13)
+        assert_array_almost_equal(
+            B, xp.asarray([
+                0.00167583914216, 0.01249479541868, 0.05282702120282,
+                0.15939804265706, 0.37690207631117, 0.73227013789108,
+                1.20191856962356, 1.69522872823393, 2.07598674519837,
+                2.21972389625291, 2.07598674519838, 1.69522872823395,
+                1.20191856962359, 0.73227013789110, 0.37690207631118,
+                0.15939804265707, 0.05282702120282, 0.01249479541868,
+                0.00167583914216], dtype=xp.float64),
+            decimal=13 if not DEFAULT_F32 else 6
+        )
+        assert_array_almost_equal(
+            A, xp.asarray([
+                1.00000000000000, -0.27631970006174, 3.19751214254060,
+                -0.15685969461355, 4.13926117356269, 0.60689917820044,
+                2.95082770636540, 0.89016501910416, 1.32135245849798,
+                0.51502467236824, 0.38906643866660, 0.15367372690642,
+                0.07255803834919, 0.02422454070134, 0.00756108751837,
+                0.00179848550988, 0.00033713574499, 0.00004258794833,
+                0.00000281030149], dtype=xp.float64),
+            decimal=13 if not DEFAULT_F32 else 6
+        )
 
     def test_highpass(self, xp):
         # high even order
@@ -3610,15 +3754,21 @@ class TestCheby2:
               5.958145844148228e-01 - 6.107074340842115e-01j,
               5.747812938519067e-01 + 6.643001536914696e-01j,
               5.747812938519067e-01 - 6.643001536914696e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 6.190427617192018e-04
         k2 = 9.932997786497189e-02
-        xp_assert_close(_sort_cmplx(z, xp=xp),
-                        _sort_cmplx(z2, xp=xp), rtol=1e-13)
-        xp_assert_close(_sort_cmplx(p, xp=xp),
-                        _sort_cmplx(p2, xp=xp), rtol=1e-12)
-        assert math.isclose(k, k2, rel_tol=1e-11)
+        xp_assert_close(
+            _sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-12 if not DEFAULT_F32 else 1e-6
+        )
+        assert math.isclose(
+            k, k2, rel_tol=1e-11 if not DEFAULT_F32 else 1e-6
+        )
 
         # high odd order
         z, p, k = cheby2(25, 80, xp.asarray(0.5), 'high', output='zpk')
@@ -3672,14 +3822,18 @@ class TestCheby2:
               -3.007943405982616e-02 - 8.846331716180016e-01j,
               6.857277464483946e-03 + 8.383275456264492e-01j,
               6.857277464483946e-03 - 8.383275456264492e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 6.507068761705037e-03
-        xp_assert_close(_sort_cmplx(z, xp=xp),
-                        _sort_cmplx(z2, xp=xp), rtol=1e-13)
-        xp_assert_close(_sort_cmplx(p, xp=xp),
-                        _sort_cmplx(p2, xp=xp), rtol=1e-12)
-        assert math.isclose(k, k2, rel_tol=1e-11)
+        xp_assert_close(
+            _sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-12 if not DEFAULT_F32 else 1e-6
+        )
+        assert math.isclose(k, k2, rel_tol=1e-11 if not DEFAULT_F32 else 1e-6)
 
     def test_bandpass(self, xp):
         z, p, k = cheby2(9, 40, xp.asarray([0.07, 0.2]), 'pass', output='zpk')
@@ -3719,14 +3873,18 @@ class TestCheby2:
               9.630425777594550e-01 - 2.317513360702271e-01j,
               9.438104703725529e-01 + 2.193509900269860e-01j,
               9.438104703725529e-01 - 2.193509900269860e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.345352824659604e-03
-        xp_assert_close(_sort_cmplx(z, xp=xp),
-                        _sort_cmplx(z2, xp=xp), rtol=1e-13)
-        xp_assert_close(_sort_cmplx(p, xp=xp),
-                        _sort_cmplx(p2, xp=xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=1e-11)
+        xp_assert_close(
+            _sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        assert math.isclose(k, k2, rel_tol=1e-11 if not DEFAULT_F32 else 1e-6)
 
     def test_bandstop(self, xp):
         z, p, k = cheby2(6, 55, xp.asarray([0.1, 0.9]), 'stop', output='zpk')
@@ -3754,15 +3912,20 @@ class TestCheby2:
                8.078751204586447e-01 - 5.729329866683007e-02j,
                8.715844103386721e-01 + 1.370665039509331e-01j,
                8.715844103386721e-01 - 1.370665039509331e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 2.917823332763358e-03
-        xp_assert_close(_sort_cmplx(z, xp=xp),
-                        _sort_cmplx(z2, xp=xp), rtol=1e-13)
-        xp_assert_close(_sort_cmplx(p, xp=xp),
-                        _sort_cmplx(p2, xp=xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=1e-11)
+        xp_assert_close(
+            _sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        assert math.isclose(k, k2, rel_tol=1e-11 if not DEFAULT_F32 else 1e-6)
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         # with transfer function conversion, without digital conversion
         b, a = cheby2(5, 20, xp.asarray([2010, 2100]), 'stop', True)
@@ -3778,10 +3941,10 @@ class TestCheby2:
               7.535048322653831e+20, 5.567966191263037e+22,
               1.589246884221346e+27, 5.871210648525566e+28,
               1.339913493808590e+33]
-        b2 = xp.asarray(b2)
-        a2 = xp.asarray(a2)
-        xp_assert_close(b, b2, rtol=5e-14)
-        xp_assert_close(a, a2, rtol=5e-14)
+        b2 = xp.asarray(b2, dtype=xp.float64)
+        a2 = xp.asarray(a2, dtype=xp.float64)
+        xp_assert_close(b, b2, rtol=5e-14 if not DEFAULT_F32 else 1e-7)
+        xp_assert_close(a, a2, rtol=5e-14 if not DEFAULT_F32 else 1e-7)
 
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
@@ -3802,28 +3965,36 @@ class TestCheby2:
                                 xp_assert_close(ba1_, ba2_)
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(ellip)
 class TestEllip:
 
+    @xfail_xp_backends("cupy", reason="dtypes do not match")
     def test_degenerate(self, xp):
         # 0-order filter is just a passthrough
         # Even-order filters have DC gain of -rp dB
         # Stopband ripple factor doesn't matter
         b, a = ellip(0, 10*math.log10(2), 123.456, xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1/math.sqrt(2)]))
-        xp_assert_equal(a, xp.asarray([1.0]))
+        assert_array_almost_equal(b, xp.asarray([1/math.sqrt(2)], dtype=xp.float64))
+        xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
         # 1-order filter is same for all types
         b, a = ellip(1, 10*math.log10(2), 1, xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1.]))
-        assert_array_almost_equal(a, xp.asarray([1., 1]))
+        assert_array_almost_equal(b, xp.asarray([1.], dtype=xp.float64))
+        assert_array_almost_equal(a, xp.asarray([1., 1], dtype=xp.float64))
 
         z, p, k = ellip(1, 1, 55, xp.asarray(0.3), output='zpk')
-        xp_assert_close(z, xp.asarray([-9.999999999999998e-01]), rtol=1e-14)
-        xp_assert_close(p, xp.asarray([-6.660721153525525e-04]), rtol=1e-10)
-        assert math.isclose(k, 5.003330360576763e-01, rel_tol=1e-14)
+        xp_assert_close(
+            z, xp.asarray([-9.999999999999998e-01 + 0j], dtype=xp.complex128),
+            rtol=1e-14
+        )
+        xp_assert_close(
+            p, xp.asarray([-6.660721153525525e-04 + 0j], dtype=xp.complex128),
+            rtol=1e-10 if not DEFAULT_F32 else 5e-5
+        )
+        assert math.isclose(
+            k, 5.003330360576763e-01, rel_tol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
 
     def test_basic(self, xp):
         for N in range(25):
@@ -3838,17 +4009,27 @@ class TestEllip:
             assert xp.all(xp.abs(p) <= 1)  # No poles outside unit circle
 
         b3, a3 = ellip(5, 3, 26, xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b3, xp.asarray([0.1420, 0, 0.3764, 0, 0.2409]),
-                                  decimal=4)
         assert_array_almost_equal(
-            a3, xp.asarray([1, 0.5686, 1.8061, 0.8017, 0.8012, 0.2409]), decimal=4
+            b3, xp.asarray([0.1420, 0, 0.3764, 0, 0.2409], dtype=xp.float64),
+            decimal=4
+        )
+        assert_array_almost_equal(
+            a3,
+            xp.asarray([1, 0.5686, 1.8061, 0.8017, 0.8012, 0.2409], dtype=xp.float64),
+            decimal=4
         )
 
         b, a = ellip(3, 1, 60, xp.asarray([0.4, 0.7]), 'stop')
-        assert_array_almost_equal(b, xp.asarray([0.3310, 0.3469, 1.1042, 0.7044, 1.1042,
-                                      0.3469, 0.3310]), decimal=4)
-        assert_array_almost_equal(a, xp.asarray([1.0000, 0.6973, 1.1441, 0.5878, 0.7323,
-                                      0.1131, -0.0060]), decimal=4)
+        assert_array_almost_equal(
+            b, xp.asarray([0.3310, 0.3469, 1.1042, 0.7044, 1.1042,
+                           0.3469, 0.3310], dtype=xp.float64),
+            decimal=4
+        )
+        assert_array_almost_equal(
+            a, xp.asarray([1.0000, 0.6973, 1.1441, 0.5878, 0.7323,
+                           0.1131, -0.0060], dtype=xp.float64),
+            decimal=4
+        )
 
     def test_highpass(self, xp):
         # high even order
@@ -3901,8 +4082,8 @@ class TestEllip:
                5.876904783532237e-01 - 8.090127161018823e-01j,
                5.877753105317594e-01 + 8.090050577978136e-01j,
                5.877753105317594e-01 - 8.090050577978136e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 4.918081266957108e-02
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -3958,8 +4139,8 @@ class TestEllip:
               -5.687071588789117e-05 - 9.999527573294513e-01j,
               -6.948417068525226e-07 + 9.999882737700173e-01j,
               -6.948417068525226e-07 - 9.999882737700173e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 1.220910020289434e-02
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -3997,8 +4178,8 @@ class TestEllip:
               9.679465190411238e-01 - 2.228772501848216e-01j,
               9.747235066273385e-01 + 2.178937926146544e-01j,
               9.747235066273385e-01 - 2.178937926146544e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 8.354782670263239e-03
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -4026,8 +4207,8 @@ class TestEllip:
               -2.180456023925693e+00 - 9.379206865455268e+01j,
               -7.230484977485752e-01 + 9.056598800801140e+01j,
               -7.230484977485752e-01 - 9.056598800801140e+01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 3.774571622827070e-02
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -4070,8 +4251,8 @@ class TestEllip:
                8.066158014414928e-01 - 5.649811440393374e-01j,
                8.062787978834571e-01 + 5.855780880424964e-01j,
                8.062787978834571e-01 - 5.855780880424964e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 2.068622545291259e-01
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-6)
@@ -4079,6 +4260,7 @@ class TestEllip:
                         _sort_cmplx(p2, xp=xp), rtol=1e-5)
         assert math.isclose(k, k2, rel_tol=1e-5)
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         # with transfer function conversion,  without digital conversion
         b, a = ellip(5, 1, 40, xp.asarray([201, 240]), 'stop', True)
@@ -4098,8 +4280,8 @@ class TestEllip:
              2.791577695211466e+19, 7.241811142725384e+20,
              2.612380874940182e+23
              ]
-        b2 = xp.asarray(b2)
-        a2 = xp.asarray(a2)
+        b2 = xp.asarray(b2, dtype=xp.float64)
+        a2 = xp.asarray(a2, dtype=xp.float64)
         xp_assert_close(b, b2, rtol=1e-6)
         xp_assert_close(a, a2, rtol=1e-4)
 
@@ -4153,6 +4335,7 @@ def test_sos_consistency():
         xp_assert_close(sos, zpk2sos(*zpk), err_msg=f"{name}(4,...)")
 
 
+@make_xp_test_case(iirnotch)
 class TestIIRNotch:
 
     def test_ba_output(self, xp):
@@ -4250,6 +4433,7 @@ class TestIIRNotch:
         assert math.isclose(xp.abs(hp[2]), 0.0, abs_tol=1e-10)
 
 
+@make_xp_test_case(iirpeak)
 class TestIIRPeak:
 
     def test_ba_output(self, xp):
@@ -4348,8 +4532,8 @@ class TestIIRPeak:
 
 
 @pytest.mark.xfail(DEFAULT_F32, reason="wrong answers with torch/float32")
-@xfail_xp_backends("jax.numpy", reason="wrong answers")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(iircomb)
 class TestIIRComb:
     # Test erroneous input cases
     @skip_xp_backends(np_only=True)
@@ -4427,12 +4611,9 @@ class TestIIRComb:
         xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
         xp_assert_equal(k, xp.real(k))
 
-        if is_numpy(xp):
-            assert issubclass(b.dtype.type, np.floating)
-            assert issubclass(a.dtype.type, np.floating)
-        else:
-            assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
-            assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
+        isdtype = array_namespace(b).isdtype
+        assert isdtype(b.dtype, ('real floating', 'complex floating'))
+        assert isdtype(a.dtype, ('real floating', 'complex floating'))
 
     # Verify filter coefficients with MATLAB's iircomb function
     def test_ba_output(self, xp):
@@ -4462,7 +4643,7 @@ class TestIIRComb:
         b, a = iircomb(50/int(44100/2), 50.0, ftype='notch', xp=xp)
 
         # Compute the frequency response at an upper harmonic of 50
-        freqs, response = freqz(b, a, [22000], fs=44100)
+        freqs, response = freqz(b, a, xp.asarray([22000]), fs=44100)
 
         # Before bug fix, this would produce N = 881, so that 22 kHz was ~0 dB.
         # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
@@ -4597,32 +4778,40 @@ class TestIIRDesign:
             iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
 
 
-@skip_xp_backends(cpu_only=True, reason="zpk2sos converts to numpy")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(iirfilter)
 class TestIIRFilter:
 
-    def test_symmetry(self, xp):
+    @pytest.mark.parametrize(
+        "func,ftype",
+        [
+            make_xp_pytest_param(butter, "butter"),
+            make_xp_pytest_param(bessel, "bessel"),
+            make_xp_pytest_param(cheby1, "cheby1"),
+            make_xp_pytest_param(cheby2, "cheby2"),
+            make_xp_pytest_param(ellip, "ellip"),
+        ]
+    )
+    def test_symmetry(self, func, ftype, xp):
         # All built-in IIR filters are real, so should have perfectly
         # symmetrical poles and zeros. Then ba representation (using
         # numpy.poly) will be purely real instead of having negligible
         # imaginary parts.
         for N in range(1, 26):
-            for ftype in ('butter', 'bessel', 'cheby1', 'cheby2', 'ellip'):
-                z, p, k = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
-                                    ftype=ftype, output='zpk')
-                xp_assert_close(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
-                xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
-                assert complex(k).imag == 0
+            z, p, k = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
+                                ftype=ftype, output='zpk')
+            xp_assert_close(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
+            xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
+            assert complex(k).imag == 0
 
-                b, a = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
-                                 ftype=ftype, output='ba')
-                if is_numpy(xp):
-                    assert issubclass(b.dtype.type, np.floating)
-                    assert issubclass(a.dtype.type, np.floating)
-                else:
-                    assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
-                    assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
+            b, a = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
+                             ftype=ftype, output='ba')
 
+            isdtype = array_namespace(b).isdtype
+            assert isdtype(b.dtype, ('real floating', 'complex floating'))
+            assert isdtype(a.dtype, ('real floating', 'complex floating'))
+
+    @make_xp_test_case(bessel)
     def test_int_inputs(self, xp):
         # Using integer frequency arguments and large N should not produce
         # numpy integers that wraparound to negative numbers
@@ -4666,6 +4855,7 @@ class TestIIRFilter:
         with pytest.raises(ValueError, match="must be greater than 0"):
             iirfilter(2, [10, -1], analog=True)
 
+    @make_xp_test_case(butter)
     def test_analog_sos(self, xp):
         # first order Butterworth filter with Wn = 1 has tf 1/(s+1)
         sos = xp.asarray([[0., 0., 1., 0., 1., 1.]])
@@ -4682,8 +4872,8 @@ class TestIIRFilter:
             iirfilter(2, [0.6, 0.5])
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="np.convolve")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(group_delay)
 class TestGroupDelay:
     def test_identity_filter(self, xp):
         w, gd = group_delay((1, xp.asarray(1)))
@@ -4694,6 +4884,7 @@ class TestGroupDelay:
         assert_array_almost_equal(w, 2 * xp.pi * xp.arange(512, dtype=w.dtype) / 512)
         assert_array_almost_equal(gd, xp.zeros(512))
 
+    @xfail_xp_backends("cupy", reason="slightly inaccurate")
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_fir(self, xp):
         # Let's design linear phase FIR and check that the group delay
@@ -4823,6 +5014,7 @@ class TestGroupDelay:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(gammatone)
 class TestGammatone:
     # Test erroneous input cases.
     @skip_xp_backends(np_only=True)
@@ -4848,7 +5040,7 @@ class TestGammatone:
     # Verify that the filter's frequency response is approximately
     # 1 at the cutoff frequency.
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
-    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9117")
+    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_frequency_response(self, xp):
         fs = 16000
         ftypes = ['fir', 'iir']
@@ -4875,7 +5067,6 @@ class TestGammatone:
     # symmetrical poles and zeros. Then ba representation (using
     # numpy.poly) will be purely real instead of having negligible
     # imaginary parts.
-    @xfail_xp_backends("jax.numpy", reason="no eig(..) on JAX CUDA")
     def test_iir_symmetry(self, xp):
         b, a = gammatone(440, 'iir', fs=24000, xp=xp)
         z, p, k = tf2zpk(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a))
@@ -4884,12 +5075,9 @@ class TestGammatone:
         xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
         xp_assert_equal(k, xp.real(k))
 
-        if is_numpy(xp):
-            assert issubclass(b.dtype.type, np.floating)
-            assert issubclass(a.dtype.type, np.floating)
-        else:
-            assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
-            assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
+        isdtype = array_namespace(b).isdtype
+        assert isdtype(b.dtype, ('real floating', 'complex floating'))
+        assert isdtype(a.dtype, ('real floating', 'complex floating'))
 
     # Verify FIR filter coefficients with the paper's
     # Mathematica implementation
@@ -4924,3 +5112,25 @@ class TestGammatone:
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             gammatone(440, 'iir', fs=np.asarray([10, 20]))
+
+
+@make_xp_test_case(findfreqs)
+class TestFindFreqs:
+    @pytest.mark.parametrize("kind", ["ba", "zp"])
+    def test_findfreqs_log_spacing(self, xp, kind):
+        N = 30
+        w = findfreqs(xp.asarray([1.2], dtype=xp.float64),
+                      xp.asarray([3.6, 9.8], dtype=xp.float64), N=N, kind=kind)
+        ratio = xp.diff(xp.log10(w))
+        xp_assert_close(ratio, ratio[0]*xp.ones(N - 1, dtype=xp.float64))
+
+    def test_findfreqs_ba_zp_equiv(self, xp):
+        num, den = [1.4, 2], [1, 3.8, 2]
+        zeros = xp.asarray(np.roots(num))
+        poles = xp.asarray(np.roots(den))
+
+        ba = findfreqs(xp.asarray(num, dtype=xp.float64),
+                       xp.asarray(den, dtype=xp.float64), N=30, kind="ba")
+        zp = findfreqs(zeros, poles, N=30, kind="zp")
+
+        xp_assert_close(ba, zp)

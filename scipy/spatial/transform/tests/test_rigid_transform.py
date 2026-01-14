@@ -985,6 +985,13 @@ def test_concatenate(xp):
     xp_assert_close(concatenated2[1].as_matrix(), tf1.as_matrix(), atol=atol)
     xp_assert_close(concatenated2[2].as_matrix(), tf2.as_matrix(), atol=atol)
 
+    # Test ND concatenation
+    tf3 = RigidTransform.from_translation(xp.reshape(xp.arange(18), (3, 2, 3)))
+    tf4 = RigidTransform.from_translation(xp.reshape(xp.arange(18) + 18, (3, 2, 3)))
+    concatenated3 = RigidTransform.concatenate([tf3, tf4])
+    xp_assert_close(concatenated3.as_matrix()[:3, ...], tf3.as_matrix(), atol=atol)
+    xp_assert_close(concatenated3.as_matrix()[3:, ...], tf4.as_matrix(), atol=atol)
+
 
 @make_xp_test_case(RigidTransform.from_matrix)
 def test_input_validation(xp):
@@ -1062,6 +1069,72 @@ def test_mean(xp, ndim: int):
                     atol=atol)
 
 
+@make_xp_test_case(
+    RigidTransform.from_rotation, RigidTransform.mean, Rotation.magnitude
+)
+@pytest.mark.parametrize("ndim", range(1, 5))
+def test_mean_axis(xp, ndim: int):
+    axes = xp.tile(xp.concat((-xp.eye(3), xp.eye(3))), (3,) * (ndim - 1) + (1, 1))
+    theta = xp.pi / 4
+    r = Rotation.from_rotvec(theta * axes)
+    tf = RigidTransform.from_rotation(r)
+
+    # Test mean over last axis
+    desired = xp.full(axes.shape[:-2], 0.0)
+    if ndim == 1:
+        desired = desired[()]
+    atol = 1e-6 if xpx.default_dtype(xp) is xp.float32 else 1e-10
+    xp_assert_close(tf.mean(axis=-1).rotation.magnitude(), desired, atol=atol)
+
+    # Test tuple axes
+    desired = xp.full(axes.shape[1:-2], 0.0)
+    if ndim < 3:
+        desired = desired[()]
+    xp_assert_close(tf.mean(axis=(0, -1)).rotation.magnitude(), desired, atol=atol)
+
+    # Empty axis tuple should return RigidTransform unchanged
+    tf_mean = tf.mean(axis=())
+    xp_assert_close(tf_mean.as_matrix(), tf.as_matrix(), atol=atol)
+
+
+@make_xp_test_case(RigidTransform.mean, Rotation.magnitude)
+def test_mean_compare_axis(xp):
+    # Create a random set of transforms and compare the mean over an axis with
+    # the mean without axis of the sliced transform
+    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1e-6
+    rng = np.random.default_rng(0)
+    q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
+    r = Rotation.from_quat(q)
+    t = xp.asarray(rng.normal(size=(4, 5, 6, 3)), dtype=xpx.default_dtype(xp))
+    tf = RigidTransform.from_components(t, r)
+
+    mean_0 = tf.mean(axis=0)
+    for i in range(q.shape[1]):
+        for j in range(q.shape[2]):
+            r_slice = Rotation.from_quat(q[:, i, j, ...])
+            t_slice = t[:, i, j, ...]
+            mean_slice_tf = RigidTransform.from_components(t_slice, r_slice).mean()
+            xp_assert_close(
+                (mean_0[i][j].rotation * mean_slice_tf.rotation.inv()).magnitude(),
+                xp.asarray(0.0)[()], atol=atol,
+            )
+            xp_assert_close(
+                mean_0[i][j].translation, mean_slice_tf.translation, atol=atol,
+            )
+    mean_1_2 = tf.mean(axis=(1, 2))
+    for i in range(q.shape[0]):
+        r_slice = Rotation.from_quat(q[i, ...])
+        t_slice = t[i, ...]
+        mean_slice_tf = RigidTransform.from_components(t_slice, r_slice).mean()
+        xp_assert_close(
+            (mean_1_2[i].rotation * mean_slice_tf.rotation.inv()).magnitude(),
+            xp.asarray(0.0)[()], atol=atol,
+        )
+        xp_assert_close(
+            mean_1_2[i].translation, mean_slice_tf.translation, atol=atol,
+        )
+
+
 @make_xp_test_case(RigidTransform.mean)
 def test_mean_invalid_weights(xp):
     tf = RigidTransform.from_matrix(xp.tile(xp.eye(4), (4, 1, 1)))
@@ -1137,6 +1210,31 @@ def test_composition_validation(xp):
         tf2 * tf4
 
 
+@make_xp_test_case(RigidTransform.__mul__, RigidTransform.__rmul__)
+def test_rotation_promotion(xp):
+    """Test that Rotation is promoted to RigidTransform in composition."""
+    atol = 1e-12
+    dtype = xpx.default_dtype(xp)
+    rng = np.random.default_rng(0)
+
+    t = xp.asarray(rng.normal(size=(3,)), dtype=dtype)
+    r1 = rotation_to_xp(Rotation.random(rng=rng), xp)
+    r2 = rotation_to_xp(Rotation.random(rng=rng), xp)
+    tf = RigidTransform.from_components(t, r2)
+
+    # RigidTransform * Rotation
+    result = tf * r1
+    expected = tf * RigidTransform.from_rotation(r1)
+    assert isinstance(result, RigidTransform)
+    xp_assert_close(result.as_matrix(), expected.as_matrix(), atol=atol)
+
+    # Rotation * RigidTransform
+    result = r1 * tf
+    expected = RigidTransform.from_rotation(r1) * tf
+    assert isinstance(result, RigidTransform)
+    xp_assert_close(result.as_matrix(), expected.as_matrix(), atol=atol)
+
+
 @make_xp_test_case(RigidTransform.concatenate)
 def test_concatenate_validation(xp):
     tf = RigidTransform.from_matrix(xp.eye(4))
@@ -1145,6 +1243,12 @@ def test_concatenate_validation(xp):
     with pytest.raises(TypeError,
                        match="input must contain RigidTransform objects"):
         RigidTransform.concatenate([tf, xp.eye(4)])
+
+    # Test incompatible shapes
+    tf2 = RigidTransform.from_translation(xp.ones((1, 1, 1, 3)))
+    # Frameworks have a highly heterogeneous way of reporting errors for this case
+    with pytest.raises((ValueError, TypeError, RuntimeError)):
+        RigidTransform.concatenate([tf, tf2])
 
 
 @make_xp_test_case(RigidTransform.__setitem__)
@@ -1381,7 +1485,11 @@ def test_pickling(xp):
     xp_assert_close(tf.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
-@make_xp_test_case(RigidTransform.as_matrix, RigidTransform.__iter__)
+@make_xp_test_case(
+    RigidTransform.as_matrix,
+    RigidTransform.__iter__,
+    RigidTransform.identity,
+)
 def test_rigid_transform_iter(xp):
     r = rigid_transform_to_xp(RigidTransform.identity(3), xp)
     for i, r_i in enumerate(r):
@@ -1391,7 +1499,7 @@ def test_rigid_transform_iter(xp):
             raise RuntimeError("Iteration exceeded length of transforms")
 
 
-@make_xp_test_case()
+@make_xp_test_case(RigidTransform.from_translation)
 @pytest.mark.parametrize("dim", range(1, 5))
 def test_shape_property(xp, dim: int):
     shape = (dim,) * (dim - 1)
