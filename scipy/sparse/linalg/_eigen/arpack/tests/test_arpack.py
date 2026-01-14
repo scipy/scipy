@@ -411,6 +411,11 @@ def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
 @pytest.mark.parametrize("typ", ['F', 'D'])
 @pytest.mark.parametrize("D", SymmetricParams().complex_test_cases)
 def test_hermitian_modes(D, typ, which, mattype, sigma):
+    # Skip problematic which values for generalized problems without sigma
+    # (ARPACK mode=2 does not preserve real/imaginary part ordering)
+    # For complex hermitian, LA->LR and SA->SR, so skip those too
+    if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI', 'LA', 'SA']:
+        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which)) #Skips the test if the which value is problematic for generalized eigenvalue problems without sigma
     rng = np.random.default_rng(1749531706842957)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
@@ -448,6 +453,10 @@ def test_symmetric_no_convergence():
 @pytest.mark.parametrize("D", NonSymmetricParams().real_test_cases)
 def test_real_nonsymmetric_modes(D, typ, which, mattype,
                                  sigma, OPpart):
+    # Skip problematic which values for generalized problems without sigma
+    # (ARPACK mode=2 does not preserve real/imaginary part ordering)
+    if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
+        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which))
     rng = np.random.default_rng(174953334412726)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
@@ -459,6 +468,10 @@ def test_real_nonsymmetric_modes(D, typ, which, mattype,
 @pytest.mark.parametrize("typ", ['F', 'D'])
 @pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
 def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
+    # Skip problematic which values for generalized problems without sigma
+    # (ARPACK mode=2 does not preserve real/imaginary part ordering)
+    if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
+        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which))
     rng = np.random.default_rng(1749533536274527)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
@@ -688,3 +701,18 @@ def test_real_eigs_real_k_subset():
             assert_allclose(dist, 0, atol=np.sqrt(eps))
 
             prev_w = w
+
+@pytest.mark.parametrize("which", ['LR', 'SR', 'LI', 'SI']) #Using pytest.mark.parametrize to test all the cases where the fix should raise an error
+#Test that generalized problems with LR/SR/LI/SI and no sigma must raise an error, as ARPACK mode=2 does not preserve real/imaginary part ordering
+def test_generalized_eigs_which_real_imag_raises(which):
+    """Generalized problems with LR/SR/LI/SI and no sigma must raise."""
+    A = np.array([[1., 2., 3.],
+                  [4., 5., 6.],
+                  [7., 8., 9.]])
+    B = np.array([[1., 2., 0.],
+                  [0., 1., 0.],
+                  [0., 0., 1.]])
+
+    #Unless the fix is in place, this will not raise an error and will return garbage values.
+    with pytest.raises(ValueError):
+        eigs(A, M=B, k=1, which=which)  #This should raise ValueError because sigma is None and which is LR/SR/LI/SI
