@@ -770,6 +770,7 @@ def is_sptriangular(A):
     Returns
     -------
     lower, upper : 2-tuple of bool
+        Whether `A` is lower / upper triangular.
 
         .. versionadded:: 1.15.0
 

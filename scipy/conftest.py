@@ -23,7 +23,7 @@ from scipy._lib._array_api import (
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 try:
     from scipy_doctest.conftest import dt_config
@@ -190,7 +190,7 @@ if SCIPY_ARRAY_API:
         xp_available_backends.append(
             pytest.param(array_api_strict, id='array_api_strict',
                          marks=pytest.mark.array_api_backends))
-        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.3'):
+        if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
             api_version='2024.12'
@@ -661,6 +661,7 @@ if HAVE_SCPDT:
         "scipy/interpolate/_interpnd_info.py",
         "scipy/interpolate/_rbfinterp_pythran.py",
         "scipy/_build_utils/tempita.py",
+        "scipy/_external",
         "scipy/_lib/array_api_compat",
         "scipy/_lib/highs",
         "scipy/_lib/unuran",

@@ -3862,23 +3862,24 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     Returns
     -------
-    An object with the following attributes.
+    result : WilcoxonResult
+        An object with the following attributes.
 
-    statistic : array_like
-        If `alternative` is "two-sided", the sum of the ranks of the
-        differences above or below zero, whichever is smaller.
-        Otherwise the sum of the ranks of the differences above zero.
-    pvalue : array_like
-        The p-value for the test depending on `alternative` and `method`.
-    zstatistic : array_like
-        When ``method = 'asymptotic'``, this is the normalized z-statistic::
+        statistic : array_like
+            If `alternative` is "two-sided", the sum of the ranks of the
+            differences above or below zero, whichever is smaller.
+            Otherwise the sum of the ranks of the differences above zero.
+        pvalue : array_like
+            The p-value for the test depending on `alternative` and `method`.
+        zstatistic : array_like
+            When ``method = 'asymptotic'``, this is the normalized z-statistic::
 
-            z = (T - mn - d) / se
+                z = (T - mn - d) / se
 
-        where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
-        distribution under the null hypothesis, ``d`` is a continuity
-        correction, and ``se`` is the standard error.
-        When ``method != 'asymptotic'``, this attribute is not available.
+            where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
+            distribution under the null hypothesis, ``d`` is a continuity
+            correction, and ``se`` is the standard error.
+            When ``method != 'asymptotic'``, this attribute is not available.
 
     See Also
     --------
