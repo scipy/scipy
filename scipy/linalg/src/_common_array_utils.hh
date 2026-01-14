@@ -507,54 +507,90 @@ GEN_GTCON_CZ(c, npy_complex64, float)
 GEN_GTCON_CZ(z, npy_complex128, double)
 
 
-/* ?GESDD*/
-// NB: ?GESVD : c- and z- variants have the rwork argument, s- and d- variants do not
-#define GEN_GESVD_SD(PREFIX, TYPE, RTYPE) \
-inline void \
-gesvd(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## gesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info); \
+
+/*
+ * ?GESVD wrappers.
+ *
+ * We need to wrap over:
+ *   - four type variants, s-, d-, c-, and zgesvd;
+ *   - complex variants, c- and z-, receive the `rwork` argument, while s- and d- variants do not.
+ * Thus,
+ *   - `call_gesvd` has four overloads;
+ *   - all variants receive the `rwork` argument; c- and z- variants forward it to LAPACK,
+ *     and s- and d- variants swallow it.
+ */
+inline void call_gesvd(
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda,
+    float *s, float *u, CBLAS_INT *ldu, float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork,
+    float *rwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(sgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
 };
 
-GEN_GESVD_SD(s, float, float)
-GEN_GESVD_SD(d, double, double)
-
-
-#define GEN_GESVD_CZ(PREFIX, TYPE, RTYPE) \
-inline void \
-gesvd(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## gesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info); \
+inline void call_gesvd(
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda,
+    double *s, double *u, CBLAS_INT *ldu, double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork,
+    double *rwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(dgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
 };
 
-GEN_GESVD_CZ(c, npy_complex64, float)
-GEN_GESVD_CZ(z, npy_complex128, double)
-
-
-
-/* ?GESDD*/
-// NB: ?GESDD : c- and z- variants have the rwork argument, s- and d- variants do not
-
-#define GEN_GESDD_SD(PREFIX, TYPE, RTYPE) \
-inline void \
-gesdd(char *jobz, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## gesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, iwork, info); \
+inline void call_gesvd(
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda,
+    float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt,
+    npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(cgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
 };
 
-GEN_GESDD_SD(s, float, float)
-GEN_GESDD_SD(d, double, double)
-
-
-#define GEN_GESDD_CZ(PREFIX, TYPE, RTYPE) \
-inline void \
-gesdd(char *jobz, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## gesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info); \
+inline void call_gesvd(
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda,
+    double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt,
+    npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(zgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
 };
 
-GEN_GESDD_CZ(c, npy_complex64, float)
-GEN_GESDD_CZ(z, npy_complex128, double)
+
+
+/*
+ * ?GESDD wrappers.
+ *
+ * The logic is similar to ?gesdd:
+ *   - we overload for four type variants, s-, d-, c-, and z-;
+ *   - we forward `rwork` to c- and z- LAPACK functions, and swallow it for s- and d-;
+ *
+ */
+
+inline void call_gesdd(
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *s, float *u, CBLAS_INT *ldu,
+    float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(sgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, iwork, info);
+};
+
+inline void call_gesdd(
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *s, double *u, CBLAS_INT *ldu,
+    double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(dgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, iwork, info);
+};
+
+inline void call_gesdd(
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu,
+    npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(cgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info);
+};
+
+inline void call_gesdd(
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu,
+    npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+{
+    BLAS_FUNC(zgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info);
+};
+
+
 
 
 // Structure tags; python side maps assume_a strings to these values

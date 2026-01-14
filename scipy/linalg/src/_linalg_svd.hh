@@ -87,7 +87,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     T tmp = numeric_limits<T>::zero;
 
     // query LWORK
-    gesdd(&jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, NULL, &info);
+    call_gesdd(&jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, NULL, &info);
     if (info != 0) { info = -100; return (int)info; }
 
     lwork = (CBLAS_INT)(real_part(tmp));
@@ -150,7 +150,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
 
         // SVD the slice
-        gesdd(&jobz, &intm, &intn, data, &intm, ptr_S, buf_U, &ldu, buf_Vh, &ldvh, work, &lwork, rwork, iwork, &info);
+        call_gesdd(&jobz, &intm, &intn, data, &intm, ptr_S, buf_U, &ldu, buf_Vh, &ldvh, work, &lwork, rwork, iwork, &info);
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -225,7 +225,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     T tmp = numeric_limits<T>::zero;
 
     // query LWORK
-    gesvd(&jobz, &jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, &info);
+    call_gesvd(&jobz, &jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, &info);
     if (info != 0) { info = -100; return (int)info; }
 
     lwork = (CBLAS_INT)(real_part(tmp));
@@ -271,7 +271,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
 
         // SVD the slice
-        gesvd(&jobz, &jobz, &intm, &intn, data, &intm, ptr_S, buf_U, &ldu, buf_Vh, &ldvh, work, &lwork, rwork, &info);
+        call_gesvd(&jobz, &jobz, &intm, &intn, data, &intm, ptr_S, buf_U, &ldu, buf_Vh, &ldvh, work, &lwork, rwork, &info);
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
