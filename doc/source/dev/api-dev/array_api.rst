@@ -496,18 +496,6 @@ One may declare a function as not supporting the JAX JIT with the option
 for more information.
 
 
-Dask Compute
-````````````
-
-The default, ``allow_dask_compute=False`` declares that a function works lazily
-in Dask and will not materialize any Dask arrays with ``dask.compute`` or
-otherwise initiate computation with ``dask.persist``. Use
-``allow_dask_compute=True`` to declare that a function supports Dask arrays but
-not lazily. Developers can also pass an integer to give a cap for the number of
-combined calls to ``dask.compute`` and ``dask.persist`` that are allowed. If a function
-is not array-agnostic, then it will typically be the case that
-``allow_dask_compute=True`` should be set, unless Dask specific codepaths have been added.
-
 Unsupported functions
 `````````````````````
 
@@ -641,6 +629,26 @@ and passing in any backends which are not supported even on CPU to ``skip_backen
 Such situations are hopefully rare enough that special handling isn't needed.
 ``xp_capabilities`` has evolved naturally over time to meet developer needs; good
 suggestions for ways to improve developer ergonomics are welcome.
+
+Dask Compute
+````````````
+
+The default, ``allow_dask_compute=False`` declares that a function works lazily
+in Dask and will not materialize any Dask arrays with ``dask.compute`` or
+otherwise initiate computation with ``dask.persist``. Use
+``allow_dask_compute=True`` to declare that a function supports Dask arrays but
+not lazily. Developers can also pass an integer to give a cap for the number of
+combined calls to ``dask.compute`` and ``dask.persist`` that are allowed. If a function
+is not array-agnostic, then it will typically be the case that
+``allow_dask_compute=True`` should be set, unless Dask specific codepaths have been added.
+
+Dask support is currently deprioritized due to structural barriers
+that make the development of meaningful Dask support particularly challenging. At present,
+developers should feel free to reflexively add ``skip_backends=[("dask.array", "deprioritized")]``
+to the ``xp_capabilities`` entry of any function they are working on. Reprioritization may
+be considered in the future if a champion emerges and the structural outlook improves.
+See `RFC: Should Dask support remain a priority? #24205 <https://github.com/scipy/scipy/issues/24205>`_
+for relevant discussion.
 
 .. _dev-arrayapi_extra_note:
 
