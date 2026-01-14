@@ -127,6 +127,12 @@ class Rectangle:
         split : float
             Position along axis `d` to split at.
 
+        Returns
+        -------
+        less : Rectangle
+            Rectangle with `d`-th axis less than `split`.
+        greater : Rectangle
+            Rectangle with `d`-th axis greater than `split`.
         """
         mid = np.copy(self.maxes)
         mid[d] = split
@@ -148,6 +154,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Minimum distance.
         """
         return minkowski_distance(
             0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
@@ -165,6 +175,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Maximum distance.
         """
         return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
 
@@ -179,6 +193,10 @@ class Rectangle:
         p : float
             Input.
 
+        Returns
+        -------
+        dist : float
+            Minimum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0,
@@ -198,6 +216,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : float
+            Maximum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)

@@ -240,6 +240,11 @@ class _spbase(SparseABC):
             If `copy` is `False`, the result might share some memory with this
             array/matrix. If `copy` is `True`, it is guaranteed that the result and
             this array/matrix do not share any memory.
+
+        Returns
+        -------
+        array/matrix
+            This array/matrix with data type `dtype`.
         """
 
         dtype = getdtype(dtype)
@@ -461,7 +466,8 @@ class _spbase(SparseABC):
 
         Returns
         -------
-        A : This array/matrix in the passed format.
+        A : array/matrix
+            This array/matrix in the passed format.
         """
         if format is None or format == self.format:
             if copy:

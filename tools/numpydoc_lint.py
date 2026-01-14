@@ -65,6 +65,14 @@ legacy_functions = [
     "scipy.optimize.KrylovJacobian"
 ]
 
+skip_modules = [
+    "scipy.odr",
+    "cipy.fftpack",
+    "scipy.stats.mstats",
+    "scipy.linalg.cython_lapack",
+    "scipy.linalg.cython_blas",
+]
+
 
 def walk_class(module_str, class_, public_api):
     class_str = class_.__name__
@@ -104,8 +112,7 @@ def main():
 
     # get a list of all public objects
     for module in PUBLIC_MODULES:
-        if ("mstats" in module or "odr" in module or "fftpack" in module or
-            "cython" in module):
+        if module in skip_modules:
             # deprecated / legacy modules
             continue
         public_api += walk_module(module)

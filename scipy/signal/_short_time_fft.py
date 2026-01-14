@@ -1472,6 +1472,12 @@ class ShortTimeFFT:
         f_axis, t_axis
             The axes in `S` denoting the frequency and the time dimension.
 
+        See Also
+        --------
+        invertible: Check if STFT is invertible.
+        :meth:`~ShortTimeFFT.stft`: Perform Short-time Fourier transform.
+        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
+
         Notes
         -----
         It is required that `S` has `f_pts` entries along the `f_axis`. For
@@ -1485,12 +1491,6 @@ class ShortTimeFFT:
 
         The :ref:`tutorial_stft` section of the :ref:`user_guide` discussed the
         slicing behavior by means of an example.
-
-        See Also
-        --------
-        invertible: Check if STFT is invertible.
-        :meth:`~ShortTimeFFT.stft`: Perform Short-time Fourier transform.
-        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         if f_axis == t_axis:
             raise ValueError(f"{f_axis=} may not be equal to {t_axis=}!")
@@ -1849,11 +1849,6 @@ class ShortTimeFFT:
         p_ub : int
             Lowest index of time slice of which the end sticks out past the signal end.
 
-        Notes
-        -----
-        Note that the return values are cached together with the parameter `n` to avoid
-        unnecessary recalculations.
-
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1864,6 +1859,11 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         p_range: Determine and validate slice index range.
         ShortTimeFFT: Class this method belongs to.
+
+        Notes
+        -----
+        Note that the return values are cached together with the parameter `n` to avoid
+        unnecessary recalculations.
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
@@ -1973,6 +1973,7 @@ class ShortTimeFFT:
         Returns
         -------
         t : ndarray
+            1d array of times of the STFT slices from `p0` to `p1` - 1.
 
         See Also
         --------
@@ -2002,15 +2003,28 @@ class ShortTimeFFT:
         return return_value
 
     def nearest_k_p(self, k: int, left: bool = True) -> int:
-        """Return nearest sample index k_p for which t[k_p] == t[p] holds.
+        """Return nearest sample index k_p for which ``t[k_p] == t[p]`` holds.
 
-        The nearest next smaller time sample p (where t[p] is the center
-        position of the window of the p-th slice) is p_k = k // `hop`.
+        The nearest next smaller time sample p (where ``t[p]`` is the center
+        position of the window of the p-th slice) is ``p_k = k // hop``.
         If `hop` is a divisor of `k` then `k` is returned.
-        If `left` is set then p_k * `hop` is returned else (p_k+1) * `hop`.
+        If `left` is set then ``p_k * hop`` is returned else ``(p_k+1) * hop``.
 
         This method can be used to slice an input signal into chunks for
         calculating the STFT and iSTFT incrementally.
+
+        Parameters
+        ----------
+        k : int
+            Sample index for which the nearest slice center index is sought.
+        left : bool
+            If ``True`` then the nearest smaller index is returned, else the
+            nearest larger index is returned.
+
+        Returns
+        -------
+        int
+            Nearest sample index k_p for which ``t[k_p] == t[p]`` holds.
 
         See Also
         --------

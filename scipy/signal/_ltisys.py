@@ -235,21 +235,88 @@ class lti(LinearTimeInvariant):
     def impulse(self, X0=None, T=None, N=None):
         """
         Return the impulse response of a continuous-time system.
-        See `impulse` for details.
+
+        Parameters
+        ----------
+        X0 : array_like, optional
+            Initial state-vector.  Defaults to zero.
+        T : array_like, optional
+            Time points.  Computed if not given.
+        N : int, optional
+            The number of time points to compute (if `T` is not given).
+
+        Returns
+        -------
+        T : ndarray
+            A 1-D array of time points.
+        yout : ndarray
+            A 1-D array containing the impulse response of the system (except for
+            singularities at zero).
+
+        See Also
+        --------
+        impulse : Impulse response of continuous-time LTI systems.
         """
         return impulse(self, X0=X0, T=T, N=N)
 
     def step(self, X0=None, T=None, N=None):
         """
         Return the step response of a continuous-time system.
-        See `step` for details.
+
+        Parameters
+        ----------
+        X0 : array_like, optional
+            Initial state-vector (default is zero).
+        T : array_like, optional
+            Time points (computed if not given).
+        N : int, optional
+            Number of time points to compute if `T` is not given.
+
+        Returns
+        -------
+        T : 1D ndarray
+            Output time points.
+        yout : 1D ndarray
+            Step response of system.
+
+        See Also
+        --------
+        step : Step response of continuous-time LTI systems.
         """
         return step(self, X0=X0, T=T, N=N)
 
     def output(self, U, T, X0=None):
         """
         Return the response of a continuous-time system to input `U`.
-        See `lsim` for details.
+
+        Parameters
+        ----------
+        U : array_like
+            An input array describing the input at each time `T`
+            (interpolation is assumed between given times).  If there are
+            multiple inputs, then each column of the rank-2 array
+            represents an input.  If U = 0 or None, a zero input is used.
+        T : array_like
+            The time steps at which the input is defined and at which the
+            output is desired.  Must be nonnegative, increasing, and equally spaced.
+        X0 : array_like, optional
+            The initial conditions on the state vector (zero by default).
+        interp : bool, optional
+            Whether to use linear (True, the default) or zero-order-hold (False)
+            interpolation for the input array.
+
+        Returns
+        -------
+        T : 1D ndarray
+            Time values for the output.
+        yout : 1D ndarray
+            System response.
+        xout : ndarray
+            Time evolution of the state vector.
+
+        See Also
+        --------
+        lsim : Simulate output of continuous-time LTI systems.
         """
         return lsim(self, U, T, X0=X0)
 
@@ -257,8 +324,29 @@ class lti(LinearTimeInvariant):
         """
         Calculate Bode magnitude and phase data of a continuous-time system.
 
-        Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See `bode` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies (in rad/s). Magnitude and phase data is calculated
+            for every value in this array. If not given a reasonable set will be
+            calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+
+        Returns
+        -------
+        w : 1D ndarray
+            Frequency array [rad/s]
+        mag : 1D ndarray
+            Magnitude array [dB]
+        phase : 1D ndarray
+            Phase array [deg]
+
+        See Also
+        --------
+        bode : Bode plot data for continuous-time LTI systems.
 
         Examples
         --------
@@ -281,9 +369,27 @@ class lti(LinearTimeInvariant):
         """
         Calculate the frequency response of a continuous-time system.
 
-        Returns a 2-tuple containing arrays of frequencies [rad/s] and
-        complex magnitude.
-        See `freqresp` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies (in rad/s). Magnitude and phase data is
+            calculated for every value in this array. If not given, a reasonable
+            set will be calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+
+        Returns
+        -------
+        w : 1D ndarray
+            Frequency array [rad/s]
+        H : 1D ndarray
+            Array of complex magnitude values
+
+        See Also
+        --------
+        freqresp : Frequency response of continuous-time LTI systems.
         """
         return freqresp(self, w=w, n=n)
 
