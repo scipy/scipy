@@ -780,6 +780,10 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
           PYERR(PyExc_ValueError, "could not convert we to a suitable array");
         }
     }                           /* we */
+  else
+    {
+      PYERR(PyExc_ValueError, "could not convert we to a suitable array");
+    }
 
   if (pwd == NULL)
     {
@@ -871,6 +875,10 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
         }
 
     }                           /* wd */
+  else
+    {
+      PYERR(PyExc_ValueError, "could not convert wd to a suitable array");
+    }
 
 
   if (pifixb == NULL)
