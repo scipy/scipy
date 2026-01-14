@@ -322,28 +322,28 @@ fail:
 PyObject* 
 convert_vec_status(SliceStatusVec& vec_status) {
     PyObject *ret_dct = NULL;
-    PyObject *ret_lst = NULL;
+    PyObject *ret_lst = PyList_New(0);
 
     if (vec_status.empty()) {
-        ret_lst = PyList_New(0);
-    } else {
-        // Problems detected in some slices, report.
-
-        ret_lst = PyList_New(0);
-        for (size_t i=0; i<vec_status.size(); i++) {
-            SliceStatus status = vec_status[i];
-            ret_dct = Py_BuildValue(
-                "{s:n,s:n,s:i,s:i,s:d,s:n}",
-                "num", status.slice_num,
-                "structure", status.structure,
-                "is_singular", status.is_singular,
-                "is_ill_conditioned", status.is_ill_conditioned,
-                "rcond", status.rcond,
-                "lapack_info", status.lapack_info
-            );
-            PyList_Append(ret_lst, ret_dct);
-        }
+        return ret_lst;
     }
+
+    // Problems detected in some slices, report.
+    for (size_t i=0; i<vec_status.size(); i++) {
+        SliceStatus status = vec_status[i];
+        ret_dct = Py_BuildValue(
+            "{s:n,s:n,s:i,s:i,s:d,s:n}",
+            "num", status.slice_num,
+            "structure", status.structure,
+            "is_singular", status.is_singular,
+            "is_ill_conditioned", status.is_ill_conditioned,
+            "rcond", status.rcond,
+            "lapack_info", status.lapack_info
+        );
+        PyList_Append(ret_lst, ret_dct);
+        Py_DECREF(ret_dct);
+    }
+
     return ret_lst;
 }
 
