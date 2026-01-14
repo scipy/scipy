@@ -48,6 +48,9 @@ legacy_functions = [
     "rv_histogram",
     "rv_continuous",
     "rv_discrete",
+    "scipy.interpolate.InterpolatedUnivariateSpline",
+    "scipy.interpolate.LSQUnivariateSpline",
+    "scipy.interpolate.UnivariateSpline"
 ]
 
 
@@ -60,9 +63,8 @@ def walk_class(module_str, class_, public_api):
             public_api.append(f"{module_str}.{class_str}.{attr}")
 
 
-def walk_module(module_str, public_api=None):
-    if public_api is None:
-        public_api = []
+def walk_module(module_str):
+    public_api = []
 
     module = importlib.import_module(module_str)
 

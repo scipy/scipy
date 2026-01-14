@@ -1029,14 +1029,14 @@ class _spbase(SparseABC):
         -------
         p : `self` with the dimensions reversed.
 
+        See Also
+        --------
+        numpy.transpose : NumPy's implementation of 'transpose' for ndarrays
+
         Notes
         -----
         If `self` is a `csr_array` or a `csc_array`, then this will return a
         `csc_array` or a `csr_array`, respectively.
-
-        See Also
-        --------
-        numpy.transpose : NumPy's implementation of 'transpose' for ndarrays
         """
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 

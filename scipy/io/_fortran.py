@@ -181,11 +181,6 @@ class FortranFile:
         data : ndarray
             A 1-D array object.
 
-        See Also
-        --------
-        read_reals
-        read_ints
-
         Raises
         ------
         FortranEOFError
@@ -193,6 +188,11 @@ class FortranFile:
         FortranFormattingError
             To signal that the end of the file was encountered
             part-way through a record
+
+        See Also
+        --------
+        read_reals
+        read_ints
 
         Notes
         -----

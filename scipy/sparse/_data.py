@@ -106,7 +106,8 @@ class _data_matrix(_spbase):
             n is a non-zero scalar (nonzero avoids dense ones creation)
             If zero power is desired, special case it to use `np.ones`
 
-        dtype : If dtype is not specified, the current dtype will be preserved.
+        dtype : dtype, optional
+            If dtype is not specified, the current dtype will be preserved.
 
         Raises
         ------
