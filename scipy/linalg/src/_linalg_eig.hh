@@ -77,7 +77,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
     // c- and z variants: lwork query segfaults with rwork=NULL, allocate it straight away
     real_type *rwork = NULL;
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(2*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
@@ -85,7 +85,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     }
 
     // query LWORK
-    geev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
+    call_geev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
     if (info != 0) { free(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
@@ -128,7 +128,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
         copy_slice_F(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
 
         // compute eigenvalues for the slice
-        geev(&jobvl, &jobvr, &intn, data, &lda, wr, wi, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
+        call_geev(&jobvl, &jobvr, &intn, data, &lda, wr, wi, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -229,7 +229,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
     // similar to geev, allocate rwork right away (not sure if ?ggev segfaults otherwise, too)
     real_type *rwork = NULL;
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(8*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
@@ -237,7 +237,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     }
 
     // query LWORK
-    ggev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, &ldb, NULL, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
+    call_ggev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, &ldb, NULL, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
     if (info != 0) { free(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
@@ -286,7 +286,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
 
         // compute eigenvalues for the slice
-        ggev(&jobvl, &jobvr, &intn, data_A, &lda, data_B, &ldb, alphar, alphai, beta, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
+        call_ggev(&jobvl, &jobvr, &intn, data_A, &lda, data_B, &ldb, alphar, alphai, beta, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;

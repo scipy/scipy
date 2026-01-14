@@ -772,7 +772,7 @@ GEN_GELSY_CZ(z, npy_complex128, double)
  */
 #define GEN_GEEV_SD(PREFIX, TYPE) \
 inline void \
-geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *wr, TYPE *wi, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork,  TYPE *rwork, CBLAS_INT *info) \
+call_geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *wr, TYPE *wi, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork,  TYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## geev)(jobvl, jobvr, n, a, lda, wr, wi, vl, ldvl, vr, ldvr, work, lwork, info); \
 };
@@ -782,7 +782,7 @@ GEN_GEEV_SD(d, double)
 
 #define GEN_GEEV_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *wr, TYPE *wi, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *wr, TYPE *wi, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     /* ignore wi */ \
     BLAS_FUNC(PREFIX ## geev)(jobvl, jobvr, n, a, lda, wr, vl, ldvl, vr, ldvr, work, lwork, rwork, info); \
@@ -799,7 +799,7 @@ GEN_GEEV_CZ(z, npy_complex128, double)
  */
 #define GEN_GGEV_SD(PREFIX, TYPE) \
 inline void \
-ggev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, TYPE *alphar, TYPE *alphai, TYPE *beta, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork, TYPE *rwork, CBLAS_INT *info) \
+call_ggev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, TYPE *alphar, TYPE *alphai, TYPE *beta, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork, TYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## ggev)(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info); \
 };
@@ -810,7 +810,7 @@ GEN_GGEV_SD(d, double)
 
 #define GEN_GGEV_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-ggev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, TYPE *alphar, TYPE *alphai, TYPE *beta, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_ggev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, TYPE *alphar, TYPE *alphai, TYPE *beta, TYPE *vl, CBLAS_INT *ldvl, TYPE *vr, CBLAS_INT *ldvr, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## ggev)(jobvl, jobvr, n, a, lda, b, ldb, alphar, beta, vl, ldvl, vr, ldvr, work, lwork, rwork, info); \
 };
