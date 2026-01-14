@@ -145,8 +145,16 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = (f"Element-wise {name}.\n\n"
-                          f"See `numpy.{name}` for more information.")
+        method.__doc__ = (
+            f"""Element-wise {name}.
+                See `numpy.{name}` for more information.
+
+                Returns
+                -------
+                {name} : { _data_matrix.__name__ }
+                    Result of applying `numpy.{name}` to the data of this sparse matrix.
+            """
+        )
         method.__name__ = name
 
         return method

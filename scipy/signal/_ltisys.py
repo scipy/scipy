@@ -431,21 +431,87 @@ class dlti(LinearTimeInvariant):
     def impulse(self, x0=None, t=None, n=None):
         """
         Return the impulse response of the discrete-time `dlti` system.
-        See `dimpulse` for details.
+
+        Parameters
+        ----------
+        x0 : array_like, optional
+            Initial state-vector.  Defaults to zero.
+        t : array_like, optional
+            Time points. Computed if not given.
+        n : int, optional
+            The number of time points to compute (if `t` is not given).
+
+        Returns
+        -------
+        tout : ndarray
+            Time values for the output, as a 1-D array.
+        yout : tuple of ndarray
+            Impulse response of system.  Each element of the tuple represents
+            the output of the system based on an impulse in each input.
+
+        See Also
+        --------
+        dimpulse : Impulse response of discrete-time LTI systems.
         """
         return dimpulse(self, x0=x0, t=t, n=n)
 
     def step(self, x0=None, t=None, n=None):
         """
         Return the step response of the discrete-time `dlti` system.
-        See `dstep` for details.
+
+        Parameters
+        ----------
+        x0 : array_like, optional
+            Initial state-vector. Defaults to zero.
+        t : array_like, optional
+            Time points. Computed if not given.
+        n : int, optional
+            The number of time points to compute (if `t` is not given).
+
+        Returns
+        -------
+        tout : ndarray
+            Output time points, as a 1-D array.
+        yout : tuple of ndarray
+            Step response of system.  Each element of the tuple represents
+            the output of the system based on a step response to each input.
+
+        See Also
+        --------
+        dstep : Step response of discrete-time LTI systems.
         """
         return dstep(self, x0=x0, t=t, n=n)
 
     def output(self, u, t, x0=None):
         """
         Return the response of the discrete-time system to input `u`.
-        See `dlsim` for details.
+
+        Parameters
+        ----------
+        u : array_like
+            An input array describing the input at each time `t` (interpolation is
+            assumed between given times).  If there are multiple inputs, then each
+            column of the rank-2 array represents an input.
+        t : array_like, optional
+            The time steps at which the input is defined.  If `t` is given, it
+            must be the same length as `u`, and the final value in `t` determines
+            the number of steps returned in the output.
+        x0 : array_like, optional
+            The initial conditions on the state vector (zero by default).
+
+        Returns
+        -------
+        tout : ndarray
+            Time values for the output, as a 1-D array.
+        yout : ndarray
+            System response, as a 1-D array.
+        xout : ndarray, optional
+            Time-evolution of the state-vector.  Only generated if the input is a
+            `StateSpace` system.
+
+        See Also
+        --------
+        dlsim : Simulate output of discrete-time LTI systems.
         """
         return dlsim(self, u, t, x0=x0)
 
@@ -453,8 +519,31 @@ class dlti(LinearTimeInvariant):
         r"""
         Calculate Bode magnitude and phase data of a discrete-time system.
 
-        Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See `dbode` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies normalized to the Nyquist frequency being π, i.e.,
+            having unit radiant / sample. Magnitude and phase data is calculated for every
+            value in this array. If not given, a reasonable set will be calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+
+        Returns
+        -------
+        w : 1D ndarray
+            Array of frequencies normalized to the Nyquist frequency being ``np.pi/dt``
+            with ``dt`` being the sampling interval of the `system` parameter.
+            The unit is rad/s assuming ``dt`` is in seconds.
+        mag : 1D ndarray
+            Magnitude array in dB
+        phase : 1D ndarray
+            Phase array in degrees
+
+        See Also
+        --------
+        dbode : Bode plot data for discrete-time LTI systems.
 
         Examples
         --------
@@ -483,10 +572,31 @@ class dlti(LinearTimeInvariant):
         """
         Calculate the frequency response of a discrete-time system.
 
-        Returns a 2-tuple containing arrays of frequencies [rad/s] and
-        complex magnitude.
-        See `dfreqresp` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies (in radians/sample). Magnitude and phase data is
+            calculated for every value in this array. If not given a reasonable
+            set will be calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+        whole : bool, optional
+            Normally, if 'w' is not given, frequencies are computed from 0 to the
+            Nyquist frequency, pi radians/sample (upper-half of unit-circle). If
+            `whole` is True, compute frequencies from 0 to 2*pi radians/sample.
 
+        Returns
+        -------
+        w : 1D ndarray
+            Frequency array [radians/sample]
+        H : 1D ndarray
+            Array of complex magnitude values
+
+        See Also
+        --------
+        dfreqresp : Frequency response of discrete-time LTI systems.
         """
         return dfreqresp(self, w=w, n=n, whole=whole)
 

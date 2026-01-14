@@ -1970,6 +1970,10 @@ class ShortTimeFFT:
         k_offset : int
             Index of first sample (t = 0) in `x`.
 
+        Returns
+        -------
+        t : ndarray
+
         See Also
         --------
         delta_t: Time increment of STFT (``hop*T``)
@@ -1978,10 +1982,6 @@ class ShortTimeFFT:
         T: Sampling interval of input signal and of the window (``1/fs``).
         fs: Sampling frequency (being ``1/T``)
         ShortTimeFFT: Class this method belongs to.
-
-        Returns
-        -------
-        t : ndarray
 
         Notes
         -----
