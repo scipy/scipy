@@ -3,51 +3,54 @@ from itertools import product
 import numpy as np
 import functools
 import pytest
-from numpy.testing import (assert_, assert_equal, assert_allclose,
-                           assert_almost_equal)  # avoid new uses
+from numpy.testing import assert_, assert_equal, assert_allclose
 from pytest import raises as assert_raises
 
-import scipy.stats as stats
+from scipy import stats, special
 from scipy.stats import distributions
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
-from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,
-                                   eager_warns)
+                                   eager_warns, xp_ravel)
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
+lazy_xp_modules = [stats]
 
+
+@make_xp_test_case(epps_singleton_2samp)
 class TestEppsSingleton:
-    def test_statistic_1(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_statistic_1(self, dtype, xp):
         # first example in Goerg & Kaiser, also in original paper of
         # Epps & Singleton. Note: values do not match exactly, the
         # value of the interquartile range varies depending on how
         # quantiles are computed
-        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35,
-                      2.69, 0.46, -0.94, -0.37, 12.07])
-        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71,
-                      4.29, 5.00, 7.74, 8.38, 8.60])
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([-0.35, 2.55, 1.73, 0.73, 0.35,
+                        2.69, 0.46, -0.94, -0.37, 12.07], dtype=dtype)
+        y = xp.asarray([-1.15, -0.15, 2.48, 3.25, 3.71,
+                     4.29, 5.00, 7.74, 8.38, 8.60], dtype=dtype)
         w, p = epps_singleton_2samp(x, y)
-        assert_almost_equal(w, 15.14, decimal=1)
-        assert_almost_equal(p, 0.00442, decimal=3)
+        xp_assert_close(w, xp.asarray(15.14, dtype=dtype), atol=0.03)
+        xp_assert_close(p, xp.asarray(0.00442, dtype=dtype), atol=0.0001)
 
-    def test_statistic_2(self):
+    def test_statistic_2(self, xp):
         # second example in Goerg & Kaiser, again not a perfect match
-        x = np.array((0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 6, 10,
-                      10, 10, 10))
-        y = np.array((10, 4, 0, 5, 10, 10, 0, 5, 6, 7, 10, 3, 1, 7, 0, 8, 1,
-                      5, 8, 10))
+        x = xp.asarray([0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4,
+                        5, 5, 5, 5, 6, 10, 10, 10, 10])
+        y = xp.asarray([10, 4, 0, 5, 10, 10, 0, 5, 6, 7,
+                        10, 3, 1, 7, 0, 8, 1, 5, 8, 10])
         w, p = epps_singleton_2samp(x, y)
-        assert_allclose(w, 8.900, atol=0.001)
-        assert_almost_equal(p, 0.06364, decimal=3)
+        xp_assert_close(w, xp.asarray(8.900), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.06364), atol=5e-5)
 
-    def test_epps_singleton_array_like(self):
+    def test_epps_singleton_array_like(self):  # only relevant for NumPy
         x, y = np.arange(30), np.arange(28)
 
         w1, p1 = epps_singleton_2samp(list(x), list(y))
@@ -57,15 +60,15 @@ class TestEppsSingleton:
         assert_(w1 == w2 == w3)
         assert_(p1 == p2 == p3)
 
-    def test_epps_singleton_size(self):
+    def test_epps_singleton_size(self, xp):
         # warns if sample contains fewer than 5 elements
-        x, y = (1, 2, 3, 4), np.arange(10)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        x, y = xp.asarray([1, 2, 3, 4]), xp.arange(10)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = epps_singleton_2samp(x, y)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_epps_singleton_nonfinite(self):
+    def test_epps_singleton_nonfinite(self, xp):
         rng = np.random.default_rng(83249872384543)
         x = rng.random(size=(10, 11))
         y = rng.random(size=(10, 12))
@@ -78,109 +81,104 @@ class TestEppsSingleton:
         x[i[0], 0] = np.nan
         x[i[1], 1] = np.inf
         y[i[2], 2] = -np.inf
+
+        x, y = xp.asarray(x), xp.asarray(y)
         w_res, p_res = epps_singleton_2samp(x, y, axis=-1)
-
-        assert_allclose(w_res, w_ref)
-        assert_allclose(p_res, p_ref)
-
-    def test_names(self):
-        x, y = np.arange(20), np.arange(30)
-        res = epps_singleton_2samp(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        xp_assert_close(w_res, xp.asarray(w_ref))
+        xp_assert_close(p_res, xp.asarray(p_ref))
 
 
+@make_xp_test_case(stats.cramervonmises)
 class TestCvm:
     # the expected values of the cdfs are taken from Table 1 in
     # Csorgo / Faraway: The Exact and Asymptotic Distribution of
     # Cramér-von Mises Statistics, 1996.
-    def test_cdf_4(self):
-        assert_allclose(
-                _cdf_cvm([0.02983, 0.04111, 0.12331, 0.94251], 4),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
+    @pytest.mark.parametrize('n, x, ref', [
+        (4, [0.02983, 0.04111, 0.12331, 0.94251], [0.01, 0.05, 0.5, 0.999]),
+        (10, [0.02657, 0.03830, 0.12068, 0.56643], [0.01, 0.05, 0.5, 0.975]),
+        (1000, [0.02481, 0.03658, 0.11889, 1.16120], [0.01, 0.05, 0.5, 0.999]),
+        (None, [0.02480, 0.03656, 0.11888, 1.16204], [0.01, 0.05, 0.5, 0.999]),
+    ])
+    def test_cdf_ref(self, n, x, ref, xp):
+        xp_assert_close(_cdf_cvm(xp.asarray(x), n), xp.asarray(ref), atol=1e-4)
 
-    def test_cdf_10(self):
-        assert_allclose(
-                _cdf_cvm([0.02657, 0.03830, 0.12068, 0.56643], 10),
-                [0.01, 0.05, 0.5, 0.975],
-                atol=1e-4)
-
-    def test_cdf_1000(self):
-        assert_allclose(
-                _cdf_cvm([0.02481, 0.03658, 0.11889, 1.16120], 1000),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
-
-    def test_cdf_inf(self):
-        assert_allclose(
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204]),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
-
-    def test_cdf_support(self):
+    def test_cdf_support(self, xp):
         # cdf has support on [1/(12*n), n/3]
-        assert_equal(_cdf_cvm([1/(12*533), 533/3], 533), [0, 1])
-        assert_equal(_cdf_cvm([1/(12*(27 + 1)), (27 + 1)/3], 27), [0, 1])
+        xp_assert_equal(_cdf_cvm(xp.asarray([1/(12*533), 533/3]), 533),
+                        xp.asarray([0., 1.]))
+        xp_assert_equal(_cdf_cvm(xp.asarray([1/(12*(27 + 1)), (27 + 1)/3]), 27),
+                        xp.asarray([0., 1.]))
 
-    def test_cdf_large_n(self):
+    def test_cdf_large_n(self, xp):
         # test that asymptotic cdf and cdf for large samples are close
-        assert_allclose(
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100], 10000),
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100]),
-                atol=1e-4)
+        x = xp.asarray([0.02480, 0.03656, 0.11888, 1.16204, 100])
+        xp_assert_close(_cdf_cvm(x, 10000), _cdf_cvm(x), atol=1e-4)
 
-    def test_large_x(self):
+    def test_large_x(self, xp):
         # for large values of x and n, the series used to compute the cdf
         # converges slowly.
         # this leads to bug in R package goftest and MAPLE code that is
         # the basis of the implementation in scipy
         # note: cdf = 1 for x >= 1000/3 and n = 1000
-        assert_(0.99999 < _cdf_cvm(333.3, 1000) < 1.0)
-        assert_(0.99999 < _cdf_cvm(333.3) < 1.0)
+        x = xp.asarray(333.3, dtype=xp.float64)
+        assert (0.99999 < _cdf_cvm(x, 1000) < 1.0)
+        assert (0.99999 < _cdf_cvm(x) < 1.0)
 
-    def test_low_p(self):
+    def test_low_p(self, xp):
         # _cdf_cvm can return values larger than 1. In that case, we just
         # return a p-value of zero.
         n = 12
-        res = cramervonmises(np.ones(n)*0.8, 'norm')
-        assert_(_cdf_cvm(res.statistic, n) > 1.0)
-        assert_equal(res.pvalue, 0)
+        res = cramervonmises(xp.ones(n)*0.8, special.ndtr)
+        assert _cdf_cvm(res.statistic, n, xp=xp) > 1.0
+        xp_assert_equal(res.pvalue, xp.asarray(0.))
 
     @pytest.mark.parametrize('x', [(), [1.5]])
-    def test_invalid_input(self, x):
+    def test_invalid_input(self, x, xp):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = cramervonmises(x, "norm")
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            res = cramervonmises(xp.asarray(x), special.ndtr)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_values_R(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_values_R(self, dtype, xp):
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         # compared against R package goftest, version 1.1.1
-        # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
-        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm")
-        assert_allclose(res.statistic, 0.288156, atol=1e-6)
-        assert_allclose(res.pvalue, 0.1453465, atol=1e-6)
+        # library(goftest)
+        # options(digits=16)
+        # cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
+        res = cramervonmises(xp.asarray([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], dtype=dtype),
+                             special.ndtr)
+        xp_assert_close(res.statistic, xp.asarray(0.28815604599198, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray( 0.1453465252039, dtype=dtype))
 
-        # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6),
-        #                   "pnorm", mean = 3, sd = 1.5)
-        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm", (3, 1.5))
-        assert_allclose(res.statistic, 0.9426685, atol=1e-6)
-        assert_allclose(res.pvalue, 0.002026417, atol=1e-6)
+        # cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm", mean = 3, sd = 1.5)
+        res = cramervonmises(xp.asarray([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], dtype=dtype),
+                             lambda x: special.ndtr((x - 3)/1.5))
+        xp_assert_close(res.statistic, xp.asarray(0.94266847977072, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(0.002026416728467, dtype=dtype))
 
-        # goftest::cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
-        res = cramervonmises([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], "expon")
-        assert_allclose(res.statistic, 0.8421854, atol=1e-6)
-        assert_allclose(res.pvalue, 0.004433406, atol=1e-6)
+        # cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
+        res = cramervonmises(
+            xp.asarray([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], dtype=dtype),
+            lambda x: -xp.expm1(-x))
+        xp_assert_close(res.statistic, xp.asarray(0.84218540922393, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(0.004433406063014, dtype=dtype))
 
-    def test_callable_cdf(self):
+    def test_str_cdf(self, xp):
+        if not is_numpy(xp):
+            message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
+            with pytest.raises(ValueError, match=message):
+                cramervonmises(xp.asarray([1, 2, 3]), "beta")
+            return
+
         x, args = np.arange(5), (1.4, 0.7)
-        r1 = cramervonmises(x, distributions.expon.cdf)
-        r2 = cramervonmises(x, "expon")
-        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+        ref = cramervonmises(x, distributions.expon.cdf)
+        res = cramervonmises(x, "expon")
+        assert_equal((res.statistic, res.pvalue), (ref.statistic, ref.pvalue))
 
-        r1 = cramervonmises(x, distributions.beta.cdf, args)
-        r2 = cramervonmises(x, "beta", args)
-        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+        ref = cramervonmises(x, distributions.beta.cdf, args)
+        res = cramervonmises(x, "beta", args)
+        assert_equal((res.statistic, res.pvalue), (ref.statistic, ref.pvalue))
 
 
 @make_xp_test_case(stats.mannwhitneyu)
@@ -191,7 +189,6 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     def test_empty(self, xp):
         x = xp.asarray([1, 2])  # generic, valid inputs
         y = xp.asarray([3, 4])
@@ -314,8 +311,6 @@ class TestMannWhitneyU:
     @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_basic(self, kwds, expected, dtype, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x, y = xp.asarray(self.x, dtype=dtype), xp.asarray(self.y, dtype=dtype)
         res = mannwhitneyu(x, y, **kwds)
@@ -351,6 +346,7 @@ class TestMannWhitneyU:
         xp_assert_close(res.statistic, xp.asarray(expected[0]))
         xp_assert_close(res.pvalue, xp.asarray(expected[1]))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy->no _axis_nan_policy deco')
     def test_tie_correct(self, xp):
         # Test tie correction against R's wilcox.test
         # options(digits = 16)
@@ -495,7 +491,6 @@ class TestMannWhitneyU:
 
     # --- Test Enhancements / Bug Reports ---
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
     def test_gh_12837_11113(self, method, xp):
         # Test that behavior for broadcastable nd arrays is appropriate:
@@ -554,7 +549,7 @@ class TestMannWhitneyU:
         xp_assert_equal(res1.statistic, res2.statistic)
         xp_assert_equal(res1.pvalue, res2.pvalue)
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
     def test_gh11355_nan(self, xp):
         # NaNs should propagate by default.
         x = [1., 2., 3., 4.]
@@ -627,7 +622,7 @@ class TestMannWhitneyU:
         xp_assert_equal(res.statistic, xp.asarray(statistic_exp))
         xp_assert_close(res.pvalue, xp.asarray(pvalue_exp))
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
     def test_gh_4067(self, xp):
         # Test for correct behavior with all NaN input - default is propagate
         nan = xp.asarray(xp.nan)
@@ -1497,7 +1492,6 @@ class TestBoschlooExact:
 class TestCvm_2samp:
     @pytest.mark.parametrize('args', [([], np.arange(5)),
                                       (np.arange(5), [1])])
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no axis_nan_policy")
     def test_too_small_input(self, args, xp):
         args = (xp.asarray(arg, dtype=xp_default_dtype(xp)) for arg in args)
         with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
@@ -1522,8 +1516,6 @@ class TestCvm_2samp:
     def test_example_conover(self, dtype, xp):
         # Example 2 in Section 6.2 of W.J. Conover: Practical Nonparametric
         # Statistics, 1971.
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.asarray([7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2], dtype=dtype)
         y = xp.asarray([5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8,
@@ -2044,24 +2036,26 @@ class TestPoissonMeansTest:
             stats.poisson_means_test(1, 2, 1, 2, alternative='error')
 
 
+@make_xp_test_case(stats.bws_test)
 class TestBWSTest:
 
-    def test_bws_input_validation(self):
+    def test_bws_input_validation(self, xp):
         rng = np.random.default_rng(4571775098104213308)
 
         x, y = rng.random(size=(2, 7))
+        x, y = xp.asarray(x), xp.asarray(y)
 
-        message = '`x` and `y` must be exactly one-dimensional.'
+        message = '`axis` must be an integer or None.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([x, x], [y, y])
+            stats.bws_test(x, y, axis=1.5)
 
-        message = '`x` and `y` must not contain NaNs.'
+        message = '`axis` is not compatible with the shapes of the inputs.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([np.nan], y)
+            stats.bws_test(x, y, axis=3)
 
-        message = '`x` and `y` must be of nonzero size.'
+        message = '`x` and `y` must contain...'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test(x, [])
+            stats.bws_test(x, xp.asarray([], dtype=x.dtype))
 
         message = 'alternative` must be one of...'
         with pytest.raises(ValueError, match=message):
@@ -2071,22 +2065,22 @@ class TestBWSTest:
         with pytest.raises(ValueError, match=message):
             stats.bws_test(x, y, method=42)
 
-
-    def test_against_published_reference(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_against_published_reference(self, dtype, xp):
         # Test against Example 2 in bws_test Reference [1], pg 9
         # https://link.springer.com/content/pdf/10.1007/BF02762032.pdf
-        x = [1, 2, 3, 4, 6, 7, 8]
-        y = [5, 9, 10, 11, 12, 13, 14]
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([1, 2, 3, 4, 6, 7, 8], dtype=dtype)
+        y = xp.asarray([5, 9, 10, 11, 12, 13, 14], dtype=dtype)
         res = stats.bws_test(x, y, alternative='two-sided')
-        assert_allclose(res.statistic, 5.132, atol=1e-3)
-        assert_equal(res.pvalue, 10/3432)
-
+        xp_assert_close(res.statistic, xp.asarray(5.132, dtype=dtype), atol=1e-3)
+        xp_assert_close(res.pvalue, xp.asarray(10/3432, dtype=dtype))
 
     @pytest.mark.parametrize(('alternative', 'statistic', 'pvalue'),
                              [('two-sided', 1.7510204081633, 0.1264422777777),
                               ('less', -1.7510204081633, 0.05754662004662),
                               ('greater', -1.7510204081633, 0.9424533799534)])
-    def test_against_R(self, alternative, statistic, pvalue):
+    def test_against_R(self, alternative, statistic, pvalue, xp):
         # Test against R library BWStest function bws_test
         # library(BWStest)
         # options(digits=16)
@@ -2095,15 +2089,18 @@ class TestBWSTest:
         # bws_test(x, y, alternative='two.sided')
         rng = np.random.default_rng(4571775098104213308)
         x, y = rng.random(size=(2, 7))
+        x, y = xp.asarray(x, dtype=xp.float64), xp.asarray(y, dtype=xp.float64)
         res = stats.bws_test(x, y, alternative=alternative)
-        assert_allclose(res.statistic, statistic, rtol=1e-13)
-        assert_allclose(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
+        statistic = xp.asarray(statistic, dtype=xp.float64)
+        pvalue = xp.asarray(pvalue, dtype=xp.float64)
+        xp_assert_close(res.statistic, statistic, rtol=1e-13)
+        xp_assert_close(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
 
     @pytest.mark.parametrize(('alternative', 'statistic', 'pvalue'),
                              [('two-sided', 1.142629265891, 0.2903950180801),
                               ('less', 0.99629665877411, 0.8545660222131),
                               ('greater', 0.99629665877411, 0.1454339777869)])
-    def test_against_R_imbalanced(self, alternative, statistic, pvalue):
+    def test_against_R_imbalanced(self, alternative, statistic, pvalue, xp):
         # Test against R library BWStest function bws_test
         # library(BWStest)
         # options(digits=16)
@@ -2113,51 +2110,88 @@ class TestBWSTest:
         rng = np.random.default_rng(5429015622386364034)
         x = rng.random(size=9)
         y = rng.random(size=8)
+        x, y = xp.asarray(x), xp.asarray(y)
         res = stats.bws_test(x, y, alternative=alternative)
-        assert_allclose(res.statistic, statistic, rtol=1e-13)
-        assert_allclose(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
+        x, y = xp.asarray(x, dtype=xp.float64), xp.asarray(y, dtype=xp.float64)
+        res = stats.bws_test(x, y, alternative=alternative)
+        statistic = xp.asarray(statistic, dtype=xp.float64)
+        pvalue = xp.asarray(pvalue, dtype=xp.float64)
+        xp_assert_close(res.statistic, statistic, rtol=1e-13)
+        xp_assert_close(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
 
-    def test_method(self):
+    def test_method(self, xp):
         # Test that `method` parameter has the desired effect
         rng = np.random.default_rng(1520514347193347862)
         x, y = rng.random(size=(2, 10))
+        x, y = xp.asarray(x), xp.asarray(y)
 
         rng = np.random.default_rng(1520514347193347862)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res1 = stats.bws_test(x, y, method=method)
 
-        assert len(res1.null_distribution) == 10
+        assert res1.null_distribution.shape[0] == 10
 
         rng = np.random.default_rng(1520514347193347862)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res2 = stats.bws_test(x, y, method=method)
 
-        assert_allclose(res1.null_distribution, res2.null_distribution)
+        xp_assert_close(res1.null_distribution, res2.null_distribution)
 
         rng = np.random.default_rng(5205143471933478621)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res3 = stats.bws_test(x, y, method=method)
 
-        assert not np.allclose(res3.null_distribution, res1.null_distribution)
+        assert xp.all(xp.abs(res3.null_distribution - res1.null_distribution) > 0.1)
 
-    def test_directions(self):
+    def test_directions(self, xp):
         # Sanity check of the sign of the one-sided statistic
         rng = np.random.default_rng(1520514347193347862)
-        x = rng.random(size=5)
-        y = x - 1
+        x = xp.asarray(rng.random(size=5))
+        y = x - 1.
+
+        pmin = xp.asarray(1 / 252, dtype=xp.float64)
+        pmax = xp.asarray(1, dtype=xp.float64)
 
         res = stats.bws_test(x, y, alternative='greater')
         assert res.statistic > 0
-        assert_equal(res.pvalue, 1 / len(res.null_distribution))
+        xp_assert_equal(res.pvalue, pmin)
 
         res = stats.bws_test(x, y, alternative='less')
         assert res.statistic > 0
-        assert_equal(res.pvalue, 1)
+        xp_assert_equal(res.pvalue, pmax)
 
         res = stats.bws_test(y, x, alternative='less')
         assert res.statistic < 0
-        assert_equal(res.pvalue, 1 / len(res.null_distribution))
+        xp_assert_equal(res.pvalue, pmin)
 
         res = stats.bws_test(y, x, alternative='greater')
         assert res.statistic < 0
-        assert_equal(res.pvalue, 1)
+        xp_assert_equal(res.pvalue, pmax)
+
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_nd(self, axis, xp):
+        rng = np.random.default_rng(1520514347193347862)
+        z = rng.random(size=(2, 3, 5))
+
+        x, y = z
+        res = stats.bws_test(xp.asarray(x), xp.asarray(y), axis=axis)
+
+        x, y = np.moveaxis(z, axis+1, -1)
+        ref_statistic, ref_pvalue = [], []
+        for x_, y_ in zip(x, y):
+            ref = stats.bws_test(xp.asarray(x_), xp.asarray(y_))
+            ref_statistic.append(ref.statistic)
+            ref_pvalue.append(ref.pvalue)
+        ref_statistic, ref_pvalue = xp.stack(ref_statistic), xp.stack(ref_pvalue)
+
+        xp_assert_close(res.statistic, ref_statistic)
+        xp_assert_close(res.pvalue, ref_pvalue)
+
+    def test_axis_None(self, xp):
+        rng = np.random.default_rng(5205143471933478621)
+        x, y = rng.random(size=(2, 2, 3))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.bws_test(x, y, axis=None)
+        ref = stats.bws_test(xp_ravel(x), xp_ravel(y))
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)

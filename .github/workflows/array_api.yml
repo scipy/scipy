@@ -14,7 +14,6 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
-  INSTALLDIR: "build-install"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -26,12 +25,20 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   xp_cpu:
-    name: Linux PyTorch/JAX/Dask/xp-strict CPU
+    name: ${{ join(matrix.tasks, ' ') }}
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tasks: [test-strict, test-torch, test-torch-float32, test-dask]
+            environments: [array-api-strict, torch-cpu, dask-cpu]
+          - tasks: [test-jax]
+            environments: [jax-cpu]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -39,21 +46,21 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          pixi-version: v0.55.0
+          pixi-version: v0.60.0
           cache: false
+          environments: build-cpu ${{ join(matrix.environments, ' ') }}
 
       - name: Set up ccache
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
 
-      - name: Build SciPy
+      - name: Build
         run: pixi run build-cpu
 
-      - name: Test SciPy
+      - name: Test
         run: |
           export OMP_NUM_THREADS=2
-          pixi run --skip-deps test-cpu -- --durations 3 --timeout=60
-
-      - name: Test SciPy with torch/float32
-        run: pixi run --skip-deps test-torch-float32 -- --durations 3 --timeout=60
+          for task in ${{ join(matrix.tasks, ' ') }}; do
+            pixi run --skip-deps "$task" -- --durations 3 --timeout=60
+          done

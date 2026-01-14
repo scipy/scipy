@@ -870,14 +870,22 @@ class IdentityOperator(LinearOperator):
 def aslinearoperator(A):
     """Return A as a LinearOperator.
 
-    'A' may be any of the following types:
-     - ndarray
-     - matrix
-     - sparse array (e.g. csr_array, lil_array, etc.)
-     - LinearOperator
-     - An object with .shape and .matvec attributes
-
     See the LinearOperator documentation for additional information.
+
+    Parameters
+    ----------
+    A : object
+        Object to convert to a `LinearOperator`. May be any one of the following types:
+        - ndarray
+        - matrix
+        - sparse array (e.g. csr_array, lil_array, etc.)
+        - `LinearOperator`
+        - An object with .shape and .matvec attributes
+
+    Returns
+    -------
+    B : LinearOperator
+        A `LinearOperator` corresponding with `A`
 
     Notes
     -----

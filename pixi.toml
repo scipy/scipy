@@ -11,12 +11,17 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [environments.build]
 # tasks: build
-features = ["build-deps", "build-task"]
+features = ["build-deps", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
-# tasks: test
-features = ["run-deps", "test-deps", "test-task"]
+# tasks: test, test-coverage, test-xslow
+features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
+solve-group = "default"
+
+[environments.smoke-docs]
+# tasks: smoke-docs
+features = ["run-deps", "test-deps", "smoke-docs"]
 solve-group = "default"
 
 [environments.docs]
@@ -27,6 +32,11 @@ solve-group = "default"
 [environments.ipython]
 # tasks: ipython
 features = ["run-deps", "test-deps", "ipython"]
+solve-group = "default"
+
+[environments.bench]
+# tasks: bench
+features = ["run-deps", "build-deps", "bench"]
 solve-group = "default"
 
 [environments.build-debug]
@@ -45,7 +55,7 @@ features = ["run-deps", "test-deps", "gdb"]
 solve-group = "debug"
 
 [environments.lint]
-# tasks: lint, check-python-h
+# tasks: lint, check-python-h, tach-check, tach-check-external
 features = ["lint"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
@@ -121,9 +131,9 @@ solve-group = "accelerate-ilp64"
 features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
-[environments.py311-system-libs-osx]
+[environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py311", "umfpack", "scikit-sparse", "system-libs"]
+features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
 
 [environments.scipy-openblas]
 # tasks: build-scipy-openblas, test-scipy-openblas
@@ -147,7 +157,6 @@ blas-devel = "*"
 ### Default building ###
 
 [feature.build-deps.dependencies]
-compilers = "*"
 ccache = "*"
 pkg-config = "*"
 ninja = "*"
@@ -160,8 +169,16 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
+[feature.build-deps.target.unix.dependencies]
+compilers = "*"
+
 [feature.build-deps.target.win-64.dependencies]
+# force flang 21 until https://github.com/conda-forge/compilers-feedstock/pull/76 is in
+flang_win-64 = "21.*"
+
+[feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
+blas-devel = { version = "*", build = "*openblas" }
 
 # XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
@@ -171,7 +188,7 @@ description = "Build SciPy (default settings)"
 
 [feature.build-task.target.win-64.tasks.build]
 cmd = "spin build --setup-args=-Dblas=openblas --setup-args=-Dlapack=openblas --setup-args=-Duse-g77-abi=true && cp .pixi/envs/build/Library/bin/openblas.dll build-install/Lib/site-packages/scipy/linalg/openblas.dll"
-env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC", FC_LD = "lld-link" }
+env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC" }
 description = "Build SciPy (default settings)"
 
 
@@ -180,6 +197,7 @@ description = "Build SciPy (default settings)"
 [feature.test-deps.dependencies]
 pytest = "*"
 hypothesis = "*"
+pytest-cov = "*"
 pytest-timeout = "*"
 pytest-xdist = "*"
 threadpoolctl = "*"
@@ -188,10 +206,43 @@ mpmath = "*"
 gmpy2 = "*"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
-[feature.test-task.tasks.test]
+[feature.test-tasks.tasks.test]
 cmd = "spin test --no-build"
 depends-on = "build"
 description = "Test SciPy (default settings)"
+
+[feature.test-tasks.tasks.test-coverage]
+cmd = "spin test --no-build --coverage"
+depends-on = "build"
+description = "Test SciPy with coverage"
+
+[feature.test-tasks.tasks.test-xslow]
+cmd = "spin test --no-build -m full"
+depends-on = "build"
+env.SCIPY_XSLOW = "1"
+description = "Test SciPy (full and x-slow)"
+
+[feature.test-tasks.tasks.check]
+cmd = "spin check --no-build"
+depends-on = "build"
+description = "Run SciPy-specific checks"
+
+
+[feature.smoke-docs.dependencies]
+hypothesis = "*"
+matplotlib = "*"
+scipy-doctest = "*"
+
+[feature.smoke-docs.tasks.smoke-docs]
+cmd = "spin smoke-docs --no-build"
+depends-on = "build"
+description = "Run doctests"
+
+
+### Type Stubs ###
+
+[feature.type-stubs.dependencies]
+scipy-stubs = "*"
 
 
 ### Documentation ###
@@ -228,6 +279,16 @@ ipython = "*"
 cmd = "spin ipython --no-build"
 depends-on = "build"
 description = "Launch IPython"
+
+
+### Benchmarking ###
+
+[feature.bench.dependencies]
+# https://github.com/airspeed-velocity/asv/issues/1537
+asv = "==0.6.4"
+
+[feature.bench.tasks.bench]
+cmd = "spin bench"
 
 
 ### Debugging ###
@@ -274,9 +335,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 ruff = "*"
 cython-lint = "*"
 packaging = "*"
-
-[feature.lint.pypi-dependencies]
-dtach = "*"
+tach = "*"
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"
@@ -301,12 +360,6 @@ description = "Check external dependencies"
 [feature.mkl.target.linux-64.dependencies]
 libblas = { version = "*", build = "*mkl" }
 mkl = "*"
-
-[feature.mkl.tasks.build-mkl]
-cmd = "spin build --build-dir=build-mkl --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
-cwd = "scipy"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
-description = "Build with MKL BLAS"
 
 
 [feature.accelerate]
@@ -337,8 +390,7 @@ description = "Test SciPy with accelerate (ilp64)"
 
 
 [feature.scipy-openblas.pypi-dependencies]
-# remove this pin once https://github.com/scipy/scipy/pull/23844#issuecomment-3528226491 is resolved
-scipy-openblas32 = "<=0.3.30.0.2"
+scipy-openblas32 = ">=0.3.30.0.8"
 
 [feature.scipy-openblas.tasks.build-scipy-openblas]
 cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
@@ -510,15 +562,6 @@ marray-python = "*"
 
 ### Optional dependencies ###
 
-[feature.umfpack]
-platforms = ["osx-arm64", "linux-64"]
-
-[feature.umfpack.dependencies]
-# scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564
-scikit-umfpack = "==0.3.3"
-setuptools = "<67"
-
-
 [feature.scikit-sparse]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
@@ -535,24 +578,24 @@ libboost-headers = "==1.89.0"
 qhull = "==2020.2"
 
 [feature.system-libs.activation.env]
-BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/include/boost"
-BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/lib"
+BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/include/boost"
+BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/lib"
 
 [feature.system-libs.tasks.build-system-libs]
-cmd = "spin build --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cmd = "spin build --build-dir=build-system-libs --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with system libs (e.g. boost, qhull)"
 
 [feature.system-libs.tasks.test-system-libs]
-cmd = "spin test --no-build"
+cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
 
 
 ### Alternative python versions ###
 
-[feature.py311]
+[feature.py312]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
-[feature.py311.dependencies]
-python = "3.11.*"
+[feature.py312.dependencies]
+python = "3.12.*"

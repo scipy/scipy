@@ -57,7 +57,8 @@ def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
 
 
 class RigidTransform:
-    """Rigid transform in 3 dimensions.
+    """
+    Rigid transform in 3 dimensions.
 
     This class provides an interface to initialize from and represent rigid
     transforms (rotation and translation) in 3D space. In different fields,
@@ -119,6 +120,10 @@ class RigidTransform:
     inv
     identity
 
+    Notes
+    -----
+    .. versionadded:: 1.16.0
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
@@ -130,10 +135,6 @@ class RigidTransform:
     .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
            ugly", June 9, 2014.
            https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
-
-    Notes
-    -----
-    .. versionadded:: 1.16.0
 
     Examples
     --------
@@ -999,7 +1000,10 @@ class RigidTransform:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def mean(self, weights: ArrayLike | None = None) -> RigidTransform:
+    def mean(self,
+        weights: ArrayLike | None = None,
+        axis: None | int | tuple[int, ...] = None
+    ) -> RigidTransform:
         """Get the mean of the transforms.
 
         The mean of a set of transforms is the same as the mean of its
@@ -1024,6 +1028,9 @@ class RigidTransform:
             None (default), then all values in `weights` are assumed to be
             equal. If given, the shape of `weights` must be broadcastable to
             the transform shape. Weights must be non-negative.
+        axis : None, int, or tuple of ints, optional
+            Axis or axes along which the means are computed. The default is to
+            compute the mean of all transforms.
 
         Returns
         -------
@@ -1061,7 +1068,7 @@ class RigidTransform:
                [ 0.51801458,  0.13833531, -0.84411151,  0.52429339],
                [0., 0., 0., 1.]])
         """
-        mean = self._backend.mean(self._matrix, weights=weights)
+        mean = self._backend.mean(self._matrix, weights=weights, axis=axis)
         return RigidTransform._from_raw_matrix(mean, xp=self._xp,
                                                backend=self._backend)
 
@@ -1435,7 +1442,9 @@ class RigidTransform:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def __mul__(self, other: RigidTransform) -> RigidTransform | NotImplementedType:
+    def __mul__(
+        self, other: RigidTransform | Rotation
+    ) -> RigidTransform | NotImplementedType:
         """Compose this transform with the other.
 
         If ``p`` and ``q`` are two transforms, then the composition of '``q``
@@ -1452,11 +1461,14 @@ class RigidTransform:
         broadcasting rules. The resulting shape for two `RigidTransform` instances
         ``p`` and ``q`` is `np.broadcast_shapes(p.shape, q.shape)`.
 
+        If ``other`` is a `Rotation`, it is automatically promoted to a
+        `RigidTransform` with zero translation.
+
         Parameters
         ----------
-        other : `RigidTransform` instance
-            Transform(s) to be composed with this one. The shapes must be
-            broadcastable.
+        other : `RigidTransform` or `Rotation` instance
+            Transform(s) or rotation(s) to be composed with this one. The shapes
+            must be broadcastable.
 
         Returns
         -------
@@ -1514,7 +1526,9 @@ class RigidTransform:
         >>> tf.translation.shape
         (5, 4, 3)
         """
-        if not isinstance(other, RigidTransform):
+        if isinstance(other, Rotation):
+            other = RigidTransform.from_rotation(other)
+        elif not isinstance(other, RigidTransform):
             # If other is not a RigidTransform, we return NotImplemented to allow other
             # types to implement __rmul__
             return NotImplemented
@@ -1530,6 +1544,31 @@ class RigidTransform:
         if self._single and other._single:
             matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=True, copy=False)
+
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def __rmul__(self, other: Rotation) -> RigidTransform | NotImplementedType:
+        """Compose a rotation with this transform (rotation applied second).
+
+        See `__mul__` for more details.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            The rotation to compose with this transform. The shapes must be
+            broadcastable.
+
+        Returns
+        -------
+        `RigidTransform` instance
+            The composed transform.
+        """
+        if isinstance(other, Rotation):
+            other = RigidTransform.from_rotation(other)
+            return other * self
+        # When other is a RigidTransform __mul__ is called, so we don't handle it here
+        return NotImplemented
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]

@@ -194,7 +194,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     rc : int
         Return code, see below
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'TNC' `method` in particular.

@@ -713,6 +713,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     Returns
     -------
     gaussian_filter1d : ndarray
+        Returned array of same shape as `input`.
 
     Notes
     -----
@@ -1650,7 +1651,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
 
     References
     ----------
-    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777.
     .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
 
 
@@ -1708,7 +1709,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
 
     References
     ----------
-    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777.
     .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
 
     Examples

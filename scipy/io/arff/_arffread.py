@@ -665,9 +665,21 @@ def read_header(ofile):
 
 
 class MetaData:
-    """Small container to keep useful information on a ARFF dataset.
+    """
+    Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.
+
+    Methods
+    -------
+    names
+    types
+
+    Notes
+    -----
+    Also maintains the list of attributes in order, i.e., doing for i in
+    meta, where meta is an instance of MetaData, will return the
+    different attribute names in the order they were defined.
 
     Examples
     --------
@@ -681,17 +693,6 @@ class MetaData:
         meta.names()
         # Getting attribute type
         types = meta.types()
-
-    Methods
-    -------
-    names
-    types
-
-    Notes
-    -----
-    Also maintains the list of attributes in order, i.e., doing for i in
-    meta, where meta is an instance of MetaData, will return the
-    different attribute names in the order they were defined.
     """
     def __init__(self, rel, attr):
         self.name = rel

@@ -39,7 +39,7 @@ from scipy._lib._testutils import _run_concurrent_barrier
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
 
-from scipy.interpolate import _dfitpack as dfitpack
+from scipy.interpolate import _fitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
@@ -326,6 +326,11 @@ class TestBSpline:
 
         # 2nd derivative is not guaranteed to be continuous either
         assert not np.allclose(b(x - 1e-10, nu=2), b(x + 1e-10, nu=2))
+
+    def test_basis_element_invalid_too_short(self, xp):
+        # There should be at least 2 knots
+        assert_raises(ValueError, BSpline.basis_element, **dict(t=xp.asarray([0])))
+        assert_raises(ValueError, BSpline.basis_element, **dict(t=xp.asarray([])))
 
     def test_basis_element_quadratic(self, xp):
         xx = xp.linspace(-1, 4, 20)
@@ -1117,15 +1122,15 @@ class TestInterop:
         # automatically calculated parameters are non-increasing
         # see gh-7589
         x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             splprep([x])
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             _impl.splprep([x])
 
         # given non-increasing parameter values u
         x = [1, 3, 2, 4]
         u = [0, 0.3, 0.2, 1]
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             splprep(*[[x], None, u])
 
     def test_sproot(self):
@@ -2172,6 +2177,16 @@ class TestGivensQR:
 
         xp_assert_close(cc, c, atol=1e-14)
 
+    def test_evaluate_all_bspl(self):
+        n = 10
+        x, _, t, k = self._get_xyt(n)
+        zero_array = np.zeros((k + 1,), dtype=float)
+        for xval in x:
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, k + 2), zero_array)
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, 2*k), zero_array)
+
 
 def data_file(basename):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)),
@@ -2614,6 +2629,11 @@ class TestNdBSpline:
             (1, 0): lambda x, y: 3 * x**2 * (y**2 + 2*y),
             (1, 1): lambda x, y: 3 * x**2 * (2*y + 2),
             (0, 0): lambda x, y: x**3 * (y**2 + 2*y),
+            (2*kx, 1): lambda x, y: 0,
+            (2*kx, 0): lambda x, y: 0,
+            (1, 3*ky): lambda x, y: 0,
+            (0, 3*ky): lambda x, y: 0,
+            (3*kx, 2*ky): lambda x, y: 0,
         }
 
         for nu, expected_fn in test_cases.items():
@@ -3693,6 +3713,54 @@ class _TestMakeSplrepBase:
         xp_assert_close(spl.t, tck[0])
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1], atol=1e-8)
+
+
+    @pytest.mark.parametrize("bc_type", ["periodic", None])
+    def test_make_splrep_with_non_c_contiguous_input(self, bc_type):
+          # regression test for https://github.com/scipy/scipy/issues/23371
+
+        def check(spl, tck):
+            xp_assert_close(spl.t, tck[0])
+            xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
+                            tck[1], atol=1e-8)
+
+        # Sample data
+        x = np.linspace(0, 2*np.pi, 10)
+        y = np.sin(x)
+
+        x1, y1 = np.c_[x, y].T
+
+        # Safety check to make sure inputs
+        # are actually not C contiguous
+        assert x1.flags.c_contiguous is False
+        assert y1.flags.c_contiguous is False
+
+        w = np.linspace(1, 5, len(x))
+        w1, _ = np.c_[w, w].T
+
+        # Safety check to make sure inputs
+        # are actually not C contiguous
+        assert w1.flags.c_contiguous is False
+
+        tck = splrep(x, y, w=w, k=3, s=1e-8, per=(bc_type == 'periodic'))
+
+        # only x.flags.c_contiguous is False
+        spl = make_splrep(x1, y, w=w, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # only x.flags.c_contiguous is False
+        spl = make_splrep(x, y1, w=w, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # only w.flags.c_contiguous is False
+        spl = make_splrep(x, y, w=w1, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # x, y, z all have c_contiguous False
+        spl = make_splrep(x1, y1, w=w1, s=1e-8, k=3,
+                          bc_type=bc_type)
+        check(spl, tck)
+
 
     @pytest.mark.parametrize("bc_type", ["periodic", None])
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5])

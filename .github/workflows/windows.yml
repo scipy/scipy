@@ -40,6 +40,9 @@ jobs:
         with:
           pixi-version: v0.56.0
           cache: false
+          environments: >-
+            build
+            test
 
       - name: Build
         run: pixi run build
@@ -52,7 +55,7 @@ jobs:
 
   #############################################################################
   full_spin_min_numpy:
-    name: full, py3.11/npMin, spin
+    name: full, py3.12/npMin, spin
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -67,7 +70,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
           cache-dependency-path: "environment.yml"
 
@@ -78,8 +81,8 @@ jobs:
 
       - name: pip-packages
         run: |
-          # 1.26.4 is currently our oldest supported NumPy version
-          python -m pip install numpy==1.26.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
+          # 2.0.0 is currently our oldest supported NumPy version
+          python -m pip install numpy==2.0.0 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
@@ -95,7 +98,7 @@ jobs:
   #############################################################################
   full_build_sdist_wheel:
     # TODO: enable ILP64 once possible
-    name: no pythran & sdist+wheel, full, py3.11/npPre, pip+pytest
+    name: no pythran & sdist+wheel, full, py3.12/npPre, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -109,7 +112,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
           cache-dependency-path: "environment.yml"
 
@@ -129,13 +132,12 @@ jobs:
 
       - name: pip-packages
         run: |
-          python -m pip install build delvewheel cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
-          python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+          python -m pip install build delvewheel numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
 
       - name: Build
         shell: bash
         run: |
-          python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
+          python -m build -Csetup-args="-Duse-pythran=false"
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel
           # Ignore `libsf_error_state.dll` for special function error handling;
@@ -196,7 +198,7 @@ jobs:
 
   #############################################################################
   full_build_sdist_wheel_arm64:
-    name: no pythran & sdist+wheel, full, py3.11/npPre, pip+pytest (Win-ARM64)
+    name: no pythran & sdist+wheel, full, py3.12/npPre, pip+pytest (Win-ARM64)
     runs-on: windows-11-arm
     needs: get_commit_message
     if: >
@@ -211,7 +213,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           architecture: "arm64"
           cache: "pip"
           cache-dependency-path: "environment.yml"

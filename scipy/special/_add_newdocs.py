@@ -1604,8 +1604,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E6
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1720,8 +1719,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E5
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1812,8 +1810,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E1
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1911,8 +1908,7 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E1
@@ -2036,27 +2032,24 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.20.iii
     .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
            Integrands with the Square Root of Two Quadratic Factors," J.
            Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
-           https://doi.org/10.1016/S0377-0427(00)00282-X
+           :doi:`10.1016/S0377-0427(00)00282-X`.
     .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
            Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
            Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
            Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
-           Switzerland: Springer Nature Switzerland)
-           https://arxiv.org/abs/1806.06725
-           https://doi.org/10.1007/978-3-030-04480-0
+           Switzerland: Springer Nature Switzerland).
+           :doi:`10.1007/978-3-030-04480-0`. https://arxiv.org/abs/1806.06725
     .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
            Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
-           pp. 288-303, 1994.
+           pp. 288-303, 1994. :doi:`10.1137/S0036141092228477`.
            https://arxiv.org/abs/math/9310223
-           https://doi.org/10.1137/S0036141092228477
 
     Examples
     --------
@@ -2140,7 +2133,7 @@ add_newdoc("entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -3579,7 +3572,7 @@ add_newdoc("gdtr",
 
     .. math::
 
-        F = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        F(x) = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3599,7 +3592,7 @@ add_newdoc("gdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The CDF of the gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
@@ -3697,7 +3690,7 @@ add_newdoc("gdtrc",
 
     .. math::
 
-        F = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        S(x) = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3717,7 +3710,7 @@ add_newdoc("gdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The survival function of the gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
@@ -3934,7 +3927,7 @@ add_newdoc("gdtrib",
            "A new hybrid quadratic/bisection algorithm for finding the zero of a
            nonlinear function without using derivatives".
            Advances in Engineering Software, 28(3), 145-149.
-           https://doi.org/10.1016/s0965-9978(96)00051-8
+           :doi:`10.1016/s0965-9978(96)00051-8`.
 
     Examples
     --------
@@ -4244,8 +4237,7 @@ add_newdoc("hyp1f1",
     .. [DLMF] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/13.2#E2
     .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-    .. [3] Zhang, Jin, "Computation of Special Functions", John Wiley
-           and Sons, Inc, 1996.
+    .. [3] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
 
     Examples
     --------
@@ -4397,7 +4389,7 @@ add_newdoc("kl_div",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -4445,7 +4437,7 @@ add_newdoc("kn",
            http://netlib.org/amos/
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
-           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
+           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265.
 
     Examples
     --------
@@ -4748,13 +4740,13 @@ add_newdoc("lpmv",
 
     .. math::
 
-        P_v^m = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} P_v(x)
+        P_v^m(x) = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} (P_v(x))
 
     where
 
     .. math::
 
-        P_v = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
+        P_v(x) = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
                 \left(\frac{1 - x}{2}\right)^k
 
     is the Legendre function of the first kind. Here :math:`(\cdot)_k`
@@ -4770,7 +4762,7 @@ add_newdoc("lpmv",
     x : array_like
         Argument (float). Must have ``|x| <= 1``.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
@@ -4783,9 +4775,41 @@ add_newdoc("lpmv",
 
     References
     ----------
-    .. [1] Zhang, Jin, "Computation of Special Functions", John Wiley
-           and Sons, Inc, 1996.
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
 
+    Examples
+    --------
+    Compute a single associated Legendre function value:
+
+    >>> from scipy.special import lpmv
+    >>> lpmv(1, 2.5, 0.3)
+    -0.1292299
+
+    Plot the associated Legendre functions for orders ``m = 1`` and
+    ``m = 2`` and degrees ``v = 0, ..., 5``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> nus = np.arange(0, 6)
+    >>> xs = np.linspace(-1+1e-5, 1-1e-5, 101)
+
+    Order 1.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, lpmv(1, nus, xs[:, np.newaxis]), "-")
+    >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$P_\nu^1(x)$")
+    >>> plt.show()
+
+    Order 2.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, lpmv(2, nus, xs[:, np.newaxis]), "-")
+    >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$P_\nu^2(x)$")
+    >>> plt.show()
     """)
 
 add_newdoc("nbdtr",
@@ -4799,7 +4823,7 @@ add_newdoc("nbdtr",
 
     .. math::
 
-        F = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        F(k) = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that `k` or fewer failures precede the nth
@@ -4818,7 +4842,7 @@ add_newdoc("nbdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k` or fewer failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -4925,7 +4949,7 @@ add_newdoc("nbdtrc",
 
     .. math::
 
-        F = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        S(k) = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that more than `k` failures precede the nth
@@ -4944,7 +4968,7 @@ add_newdoc("nbdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -6223,6 +6247,12 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
     Notes
     -----
     This function relies on the ``gamma_q_inva`` function from the Boost
@@ -6231,12 +6261,6 @@ add_newdoc("pdtrik",
     References
     ----------
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrc : Poisson survival function
-    pdtri : inverse of `pdtr` with respect to `m`
 
     Examples
     --------
@@ -6573,7 +6597,7 @@ add_newdoc("rel_entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
@@ -7681,9 +7705,9 @@ add_newdoc("owens_t",
 
     Parameters
     ----------
-    h: array_like
+    h : array_like
         Input value.
-    a: array_like
+    a : array_like
         Input value.
     out : ndarray, optional
         Optional output array for the function results

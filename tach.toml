@@ -1,3 +1,5 @@
+respect_gitignore = "if_git_repo"
+
 exclude = [
   "scipy/_lib/array_api_compat",
   "scipy/_lib/array_api_extra",
@@ -11,6 +13,10 @@ exclude = [
 [[modules]]
 path = "scipy"
 depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy._external"
+depends_on = []
 
 [[modules]]
 path = "scipy._lib"
@@ -155,6 +161,7 @@ depends_on = [
     "scipy.linalg.blas",
     "scipy.ndimage",
     "scipy.optimize",
+    "scipy.optimize.elementwise",
     "scipy.sparse",
     "scipy.sparse.csgraph",
     "scipy.spatial",
@@ -206,6 +213,8 @@ exclude = [
     "_registry", # scipy/datasets/_download_all.py
     "_wrappers_common", # scipy/_build_utils/_generate_blas_wrapper.py
     "convert", # scipy/special/utils/datafunc.py
+    # conditional imports
+    "annotationlib", # conditional stdlib for backward compatibility of <3.14
     # optional dependencies
     "Cython",
     "array-api-compat",

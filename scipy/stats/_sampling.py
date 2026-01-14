@@ -440,7 +440,7 @@ class FastGeneratorInversion:
         The default is None. In that case, the random variates are not
         truncated, and the domain is inferred from the support of the
         distribution.
-    ignore_shape_range : boolean, optional.
+    ignore_shape_range : boolean, optional
         If False, shape parameters that are outside of the valid range
         of values to ensure that the numerical accuracy (see Notes) is
         high, raise a ValueError. If True, any shape parameters that are valid
@@ -522,8 +522,10 @@ class FastGeneratorInversion:
     antithetic variates are be used ([2]_).
 
     In addition, inversion makes it possible to
+
     - to use a QMC generator from `scipy.stats.qmc` (method `qrvs`),
     - to generate random variates truncated to an interval. For example, if
+
     one aims to sample standard normal random variates from
     the interval (2, 4), this can be easily achieved by using the parameter
     `domain`.
@@ -1138,7 +1140,7 @@ class RatioUniforms:
         The lower bound of the bounding rectangle in the v-direction.
     vmax : float
         The upper bound of the bounding rectangle in the v-direction.
-    c : float, optional.
+    c : float, optional
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
@@ -1246,14 +1248,14 @@ class RatioUniforms:
     0.21121052054580314
 
     """
-    
+
     def __init__(self, pdf, *, umax, vmin, vmax, c=0, random_state=None):
         if vmin >= vmax:
             raise ValueError("vmin must be smaller than vmax.")
 
         if umax <= 0:
             raise ValueError("umax must be positive.")
-        
+
         self._pdf = pdf
         self._umax = umax
         self._vmin = vmin

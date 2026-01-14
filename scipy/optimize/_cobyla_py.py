@@ -10,9 +10,8 @@ Functions
 
 """
 
-from inspect import signature
-
 import numpy as np
+from scipy._lib._util import wrapped_inspect_signature
 from ._optimize import (OptimizeResult, _check_unknown_options,
     _prepare_scalar_function)
 from ._constraints import NonlinearConstraint
@@ -66,7 +65,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     x : ndarray
         The argument that minimises `f`.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'COBYLA' `method` in particular.
@@ -98,10 +97,10 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     how these issues are resolved, as well as how the points v_i are
     updated, refer to the source code or the references below.
 
-        .. versionchanged:: 1.16.0
-            The original Powell implementation was replaced by a pure
-            Python version from the PRIMA package, with bug fixes and
-            improvements being made.
+    .. versionchanged:: 1.16.0
+        The original Powell implementation was replaced by a pure
+        Python version from the PRIMA package, with bug fixes and
+        improvements being made.
 
 
     References
@@ -246,7 +245,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     sf = _prepare_scalar_function(fun, x0, args=args, jac=_jac)
 
     if callback is not None:
-        sig = signature(callback)
+        sig = wrapped_inspect_signature(callback)
         if set(sig.parameters) == {"intermediate_result"}:
             def wrapped_callback_intermediate(x, f, nf, tr, cstrv, nlconstrlist):
                 intermediate_result = OptimizeResult(x=np.copy(x), fun=f, nfev=nf,

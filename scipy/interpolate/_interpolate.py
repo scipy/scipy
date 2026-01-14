@@ -894,7 +894,7 @@ class PPoly(_PPolyBase):
     from_bernstein_basis
     construct_fast
 
-    See also
+    See Also
     --------
     BPoly : piecewise polynomials in the Bernstein basis
 
@@ -1371,7 +1371,7 @@ class BPoly(_PPolyBase):
     from_power_basis
     from_derivatives
 
-    See also
+    See Also
     --------
     PPoly : piecewise polynomials in the power basis
 
@@ -1931,7 +1931,7 @@ class NdPPoly:
     integrate_1d
     construct_fast
 
-    See also
+    See Also
     --------
     PPoly : piecewise polynomials in 1D
 

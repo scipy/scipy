@@ -7,7 +7,7 @@ Convenience interface to N-D interpolation
 import numpy as np
 from ._interpnd import (LinearNDInterpolator, NDInterpolatorBase,
      CloughTocher2DInterpolator, _ndim_coords_from_arrays)
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 
 __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
            'CloughTocher2DInterpolator']
@@ -19,10 +19,6 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 
 class NearestNDInterpolator(NDInterpolatorBase):
     """Nearest-neighbor interpolator in N > 1 dimensions.
-
-    Methods
-    -------
-    __call__
 
     Parameters
     ----------
@@ -38,9 +34,13 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         .. versionadded:: 0.14.0
     tree_options : dict, optional
-        Options passed to the underlying ``cKDTree``.
+        Options passed to the underlying ``KDTree``.
 
         .. versionadded:: 0.17.0
+
+    Methods
+    -------
+    __call__
 
     See Also
     --------
@@ -57,7 +57,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Notes
     -----
-    Uses ``scipy.spatial.cKDTree``
+    Uses ``scipy.spatial.KDTree``
 
     .. note:: For data on a regular grid use `interpn` instead.
 
@@ -83,7 +83,6 @@ class NearestNDInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
-
     """
 
     def __init__(self, x, y, rescale=False, tree_options=None):
@@ -92,7 +91,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
                                     need_values=False)
         if tree_options is None:
             tree_options = dict()
-        self.tree = cKDTree(self.points, **tree_options)
+        self.tree = KDTree(self.points, **tree_options)
         self.values = np.asarray(y)
 
     def __call__(self, *args, **query_options):
@@ -107,14 +106,14 @@ class NearestNDInterpolator(NDInterpolatorBase):
             or x1 can be array-like of float with shape ``(..., ndim)``
         **query_options
             This allows ``eps``, ``p``, ``distance_upper_bound``, and ``workers``
-            being passed to the cKDTree's query function to be explicitly set.
-            See `scipy.spatial.cKDTree.query` for an overview of the different options.
+            being passed to the KDTree's query function to be explicitly set.
+            See `scipy.spatial.KDTree.query` for an overview of the different options.
 
             .. versionadded:: 1.12.0
 
         """
         # For the sake of enabling subclassing, NDInterpolatorBase._set_xi performs
-        # some operations which are not required by NearestNDInterpolator.__call__, 
+        # some operations which are not required by NearestNDInterpolator.__call__,
         # hence here we operate on xi directly, without calling a parent class function.
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
@@ -133,7 +132,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         flattened_shape = xi_flat.shape
 
         # if distance_upper_bound is set to not be infinite,
-        # then we need to consider the case where cKDtree
+        # then we need to consider the case where KDtree
         # does not find any points within distance_upper_bound to return.
         # It marks those points as having infinte distance, which is what will be used
         # below to mask the array and return only the points that were deemed
@@ -169,17 +168,17 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
 
 def griddata(points, values, xi, method='linear', fill_value=np.nan,
-             rescale=False):
+             rescale=False, simplex_tolerance=1.0):
     """
     Convenience function for interpolating unstructured data in multiple dimensions.
 
     Parameters
     ----------
-    points : 2-D ndarray of floats with shape (n, D), or length D tuple of 1-D ndarrays with shape (n,).
+    points : 2-D ndarray of floats with shape (n, D), or length D tuple of 1-D ndarrays with shape (n,)
         Data point coordinates.
     values : ndarray of float or complex, shape (n,)
         Data values.
-    xi : 2-D ndarray of floats with shape (m, D), or length D tuple of ndarrays broadcastable to the same shape.
+    xi : 2-D ndarray of floats with shape (m, D), or length D tuple of ndarrays broadcastable to the same shape
         Points at which to interpolate data.
     method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of
@@ -214,11 +213,25 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         incommensurable units and differ by many orders of magnitude.
 
         .. versionadded:: 0.14.0
+    simplex_tolerance : float, optional
+        Multiplier for the default tolerance QHull uses to assign
+        a simplex to the xi.  Default is 1.0.  Increase if there are
+        difficulties assigning points to simplexes; this is most
+        reproducible with points exatly on the border of a very
+        oblique triangle.  Only relevant for linear and 2-D cubic
+        interpolation.
+
+        .. versionadded:: 1.18.0
 
     Returns
     -------
     ndarray
         Array of interpolated values.
+
+    Raises
+    ------
+    ValueError
+        If simplex_tolerance <= 0
 
     See Also
     --------
@@ -289,6 +302,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.show()
 
     """ # numpy/numpydoc#87  # noqa: E501
+    if simplex_tolerance <= 0:
+        raise ValueError("simplex_tolerance must be positive")
 
     points = _ndim_coords_from_arrays(points)
 
@@ -319,11 +334,11 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     elif method == 'linear':
         ip = LinearNDInterpolator(points, values, fill_value=fill_value,
                                   rescale=rescale)
-        return ip(xi)
+        return ip(xi, simplex_tolerance=simplex_tolerance)
     elif method == 'cubic' and ndim == 2:
         ip = CloughTocher2DInterpolator(points, values, fill_value=fill_value,
                                         rescale=rescale)
-        return ip(xi)
+        return ip(xi, simplex_tolerance=simplex_tolerance)
     else:
         raise ValueError(
             f"Unknown interpolation method {method!r} for {ndim} dimensional data"
