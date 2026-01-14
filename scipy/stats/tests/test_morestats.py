@@ -1179,30 +1179,6 @@ class TestBinomTest:
         assert_equal(res.statistic, 0.25)
         assert_equal(res.pvalue, 1.0)
 
-    @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
-    def test_invalid_k_n(self, k, n):
-        with pytest.raises(ValueError,
-                           match="must be an integer not less than"):
-            stats.binomtest(k, n)
-
-    def test_invalid_k_too_big(self):
-        with pytest.raises(ValueError,
-                           match=r"k \(11\) must not be greater than n \(10\)."):
-            stats.binomtest(11, 10, 0.25)
-
-    def test_invalid_k_wrong_type(self):
-        with pytest.raises(TypeError,
-                           match="k must be an integer."):
-            stats.binomtest([10, 11], 21, 0.25)
-
-    def test_invalid_p_range(self):
-        message = r'p \(-0.5\) must be in range...'
-        with pytest.raises(ValueError, match=message):
-            stats.binomtest(50, 150, p=-0.5)
-        message = r'p \(1.5\) must be in range...'
-        with pytest.raises(ValueError, match=message):
-            stats.binomtest(50, 150, p=1.5)
-
     def test_invalid_confidence_level(self):
         res = stats.binomtest(3, n=10, p=0.1)
         message = r"confidence_level \(-1\) must be in the interval"
@@ -1227,6 +1203,53 @@ class TestBinomTest:
         # Boost.Math error policy should raise exceptions in Python
         with pytest.raises(OverflowError, match='Error in function...'):
             stats.binomtest(5, 6, p=sys.float_info.min)
+
+    @pytest.mark.parametrize("k, n, p",
+        [(-1, 10, 0.5), (11, 10, 0.5), (5.5, 10, 0.5), (np.nan, 10, 0.5),
+         (0, 0, 0.5), (5, 10.5, 0.5), (5, np.nan, 0.5),
+         (5, 10, -0.1), (5, 10, 1.1), (5, 10, np.nan)])
+    def test_invalid(self, k, n, p):
+        res = stats.binomtest(k, n, p)
+        np.testing.assert_equal(res.statistic, np.nan)
+        np.testing.assert_equal(res.pvalue, np.nan)
+
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("method", ['exact', 'wilson', 'wilsoncc'])
+    def test_scalar_in_scalar_out(self, alternative, method):
+        res = stats.binomtest(3, 11, 0.4, alternative=alternative)
+        assert np.isscalar(res.statistic)
+        assert np.isscalar(res.pvalue)
+        assert np.isscalar(res.n)
+        assert np.isscalar(res.k)
+        ci = res.proportion_ci(method=method)
+        assert np.isscalar(ci.low)
+        assert np.isscalar(ci.high)
+
+    @pytest.mark.parametrize("alternative", ["less", "greater", "two-sided"])
+    @pytest.mark.parametrize("method", ["exact", "wilson", "wilsoncc"])
+    def test_ndarray(self, alternative, method):
+        shape = (7, 8, 9)
+        rng = np.random.default_rng(2150248640)
+        k = rng.integers(-1, 11, size=shape)
+        n = rng.integers(-1, 11, size=shape)
+        p = rng.uniform(-0.1, 1.1, size=shape)
+        res = stats.binomtest(k, n, p, alternative=alternative)
+        ci = res.proportion_ci(method=method)
+
+        @np.vectorize(excluded='alternative')
+        def binomtest_1d(k, n, p, alternative):
+            ref = stats.binomtest(k, n, p, alternative=alternative)
+            ci = ref.proportion_ci(method=method)
+            return ref.k, ref.n, ref.statistic, ref.pvalue, ci.low, ci.high
+
+        ref_k, ref_n, ref_statistic, ref_pvalue, ci_low, ci_high = binomtest_1d(
+            k, n, p, alternative)
+        assert_allclose(res.k, ref_k)
+        assert_allclose(res.n, ref_n)
+        assert_allclose(res.statistic, ref_statistic)
+        assert_allclose(res.pvalue, ref_pvalue)
+        assert_allclose(ci.low, ci_low)
+        assert_allclose(ci.high, ci_high)
 
 
 @make_xp_test_case(stats.fligner)
