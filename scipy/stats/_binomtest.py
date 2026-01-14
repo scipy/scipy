@@ -112,7 +112,7 @@ class BinomTestResult:
                                                confidence_level,
                                                self.alternative,
                                                correction=method == 'wilsoncc')
-        return ConfidenceInterval(low=low, high=high)
+        return ConfidenceInterval(low=low[()], high=high[()])
 
 
 def _binom_exact_conf_int(k, n, confidence_level, alternative):
@@ -126,10 +126,14 @@ def _binom_exact_conf_int(k, n, confidence_level, alternative):
     alpha = ((1 - confidence_level) / 2 if alternative == 'two-sided'
              else 1 - confidence_level)
 
+    # I think using the private methods here is fine, since we will only evaluate with
+    # valid `p`, `k`, and `n` (or all NaNs). One exception is when `k=0` and
+    # `binom._sf(k-1, n, p)`: evaluates to NaN, but that's not a problem because
+    # `plow` has a special case for `k=0` below.
     plow = (np.zeros(k.shape, dtype=np.float64) if alternative == 'less' else
-            find_root(lambda p, k, n: binom.sf(k-1, n, p) - alpha, init, args=args).x)
+            find_root(lambda p, k, n: binom._sf(k-1, n, p) - alpha, init, args=args).x)
     phigh = (np.ones(k.shape, dtype=np.float64) if alternative == 'greater' else
-             find_root(lambda p, k, n: binom.cdf(k, n, p) - alpha, init, args=args).x)
+             find_root(lambda p, k, n: binom._cdf(k, n, p) - alpha, init, args=args).x)
 
     plow = np.where(k == 0, 0.0, plow)
     phigh = np.where(k == n, 1.0, phigh)
@@ -154,10 +158,10 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
 
     if correction:
         with np.errstate(divide='ignore', invalid='ignore'):
-            dlo = (1 + z*np.sqrt(z**2 - 2 - 1/n + 4*p*(n * q + 1)))/denom
-            dhi = (1 + z*np.sqrt(z**2 + 2 - 1/n + 4*p*(n * q - 1)))/denom
+            dlo = (1 + z*np.sqrt(z**2 - 2 - 1/n + 4*p*(n*q + 1)))/denom
+            dhi = (1 + z*np.sqrt(z**2 + 2 - 1/n + 4*p*(n*q - 1)))/denom
     else:
-        delta = z / denom * np.sqrt(4 * n * p * q + z ** 2)
+        delta = z / denom * np.sqrt(4*n*p*q + z**2)
         dlo, dhi = delta, delta
 
     lo = np.where((k == 0) | (alternative == 'less'), 0.0, center - dlo)
@@ -302,13 +306,13 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             pval = B.cdf(y-1) + B.sf(k-1)
             return pval
 
-        pval = xpx.apply_where(k < p * n, (d, k, p, n), k_lt_pn,  k_gte_pn)
+        pval = xpx.apply_where(k < p*n, (d, k, p, n), k_lt_pn,  k_gte_pn)
         pval = np.minimum(1.0, pval)
 
     statistic = np.where(valid, k/n, np.nan)
     pval = np.where(valid, pval, np.nan)
-    result = BinomTestResult(k=k, n=n, alternative=alternative,
-                             statistic=statistic, pvalue=pval)
+    result = BinomTestResult(k=k[()], n=n[()], alternative=alternative,
+                             statistic=statistic[()], pvalue=pval[()])
     return result
 
 

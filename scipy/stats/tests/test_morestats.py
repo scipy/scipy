@@ -1213,6 +1213,18 @@ class TestBinomTest:
         np.testing.assert_equal(res.statistic, np.nan)
         np.testing.assert_equal(res.pvalue, np.nan)
 
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("method", ['exact', 'wilson', 'wilsoncc'])
+    def test_scalar_in_scalar_out(self, alternative, method):
+        res = stats.binomtest(3, 11, 0.4, alternative=alternative)
+        assert np.isscalar(res.statistic)
+        assert np.isscalar(res.pvalue)
+        assert np.isscalar(res.n)
+        assert np.isscalar(res.k)
+        ci = res.proportion_ci(method=method)
+        assert np.isscalar(ci.low)
+        assert np.isscalar(ci.high)
+
     @pytest.mark.parametrize("alternative", ["less", "greater", "two-sided"])
     @pytest.mark.parametrize("method", ["exact", "wilson", "wilsoncc"])
     def test_ndarray(self, alternative, method):
@@ -1238,7 +1250,6 @@ class TestBinomTest:
         assert_allclose(res.pvalue, ref_pvalue)
         assert_allclose(ci.low, ci_low)
         assert_allclose(ci.high, ci_high)
-
 
 
 @make_xp_test_case(stats.fligner)
