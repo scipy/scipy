@@ -828,35 +828,37 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     Returns
     -------
-    Bunch object with the following fields defined:
-    sol : PPoly
-        Found solution for y as `scipy.interpolate.PPoly` instance, a C1
-        continuous cubic spline.
-    p : ndarray or None, shape (k,)
-        Found parameters. None, if the parameters were not present in the
-        problem.
-    x : ndarray, shape (m,)
-        Nodes of the final mesh.
-    y : ndarray, shape (n, m)
-        Solution values at the mesh nodes.
-    yp : ndarray, shape (n, m)
-        Solution derivatives at the mesh nodes.
-    rms_residuals : ndarray, shape (m - 1,)
-        RMS values of the relative residuals over each mesh interval (see the
-        description of `tol` parameter).
-    niter : int
-        Number of completed iterations.
-    status : int
-        Reason for algorithm termination:
+    result : BVPResult
+        Bunch object with the following fields defined:
 
-        * 0: The algorithm converged to the desired accuracy.
-        * 1: The maximum number of mesh nodes is exceeded.
-        * 2: A singular Jacobian encountered when solving the collocation system.
+        sol : PPoly
+            Found solution for y as `scipy.interpolate.PPoly` instance, a C1
+            continuous cubic spline.
+        p : ndarray or None, shape (k,)
+            Found parameters. None, if the parameters were not present in the
+            problem.
+        x : ndarray, shape (m,)
+            Nodes of the final mesh.
+        y : ndarray, shape (n, m)
+            Solution values at the mesh nodes.
+        yp : ndarray, shape (n, m)
+            Solution derivatives at the mesh nodes.
+        rms_residuals : ndarray, shape (m - 1,)
+            RMS values of the relative residuals over each mesh interval (see the
+            description of `tol` parameter).
+        niter : int
+            Number of completed iterations.
+        status : int
+            Reason for algorithm termination:
 
-    message : string
-        Verbal description of the termination reason.
-    success : bool
-        True if the algorithm converged to the desired accuracy (``status=0``).
+            * 0: The algorithm converged to the desired accuracy.
+            * 1: The maximum number of mesh nodes is exceeded.
+            * 2: A singular Jacobian encountered when solving the collocation system.
+
+        message : string
+            Verbal description of the termination reason.
+        success : bool
+            True if the algorithm converged to the desired accuracy (``status=0``).
 
     Notes
     -----

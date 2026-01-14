@@ -288,7 +288,7 @@ class KDTree(cKDTree):
     .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
            nearest neighbor searching with clustered point sets,"
            Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
-    """
+    """  # numpydoc ignore=SS02
 
     class node:
         @staticmethod

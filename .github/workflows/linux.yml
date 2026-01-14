@@ -14,7 +14,6 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
-  INSTALLDIR: "build-install"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -107,21 +106,26 @@ jobs:
       shell: bash -l {0}
       run: ccache -s
 
-    - name: Check installation
+    - name: Check installed files
       run: |
-        pushd tools
-        python check_installation.py ${{ env.INSTALLDIR }}
-        ./check_pyext_symbol_hiding.sh ../build
-        popd
+        spin check --installed-files --no-build
+
+    - name: Check symbol hiding
+      run: |
+        spin check --symbol-hiding --no-build
 
     - name: Check usage of install tags
       run: |
-        rm -r ${{ env.INSTALLDIR }}
+        rm -r build-install
         spin build --tags=runtime,python-runtime,devel
-        python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
-        rm -r ${{ env.INSTALLDIR }}
+        python tools/check_installation.py build-install --no-tests
+        rm -r build-install
         spin build --tags=runtime,python-runtime,devel,tests
-        python tools/check_installation.py ${{ env.INSTALLDIR }}
+        spin check --installed-files --no-build
+
+    - name: Check xp markers
+      run: |
+        spin check --xp-markers --no-build
 
     - name: Check build-internal dependencies
       run: ninja -C build -t missingdeps

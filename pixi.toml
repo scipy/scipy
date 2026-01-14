@@ -222,6 +222,11 @@ depends-on = "build"
 env.SCIPY_XSLOW = "1"
 description = "Test SciPy (full and x-slow)"
 
+[feature.test-tasks.tasks.check]
+cmd = "spin check --no-build"
+depends-on = "build"
+description = "Run SciPy-specific checks"
+
 
 [feature.smoke-docs.dependencies]
 hypothesis = "*"
