@@ -190,7 +190,7 @@ ilu_zcopy_to_ucol(
 			z_add(sum, sum, &ucol[i]);
 			break;
 		    case SMILU_3:
-			sum->r += tmp;
+			sum->r += z_abs1(&ucol[i]);
 			break;
 		    case SILU:
 		    default:
