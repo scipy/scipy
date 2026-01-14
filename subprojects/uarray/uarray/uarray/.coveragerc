@@ -1,0 +1,9 @@
+[run]
+branch = True
+source = 
+    uarray
+[report]
+omit =
+    **/tests/
+    docs/
+    uarray/_version.py

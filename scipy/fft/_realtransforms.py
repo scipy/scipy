@@ -1,5 +1,5 @@
 from ._basic import _dispatch
-from scipy._lib.uarray import Dispatchable
+from scipy._external.uarray import Dispatchable
 from scipy._lib._array_api import xp_capabilities
 import numpy as np
 

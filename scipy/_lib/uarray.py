@@ -7,7 +7,6 @@ be used instead, if available. This means that users can call
 
 """
 
-
 # Prefer an installed version of uarray, if available
 try:
     import uarray as _uarray
@@ -25,7 +24,7 @@ if _has_uarray:
     from uarray import *  # noqa: F403
     from uarray import _Function
 else:
-    from ._uarray import *  # noqa: F403
-    from ._uarray import _Function  # noqa: F401
+    from scipy._external.uarray import *  # noqa: F403
+    from scipy._external.uarray import _Function  # noqa: F401
 
 del _has_uarray
