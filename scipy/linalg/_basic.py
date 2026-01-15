@@ -24,44 +24,6 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 
 # Linear equations
-def _solve_check(n, info, lamch=None, rcond=None):
-    """ Check arguments during the different steps of the solution phase """
-    if info < 0:
-        raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument.')
-    elif 0 < info or rcond == 0:
-        raise LinAlgError('Matrix is singular.')
-
-    if lamch is None:
-        return
-    E = lamch('E')
-    if not (rcond >= E):  # `rcond < E` doesn't handle NaN
-        warn(f'Ill-conditioned matrix (rcond={rcond:.6g}): '
-             'result may not be accurate.',
-             LinAlgWarning, stacklevel=3)
-
-
-def _find_matrix_structure(a):
-    n = a.shape[0]
-    n_below, n_above = bandwidth(a)
-
-    if n_below == n_above == 0:
-        kind = 'diagonal'
-    elif n_above == 0:
-        kind = 'lower triangular'
-    elif n_below == 0:
-        kind = 'upper triangular'
-    elif n_above <= 1 and n_below <= 1 and n > 3:
-        kind = 'tridiagonal'
-    elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
-        kind = 'hermitian'
-    elif issymmetric(a):
-        kind = 'symmetric'
-    else:
-        kind = 'general'
-
-    return kind, n_below, n_above
-
-
 def _format_emit_errors_warnings(err_lst):
     """Format/emit errors/warnings from a lowlevel batched routine.
 
