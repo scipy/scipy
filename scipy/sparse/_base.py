@@ -1563,7 +1563,17 @@ class _spbase(SparseABC):
 
 
 class sparray:
-    """A namespace class to separate sparray from spmatrix"""
+    """
+A namespace class to separate sparray from spmatrix.
+
+This class serves as the base namespace for SciPy sparse array types.
+
+Attributes
+----------
+format : str
+    String representation of the sparse array format
+    (e.g. ``'csr'``, ``'csc'``, ``'coo'``).
+"""
 
     @classmethod
     def __class_getitem__(cls, arg, /):
