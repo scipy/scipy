@@ -215,7 +215,6 @@ class TestTf2zpk:
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
 
-
 @make_xp_test_case(zpk2tf)
 class TestZpk2Tf:
 
@@ -287,6 +286,21 @@ class TestZpk2Tf:
         a_ref = xp.asarray([1, -3, 2])
         xp_assert_close(b, b_ref, check_dtype=False)
         xp_assert_close(a, a_ref, check_dtype=False)
+
+    def test_zpk2tf_int_truncation(self, xp):
+        # regression test for gh-24382
+        z =  xp.asarray([[ 1, 2.], [ 0., -1.]], dtype=xp.float64)
+        p = xp.asarray([3., 4.], dtype=xp.float64)
+        k = 2.5
+
+        b, a = zpk2tf(z, p, k)
+
+        # reference values from scipy 1.15.3
+        b_ref = xp.asarray([[ 2.5, -7.5,  5. ], [ 2.5,  2.5,  0. ]], dtype=xp.float64)
+        a_ref = xp.asarray([ 1., -7., 12.], dtype=xp.float64)
+
+        xp_assert_close(b, b_ref, atol=1e-14)
+        xp_assert_close(a, a_ref, atol=1e-14)
 
 
 @make_xp_test_case(sos2zpk)
