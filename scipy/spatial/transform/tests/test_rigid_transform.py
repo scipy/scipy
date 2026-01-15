@@ -1510,4 +1510,4 @@ def test_shape_property(xp, dim: int):
 def test_non_writeable():
     mat = np.eye(4)
     mat.flags.writeable = False
-    RigidTransform.from_matrix(mat)  # Regression test against gh-24378, should not raise
+    RigidTransform.from_matrix(mat)  # Regression test against gh-24378
