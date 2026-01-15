@@ -1313,6 +1313,12 @@ class ShortTimeFFT:
             one-dimensional `x`, a complex 2d array is returned, with axis 0
             representing frequency and axis 1 the time slices.
 
+        See Also
+        --------
+        :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
+        stft_detrend: STFT with a trend subtracted from each segment.
+        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
+
         Notes
         -----
         The cross-spectrogram may be interpreted as the time-frequency analogon of the
@@ -1382,12 +1388,6 @@ class ShortTimeFFT:
         The logarithmic scaling reveals the odd harmonics of the square wave,
         which are reflected at the Nyquist frequency of 10 Hz. This aliasing
         is also the main source of the noise artifacts in the plot.
-
-        See Also
-        --------
-        :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
-        stft_detrend: STFT with a trend subtracted from each segment.
-        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         Sx = self.stft_detrend(x, detr, p0, p1, k_offset=k_offset,
                                padding=padding, axis=axis)
