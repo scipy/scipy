@@ -780,6 +780,7 @@
             ret = NULL;
             goto cleanup;
         }
+        Py_DECREF(callback_py);  /* DECREF the callback's return value */
     }
 /* L10: */
     }
