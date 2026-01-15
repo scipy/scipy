@@ -28,7 +28,8 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
 
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
-                                   is_numpy, xp_default_dtype)
+                                   is_numpy, xp_default_dtype, is_array_api_strict,
+                                   is_jax)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -991,6 +992,7 @@ class TestLevene:
         check_named_results(res, attributes, xp=xp)
 
 
+@make_xp_test_case(stats.binomtest)
 class TestBinomTest:
     """Tests for stats.binomtest."""
 
@@ -1059,7 +1061,7 @@ class TestBinomTest:
         # New way with binary search.
         ix = _binary_search_for_binom_tst(lambda x1:
                                           -stats.binom.pmf(x1, n, p),
-                                          -d, np.ceil(p * n), n)
+                                          -d, np.ceil(p * n), n, xp=np)
         y2 = n - ix + int(d == stats.binom.pmf(ix, n, p))
         assert_allclose(y1, y2, rtol=1e-9)
         # Now test for the other side.
@@ -1071,7 +1073,7 @@ class TestBinomTest:
         # New way with binary search.
         ix = _binary_search_for_binom_tst(lambda x1:
                                           stats.binom.pmf(x1, n, p),
-                                          d, 0, np.floor(p * n))
+                                          d, 0, np.floor(p * n), xp=np)
         y2 = ix + 1
         assert_allclose(y1, y2, rtol=1e-9)
 
@@ -1225,16 +1227,17 @@ class TestBinomTest:
         assert np.isscalar(ci.low)
         assert np.isscalar(ci.high)
 
+    @skip_xp_backends('dask.array', reason='expects dtype to be spoon-fed to it')
+    @pytest.mark.parametrize("shape", [(), (7, 8, 9)])
     @pytest.mark.parametrize("alternative", ["less", "greater", "two-sided"])
     @pytest.mark.parametrize("method", ["exact", "wilson", "wilsoncc"])
-    def test_ndarray(self, alternative, method):
-        shape = (7, 8, 9)
+    def test_ndarray(self, shape, alternative, method, xp):
         rng = np.random.default_rng(2150248640)
         k = rng.integers(-1, 11, size=shape)
         n = rng.integers(-1, 11, size=shape)
         p = rng.uniform(-0.1, 1.1, size=shape)
-        res = stats.binomtest(k, n, p, alternative=alternative)
-        ci = res.proportion_ci(method=method)
+        res = stats.binomtest(xp.asarray(k), xp.asarray(n), xp.asarray(p),
+                              alternative=alternative)
 
         @np.vectorize(excluded='alternative')
         def binomtest_1d(k, n, p, alternative):
@@ -1244,12 +1247,18 @@ class TestBinomTest:
 
         ref_k, ref_n, ref_statistic, ref_pvalue, ci_low, ci_high = binomtest_1d(
             k, n, p, alternative)
-        assert_allclose(res.k, ref_k)
-        assert_allclose(res.n, ref_n)
-        assert_allclose(res.statistic, ref_statistic)
-        assert_allclose(res.pvalue, ref_pvalue)
-        assert_allclose(ci.low, ci_low)
-        assert_allclose(ci.high, ci_high)
+        xp_assert_close(res.k, xp.asarray(ref_k))
+        xp_assert_close(res.n, xp.asarray(ref_n))
+        xp_assert_close(res.statistic, xp.asarray(ref_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref_pvalue))
+
+        if (is_array_api_strict(xp) or is_jax(xp)) and method == 'exact':
+            # array API strict and JAX don't support exact CI right now
+            return
+
+        ci = res.proportion_ci(method=method)
+        xp_assert_close(ci.low, xp.asarray(ci_low))
+        xp_assert_close(ci.high, xp.asarray(ci_high))
 
 
 @make_xp_test_case(stats.fligner)
