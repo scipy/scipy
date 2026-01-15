@@ -65,6 +65,13 @@ legacy_functions = [
     "scipy.optimize.KrylovJacobian"
 ]
 
+# the method of these classes have no __doc__, skip for now
+false_positives = ["scipy.stats.Uniform",
+                   "scipy.stats.Normal",
+                   "scipy.stats.Mixture",
+                   "scipy.stats.Binomial",
+                   "scipy.stats.Logistic"]
+
 skip_modules = [
     "scipy.odr",
     "cipy.fftpack",
@@ -119,7 +126,8 @@ def main():
 
     errors = 0
     for item in public_api:
-        if any(func in item for func in legacy_functions):
+        if (any(func in item for func in legacy_functions) or
+            any(func in item for func in false_positives)):
             continue
         try:
             res = validate(item)

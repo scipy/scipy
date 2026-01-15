@@ -609,7 +609,13 @@ class _spbase(SparseABC):
             return self @ other
 
     def power(self, n, dtype=None):
-        """Element-wise power."""
+        """Element-wise power.
+
+        Returns
+        -------
+        csr array/matrix
+            Result of raising all elements to the power `n`.
+        """
         return self.tocsr().power(n, dtype=dtype)
 
     def _broadcast_to(self, shape, copy=False):
@@ -1084,8 +1090,12 @@ class _spbase(SparseABC):
     def nonzero(self):
         """Nonzero indices of the array/matrix.
 
-        Returns a tuple of arrays (row,col) containing the indices
-        of the non-zero elements of the array.
+        Returns
+        -------
+        row : ndarray
+            Row indices of non-zero elements.
+        col : ndarray
+            Column indices of non-zero elements.
 
         Examples
         --------
@@ -1322,6 +1332,11 @@ class _spbase(SparseABC):
 
         No data/indices will be shared between the returned value and current
         array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix
+            A copy of this array/matrix.
         """
         return self.__class__(self, copy=True)
 
@@ -1433,6 +1448,7 @@ class _spbase(SparseABC):
         Returns
         -------
         m : np.matrix
+            Mean along the specified axis.
 
         See Also
         --------
@@ -1498,6 +1514,10 @@ class _spbase(SparseABC):
             Which diagonal to get, corresponding to elements a[i, i+offset].
             Default: 0 (the main diagonal).
 
+        Returns
+        -------
+        scalar
+            The sum of the specified diagonal of the array/matrix.
         """
         return self.diagonal(k=offset).sum()
 

@@ -132,6 +132,11 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
+
+        Returns
+        -------
+        lil_array or lil_matrix
+            A view of the 'i'th row.
         """
         new = self._lil_container((1, self.shape[1]), dtype=self.dtype)
         new.rows[0] = self.rows[i]
@@ -140,6 +145,11 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
+
+        Returns
+        -------
+        lil_array or lil_matrix
+            A copy of the 'i'th row.
         """
         M, N = self.shape
         if i < 0:
