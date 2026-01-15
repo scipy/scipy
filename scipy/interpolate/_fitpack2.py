@@ -2157,6 +2157,11 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
             .. versionadded:: 0.14.0
 
+        Returns
+        -------
+        z : ndarray
+            Evaluated values.
+
         Examples
         --------
         Suppose that we want to use splines to interpolate a bivariate function on a

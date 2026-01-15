@@ -1454,23 +1454,29 @@ class ShortTimeFFT:
             -> np.ndarray:
         """Inverse short-time Fourier transform.
 
-        It returns an array of dimension ``S.ndim - 1``  which is real
-        if `onesided_fft` is set, else complex. If the STFT is not
-        `invertible`, or the parameters are out of bounds  a ``ValueError`` is
-        raised.
-
         Parameters
         ----------
-        S
+        S : ndarray
             A complex valued array where `f_axis` denotes the frequency
             values and the `t-axis` dimension the temporal values of the
             STFT values.
-        k0, k1
+        k0, k1 : int, optional
             The start and the end index of the reconstructed signal. The
             default (``k0 = 0``, ``k1 = None``) assumes that the maximum length
             signal should be reconstructed.
-        f_axis, t_axis
+        f_axis, t_axis : int, optional
             The axes in `S` denoting the frequency and the time dimension.
+
+        Returns
+        -------
+        ndarray
+            Array of dimension ``S.ndim - 1``  which is real if `onesided_fft` is set,
+            else complex.
+
+        Raises
+        ------
+        ValueError
+            If the STFT is not invertible, or the parameters are out of bounds.
 
         See Also
         --------
@@ -1727,6 +1733,11 @@ class ShortTimeFFT:
         n : int
             Number of samples of input signal (must be ≥ half of the window length).
 
+        Returns
+        -------
+        int
+            First sample index after signal end not touched by a time slice.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1749,6 +1760,16 @@ class ShortTimeFFT:
         `p_min` is typically less than zero.
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
+
+        Parameters
+        ----------
+        n : int
+            Size of the sample input.
+
+        Returns
+        -------
+        int
+            Index of first non-overlapping upper time slice for `n` sample input.
 
         See Also
         --------
@@ -2182,12 +2203,6 @@ class ShortTimeFFT:
                center_bins: bool = False) -> tuple[float, float, float, float]:
         """Return minimum and maximum values time-frequency values.
 
-        A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
-        of the time-frequency domain of the `~ShortTimeFFT.stft`.
-        That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
-        with the same name.
-
         Parameters
         ----------
         n : int
@@ -2199,6 +2214,15 @@ class ShortTimeFFT:
             frequency bins are moved from the side the middle. This is useful,
             when plotting the `~ShortTimeFFT.stft` values as step functions,
             i.e., with no interpolation.
+
+        Returns
+        -------
+        tuple
+            A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
+            ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
+            of the time-frequency domain of the `~ShortTimeFFT.stft`.
+            That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
+            with the same name.
 
         See Also
         --------

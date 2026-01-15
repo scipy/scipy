@@ -109,6 +109,11 @@ class _data_matrix(_spbase):
         dtype : dtype, optional
             If dtype is not specified, the current dtype will be preserved.
 
+        Returns
+        -------
+        sparse array/matrix
+            Result of raising all elements to the power `n`.
+
         Raises
         ------
         NotImplementedError : if n is a zero scalar
