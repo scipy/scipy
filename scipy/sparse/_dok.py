@@ -141,12 +141,36 @@ class _dok_base(_spbase, IndexMixin, dict):
         return self._dict.popitem()
 
     def items(self):
+        """
+        Returns the key, value pairs of the array.
+
+        Returns
+        -------
+        dict_items
+            A view object displaying a list of a dictionary's key-value tuple pairs.
+        """
         return self._dict.items()
 
     def keys(self):
+        """
+        Returns the keys of the array.
+
+        Returns
+        -------
+        dict_keys
+            A view object displaying a list of all the keys in the dictionary.
+        """
         return self._dict.keys()
 
     def values(self):
+        """
+        Returns the values of the array.
+
+        Returns
+        -------
+        dict_values
+            A view object displaying a list of all the values in the dictionary.
+        """
         return self._dict.values()
 
     def get(self, key, default=0.0):
@@ -427,6 +451,8 @@ class _dok_base(_spbase, IndexMixin, dict):
         if self.ndim == 2:
             return super().diagonal(k)
         raise ValueError("diagonal requires two dimensions")
+
+    diagonal.__doc__ = _spbase.diagonal.__doc__
 
     def transpose(self, axes=None, copy=False):
         if self.ndim == 1:

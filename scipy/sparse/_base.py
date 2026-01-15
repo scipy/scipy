@@ -494,7 +494,13 @@ class _spbase(SparseABC):
     ####################################################################
 
     def multiply(self, other):
-        """Element-wise multiplication by another array/matrix."""
+        """Element-wise multiplication by another array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix
+            Result of element-wise multiplication.
+        """
         if isscalarlike(other):
             return self._mul_scalar(other)
 
@@ -583,15 +589,41 @@ class _spbase(SparseABC):
             raise ValueError("Operands not compatible.")
 
     def maximum(self, other):
-        """Element-wise maximum between this and another array/matrix."""
+        """Element-wise maximum between this and another array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix or ndarray
+            Result of element-wise minimum. The type depends on `other`:
+
+            - If `other` is a scalar, the result is a sparse array/matrix.
+            - If `other` is an ndarray, the result is an ndarray.
+        """
         return self._maximum_minimum(other, np.maximum)
 
     def minimum(self, other):
-        """Element-wise minimum between this and another array/matrix."""
+        """Element-wise minimum between this and another array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix or ndarray
+            Result of element-wise minimum. The type depends on `other`:
+
+            - If `other` is a scalar, the result is a sparse array/matrix.
+            - If `other` is an ndarray, the result is an ndarray.
+        """
         return self._maximum_minimum(other, np.minimum)
 
     def dot(self, other):
         """Ordinary dot product
+
+        Returns
+        -------
+        sparse array/matrix or ndarray
+            Result of dot product. The type depends on `other`:
+
+            - If `other` is a scalar, the result is a sparse array/matrix.
+            - If `other` is an ndarray, the result is an ndarray.
 
         Examples
         --------
