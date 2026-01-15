@@ -174,7 +174,7 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction, *, x
     return lo, hi
 
 
-@xp_capabilities(jax_jit=False, cpu_only=True,
+@xp_capabilities(skip_backends=[('dask.array', "")], jax_jit=False, cpu_only=True,
                  reason="binomial distribution ufuncs only available for NumPy")
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
