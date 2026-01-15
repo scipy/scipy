@@ -73,38 +73,46 @@ direct(PyObject *self, PyObject *args)
  * Standard Python module interface
  */
 
-static PyMethodDef
-DIRECTMethods[] = {
+static struct PyMethodDef direct_module_methods[] = {
     {"direct", direct, METH_VARARGS, "DIRECT Optimization Algorithm"},
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_direct",
-    NULL,
-    -1,
-    DIRECTMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
 
-PyMODINIT_FUNC
-PyInit__direct(void)
-{
-    PyObject *module;
+static int module_exec(PyObject *module) {
+    (void)module;  /* unused */
 
-    import_array();
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return module;
-    }
+    if (_import_array() < 0) { return -1; }
 
 #if Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
+    return 0;
+}
 
-    return module;
+
+static struct PyModuleDef_Slot direct_slots[] = {
+    {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    /* signal that this module supports running without an active GIL */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
+static struct PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_direct",
+    .m_size = 0,
+    .m_methods = direct_module_methods,
+    .m_slots = direct_slots
+};
+
+
+PyMODINIT_FUNC
+PyInit__direct(void)
+{
+    return PyModuleDef_Init(&moduledef);
 }
