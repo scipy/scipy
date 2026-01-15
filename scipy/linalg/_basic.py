@@ -247,46 +247,6 @@ def solve(a, b, lower=False, overwrite_a=False,
     return x
 
 
-def _matrix_norm_diagonal(a, check_finite):
-    # Equivalent of dlange for diagonal matrix, assuming
-    # norm is either 'I' or '1' (really just not the Frobenius norm)
-    d = np.diag(a)
-    d = np.asarray_chkfinite(d) if check_finite else d
-    return np.abs(d).max()
-
-
-def _matrix_norm_tridiagonal(norm, a, check_finite):
-    # Equivalent of dlange for tridiagonal matrix, assuming
-    # norm is either 'I' or '1'
-    if norm == 'I':
-        a = a.T
-    # Context to avoid warning before error in cases like -inf + inf
-    with np.errstate(invalid='ignore'):
-        d = np.abs(np.diag(a))
-        d[1:] += np.abs(np.diag(a, 1))
-        d[:-1] += np.abs(np.diag(a, -1))
-    d = np.asarray_chkfinite(d) if check_finite else d
-    return d.max()
-
-
-def _matrix_norm_triangular(structure, norm, a, check_finite):
-    a = np.asarray_chkfinite(a) if check_finite else a
-    lantr = get_lapack_funcs('lantr', (a,))
-    return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
-
-
-def _matrix_norm_banded(kl, ku, norm, ab, check_finite):
-    ab = np.asarray_chkfinite(ab) if check_finite else ab
-    langb = get_lapack_funcs('langb', (ab,))
-    return langb(norm, kl, ku, ab)
-
-
-def _matrix_norm_general(norm, a, check_finite):
-    a = np.asarray_chkfinite(a) if check_finite else a
-    lange = get_lapack_funcs('lange', (a,))
-    return lange(norm, a)
-
-
 def _to_banded(n_below, n_above, a):
     n = a.shape[0]
     rows = n_above + n_below + 1
