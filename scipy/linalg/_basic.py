@@ -274,7 +274,8 @@ def solve(a, b, lower=False, overwrite_a=False,
         return out[..., 0] if b_is_1D else out
 
     # heavy lifting
-    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed)
+    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed,
+                                        overwrite_a, overwrite_b)
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)

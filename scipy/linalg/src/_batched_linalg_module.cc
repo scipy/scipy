@@ -106,11 +106,12 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     SliceStatusVec vec_status;
     St structure = St::NONE;
     int overwrite_a = 0;
+    int overwrite_b = 0;
     int transposed = 0;
     int lower=0;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!O!|nppp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &lower, &transposed, &overwrite_a)) {
+    if (!PyArg_ParseTuple(args, "O!O!|npppp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &lower, &transposed, &overwrite_a, &overwrite_b)) {
         return NULL;
     }
 
