@@ -28,13 +28,12 @@ for others too".  Perhaps it's a good idea then to contribute it to SciPy or
 another open source project.  The first question to ask is then, where does
 this code belong?  That question is hard to answer here, so we start with a
 more specific one: *what code is suitable for putting into SciPy?*
-Almost all of the new code added to SciPy has in common that it's potentially
-useful in multiple scientific domains and it fits in the scope of existing
-SciPy subpackages (see :ref:`deciding-on-new-features`).  In principle, new
-subpackages can be added too, but this is far less common.  For code that is
-specific to a single application, there may be an existing project that can
-use the code.  Some SciKits (`scikit-learn`_, `scikit-image`_, `statsmodels`_,
-etc.) are good examples here; they have a narrower focus and because of that
+Most new code added to SciPy is potentially useful across multiple scientific 
+domains and fits within existing SciPy subpackages (see :ref:`deciding-on-new-features`).
+In principle, new subpackages can be added too, but this is far less common.  
+For code that is specific to a single application, there may be an existing project that can
+use the code. Some SciKits (`scikit-learn`_, `scikit-image`_, `statsmodels`_, etc.) are good examples; they have a narrower focus and therefore contain more domain-specific code than SciPy.
+are good examples here; they have a narrower focus and because of that
 more domain-specific code than SciPy.
 
 Now if you have code that you would like to see included in SciPy, how do you
@@ -61,10 +60,9 @@ tests, benchmarks, and correct code style.
     documents how to run them.
 
 2. Benchmarks
-    Unit tests check for correct functionality; benchmarks measure code
-    performance. Not all existing SciPy code has benchmarks, but it should:
-    as SciPy grows it is increasingly important to monitor execution times in
-    order to catch unexpected regressions. More information about writing
+    Unit tests check that the code works correctly. benchmarks measure code
+    performance. Not all existing SciPy code has benchmarks yet, but they are important:
+    as SciPy grows, monitoring execution times helps to catch unexpected regressions. More information about writing
     and running benchmarks is available in :ref:`benchmarking-with-asv`.
 
 3. Documentation
@@ -74,9 +72,9 @@ tests, benchmarks, and correct code style.
     meaning of all parameters and returns values, and usage examples in
     `doctest`_ format -- is put in docstrings.  Those docstrings can be read
     within the interpreter, and are compiled into a reference guide in HTML and
-    pdf format.  Higher-level documentation for key (areas of) functionality is
-    provided in tutorial format and/or in module docstrings.  A guide on how to
-    write documentation is given in :ref:`numpy:howto-document`, and
+    pdf format. Higher-level documentation for key areas of functionality is 
+    provided in tutorial format and/or in module docstrings.
+    A guide on how to write documentation is given in :ref:`numpy:howto-document`, and
     :ref:`rendering-documentation` explains how to preview the documentation
     as it will appear online.
 
@@ -96,9 +94,8 @@ tests, benchmarks, and correct code style.
 
       spin lint
 
-    Most IDEs and text editors also have settings that can help you
-    follow PEP8, for example by translating tabs by four spaces. More
-    information is available in :ref:`pep8-scipy`.
+    Most IDEs and text editors have settings to help you follow PEP8, for example, by converting tabs to four spaces.
+    More information is available in :ref:`pep8-scipy`.
 
 A :ref:`checklist<pr-checklist>`, including these and other requirements, is
 available at the end of the example :ref:`development-workflow`.
@@ -248,10 +245,10 @@ https://github.com/scipy/scipy.org
 Getting started
 ===============
 
-Thanks for your interest in contributing to SciPy! If you're interested in
-contributing code, we hope you'll continue on to the :ref:`contributor-toc`
-for details on how to set up your development environment, implement your
-improvements, and submit your first PR!
+Thanks for your interest in contributing to SciPy! If you wantt to contribute code,
+we encourage you to continue to the :ref:`contributor-toc` section
+for details on how to set up your development environment, implement 
+improvements, and submit your first pull request (PR).
 
 .. _scikit-learn: http://scikit-learn.org
 
