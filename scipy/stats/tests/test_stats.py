@@ -6604,6 +6604,7 @@ def test_pointbiserial():
 
 
 @make_xp_test_case(stats.obrientransform)
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 class TestObrientransform:
     def test_basic(self, xp):
         # A couple tests calculated by hand.
@@ -6700,6 +6701,14 @@ class TestObrientransform:
             assert isinstance(res, tuple)
         else:
             assert isinstance(res, np.ndarray)
+
+
+@skip_xp_invalid_arg
+def test_obrientransform_warning():
+    x = np.ones(10)
+    message = "Beginning in SciPy 1.20.0..."
+    with pytest.warns(FutureWarning, match=message):
+        stats.obrientransform(x)
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,

@@ -2512,7 +2512,9 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-@xp_capabilities()
+@xp_capabilities(extra_note=("When `SCIPY_ARRAY_API=1, `obrientransform` returns a "
+                             "tuple of arrays."))
+
 def obrientransform(*samples, nan_policy='propagate'):
     """Compute the O'Brien transform on input data (any number of arrays).
 
@@ -2530,9 +2532,8 @@ def obrientransform(*samples, nan_policy='propagate'):
 
         - ``propagate``: if a NaN is present in a sample, all elements of the
           transformed sample will be NaN.
-        - ``omit``: NaNs will be omitted when computing reducing statistics involved in
-          the transform, but NaNs in the sample will remain NaNs in the transformed
-          sample.
+        - ``omit``: NaNs will be omitted when computing reducing statistics for the
+          transform, but NaNs in the sample will remain NaNs in the transformed sample.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
@@ -2588,6 +2589,9 @@ def obrientransform(*samples, nan_policy='propagate'):
     if SCIPY_ARRAY_API:
         return _xp_obrientransform(*samples, nan_policy=nan_policy)
     else:
+        message =  ("Beginning in SciPy 1.20.0, `obrientransform` will return a tuple "
+                    "of arrays rather than a 2-D array or 1-D object array of arrays.")
+        warnings.warn(message, FutureWarning, stacklevel=2)
         return _obrientransform(*samples, nan_policy=nan_policy)
 
 
@@ -2620,7 +2624,7 @@ def _obrientransform(*samples, nan_policy):
         contains_nan = _contains_nan(sample, nan_policy, xp_omit_okay=True)
         if nan_policy == 'omit' and contains_nan:
             _mean, _sum = np.nanmean, np.nansum
-            def _len(x): return np.count_nonzero(~np.isnan(x))
+            def _len(x): return int(np.count_nonzero(~np.isnan(x)))
         else:
             _mean, _sum, _len = np.mean, np.sum, len
         a = np.asarray(sample)
