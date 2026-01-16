@@ -41,7 +41,7 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes, xp_result_type)
+                                   xp_swapaxes, xp_result_type, is_cupy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -6604,7 +6604,7 @@ def test_pointbiserial():
 
 
 @make_xp_test_case(stats.obrientransform)
-@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings("ignore:Beginning in SciPy 1.20.0:FutureWarning")
 class TestObrientransform:
     def test_basic(self, xp):
         # A couple tests calculated by hand.
@@ -6640,19 +6640,16 @@ class TestObrientransform:
         xp_assert_close(res[0], ref[0, ...])
         xp_assert_close(res[1], ref[1, ...])
 
+    @skip_xp_backends("dask.array", reason="trouble with xp.repeat")
     def test_reference(self, xp):
-        # Example from "O'Brien Test for Homogeneity of Variance"
-        # by Herve Abdi.
-        values = range(5, 11)
-        reps = xp.asarray([5, 11, 9, 3, 2, 2])
-        xp_test = array_namespace(reps)
-        # replace with xp.repeat when in the compat library
-        data = xp_test.concat([xp.asarray([values[i] for _ in range (rep)])
-                               for i, rep in enumerate(reps)])
+        # Example from "O'Brien Test for Homogeneity of Variance" by Herve Abdi.
+        values = xp.arange(5, 11)
+        reps = [5, 11, 9, 3, 2, 2]
+        reps = reps if is_cupy(xp) else xp.asarray(reps)
+        data = xp.repeat(values, reps)
         transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
                                          1.6086, 5.2817, 11.0538])
-        expected = xp_test.concat([xp.stack([transformed_values[i] for _ in range (rep)])
-                                   for i, rep in enumerate(reps)])
+        expected = xp.repeat(transformed_values, reps)
         result = stats.obrientransform(data)
         xp_assert_close(result[0][:], expected, rtol=1e-3)
 
@@ -6681,7 +6678,6 @@ class TestObrientransform:
         xp_assert_equal(res[i], x[i])
         xp_assert_close(res[~i], ref)
 
-
     @pytest.mark.parametrize('nan_policy', [None, 'propagate', 'omit'])
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_new_vs_old(self, nan_policy, dtype, xp):
@@ -6695,7 +6691,7 @@ class TestObrientransform:
         res = stats.obrientransform(xp.asarray(x.tolist(), dtype=dtype),
                                     nan_policy=nan_policy)
         ref = _obrientransform(x, nan_policy=nan_policy)
-        xp_assert_close(res[0], xp.asarray(ref[0], dtype=dtype))
+        xp_assert_close(res[0], xp.asarray(ref[0].tolist(), dtype=dtype))
 
         if SCIPY_ARRAY_API:
             assert isinstance(res, tuple)

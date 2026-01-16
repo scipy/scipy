@@ -1938,6 +1938,7 @@ class TestCompareWithStats:
             assert_almost_equal(r[0], rm[0], decimal=10)
             assert_almost_equal(r[1], rm[1], decimal=7)
 
+    @pytest.mark.filterwarnings("ignore:Beginning in SciPy 1.20.0:FutureWarning")
     def test_obrientransform(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
