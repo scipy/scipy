@@ -6655,13 +6655,45 @@ class TestObrientransform:
         result = stats.obrientransform(data)
         xp_assert_close(result[0][:], expected, rtol=1e-3)
 
+    def test_nan_policy(self, xp):
+        rng = np.random.default_rng(4284359689201882838835)
+        x = rng.random(10)
+        x[3] = np.nan
+        x = xp.asarray(x)
+
+        # nan_policy='raise'
+        if not is_lazy_array(x):
+            with pytest.raises(ValueError, match="The input contains nan values"):
+                stats.obrientransform(x, nan_policy='raise')
+        else:
+            with pytest.raises(TypeError, match="nan_policy='raise' is not supported"):
+                stats.obrientransform(x, nan_policy='raise')
+
+        # nan_policy='propagate'
+        res = stats.obrientransform(x, nan_policy='propagate')[0]
+        xp_assert_equal(res, xp.full_like(x, xp.nan))
+
+        # nan_policy='omit'
+        i = xp.isnan(x)
+        res = stats.obrientransform(x, nan_policy='omit')[0]
+        ref = stats.obrientransform(x[~i])[0]
+        xp_assert_equal(res[i], x[i])
+        xp_assert_close(res[~i], ref)
+
+
+    @pytest.mark.parametrize('nan_policy', [None, 'propagate', 'omit'])
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
-    def test_new_vs_old(self, dtype, xp):
+    def test_new_vs_old(self, nan_policy, dtype, xp):
         dtype = dtype if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(4284359689201882838835)
         x = rng.random(10)
-        res = stats.obrientransform(xp.asarray(x.tolist(), dtype=dtype))
-        ref = _obrientransform(x)
+        if nan_policy is not None:
+            x[3] = np.nan
+        else:
+            nan_policy = 'propagate'
+        res = stats.obrientransform(xp.asarray(x.tolist(), dtype=dtype),
+                                    nan_policy=nan_policy)
+        ref = _obrientransform(x, nan_policy=nan_policy)
         xp_assert_close(res[0], xp.asarray(ref[0], dtype=dtype))
 
         if SCIPY_ARRAY_API:
