@@ -287,6 +287,8 @@ class TestZpk2Tf:
         xp_assert_close(b, b_ref, check_dtype=False)
         xp_assert_close(a, a_ref, check_dtype=False)
 
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
     def test_zpk2tf_int_truncation(self, xp):
         # regression test for gh-24382
         z =  xp.asarray([[ 1, 2.], [ 0., -1.]], dtype=xp.float64)
