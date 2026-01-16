@@ -490,57 +490,48 @@ static char gstrs_doc[] =
  */
 
 static PyMethodDef SuperLU_Methods[] = {
-    {"gssv", (PyCFunction) Py_gssv, METH_VARARGS | METH_KEYWORDS,
-     gssv_doc},
-    {"gstrf", (PyCFunction) Py_gstrf, METH_VARARGS | METH_KEYWORDS,
-     gstrf_doc},
-    {"gstrs", (PyCFunction) Py_gstrs, METH_VARARGS | METH_KEYWORDS,
-     gstrs_doc},
-    {NULL, NULL}
+    {"gssv",  (PyCFunction)Py_gssv,  METH_VARARGS | METH_KEYWORDS, gssv_doc},
+    {"gstrf", (PyCFunction)Py_gstrf, METH_VARARGS | METH_KEYWORDS, gstrf_doc},
+    {"gstrs", (PyCFunction)Py_gstrs, METH_VARARGS | METH_KEYWORDS, gstrs_doc},
+    {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_superlu",
-    NULL,
-    -1,
-    SuperLU_Methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+
+static int
+_superlu_module_exec(PyObject *module)
+{
+    if (_import_array() < 0) { return -1; }
+
+    if (PyType_Ready(&SuperLUType) < 0) { return -1; }
+    if (PyType_Ready(&SuperLUGlobalType) < 0) { return -1; }
+
+    if (PyModule_AddType(module, &SuperLUType) < 0) { return -1; }
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot _superlu_slots[] = {
+    {Py_mod_exec, _superlu_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
 };
+
+
+static struct PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_superlu",
+    .m_size = 0,
+    .m_methods = SuperLU_Methods,
+    .m_slots = _superlu_slots,
+};
+
 
 PyMODINIT_FUNC
 PyInit__superlu(void)
 {
-    PyObject *module, *mdict;
-
-    import_array();
-
-    if (PyType_Ready(&SuperLUType) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&SuperLUGlobalType) < 0) {
-    	return NULL;
-    }
-
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-    mdict = PyModule_GetDict(module);
-    if (mdict == NULL) {
-        return NULL;
-    }
-
-    if (PyDict_SetItemString(mdict, "SuperLU", (PyObject *) &SuperLUType)) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
