@@ -808,6 +808,22 @@ class TestSolve:
         with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
             solve(A, b, assume_a=structure)
 
+
+    @pytest.mark.parametrize('b', [0, 1, [0, 1]])
+    def test_singular_scalar(self, b):
+        # regression test for gh-24355: scalar a=0 is singular
+        # thus should raise the same error 
+
+        with pytest.raises(LinAlgError):
+            a = np.zeros((1, 1))
+            solve(a, b)
+
+        with pytest.raises(LinAlgError):
+            solve(0, b)
+
+        with pytest.raises(LinAlgError):
+            solve([[0]], b)
+
     def test_multiple_rhs(self):
         a = np.eye(2)
         rng = np.random.default_rng(1234)
