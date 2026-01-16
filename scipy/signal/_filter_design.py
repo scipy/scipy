@@ -1294,8 +1294,9 @@ def zpk2tf(z, p, k):
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            k_i = xp.asarray(k[i], dtype=xp.int64)
-            b[i, ...] = xp.multiply(k_i, _pu.poly(z[i, ...], xp=xp))
+            k_i = xp.asarray(k[i], dtype=b.dtype)
+            b_i = k_i * _pu.poly(z[i, ...], xp=xp)
+            b = xpx.at(b)[i, ...].set(b_i)
     else:
         # Use xp.multiply to work around torch type promotion
         # non-compliance for operations between 0d and higher
