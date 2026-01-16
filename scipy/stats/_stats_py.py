@@ -2587,7 +2587,7 @@ def _xp_obrientransform(*samples):
     n_samples = len(samples)
     samples = xp_promote(*samples, force_floating=True, xp=xp)
     samples = (samples,) if n_samples == 1 else samples
-    return [_xp_obrientransform_one_sample(sample, xp=xp) for sample in samples]
+    return tuple(_xp_obrientransform_one_sample(sample, xp=xp) for sample in samples)
 
 
 def _xp_obrientransform_one_sample(a, *, xp):

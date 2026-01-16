@@ -6664,6 +6664,11 @@ class TestObrientransform:
         ref = _obrientransform(x)
         xp_assert_close(res[0], xp.asarray(ref[0], dtype=dtype))
 
+        if SCIPY_ARRAY_API:
+            assert isinstance(res, tuple)
+        else:
+            assert isinstance(res, np.ndarray)
+
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
                       rtol=None, weights=None):
