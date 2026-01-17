@@ -1458,7 +1458,7 @@ class ShortTimeFFT:
         ----------
         S : ndarray
             A complex valued array where `f_axis` denotes the frequency
-            values and the `t-axis` dimension the temporal values of the
+            values and the `t_axis` dimension the temporal values of the
             STFT values.
         k0, k1 : int, optional
             The start and the end index of the reconstructed signal. The
@@ -1764,7 +1764,7 @@ class ShortTimeFFT:
         Parameters
         ----------
         n : int
-            Size of the sample input.
+            Number of samples of input.
 
         Returns
         -------
@@ -1982,7 +1982,7 @@ class ShortTimeFFT:
         ----------
         n : int
             Number of sample of the input signal.
-        p0 : int or None
+        p0 : int, optional
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
             slice.

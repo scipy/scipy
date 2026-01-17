@@ -630,8 +630,8 @@ class dlti(LinearTimeInvariant):
         ----------
         w : array_like, optional
             Array of frequencies normalized to the Nyquist frequency being π, i.e.,
-            having unit radiant / sample. Magnitude and phase data is calculated for every
-            value in this array. If not given, a reasonable set will be calculated.
+            having unit radiant / sample. Magnitude and phase data is calculated for
+            every value in this array. If not given, a reasonable set will be calculated.
         n : int, optional
             Number of frequency points to compute if `w` is not given. The `n`
             frequencies are logarithmically spaced in an interval chosen to
@@ -690,7 +690,7 @@ class dlti(LinearTimeInvariant):
             frequencies are logarithmically spaced in an interval chosen to
             include the influence of the poles and zeros of the system.
         whole : bool, optional
-            Normally, if 'w' is not given, frequencies are computed from 0 to the
+            Normally, if `w` is not given, frequencies are computed from 0 to the
             Nyquist frequency, pi radians/sample (upper-half of unit-circle). If
             `whole` is True, compute frequencies from 0 to 2*pi radians/sample.
 
