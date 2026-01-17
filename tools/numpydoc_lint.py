@@ -83,6 +83,7 @@ skip_modules = [
 
 def walk_class(module_str, class_, public_api):
     class_str = class_.__name__
+    # skip private methods (and dunder methods)
     attrs = {a for a in dir(class_) if not a.startswith("_")}
     for attr in attrs:
         item = getattr(class_, attr)

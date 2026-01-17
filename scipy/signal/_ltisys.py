@@ -296,7 +296,7 @@ class lti(LinearTimeInvariant):
             (interpolation is assumed between given times).  If there are
             multiple inputs, then each column of the rank-2 array
             represents an input.  If U = 0 or None, a zero input is used.
-        T : array_like
+        T : 1D array_like
             The time steps at which the input is defined and at which the
             output is desired.  Must be nonnegative, increasing, and equally spaced.
         X0 : array_like, optional
@@ -2005,7 +2005,7 @@ def lsim(system, U, T, X0=None, interp=True):
         (interpolation is assumed between given times).  If there are
         multiple inputs, then each column of the rank-2 array
         represents an input.  If U = 0 or None, a zero input is used.
-    T : array_like
+    T : 1D array_like
         The time steps at which the input is defined and at which the
         output is desired.  Must be nonnegative, increasing, and equally spaced.
     X0 : array_like, optional
