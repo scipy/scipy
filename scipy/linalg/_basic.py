@@ -5,7 +5,6 @@
 #              and Jake Vanderplas, August 2012
 
 import warnings
-from warnings import warn
 from itertools import product
 import numpy as np
 from scipy._lib._util import _apply_over_batch
@@ -14,8 +13,7 @@ from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
-                                      ishermitian)
+from ._cythonized_array_utils import find_det_from_lu
 from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
