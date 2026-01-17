@@ -301,9 +301,6 @@ class lti(LinearTimeInvariant):
             output is desired.  Must be nonnegative, increasing, and equally spaced.
         X0 : array_like, optional
             The initial conditions on the state vector (zero by default).
-        interp : bool, optional
-            Whether to use linear (True, the default) or zero-order-hold (False)
-            interpolation for the input array.
 
         Returns
         -------
