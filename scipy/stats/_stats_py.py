@@ -5087,14 +5087,14 @@ def fisher_exact(table, alternative=None, *, method=None):
             if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
                 return SignificanceResult(oddsratio, plower)
 
-            guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
+            guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n, xp=np)
             pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
             if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
                 return SignificanceResult(oddsratio, pupper)
 
-            guess = _binary_search(pmf, pexact * gamma, 0, mode)
+            guess = _binary_search(pmf, pexact * gamma, 0, mode, xp=np)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
     else:
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"

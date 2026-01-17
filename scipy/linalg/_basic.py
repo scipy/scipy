@@ -277,6 +277,9 @@ def solve(a, b, lower=False, overwrite_a=False,
         return x
 
     if a_is_scalar:
+        if a1.item() == 0:
+            raise LinAlgError("A singular matrix detected.")
+
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
 

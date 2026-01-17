@@ -47,7 +47,6 @@ def chr12c():
     return A, B, opt_perm
 
 
-@pytest.mark.filterwarnings("ignore:The NumPy global RNG was seeded by calling")
 class QAPCommonTests:
     """
     Base class for `quadratic_assignment` tests.
@@ -169,25 +168,6 @@ class QAPCommonTests:
         with pytest.warns(OptimizeWarning):
             quadratic_assignment(A, B, method=self.method,
                                  options={"ekki-ekki": True})
-
-    def test_deprecation_future_warnings(self):
-        # May be removed after SPEC-7 transition is complete in SciPy 1.17
-        A = np.arange(16).reshape((4, 4))
-        B = np.arange(16).reshape((4, 4))
-
-        with pytest.warns(DeprecationWarning, match="Use of `RandomState`*"):
-            rng = np.random.RandomState(0)
-            quadratic_assignment(A, B, method=self.method,
-                                 options={"rng": rng, "maximize": False})
-
-        with pytest.warns(FutureWarning, match="The NumPy global RNG was seeded*"):
-            np.random.seed(0)
-            quadratic_assignment(A, B, method=self.method,
-                                 options={"maximize": False})
-
-        with pytest.warns(FutureWarning, match="The behavior when the rng option*"):
-            quadratic_assignment(A, B, method=self.method,
-                                 options={"rng": 0, "maximize": False})
 
 
 class TestFAQ(QAPCommonTests):
@@ -346,7 +326,6 @@ class Test2opt(QAPCommonTests):
             )
 
 
-@pytest.mark.filterwarnings("ignore:The NumPy global RNG was seeded by calling")
 class TestQAPOnce:
 
     # these don't need to be repeated for each method

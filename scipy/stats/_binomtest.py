@@ -1,10 +1,9 @@
-from math import sqrt
 import numpy as np
-from scipy._lib._array_api import xp_capabilities
-from scipy._lib._util import _validate_int
-from scipy.optimize import brentq
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
+from scipy.optimize.elementwise import find_root
 from scipy.special import ndtri
-from ._discrete_distns import binom
+from scipy.special import _ufuncs as scu
 from ._common import ConfidenceInterval
 
 
@@ -28,12 +27,13 @@ class BinomTestResult:
         The p-value of the hypothesis test.
 
     """
-    def __init__(self, k, n, alternative, statistic, pvalue):
+    def __init__(self, k, n, alternative, statistic, pvalue, xp):
         self.k = k
         self.n = n
         self.alternative = alternative
         self.statistic = statistic
         self.pvalue = pvalue
+        self._xp = xp
 
         # add alias for backward compatibility
         self.proportion_estimate = statistic
@@ -102,65 +102,50 @@ class BinomTestResult:
         if not (0 <= confidence_level <= 1):
             raise ValueError(f'confidence_level ({confidence_level}) must be in '
                              'the interval [0, 1].')
+
+        xp = self._xp
+        k, n, confidence_level = xp_promote(self.k, self.n, confidence_level, xp=xp)
         if method == 'exact':
-            low, high = _binom_exact_conf_int(self.k, self.n,
-                                              confidence_level,
-                                              self.alternative)
+            low, high = _binom_exact_conf_int(
+                k, n, confidence_level, self.alternative, xp=xp)
         else:
             # method is 'wilson' or 'wilsoncc'
-            low, high = _binom_wilson_conf_int(self.k, self.n,
-                                               confidence_level,
-                                               self.alternative,
-                                               correction=method == 'wilsoncc')
+            correction = method == 'wilsoncc'
+            low, high = _binom_wilson_conf_int(
+                k, n, confidence_level, self.alternative, correction, xp=xp)
+        low = low[()] if low.ndim == 0 else low
+        high = high[()] if high.ndim == 0 else high
         return ConfidenceInterval(low=low, high=high)
 
 
-def _findp(func):
-    try:
-        p = brentq(func, 0, 1)
-    except RuntimeError:
-        raise RuntimeError('numerical solver failed to converge when '
-                           'computing the confidence limits') from None
-    except ValueError as exc:
-        raise ValueError('brentq raised a ValueError; report this to the '
-                         'SciPy developers') from exc
-    return p
-
-
-def _binom_exact_conf_int(k, n, confidence_level, alternative):
+def _binom_exact_conf_int(k, n, confidence_level, alternative, *, xp):
     """
     Compute the estimate and confidence interval for the binomial test.
 
     Returns proportion, prop_low, prop_high
     """
-    if alternative == 'two-sided':
-        alpha = (1 - confidence_level) / 2
-        if k == 0:
-            plow = 0.0
-        else:
-            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
-        if k == n:
-            phigh = 1.0
-        else:
-            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
-    elif alternative == 'less':
-        alpha = 1 - confidence_level
-        plow = 0.0
-        if k == n:
-            phigh = 1.0
-        else:
-            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
-    elif alternative == 'greater':
-        alpha = 1 - confidence_level
-        if k == 0:
-            plow = 0.0
-        else:
-            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
-        phigh = 1.0
+    init = (xp.zeros_like(k), xp.ones_like(k))
+    args = (k, n)
+    alpha = ((1 - confidence_level) / 2 if alternative == 'two-sided'
+             else 1 - confidence_level)
+
+    # I think using the private methods here is fine, since we will only evaluate with
+    # valid `p`, `k`, and `n` (or all NaNs). One exception is when `k=0` and
+    # `binom._sf(k-1, n, p)`: evaluates to NaN, but that's not a problem because
+    # `plow` has a special case for `k=0` below.
+    plow = (xp.zeros_like(k) if alternative == 'less' else
+            find_root(lambda p, k, n: _SimpleBinomial(n, p).sf(k-1) - alpha,
+                      init, args=args).x)
+    phigh = (xp.ones_like(k) if alternative == 'greater' else
+             find_root(lambda p, k, n: _SimpleBinomial(n, p).cdf(k) - alpha,
+                       init, args=args).x)
+
+    plow = xp.where(k == 0, 0.0, plow)
+    phigh = xp.where(k == n, 1.0, phigh)
     return plow, phigh
 
 
-def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
+def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction, *, xp):
     # This function assumes that the arguments have already been validated.
     # In particular, `alternative` must be one of 'two-sided', 'less' or
     # 'greater'.
@@ -175,32 +160,22 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     denom = 2*(n + z**2)
     center = (2*n*p + z**2)/denom
     q = 1 - p
-    if correction:
-        if alternative == 'less' or k == 0:
-            lo = 0.0
-        else:
-            dlo = (1 + z*sqrt(z**2 - 2 - 1/n + 4*p*(n*q + 1))) / denom
-            lo = center - dlo
-        if alternative == 'greater' or k == n:
-            hi = 1.0
-        else:
-            dhi = (1 + z*sqrt(z**2 + 2 - 1/n + 4*p*(n*q - 1))) / denom
-            hi = center + dhi
-    else:
-        delta = z/denom * sqrt(4*n*p*q + z**2)
-        if alternative == 'less' or k == 0:
-            lo = 0.0
-        else:
-            lo = center - delta
-        if alternative == 'greater' or k == n:
-            hi = 1.0
-        else:
-            hi = center + delta
 
+    if correction:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            dlo = (1 + z*xp.sqrt(z**2 - 2 - 1/n + 4*p*(n*q + 1)))/denom
+            dhi = (1 + z*xp.sqrt(z**2 + 2 - 1/n + 4*p*(n*q - 1)))/denom
+    else:
+        delta = z / denom * xp.sqrt(4*n*p*q + z**2)
+        dlo, dhi = delta, delta
+
+    lo = xp.where((k == 0) | (alternative == 'less'), 0.0, center - dlo)
+    hi = xp.where((k == n) | (alternative == 'greater'), 1.0, center + dhi)
     return lo, hi
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', "")], jax_jit=False, cpu_only=True,
+                 reason="binomial distribution ufuncs only available for NumPy")
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -210,6 +185,9 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
 
     Details of the test can be found in many texts on statistics, such
     as section 24.5 of [2]_.
+
+    The documentation is written as though the function accepts and returns Python
+    scalars, but the function is vectorized to work elementwise with NumPy arrays.
 
     Parameters
     ----------
@@ -286,56 +264,70 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     ConfidenceInterval(low=0.05684686759024681, high=1.0)
 
     """
-    k = _validate_int(k, 'k', minimum=0)
-    n = _validate_int(n, 'n', minimum=1)
-    if k > n:
-        raise ValueError(f'k ({k}) must not be greater than n ({n}).')
-
-    if not (0 <= p <= 1):
-        raise ValueError(f"p ({p}) must be in range [0,1]")
+    xp = array_namespace(k, n, p)
+    k, n, p = xp_promote(k, n, p, force_floating=True, broadcast=True, xp=xp)
+    k_valid = (k >= 0) & (k <= n) & (k == xp.floor(k))
+    n_valid = (n >= 1) & (n == xp.floor(n))
+    p_valid = (p >= 0) & (p <= 1)
+    valid = k_valid & n_valid & p_valid
+    k = xp.where(valid, k, xp.nan)
+    n = xp.where(valid, n, xp.nan)
+    p = xp.where(valid, p, xp.nan)
 
     if alternative not in ('two-sided', 'less', 'greater'):
         raise ValueError(f"alternative ('{alternative}') not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
+
+    B = _SimpleBinomial(n, p)
     if alternative == 'less':
-        pval = binom.cdf(k, n, p)
+        pval = B.cdf(k)
     elif alternative == 'greater':
-        pval = binom.sf(k-1, n, p)
+        pval = B.sf(k - 1)
     else:
         # alternative is 'two-sided'
-        d = binom.pmf(k, n, p)
+        d = B.pmf(k)
         rerr = 1 + 1e-7
-        if k == p * n:
-            # special case as shortcut, would also be handled by `else` below
-            pval = 1.
-        elif k < p * n:
-            ix = _binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
-                                              -d*rerr, np.ceil(p * n), n)
+
+        def k_lt_pn(d, k, p, n):
+            B = _SimpleBinomial(n, p)
+            ix = _binary_search_for_binom_tst(lambda x1: -B.pmf(x1), -d*rerr,
+                                              xp.ceil(p * n), n, xp=xp)
             # y is the number of terms between mode and n that are <= d*rerr.
             # ix gave us the first term where a(ix) <= d*rerr < a(ix-1)
             # if the first equality doesn't hold, y=n-ix. Otherwise, we
             # need to include ix as well as the equality holds. Note that
             # the equality will hold in very very rare situations due to rerr.
-            y = n - ix + int(d*rerr == binom.pmf(ix, n, p))
-            pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
-        else:
-            ix = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
-                                              d*rerr, 0, np.floor(p * n))
+            y = n - ix + xp.asarray(d*rerr == B.pmf(ix), dtype=ix.dtype)
+            pval = B.cdf(k) + B.sf(n - y)
+            return pval
+
+        def k_gte_pn(d, k, p, n):
+            B = _SimpleBinomial(n, p)
+            ix = _binary_search_for_binom_tst(B.pmf, d*rerr,
+                                              xp.zeros_like(n), xp.floor(p * n), xp=xp)
             # y is the number of terms between 0 and mode that are <= d*rerr.
             # we need to add a 1 to account for the 0 index.
             # For comparing this with old behavior, see
             # tst_binary_srch_for_binom_tst method in test_morestats.
             y = ix + 1
-            pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
+            pval = B.cdf(y-1) + B.sf(k-1)
+            return pval
 
-        pval = min(1.0, pval)
+        pval = xpx.apply_where(k < p*n, (d, k, p, n), k_lt_pn,  k_gte_pn)
+        # xp.minimum(1.0, pval) but for data-apis/array-api-compat#271
+        pval = xp.minimum(xp.asarray(1.0, dtype=pval.dtype), pval)
+
+    statistic = xp.where(valid, k/n, xp.nan)
+    pval = xp.where(valid, pval, xp.nan)
+    if statistic.ndim == 0:
+        k, n, statistic, pval = k[()], n[()], statistic[()], pval[()]
 
     result = BinomTestResult(k=k, n=n, alternative=alternative,
-                             statistic=k/n, pvalue=pval)
+                             statistic=statistic, pvalue=pval, xp=xp)
     return result
 
 
-def _binary_search_for_binom_tst(a, d, lo, hi):
+def _binary_search_for_binom_tst(a, d, lo, hi, *, xp):
     """
     Conducts an implicit binary search on a function specified by `a`.
 
@@ -362,16 +354,47 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       The index, i between lo and hi
       such that a(i)<=d<a(i+1)
     """
-    while lo < hi:
+    d = xp.asarray(d, copy=True)
+    lo = xp.asarray(lo, copy=True)
+    hi = xp.asarray(hi, copy=True)
+    while xp.any(lo < hi):
         mid = lo + (hi-lo)//2
         midval = a(mid)
-        if midval < d:
-            lo = mid+1
-        elif midval > d:
-            hi = mid-1
-        else:
-            return mid
-    if a(lo) <= d:
-        return lo
-    else:
-        return lo-1
+
+        i_lt = midval < d
+        lo = xpx.at(lo)[i_lt].set(mid[i_lt] + 1)
+
+        i_gt = midval > d
+        hi = xpx.at(hi)[i_gt].set(mid[i_gt] - 1)
+
+        i_eq = (midval == d)
+        mid_i_eq = mid[i_eq]
+        lo = xpx.at(lo)[i_eq].set(mid_i_eq)
+        hi = xpx.at(hi)[i_eq].set(mid_i_eq)
+
+    return xp.where(a(lo) <= d, lo, lo-1)
+
+
+class _SimpleBinomial:
+    # A very simple, array-API compatible binomial distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure Binomial
+    # distribution in due time.
+    def __init__(self, n, p, *, xp=None):
+        xp = array_namespace(n, p) if xp is None else xp
+        self.n = np.asarray(n)
+        self.p = np.asarray(p)
+        self.xp = xp
+
+    def f(self, x, fun):
+        xp = self.xp
+        k = np.floor(np.asarray(x))
+        return xp.asarray(fun(k, self.n, self.p))
+
+    def cdf(self, x):
+        return self.xp.where(x >= 0, self.f(x, scu._binom_cdf), 0.0)
+
+    def sf(self, x):
+        return self.xp.where(x >= 0, self.f(x, scu._binom_sf), 1.0)
+
+    def pmf(self, x):
+        return self.f(x, scu._binom_pmf)

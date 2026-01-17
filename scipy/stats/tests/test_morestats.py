@@ -28,7 +28,8 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
 
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
-                                   is_numpy, xp_default_dtype)
+                                   is_numpy, xp_default_dtype, is_array_api_strict,
+                                   is_jax)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -991,59 +992,55 @@ class TestLevene:
         check_named_results(res, attributes, xp=xp)
 
 
+@make_xp_test_case(stats.binomtest)
 class TestBinomTest:
     """Tests for stats.binomtest."""
 
     # Expected results here are from R binom.test, e.g.
     # options(digits=16)
     # binom.test(484, 967, p=0.48)
-    #
-    def test_two_sided_pvalues1(self):
+    @pytest.mark.parametrize("k, n, p, ref, rtol",
+                             # aarch64 observed rtol: 1.5e-11
+                             [(10079999, 21000000, 0.48, 1.0, 1e-10),
+                              (10079990, 21000000, 0.48, 0.9966892187965, 1e-10),
+                              (10080009, 21000000, 0.48, 0.9970377203856, 1e-10),
+                              (10080017, 21000000, 0.48, 0.9940754817328, 1e-9)])
+    def test_two_sided_pvalues1(self, k, n, p, ref, rtol, xp):
         # `tol` could be stricter on most architectures, but the value
         # here is limited by accuracy of `binom.cdf` for large inputs on
         # Linux_Python_37_32bit_full and aarch64
-        rtol = 1e-10  # aarch64 observed rtol: 1.5e-11
-        res = stats.binomtest(10079999, 21000000, 0.48)
-        assert_allclose(res.pvalue, 1.0, rtol=rtol)
-        res = stats.binomtest(10079990, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9966892187965, rtol=rtol)
-        res = stats.binomtest(10080009, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9970377203856, rtol=rtol)
-        res = stats.binomtest(10080017, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9940754817328, rtol=1e-9)
+        dtype = xp.float64  # because this tests precision
+        res = stats.binomtest(k, n, xp.asarray(p, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
-    def test_two_sided_pvalues2(self):
-        rtol = 1e-10  # no aarch64 failure with 1e-15, preemptive bump
-        res = stats.binomtest(9, n=21, p=0.48)
-        assert_allclose(res.pvalue, 0.6689672431939, rtol=rtol)
-        res = stats.binomtest(4, 21, 0.48)
-        assert_allclose(res.pvalue, 0.008139563452106, rtol=rtol)
-        res = stats.binomtest(11, 21, 0.48)
-        assert_allclose(res.pvalue, 0.8278629664608, rtol=rtol)
-        res = stats.binomtest(7, 21, 0.48)
-        assert_allclose(res.pvalue, 0.1966772901718, rtol=rtol)
-        res = stats.binomtest(3, 10, .5)
-        assert_allclose(res.pvalue, 0.34375, rtol=rtol)
-        res = stats.binomtest(2, 2, .4)
-        assert_allclose(res.pvalue, 0.16, rtol=rtol)
-        res = stats.binomtest(2, 4, .3)
-        assert_allclose(res.pvalue, 0.5884, rtol=rtol)
+    @pytest.mark.parametrize("k, n, p, ref, rtol",
+                             # no aarch64 failure with 1e-15, preemptive bump
+                             [(9, 21, 0.48, 0.6689672431939, 1e-10),
+                              (4, 21, 0.48, 0.0081395634521, 1e-10),
+                              (11, 21, 0.48, 0.8278629664608, 1e-10),
+                              (7, 21, 0.48, 0.1966772901718, 1e-10),
+                              (3, 10, 0.5, 0.34375, 1e-10),
+                              (2, 2, 0.4, 0.16, 1e-10),
+                              (2, 4, 0.3, 0.5884, 1e-10)])
+    def test_two_sided_pvalues2(self, k, n, p, ref, rtol, xp):
+        dtype = xp.float64  # because this tests precision
+        res = stats.binomtest(k, n, xp.asarray(p, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
-    def test_edge_cases(self):
-        rtol = 1e-10  # aarch64 observed rtol: 1.33e-15
-        res = stats.binomtest(484, 967, 0.5)
-        assert_allclose(res.pvalue, 1, rtol=rtol)
-        res = stats.binomtest(3, 47, 3/47)
-        assert_allclose(res.pvalue, 1, rtol=rtol)
-        res = stats.binomtest(13, 46, 13/46)
-        assert_allclose(res.pvalue, 1, rtol=rtol)
-        res = stats.binomtest(15, 44, 15/44)
-        assert_allclose(res.pvalue, 1, rtol=rtol)
-        res = stats.binomtest(7, 13, 0.5)
-        assert_allclose(res.pvalue, 1, rtol=rtol)
-        res = stats.binomtest(6, 11, 0.5)
-        assert_allclose(res.pvalue, 1, rtol=rtol)
+    @pytest.mark.parametrize("k, n, p, ref, rtol",
+                             # no aarch64 failure with 1e-15, preemptive bump
+                             [(484, 967, 0.5, 1.0, 1e-10),
+                              (3, 47, 3/47, 1.0, 1e-10),
+                              (13, 46, 13/46, 1.0, 1e-10),
+                              (15, 44, 15/44, 1.0, 1e-10),
+                              (7, 13, 0.5, 1.0, 1e-10),
+                              (6, 11, 0.5, 1.0, 1e-10)])
+    def test_edge_cases(self, k, n, p, ref, rtol, xp):
+        dtype = xp.float64
+        res = stats.binomtest(k, n, xp.asarray(p, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
+    # tests private function, so leave NumPy-only
     def test_binary_srch_for_binom_tst(self):
         # Test that old behavior of binomtest is maintained
         # by the new binary search method in cases where d
@@ -1059,7 +1056,7 @@ class TestBinomTest:
         # New way with binary search.
         ix = _binary_search_for_binom_tst(lambda x1:
                                           -stats.binom.pmf(x1, n, p),
-                                          -d, np.ceil(p * n), n)
+                                          -d, np.ceil(p * n), n, xp=np)
         y2 = n - ix + int(d == stats.binom.pmf(ix, n, p))
         assert_allclose(y1, y2, rtol=1e-9)
         # Now test for the other side.
@@ -1071,11 +1068,13 @@ class TestBinomTest:
         # New way with binary search.
         ix = _binary_search_for_binom_tst(lambda x1:
                                           stats.binom.pmf(x1, n, p),
-                                          d, 0, np.floor(p * n))
+                                          d, 0, np.floor(p * n), xp=np)
         y2 = ix + 1
         assert_allclose(y1, y2, rtol=1e-9)
 
     # Expected results here are from R 3.6.2 binom.test
+    @skip_xp_backends("array_api_strict", reason="needs find_root")
+    @skip_xp_backends("jax.numpy", reason="needs find_root")
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
                              [('less', 0.148831050443,
                                0.0, 0.2772002496709138),
@@ -1083,14 +1082,19 @@ class TestBinomTest:
                                0.1366613252458672, 1.0),
                               ('two-sided', 0.2983720970096,
                                0.1266555521019559, 0.2918426890886281)])
-    def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high):
-        res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
-        assert_allclose(res.pvalue, pval, rtol=1e-12)
-        assert_equal(res.statistic, 0.2)
+    def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high, xp):
+        dtype = xp.float64
+        res = stats.binomtest(20, n=100, p=xp.asarray(0.25, dtype=dtype),
+                              alternative=alternative)
+        xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-12)
+        xp_assert_equal(res.statistic, xp.asarray(0.2, dtype=dtype))
         ci = res.proportion_ci(confidence_level=0.95)
-        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-12)
+        xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-12)
+        xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-12)
 
     # Expected results here are from R 3.6.2 binom.test.
+    @skip_xp_backends("array_api_strict", reason="needs find_root")
+    @skip_xp_backends("jax.numpy", reason="needs find_root")
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
                              [('less',
                                0.005656361, 0.0, 0.1872093),
@@ -1098,38 +1102,49 @@ class TestBinomTest:
                                0.9987146, 0.008860761, 1.0),
                               ('two-sided',
                                0.01191714, 0.006872485, 0.202706269)])
-    def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high):
-        res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
-        assert_allclose(res.pvalue, pval, rtol=1e-6)
-        assert_equal(res.statistic, 0.06)
+    def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high, xp):
+        dtype = xp.float64
+        res = stats.binomtest(3, n=50, p=xp.asarray(0.2, dtype=dtype),
+                              alternative=alternative)
+        xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
+        xp_assert_equal(res.statistic, xp.asarray(0.06, dtype=dtype))
         ci = res.proportion_ci(confidence_level=0.99)
-        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+        xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
+        xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
     # Expected results here are from R 3.6.2 binom.test.
+    @skip_xp_backends("array_api_strict", reason="needs find_root")
+    @skip_xp_backends("jax.numpy", reason="needs find_root")
     @pytest.mark.parametrize('alternative, pval, ci_high',
                              [('less', 0.05631351, 0.2588656),
                               ('greater', 1.0, 1.0),
                               ('two-sided', 0.07604122, 0.3084971)])
-    def test_confidence_interval_exact_k0(self, alternative, pval, ci_high):
+    def test_confidence_interval_exact_k0(self, alternative, pval, ci_high, xp):
         # Test with k=0, n = 10.
-        res = stats.binomtest(0, 10, p=0.25, alternative=alternative)
-        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        dtype = xp.float64
+        res = stats.binomtest(0, n=10, p=xp.asarray(0.25, dtype=dtype),
+                              alternative=alternative)
+        xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
         ci = res.proportion_ci(confidence_level=0.95)
-        assert_equal(ci.low, 0.0)
-        assert_allclose(ci.high, ci_high, rtol=1e-6)
+        xp_assert_equal(ci.low, xp.asarray(0.0, dtype=dtype))
+        xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
     # Expected results here are from R 3.6.2 binom.test.
+    @skip_xp_backends("array_api_strict", reason="needs find_root")
+    @skip_xp_backends("jax.numpy", reason="needs find_root")
     @pytest.mark.parametrize('alternative, pval, ci_low',
                              [('less', 1.0, 0.0),
                               ('greater', 9.536743e-07, 0.7411344),
                               ('two-sided', 9.536743e-07, 0.6915029)])
-    def test_confidence_interval_exact_k_is_n(self, alternative, pval, ci_low):
+    def test_confidence_interval_exact_k_is_n(self, alternative, pval, ci_low, xp):
         # Test with k = n = 10.
-        res = stats.binomtest(10, 10, p=0.25, alternative=alternative)
-        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        dtype = xp.float64
+        res = stats.binomtest(10, n=10, p=xp.asarray(0.25, dtype=dtype),
+                              alternative=alternative)
+        xp_assert_close(res.pvalue, xp.asarray(pval, dtype=dtype), rtol=1e-6)
         ci = res.proportion_ci(confidence_level=0.95)
-        assert_equal(ci.high, 1.0)
-        assert_allclose(ci.low, ci_low, rtol=1e-6)
+        xp_assert_equal(ci.high, xp.asarray(1.0, dtype=dtype))
+        xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
 
     # Expected results are from the prop.test function in R 3.6.2.
     @pytest.mark.parametrize(
@@ -1162,71 +1177,138 @@ class TestBinomTest:
          [10, 'greater', False, 0.95, 0.787058, 1.0]]
     )
     def test_ci_wilson_method(self, k, alternative, corr, conf,
-                              ci_low, ci_high):
-        res = stats.binomtest(k, n=10, p=0.1, alternative=alternative)
+                              ci_low, ci_high, xp):
+        dtype = xp.float64
+        res = stats.binomtest(k, n=10, p=xp.asarray(0.1, dtype=dtype),
+                              alternative=alternative)
         if corr:
             method = 'wilsoncc'
         else:
             method = 'wilson'
         ci = res.proportion_ci(confidence_level=conf, method=method)
-        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+        xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
+        xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
-    def test_estimate_equals_hypothesized_prop(self):
+    def test_estimate_equals_hypothesized_prop(self, xp):
         # Test the special case where the estimated proportion equals
         # the hypothesized proportion.  When alternative is 'two-sided',
         # the p-value is 1.
-        res = stats.binomtest(4, 16, 0.25)
-        assert_equal(res.statistic, 0.25)
-        assert_equal(res.pvalue, 1.0)
+        res = stats.binomtest(4, 16, xp.asarray(0.25))
+        xp_assert_equal(res.statistic, xp.asarray(0.25))
+        xp_assert_equal(res.pvalue, xp.asarray(1.0))
 
-    @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
-    def test_invalid_k_n(self, k, n):
-        with pytest.raises(ValueError,
-                           match="must be an integer not less than"):
-            stats.binomtest(k, n)
-
-    def test_invalid_k_too_big(self):
-        with pytest.raises(ValueError,
-                           match=r"k \(11\) must not be greater than n \(10\)."):
-            stats.binomtest(11, 10, 0.25)
-
-    def test_invalid_k_wrong_type(self):
-        with pytest.raises(TypeError,
-                           match="k must be an integer."):
-            stats.binomtest([10, 11], 21, 0.25)
-
-    def test_invalid_p_range(self):
-        message = r'p \(-0.5\) must be in range...'
-        with pytest.raises(ValueError, match=message):
-            stats.binomtest(50, 150, p=-0.5)
-        message = r'p \(1.5\) must be in range...'
-        with pytest.raises(ValueError, match=message):
-            stats.binomtest(50, 150, p=1.5)
-
-    def test_invalid_confidence_level(self):
-        res = stats.binomtest(3, n=10, p=0.1)
+    def test_invalid_confidence_level(self, xp):
+        res = stats.binomtest(3, n=10, p=xp.asarray(0.1))
         message = r"confidence_level \(-1\) must be in the interval"
         with pytest.raises(ValueError, match=message):
             res.proportion_ci(confidence_level=-1)
 
-    def test_invalid_ci_method(self):
-        res = stats.binomtest(3, n=10, p=0.1)
+    def test_invalid_ci_method(self, xp):
+        res = stats.binomtest(3, n=10, p=xp.asarray(0.1))
         with pytest.raises(ValueError, match=r"method \('plate of shrimp'\) must be"):
             res.proportion_ci(method="plate of shrimp")
 
-    def test_invalid_alternative(self):
+    def test_invalid_alternative(self, xp):
         with pytest.raises(ValueError, match=r"alternative \('ekki'\) not..."):
-            stats.binomtest(3, n=10, p=0.1, alternative='ekki')
+            stats.binomtest(3, n=10, p=xp.asarray(0.1), alternative='ekki')
 
-    def test_alias(self):
-        res = stats.binomtest(3, n=10, p=0.1)
-        assert_equal(res.proportion_estimate, res.statistic)
+    def test_alias(self, xp):
+        res = stats.binomtest(3, n=10, p=xp.asarray(0.1))
+        xp_assert_equal(res.proportion_estimate, res.statistic)
 
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
-    def test_boost_overflow_raises(self):
+    def test_boost_overflow_raises(self):  # NumPy-specific
         # Boost.Math error policy should raise exceptions in Python
         with pytest.raises(OverflowError, match='Error in function...'):
             stats.binomtest(5, 6, p=sys.float_info.min)
+
+    @pytest.mark.parametrize("k, n, p",
+        [(-1, 10, 0.5), (11, 10, 0.5), (5.5, 10, 0.5), (np.nan, 10, 0.5),
+         (0, 0, 0.5), (5, 10.5, 0.5), (5, np.nan, 0.5),
+         (5, 10, -0.1), (5, 10, 1.1), (5, 10, np.nan)])
+    def test_invalid(self, k, n, p, xp):
+        res = stats.binomtest(k, n, xp.asarray(p))
+        xp_assert_equal(res.statistic, xp.asarray(np.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(np.nan))
+
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("method", ['exact', 'wilson', 'wilsoncc'])
+    def test_scalar_0d_in_scalar_out(self, alternative, method):
+        # Tests that scalar / 0-D NumPy array input are equivalent and that both
+        # result in NumPy scalars (as confirmed by xp_assert_equal).
+        res = stats.binomtest(3, 11, 0.4, alternative=alternative)
+        ref = stats.binomtest(np.asarray(3), np.asarray(11), np.asarray(0.4),
+                              alternative=alternative)
+
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.n, ref.n)
+        xp_assert_equal(res.k, ref.k)
+
+        res = res.proportion_ci(method=method)
+        ref = ref.proportion_ci(method=method)
+
+        xp_assert_equal(res.low, ref.low)
+        xp_assert_equal(res.high, ref.high)
+
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("method", ['exact', 'wilson', 'wilsoncc'])
+    def test_dtype(self, dtype, alternative, method, xp):
+        # Tests that output dtype is as expected
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        res = stats.binomtest(xp.asarray(3, dtype=dtype),
+                              xp.asarray(11, dtype=dtype),
+                              xp.asarray(0.4, dtype=dtype),
+                              alternative=alternative)
+        ref = stats.binomtest(3, 11, 0.4, alternative=alternative)
+
+        xp_assert_close(res.statistic, xp.asarray(float(ref.statistic), dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(float(ref.pvalue), dtype=dtype))
+        xp_assert_close(res.n, xp.asarray(float(ref.n), dtype=dtype))
+        xp_assert_close(res.k, xp.asarray(float(ref.k), dtype=dtype))
+
+        if (is_array_api_strict(xp) or is_jax(xp)) and method == 'exact':
+            # array API strict and JAX don't support exact CI right now
+            return
+
+        res = res.proportion_ci(method=method)
+        ref = ref.proportion_ci(method=method)
+
+        xp_assert_close(res.low, xp.asarray(float(ref.low), dtype=dtype))
+        xp_assert_close(res.high, xp.asarray(float(ref.high), dtype=dtype))
+
+    @pytest.mark.parametrize("shape", [(), (7, 8, 9)])
+    @pytest.mark.parametrize("alternative", ["less", "greater", "two-sided"])
+    @pytest.mark.parametrize("method", ["exact", "wilson", "wilsoncc"])
+    def test_ndarray(self, shape, alternative, method, xp):
+        rng = np.random.default_rng(2150248640)
+        k = rng.integers(-1, 11, size=shape)
+        n = rng.integers(-1, 11, size=shape)
+        p = rng.uniform(-0.1, 1.1, size=shape)
+        res = stats.binomtest(xp.asarray(k), xp.asarray(n), xp.asarray(p),
+                              alternative=alternative)
+
+        @np.vectorize(excluded='alternative')
+        def binomtest_1d(k, n, p, alternative):
+            ref = stats.binomtest(k, n, p, alternative=alternative)
+            ci = ref.proportion_ci(method=method)
+            return ref.k, ref.n, ref.statistic, ref.pvalue, ci.low, ci.high
+
+        ref_k, ref_n, ref_statistic, ref_pvalue, ci_low, ci_high = binomtest_1d(
+            k, n, p, alternative)
+        xp_assert_close(res.k, xp.asarray(ref_k))
+        xp_assert_close(res.n, xp.asarray(ref_n))
+        xp_assert_close(res.statistic, xp.asarray(ref_statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref_pvalue))
+
+        if (is_array_api_strict(xp) or is_jax(xp)) and method == 'exact':
+            # array API strict and JAX don't support exact CI right now
+            return
+
+        ci = res.proportion_ci(method=method)
+        xp_assert_close(ci.low, xp.asarray(ci_low))
+        xp_assert_close(ci.high, xp.asarray(ci_high))
 
 
 @make_xp_test_case(stats.fligner)

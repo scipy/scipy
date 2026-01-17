@@ -554,7 +554,8 @@ znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
 
     if (V->ido == ido_FIRST)
     {
-        V->aup2_nev0 = V->nev;
+        V->aup2_nev = V->nev;
+        V->aup2_nev0 = V->aup2_nev;
         V->aup2_np0 = V->np;
 
         //  kplusp is the bound on the largest
@@ -564,7 +565,7 @@ znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
         //  iter is the counter on the current
         //       iteration step.
 
-        V->aup2_kplusp = V->nev + V->np;
+        V->aup2_kplusp = V->aup2_nev + V->np;
         V->nconv = 0;
         V->aup2_iter = 0;
 
@@ -622,7 +623,7 @@ znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
 
     //  Compute the first NEV steps of the Arnoldi factorization
 
-    znaitr(V, 0, V->nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    znaitr(V, 0, V->aup2_nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -651,13 +652,13 @@ LINE1000:
     //  Adjust NP since NEV might have been updated by last call
     //  to the shift application routine dnapps .
 
-    V->np = V->aup2_kplusp - V->nev;
+    V->np = V->aup2_kplusp - V->aup2_nev;
     V->ido = ido_FIRST;
 
 LINE20:
     V->aup2_update = 1;
 
-    znaitr(V, V->nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    znaitr(V, V->aup2_nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -691,7 +692,7 @@ LINE20:
     //  error bounds are in the last NEV loc. of RITZ,
     //  and BOUNDS respectively.
 
-    V->nev = V->aup2_nev0;
+    V->aup2_nev = V->aup2_nev0;
     V->np = V->aup2_np0;
 
     //  Make a copy of Ritz values and the corresponding
@@ -707,7 +708,7 @@ LINE20:
     //  bounds are in the last NEV loc. of RITZ
     //  BOUNDS respectively.
 
-    zngets(V, &V->nev, &V->np, ritz, bounds);
+    zngets(V, &V->aup2_nev, &V->np, ritz, bounds);
 
     //  Convergence test: currently we use the following criteria.
     //  The relative accuracy of a Ritz value is considered
@@ -716,7 +717,7 @@ LINE20:
     //  error_bounds(i) .le. tol*max(eps23, magnitude_of_ritz(i)).
     //
     V->nconv = 0;
-    for (i = 0; i < V->nev; i++)
+    for (i = 0; i < V->aup2_nev; i++)
     {
         rtemp = fmax(eps23, cabs(ritz[V->np + i]));
         if (cabs(bounds[V->np + i]) <= V->tol*rtemp)
@@ -742,7 +743,7 @@ LINE20:
         if ((creal(bounds[j]) == 0.0) && (cimag(bounds[j]) == 0.0))
         {
             V->np -= 1;
-            V->nev += 1;
+            V->aup2_nev += 1;
         }
     }
     // 30
@@ -828,7 +829,7 @@ LINE20:
 
         V->np = V->nconv;
         V->iter = V->aup2_iter;
-        V->nev = V->nconv;
+        V->aup2_nev = V->nconv;
         V->ido = ido_DONE;
         return;
 
@@ -838,21 +839,21 @@ LINE20:
         //  To prevent possible stagnation, adjust the size
         //  of NEV.
 
-        int nevbef = V->nev;
-        V->nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
-        if ((V->nev == 1) && (V->aup2_kplusp >= 6)) {
-            V->nev = V->aup2_kplusp / 2;
-        } else if ((V->nev == 1) && (V->aup2_kplusp > 3)) {
-            V->nev = 2;
+        int nevbef = V->aup2_nev;
+        V->aup2_nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
+        if ((V->aup2_nev == 1) && (V->aup2_kplusp >= 6)) {
+            V->aup2_nev = V->aup2_kplusp / 2;
+        } else if ((V->aup2_nev == 1) && (V->aup2_kplusp > 3)) {
+            V->aup2_nev = 2;
         }
 
-        V->np = V->aup2_kplusp - V->nev;
+        V->np = V->aup2_kplusp - V->aup2_nev;
 
         // If the size of NEV was just increased
         // resort the eigenvalues.
 
-        if (nevbef < V->nev) {
-            zngets(V, &V->nev, &V->np, ritz, bounds);
+        if (nevbef < V->aup2_nev) {
+            zngets(V, &V->aup2_nev, &V->np, ritz, bounds);
         }
     }
 
@@ -890,7 +891,7 @@ LINE50:
     //  matrix H.
     //  The first 2*N locations of WORKD are used as workspace.
 
-    znapps(V->n, &V->nev, V->np, ritz, v, ldv, h, ldh, resid, q, ldq, workl, workd);
+    znapps(V->n, &V->aup2_nev, V->np, ritz, v, ldv, h, ldh, resid, q, ldq, workl, workd);
 
     //  Compute the B-norm of the updated residual.
     //  Keep B*RESID in WORKD(1:N) to be used in

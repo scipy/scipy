@@ -24,7 +24,7 @@ static PyObject* arpack_error_obj;
                                X(shift) X(getv0_first) X(getv0_iter) X(getv0_itry) X(getv0_orth) \
                                X(aitr_iter) X(aitr_j) X(aitr_orth1) X(aitr_orth2) X(aitr_restart) \
                                X(aitr_step3) X(aitr_step4) X(aitr_ierr) X(aup2_initv) X(aup2_iter) \
-                               X(aup2_getv0) X(aup2_cnorm) X(aup2_kplusp) X(aup2_nev0) X(aup2_np0) \
+                               X(aup2_getv0) X(aup2_cnorm) X(aup2_kplusp) X(aup2_nev) X(aup2_nev0) X(aup2_np0) \
                                X(aup2_numcnv) X(aup2_update) X(aup2_ushift)
 #define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_INEXACT_FIELD_NAMES
 
@@ -423,6 +423,9 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     ARNAUD_sneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
 
+    // Unpack the struct back to the dictionary
+    if (unpack_state_s_to_dict(&Vars, input_dict, "sneupd_wrap") != 0) { return NULL; }
+
     Py_RETURN_NONE;
 
 }
@@ -487,6 +490,9 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     ARNAUD_dneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
 
+    // Unpack the struct back to the dictionary
+    if (unpack_state_d_to_dict(&Vars, input_dict, "dneupd_wrap") != 0) { return NULL; }
+
     Py_RETURN_NONE;
 
 }
@@ -550,6 +556,9 @@ cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     ARNAUD_cneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
 
+    // Unpack the struct back to the dictionary
+    if (unpack_state_s_to_dict(&Vars, input_dict, "cneupd_wrap") != 0) { return NULL; }
+
     Py_RETURN_NONE;
 }
 
@@ -611,6 +620,9 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     if (pack_dict_to_state_d(input_dict, &Vars, "zneupd_wrap") != 0) { return NULL; }
 
     ARNAUD_zneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
+
+    // Unpack the struct back to the dictionary
+    if (unpack_state_d_to_dict(&Vars, input_dict, "zneupd_wrap") != 0) { return NULL; }
 
     Py_RETURN_NONE;
 }
@@ -751,6 +763,9 @@ sseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     ARNAUD_sseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
 
+    // Unpack the struct back to the dictionary
+    if (unpack_state_s_to_dict(&Vars, input_dict, "sseupd_wrap") != 0) { return NULL; }
+
     Py_RETURN_NONE;
 }
 
@@ -805,6 +820,9 @@ dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     if (pack_dict_to_state_d(input_dict, &Vars, "dseupd_wrap") != 0) { return NULL; }
 
     ARNAUD_dseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
+
+    // Unpack the struct back to the dictionary
+    if (unpack_state_d_to_dict(&Vars, input_dict, "dseupd_wrap") != 0) { return NULL; }
 
     Py_RETURN_NONE;
 }
