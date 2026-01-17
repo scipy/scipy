@@ -232,7 +232,7 @@ _linalg_solve_banded(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Sanity check shapes
     int ndim = PyArray_NDIM(ap_Ab);
     npy_intp* shape = PyArray_SHAPE(ap_Ab);
-    if ((ndim < 2) || (shape[ndim - 2] > shape[ndim - 1])) {
+    if (ndim < 2) { // Can not perform a check on the two last dimensions: should be related to the banding
         PyErr_SetString(PyExc_ValueError, "Incorrect dimensions for ab.");
         return NULL;
     }
@@ -248,7 +248,7 @@ _linalg_solve_banded(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
     if (!dims_match){
-        PyErr_SetString(PyExc_ValueError, "`a` and `b` shape mismatch.");
+        PyErr_SetString(PyExc_ValueError, "`ab` and `b` shape mismatch.");
         return NULL;
     }
 
