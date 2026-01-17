@@ -4,6 +4,8 @@
 #include "_linalg_inv.hh"
 #include "_linalg_solve.hh"
 #include "_common_array_utils.hh"
+#include "numpy/ndarrayobject.h"
+#include "pyerrors.h"
 
 
 static PyObject* _linalg_inv_error;
@@ -191,6 +193,106 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
 }
 
 
+static PyObject*
+_linalg_solve_banded(PyObject* Py_UNUSED(dummy), PyObject* args) {
+
+    PyArrayObject *ap_Ab = NULL;
+    PyArrayObject *ap_b = NULL;
+    PyArrayObject *ap_kls = NULL; // lower bands
+    PyArrayObject *ap_kus = NULL; // upper bands
+    PyArrayObject *ap_x = NULL; // return object
+
+    int overwrite_ab = 0;
+    int overwrite_b = 0;
+    int info;
+    SliceStatusVec vec_status;
+
+    // Get input data
+    if (!PyArg_ParseTuple(args, "O!O!O!O!|pp", &PyArray_Type, (PyObject **)&ap_Ab, &PyArray_Type, (PyObject **)&ap_b, &PyArray_Type, (PyObject **)&ap_kls, &PyArray_Type, (PyObject **)&ap_kus, &overwrite_ab, &overwrite_b)) {
+        PyErr_SetString(PyExc_ValueError, "Could not parse input.");
+        return NULL;
+    }
+
+    // Check for dtype compatibility & array flags
+    int typenum = PyArray_TYPE(ap_Ab);
+    bool dtype_ok = (typenum == NPY_FLOAT32)
+                     || (typenum == NPY_FLOAT64)
+                     || (typenum == NPY_COMPLEX64)
+                     || (typenum == NPY_COMPLEX128);
+    if(!dtype_ok || !PyArray_ISALIGNED(ap_Ab)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+        return NULL;
+    }
+
+    if (!(PyArray_TYPE(ap_kls) == NPY_INT16) || !PyArray_ISALIGNED(ap_kls)) {
+        PyErr_SetString(PyExc_TypeError, "Expected bounds to be integers.");
+        return NULL;
+    }
+
+    // Sanity check shapes
+    int ndim = PyArray_NDIM(ap_Ab);
+    npy_intp* shape = PyArray_SHAPE(ap_Ab);
+    if ((ndim < 2) || (shape[ndim - 2] > shape[ndim - 1])) {
+        PyErr_SetString(PyExc_ValueError, "Incorrect dimensions for ab.");
+        return NULL;
+    }
+
+    // Allocate output object
+    npy_intp ndim_b = PyArray_NDIM(ap_b);
+    npy_intp *shape_b = PyArray_SHAPE(ap_b);
+
+    bool dims_match = ndim_b == ndim;
+    if (dims_match) {
+        for (int i=0; i<ndim-2; i++) { // ndim - 2 can be different due to banded structure
+            dims_match = dims_match && (shape[i] == shape_b[i]);
+        }
+    }
+    if (!dims_match){
+        PyErr_SetString(PyExc_ValueError, "`a` and `b` shape mismatch.");
+        return NULL;
+    }
+
+    // Allocate the output
+    ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum);
+    if(!ap_x) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    void *buf = PyArray_DATA(ap_x);
+    switch (typenum) {
+        case (NPY_FLOAT32):
+            info = _solve_banded<float>(ap_Ab, ap_b, (float *)buf, ap_kls, ap_kus, overwrite_ab, overwrite_b, vec_status);
+            break;
+
+        case (NPY_FLOAT64):
+            info = _solve_banded<double>(ap_Ab, ap_b, (double *)buf, ap_kls, ap_kus, overwrite_ab, overwrite_b, vec_status);
+            break;
+
+        case (NPY_COMPLEX64):
+            info = _solve_banded<npy_complex64>(ap_Ab, ap_b, (npy_complex64 *)buf, ap_kls, ap_kus, overwrite_ab, overwrite_b, vec_status);
+            break;
+
+        case (NPY_COMPLEX128):
+            info = _solve_banded<npy_complex128>(ap_Ab, ap_b, (npy_complex128 *)buf, ap_kls, ap_kus, overwrite_ab, overwrite_b, vec_status);
+            break;
+
+        default:
+                PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
+                return NULL;
+    }
+
+    if (info < 0) {
+        // Either OOM error or requiested lwork too large.
+        Py_DECREF(ap_x);
+        PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.solve_banded.");
+        return NULL;
+    }
+    PyObject *ret_lst = convert_vec_status(vec_status);
+
+    return Py_BuildValue("NN", PyArray_Return(ap_x), ret_lst);
+}
+
 
 /*
  * Helper: convert a vector of slice error statuses to list of dicts
@@ -226,10 +328,12 @@ convert_vec_status(SliceStatusVec& vec_status) {
 
 static char doc_inv[] = ("Compute the matrix inverse.");
 static char doc_solve[] = ("Solve the linear system of equations.");
+static char doc_solve_banded[] = ("Solve the banded linear system of equations.");
 
 static struct PyMethodDef inv_module_methods[] = {
   {"_inv", _linalg_inv, METH_VARARGS, doc_inv},
   {"_solve", _linalg_solve, METH_VARARGS, doc_solve},
+  {"_solve_banded", _linalg_solve_banded, METH_VARARGS, doc_solve_banded},
   {NULL, NULL, 0, NULL}
 };
 
