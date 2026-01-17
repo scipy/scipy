@@ -469,9 +469,6 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     if ab1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {ab1.ndim}")
 
-    if ab1.shape[-1] != b1.shape[0]:
-        raise ValueError("Shapes of ab and b are not compatible.")
-
     if not (ab1.flags["ALIGNED"] or ab1.dtype.byteorder == "="):
         overwrite_ab = True
         ab1 = ab1.copy()

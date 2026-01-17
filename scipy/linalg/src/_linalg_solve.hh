@@ -718,8 +718,7 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
 
     char trans = 'N'; // `solve_banded` does not offer transposing.
     SliceStatus slice_status;
-    npy_intp kl_max = 0; // Maximal size of lower band
-    npy_intp ku_max = 0; // Maximal size of upper band
+    npy_intp ldab_max = 0; // Maximal size required for LAPACK call format of `ab`
     CBLAS_INT info;
 
 
@@ -746,7 +745,7 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
 
     int16_t *kls_data = (int16_t *)PyArray_DATA(ap_kls);
     int16_t *kus_data = (int16_t *)PyArray_DATA(ap_kus);
-    npy_intp *shape_kls = PyArray_SHAPE(ap_kls); // identical => only tack one
+    npy_intp *shape_kls = PyArray_SHAPE(ap_kls); // identical => only track one
     npy_intp *strides_kls = PyArray_STRIDES(ap_kls);
 
     // Find the maximum number of bands to use for allocation of buffer
@@ -768,15 +767,11 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
             temp_idx /= shape_kls[i];
         }
 
-        kls[idx] = (npy_intp)kls_data[offset / sizeof(T)];
-        kus[idx] = (npy_intp)kus_data[offset / sizeof(T)];
+        kls[idx] = (npy_intp)kls_data[offset / sizeof(int16_t)];
+        kus[idx] = (npy_intp)kus_data[offset / sizeof(int16_t)];
 
-        if (kls[idx] > kl_max) {
-            kl_max = kls[idx];
-        }
-
-        if (kus[idx] > ku_max) {
-            ku_max = kus[idx];
+        if (2 * kls[idx] + kus[idx] + 1 > ldab_max) {
+            ldab_max = 2 * kls[idx] + kus[idx] + 1;
         }
     }
 
@@ -786,7 +781,7 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
     CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
 
     // Data storage
-    T *buffer = (T *)malloc((n * nrhs + 3 * n + (2 * kl_max + ku_max + 1) * n) * sizeof(T));
+    T *buffer = (T *)malloc((n * nrhs + 3 * n + ldab_max * n) * sizeof(T));
 
     if (buffer == NULL) {
         free(ks);
@@ -844,7 +839,7 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
 
         // Use the "one pass copy" strategy.
         copy_banded(slice_ptr_ab, shape[ndim-2], shape[ndim-1], kls[idx], kus[idx], ldab, ab, strides[ndim-2], strides[ndim-1]);
-        copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides[ndim-1]);
+        copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
 
         init_status(slice_status, idx, St::BANDED);
         solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work, irwork, kls[idx], kus[idx], slice_status);
