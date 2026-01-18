@@ -1367,69 +1367,6 @@ double bup(double a, double b, double x, double y, int n, double eps)
     //**********************************************************************
 
 
-struct TupleDID cdfbin_which2(double p, double q, double xn, double pr, double ompr)
-{
-    double tol = 1e-10;
-    double atol = 1e-50;
-    int qporq = (p <= q);
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-
-    DS.small = 0.0;
-    DS.big = xn;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = xn / 2.0;
-    struct TupleDD binret;
-    struct TupleDID ret = {0};
-
-    if (!((0 <= p) && (p <= 1.0))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : 1.0);
-        return ret;
-    }
-    if (!((0 <= q) && (q <= 1.0))) {
-        ret.i1 = -2;
-        ret.d2 = (!(q > 0.0) ? 0.0 : 1.0);
-        return ret;
-    }
-    if (!(0 < xn)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -3};
-    }
-    if (!((0 <= pr) && (pr <= 1))) {
-        return (struct TupleDID){.d1 = 0.0, .i1 = -4, .d2 = (pr > 0.0 ? 0.0 : 1.0)};
-    }
-    if (!((0 <= ompr) && (ompr < 1))) {
-        return (struct TupleDID){.d1 = 0.0, .i1 = -5, .d2 = (ompr > 0.0 ? 0.0 : 1.0)};
-    }
-    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
-        return (struct TupleDID){.d1 = 0.0, .i1 = 3, .d2 = (p+q < 0 ? 0.0 : 1.0)};
-    }
-    if (((fabs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]) {
-        return (struct TupleDID){.d1 = 0.0, .i1 = 4, .d2 = (pr+ompr < 0 ? 0.0 : 1.0)};
-    }
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        binret = cumbin(DS.x, xn, pr, ompr);
-        DS.fx = (qporq ? binret.d1 - p : binret.d2 - q);
-        dinvr(&DS, &DZ);
-    }
-
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0.0 : xn);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
 struct TupleDID cdfbin_which3(double p, double q, double s, double pr, double ompr)
 {
     double tol = 1e-10;

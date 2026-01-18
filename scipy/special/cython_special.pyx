@@ -63,6 +63,7 @@ Available functions
 
 - :py:func:`~scipy.special.bdtrik`::
 
+        float bdtrik(float, float, float)
         double bdtrik(double, double, double)
 
 - :py:func:`~scipy.special.bdtrin`::
@@ -1385,10 +1386,6 @@ from ._legacy cimport bdtri_unsafe as _func_bdtri_unsafe
 ctypedef double _proto_bdtri_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_bdtri_unsafe_t *_proto_bdtri_unsafe_t_var = &_func_bdtri_unsafe
 
-from ._cdflib_wrappers cimport bdtrik as _func_bdtrik
-ctypedef double _proto_bdtrik_t(double, double, double) noexcept nogil
-cdef _proto_bdtrik_t *_proto_bdtrik_t_var = &_func_bdtrik
-
 from ._cdflib_wrappers cimport bdtrin as _func_bdtrin
 ctypedef double _proto_bdtrin_t(double, double, double) noexcept nogil
 cdef _proto_bdtrin_t *_proto_bdtrin_t_var = &_func_bdtrin
@@ -1882,9 +1879,17 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
     else:
         return NAN
 
-cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
+cpdef df_number_t bdtrik(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
-    return _func_bdtrik(x0, x1, x2)
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrik_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrik_double)(x0, x1, x2)
+    else:
+        if df_number_t is double:
+            return NAN
+        else:
+            return NAN
 
 cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrin"""
