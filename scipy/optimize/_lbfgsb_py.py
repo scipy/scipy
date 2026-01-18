@@ -36,6 +36,7 @@ Functions
 import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
+from scipy._lib._array_api import _asarray as xp_asarray
 from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
                         _wrap_callback, _check_unknown_options,
                         _prepare_scalar_function)
@@ -269,7 +270,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, m=
 
 
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
-                     ftol=2.2204460492503131e-09, gtol=1e-5, eps=1e-8, maxfun=15000,
+                     ftol=2.2204460492503131e-09, gtol=1e-5, eps=None, maxfun=15000,
                      maxiter=15000, callback=None, maxls=20, finite_diff_rel_step=None,
                      workers=None, **unknown_options):
     """
@@ -364,6 +365,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
                                   workers=workers)
 
     func_and_grad = sf.fun_and_grad
+    f0 = sf.fun(x0)
+    if not hasattr(f0, "dtype"):
+        f0 = np.float64(f0)
+    f_dtype = f0.dtype
+    g_dtype = sf.grad(x0).dtype
 
     nbd = zeros(n, np.int32)
     low_bnd = zeros(n, float64)
@@ -405,6 +411,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
         # the Jacobian in float32 (see gh-18730). The underlying code expects
         # float64, so upcast it
         g = g.astype(np.float64)
+        f = np.float64(f)
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr, pgtol, wa,
                        iwa, task, lsave, isave, dsave, maxls, ln_task)
@@ -419,7 +426,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
             # new iteration
             n_iterations += 1
 
-            intermediate_result = OptimizeResult(x=x, fun=f)
+            intermediate_result = OptimizeResult(
+                x=xp_asarray(x, dtype=x0.dtype, copy=False),
+                fun=f_dtype.type(f)
+            )
             if _call_callback_maybe_halt(callback, intermediate_result):
                 task[0] = 5
                 task[1] = 505
@@ -452,10 +462,13 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
 
     msg = status_messages[task[0]] + ": " + task_messages[task[1]]
 
-    return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
+    return OptimizeResult(fun=f_dtype.type(f),
+                          jac=xp_asarray(g, dtype=g_dtype, copy=False),
+                          nfev=sf.nfev,
                           njev=sf.ngev,
                           nit=n_iterations, status=warnflag, message=msg,
-                          x=x, success=(warnflag == 0), hess_inv=hess_inv)
+                          x=xp_asarray(x, dtype=x0.dtype, copy=False),
+                          success=(warnflag == 0), hess_inv=hess_inv)
 
 
 class LbfgsInvHessProduct(LinearOperator):
