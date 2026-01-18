@@ -499,8 +499,8 @@ class interp1d(_Interpolator1D):
         # Note that the following expression relies on the specifics of the
         # broadcasting semantics.
         y_new = (
-            ((x_new-x_lo)/(x_hi-x_lo))[:, None]*y_hi
-            +((x_hi-x_new)/(x_hi-x_lo))[:, None]*y_lo
+            ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
+            + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
             )
         
         return y_new
