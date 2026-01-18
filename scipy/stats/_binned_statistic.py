@@ -1,5 +1,5 @@
 import builtins
-from warnings import catch_warnings, simplefilter
+from warnings import catch_warnings, simplefilter, warn
 import numpy as np
 from operator import index
 from collections import namedtuple
@@ -550,10 +550,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
         pass
     # If bins was an integer-like object, now it is an actual Python int.
 
-    # NOTE: for _bin_edges(), see e.g. gh-11365
-    if isinstance(bins, int) and not np.isfinite(sample).all():
-        raise ValueError(f'{sample!r} contains non-finite values.')
-
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.
     # This code is based on np.histogramdd
@@ -576,6 +572,15 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if statistic != 'count' and Vlen != Dlen:
         raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
+
+    # NOTE: for _bin_edges(), see e.g. gh-11365
+    i_numeric = ~(np.isnan(sample).any(axis=1))
+    if not i_numeric.all():
+        sample = sample[i_numeric]
+        values = values[:, i_numeric]
+        message = ("`sample` contains NaNs; corresponding `values` will '"
+                   "not be considered as elements of any bin.")
+        warn(message, stacklevel=2)
 
     try:
         M = len(bins)
@@ -725,11 +730,17 @@ def _bin_edges(sample, bins=None, range=None):
     edges = Ndim * [None]         # Bin edges for each dim (will be 2D array)
     dedges = Ndim * [None]        # Spacing between edges (will be 2D array)
 
+    # Preserve sample floating point precision in bin edges
+    edges_dtype = (sample.dtype if np.issubdtype(sample.dtype, np.floating)
+                   else float)
+
     # Select range for each dimension
     # Used only if number of bins is given.
     if range is None:
-        smin = np.atleast_1d(np.array(sample.min(axis=0), float))
-        smax = np.atleast_1d(np.array(sample.max(axis=0), float))
+        sample = sample.astype(float, copy=True)
+        sample[np.isinf(sample)] = np.nan
+        smin = np.atleast_1d(np.nanmin(sample, axis=0))
+        smax = np.atleast_1d(np.nanmax(sample, axis=0))
     else:
         if len(range) != Ndim:
             raise ValueError(
@@ -748,10 +759,6 @@ def _bin_edges(sample, bins=None, range=None):
         if smin[i] == smax[i]:
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
-
-    # Preserve sample floating point precision in bin edges
-    edges_dtype = (sample.dtype if np.issubdtype(sample.dtype, np.floating)
-                   else float)
 
     # Create edge arrays
     for i in builtins.range(Ndim):
