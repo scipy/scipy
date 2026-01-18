@@ -391,7 +391,7 @@ if use_ilp64
        '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
      ]
      c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
-elif uses_accelerate
+  elif uses_accelerate
     blas_ilp64 = dependency('accelerate')
     lapack_ilp64 = blas_ilp64
     _args_blas_ilp64 += ['-DACCELERATE_NEW_LAPACK']
@@ -445,8 +445,8 @@ elif uses_accelerate
 else
   # we're not using ILP64; user code will link to the always-available LP64 blas/lapack
   # (all users must use preprocessor macros BLAS_NAME to handle the two options)
-  blas_dep = blas
-  lapack_dep = lapack
+  blas_dep = blas_lp64_dep
+  lapack_dep = lapack_lp64_dep
   c_flags_ilp64 = []
 endif
 

@@ -78,6 +78,12 @@ class Bench(Benchmark):
         else:
             sl.eigvals(self.a)
 
+    def time_geneig(self, size, contig, module):
+        if module == 'numpy':
+            pass
+        else:
+            sl.eig(self.a, self.a, check_finite=True)
+
     def time_svd(self, size, contig, module):
         if module == 'numpy':
             nl.svd(self.a)
@@ -146,6 +152,55 @@ class BatchedSolveBench(Benchmark):
             nl.solve(self.a, self.b)
         else:
             sl.solve(self.a, self.b, check_finite=False, **self.kwd)
+
+
+class BatchedSVDBench(Benchmark):
+    params = [
+        [(10, 10, 10, 2), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_svd(self, shape, module):
+        if module == 'numpy':
+            nl.svd(self.a)
+        else:
+            sl.svd(self.a)
+
+
+class BatchedLstsqBench(Benchmark):
+    params = [
+        [(10, 10, 50, 2), (100, 20, 5), (100, 10, 10), (100, 5, 20), (100, 2, 50)],
+    ]
+    param_names = ['shape']
+
+    def setup(self, shape):
+         self.a = random(shape)
+         self.b = random((shape[-2],))
+
+    def time_lstsq(self, shape):
+        sl.lstsq(self.a, self.b, check_finite=False)
+
+
+class BatchedEigBench(Benchmark):
+    params = [
+        [(10, 10, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_eig(self, shape, module):
+        if module == 'numpy':
+            nl.eig(self.a)
+        else:
+            sl.eig(self.a)
+
 
 
 class Norm(Benchmark):
