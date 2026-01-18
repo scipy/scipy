@@ -8,7 +8,7 @@ from ..sparse import issparse, isspmatrix, find, csc_array, csr_array, csr_matri
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace, xp_result_type
 from scipy._lib._util import MapWrapper
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):

@@ -6,7 +6,7 @@ import numpy as np
 
 from scipy.linalg import solve, solve_banded
 from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 
 from . import PPoly
 from ._polyint import _isscalar

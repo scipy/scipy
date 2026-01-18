@@ -10,7 +10,7 @@ from scipy._lib._array_api import (
     _length_nonmasked,
     is_torch,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 

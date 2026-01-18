@@ -9,7 +9,7 @@ from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
 from scipy._lib._util import _asarray_validated, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
