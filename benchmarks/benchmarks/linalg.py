@@ -105,7 +105,7 @@ class Bench(Benchmark):
 class BatchedSolveBench(Benchmark):
     params = [
         [(100, 10, 10), (100, 20, 20), (100, 100)],
-        ["gen", "pos", "sym", "diagonal", "tridiagonal"],
+        ["gen", "pos", "sym", "diagonal", "tridiagonal", "banded"],
         ["scipy/detect", "scipy/assume", "numpy"]
     ]
     param_names = ["shape", "structure" ,"module"]
@@ -132,6 +132,9 @@ class BatchedSolveBench(Benchmark):
                 self.a[..., i+1, i] = a[..., i+1, i]
             for i in range(shape[-1]-1):
                 self.a[..., i, i+1] = a[..., i, i+1]
+        elif structure == "banded":
+            self.a = np.zeros_like(a)
+            self.a += np.triu(np.tril(a, k=5), k=-5)
         else:
             self.a = a
 
@@ -146,6 +149,39 @@ class BatchedSolveBench(Benchmark):
             nl.solve(self.a, self.b)
         else:
             sl.solve(self.a, self.b, check_finite=False, **self.kwd)
+
+
+class BatchedSolveBandedBench(Benchmark):
+    params = [
+        [(100, 10, 10), (100, 20, 20), (100, 100)],
+        [(0, 0), (5, 0), (0, 5), (5, 5)],
+        ["solve_banded", "solve"],
+    ]
+    param_names = ["shape", "l_and_u", "function"]
+
+    def setup(self, shape, l_and_u, function):
+        self.a = random(shape)
+        l, u = l_and_u
+
+        self.ab = np.zeros((*self.a.shape[:-2], l + u + 1, self.a.shape[-1]))
+        self.ab[..., u, :] = np.diagonal(self.a, axis1=-2, axis2=-1)
+        for i in range(l):
+            self.ab[..., u + i + 1, :-i-1] = np.diagonal(
+                self.a, offset=-i-1, axis1=-2, axis2=-1
+            )
+
+        for i in range(u):
+            self.ab[..., u - i - 1, i + 1:] = np.diagonal(
+                self.a, offset=i+1, axis1=-2, axis2=-1
+            )
+
+        self.b = random([shape[-1]])
+
+    def time_solve_banded(self, shape, l_and_u, function):
+        if function == "solve":
+            sl.solve(self.a, self.b, check_finite=False, assume_a="banded")
+        else:
+            sl.solve_banded(l_and_u, self.ab, self.b, check_finite=False)
 
 
 class Norm(Benchmark):
