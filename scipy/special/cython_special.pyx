@@ -67,6 +67,7 @@ Available functions
 
 - :py:func:`~scipy.special.bdtrin`::
 
+        float bdtrin(float, float, float)
         double bdtrin(double, double, double)
 
 - :py:func:`~scipy.special.bei`::
@@ -1389,10 +1390,6 @@ from ._cdflib_wrappers cimport bdtrik as _func_bdtrik
 ctypedef double _proto_bdtrik_t(double, double, double) noexcept nogil
 cdef _proto_bdtrik_t *_proto_bdtrik_t_var = &_func_bdtrik
 
-from ._cdflib_wrappers cimport bdtrin as _func_bdtrin
-ctypedef double _proto_bdtrin_t(double, double, double) noexcept nogil
-cdef _proto_bdtrin_t *_proto_bdtrin_t_var = &_func_bdtrin
-
 from ._boxcox cimport boxcox as _func_boxcox
 ctypedef double _proto_boxcox_t(double, double) noexcept nogil
 cdef _proto_boxcox_t *_proto_boxcox_t_var = &_func_boxcox
@@ -1885,10 +1882,6 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
     return _func_bdtrik(x0, x1, x2)
-
-cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.bdtrin"""
-    return _func_bdtrin(x0, x1, x2)
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""
@@ -3122,6 +3115,15 @@ cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_double)(x0, x1, x2)
+    else:
+        return NAN
+
+cpdef df_number_t bdtrin(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.fdtri"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_double)(x0, x1, x2)
     else:
         return NAN
 
