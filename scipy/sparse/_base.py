@@ -391,6 +391,16 @@ class _spbase(SparseABC):
     def T(self):
         """Transpose."""
         return self.transpose()
+    
+    @property
+    def mT(self):
+        """Matrix transpose.
+        
+        See Also
+        --------
+        sparse.matrix_transpose : equivalent function
+        """
+        return self.transpose()
 
     @property
     def real(self):
