@@ -966,47 +966,74 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
 
     Notes
     -----
-    1. For method 'single', an optimized algorithm based on minimum spanning
-       tree is implemented. It has time complexity :math:`O(n^2)`.
-       For methods 'complete', 'average', 'weighted' and 'ward', an algorithm
-       called nearest-neighbors chain is implemented. It also has time
-       complexity :math:`O(n^2)`.
-       For other methods, a naive algorithm is implemented with :math:`O(n^3)`
-       time complexity.
-       All algorithms use :math:`O(n^2)` memory.
-       Refer to [1]_ for details about the algorithms.
-    2. Methods 'centroid', 'median', and 'ward' are correctly defined only if
-       Euclidean pairwise metric is used. If `y` is passed as precomputed
-       pairwise distances, then it is the user's responsibility to assure that
-       these distances are in fact Euclidean, otherwise the produced result
-       will be incorrect.
+        The linkage matrix ``Z`` represents the hierarchical clustering as a
+        dendrogram. It has shape ``(n - 1, 4)``, where each row
+        ``[idx1, idx2, dist, sample_count]`` corresponds to a single merge
+        operation performed during clustering.
 
-    See Also
-    --------
-    scipy.spatial.distance.pdist : pairwise distance metrics
+        - ``idx1`` and ``idx2`` are the cluster indices merged at this step.
+          Clusters with indices less than ``n`` correspond to original observations.
+        - ``dist`` is the distance between these clusters at the time of merging.
+        - ``sample_count`` is the number of original observations contained in the
+          newly formed cluster.
 
-    References
-    ----------
-    .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
-           algorithms", :arXiv:`1109.2378v1`.
-    .. [2] Ziv Bar-Joseph, David K. Gifford, Tommi S. Jaakkola, "Fast optimal
-           leaf ordering for hierarchical clustering", 2001. Bioinformatics
-           :doi:`10.1093/bioinformatics/17.suppl_1.S22`
+        Algorithmically:
+        1. Each observation is initially assigned to its own single-element cluster,
+           where the cluster index equals the observation index (0 to n-1).
+        2. At each merge step, two clusters are combined into a new cluster.
+           The newly formed cluster is assigned an index starting from ``n``,
+           increasing by one at each step.
+           Thus, the cluster created at merge step ``i`` receives index ``n + i``.
 
-    Examples
-    --------
-    >>> from scipy.cluster.hierarchy import dendrogram, linkage
-    >>> from matplotlib import pyplot as plt
-    >>> X = [[i] for i in [2, 8, 0, 4, 1, 9, 9, 0]]
+        This convention ensures that clusters with indices less than ``n``
+        represent original observations, while clusters with indices greater than
+        or equal to ``n`` correspond to clusters formed during the hierarchy
+        construction.
 
-    >>> Z = linkage(X, 'ward')
-    >>> fig = plt.figure(figsize=(25, 10))
-    >>> dn = dendrogram(Z)
+        This matrix can be visualized as a dendrogram; see
+        :func:`scipy.cluster.hierarchy.dendrogram` for examples.
 
-    >>> Z = linkage(X, 'single')
-    >>> fig = plt.figure(figsize=(25, 10))
-    >>> dn = dendrogram(Z)
-    >>> plt.show()
+        1. For method 'single', an optimized algorithm based on minimum spanning
+           tree is implemented. It has time complexity :math:`O(n^2)`.
+           For methods 'complete', 'average', 'weighted', and 'ward', an algorithm
+           called nearest-neighbors chain is implemented. It also has time
+           complexity :math:`O(n^2)`.
+           For other methods, a naive algorithm is implemented with
+           :math:`O(n^3)` time complexity.
+           All algorithms use :math:`O(n^2)` memory.
+           Refer to [1]_ for details about the algorithms.
+
+        2. Methods 'centroid', 'median', and 'ward' are correctly defined only if
+           the Euclidean pairwise metric is used. If `y` is passed as precomputed
+           pairwise distances, then it is the user's responsibility to ensure that
+           these distances are Euclidean; otherwise, the result will be incorrect.
+
+See Also
+--------
+scipy.spatial.distance.pdist : pairwise distance metrics
+
+References
+----------
+.. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
+       algorithms", :arXiv:`1109.2378v1`.
+.. [2] Ziv Bar-Joseph, David K. Gifford, Tommi S. Jaakkola, "Fast optimal
+       leaf ordering for hierarchical clustering", 2001. Bioinformatics
+       :doi:`10.1093/bioinformatics/17.suppl_1.S22`
+
+Examples
+--------
+>>> from scipy.cluster.hierarchy import dendrogram, linkage
+>>> from matplotlib import pyplot as plt
+>>> X = [[i] for i in [2, 8, 0, 4, 1, 9, 9, 0]]
+
+>>> Z = linkage(X, 'ward')
+>>> fig = plt.figure(figsize=(25, 10))
+>>> dn = dendrogram(Z)
+
+>>> Z = linkage(X, 'single')
+>>> fig = plt.figure(figsize=(25, 10))
+>>> dn = dendrogram(Z)
+>>> plt.show()
     """
     xp = array_namespace(y)
     y = _asarray(y, order='C', dtype=xp.float64, xp=xp)
@@ -2613,10 +2640,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
            [18.        , 19.        ,  5.77350269,  6.        ],
            [20.        , 21.        ,  8.16496581, 12.        ]])
 
-    This matrix represents a dendrogram, where the first and second elements
-    are the two clusters merged at each step, the third element is the
-    distance between these clusters, and the fourth element is the size of
-    the new cluster - the number of original data points included.
+    For more details about the structure and interpretation of the linkage
+    matrix, see :func:`scipy.cluster.hierarchy.linkage`.
 
     `scipy.cluster.hierarchy.fcluster` can be used to flatten the
     dendrogram, obtaining as a result an assignation of the original data
