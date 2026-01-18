@@ -164,10 +164,13 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     }
 
 
-def is_named_function_like_object(obj):
+def is_inherently_out_of_scope(obj):
+    # modules, exceptions, and things that are not named callables
+    # are inherently out of scope.
     return (
-        not isinstance(obj, ModuleType | type)
-        and callable(obj) and hasattr(obj, "__name__")
+        isinstance(obj, ModuleType)
+        or (isinstance(obj, type) and issubclass(obj, Exception))
+        or not (callable(obj) and hasattr(obj, "__name__"))
     )
 
 
@@ -225,7 +228,7 @@ def make_flat_capabilities_table(
                 # for backwards compatibility reasons.
                 continue
             thing = getattr(module, name)
-            if not is_named_function_like_object(thing):
+            if is_inherently_out_of_scope(thing):
                 continue
             entry = xp_capabilities_table.get(thing, None)
             capabilities = _process_capabilities_table_entry(entry)[backend_type]
