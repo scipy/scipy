@@ -1,6 +1,7 @@
 import warnings
 
 from itertools import product
+from unittest.mock import Mock
 
 from numpy.testing import (assert_, assert_allclose, assert_array_less,
                            assert_equal, assert_no_warnings)
@@ -9,9 +10,10 @@ from pytest import raises as assert_raises
 import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
-from scipy.integrate import OdeSolution
+from scipy.integrate import OdeSolution, OdeSolver
 from scipy.integrate._ivp.common import num_jac, select_initial_step
-from scipy.integrate._ivp.base import ConstantDenseOutput
+from scipy.integrate._ivp.base import ConstantDenseOutput, DenseOutput
+from scipy.integrate._ivp.ivp import IntermediateOdeResult
 from scipy.sparse import coo_matrix, csc_matrix
 
 
@@ -933,6 +935,7 @@ def test_classes():
         assert_(solver.nfev > 0)
         assert_(solver.njev >= 0)
         assert_(solver.nlu >= 0)
+        assert_equal(solver.nstep, 1)
         sol = solver.dense_output()
         assert_allclose(sol(5), y0, rtol=1e-15, atol=0)
 
@@ -1291,3 +1294,94 @@ def test_inital_maxstep():
                                             method_order,
                                             rtol, atol)
             assert_equal(max_step, step_with_max)
+
+
+def test_callable():
+    callable_fun = Mock()
+    sol = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun)
+    assert callable_fun.call_count == len(sol.t) - 1  # initial time isn't a step
+
+    call_args, call_kwargs = callable_fun.call_args
+    assert call_kwargs == {}
+    assert len(call_args) == 1
+    call_arg = call_args[0]
+    assert isinstance(call_arg, IntermediateOdeResult)
+
+    # call_arg has last time step call, so many attributes match final solution
+    assert_allclose(call_arg.t, sol.t)
+    assert_allclose(call_arg.y, np.asarray(sol.y).T)
+    assert call_arg.sol is None
+    assert call_arg.t_events is None
+    assert call_arg.y_events is None
+    assert call_arg.nfev == sol.nfev
+    assert call_arg.njev == sol.njev
+    assert call_arg.nlu == sol.nlu
+    assert isinstance(call_arg.solver, OdeSolver)
+    assert call_arg.current_t == sol.t[-1]
+    assert_allclose(call_arg.current_y, sol.y[:, -1].T)
+    assert call_arg.active_events is None
+
+def test_callable_dense_output():
+    callable_fun = Mock()
+    _ = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun,
+                  dense_output=True)
+
+    call_args, _ = callable_fun.call_args
+
+    assert isinstance(call_args[0].sol, DenseOutput)
+
+
+def test_callable_stop_iteration():
+
+    # run first to confirm it normally runs more than 1 step
+    callable_fun = Mock()
+    sol = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun)
+    assert callable_fun.call_count > 1
+
+    # Stop iteration after 1 step using callback
+    callable_fun = Mock()
+    callable_fun.side_effect = StopIteration
+    sol = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun)
+    assert callable_fun.call_count == 1  # Stopped after first iteration
+    assert sol.status == 2
+    assert sol.message == 'Solver stopped via callback.'
+
+
+def test_callable_events():
+    class CallableCountingEvents:
+        """Keeps track of number of each active event is passed to callable."""
+        def __init__(self):
+            self.active_event_count = np.array([0, 0])
+
+        def __call__(self, int_sol):
+            self.active_event_count[int_sol.active_events] += 1
+            if int_sol.current_t < 1:
+                assert int_sol.t_events == [[], []]
+                assert int_sol.y_events == [[], []]
+                assert int_sol.active_events.size == 0
+                assert_equal(self.active_event_count, [0, 0])
+            elif int_sol.current_t < 1.5:
+                assert int_sol.t_events == [[1.0], []]
+                assert len(int_sol.y_events) == 2  # 2 event types
+                assert len(int_sol.y_events[0]) == 1  # 1 event for first type
+                assert int_sol.y_events[0][0].shape == (2,)
+                assert len(int_sol.y_events[1]) == 0  # no event for second type
+                assert_equal(self.active_event_count, [1, 0])
+            else:
+                assert int_sol.t_events == [[1.0], [1.5]]
+                assert len(int_sol.y_events) == 2  # 2 event types
+                assert len(int_sol.y_events[0]) == 1  # 1 event for first type
+                assert int_sol.y_events[0][0].shape == (2,)
+                assert len(int_sol.y_events[1]) == 1  # 1 event for second type
+                assert int_sol.y_events[0][0].shape == (2,)
+                assert_equal(self.active_event_count, [1, 1])
+
+    def event_fun(t, y):
+        """Event at t=1."""
+        return t - 1
+
+    def event_fun2(t, y):
+        return t - 1.5
+
+    solve_ivp(fun_linear, [0, 2], [0, 2], events=[event_fun, event_fun2],
+              callback=CallableCountingEvents(), max_step=0.1)
