@@ -2189,7 +2189,7 @@ class PoissonDisk(QMCEngine):
             `candidate` sample.
             """
             indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
-            ind_min = np.maximum(indices - n, self.l_bounds.astype(int))
+            ind_min = np.maximum(indices - n, 0)
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
             # Check if the center cell is empty
