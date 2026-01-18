@@ -20,7 +20,8 @@ from scipy.stats._distribution_infrastructure import (
     _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support, Mixture)
-from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
+from scipy.stats._new_distributions import (StandardNormal, _LogUniform, _Gamma,
+                                            _TestCircular, VonMises)
 from scipy.stats._new_distributions import DiscreteDistribution
 from scipy.stats import Normal, Logistic, Uniform, Binomial
 
@@ -195,7 +196,12 @@ discrete_families = [
     Binomial,
 ]
 
-families = continuous_families + discrete_families
+circular_families = [
+    _TestCircular,
+    VonMises,
+]
+
+families = continuous_families + discrete_families + circular_families
 
 
 class TestDistributions:
@@ -235,6 +241,8 @@ class TestDistributions:
                               ('logpdf', {'log/exp'}, 'x'),
                               ('logcdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
                               ('cdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
+                              ('ilogcdf', {'complement', 'inversion'}, 'logp'),
+                              ('icdf', {'complement', 'inversion'}, 'p'),
                               ('logccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
                               ('ccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
                               ('ilogccdf', {'complement', 'inversion'}, 'logp'),
@@ -245,6 +253,11 @@ class TestDistributions:
     def test_funcs(self, family, data, seed, func, methods, arg):
         if family == Uniform and func == 'mode':
             pytest.skip("Mode is not unique; `method`s disagree.")
+        if family in circular_families:
+            if func in {'logcdf', 'logccdf', 'ilogcdf', 'ilogccdf'}:
+                pytest.skip("Circular distributions don't have logcdf methods.")
+            elif func in {'median'}:
+                methods = {'optimization'}
 
         rng = np.random.default_rng(seed)
 
@@ -260,12 +273,17 @@ class TestDistributions:
             elif arg in args:
                 check_dist_func(dist, func, args[arg], x_result_shape, methods)
 
-        if func == 'variance':
-            assert_allclose(dist.standard_deviation()**2, dist.variance())
+        if func == 'variance':  # check standard deviation against the variance
+            ref = dist.variance()
+            if family in circular_families:
+                assert_allclose(1 - np.exp(-0.5*dist.standard_deviation()**2), ref)
+            else:
+                assert_allclose(dist.standard_deviation()**2, ref)
 
         # invalid and divide are to be expected; maybe look into over
         with np.errstate(invalid='ignore', divide='ignore', over='ignore'):
-            if not isinstance(dist, ShiftedScaledDistribution):
+            if not (isinstance(dist, ShiftedScaledDistribution)
+                    or family in circular_families):
                 if func == 'cdf':
                     methods = {'quadrature'}
                     check_cdf2(dist, False, x, y, xy_result_shape, methods)
@@ -328,7 +346,6 @@ class TestDistributions:
         # Safe subtraction is needed in special cases
         x = np.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
         y = np.asarray([-1e-21, -1e-20, 1e-21, 1e-20, 1e-20])
-
 
         p0 = X.pdf(0)*(y-x)
         p1 = X.cdf(x, y, method='subtraction_safe')
@@ -456,11 +473,12 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
     # Mean can be 0, which makes logmean -inf.
     if fname in {'logmean', 'mean', 'logskewness', 'skewness'}:
         tol_override = {'atol': 1e-15}
-    elif fname in {'mode'}:
+    elif (fname in {'mode'}) or (fname in {'median'}
+                                 and dist.__class__ in circular_families):
         # can only expect about half of machine precision for optimization
         # because math
         tol_override = {'atol': 1e-6}
-    elif fname in {'logcdf'}:  # gh-22276
+    elif fname in {'logcdf', 'ccdf'}:  # gh-22276 and such
         tol_override = {'rtol': 2e-7}
 
     if dist._overrides(f'_{fname}_formula'):
@@ -475,9 +493,15 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
     for method in methods:
         res = getattr(dist, fname)(*args, method=method)
         if 'log' in fname:
-            np.testing.assert_allclose(np.exp(res), np.exp(ref),
-                                       **tol_override)
+            np.testing.assert_allclose(np.exp(res), np.exp(ref), **tol_override)
         else:
+            if fname in {'median', 'mode'} and dist.__class__ in circular_families:
+                # wrap to center around 0
+                a, b = dist.support()
+                period = b - a
+                res = np.where(res > period/2, res - period, res)[()]
+                ref = np.where(ref > period/2, ref - period, ref)[()]
+
             np.testing.assert_allclose(res, ref, **tol_override)
 
         # for now, make sure dtypes are consistent; later, we can check whether
@@ -486,6 +510,7 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         np.testing.assert_equal(res.shape, result_shape)
         if result_shape == tuple():
             assert np.isscalar(res)
+
 
 def check_cdf2(dist, log, x, y, result_shape, methods):
     # Specialized test for 2-arg cdf since the interface is a bit different
@@ -594,6 +619,10 @@ def check_nans_and_edges(dist, fname, arg, res):
     a = np.broadcast_to(a, res.shape)
     b = np.broadcast_to(b, res.shape)
 
+    if dist.__class__ in circular_families:
+        return check_periodicity(dist, fname, arg, res, a, b, valid_parameters,
+                                 classified_args)
+
     outside_arg_minus = (outside_arg == -1) & valid_parameters
     outside_arg_plus = (outside_arg == 1) & valid_parameters
     endpoint_arg_minus = (endpoint_arg == -1) & valid_parameters
@@ -658,6 +687,46 @@ def check_nans_and_edges(dist, fname, arg, res):
         # for the tests, or think about storing info about degeneracy in the
         # instances.
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
+
+
+def check_periodicity(dist, fname, arg, res, a, b, valid_parameters, classified_args):
+    inside_arg, endpoint_arg, outside_arg, nan_arg = classified_args
+    # we've already checked NaN patterns; don't include known NaNs in these checks
+    inside_arg = np.where(valid_parameters, inside_arg, False)
+    endpoint_arg = np.where(valid_parameters, endpoint_arg, 0)
+    method = getattr(dist, fname)
+    period = (b - a)
+    if fname in {'pdf', 'logpdf'}:
+        np.testing.assert_allclose(method(arg + period), res)
+        np.testing.assert_allclose(method(arg - period), res)
+    elif fname in {'cdf'}:
+        np.testing.assert_allclose(method(arg + period), res + 1)
+        np.testing.assert_allclose(method(arg - period), res - 1)
+        assert np.all(res[inside_arg] <= 1.)
+        assert np.all(res[inside_arg] >= 0.)
+        assert np.all(res[endpoint_arg == 1] == 1.)
+        assert np.all(res[endpoint_arg == -1] == 0.)
+    elif fname in {'icdf'}:
+        np.testing.assert_allclose(method(arg + 1), res + period)
+        np.testing.assert_allclose(method(arg - 1), res - period)
+        assert np.all(res[inside_arg] <= b[inside_arg])
+        assert np.all(res[inside_arg] >= a[inside_arg])
+        assert np.all(res[endpoint_arg == 1] == b[endpoint_arg == 1])
+        assert np.all(res[endpoint_arg == -1] == a[endpoint_arg == -1])
+    elif fname in {'ccdf'}:
+        np.testing.assert_allclose(method(arg + period), res - 1)
+        np.testing.assert_allclose(method(arg - period), res + 1)
+        assert np.all(res[inside_arg] <= 1.)
+        assert np.all(res[inside_arg] >= 0.)
+        assert np.all(res[endpoint_arg == 1] == 0.)
+        assert np.all(res[endpoint_arg == -1] == 1.)
+    elif fname in {'iccdf'}:
+        np.testing.assert_allclose(method(arg + 1), res - period)
+        np.testing.assert_allclose(method(arg - 1), res + period)
+        assert np.all(res[inside_arg] <= b[inside_arg])
+        assert np.all(res[inside_arg] >= a[inside_arg])
+        assert np.all(res[endpoint_arg == 1] == a[endpoint_arg == 1])
+        assert np.all(res[endpoint_arg == -1] == b[endpoint_arg == -1])
 
 
 def check_moment_funcs(dist, result_shape):
@@ -725,7 +794,8 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'central', 'cache', ref, success=True)
         check(i, 'central', 'formula', ref, success=has_formula(i, 'central'))
-        check(i, 'central', 'general', ref, success=i <= 1)
+        check(i, 'central', 'general', ref,
+              success=(i == 0) if dist.__class__ in circular_families else (i <= 1))
         if dist.__class__ == stats.Normal:
             check(i, 'central', 'quadrature_icdf', ref, success=True)
         if not (dist.__class__ == stats.Uniform and i == 5):
@@ -737,6 +807,10 @@ def check_moment_funcs(dist, result_shape):
         if not has_formula(i, 'raw'):
             dist.moment(i, 'raw')
             check(i, 'central', 'transform', ref)
+
+    # Circular distributions don't have kind='standardized'
+    if dist.__class__ in circular_families:
+        return
 
     variance = dist.variance()
     dist.reset_cache()
@@ -2174,6 +2248,83 @@ class TestMixture:
         np.testing.assert_allclose(X.iccdf(p), X0.iccdf(p))
         np.testing.assert_allclose(X.ilogcdf(p), X0.ilogcdf(p))
         np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))
+
+
+class TestCircular:
+    def test_input_validation(self):
+        X = stats.VonMises(mu=0, kappa=1)
+
+        message = "Circular distributions do not support "
+        with pytest.raises(NotImplementedError, match=message + '`logcdf`.'):
+            X.logcdf(1)
+        with pytest.raises(NotImplementedError, match=message + '`logcdf`.'):
+            X.logcdf(1, 2)
+        with pytest.raises(NotImplementedError, match=message + '`logccdf`.'):
+            X.logccdf(1)
+        with pytest.raises(NotImplementedError, match=message + '`logccdf`.'):
+            X.logccdf(1, 2)
+        with pytest.raises(NotImplementedError, match=message + '`ilogcdf`.'):
+            X.ilogcdf(1)
+        with pytest.raises(NotImplementedError, match=message + '`ilogccdf`.'):
+            X.ilogccdf(1)
+
+        message = "Circular distributions do not support two-argument "
+        with pytest.raises(NotImplementedError, match=message + '`cdf`.'):
+            X.cdf(1, 2)
+        with pytest.raises(NotImplementedError, match=message + '`ccdf`.'):
+            X.ccdf(1, 2)
+
+        message = "`VonMises.kurtosis` supports only the default value of `convention`."
+        with pytest.raises(ValueError, match=message):
+            X.kurtosis(convention='excess')
+
+        message = "Argument `kind` of `VonMises.moment` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            X.moment(3, kind='standardized')
+
+        message = "`VonMises` does not provide an accurate implementation of..."
+        with pytest.raises(NotImplementedError, match=message):
+            X.moment(3, kind='central', method='normalize')
+
+    @pytest.mark.parametrize('shape', [(), (20,)])
+    def test_basic(self, shape):
+        # This test was developed before circular distributions were supported by the
+        # `TestDistributions` class. That mostly makes this redundant, but it is very
+        # fast, so I see little harm in keeping it.
+        rng = np.random.default_rng(582348972387243524)
+        X = stats.VonMises(mu=1.23, kappa=2.34)
+        x = rng.uniform(-10, 10, size=shape)
+        period = 2 * np.pi
+        x_turn = (x + np.pi) // period
+        x_wrapped = (x + np.pi) % period - np.pi
+
+        def assert_allclose(res, ref, **kwargs):
+            if shape == ():
+                assert np.isscalar(res)
+            np.testing.assert_allclose(res, ref, **kwargs)
+
+        assert_allclose(X.pdf(x), X.pdf(x_wrapped))
+        assert_allclose(X.logpdf(x), X.logpdf(x_wrapped))
+        assert_allclose(X.pmf(x), X.pmf(x_wrapped))
+        assert_allclose(X.logpmf(x), X.logpmf(x_wrapped))
+        assert_allclose(X.cdf(x), X.cdf(x_wrapped) + x_turn)
+        assert_allclose(X.ccdf(x), X.ccdf(x_wrapped) - x_turn)
+        assert_allclose(X.icdf(x), X.icdf(x % 1) + (x // 1)*period)
+        assert_allclose(X.iccdf(x), X.iccdf(x % 1) - (x // 1)*period)
+        assert_allclose(X.cdf(X.icdf(x)), x)
+        assert_allclose(X.icdf(X.cdf(x)), x)
+        assert_allclose(X.ccdf(X.iccdf(x)), x)
+        assert_allclose(X.iccdf(X.ccdf(x)), x)
+
+        assert_allclose(X.cdf(x, method='quadrature'), X.cdf(x, method='formula'))
+        assert_allclose(X.mode(method='optimization'), X.mode(method='formula'))
+        assert_allclose(X.median(method='optimization'), X.mode(method='formula'))
+        assert_allclose(X.entropy(method='quadrature'), X.entropy(method='formula'))
+        for order in range(5):
+            for kind in ['raw', 'central']:
+                assert_allclose(X.moment(order, kind=kind, method='quadrature'),
+                                X.moment(order, kind=kind, method='formula'))
+
 
 
 def test_zipfian_distribution_wrapper():
