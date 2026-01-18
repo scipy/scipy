@@ -9,7 +9,7 @@
 static PyObject* _linalg_inv_error;
 
 
-PyObject* 
+PyObject*
 convert_vec_status(SliceStatusVec& vec_status);
 
 
@@ -106,11 +106,12 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     SliceStatusVec vec_status;
     St structure = St::NONE;
     int overwrite_a = 0;
+    int overwrite_b = 0;
     int transposed = 0;
     int lower=0;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!O!|nppp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &lower, &transposed, &overwrite_a)) {
+    if (!PyArg_ParseTuple(args, "O!O!|npppp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &lower, &transposed, &overwrite_a, &overwrite_b)) {
         return NULL;
     }
 
@@ -133,7 +134,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // At the python call site, 
+    // At the python call site,
     // 1) 1D `b` must have been converted in to 2D, and
     // 2) batch dimensions of `a` and `b` have been broadcast
     // Therefore, if `a.shape == (s, p, r, n, n)`, then `b.shape == (s, p, r, n, k)`
@@ -194,7 +195,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
 /*
  * Helper: convert a vector of slice error statuses to list of dicts
  */
-PyObject* 
+PyObject*
 convert_vec_status(SliceStatusVec& vec_status) {
     PyObject *ret_dct = NULL;
     PyObject *ret_lst = NULL;
