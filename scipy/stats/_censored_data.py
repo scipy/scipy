@@ -297,6 +297,11 @@ class CensoredData:
     def num_censored(self):
         """
         Number of censored values.
+
+        Returns
+        -------
+        int
+            The number of censored values.
         """
         return len(self._left) + len(self._right) + len(self._interval)
 

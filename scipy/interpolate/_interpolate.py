@@ -1591,7 +1591,7 @@ class BPoly(_PPolyBase):
         k = max(self._c.shape[0], c.shape[0])
         self._c = self._raise_degree(self._c, k - self._c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
-        return _PPolyBase.extend(self, c, x)
+        _PPolyBase.extend(self, c, x)
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod

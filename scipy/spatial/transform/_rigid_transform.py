@@ -436,6 +436,7 @@ class RigidTransform:
         Returns
         -------
         transform : `RigidTransform` instance
+            Object containing the rigid transform represented by the input matrix.
 
         Notes
         -----
@@ -513,6 +514,7 @@ class RigidTransform:
         Returns
         -------
         transform : `RigidTransform` instance
+            Object containing the rigid transform represented by the input rotation.
 
         Examples
         --------
@@ -585,6 +587,7 @@ class RigidTransform:
         Returns
         -------
         transform : `RigidTransform` instance
+            Object containing the rigid transform represented by the input translation.
 
         Examples
         --------
