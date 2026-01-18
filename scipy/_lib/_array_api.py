@@ -608,6 +608,10 @@ def xp_default_dtype(xp):
         return xp.float64
 
 
+def xp_fmod(a, b, *, xp):
+    return xp.sign(a) * (xp.abs(a) % xp.abs(b))
+
+
 ### MArray Helpers ###
 def xp_result_device(*args):
     """Return the device of an array in `args`, for the purpose of
