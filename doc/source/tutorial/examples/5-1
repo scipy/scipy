@@ -43,7 +43,7 @@ Optimization Tools
    brent       --  1-D function minimization using Brent method.
    golden      --  1-D function minimization using Golden Section method
    bracket     --  Bracket a minimum (given two starting points)
-
+   linewalker  --  1-D function minimization using Linewalker method
 
  Also a collection of general-purpose root-finding routines.
 
