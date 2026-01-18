@@ -360,6 +360,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     min_step : float, optional
         The minimum allowed step size for 'LSODA' method.
         By default `min_step` is zero.
+    tcrit : float and array_like, optional
+        Critical points to take care during integration.  Forces
+        solver to integrate to this time point exactly before proceeding.
+        If an array of values is passed in, the solver will treat each
+        value as critical. The array of values must be sorted either
+        ascending or descending in the same manner as the direction
+        defined by ``t_span``.
+
+        .. versionadded:: 1.18.0
 
     Returns
     -------
