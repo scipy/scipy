@@ -236,8 +236,9 @@ class TestInterp1D:
         xp_assert_close(yp, y, atol=1e-15)
 
     def test_linear_numerical_stability(self):
-        # Using de Boor's algorithm, there should be no floating point error
-        # for query points contained exactly in the x input array
+        # regression test for gh-24281: Using de Boor's algorithm, there 
+        # should be no floating point error for query points contained 
+        # exactly in the x input array
         x = np.array([0.0007499999999999, 0.002])
         y = np.array([[0.0, 0.0], [0.0004164930555555557, 0.0]])
         yp = interp1d(x, y)(x)
