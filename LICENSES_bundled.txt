@@ -93,9 +93,9 @@ License: BSD-3-Clause
   For details, see scipy/fft/_pocketfft/LICENSE.md
 
 Name: uarray
-Files: scipy/_lib/_uarray/*
+Files: subprojects/uarray/uarray/*
 License: BSD-3-Clause
-  For details, see scipy/_lib/_uarray/LICENSE
+  For details, see subprojects/uarray/uarray/LICENSE
 
 Name: ampgo
 Files: benchmarks/benchmarks/go_benchmark_functions/*.py
