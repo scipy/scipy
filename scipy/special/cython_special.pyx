@@ -583,6 +583,10 @@ Available functions
 
         double j1(double)
 
+- :py:func:`~scipy.special.js_div`::
+
+        double js_div(double, double)
+
 - :py:func:`~scipy.special.jv`::
 
         double complex jv(double, double complex)
@@ -1678,6 +1682,10 @@ cdef extern from r"_ufuncs_defs.h":
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k1e "k1e"(npy_double)nogil
 
+from ._convex_analysis cimport js_div as _func_js_div
+ctypedef double _proto_js_div_t(double, double) noexcept nogil
+cdef _proto_js_div_t *_proto_js_div_t_var = &_func_js_div
+
 from ._convex_analysis cimport kl_div as _func_kl_div
 ctypedef double _proto_kl_div_t(double, double) noexcept nogil
 cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
@@ -2749,6 +2757,10 @@ cpdef double j0(double x0) noexcept nogil:
 cpdef double j1(double x0) noexcept nogil:
     """See the documentation for scipy.special.j1"""
     return xsf_j1(x0)
+
+cpdef double js_div(double x0, double x1) noexcept nogil:
+    """See the documentation for scipy.special.js_div"""
+    return _func_js_div(x0, x1)
 
 cpdef Dd_number_t jv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.jv"""
