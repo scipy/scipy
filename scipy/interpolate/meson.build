@@ -86,6 +86,7 @@ py3.install_sources([
     '_rbfinterp_common.py',
     '_rbfinterp_np.py',
     '_rbfinterp_xp.py',
+    '_regrid_python.py',
     '_rgi.py',
     '_ndbspline.py',
     'dfitpack.py',
