@@ -6060,8 +6060,7 @@ def unpack_TtestResult(res, _):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 allow_dask_compute=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6351,7 +6350,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], jax_jit=False)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True, alternative="two-sided"):
     r"""
@@ -6494,7 +6493,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], jax_jit=False)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
@@ -6881,8 +6880,7 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
