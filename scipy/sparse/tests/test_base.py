@@ -4935,7 +4935,7 @@ class TestLIL(sparse_test_class(minmax=False)):
         
         expected = np.zeros((10, 10))
         expected[1:3, 1:4] = src_data
-        assert_array_equal(dest.toarray(), expected)
+        assert_equal(dest.toarray(), expected)
 
     def test_lil_to_lil_sparse_assignment(self):
         # Issue #16601: LIL-to-LIL sparse assignment
