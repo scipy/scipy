@@ -7007,7 +7007,7 @@ def _pd_nsamples(kwargs):
     return 2 if kwargs.get('f_exp', None) is not None else 1
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -7194,7 +7194,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
         f_exp = xp.broadcast_to(f_exp, bshape)
         f_obs_float, f_exp = _share_masks(f_obs_float, f_exp, xp=xp)
 
-        if sum_check:
+        if not is_lazy_array(f_obs) and sum_check:
             dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
             rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
             with np.errstate(invalid='ignore'):
@@ -7282,7 +7282,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
         Whether to perform a check that ``sum(f_obs) - sum(f_exp) == 0``. If True,
         (default) raise an error when the relative difference exceeds the square root
         of the precision of the data type. See Notes for rationale and possible
-        exceptions.
+        exceptions. Ignored by lazy backends.
 
     Returns
     -------

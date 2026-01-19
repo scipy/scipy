@@ -4453,11 +4453,12 @@ class TestPowerDivergence:
         # The sums of observed and expected frequencies must match
         f_obs = xp.asarray([[10., 20.], [30., 20.]])
         f_exp = xp.asarray([[5., 15.], [35., 25.]])
-        message = 'For each axis slice...'
-        with pytest.raises(ValueError, match=message):
-            stats.power_divergence(f_obs, f_exp=xp.asarray([30., 60.]))
-        with pytest.raises(ValueError, match=message):
-            stats.power_divergence(f_obs, f_exp=f_exp, axis=1)
+        if not is_lazy_array(f_obs):
+            message = 'For each axis slice...'
+            with pytest.raises(ValueError, match=message):
+                stats.power_divergence(f_obs, f_exp=xp.asarray([30., 60.]))
+            with pytest.raises(ValueError, match=message):
+                stats.power_divergence(f_obs, f_exp=f_exp, axis=1)
         stat, pval = stats.power_divergence(f_obs, f_exp=f_exp)
         xp_assert_close(stat, xp.asarray([5.71428571, 2.66666667]))
         xp_assert_close(pval, xp.asarray([0.01682741, 0.10247043]))
@@ -4482,7 +4483,7 @@ class TestPowerDivergence:
         table4 = xp.concat((obs[xp.newaxis, :],
                             expected_counts[xp.newaxis, :])).T
 
-        table5 = xp.asarray([
+        table5 = np.asarray([
             # lambda, statistic
             -10.0, 72.2e3,
             -5.0, 28.9e1,
@@ -4501,10 +4502,10 @@ class TestPowerDivergence:
             5.0, 35.5,
             10.0, 21.4e1,
             ])
-        table5 = xp.reshape(table5, (-1, 2))
+        table5 = np.reshape(table5, (-1, 2))
 
         for i in range(table5.shape[0]):
-            lambda_, expected_stat = table5[i, 0], table5[i, 1]
+            lambda_, expected_stat = float(table5[i, 0]), xp.asarray(table5[i, 1])
             stat, p = stats.power_divergence(table4[:,0], table4[:,1],
                                              lambda_=lambda_)
             xp_assert_close(stat, expected_stat, rtol=5e-3)
