@@ -760,7 +760,7 @@ dopri5(const int n, dopri_fcn* fcn, double *x, double* y, double *xend, double* 
         }
     }
     // -------- maximal step size
-    if (work[5] == 0.0) { hmax = xend - x; } else { hmax = work[5]; }
+    if (work[5] == 0.0) { hmax = *xend - *x; } else { hmax = work[5]; }
     // -------- initial step size
     h = work[6];
     // -------- when a fail has occurred, we return with wrong input error code
