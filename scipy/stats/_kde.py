@@ -17,6 +17,8 @@
 #
 #-------------------------------------------------------------------------------
 
+from types import GenericAlias
+
 # SciPy imports.
 from scipy import linalg, special
 from scipy._lib._util import check_random_state
@@ -206,6 +208,10 @@ class gaussian_kde:
     >>> np.allclose(res, ref)
     True
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, dataset, bw_method=None, weights=None):
         self.dataset = atleast_2d(asarray(dataset))
         if not self.dataset.size > 1:
