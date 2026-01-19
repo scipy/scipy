@@ -9,9 +9,8 @@ from numpy.testing import assert_array_equal
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
-                              ClusterError, _krandinit)
-from scipy.cluster import _vq
+from scipy.cluster.vq import ClusterError, kmeans, kmeans2, vq, whiten
+from scipy.cluster.vq._vq_impl import _py_vq, _krandinit, _vq
 from scipy.sparse._sputils import matrix
 
 from scipy._lib import array_api_extra as xpx
@@ -146,7 +145,7 @@ class TestVq:
     def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         # label1.dtype varies between int32 and int64 over platforms
-        label1 = py_vq(xp.asarray(X), xp.asarray(initc))[0]
+        label1 = _py_vq(xp.asarray(X), xp.asarray(initc))[0]
         xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
                         check_dtype=False)
 
@@ -155,7 +154,7 @@ class TestVq:
     def test_py_vq_matrix(self):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         # label1.dtype varies between int32 and int64 over platforms
-        label1 = py_vq(matrix(X), matrix(initc))[0]
+        label1 = _py_vq(matrix(X), matrix(initc))[0]
         assert_array_equal(label1, LABEL1)
 
     def test_vq(self, xp):
@@ -179,7 +178,7 @@ class TestVq:
         a, b = _vq.vq(data, initc)
         data = xp.asarray(data)
         initc = xp.asarray(initc)
-        ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
+        ta, tb = _py_vq(data[:, np.newaxis], initc[:, np.newaxis])
         # ta.dtype varies between int32 and int64 over platforms
         xp_assert_equal(ta, xp.asarray(a, dtype=xp.int64), check_dtype=False)
         xp_assert_equal(tb, xp.asarray(b))
@@ -198,7 +197,7 @@ class TestVq:
         code_book = np.random.rand(3, 20)
 
         codes0, dis0 = _vq.vq(X, code_book)
-        codes1, dis1 = py_vq(
+        codes1, dis1 = _py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
         xp_assert_close(dis1, xp.asarray(dis0), rtol=1e-5)
@@ -209,7 +208,7 @@ class TestVq:
         code_book = code_book.astype(np.float32)
 
         codes0, dis0 = _vq.vq(X, code_book)
-        codes1, dis1 = py_vq(
+        codes1, dis1 = _py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
         xp_assert_close(dis1, xp.asarray(dis0, dtype=xp.float64), rtol=1e-5)
@@ -221,7 +220,7 @@ class TestVq:
         code_book = np.random.rand(2, 5) * 1000000
 
         codes0, dis0 = _vq.vq(X, code_book)
-        codes1, dis1 = py_vq(
+        codes1, dis1 = _py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
         xp_assert_close(dis1, xp.asarray(dis0), rtol=1e-5)

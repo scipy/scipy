@@ -1,95 +1,3 @@
-"""
-Hierarchical clustering (:mod:`scipy.cluster.hierarchy`)
-========================================================
-
-.. currentmodule:: scipy.cluster.hierarchy
-
-These functions cut hierarchical clusterings into flat clusterings
-or find the roots of the forest formed by a cut by providing the flat
-cluster ids of each observation.
-
-.. autosummary::
-   :toctree: generated/
-
-   fcluster
-   fclusterdata
-   leaders
-
-These are routines for agglomerative clustering.
-
-.. autosummary::
-   :toctree: generated/
-
-   linkage
-   single
-   complete
-   average
-   weighted
-   centroid
-   median
-   ward
-
-These routines compute statistics on hierarchies.
-
-.. autosummary::
-   :toctree: generated/
-
-   cophenet
-   from_mlab_linkage
-   inconsistent
-   maxinconsts
-   maxdists
-   maxRstat
-   to_mlab_linkage
-
-Routines for visualizing flat clusters.
-
-.. autosummary::
-   :toctree: generated/
-
-   dendrogram
-
-These are data structures and routines for representing hierarchies as
-tree objects.
-
-.. autosummary::
-   :toctree: generated/
-
-   ClusterNode
-   leaves_list
-   to_tree
-   cut_tree
-   optimal_leaf_ordering
-
-These are predicates for checking the validity of linkage and
-inconsistency matrices as well as for checking isomorphism of two
-flat cluster assignments.
-
-.. autosummary::
-   :toctree: generated/
-
-   is_valid_im
-   is_valid_linkage
-   is_isomorphic
-   is_monotonic
-   correspond
-   num_obs_linkage
-
-Utility routines for plotting:
-
-.. autosummary::
-   :toctree: generated/
-
-   set_link_color_palette
-
-Utility classes:
-
-.. autosummary::
-   :toctree: generated/
-
-   DisjointSet -- data structure for incremental connectivity queries
-
-"""
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
 # hierarchy.py (derived from cluster.py, http://scipy-cluster.googlecode.com)
@@ -144,7 +52,8 @@ _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
 _EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
 
-__all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
+__all__ = ['ClusterNode', 'ClusterWarning', 'DisjointSet',
+           'average', 'centroid', 'complete',
            'cophenet', 'correspond', 'cut_tree', 'dendrogram', 'fcluster',
            'fclusterdata', 'from_mlab_linkage', 'inconsistent',
            'is_isomorphic', 'is_monotonic', 'is_valid_im', 'is_valid_linkage',
@@ -155,6 +64,9 @@ __all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
 
 
 class ClusterWarning(UserWarning):
+    """
+    A ``UserWarning`` raised during clustering.
+    """
     pass
 
 
@@ -162,7 +74,7 @@ def _warning(s):
     warnings.warn(f'scipy.cluster: {s}', ClusterWarning, stacklevel=3)
 
 
-def int_floor(arr, xp):
+def _int_floor(arr, xp):
     # array_api_strict is strict about not allowing `int()` on a float array.
     # That's typically not needed, here it is - so explicitly convert
     return int(xp.asarray(arr, dtype=xp.int64))
@@ -1463,8 +1375,8 @@ def to_tree(Z, rd=False):
     for i in range(Z.shape[0]):
         row = Z[i, :]
 
-        fi = int_floor(row[0], xp)
-        fj = int_floor(row[1], xp)
+        fi = _int_floor(row[0], xp)
+        fj = _int_floor(row[1], xp)
         if fi > i + n:
             raise ValueError('Corrupt matrix Z. Index to derivative cluster '
                               f'is used before it is formed. See row {fi}, '
@@ -3548,18 +3460,18 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_contraction_marks(Z, iv, i, n, contraction_marks, xp):
-    _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 0], xp),
+    _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 0], xp),
                                   n, contraction_marks, xp)
-    _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 1], xp),
+    _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 1], xp),
                                   n, contraction_marks, xp)
 
 
 def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks, xp):
     if i >= n:
         contraction_marks.append((iv, Z[i - n, 2]))
-        _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 0], xp),
+        _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 0], xp),
                                       n, contraction_marks, xp)
-        _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 1], xp),
+        _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 1], xp),
                                       n, contraction_marks, xp)
 
 
@@ -3660,8 +3572,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # !!! Otherwise, we don't have a leaf node, so work on plotting a
     # non-leaf node.
     # Actual indices of a and b
-    aa = int_floor(Z[i - n, 0], xp)
-    ab = int_floor(Z[i - n, 1], xp)
+    aa = _int_floor(Z[i - n, 0], xp)
+    ab = _int_floor(Z[i - n, 1], xp)
     if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
