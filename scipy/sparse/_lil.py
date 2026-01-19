@@ -248,12 +248,52 @@ class _lil_base(_spbase, IndexMixin):
                                     self.rows, self.data,
                                     i, j, x)
 
-    def _set_arrayXarray_sparse(self, row, col, x):
-        # Fall back to densifying x
-        x = np.asarray(x.toarray(), dtype=self.dtype)
+    def _clear_cells(self, row, col):
+        # the indexing result of self[row, col] is 1D, so the call to nonzero
+        # is performed on a 1D sparse matrix, therefore nonzero rows are
+        # irrelevant
+        result = self[row, col].nonzero()
+        if len(result) == 2:
+            # 2D result
+            _, nnz_cols = result
+        else:
+            # 1D result
+            nnz_cols = result[0]
+        mapped_nnz_rows = row[nnz_cols]
+        mapped_nnz_cols = col[nnz_cols]
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                           self.rows, self.data,
+                                           mapped_nnz_rows, mapped_nnz_cols,
+                                           np.zeros_like(mapped_nnz_rows))
+
+    def _densify_set(self, row, col, x):
+        x = x.toarray()
         x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
+    def _set_arrayXarray_sparse(self, row, col, x):
+        x_nrows, x_ncols = x.shape
+        if x_nrows == x_ncols == 1:
+            self._densify_set(row, col, x)
+            return
+        elif (not isinstance(row, np.ndarray) or row.ndim != 2 or
+              not isinstance(col, np.ndarray) or col.ndim != 2):
+            self._densify_set(row, col, x)
+            return
+
+        # clear the block
+        self._clear_cells(row.flatten(), col.flatten())
+
+        # extract sparsity structure from x
+        x_nnz_rows, x_nnz_cols = x.nonzero()
+        row = row[x_nnz_rows, x_nnz_cols].flatten()
+        col = col[x_nnz_rows, x_nnz_cols].flatten()
+        # write in the locations specified by the sparsity structure
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                           self.rows, self.data, row, col,
+                                           x.data)
+
+    
     def __setitem__(self, key, x):
         if isinstance(key, tuple) and len(key) == 2:
             row, col = key

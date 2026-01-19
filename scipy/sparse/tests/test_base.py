@@ -4924,6 +4924,56 @@ class TestLIL(sparse_test_class(minmax=False)):
         a = self.lil_container(np.ones((3, 3)))
         a *= 2.
         a[0, :] = 0
+    
+    def test_sparse_assignment_to_lil_slice(self):
+        # Issue #16601: Sparse-to-LIL assignment should not densify
+        dest = self.lil_container((10, 10))
+        src_data = np.array([[1, 0, 2], [0, 3, 0]])
+        src = self.spcreator(src_data)
+        
+        dest[1:3, 1:4] = src
+        
+        expected = np.zeros((10, 10))
+        expected[1:3, 1:4] = src_data
+        assert_array_equal(dest.toarray(), expected)
+
+    def test_lil_to_lil_sparse_assignment(self):
+        # Issue #16601: LIL-to-LIL sparse assignment
+        dest = self.lil_container((8, 8))
+        src = self.lil_container((3, 3))
+        src[0, 0] = 1
+        src[1, 1] = 2
+        src[2, 2] = 3
+        
+        dest[2:5, 2:5] = src
+        
+        result = dest.toarray()
+        assert_equal(result[2, 2], 1)
+        assert_equal(result[3, 3], 2)
+        assert_equal(result[4, 4], 3)
+
+    def test_lil_sparse_assignment_no_densify_memory_error(self):
+        # Issue #16601: Verify sparse assignment doesn't cause memory error
+        rows = [0, 0, 4, 7]
+        cols = [1, 0, 3, 3]
+        vals = [2, 1, 3, 9]
+        m, n = int(1E3), int(1E4)
+        mat = sparse.csr_matrix((vals, (rows, cols)), shape=(m, n), dtype=np.float32)
+        
+        # Create a smaller sparse matrix to assign
+        mini_rows = [0, 0, 2, 3]
+        mini_cols = [1, 0, 2, 2]
+        mini_vals = [2, 1, 3, 9]
+        mini_m, mini_n = 100, 500
+        mini_mat = sparse.csr_matrix((mini_vals, (mini_rows, mini_cols)), 
+                                  shape=(mini_m, mini_n), dtype=np.float32)
+        
+        mat_lil = mat.tolil()
+        mini_lil = mini_mat.tolil()
+        mat_lil[1:mini_m+1, 10:mini_n+10] = mini_lil
+        
+        result = mat_lil.toarray()
+        assert result[1, 11] == 2 or result[1, 10] == 1
 
 
 class TestLILMatrix(_MatrixMixin, TestLIL):
