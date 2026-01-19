@@ -40,6 +40,9 @@ DEF DTYPE_EPS = 1E-15
 
 
 class NegativeCycleError(Exception):
+    """
+    Negative cycle in graph.
+    """
     def __init__(self, message=''):
         Exception.__init__(self, message)
 
@@ -66,32 +69,28 @@ def shortest_path(csgraph, method='auto',
     method : string ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
 
-           'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
-                     based on the input data.
-
-           'FW'   -- Floyd-Warshall algorithm.
-                     Computational cost is approximately ``O[N^3]``.
-                     The input csgraph will be converted to a dense representation.
-
-           'D'    -- Dijkstra's algorithm with priority queue.
-                     Computational cost is approximately ``O[I * (E + N) * log(N)]``,
-                     where ``E`` is the number of edges in the graph,
-                     and ``I = len(indices)`` if ``indices`` is passed. Otherwise,
-                     ``I = N``.
-                     The input csgraph will be converted to a csr representation.
-
-           'BF'   -- Bellman-Ford algorithm.
-                     This algorithm can be used when weights are negative.
-                     If a negative cycle is encountered, an error will be raised.
-                     Computational cost is approximately ``O[N(N^2 k)]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr representation.
-
-           'J'    -- Johnson's algorithm.
-                     Like the Bellman-Ford algorithm, Johnson's algorithm is
-                     designed for use when the weights are negative. It combines
-                     the Bellman-Ford algorithm with Dijkstra's algorithm for
-                     faster computation.
+        'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
+                  based on the input data.
+        'FW'   -- Floyd-Warshall algorithm.
+                  Computational cost is approximately ``O[N^3]``.
+                  The input csgraph will be converted to a dense representation.
+        'D'    -- Dijkstra's algorithm with priority queue.
+                  Computational cost is approximately ``O[I * (E + N) * log(N)]``,
+                  where ``E`` is the number of edges in the graph,
+                  and ``I = len(indices)`` if ``indices`` is passed. Otherwise,
+                  ``I = N``.
+                  The input csgraph will be converted to a csr representation.
+        'BF'   -- Bellman-Ford algorithm.
+                  This algorithm can be used when weights are negative.
+                  If a negative cycle is encountered, an error will be raised.
+                  Computational cost is approximately ``O[N(N^2 k)]``, where
+                  ``k`` is the average number of connected edges per node.
+                  The input csgraph will be converted to a csr representation.
+        'J'    -- Johnson's algorithm.
+                  Like the Bellman-Ford algorithm, Johnson's algorithm is
+                  designed for use when the weights are negative. It combines
+                  the Bellman-Ford algorithm with Dijkstra's algorithm for
+                  faster computation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -164,14 +163,14 @@ def shortest_path(csgraph, method='auto',
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 6 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 2)	7
-    	(1, 2)	8
-    	(1, 3)	5
-    	(2, 0)	7
-    	(2, 1)	8
-    	(3, 1)	5
+        with 6 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 2)	7
+        (1, 2)	8
+        (1, 3)	5
+        (2, 0)	7
+        (2, 1)	8
+        (3, 1)	5
 
     >>> sources = [0, 2]
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=sources, return_predecessors=True)
@@ -358,13 +357,13 @@ def floyd_warshall(csgraph, directed=True,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
@@ -589,12 +588,12 @@ def dijkstra(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 4 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 3)	3
+        with 4 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -947,13 +946,13 @@ def bellman_ford(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1190,13 +1189,13 @@ def johnson(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1486,13 +1485,13 @@ def yen(
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2,
     ...                                directed=False, return_predecessors=True)

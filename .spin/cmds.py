@@ -496,6 +496,11 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
     os.environ['PYTHONPATH'] = install_dir
     util.run(cmd)
 
+    cmd_numpydoc_lint =  [f'{sys.executable}',
+        os.path.join('tools', 'numpydoc_lint.py')
+    ]
+    util.run(cmd_numpydoc_lint)
+
 @click.command()
 @click.argument(
     'pytest_args', nargs=-1, metavar='PYTEST-ARGS', required=False
@@ -637,6 +642,76 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         os.path.join('tools', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
+
+
+@click.command()
+@click.option(
+    '--xp-markers', default=False, is_flag=True,
+    help='For each function using `xp_capabilities`, ensure non-numpy backends are '
+         'actually tested')
+@click.option(
+    '--installed-files', default=False, is_flag=True,
+    help='Ensure all test and stub files are installed correctly.')
+@click.option(
+    '--symbol-hiding', default=False, is_flag=True,
+    help='Check whether symbol hiding in extension modules is correct (GCC-only)')
+@click.option(
+    '--no-build', default=False, is_flag=True,
+    help='Build SciPy before running checks')
+@meson.build_dir_option
+@click.pass_context
+def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=None):
+    """🔧  Run checks specific to the SciPy code base.
+
+    Exactly one check can be run at once. Example:
+
+      \b
+      spin check --xp-markers
+
+    """
+    # Checks are typically useful enough to run in CI or maintain a custom script for,
+    # but not deserving of their own top-level command in the spin CLI interface.
+    #
+    # We only run a single check per invocation, since they're so different and not all
+    # checks are expected to pass on all platforms.
+    #
+    # These checks, unlike the `lint` ones, are allowed (but don't have to) require
+    # building or importing `scipy`.
+    options = [xp_markers, installed_files, symbol_hiding]
+    if not sum(options) == 1:
+        click.secho(
+            f"Exactly one option to `check` should be given, found {sum(options)} - "
+            "exiting",
+            fg="bright_red",
+        )
+        sys.exit(1)
+
+    if not no_build:
+        click.secho(
+                "Invoking `build` prior to running checks:",
+                bold=True, fg="bright_green"
+            )
+        ctx.invoke(build)
+
+    build_dir = os.path.abspath(build_dir)
+    install_dir = meson._get_site_packages(build_dir)
+    os.environ['PYTHONPATH'] = install_dir
+
+    if xp_markers:
+        os.environ['SCIPY_ARRAY_API'] = '1'
+        cmd = [sys.executable, os.path.join('tools', 'check_xp_untested.py')]
+        util.run(cmd)
+
+    if installed_files:
+        cmd = [sys.executable, os.path.join('tools', 'check_installation.py'),
+               install_dir]
+        util.run(cmd)
+
+    if symbol_hiding:
+        script = os.path.join(os.path.abspath('tools'),
+                              'check_pyext_symbol_hiding.sh')
+        util.run([script, install_dir])
+
 
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):

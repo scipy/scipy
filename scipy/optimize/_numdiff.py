@@ -6,7 +6,7 @@ from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, isspmatrix, find, csc_array, csr_array, csr_matrix
 from ._group_columns import group_dense, group_sparse
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_result_type
 from scipy._lib._util import MapWrapper
 from scipy._lib import array_api_extra as xpx
 
@@ -160,35 +160,45 @@ def _compute_absolute_step(rel_step, x0, f0, method):
 
     Returns
     -------
-    h : float
-        The absolute step size
+    h : np.array
+        The absolute step size, ``h.dtype==x0.dtype``.
 
     Notes
     -----
-    `h` will always be np.float64. However, if `x0` or `f0` are
-    smaller floating point dtypes (e.g. np.float32), then the absolute
-    step size will be calculated from the smallest floating point size.
+    `h` has the same dtype as `x0` because dx is later calculated
+    as ``(x0 + h) - x0``, and problems would occur if ``x0.dtype==np.float16``
+    with ``h.dtype==np.float64``.
+    If `rel_step is None`, then a default relative step is calculated using the
+    smallest floating point type of `x0` and `f0`, see _eps_for_method.
+
     """
     # this is used instead of np.sign(x0) because we need
     # sign_x0 to be 1 when x0 == 0.
-    sign_x0 = (x0 >= 0).astype(float) * 2 - 1
+    sign_x0 = (x0 >= 0).astype(x0.dtype) * 2 - 1
 
     rstep = _eps_for_method(x0.dtype, f0.dtype, method)
+    default_abs_step = (
+        rstep * sign_x0 * np.maximum(1.0, np.abs(x0))
+    ).astype(x0.dtype)
 
     if rel_step is None:
-        abs_step = rstep * sign_x0 * np.maximum(1.0, np.abs(x0))
+        abs_step = default_abs_step
     else:
         # User has requested specific relative steps.
         # Don't multiply by max(1, abs(x0) because if x0 < 1 then their
         # requested step is not used.
-        abs_step = rel_step * sign_x0 * np.abs(x0)
+        abs_step = (
+            rel_step * sign_x0 * np.abs(x0)
+        ).astype(x0.dtype)
 
         # however we don't want an abs_step of 0, which can happen if
         # rel_step is 0, or x0 is 0. Instead, substitute a realistic step
         dx = ((x0 + abs_step) - x0)
-        abs_step = np.where(dx == 0,
-                            rstep * sign_x0 * np.maximum(1.0, np.abs(x0)),
-                            abs_step)
+        abs_step = np.where(
+            dx == 0,
+            default_abs_step,
+            abs_step
+        )
 
     return abs_step
 
@@ -308,16 +318,16 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                      produces bogus results.
     rel_step : None or array_like, optional
         Relative step size to use. If None (default) the absolute step size is
-        computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``, with
-        `rel_step` being selected automatically, see Notes. Otherwise
-        ``h = rel_step * sign(x0) * abs(x0)``. For ``method='3-point'`` the
-        sign of `h` is ignored. The calculated step size is possibly adjusted
-        to fit into the bounds.
+        computed as ``h = (rel_step * sign(x0) * max(1, abs(x0))).astype(x0.dtype)``,
+        with `rel_step` being selected automatically, see Notes. Otherwise
+        ``h = (rel_step * sign(x0) * abs(x0)).astype(x0.dtype)``. For
+        ``method='3-point'`` the sign of `h` is ignored. The calculated step size
+        is possibly adjusted to fit into the bounds.
     abs_step : array_like, optional
         Absolute step size to use, possibly adjusted to fit into the bounds.
         For ``method='3-point'`` the sign of `abs_step` is ignored. By default
         relative steps are used, only if ``abs_step is not None`` are absolute
-        steps used.
+        steps used. `abs_step` is coerced to the dtype of `x0` during calculation.
     f0 : None or array_like, optional
         If not None it is assumed to be equal to ``fun(x0)``, in this case
         the ``fun(x0)`` is not called. Default is None.
@@ -385,6 +395,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         For sparse arrays and linear operators it is always returned as
         a 2-D structure. For ndarrays, if m=1 it is returned
         as a 1-D gradient array with shape (n,).
+        `J.dtype` is the promoted type of ``fun(x0)`` and `x0`.
 
     info_dict : dict
         Dictionary containing extra information about the calculation. The
@@ -401,15 +412,21 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     Notes
     -----
-    If `rel_step` is not provided, it assigned as ``EPS**(1/s)``, where EPS is
-    determined from the smallest floating point dtype of `x0` or `fun(x0)`,
+    If `rel_step` is not provided, it is assigned as ``EPS**(1/s)``, where EPS is
+    determined from the smallest floating point dtype of `x0` or ``fun(x0)``,
     ``np.finfo(x0.dtype).eps``, s=2 for '2-point' method and
-    s=3 for '3-point' method. Such relative step approximately minimizes a sum
+    s=3 for '3-point' method. This relative step approximately minimizes a sum
     of truncation and round-off errors, see [1]_. Relative steps are used by
     default. However, absolute steps are used when ``abs_step is not None``.
     If any of the absolute or relative steps produces an indistinguishable
     difference from the original `x0`, ``(x0 + dx) - x0 == 0``, then a
     automatic step size is substituted for that particular entry.
+    The calculated absolute step size, `h`, is coerced to have the same dtype as `x0`.
+
+    The floating point precision of `J` is the promoted type of ``fun(x0)``
+    and `x0`. If `rel_step` and `abs_step` are None, then the overall accuracy of
+    `J` depends on the smallest floating point dtype of `x0` and ``fun(x0)``,
+    as that dtype is used to calculate the default step size.
 
     A finite difference scheme for '3-point' method is selected automatically.
     The well-known central difference scheme is used for points sufficiently
@@ -566,7 +583,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
             h = _compute_absolute_step(rel_step, x0, f0, method)
         else:
             # user specifies an absolute step
-            sign_x0 = (x0 >= 0).astype(float) * 2 - 1
+            sign_x0 = (x0 >= 0).astype(x0.dtype) * 2 - 1
             h = abs_step
 
             # cannot have a zero step. This might happen if x0 is very large
@@ -576,6 +593,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                          _eps_for_method(x0.dtype, f0.dtype, method) *
                          sign_x0 * np.maximum(1.0, np.abs(x0)),
                          h)
+            h = h.astype(x0.dtype)
 
         if method == '2-point':
             h, use_one_sided = _adjust_scheme_to_bounds(
@@ -621,11 +639,13 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     m = f0.size
     n = x0.size
 
+    result_dtype = xp_result_type(x0, f0, force_floating=True, xp=np)
+
     if method == '2-point':
         # nfev = 1
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
-                return np.zeros(m)
+                return np.zeros(m, dtype=result_dtype)
             dx = h / norm(p)
             x = x0 + dx*p
             df = fun(x) - f0
@@ -635,7 +655,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
         # nfev = 2
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
-                return np.zeros(m)
+                return np.zeros(m, dtype=result_dtype)
             dx = 2*h / norm(p)
             x1 = x0 - (dx/2)*p
             x2 = x0 + (dx/2)*p
@@ -648,7 +668,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
         # nfev = 1
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
-                return np.zeros(m)
+                return np.zeros(m, dtype=result_dtype)
             dx = h / norm(p)
             x = x0 + dx*p*1.j
             f1 = fun(x)
@@ -657,14 +677,18 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     else:
         raise RuntimeError("Never be here.")
 
-    return LinearOperator((m, n), matvec), 0
+    return LinearOperator(shape=(m, n), matvec=matvec, dtype=result_dtype), 0
 
 
 def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     m = f0.size
     n = x0.size
-    J_transposed = np.empty((n, m))
     nfev = 0
+
+    # h should have same dtype as x0
+    result_type = xp_result_type(x0, f0, force_floating=True, xp=np)
+    # output dtype should be the same as df_dx
+    J_transposed = np.empty((n, m), dtype=result_type)
 
     if method == '2-point':
         def x_generator2(x0, h):
@@ -750,6 +774,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     row_indices = []
     col_indices = []
     fractions = []
+    result_type = xp_result_type(x0, f0, force_floating=True, xp=np)
 
     n_groups = np.max(groups) + 1
     nfev = 0
@@ -821,7 +846,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             mask_1 = use_one_sided & e
             mask_2 = ~use_one_sided & e
 
-            dx = np.zeros(n)
+            dx = np.zeros(n, dtype=x0.dtype)
             dx[mask_1] = x2[mask_1] - x0[mask_1]
             dx[mask_2] = x2[mask_2] - x1[mask_2]
 
@@ -830,7 +855,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             nfev += 2
 
             mask = use_one_sided[j]
-            df = np.empty(m)
+            df = np.empty(m, dtype=f0.dtype)
 
             rows = i[mask]
             df[rows] = -3 * f0[rows] + 4 * f1[rows] - f2[rows]
@@ -856,8 +881,16 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     fractions = np.hstack(fractions)
 
     if isspmatrix(structure):
-        return csr_matrix((fractions, (row_indices, col_indices)), shape=(m, n)), nfev
-    return csr_array((fractions, (row_indices, col_indices)), shape=(m, n)), nfev
+        return csr_matrix(
+            (fractions, (row_indices, col_indices)),
+            shape=(m, n),
+            dtype=result_type
+        ), nfev
+    return csr_array(
+        (fractions, (row_indices, col_indices)),
+        shape=(m, n),
+        dtype=result_type
+    ), nfev
 
 
 class _Fun_Wrapper:

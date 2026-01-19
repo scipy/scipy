@@ -238,7 +238,7 @@ def make_flat_capabilities_table(
 
 def calculate_table_statistics(
     flat_table: list[dict[str, str]]
-) -> dict[str, tuple[dict[str, str], bool]]:
+) -> dict[str, dict[str, str]]:
     """Get counts of what is supported per module.
 
     Parameters
@@ -248,16 +248,13 @@ def calculate_table_statistics(
 
     Returns
     -------
-    dict[str, tuple[dict[str, str], bool]]
-        dict mapping module names to 2-tuples containing an inner dict and a
+    dict[str, dict[str, str]]
+        dict mapping module names to inner dicts.
         bool. The inner dicts have a key "total" along with keys for each
         backend column of the supplied flat capabilities table. The value
         corresponding to total is the total count of functions in the given
         module, and the value associated to the other keys is the count of
-        functions that support that particular backend. The bool is False if
-        the calculation may be innacurate due to missing xp_capabilities
-        decorators, and True if all functions for that particular module have
-        been decorated with xp_capabilities.
+        functions that support that particular backend.
     """
     if not flat_table:
         return []
@@ -265,9 +262,6 @@ def calculate_table_statistics(
     counter = defaultdict(lambda: defaultdict(int))
 
     S = BackendSupportStatus
-    # Keep track of which modules have functions with missing xp_capabilities
-    # decorators so this information can be passed back to the caller.
-    missing_xp_capabilities = set()
     for entry in flat_table:
         entry = entry.copy()
         entry.pop("function")
@@ -286,9 +280,4 @@ def calculate_table_statistics(
                 # set up to return information needed to put asterisks next
                 # to percentages impacted by missing xp_capabilities decorators.
                 current_counter[key] += 1 if value == S.YES else 0
-                if value == S.UNKNOWN:
-                    missing_xp_capabilities.add(module)
-    return {
-        key: (dict(value), key not in missing_xp_capabilities)
-        for key, value in counter.items()
-    }
+    return dict(counter)

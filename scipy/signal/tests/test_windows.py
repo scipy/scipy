@@ -568,6 +568,7 @@ class TestKaiserBesselDerived:
             windows.kaiser_bessel_derived(M + 1, beta=4., sym=False, xp=xp)
 
 
+@make_xp_test_case(windows.nuttall)
 class TestNuttall:
 
     def test_basic(self, xp):

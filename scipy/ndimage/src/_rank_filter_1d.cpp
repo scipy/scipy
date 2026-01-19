@@ -349,26 +349,47 @@ static PyMethodDef myMethods[] = {
     {"rank_filter", rank_filter, METH_VARARGS, "1D rank filter"},
     {NULL, NULL, 0, NULL}};
 
+
+static int
+_rank_filter_1d_module_exec(PyObject *module)
+{
+    (void)module;  /* unused */
+
+    if (_import_array() < 0) { return -1; }
+
+    return 0;
+}
+
+
+static PyModuleDef_Slot _rank_filter_1d_slots[] = {
+    {Py_mod_exec, (void*)_rank_filter_1d_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 // define the module
+// Designated initializers require C99 or C++20; hence the use of C++17 style initialization.
+// CAUTION: Even then, C++ requires the order of the fields preserved.
 static struct PyModuleDef _rank_filter_1d = {
-    PyModuleDef_HEAD_INIT, "_rank_filter_1d", "1D rank filter module", -1,
-    myMethods};
+    /* m_base     */ PyModuleDef_HEAD_INIT,
+    /* m_name     */ "_rank_filter_1d",
+    /* m_doc      */ "1D rank filter module",
+    /* m_size     */ 0,
+    /* m_methods  */ myMethods,
+    /* m_slots    */ _rank_filter_1d_slots,
+    /* m_traverse */ NULL,
+    /* m_clear    */ NULL,
+    /* m_free     */ NULL
+};
+
 
 // init the module
 PyMODINIT_FUNC
 PyInit__rank_filter_1d(void)
 {
-    PyObject *module;
-
-    import_array();
-    module = PyModule_Create(&_rank_filter_1d);
-    if (module == NULL) {
-        return module;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-  return module;
+    return PyModuleDef_Init(&_rank_filter_1d);
 }

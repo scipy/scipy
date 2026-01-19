@@ -2160,6 +2160,7 @@ def test_align_vectors_mixed_dtypes(xp):
     xp_assert_close(est.as_quat(), c.as_quat())
 
 
+@make_xp_test_case(Rotation.__repr__)
 def test_repr_single_rotation(xp):
     q = xp.asarray([0, 0, 0, 1])
     actual = repr(Rotation.from_quat(q))
@@ -3148,3 +3149,9 @@ def test_rotation_shape(xp, ndim: int):
     quat = xp.ones(shape + (4,))
     r = Rotation.from_quat(quat)
     assert r.shape == shape, f"Got {r.shape}, expected {shape}"
+
+
+def test_non_writeable():
+    q = np.array([0, 0, 0, 1.0])
+    q.flags.writeable = False
+    Rotation.from_quat(q)  # Regression test against gh-24354, should not raise

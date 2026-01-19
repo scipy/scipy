@@ -8,7 +8,8 @@ from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
-                                   xp_capabilities, xp_promote, xp_swapaxes, is_numpy)
+                                   xp_capabilities, xp_promote, xp_swapaxes, is_numpy,
+                                   is_lazy_array)
 import scipy._lib.array_api_extra as xpx
 
 
@@ -178,7 +179,7 @@ def _cached_roots_legendre(n):
 _cached_roots_legendre.cache = dict()
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def fixed_quad(func, a, b, args=(), n=5):
     """
     Compute a definite integral using fixed-order Gaussian quadrature.
@@ -237,13 +238,17 @@ def fixed_quad(func, a, b, args=(), n=5):
     1.0
 
     """
+    # `args` not necessarily numeric arrays, so don't pass to array_namespace/xp_promote
+    xp = array_namespace(a, b)
+    a, b = xp_promote(a, b, force_floating=True, xp=xp)
     x, w = _cached_roots_legendre(n)
-    x = np.real(x)
-    if np.isinf(a) or np.isinf(b):
+    x, w = xp.asarray(x, dtype=a.dtype), xp.asarray(w, dtype=a.dtype)
+    x = xp.real(x)
+    if not is_lazy_array(a) and (xp.isinf(a) or xp.isinf(b)):
         raise ValueError("Gaussian quadrature is only available for "
                          "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
-    return (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1), None
+    return (b-a)/2.0 * xp.sum(w*func(y, *args), axis=-1), None
 
 
 def tupleset(t, i, value):
@@ -1198,7 +1203,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         the dimensionality of the function domain) and `n_points` is the number
         of quadrature points, and return an array of shape ``(n_points,)``,
         the integrand at each quadrature point.
-    a, b : array-like
+    a, b : scalar or 1-d array-like
         One-dimensional arrays specifying the lower and upper integration
         limits, respectively, of each of the ``d`` variables.
     n_estimates, n_points : int, optional

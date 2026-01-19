@@ -363,6 +363,11 @@ class BSpline:
         xp = array_namespace(t)
         t = np.asarray(t)
         k = t.shape[0] - 2
+        
+        if k < 0:
+            raise ValueError("BSpline.basis_element requires at least 2 knots")
+
+        
         t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
@@ -1426,7 +1431,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         Ordinates.
     k : int, optional
         B-spline degree. Default is cubic, ``k = 3``.
-    t : array_like, shape (nt + k + 1,), optional.
+    t : array_like, shape (nt + k + 1,), optional
         Knots.
         The number of knots needs to agree with the number of data points and
         the number of derivatives at the edges. Specifically, ``nt - n`` must
@@ -1713,7 +1718,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         Abscissas.
     y : array_like, shape (m, ...)
         Ordinates.
-    t : array_like, shape (n + k + 1,).
+    t : array_like, shape (n + k + 1,)
         Knots.
         Knots and data points must satisfy Schoenberg-Whitney conditions.
     k : int, optional

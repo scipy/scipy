@@ -19,6 +19,11 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
 solve-group = "default"
 
+[environments.smoke-docs]
+# tasks: smoke-docs
+features = ["run-deps", "test-deps", "smoke-docs"]
+solve-group = "default"
+
 [environments.docs]
 # tasks: docs
 features = ["docs"]
@@ -216,6 +221,22 @@ cmd = "spin test --no-build -m full"
 depends-on = "build"
 env.SCIPY_XSLOW = "1"
 description = "Test SciPy (full and x-slow)"
+
+[feature.test-tasks.tasks.check]
+cmd = "spin check --no-build"
+depends-on = "build"
+description = "Run SciPy-specific checks"
+
+
+[feature.smoke-docs.dependencies]
+hypothesis = "*"
+matplotlib = "*"
+scipy-doctest = "*"
+
+[feature.smoke-docs.tasks.smoke-docs]
+cmd = "spin smoke-docs --no-build"
+depends-on = "build"
+description = "Run doctests"
 
 
 ### Type Stubs ###

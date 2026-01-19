@@ -90,7 +90,7 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int,
             The window must be a real- or complex-valued 1d array.
         hop : int
             The increment in samples by which the window is shifted in each step.
-        desired_dual: np.ndarray | None
+        desired_dual : np.ndarray | None
             The desired dual window must be a 1d array of the same length as `win`.
             If set to ``None`` (default), then `desired_dual` is assumed to be the
             rectangular window, i.e., ``np.ones_like(win)``.
@@ -275,7 +275,7 @@ class ShortTimeFFT:
     fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
         Mode of FFT to be used (default 'onesided').
         See property `fft_mode` for details.
-    mfft: int | None
+    mfft : int | None
         Length of the FFT used, if a zero padded FFT is desired.
         If ``None`` (default), the length of the window `win` is used.
     dual_win : np.ndarray | None
