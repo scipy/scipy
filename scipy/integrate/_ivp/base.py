@@ -296,3 +296,9 @@ class ConstantDenseOutput(DenseOutput):
             ret = np.empty((self.value.shape[0], t.shape[0]))
             ret[:] = self.value[:, None]
             return ret
+
+
+class DaeSolver(OdeSolver):
+    """Base class for solvers of differential-algebraic equations (DAEs).
+    For now, it is identical to OdeSolver, and is only used for input verification.
+    """
