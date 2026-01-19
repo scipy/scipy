@@ -3523,22 +3523,22 @@ class TestIQR:
         with pytest.raises(ValueError, match=message):
             stats.iqr(x, axis=1, nan_policy='raise')
 
-    def test_scale(self, xp):
+    def test_scale_no_nans(self, xp):
         x = xp.reshape(xp.arange(15.0), (3, 5))
-
-        # No NaNs
         xp_assert_equal(stats.iqr(x, scale=1.0), xp.asarray(7.))
         xp_assert_close(stats.iqr(x, scale='normal'), xp.asarray(7 / 1.3489795))
         xp_assert_equal(stats.iqr(x, scale=2.0), xp.asarray(3.5))
 
-        # Yes NaNs
+    @skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
+    def test_scale_with_nans(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
         x = xpx.at(x)[1, 2].set(xp.nan)
         nan = xp.asarray(xp.nan)
         xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='propagate'), nan)
         xp_assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), nan)
         xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), nan)
 
-        # # Bad scale
+    def test_invalid_scale(self, xp):
         message = "foobar not a valid scale for `iqr`"
         with pytest.raises(ValueError, match=message):
             stats.iqr(x, scale='foobar')
