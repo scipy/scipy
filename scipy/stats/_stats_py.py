@@ -3767,6 +3767,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
+# JAX JIT / Torch GPU need fdtrc
 @xp_capabilities(jax_jit=False, cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
@@ -4061,7 +4062,7 @@ class AlexanderGovernResult:
     pvalue: float
 
 
-@xp_capabilities(jax_jit=False)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
     result_to_tuple=lambda x, _: (x.statistic, x.pvalue),
