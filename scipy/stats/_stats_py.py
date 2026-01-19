@@ -6049,8 +6049,8 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
     # at most one unique non-NaN value
     xp = array_namespace(statistic, pvalue)
     alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
-    alternative = alternative[xp.isfinite(alternative)]
-    alternative = alternative[0] if xp_size(alternative) != 0 else xp.nan
+    alternative = (_xp_mean(alternative, axis=None, nan_policy='omit', warn=False)
+                   if xp_size(alternative) != 0 else xp.nan)
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
 
@@ -6061,7 +6061,7 @@ def unpack_TtestResult(res, _):
 
 
 @xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=True)
+                 allow_dask_compute=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -10645,7 +10645,7 @@ def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
 
 
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
-             dtype=None, xp=None):
+             dtype=None, warn=True, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
 
     Parameters
@@ -10738,7 +10738,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             res = xp.mean(x, axis=axis, keepdims=keepdims)
-        if xp_size(res) != 0:
+        if warn and xp_size(res) != 0:
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         return res
 
@@ -10756,7 +10756,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         nan_mask = xp.isnan(x)
         if weights is not None:
             nan_mask |= xp.isnan(weights)
-        if not lazy and xp.any(xp.all(nan_mask, axis=axis)):
+        if warn and not lazy and xp.any(xp.all(nan_mask, axis=axis)):
             message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
                        else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
