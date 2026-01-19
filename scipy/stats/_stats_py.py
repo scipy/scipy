@@ -7250,7 +7250,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
@@ -7447,6 +7447,7 @@ def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
+# JAX JIT / Torch GPU / CuPy need null distribution
 @xp_capabilities(cpu_only=True, jax_jit=False,
                  skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
@@ -8424,7 +8425,7 @@ KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)
+                 jax_jit=False)  # rankdata incompatible with JIT
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8536,7 +8537,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
 
 
 @xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
-                 jax_jit=False)
+                 jax_jit=False)  # rankdata incompatible with JIT
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8639,7 +8640,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
                  skip_backends=[('dask.array', 'needs rankdata'),
                                 ('cupy', 'needs rankdata')],
-                 jax_jit=False)
+                 jax_jit=False)  # rankdata incompatible with JIT
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate', *, axis=0):
@@ -8777,8 +8778,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.',
-    jax_jit=False, allow_dask_compute=True)
+    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.')
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
@@ -10340,7 +10340,8 @@ def _prk(r, k):
 
 
 @xp_capabilities(skip_backends=[('dask.array', "too many issues")],
-                 jax_jit=False, cpu_only=True,  # torch doesn't have `binom`
+                 jax_jit=False,  # uses arange(max(order))
+                 cpu_only=True,  # torch doesn't have `binom`
                  exceptions=('cupy', 'jax.numpy'))
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,

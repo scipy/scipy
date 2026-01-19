@@ -4513,6 +4513,7 @@ class TestPowerDivergence:
 
 @make_xp_test_case(stats.chisquare)
 class TestChisquare:
+    @skip_xp_backends(eager_only=True)
     def test_chisquare_12282a(self, xp):
         # Currently `chisquare` is implemented via power_divergence
         # in case that ever changes, perform a basic test like
