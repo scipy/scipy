@@ -2597,7 +2597,7 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, too_small=1
 )
