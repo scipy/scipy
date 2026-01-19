@@ -17,7 +17,6 @@ from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
 from .levyst import Nolan
 from scipy._lib.doccer import inherit_docstring_from
 
-
 __all__ = ["levy_stable", "levy_stable_gen", "pdf_from_cf_with_fft"]
 
 # Stable distributions are known for various parameterisations
@@ -283,7 +282,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
         try:
             tail_points = [optimize.bisect(lambda t: integrand(t) - gmax / exp_height, -xi, np.pi/2)
                             for exp_height in [1000, 500, 100, 10, 5]]
-        except:
+        except ValueError:
             tail_points = np.linspace(-xi, np.pi / 2, 50).tolist()
             
         points = tail_points + [0, peak, np.pi/2]
