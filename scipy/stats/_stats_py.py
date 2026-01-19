@@ -233,7 +233,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return xp.exp(_xp_mean(log_a, axis=axis, weights=weights))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=1)
+@xp_capabilities()
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -321,11 +321,9 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if xp.any(negative_mask):
-        # `where` avoids having to be careful about dtypes and will work with
-        # JAX. This is the exceptional case, so it's OK to be a little slower.
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
-        a = xp.where(negative_mask, xp.nan, a)
+    a = xp.where(negative_mask, xp.nan, a)
+
+    if not is_lazy_array(negative_mask) and xp.any(negative_mask):
         message = ("The harmonic mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
@@ -334,7 +332,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         return 1.0 / _xp_mean(1.0 / a, axis=axis, weights=weights)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=1)
+@xp_capabilities()
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -453,11 +451,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if xp.any(negative_mask):
-        # `where` avoids having to be careful about dtypes and will work with
-        # JAX. This is the exceptional case, so it's OK to be a little slower.
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
-        a = xp.where(negative_mask, np.nan, a)
+    a = xp.where(negative_mask, np.nan, a)
+
+    if not is_lazy_array(negative_mask) and xp.any(negative_mask):
         message = ("The power mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)

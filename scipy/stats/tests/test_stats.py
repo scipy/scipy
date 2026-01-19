@@ -6711,9 +6711,8 @@ class TestHMean:
         desired = 0.0
         check_equal_hmean(a, desired, xp=xp, rtol=0.0)
 
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered:RuntimeWarning"
-    ) # for dask
+    @skip_xp_backends("jax.numpy", reason="lazy -> no value-dependent warnings")
+    @skip_xp_backends("dask.array", reason="lazy -> no value-dependent warnings")
     def test_1d_with_negative_value(self, xp):
         a = np.array([1, 0, -1])
         message = "The harmonic mean is only defined..."
@@ -6952,6 +6951,8 @@ class TestPMean:
         desired = 0.0
         check_equal_pmean(a, p, desired, rtol=0.0, xp=xp)
 
+    @skip_xp_backends("jax.numpy", reason="lazy -> no value-dependent warnings")
+    @skip_xp_backends("dask.array", reason="lazy -> no value-dependent warnings")
     def test_1d_with_negative_value(self, xp):
         a, p = np.array([1, 0, -1]), 1.23
         message = "The power mean is only defined..."
