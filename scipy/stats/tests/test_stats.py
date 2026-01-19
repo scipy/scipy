@@ -3223,6 +3223,7 @@ class TestMedianAbsDeviation:
         mad = stats.median_abs_deviation(xp.asarray(self.dat_nan), nan_policy='omit')
         xp_assert_close(mad, xp.asarray(0.34))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_axis_and_nan(self, xp):
         x = xp.asarray([[1.0, 2.0, 3.0, 4.0, np.nan],
                         [1.0, 4.0, 5.0, 8.0, 9.0]])
@@ -3244,6 +3245,7 @@ class TestMedianAbsDeviation:
             mad = stats.median_abs_deviation(x, axis=axis)
         xp_assert_close(mad, xp.full_like(xp.sum(x, axis=axis), fill_value=xp.nan))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     @pytest.mark.parametrize('nan_policy, expected',
                              [('omit', [np.nan, 1.5, 1.5]),
                               ('propagate', [np.nan, np.nan, 1.5])])

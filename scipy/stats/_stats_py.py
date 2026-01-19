@@ -3236,8 +3236,7 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
 )
