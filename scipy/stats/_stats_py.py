@@ -1471,7 +1471,7 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
