@@ -253,12 +253,7 @@ class _lil_base(_spbase, IndexMixin):
         # is performed on a 1D sparse matrix, therefore nonzero rows are
         # irrelevant
         result = self[row, col].nonzero()
-        if len(result) == 2:
-            # 2D result
-            _, nnz_cols = result
-        else:
-            # 1D result
-            nnz_cols = result[0]
+        nnz_cols = result[-1]
         mapped_nnz_rows = row[nnz_cols]
         mapped_nnz_cols = col[nnz_cols]
         _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
