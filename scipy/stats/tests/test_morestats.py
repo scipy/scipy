@@ -36,6 +36,7 @@ from scipy._lib._array_api_no_0d import (
     xp_assert_less,
 )
 
+lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 distcont = dict(distcont)  # type: ignore
@@ -3552,14 +3553,20 @@ class TestDirectionalStats:
 
 @make_xp_test_case(stats.false_discovery_control)
 class TestFDRControl:
-    def test_input_validation(self, xp):
-        message = "`ps` must include only numbers between 0 and 1"
+    @skip_xp_backends(eager_only=True)
+    def test_input_validation_ps(self, xp):
+        message = "All values in `ps` must lie between 0. and 1."
         with pytest.raises(ValueError, match=message):
             stats.false_discovery_control(xp.asarray([-1, 0.5, 0.7]))
         with pytest.raises(ValueError, match=message):
             stats.false_discovery_control(xp.asarray([0.5, 0.7, 2]))
         with pytest.raises(ValueError, match=message):
             stats.false_discovery_control(xp.asarray([0.5, 0.7, xp.nan]))
+
+    def test_input_validation(self, xp):
+        message = "`ps` must contain only real numbers."
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control(xp.asarray([1+1j, 2+2j]))
 
         message = "Unrecognized `method` 'YAK'"
         with pytest.raises(ValueError, match=message):

@@ -29,6 +29,7 @@ from scipy._lib._array_api import (
     xp_device,
     xp_ravel,
     _length_nonmasked,
+    is_lazy_array,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -1734,7 +1735,8 @@ def _yeojohnson_transform(x, lmbda, xp=None):
     return out
 
 
-@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")])
+@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")],
+                 jax_jit=False)  # branches based on presence of +/- values
 def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False):
     r"""The Yeo-Johnson log-likelihood function.
 
@@ -3261,7 +3263,8 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+                 jax_jit=False)  # needs fdtrc
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3635,7 +3638,8 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+                 jax_jit=False)  # JAX JIT incompatible with rankdata
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -4706,7 +4710,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     return DirectionalStats(mean_direction, mean_resultant_length)
 
 
-@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")], jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")])
 def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate.
 
@@ -4860,10 +4864,14 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     # Input Validation and Special Cases
     ps = xp.asarray(ps)
 
-    ps_in_range = (xp.isdtype(ps.dtype, ("integral", "real floating"))
-                   and xp.all(ps == xp.clip(ps, 0., 1.)))
-    if not ps_in_range:
-        raise ValueError("`ps` must include only numbers between 0 and 1.")
+    if not xp.isdtype(ps.dtype, ("integral", "real floating")):
+        raise ValueError("`ps` must contain only real numbers.")
+
+    if is_lazy_array(ps):
+        ps = xp.where((ps < 0.) | (ps > 1.), xp.nan, ps)
+    else:
+        if not xp.all(ps == xp.clip(ps, 0., 1.)):
+            raise ValueError("All values in `ps` must lie between 0. and 1.")
 
     methods = {'bh', 'by'}
     if method.lower() not in methods:
