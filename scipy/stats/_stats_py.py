@@ -6479,10 +6479,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     """
     xp = array_namespace(mean1, std1, mean2, std2)
 
-    mean1 = xp.asarray(mean1)
-    std1 = xp.asarray(std1)
-    mean2 = xp.asarray(mean2)
-    std2 = xp.asarray(std2)
+    mean1, std1, nobs1, mean2, std2, nobs2 = xp_promote(
+        mean1, std1, nobs1, mean2, std2, nobs2, force_floating=True, xp=xp)
 
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)

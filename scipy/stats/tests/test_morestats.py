@@ -1471,7 +1471,6 @@ class TestMood:
         xp_assert_close(res.statistic, xp.asarray(expected[0], dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(expected[1], dtype=dtype))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     def test_mood_order_of_args(self, xp):
         # z should change sign when the order of arguments changes, pvalue
         # should not change
@@ -1483,7 +1482,6 @@ class TestMood:
         xp_assert_close(z2, -z1)
         xp_assert_close(p2, p1)
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     def test_mood_with_axis_none(self, xp):
         # Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047,
@@ -1511,7 +1509,6 @@ class TestMood:
         xp_assert_close(res.statistic, xp.asarray(-1.31716607555))
         xp_assert_close(res.pvalue, xp.asarray(0.18778296257))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
                                                   ('integers', (8,))])
     def test_mood_2d(self, rng_method, args, xp):
@@ -1542,7 +1539,6 @@ class TestMood:
             xp_assert_close(res.statistic[i], xp.asarray(ref.statistic))
             xp_assert_close(res.pvalue[i], xp.asarray(ref.pvalue))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
                                                   ('integers', (8,))])
     def test_mood_3d(self, rng_method, args, xp):
@@ -1574,10 +1570,9 @@ class TestMood:
                     xp_assert_close(res.statistic[i, j], ref.statistic)
                     xp_assert_close(res.pvalue[i, j], ref.pvalue)
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     def test_mood_bad_arg(self, xp):
         # Warns when the sum of the lengths of the args is less than 3
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.mood(xp.asarray([1.]), xp.asarray([]))
             xp_assert_equal(res.statistic, xp.asarray(np.nan))
             xp_assert_equal(res.pvalue, xp.asarray(np.nan))
@@ -2047,7 +2042,6 @@ class TestWilcoxon:
         xp_assert_close(res.statistic, xp.asarray(0.))
         xp_assert_close(res.pvalue, xp.asarray(1.))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy->limited input validation')
     def test_wilcoxon_axis_broadcasting_errors_gh22051(self, xp):
         # In previous versions of SciPy, `wilcoxon` gave an incorrect error
         # message when `AxisError` was not found in the base NumPy namespace.
@@ -2154,11 +2148,9 @@ class TestKstatVar:
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
-    @skip_xp_backends(np_only=True,
-                      reason='input validation of `n` does not depend on backend')
     def test_bad_arg(self, xp):
         # Raise ValueError is n is not 1 or 2.
-        data = [1]
+        data = xp.asarray([1])
         n = 10
         message = 'Only n=1 or n=2 supported.'
         with pytest.raises(ValueError, match=message):
