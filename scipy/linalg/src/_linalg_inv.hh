@@ -336,18 +336,30 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 // Check if symmetric/hermitian
                 std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
 
-                if (is_herm || (is_symm && !type_traits<T>::is_complex)) {
-                    // either real symmetric or complex hermitian; try Cholesky first,
-                    // fall back to sym/her if it fails
-                    slice_structure = St::POS_DEF;
-                }
-                else if (is_symm && type_traits<T>::is_complex) {
-                    // complex symmetric, not hermitian
-                    slice_structure = St::SYM;
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real: is_symm and is_herm are always equal
+                    if (is_symm) {
+                        // try Cholesky first, fall back to sytrf if it fails
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        slice_structure = St::GENERAL;
+                    }
                 }
                 else {
-                    // give up auto-detection
-                    slice_structure = St::GENERAL;
+                    // Complex
+                    if (!is_symm && !is_herm) {
+                        slice_structure = St::GENERAL;
+                    }
+                    else if (is_herm) {
+                        // Hermitian (may also be symmetric if entries are real)
+                        // try Cholesky first, fall back to hetrf if it fails
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        // is_symm && !is_herm: complex symmetric, not hermitian
+                        slice_structure = St::SYM;
+                    }
                 }
             }
         }
@@ -415,7 +427,14 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             case St::SYM:     // NB: if POS_DEF failed, fall-through to here
             case St::HER:
             {
-                invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, (is_symm && !is_herm), slice_status);
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real: always use sytrf/sytri
+                    invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, true, slice_status);
+                }
+                else {
+                    // Complex: use sytrf if symmetric-only, hetrf if hermitian
+                    invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, !is_herm, slice_status);
+                }
 
                 if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
                     vec_status.push_back(slice_status);
@@ -425,11 +444,18 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     vec_status.push_back(slice_status);
                 }
 
-                if (is_symm && !is_herm) {
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real symmetric
                     fill_other_triangle_noconj(uplo, data, intn);
                 }
                 else {
-                    fill_other_triangle(uplo, data, intn);
+                    // Complex: depends on whether symmetric or hermitian
+                    if (!is_herm) {
+                        fill_other_triangle_noconj(uplo, data, intn);
+                    }
+                    else {
+                        fill_other_triangle(uplo, data, intn);
+                    }
                 }
                 break;
             }
