@@ -3639,7 +3639,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
 
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)  # JAX JIT incompatible with rankdata
+                 jax_jit=False)  # _rankdata incompatible with JAX JIT (return_ties)
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
