@@ -71,6 +71,7 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
+    is_jax,
     is_marray,
     xp_size,
     xp_vector_norm,
@@ -9942,8 +9943,7 @@ def _validate_distribution(values, weights):
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")],
-                 jax_jit=False)
+                                ("dask.array", "no `take_along_axis`")])
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
@@ -10037,6 +10037,11 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         raise ValueError(f'unknown method "{method}"')
 
     xp = array_namespace(a)
+
+    if is_jax(xp):
+        import jax.scipy.stats as jax_stats
+        return jax_stats.rankdata(a, method=method, axis=axis, nan_policy=nan_policy)
+
     x = xp.asarray(a)
 
     if axis is None:
