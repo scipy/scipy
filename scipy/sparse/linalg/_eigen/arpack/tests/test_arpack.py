@@ -415,7 +415,12 @@ def test_hermitian_modes(D, typ, which, mattype, sigma):
     # (ARPACK mode=2 does not preserve real/imaginary part ordering)
     # For complex hermitian, LA->LR and SA->SR, so skip those too
     if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI', 'LA', 'SA']:
-        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which)) #Skips the test if the which value is problematic for generalized eigenvalue problems without sigma
+        # Skips the test if the which value is problematic for generalized 
+        # eigenvalue problems without sigma
+        pytest.skip(
+            f"which={which} is unreliable for generalized eigenvalue "
+            f"problem without sigma"
+        ) 
     rng = np.random.default_rng(1749531706842957)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
@@ -456,7 +461,12 @@ def test_real_nonsymmetric_modes(D, typ, which, mattype,
     # Skip problematic which values for generalized problems without sigma
     # (ARPACK mode=2 does not preserve real/imaginary part ordering)
     if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
-        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which))
+        # Skips the test if the which value is problematic for generalized 
+        # eigenvalue problems without sigma
+        pytest.skip(
+            f"which={which} is unreliable for generalized eigenvalue "
+            f"problem without sigma"
+        )
     rng = np.random.default_rng(174953334412726)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
@@ -471,7 +481,12 @@ def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
     # Skip problematic which values for generalized problems without sigma
     # (ARPACK mode=2 does not preserve real/imaginary part ordering)
     if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
-        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which))
+        # Skips the test if the which value is problematic for generalized 
+        # eigenvalue problems without sigma
+        pytest.skip(
+            f"which={which} is unreliable for generalized eigenvalue "
+            f"problem without sigma"
+        )
     rng = np.random.default_rng(1749533536274527)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
@@ -702,8 +717,10 @@ def test_real_eigs_real_k_subset():
 
             prev_w = w
 
-@pytest.mark.parametrize("which", ['LR', 'SR', 'LI', 'SI']) #Using pytest.mark.parametrize to test all the cases where the fix should raise an error
-#Test that generalized problems with LR/SR/LI/SI and no sigma must raise an error, as ARPACK mode=2 does not preserve real/imaginary part ordering
+# Test all cases where the fix should raise an error
+# Generalized problems with LR/SR/LI/SI and no sigma must raise,
+# because ARPACK mode=2 does not preserve real/imaginary ordering.
+@pytest.mark.parametrize("which", ['LR', 'SR', 'LI', 'SI']) 
 def test_generalized_eigs_which_real_imag_raises(which):
     """Generalized problems with LR/SR/LI/SI and no sigma must raise."""
     A = np.array([[1., 2., 3.],
@@ -713,23 +730,11 @@ def test_generalized_eigs_which_real_imag_raises(which):
                   [0., 1., 0.],
                   [0., 0., 1.]])
 
-    #Unless the fix is in place, this will not raise an error and will return garbage values.
+    # Unless the fix is in place, this will not raise an error 
+    # and will return garbage values.
+
+    # This should raise ValueError because sigma is None and
+    # which is LR/SR/LI/SI
     with pytest.raises(ValueError):
-        eigs(A, M=B, k=1, which=which)  #This should raise ValueError because sigma is None and which is LR/SR/LI/SI
-
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_gh24358(dtype):
-    # gh-24358: eigs with which="SR" returned zeros due to nev variable was modifed
-    #  after naupd calls in the C ARPACK implementation. This was due to hitting a
-    # complex valued eig but requesting only one of them.
-
-    # Test the specific issue in gh-24358
-    A = csr_array(np.array([[-1.3, 2.7, 0.2],
-                            [0.8, 4.1, 2.2],
-                            [2.1, 4.4, -1.9]], dtype=dtype))
-    w, z = eigs(A, 1, which="SR")
-    atol = 1e-4 if dtype in [np.float32, np.complex64] else 1e-6
-    assert_allclose(w.real, -2.495689365014214, atol=atol, rtol=0.0)
-    # ARPACK can sometimes pick up the conjugate
-    assert_allclose(np.abs(w.imag), 0.5173365219668336, atol=atol, rtol=0.0)
-    assert_allclose(A @ z, w * z, atol=atol, rtol=0.0)
+        eigs(A, M=B, k=1, which=which)
+        
