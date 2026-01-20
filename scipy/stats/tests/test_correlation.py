@@ -4,10 +4,14 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_jax
+from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_jax,
+                                   eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy import stats
 from scipy.stats._axis_nan_policy import SmallSampleWarning
+
+
+lazy_xp_modules = [stats]
 
 
 @make_xp_test_case(stats.chatterjeexi)
@@ -205,25 +209,23 @@ class TestSpearmanRho:
         with pytest.raises(ValueError, match=message):
             stats.spearmanrho(x, y, method='method')
 
-
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='no SmallSampleWarning (lazy)')
     def test_special_cases(self, xp):
         def check_nan(res):
             assert xp.isnan(res.statistic)
             assert xp.isnan(res.pvalue)
 
         message = 'One or more sample arguments is too small...'
-        with pytest.warns(SmallSampleWarning, match=message):
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             res = stats.spearmanrho(xp.asarray([1]), xp.asarray([2]))
             check_nan(res)
 
         x = xp.asarray([1, 1, 1, 1, 1])
         y = xp.asarray([1, 2, 3, 4, 5])
         message = 'An input array is constant; the correlation coefficient...'
-        with pytest.warns(stats.ConstantInputWarning, match=message):
+        with eager_warns(stats.ConstantInputWarning, match=message, xp=xp):
             res = stats.spearmanrho(x, y)
             check_nan(res)
-        with pytest.warns(stats.ConstantInputWarning, match=message):
+        with eager_warns(stats.ConstantInputWarning, match=message, xp=xp):
             res = stats.spearmanrho(y, x)
             check_nan(res)
 

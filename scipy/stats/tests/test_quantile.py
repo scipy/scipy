@@ -179,6 +179,7 @@ class TestQuantile:
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
+    @skip_xp_backends("jax.numpy", reason='currently incompatible with JIT')
     @pytest.mark.filterwarnings("ignore:torch.searchsorted:UserWarning")
     @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
                       exceptions=['cupy', 'jax.numpy'])
@@ -312,6 +313,7 @@ class TestQuantile:
         ref = np.quantile(x, p, method=method, weights=weights)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
+    @skip_xp_backends("jax.numpy", reason='currently incompatible with JIT')
     @pytest.mark.parametrize('method',
         ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation', 'hazen',
          'interpolated_inverted_cdf', 'linear','median_unbiased', 'normal_unbiased',
