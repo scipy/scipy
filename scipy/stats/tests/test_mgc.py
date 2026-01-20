@@ -207,6 +207,23 @@ class TestMGCStat:
         _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_allclose(pvalue, 1/1001)
 
+    def test_zero_distance_matrix_index_error(self):
+        # regression test for zero distance
+        # matrix IndexError issue; see gh-19769
+        n = 6
+        x = np.arange(n).reshape(-1, 1)
+
+        # valid distance matrix
+        distx = cdist(x, x)
+
+        # degenerate all-zero distance matrix
+        disty = np.zeros((n, n))
+
+        # test stat and pvalue
+        res = stats.multiscale_graphcorr(distx, disty, compute_distance=None)
+        assert_allclose(res.statistic, 0.0)
+        assert_allclose(res.pvalue, 1.0)
+    
     @pytest.mark.xslow
     def test_alias(self):
         # generate x and y
