@@ -6435,7 +6435,8 @@ class TestLevyStable:
     )
     def test_logpdf_tail(self, param, alpha, beta, xs, expected):
         # gh-20636
-        # Expected values computed from Mathematica.
+        # Expected values computed from Mathematica. Mathematica command is:
+        # Log[PDF[StableDistribution[0, 1.6, 1, 0, 1], -15.0]] // InputForm
         # Test levy_stable.logpdf accuracy in the tails when beta=1 or beta=-1
         # for both S0/S1 parameterizations.
         # Testing logpdf instead of pdf as more compact.
