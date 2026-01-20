@@ -127,7 +127,7 @@ _pdf_single_value_cf_integrate_Z1 = partial(
 )
 
 
-def _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta):
+def _nolan_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta):
     """Round x close to zeta for Nolan's method in [NO]."""
     #   "8. When |x0-beta*tan(pi*alpha/2)| is small, the
     #   computations of the density and cumulative have numerical problems.
@@ -163,8 +163,8 @@ def _nolan_round_difficult_input(
     #   problems.  The current version sets beta=0."
     # We seem to have addressed this through re-expression of g(theta) here
 
-    need_rounding = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
-    return need_rounding, alpha, beta
+    x_near_zeta = _nolan_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
+    return x_near_zeta, alpha, beta
 
 
 def _pdf_single_value_piecewise_Z1(x, alpha, beta, **kwds):
@@ -184,11 +184,11 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    needs_rounding, alpha, beta = _nolan_round_difficult_input(
+    x_near_zeta, alpha, beta = _nolan_round_difficult_input(
         x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
     )
     xorig = np.copy(x0)
-    if needs_rounding:
+    if x_near_zeta:
         x0 = zeta
     # some other known distribution pdfs / analytical cases
     # TODO: add more where possible with test coverage,
@@ -233,9 +233,9 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
     # round x0 to zeta again if needed. zeta was recomputed and may have
     # changed due to floating point differences.
     # See https://github.com/scipy/scipy/pull/18133
-    need_rounding = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
+    x_near_zeta = _nolan_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     # handle Nolan's initial case logic
-    if need_rounding:
+    if x_near_zeta:
         # This is the Taylor expansion in 
         # https://arxiv.org/pdf/1607.04247 Eq. (2.18) 
         k = np.arange(0, 17, 1)
@@ -314,10 +314,10 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    needs_rounding, alpha, beta = _nolan_round_difficult_input(
+    x_near_zeta, alpha, beta = _nolan_round_difficult_input(
         x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
     )
-    if needs_rounding:
+    if x_near_zeta:
         x0 = zeta
 
     # some other known distribution cdfs / analytical cases
@@ -357,8 +357,8 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
     # round x0 to zeta again if needed. zeta was recomputed and may have
     # changed due to floating point differences.
     # See https://github.com/scipy/scipy/pull/18133
-    need_rounding = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
-    if need_rounding:
+    x_near_zeta = _nolan_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
+    if x_near_zeta:
         x0 = zeta
     # handle Nolan's initial case logic
     if (alpha == 1 and beta < 0) or x0 < zeta:
