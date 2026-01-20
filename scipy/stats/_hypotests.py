@@ -1637,7 +1637,7 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
 
 @xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
-                 cpu_only=True, jax_jit=False)  # rankdata not compatible with JAX JIT
+                 cpu_only=True, jax_jit=False)  # due to p-value calculation
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
