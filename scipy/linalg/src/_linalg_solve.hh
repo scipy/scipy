@@ -391,14 +391,14 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             } else {
                 // Check if symmetric/hermitian
                 std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
-                if (is_symm && type_traits<T>::is_complex) {
-                    // complex symmetrix matrix
-                    slice_structure = St::SYM;
-                }
-                else if (is_symm || is_herm) {
+                if (is_herm || (is_symm && !type_traits<T>::is_complex)) {
                     // either real symmetric or complex hermitian; try Cholesky first,
                     // fall back to sym/her if it fails
                     slice_structure = St::POS_DEF;
+                }
+                else if (is_symm && type_traits<T>::is_complex) {
+                    // complex symmetric, not hermitian
+                    slice_structure = St::SYM;
                 }
                 else {
                     // give up auto-detection
