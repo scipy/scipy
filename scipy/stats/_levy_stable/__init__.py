@@ -236,20 +236,16 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
     need_rounding = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     # handle Nolan's initial case logic
     if need_rounding:
-        
         # This is the Taylor expansion in 
         # https://arxiv.org/pdf/1607.04247 Eq. (2.18) 
-        running_sum = 0
-        for k in range(0, 16):
-            running_sum += (
-                sc.gamma((k+1) / alpha)
+        k = np.arange(0, 17, 1)
+        series = (sc.gamma((k+1) / alpha)
                 / sc.gamma(k+1)
                 * (1+zeta**2)**(-(k+1)/2/alpha)
                 * np.sin((k+1)*(np.pi/2 - xi))
-                * (x0 - zeta)**k
-            )
-        running_sum *= 1 / alpha / np.pi
-        return running_sum
+                * (x0 - zeta)**k)
+        series = np.sum(series) / alpha / np.pi
+        return series
     
     elif x0 < zeta:
         return _pdf_single_value_piecewise_post_rounding_Z0(
