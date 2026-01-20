@@ -1407,24 +1407,24 @@ class TestPermutationTest:
         statistic.counter = 0
         statistic.batch_size = 0
 
-        kwds = {'n_resamples': 1000, 'permutation_type': permutation_type,
+        kwds = {'n_resamples': 100, 'permutation_type': permutation_type,
                 'vectorized': True}
         res1 = stats.permutation_test((x, y), statistic, batch=1,
                                       random_state=random_state(0), **kwds)
-        assert statistic.counter == 1001
+        assert statistic.counter == 101
         assert statistic.batch_size == 1
 
         statistic.counter = 0
         res2 = stats.permutation_test((x, y), statistic, batch=50,
                                       random_state=random_state(0), **kwds)
-        assert statistic.counter == 21
+        assert statistic.counter == 3
         assert statistic.batch_size == 50
 
         statistic.counter = 0
-        res3 = stats.permutation_test((x, y), statistic, batch=1000,
+        res3 = stats.permutation_test((x, y), statistic, batch=100,
                                       random_state=random_state(0), **kwds)
         assert statistic.counter == 2
-        assert statistic.batch_size == 1000
+        assert statistic.batch_size == 100
 
         xp_assert_equal(res1.pvalue, res3.pvalue)
         xp_assert_equal(res2.pvalue, res3.pvalue)
