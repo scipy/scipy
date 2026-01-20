@@ -4505,10 +4505,9 @@ class TestPowerDivergence:
         table5 = np.reshape(table5, (-1, 2))
 
         for i in range(table5.shape[0]):
-            lambda_, expected_stat = float(table5[i, 0]), xp.asarray(table5[i, 1])
-            stat, p = stats.power_divergence(table4[:,0], table4[:,1],
-                                             lambda_=lambda_)
-            xp_assert_close(stat, expected_stat, rtol=5e-3)
+            lambda_, expected_stat = float(table5[i, 0]), float(table5[i, 1])
+            stat, p = stats.power_divergence(table4[:,0], table4[:,1], lambda_=lambda_)
+            xp_assert_close(stat, xp.asarray(expected_stat), rtol=5e-3)
 
 
 @make_xp_test_case(stats.chisquare)
