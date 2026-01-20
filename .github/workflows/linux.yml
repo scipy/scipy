@@ -443,6 +443,63 @@ jobs:
           python3.12 -m pytest --pyargs scipy.linalg
           popd
 
+  #################################################################################
+  meson_global_install:
+    # Check that `meson` can be used from anywhere. The environment Meson is
+    # installed in doesn't have to have any other build dependencies in it
+    # (i.e., we're using it as a binary). This isn't a normal setup, but it's
+    # sometimes being used that way - see gh-20535 and gh-24406
+    name: build with global meson
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+          fetch-tags: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran pkg-config libopenblas-dev liblapack-dev
+
+      - name: Install global meson
+        run: |
+          python -m pip install meson --break-system-packages
+
+      - name: Setup Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: "3.14"
+
+      - name: Setup Python build/test deps
+        run: |
+          python -m pip install -r requirements/build.txt
+          python -m pip install -r requirements/openblas.txt
+          python -m pip install build pytest hypothesis
+          # Remove `meson` from environment
+          python -m pip uninstall meson --yes
+
+      - name: Check we're using global Meson
+        run: |
+          which meson
+
+      - name: Build wheel and install
+        run: |
+          python -m build -wnx
+          python -m pip install dist/*.whl
+
+      - name: Run tests
+        run: |
+          # Just a small subset of tests; this will be fine if the build
+          # succeeds (that's the real purpose of this job)
+          pushd $RUNNER_TEMP
+          python -m pytest --pyargs scipy.linalg
+          popd
+
+  #################################################################################
   free-threaded:
     needs: get_commit_message
     strategy:
