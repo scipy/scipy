@@ -486,7 +486,7 @@ def _mode_result(mode, count):
 
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
-                 jax_jit=False)  # doesn't really support unique_counts
+                 jax_jit=False)  # would delegate, but jax-ml/jax#34486
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
