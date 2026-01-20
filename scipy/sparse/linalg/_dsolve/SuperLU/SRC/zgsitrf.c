@@ -299,7 +299,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     for (k = 0; k < n; k++) iswap[k] = perm_c[k];
     amax = (double *) SUPERLU_MALLOC(panel_size * sizeof(double));
     if (drop_rule & DROP_SECONDARY)
-	dwork2 = SUPERLU_MALLOC(n * sizeof(double));
+	dwork2 = (double *) SUPERLU_MALLOC(n * sizeof(double));
     else
 	dwork2 = NULL;
 
