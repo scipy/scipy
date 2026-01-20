@@ -1626,7 +1626,7 @@ def medfilt(volume, kernel_size=None):
     >>> from scipy import signal
     >>> x = np.array([1, 2, 100, 4, 5])
     >>> signal.medfilt(x, kernel_size=3)
-    array([1., 2., 4., 4., 4.])
+    array([1., 2., 4., 5., 4.])
 
     We can also apply the filter to a 2D array (image). A noisy pulse in 
     the middle is smoothed out by the median filter:
