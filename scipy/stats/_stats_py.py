@@ -7193,22 +7193,26 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
         f_exp = xp.broadcast_to(f_exp, bshape)
         f_obs_float, f_exp = _share_masks(f_obs_float, f_exp, xp=xp)
 
-        if not is_lazy_array(f_obs) and sum_check:
+        if sum_check:
             dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
             rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
             with np.errstate(invalid='ignore'):
-                f_obs_sum = xp.sum(f_obs_float, axis=axis)
-                f_exp_sum = xp.sum(f_exp, axis=axis)
+                f_obs_sum = xp.sum(f_obs_float, axis=axis, keepdims=True)
+                f_exp_sum = xp.sum(f_exp, axis=axis, keepdims=True)
                 relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
                                  xp.minimum(f_obs_sum, f_exp_sum))
-                diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
-            if diff_gt_tol:
+                diff_gt_tol = xp.any(relative_diff > rtol, axis=axis, keepdims=True)
+
+            if not is_lazy_array(diff_gt_tol) and xp.any(diff_gt_tol):
                 msg = (f"For each axis slice, the sum of the observed "
                        f"frequencies must agree with the sum of the "
                        f"expected frequencies to a relative tolerance "
                        f"of {rtol}, but the percent differences are:\n"
                        f"{relative_diff}")
                 raise ValueError(msg)
+            elif is_lazy_array(diff_gt_tol):
+                diff_gt_tol = xp.broadcast_to(diff_gt_tol, f_obs.shape)
+                f_obs = xpx.at(f_obs)[diff_gt_tol].set(xp.nan)
 
     else:
         # Avoid warnings with the edge case of a data set with length 0
@@ -7279,9 +7283,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
         as a single data set.  Default is 0.
     sum_check : bool, optional
         Whether to perform a check that ``sum(f_obs) - sum(f_exp) == 0``. If True,
-        (default) raise an error when the relative difference exceeds the square root
-        of the precision of the data type. See Notes for rationale and possible
-        exceptions. Ignored by lazy backends.
+        (default) raise an error (or, for lazy backends, return NaN) when the relative
+        difference exceeds the square root of the precision of the data type.
+        See Notes for rationale and possible exceptions.
 
     Returns
     -------

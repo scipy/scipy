@@ -4452,15 +4452,30 @@ class TestPowerDivergence:
         # The sums of observed and expected frequencies must match
         f_obs = xp.asarray([[10., 20.], [30., 20.]])
         f_exp = xp.asarray([[5., 15.], [35., 25.]])
-        if not is_lazy_array(f_obs):
+        stat, pval = stats.power_divergence(f_obs, f_exp=f_exp)
+        xp_assert_close(stat, xp.asarray([5.71428571, 2.66666667]))
+        xp_assert_close(pval, xp.asarray([0.01682741, 0.10247043]))
+
+        if is_lazy_array(f_obs):
+            res = stats.power_divergence(f_obs, f_exp=xp.asarray([30., 60.]))
+            xp_assert_equal(res.statistic, xp.asarray([xp.nan, xp.nan]))
+            xp_assert_equal(res.pvalue, xp.asarray([xp.nan, xp.nan]))
+
+            res = stats.power_divergence(f_obs, f_exp=f_exp, axis=1)
+            xp_assert_equal(res.statistic, xp.asarray([xp.nan, xp.nan]))
+            xp_assert_equal(res.pvalue, xp.asarray([xp.nan, xp.nan]))
+
+            # only slices with unequal sums result in NaN
+            f_exp = xp.asarray([[5., 25.], [35., 25.]])
+            res = stats.power_divergence(f_obs, f_exp=f_exp)
+            xp_assert_close(res.statistic, xp.asarray([stat[0], xp.nan]))
+            xp_assert_close(res.pvalue, xp.asarray([pval[0], xp.nan]))
+        else:
             message = 'For each axis slice...'
             with pytest.raises(ValueError, match=message):
                 stats.power_divergence(f_obs, f_exp=xp.asarray([30., 60.]))
             with pytest.raises(ValueError, match=message):
                 stats.power_divergence(f_obs, f_exp=f_exp, axis=1)
-        stat, pval = stats.power_divergence(f_obs, f_exp=f_exp)
-        xp_assert_close(stat, xp.asarray([5.71428571, 2.66666667]))
-        xp_assert_close(pval, xp.asarray([0.01682741, 0.10247043]))
 
     def test_power_divergence_against_cressie_read_data(self, xp):
         # Test stats.power_divergence against tables 4 and 5 from
@@ -4512,15 +4527,19 @@ class TestPowerDivergence:
 
 @make_xp_test_case(stats.chisquare)
 class TestChisquare:
-    @skip_xp_backends(eager_only=True)
     def test_chisquare_12282a(self, xp):
         # Currently `chisquare` is implemented via power_divergence
         # in case that ever changes, perform a basic test like
         # test_power_divergence_gh_12282
-        with assert_raises(ValueError, match='For each axis slice...'):
-            f_obs = xp.asarray([10., 20.])
-            f_exp = xp.asarray([30., 60.])
-            stats.chisquare(f_obs, f_exp=f_exp)
+        f_obs = xp.asarray([10., 20.])
+        f_exp = xp.asarray([30., 60.])
+        if is_lazy_array(f_obs):
+            res = stats.chisquare(f_obs, f_exp=f_exp)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
+        else:
+            with assert_raises(ValueError, match='For each axis slice...'):
+                stats.chisquare(f_obs, f_exp=f_exp)
 
     def test_chisquare_12282b(self, xp):
         # Check that users can now disable the sum check tested in
