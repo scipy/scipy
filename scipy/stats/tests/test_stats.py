@@ -3979,7 +3979,7 @@ def ttest_data_axis_strategy(draw):
 
 
 @make_xp_test_case(stats.ttest_1samp)
-class TestStudentTest:
+class TestTTest_1samp:
     # Preserving original test cases.
     # Recomputed statistics and p-values with R t.test, e.g.
     # options(digits=16)
@@ -4505,7 +4505,8 @@ class TestPowerDivergence:
 
         for i in range(table5.shape[0]):
             lambda_, expected_stat = float(table5[i, 0]), float(table5[i, 1])
-            stat, p = stats.power_divergence(table4[:,0], table4[:,1], lambda_=lambda_)
+            stat, p = stats.power_divergence(table4[:, 0], table4[:, 1],
+                                             lambda_=lambda_)
             xp_assert_close(stat, xp.asarray(expected_stat), rtol=5e-3)
 
 

@@ -131,9 +131,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     n = xp.asarray(n, dtype=dtype, device=xp_device(y))
 
     p_mask = (p > 1) | (p < 0) | xp.isnan(p)
-    if is_lazy_array(y) or xp.any(p_mask):
-        p = xp.asarray(p, copy=True)
-        p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
+    p = xp.where(p_mask, 0.5, p)
 
     return (y, p, method, axis, nan_policy, keepdims,
             n, axis_none, ndim, p_mask, weights, xp)

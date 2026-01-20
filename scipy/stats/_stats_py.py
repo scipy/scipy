@@ -6045,10 +6045,11 @@ class TtestResult(TtestResultBase):
 
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
-    # this could be any number of dimensions (including 0d), but there is
-    # at most one unique non-NaN value
     xp = array_namespace(statistic, pvalue)
-    alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
+    # Due to behavior of `_axis_nan_policy` decorator, `alternative` can be any number
+    # of dimensions, but there is at most one unique non-NaN value.
+    # `_xp_mean` with `nan_policy='omit'` is a JIT-compatible way to extract it.
+    alternative = xp.asarray(alternative)
     alternative = (_xp_mean(alternative, axis=None, nan_policy='omit', warn=False)
                    if xp_size(alternative) != 0 else xp.nan)
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,

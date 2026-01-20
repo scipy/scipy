@@ -102,8 +102,8 @@ class TestEntropy:
         x = xp.asarray(rng.random(3))
         y = xp.asarray(rng.random((2, 1)))
         res = stats.entropy(x, y, axis=-1)
-        xp_assert_close(res[0], stats.entropy(x, y[0, ...]), atol=1e-16)
-        xp_assert_close(res[1], stats.entropy(x, y[1, ...]), atol=1e-16)
+        xp_assert_close(res[0], stats.entropy(x, y[0, ...]))
+        xp_assert_close(res[1], stats.entropy(x, y[1, ...]))
 
     def test_entropy_shape_mismatch(self, xp):
         x = xp.ones((10, 1, 12))
