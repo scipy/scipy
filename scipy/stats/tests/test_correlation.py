@@ -10,6 +10,9 @@ from scipy import stats
 from scipy.stats._axis_nan_policy import SmallSampleWarning
 
 
+lazy_xp_modules = [stats]
+
+
 @make_xp_test_case(stats.chatterjeexi)
 class TestChatterjeeXi:
     @pytest.mark.parametrize('case', [

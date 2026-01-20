@@ -29,8 +29,8 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy"),
-                                ("jax.numpy", "lazy -> no _axis_nan_policy")])
+@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy")],
+                 jax_jit=False)  # value-dependent branching
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
@@ -530,7 +530,8 @@ def _cvm_result_to_tuple(res, _):
 
 
 @xp_capabilities(cpu_only=True,  # needs special function `kv`
-                 skip_backends=[('dask.array', 'typical dask issues')], jax_jit=False)
+                 skip_backends=[('dask.array', 'typical dask issues')],
+                 jax_jit=False)  # array boolean indices must be concrete
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
@@ -654,11 +655,12 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
-    rvs, n = xp_promote(rvs, n, force_floating=True, xp=xp)
+    rvs = xp_promote(rvs, force_floating=True, xp=xp)
+    n = float(n)
     vals = xp.sort(rvs, axis=-1)
     cdfvals = cdf(vals, *args)
 
-    u = (2*xp.arange(1, n+1, dtype=n.dtype) - 1)/(2*n)
+    u = (2*xp.arange(1, n+1, dtype=rvs.dtype) - 1)/(2*n)
     w = 1/(12*n) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
@@ -1635,7 +1637,7 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
 
 @xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
-                 cpu_only=True, jax_jit=False)
+                 cpu_only=True, jax_jit=False)  # rankdata not compatible with JAX JIT
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
