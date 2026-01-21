@@ -3609,7 +3609,11 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     x = xp.sort(x, axis=-1)
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
-    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
+    if is_jax(xp):
+        max_ranks = stats.rankdata(xp.sort(x, axis=-1), method='max', axis=-1)
+        a = xp.diff(max_ranks, axis=-1, prepend=0.)
+    else:
+        _, a = _stats_py._rankdata(x, method='average', return_ties=True)
     a = xp.astype(a, phi.dtype)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
@@ -3638,8 +3642,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)  # _rankdata incompatible with JAX JIT (return_ties)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3748,10 +3751,15 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
-    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    if is_jax(xp):
+        r = stats.rankdata(xy, method='average', axis=-1)
+        max_ranks = stats.rankdata(xp.sort(xy, axis=-1), method='max', axis=-1)
+        t = xp.diff(max_ranks, axis=-1, prepend=0.)
+    else:
+        r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
     r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
 
-    if xp.any(t > 1):
+    if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
         z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
