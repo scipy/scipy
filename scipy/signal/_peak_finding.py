@@ -1017,6 +1017,9 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     Expect that the width of the wavelet feature increases with increasing row
     number.
 
+    This is an optimized implementation that improves performance while
+    maintaining compatibility with the original algorithm.
+
     Parameters
     ----------
     matr : 2-D ndarray
@@ -1059,77 +1062,146 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     This function is intended to be used in conjunction with `cwt`
     as part of `find_peaks_cwt`.
 
+    Key implementation optimizations:
+    - Relative maxima are pre-extracted per row to avoid repeated boolean
+      indexing.
+    - Nearest-ridge lookup uses vectorized operations on active ridges'
+      last-column positions.
+    - Active ridge state (last column and gap) is stored in preallocated
+      buffers with dynamic growth to avoid repeated reallocations.
+    - Multiple maxima in the same row may connect to the same ridge
+      (greedy, many-to-one), matching the original behavior.
+
     """
-    if len(max_distances) < matr.shape[0]:
+    n_rows = matr.shape[0]
+    if len(max_distances) < n_rows:
         raise ValueError('Max_distances must have at least as many rows '
                          'as matr')
 
-    all_max_cols = _boolrelextrema(matr, np.greater, axis=1, order=1)
-    # Highest row for which there are any relative maxima
-    has_relmax = np.nonzero(all_max_cols.any(axis=1))[0]
-    if len(has_relmax) == 0:
+    all_max = _boolrelextrema(matr, np.greater, axis=1, order=1)
+    has_relmax = np.nonzero(all_max.any(axis=1))[0]
+    if has_relmax.size == 0:
         return []
-    start_row = has_relmax[-1]
-    # Each ridge line is a 3-tuple:
-    # rows, cols,Gap number
-    ridge_lines = [[[start_row],
-                   [col],
-                   0] for col in np.nonzero(all_max_cols[start_row])[0]]
-    final_lines = []
-    rows = np.arange(start_row - 1, -1, -1)
-    cols = np.arange(0, matr.shape[1])
-    for row in rows:
-        this_max_cols = cols[all_max_cols[row]]
 
-        # Increment gap number of each line,
-        # set it to zero later if appropriate
-        for line in ridge_lines:
-            line[2] += 1
+    max_cols_by_row = [
+        np.flatnonzero(all_max[r]).astype(np.int32) for r in range(n_rows)
+    ]
 
-        # XXX These should always be all_max_cols[row]
-        # But the order might be different. Might be an efficiency gain
-        # to make sure the order is the same and avoid this iteration
-        prev_ridge_cols = np.array([line[1][-1] for line in ridge_lines])
-        # Look through every relative maximum found at current row
-        # Attempt to connect them with existing ridge lines.
-        for ind, col in enumerate(this_max_cols):
-            # If there is a previous ridge line within
-            # the max_distance to connect to, do so.
-            # Otherwise start a new one.
-            line = None
-            if len(prev_ridge_cols) > 0:
-                diffs = np.abs(col - prev_ridge_cols)
-                closest = np.argmin(diffs)
-                if diffs[closest] <= max_distances[row]:
-                    line = ridge_lines[closest]
-            if line is not None:
-                # Found a point close enough, extend current ridge line
-                line[1].append(col)
-                line[0].append(row)
-                line[2] = 0
+    start_row = int(has_relmax[-1])
+    start_cols = max_cols_by_row[start_row]
+    if start_cols.size == 0:
+        return []
+
+    # Python lists for variable-length paths
+    ridge_rows = [[start_row] for _ in range(start_cols.size)]
+    ridge_cols = [[int(c)] for c in start_cols]
+
+    # Preallocate buffers for last_col & gap
+    n_ridges = start_cols.size
+    cap = max(16, n_ridges * 2)
+    last_col_buf = np.empty(cap, dtype=np.int32)
+    gap_buf = np.empty(cap, dtype=np.int32)
+
+    last_col_buf[:n_ridges] = start_cols.astype(np.int32, copy=False)
+    gap_buf[:n_ridges] = 0
+
+    final_rows = []
+    final_cols = []
+
+    def ensure_capacity(cap_needed):
+        nonlocal cap, last_col_buf, gap_buf
+        if cap_needed <= cap:
+            return
+        new_cap = cap
+        while new_cap < cap_needed:
+            new_cap *= 2
+        new_last = np.empty(new_cap, dtype=np.int32)
+        new_gap = np.empty(new_cap, dtype=np.int32)
+        new_last[:n_ridges] = last_col_buf[:n_ridges]
+        new_gap[:n_ridges] = gap_buf[:n_ridges]
+        last_col_buf = new_last
+        gap_buf = new_gap
+        cap = new_cap
+
+    for row in range(start_row - 1, -1, -1):
+        # Increment gaps (only valid part)
+        if n_ridges:
+            gap_buf[:n_ridges] += 1
+
+        this_cols = max_cols_by_row[row]
+        if this_cols.size:
+            # Ensure processing in column order (critical for consistency)
+            this_cols_sorted = np.sort(this_cols)
+
+            if n_ridges:
+                # Calculate distance from each col to all active ridges
+                # diffs[i, j] = |this_cols_sorted[i] - last_col_buf[j]|
+                diffs = np.abs(this_cols_sorted[:, None] - last_col_buf[:n_ridges])
+
+                # Find nearest ridge for each col (argmin returns first minimum)
+                best_ridge_idx = np.argmin(diffs, axis=1)
+                best_dist = diffs[np.arange(len(this_cols_sorted)), best_ridge_idx]
+
+                md = int(max_distances[row])
+
+                # Process in sorted column order (consistent with original)
+                for c, ridx, dist in zip(this_cols_sorted, best_ridge_idx, best_dist):
+                    c = int(c)
+                    if dist <= md:
+                        # Connect to existing ridge
+                        ridge_rows[ridx].append(row)
+                        ridge_cols[ridx].append(c)
+                        last_col_buf[ridx] = c
+                        gap_buf[ridx] = 0
+                    else:
+                        # Start new ridge
+                        ridge_rows.append([row])
+                        ridge_cols.append([c])
+                        ensure_capacity(n_ridges + 1)
+                        last_col_buf[n_ridges] = c
+                        gap_buf[n_ridges] = 0
+                        n_ridges += 1
             else:
-                new_line = [[row],
-                            [col],
-                            0]
-                ridge_lines.append(new_line)
+                # No active ridges, create new ones
+                this_cols_sorted = np.sort(this_cols)
+                for c in this_cols_sorted:
+                    c = int(c)
+                    ridge_rows.append([row])
+                    ridge_cols.append([c])
+                n_new = this_cols_sorted.size
+                ensure_capacity(n_ridges + n_new)
+                last_col_buf[n_ridges : n_ridges + n_new] = this_cols_sorted
+                gap_buf[n_ridges : n_ridges + n_new] = 0
+                n_ridges += n_new
 
-        # Remove the ridge lines with gap_number too high
-        # XXX Modifying a list while iterating over it.
-        # Should be safe, since we iterate backwards, but
-        # still tacky.
-        for ind in range(len(ridge_lines) - 1, -1, -1):
-            line = ridge_lines[ind]
-            if line[2] > gap_thresh:
-                final_lines.append(line)
-                del ridge_lines[ind]
+        # Prune ridges with gap too large
+        if n_ridges:
+            dead = gap_buf[:n_ridges] > gap_thresh
+            if np.any(dead):
+                dead_idx = np.nonzero(dead)[0]
+                # Move dead ridges to final (reverse to keep deletes stable)
+                for idx in dead_idx[::-1]:
+                    final_rows.append(ridge_rows[idx])
+                    final_cols.append(ridge_cols[idx])
+                    del ridge_rows[idx]
+                    del ridge_cols[idx]
+
+                # Compress buffers to match list deletions
+                keep = ~dead
+                kept_last = last_col_buf[:n_ridges][keep]
+                kept_gap = gap_buf[:n_ridges][keep]
+                n_ridges = kept_last.size
+                last_col_buf[:n_ridges] = kept_last
+                gap_buf[:n_ridges] = kept_gap
 
     out_lines = []
-    for line in (final_lines + ridge_lines):
-        sortargs = np.array(np.argsort(line[0]))
-        rows, cols = np.zeros_like(sortargs), np.zeros_like(sortargs)
-        rows[sortargs] = line[0]
-        cols[sortargs] = line[1]
-        out_lines.append([rows, cols])
+    for rlist, clist in list(zip(final_rows, final_cols)) + list(
+        zip(ridge_rows, ridge_cols)
+    ):
+        r = np.asarray(rlist, dtype=np.int32)
+        c = np.asarray(clist, dtype=np.int32)
+        order = np.argsort(r)
+        out_lines.append([r[order], c[order]])
 
     return out_lines
 

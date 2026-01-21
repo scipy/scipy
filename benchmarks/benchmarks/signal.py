@@ -243,3 +243,89 @@ class FIRLS(Benchmark):
 
     def time_firls(self, n, edges):
         signal.firls(n, (0,) + edges + (1,), [1, 1, 0, 0])
+
+
+class IdentifyRidgeLines(Benchmark):
+    """Benchmark _identify_ridge_lines performance directly"""
+
+    param_names = ['matrix_type', 'size']
+    params = [
+        ['synthetic_sparse', 'synthetic_dense', 'cwt_real'],
+        ['small', 'medium', 'large']
+    ]
+
+    def setup(self, matrix_type, size):
+        from scipy.signal._wavelets import _cwt, _ricker
+
+        # Setup test matrices based on parameters
+        sizes = {
+            'small': (50, 500),
+            'medium': (100, 1000),
+            'large': (200, 5000)
+        }
+        n_rows, n_cols = sizes[size]
+
+        if matrix_type == 'synthetic_sparse':
+            rng = np.random.RandomState(42)
+            self.matr = rng.random((n_rows, n_cols))
+            mask = rng.random((n_rows, n_cols)) > 0.01
+            self.matr[mask] = 0
+        elif matrix_type == 'synthetic_dense':
+            rng = np.random.RandomState(42)
+            self.matr = rng.random((n_rows, n_cols))
+            mask = rng.random((n_rows, n_cols)) > 0.1
+            self.matr[mask] = 0
+        else:  # cwt_real
+            # Generate CWT matrix
+            signal_length = n_cols
+            n_widths = n_rows
+            # Create signal with Gaussian peaks
+            rng = np.random.RandomState(42)
+            sig = np.sin(np.linspace(0, 10*np.pi, signal_length))
+            sig += rng.normal(0, 0.1, signal_length)
+            widths = np.arange(1, n_widths + 1)
+            self.matr = _cwt(sig, _ricker, widths)
+
+        self.max_distances = np.full(n_rows, 3)
+        self.gap_thresh = 2
+
+    def time_identify_ridge_lines(self, matrix_type, size):
+        from scipy.signal._peak_finding import _identify_ridge_lines
+        _identify_ridge_lines(self.matr, self.max_distances, self.gap_thresh)
+
+    def peakmem_identify_ridge_lines(self, matrix_type, size):
+        from scipy.signal._peak_finding import _identify_ridge_lines
+        _identify_ridge_lines(self.matr, self.max_distances, self.gap_thresh)
+
+
+class FindPeaksCWT(Benchmark):
+    """Benchmark find_peaks_cwt performance (end-to-end with _identify_ridge_lines)"""
+
+    param_names = ['signal_length', 'n_widths']
+    params = [
+        [500, 1000, 2000, 5000],  # Signal lengths
+        [30, 50, 100]  # Number of widths
+    ]
+
+    def setup(self, signal_length, n_widths):
+        # Create realistic signal with multiple Gaussian peaks
+        rng = np.random.RandomState(42)
+        t = np.linspace(0, 1, signal_length)
+
+        # Add several Gaussian peaks at different positions
+        self.signal = np.zeros(signal_length)
+        peak_positions = [0.2, 0.4, 0.6, 0.8]
+        for pos in peak_positions:
+            self.signal += np.exp(-((t - pos) / 0.05) ** 2)
+
+        # Add noise
+        self.signal += rng.normal(0, 0.1, signal_length)
+
+        # Widths for CWT
+        self.widths = np.arange(1, n_widths + 1)
+
+    def time_find_peaks_cwt(self, signal_length, n_widths):
+        signal.find_peaks_cwt(self.signal, self.widths)
+
+    def peakmem_find_peaks_cwt(self, signal_length, n_widths):
+        signal.find_peaks_cwt(self.signal, self.widths)
