@@ -8541,7 +8541,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
 
 
 @xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
-                 jax_jit=False)  # rankdata incompatible with JIT
+                 jax_jit=False)  # _rankdata incompatible with JAX JIT (return_ties)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
