@@ -4526,6 +4526,24 @@ class TestCSR(_CompressedMixin, sparse_test_class()):
         assert (a + b).nnz == 2
         assert a.multiply(b).nnz == 1
 
+    def test_explicit_zeros(self):
+        # Ensures that binary operations do not 
+        # remove the explicit zeros.
+        indices = np.array([0, 2, 1, 3])
+        indptr = np.array([0, 1, 2, 3, 4])
+        data1 = np.array([0, 5, 7, 9])
+        data2 = np.array([0, 4, 6, 8])
+        m1 = csr_matrix((data1, indices, indptr), shape=(4, 4))
+        m2 = csr_matrix((data2, indices, indptr), shape=(4, 4))
+        msum = m1+m2
+        msub = m1-m2
+        mmul = m1.multiply(m2)
+        mdiv = m1._divide(m2)
+        assert msum.nnz == 4
+        assert msub.nnz == 4
+        assert mmul.nnz == 4
+        assert mdiv.nnz == 4
+
 
 TestCSR.init_class()
 

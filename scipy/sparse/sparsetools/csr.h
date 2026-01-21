@@ -688,8 +688,153 @@ void csr_matmat(const I n_row,
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
+ 
+ //operations of addition and subtraction
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_general(const I n_row, const I n_col,
+void csr_addsub_csr_general(const I n_row, const I n_col,
+                           const I Ap[], const I Aj[], const T Ax[],
+                           const I Bp[], const I Bj[], const T Bx[],
+                                 I Cp[],       I Cj[],       T2 Cx[],
+                           const binary_op& op)
+{
+    //Method that works for duplicate and/or unsorted indices
+
+    std::vector<I>  next(n_col,-1);
+    std::vector<T> A_row(n_col, 0);
+    std::vector<T> B_row(n_col, 0);
+
+    I nnz = 0;
+    Cp[0] = 0;
+
+    for(I i = 0; i < n_row; i++){
+        I head   = -2;
+        I length =  0;
+
+        //add a row of A to A_row
+        I i_start = Ap[i];
+        I i_end   = Ap[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Aj[jj];
+
+            A_row[j] += Ax[jj];
+
+            if(next[j] == -1){
+                next[j] = head;
+                head = j;
+                length++;
+            }
+        }
+
+        //add a row of B to B_row
+        i_start = Bp[i];
+        i_end   = Bp[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Bj[jj];
+
+            B_row[j] += Bx[jj];
+
+            if(next[j] == -1){
+                next[j] = head;
+                head = j;
+                length++;
+            }
+        }
+        // scan through columns where operations of addition or
+        // subtraction on A and B has contributed a non-zero entry.
+        for(I jj = 0; jj < length; jj++){
+            T result = op(A_row[head], B_row[head]);
+            //if result is zero and A_row is also zero
+            //implies the Bx is zero and vice-versa.
+            if(result != 0 || A_row[head] == 0){
+                Cj[nnz] = head;
+                Cx[nnz] = result;
+                nnz++;
+            }
+
+            I temp = head;
+            head = next[head];
+
+            next[temp]  = -1;
+            A_row[temp] =  0;
+            B_row[temp] =  0;
+        }
+        Cp[i + 1] = nnz;
+    }
+}
+
+//operations of multiplication and divison.
+template <class I, class T, class T2, class binary_op>
+void csr_muldiv_csr_general(const I n_row, const I n_col,
+                           const I Ap[], const I Aj[], const T Ax[],
+                           const I Bp[], const I Bj[], const T Bx[],
+                                 I Cp[],       I Cj[],       T2 Cx[],
+                           const binary_op& op)
+{
+    //Method that works for duplicate and/or unsorted indices
+
+    std::vector<I>  next(n_col,-1);
+    std::vector<T> A_row(n_col, 0);
+    std::vector<T> B_row(n_col, 0);
+
+    I nnz = 0;
+    Cp[0] = 0;
+
+    for(I i = 0; i < n_row; i++){
+        I head   = -2;
+        I length =  0;
+
+        //add a row of A to A_row
+        I i_start = Ap[i];
+        I i_end   = Ap[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Aj[jj];
+
+            A_row[j] += Ax[jj];
+
+            if(next[j] == -1){
+                next[j] = head;
+                head = j;
+                length++;
+            }
+        }
+
+        //add a row of B to B_row
+        i_start = Bp[i];
+        i_end   = Bp[i+1];
+        for(I jj = i_start; jj < i_end; jj++){
+            I j = Bj[jj];
+
+            B_row[j] += Bx[jj];
+
+            if(next[j] == -1){
+                next[j] = head;
+                head = j;
+                length++;
+            }
+        }
+        
+        for(I jj = 0; jj < length; jj++){
+            T result = op(A_row[head], B_row[head]);
+            if(result != 0 || A_row[head] == 0 || B_row[head] == 0){
+                Cj[nnz] = head;
+                Cx[nnz] = result;
+                nnz++;
+            }
+
+            I temp = head;
+            head = next[head];
+
+            next[temp]  = -1;
+            A_row[temp] =  0;
+            B_row[temp] =  0;
+        }
+        Cp[i + 1] = nnz;
+    }
+}
+
+//relational operations
+template <class I, class T, class T2, class binary_op>
+void csr_rel_csr_general(const I n_row, const I n_col,
                            const I Ap[], const I Aj[], const T Ax[],
                            const I Bp[], const I Bj[], const T Bx[],
                                  I Cp[],       I Cj[],       T2 Cx[],
@@ -738,9 +883,8 @@ void csr_binop_csr_general(const I n_row, const I n_col,
             }
         }
 
-
-        // scan through columns where A or B has
-        // contributed a non-zero entry
+        // scan through columns where binary operations
+        // on A and B has contributed a non-zero entry.
         for(I jj = 0; jj < length; jj++){
             T result = op(A_row[head], B_row[head]);
 
@@ -757,12 +901,9 @@ void csr_binop_csr_general(const I n_row, const I n_col,
             A_row[temp] =  0;
             B_row[temp] =  0;
         }
-
         Cp[i + 1] = nnz;
     }
 }
-
-
 
 /*
  * Compute C = A (binary_op) B for CSR matrices that are in the
@@ -775,11 +916,13 @@ void csr_binop_csr_general(const I n_row, const I n_col,
  * Note:
  *   Input:  A and B column indices are assumed to be in sorted order
  *   Output: C column indices will be in sorted order
- *           Cx will not contain any zero entries
+ *           Cx will not contain any implicit zero entries
  *
  */
+ 
+ //operations of additon and subtraction
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_canonical(const I n_row, const I n_col,
+void csr_addsub_csr_canonical(const I n_row, const I n_col,
                              const I Ap[], const I Aj[], const T Ax[],
                              const I Bp[], const I Bj[], const T Bx[],
                                    I Cp[],       I Cj[],       T2 Cx[],
@@ -796,14 +939,16 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
         I A_end = Ap[i+1];
         I B_end = Bp[i+1];
 
-        //while not finished with either row
+        //while not finished with either row.
         while(A_pos < A_end && B_pos < B_end){
             I A_j = Aj[A_pos];
             I B_j = Bj[B_pos];
 
             if(A_j == B_j){
-                T result = op(Ax[A_pos],Bx[B_pos]);
-                if(result != 0){
+                T result = op(Ax[A_pos], Bx[B_pos]);
+                //removes the implicit zeros generated in
+                //the binary operation.
+                if(result != 0 || Ax[A_pos] == 0){
                     Cj[nnz] = A_j;
                     Cx[nnz] = result;
                     nnz++;
@@ -811,8 +956,70 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
                 A_pos++;
                 B_pos++;
             } else if (A_j < B_j) {
+                Cj[nnz] = A_j;
+                Cx[nnz] = Ax[A_pos];
+                nnz++;
+                A_pos++;
+            } else {
+                //B_j < A_j
+                Cj[nnz] = B_j;
+                Cx[nnz] = op(0, Bx[B_pos]);
+                nnz++;
+                B_pos++;
+            }
+        }
+        
+        //tail
+        while(A_pos < A_end){
+            Cj[nnz] = Aj[A_pos];
+            Cx[nnz] = Ax[A_pos];
+            nnz++;
+            A_pos++;
+        }
+        while(B_pos < B_end){
+            Cj[nnz] = Bj[B_pos];
+            Cx[nnz] = op(0, Bx[B_pos]);
+            nnz++;
+            B_pos++;
+        }
+
+        Cp[i+1] = nnz;
+    }
+}
+//operations of multiplication and divison
+template <class I, class T, class T2, class binary_op>
+void csr_muldiv_csr_canonical(const I n_row, const I n_col,
+                             const I Ap[], const I Aj[], const T Ax[],
+                             const I Bp[], const I Bj[], const T Bx[],
+                                   I Cp[],       I Cj[],       T2 Cx[],
+                             const binary_op& op)
+{
+    //Method that works for canonical CSR matrices
+
+    Cp[0] = 0;
+    I nnz = 0;
+
+    for(I i = 0; i < n_row; i++){
+        I A_pos = Ap[i];
+        I B_pos = Bp[i];
+        I A_end = Ap[i+1];
+        I B_end = Bp[i+1];
+
+        //while not finished with either row.
+        while(A_pos < A_end && B_pos < B_end){
+            I A_j = Aj[A_pos];
+            I B_j = Bj[B_pos];
+
+            if(A_j == B_j){
+                Cj[nnz] = A_j;
+                Cx[nnz] = op(Ax[A_pos], Bx[B_pos]);
+                nnz++;
+                A_pos++;
+                B_pos++;
+            } else if (A_j < B_j) {
                 T result = op(Ax[A_pos],0);
-                if (result != 0){
+                if(result!=0 || Ax[A_pos] == 0)
+                {
                     Cj[nnz] = A_j;
                     Cx[nnz] = result;
                     nnz++;
@@ -820,8 +1027,9 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
                 A_pos++;
             } else {
                 //B_j < A_j
-                T result = op(0,Bx[B_pos]);
-                if (result != 0){
+                T result = op(0, Bx[B_pos]);
+                if(result!=0 || Bx[B_pos] == 0)
+                {
                     Cj[nnz] = B_j;
                     Cx[nnz] = result;
                     nnz++;
@@ -833,7 +1041,8 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
         //tail
         while(A_pos < A_end){
             T result = op(Ax[A_pos],0);
-            if (result != 0){
+            if(result!=0 || Ax[A_pos] == 0)
+            {
                 Cj[nnz] = Aj[A_pos];
                 Cx[nnz] = result;
                 nnz++;
@@ -841,15 +1050,92 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
             A_pos++;
         }
         while(B_pos < B_end){
-            T result = op(0,Bx[B_pos]);
-            if (result != 0){
+            T result = op(0, Bx[B_pos]);
+            if(result!=0 || Bx[B_pos] == 0)
+            {
                 Cj[nnz] = Bj[B_pos];
                 Cx[nnz] = result;
                 nnz++;
             }
             B_pos++;
         }
+        Cp[i+1] = nnz;
+    }
+}
+//relational operations
+template <class I, class T, class T2, class binary_op>
+void csr_rel_csr_canonical(const I n_row, const I n_col,
+                             const I Ap[], const I Aj[], const T Ax[],
+                             const I Bp[], const I Bj[], const T Bx[],
+                                   I Cp[],       I Cj[],       T2 Cx[],
+                             const binary_op& op)
+{
+    //Method that works for canonical CSR matrices
 
+    Cp[0] = 0;
+    I nnz = 0;
+
+    for(I i = 0; i < n_row; i++){
+        I A_pos = Ap[i];
+        I B_pos = Bp[i];
+        I A_end = Ap[i+1];
+        I B_end = Bp[i+1];
+
+        //while not finished with either row.
+        while(A_pos < A_end && B_pos < B_end){
+            I A_j = Aj[A_pos];
+            I B_j = Bj[B_pos];
+
+            if(A_j == B_j){
+                T result = op(Ax[A_pos], Bx[B_pos]);
+                //removes the zeros generated in
+                //the binary operation.
+                if(result != 0){
+                    Cj[nnz] = A_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
+                A_pos++;
+                B_pos++;
+            } else if (A_j < B_j) {
+                T result = op(Ax[A_pos], 0);
+                if (result != 0) {
+                    Cj[nnz] = A_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
+                A_pos++;
+            } else {
+                //B_j < A_j
+                T result = op(0, Bx[B_pos]);
+                    if(result != 0) {
+                    Cj[nnz] = B_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
+                B_pos++;
+            }
+        }
+
+        //tail
+        while(A_pos < A_end){
+            T result = op(Ax[A_pos], 0);
+            if(result != 0) {
+                Cj[nnz] = Aj[A_pos];
+                Cx[nnz] = result;
+                nnz++;
+            }
+            A_pos++;
+        }
+        while(B_pos < B_end){
+            T result = op(0, Bx[B_pos]);
+            if(result != 0) {
+                Cj[nnz] = Bj[B_pos];
+                Cx[nnz] = result;
+                nnz++;
+            }
+            B_pos++;
+        }
         Cp[i+1] = nnz;
     }
 }
@@ -886,8 +1172,10 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
+
+ //operations of addition and subtraction
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr(const I n_row,
+void csr_addsub_csr(const I n_row,
                    const I n_col,
                    const I Ap[],
                    const I Aj[],
@@ -901,9 +1189,51 @@ void csr_binop_csr(const I n_row,
                    const binary_op& op)
 {
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
-        csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_addsub_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     else
-        csr_binop_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_addsub_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+}
+
+//operations of multiplication and divison*/
+template <class I, class T, class T2, class binary_op>
+void csr_muldiv_csr(const I n_row,
+                   const I n_col,
+                   const I Ap[],
+                   const I Aj[],
+                   const T Ax[],
+                   const I Bp[],
+                   const I Bj[],
+                   const T Bx[],
+                         I Cp[],
+                         I Cj[],
+                         T2 Cx[],
+                   const binary_op& op)
+{
+    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
+        csr_muldiv_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+    else
+        csr_muldiv_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+}
+
+//relational operations
+template <class I, class T, class T2, class binary_op>
+void csr_rel_csr(const I n_row,
+                   const I n_col,
+                   const I Ap[],
+                   const I Aj[],
+                   const T Ax[],
+                   const I Bp[],
+                   const I Bj[],
+                   const T Bx[],
+                         I Cp[],
+                         I Cj[],
+                         T2 Cx[],
+                   const binary_op& op)
+{
+    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
+        csr_rel_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+    else
+        csr_rel_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
 }
 
 /* element-wise binary operations*/
@@ -913,7 +1243,7 @@ void csr_ne_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+    csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
 }
 
 template <class I, class T, class T2>
@@ -922,7 +1252,7 @@ void csr_lt_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+    csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
 }
 
 template <class I, class T, class T2>
@@ -931,7 +1261,7 @@ void csr_gt_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
 }
 
 template <class I, class T, class T2>
@@ -940,7 +1270,7 @@ void csr_le_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+    csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
 }
 
 template <class I, class T, class T2>
@@ -949,7 +1279,7 @@ void csr_ge_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
 }
 
 template <class I, class T>
@@ -958,7 +1288,7 @@ void csr_elmul_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+    csr_muldiv_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
 template <class I, class T>
@@ -967,7 +1297,7 @@ void csr_eldiv_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,safe_divides<T>());
+    csr_muldiv_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,safe_divides<T>());
 }
 
 
@@ -977,7 +1307,7 @@ void csr_plus_csr(const I n_row, const I n_col,
                   const I Bp[], const I Bj[], const T Bx[],
                         I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
+    csr_addsub_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
 template <class I, class T>
@@ -986,7 +1316,7 @@ void csr_minus_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
+    csr_addsub_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
 
 template <class I, class T>
@@ -995,7 +1325,7 @@ void csr_maximum_csr(const I n_row, const I n_col,
                      const I Bp[], const I Bj[], const T Bx[],
                            I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+    csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
 }
 
 template <class I, class T>
@@ -1004,7 +1334,7 @@ void csr_minimum_csr(const I n_row, const I n_col,
                      const I Bp[], const I Bj[], const T Bx[],
                            I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+    csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
 }
 
 
@@ -1734,3 +2064,4 @@ SPTOOLS_FOR_EACH_INDEX_DATA_TYPE_COMBINATION(SPTOOLS_CSR_EXTERN_TEMPLATE)
 #undef SPTOOLS_CSR_EXTERN_TEMPLATE
 
 #endif
+
