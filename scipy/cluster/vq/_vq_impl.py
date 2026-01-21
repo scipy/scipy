@@ -213,8 +213,8 @@ def _py_vq(obs, code_book, check_finite=True):
 
 
 _py_vq_dep_msg = (
-    "`scipy.cluster.vq.py_vq` was unintentionally public,"
-    " use `scipy.cluster.vq.vq` instead."
+    "`scipy.cluster.vq.py_vq` was unintentionally public, "
+    "and will be removed in SciPy 1.20.0, use `scipy.cluster.vq.vq` instead."
 )
 py_vq = _deprecated(_py_vq_dep_msg)(_py_vq)
 
