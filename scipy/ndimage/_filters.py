@@ -2251,6 +2251,26 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
+    Examples
+    --------
+    Apply a custom one-dimensional filter to an array.
+
+    The filtering function operates on one-dimensional input and output
+    lines and must modify the output in-place.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import generic_filter1d
+
+    >>> def local_range(input_line, output_line):
+    ...     # input_line includes padded values according to `filter_size` and `mode`
+    ...     for i in range(len(output_line)):
+    ...         window = input_line[i:i + 3]
+    ...         output_line[i] = window.max() - window.min()
+
+    >>> x = np.array([1, 2, 3, 4, 5], dtype=np.float64)
+    >>> generic_filter1d(x, local_range, filter_size=3)
+    array([1., 2., 2., 2., 1.])
+
     """
     if extra_keywords is None:
         extra_keywords = {}
