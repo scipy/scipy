@@ -8544,8 +8544,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
-                 jax_jit=False)  # _rankdata incompatible with JAX JIT (return_ties)
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")])
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8626,7 +8625,12 @@ def friedmanchisquare(*samples, axis=0):
     # The transpose flips this so we can work with axis-slices along -1. This is a
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
-    data, t = _rankdata(data, method='average', return_ties=True)
+    if is_jax(xp):
+        max_ranks = stats.rankdata(xp.sort(data, axis=-1), method='max', axis=-1)
+        t = xp.diff(max_ranks, axis=-1, prepend=0.)
+        data = stats.rankdata(data, method='average', axis=-1)
+    else:
+        data, t = _rankdata(data, method='average', return_ties=True)
     data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
