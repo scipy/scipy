@@ -3545,7 +3545,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     Xibar = [func(sample) for sample in samples]
     Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
     Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
-    ranks = stats.rankdata(Xij_Xibar, method='average')
+    ranks = stats.rankdata(Xij_Xibar, method='average', axis=-1)
     ranks = xp.astype(ranks, dtype)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
