@@ -8515,12 +8515,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
-    if is_jax(xp):
-        ranked = stats.rankdata(alldata, method='average', axis=-1)
-        max_ranks = stats.rankdata(xp.sort(alldata, axis=-1), method='max', axis=-1)
-        t = xp.diff(max_ranks, axis=-1, prepend=0.)
-    else:
-        ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    ranked, t = _rankdata(alldata, method='average', return_ties=True)
     # should adjust output dtype of _rankdata
     ranked = xp.astype(ranked, alldata.dtype, copy=False)
     t = xp.astype(t, alldata.dtype, copy=False)
@@ -8625,12 +8620,7 @@ def friedmanchisquare(*samples, axis=0):
     # The transpose flips this so we can work with axis-slices along -1. This is a
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
-    if is_jax(xp):
-        max_ranks = stats.rankdata(xp.sort(data, axis=-1), method='max', axis=-1)
-        t = xp.diff(max_ranks, axis=-1, prepend=0.)
-        data = stats.rankdata(data, method='average', axis=-1)
-    else:
-        data, t = _rankdata(data, method='average', return_ties=True)
+    data, t = _rankdata(data, method='average', return_ties=True)
     data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
@@ -10045,11 +10035,6 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         raise ValueError(f'unknown method "{method}"')
 
     xp = array_namespace(a)
-
-    if is_jax(xp):
-        import jax.scipy.stats as jax_stats
-        return jax_stats.rankdata(a, method=method, axis=axis, nan_policy=nan_policy)
-
     x = xp.asarray(a)
 
     if axis is None:
@@ -10065,7 +10050,12 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     x = xp_swapaxes(x, axis, -1, xp=xp)
     ranks = _rankdata(x, method, xp=xp)
 
-    if contains_nan:
+    # JIT won't allow use of `contains_nan` for control flow here, so we have to choose
+    # whether to always or never run this block wit JIT.
+    # For now, *never* run it; otherwise, it would change dtype of `ranks`.
+    # When gh-19889 is resolved, dtype will already be `float`, so *always* run it.
+    # TODO then: broadcast `i_nan` to the shape of ranks before using `at.set`
+    if not is_lazy_array(x) and contains_nan:
         default_float = xp_default_dtype(xp)
         i_nan = (xp.isnan(x) if nan_policy == 'omit'
                  else xp.any(xp.isnan(x), axis=-1))
@@ -10093,6 +10083,16 @@ def _order_ranks(ranks, j, *, xp):
 def _rankdata(x, method, return_ties=False, xp=None):
     # Rank data `x` by desired `method`; `return_ties` if desired
     xp = array_namespace(x) if xp is None else xp
+
+    if is_jax(xp):
+        import jax.scipy.stats as jax_stats
+        ranks = jax_stats.rankdata(x, method=method, axis=-1)
+        if return_ties:
+            max_ranks = jax_stats.rankdata(xp.sort(x, axis=-1), method='max', axis=-1)
+            t = xp.diff(max_ranks, axis=-1, prepend=0)
+            return ranks, t
+        return ranks
+
     shape = x.shape
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
