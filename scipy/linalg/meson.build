@@ -1,5 +1,3 @@
-# TODO: 64-bit BLAS and LAPACK
-
 __init__py = fs.copyfile('__init__.py')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
@@ -21,10 +19,16 @@ cython_linalg = custom_target('cython_linalg',
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
   ],
-  # TODO - we only want to install the .pxd files! See comments for
-  #        `pxd_files` further down.
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/linalg',
+  # Install only the .pxd files
+  install_dir: [
+    false,
+    false,
+    py3.get_install_dir() / 'scipy/linalg',
+    py3.get_install_dir() / 'scipy/linalg',
+    false,
+    false,
+  ],
   install_tag: 'devel'
 )
 cython_blas_pxd = cython_linalg[2]
@@ -340,35 +344,5 @@ py3.install_sources(
   python_sources,
   subdir: 'scipy/linalg'
 )
-
-
-
-# TODO: install (only) these pxd files. Neither py3.install_sources nor
-#       install_data accept generated data files. What
-#       https://mesonbuild.com/Installing.html says is for build targets to
-#       use:
-#         `custom_target(..., install: true, install_dir: ...)
-#         # should use `py3.get_install_dir() / 'scipy/linalg'` ?
-#       see https://github.com/mesonbuild/meson/issues/3206
-#
-#       For the below code to work, the script generating the files should use
-#       a different filename, and then it should be moved to the final location
-#       (e.g. with `fs.copyfile`). Either that, or split the codegen scripts and
-#       call it twice: once for the installable files, and once for the
-#       non-installable files.
-#
-#pxd_files = [
-#  cython_linalg[2],  # cython_blas.pxd
-#  cython_linalg[3],  # cython_lapack.pxd
-#]
-#py.install_sources(pxd_files)
-
-#custom_target('cython_blas_lapack_pxd',
-#  input : pxd_files,
-#  output : ['cython_blas2.pxd', 'cython_lapack2.pxd'],
-#  command : ['cp', '@INPUT0@', '@OUTPUT0@', '&&', 'cp', '@INPUT1@', '@OUTPUT1@'],
-#  install : true,
-#  install_dir: py3.get_install_dir() / 'scipy/linalg'
-#)
 
 subdir('tests')

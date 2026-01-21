@@ -1902,7 +1902,7 @@ class RectBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x,y : array_like
+    x, y : array_like
         1-D arrays of coordinates in strictly ascending order.
         Evaluated points outside the data range will be extrapolated.
     z : array_like

@@ -1541,9 +1541,9 @@ class chi_gen(rv_continuous):
 
     Special cases of `chi` are:
 
-        - ``chi(1, loc, scale)`` is equivalent to `halfnorm`
-        - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
-        - ``chi(3, 0, scale)`` is equivalent to `maxwell`
+    - ``chi(1, loc, scale)`` is equivalent to `halfnorm`
+    - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
+    - ``chi(3, 0, scale)`` is equivalent to `maxwell`
 
     `chi` takes ``df`` as a shape parameter.
 
@@ -5110,9 +5110,12 @@ class invgauss_gen(rv_continuous):
         SciPy's with the conversion `fshape_s = fshape / scale`.
 
         MLE formulas are not used in 3 conditions:
+
         - `loc` is not fixed
         - `mu` is fixed
+
         These cases fall back on the superclass fit method.
+
         - `loc` is fixed but translation results in negative data raises
           a `FitDataError`.
         '''
@@ -8386,7 +8389,8 @@ lomax = lomax_gen(a=0.0, name="lomax")
 
 
 class pearson3_gen(rv_continuous):
-    r"""A pearson type III continuous random variable.
+    r"""
+    A pearson type III continuous random variable.
 
     %(before_notes)s
 
@@ -8416,8 +8420,6 @@ class pearson3_gen(rv_continuous):
 
     %(after_notes)s
 
-    %(example)s
-
     References
     ----------
     R.W. Vogel and D.E. McMartin, "Probability Plot Goodness-of-Fit and
@@ -8430,6 +8432,7 @@ class pearson3_gen(rv_continuous):
     "Using Modern Computing Tools to Fit the Pearson Type III Distribution to
     Aviation Loads Data", Office of Aviation Research (2003).
 
+    %(example)s
     """
     def _preprocess(self, x, skew):
         # The real 'loc' and 'scale' are handled in the calling pdf(...). The
@@ -9906,7 +9909,8 @@ skewnorm = skewnorm_gen(name='skewnorm')
 
 
 class trapezoid_gen(rv_continuous):
-    r"""A trapezoidal continuous random variable.
+    r"""
+    A trapezoidal continuous random variable.
 
     %(before_notes)s
 
@@ -9929,15 +9933,13 @@ class trapezoid_gen(rv_continuous):
     The location parameter shifts the start to `loc`.
     The scale parameter changes the width from 1 to `scale`.
 
-    %(example)s
-
     References
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
        Metrologia 44, 117-127. :doi:`10.1088/0026-1394/44/2/003`
 
-
+    %(example)s
     """
     def _argcheck(self, c, d):
         return (c >= 0) & (c <= 1) & (d >= 0) & (d <= 1) & (d >= c)
@@ -11463,7 +11465,7 @@ class gennorm_gen(rv_continuous):
     The (symmetric) generalized normal distribution is also known as the
     Subbotin distribution, exponential power distribution, and generalized
     error distribution [1]_.
-    
+
     The probability density function for `gennorm` is [1]_:
 
     .. math::

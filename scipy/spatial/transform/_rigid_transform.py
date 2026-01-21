@@ -57,7 +57,8 @@ def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
 
 
 class RigidTransform:
-    """Rigid transform in 3 dimensions.
+    """
+    Rigid transform in 3 dimensions.
 
     This class provides an interface to initialize from and represent rigid
     transforms (rotation and translation) in 3D space. In different fields,
@@ -119,6 +120,10 @@ class RigidTransform:
     inv
     identity
 
+    Notes
+    -----
+    .. versionadded:: 1.16.0
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
@@ -130,10 +135,6 @@ class RigidTransform:
     .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
            ugly", June 9, 2014.
            https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
-
-    Notes
-    -----
-    .. versionadded:: 1.16.0
 
     Examples
     --------

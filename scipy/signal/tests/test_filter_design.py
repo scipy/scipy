@@ -5,7 +5,7 @@ import os
 
 from itertools import product
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
@@ -48,7 +48,7 @@ except ImportError:
 def mpmath_check(min_ver):
     return pytest.mark.skipif(
         mpmath is None
-        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        or version.parse(mpmath.__version__) < version.Version(min_ver),
         reason=f"mpmath version >= {min_ver} required",
     )
 
@@ -215,7 +215,6 @@ class TestTf2zpk:
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
 
-
 @make_xp_test_case(zpk2tf)
 class TestZpk2Tf:
 
@@ -287,6 +286,23 @@ class TestZpk2Tf:
         a_ref = xp.asarray([1, -3, 2])
         xp_assert_close(b, b_ref, check_dtype=False)
         xp_assert_close(a, a_ref, check_dtype=False)
+
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
+    def test_zpk2tf_int_truncation(self, xp):
+        # regression test for gh-24382
+        z =  xp.asarray([[ 1, 2.], [ 0., -1.]], dtype=xp.float64)
+        p = xp.asarray([3., 4.], dtype=xp.float64)
+        k = 2.5
+
+        b, a = zpk2tf(z, p, k)
+
+        # reference values from scipy 1.15.3
+        b_ref = xp.asarray([[ 2.5, -7.5,  5. ], [ 2.5,  2.5,  0. ]], dtype=xp.float64)
+        a_ref = xp.asarray([ 1., -7., 12.], dtype=xp.float64)
+
+        xp_assert_close(b, b_ref, atol=1e-14)
+        xp_assert_close(a, a_ref, atol=1e-14)
 
 
 @make_xp_test_case(sos2zpk)
@@ -1128,6 +1144,7 @@ class TestFreqz_sos:
         with assert_raises(ValueError):
             freqz_sos(sos[:0, ...])
 
+    @make_xp_test_case(sosfreqz)
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
         N = 500

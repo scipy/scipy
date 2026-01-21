@@ -8,7 +8,8 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, zeros, array, outer)
 from scipy import linalg
 
-from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
+                                   xp_result_type)
 import scipy._lib.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
@@ -114,7 +115,7 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
-def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
+def abcd_normalize(A=None, B=None, C=None, D=None):
     r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
     First, the input matrices are converted into two-dimensional arrays with
@@ -134,20 +135,15 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
         Two-dimensional array of shape (q, n).
     D : array_like, optional
         Two-dimensional array of shape (q, p).
-    dtype : dtype | None, optional
-        Cast all matrices to the specified dtype. If set to ``None`` (default), their
-        dtypes will be "complex128" if any of the matrices are complex-valued.
-        Otherwise, they will be of the type "float64".
-
-        .. versionadded:: 1.18.0
-
-            With this new parameter, all return values have identical dtypes.
-            In previous versions the dtype of the input was preserved.
 
     Returns
     -------
     A, B, C, D : array
         State-space matrices as two-dimensional arrays with identical dtype.
+        The result dtype is determined based on the standard
+        `dtype promotion rules <https://numpy.org/doc/2.3/reference/arrays.promotion.html>`_
+        except for when the inputs are all of integer dtype, in which case the returned
+        arrays will have the default floating point dtype of ``float64``.
 
     Raises
     ------
@@ -193,20 +189,6 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
     >>> CC
     array([[0., 0.]])
 
-    The following snippet shows the effect of the `dtype` parameter:
-
-    >>> import numpy as np
-    >>> from scipy.signal import abcd_normalize
-    >>> A, D = [[1, 2], [3, 4]], 2.5
-    ...
-    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D)  # default type casting
-    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
-     AA: float64, BB: float64
-     CC: float64, DD: float64
-    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=np.float32)  # Explicit dtype
-    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
-     AA: float32, BB: float32
-     CC: float32, DD: float32
     """
     if A is None and B is None and C is None:
         raise ValueError("Dimension n is undefined for parameters A = B = C = None!")
@@ -216,34 +198,25 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
         raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
     xp = array_namespace(A, B, C, D)
+    A, B, C, D = xp_promote(A, B, C, D, xp=xp, force_floating=True)
+    dtype = xp_result_type(A, B, C, D, xp=xp)
 
     # convert inputs into 2d arrays (zero-size 2d array if None):
-    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
-                  if M_ is not None else xp.zeros((0, 0)) for M_ in (A, B, C, D))
-
-    if dtype is None:
-        to_comp = any(xp.isdtype(M_.dtype, 'complex floating') for M_ in (A, B, C, D))
-        dtype = xp.complex128 if to_comp else xp.float64
-    else:
-        try:
-            is_numeric = xp.isdtype(dtype, 'numeric')
-        except Exception as dtype_error:
-            err_msg = f"Parameter {dtype=} must be None or a numeric dtype!"
-            raise ValueError(err_msg) from dtype_error
-        if not is_numeric:
-            raise ValueError(f"Parameter {dtype=} is not a numeric dtype!")
+    A, B, C, D = (
+        xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
+        if M_ is not None else xp.zeros((0, 0), dtype=dtype)
+        for M_ in (A, B, C, D)
+    )
 
     n = A.shape[0] or B.shape[0] or C.shape[1] # try finding non-zero dimensions
     p = B.shape[1] or D.shape[1]
     q = C.shape[0] or D.shape[0]
 
     # Create zero matrices as needed:
-    A = xp.zeros((n, n)) if xp_size(A) == 0 else A
-    B = xp.zeros((n, p)) if xp_size(B) == 0 else B
-    C = xp.zeros((q, n)) if xp_size(C) == 0 else C
-    D = xp.zeros((q, p)) if xp_size(D) == 0 else D
-
-    A, B, C, D = (xp.astype(M_, dtype, copy=False) for M_ in (A, B, C, D))
+    A = xp.zeros((n, n), dtype=dtype) if xp_size(A) == 0 else A
+    B = xp.zeros((n, p), dtype=dtype) if xp_size(B) == 0 else B
+    C = xp.zeros((q, n), dtype=dtype) if xp_size(C) == 0 else C
+    D = xp.zeros((q, p), dtype=dtype) if xp_size(D) == 0 else D
 
     if A.shape != (n, n):
         raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")
@@ -289,9 +262,10 @@ def ss2tf(A, B, C, D, input=0):
     Notes
     -----
     Before calculating `num` and `den`, the function `abcd_normalize` is called to
-    convert the parameters `A`, `B`, `C`, `D` into two-dimesional arrays. Their dtypes
-    will be "complex128" if any of the matrices are complex-valued. Otherwise, they
-    will be of type "float64".
+    convert the parameters `A`, `B`, `C`, `D` into two-dimesional arrays of the
+    same dtype. The resulting dtype will be based on NumPy's dtype promotion rules,
+    except in the case where each of `A`, `B`, `C`, and `D` has integer dtype, in which
+    case the resulting dtype will be the default floating point dtype of ``float64``.
 
     The :ref:`tutorial_signal_state_space_representation` section of the
     :ref:`user_guide` presents the corresponding definitions of continuous-time and
@@ -417,23 +391,23 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1: (instance of `lti`)
-            * 2: (num, den)
-            * 3: (zeros, poles, gain)
-            * 4: (A, B, C, D)
+        * 1: (instance of `lti`)
+        * 2: (num, den)
+        * 3: (zeros, poles, gain)
+        * 4: (A, B, C, D)
 
     dt : float
         The discretization time step.
     method : str, optional
         Which method to use:
 
-            * gbt: generalized bilinear transformation
-            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
-            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
-            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
-            * zoh: zero-order hold (default)
-            * foh: first-order hold (*versionadded: 1.3.0*)
-            * impulse: equivalent impulse response (*versionadded: 1.3.0*)
+        * gbt: generalized bilinear transformation
+        * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+        * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+        * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+        * zoh: zero-order hold (default)
+        * foh: first-order hold (*versionadded: 1.3.0*)
+        * impulse: equivalent impulse response (*versionadded: 1.3.0*)
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which

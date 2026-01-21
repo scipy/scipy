@@ -102,7 +102,8 @@ capabilities_dict = {
     "map_coordinates": xp_capabilities(
         cpu_only=True, exceptions=["cupy", "jax.numpy"],
         allow_dask_compute=True, jax_jit=True
-    )
+    ),
+    "labeled_comprehension": xp_capabilities(np_only=True),
 }
 
 # ### decorate ###
