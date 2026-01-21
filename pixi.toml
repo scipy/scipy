@@ -248,7 +248,7 @@ scipy-stubs = "*"
 ### Documentation ###
 
 [feature.docs.dependencies]
-sphinx = "*"
+sphinx = "<8.2.0"
 intersphinx-registry = "*"
 pydata-sphinx-theme = "*"
 sphinx-copybutton = "*"
@@ -262,6 +262,7 @@ jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
 scipy-doctest = "*"
 linkify-it-py = "*"
+make = ">=4.4.1,<5"
 
 
 [feature.docs.tasks.docs]

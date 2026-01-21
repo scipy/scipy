@@ -28,11 +28,11 @@ depends_on = ["scipy._lib", "scipy.cluster.hierarchy", "scipy.cluster.vq"]
 
 [[modules]]
 path = "scipy.cluster.hierarchy"
-depends_on = ["scipy._lib", "scipy.cluster", "scipy.spatial.distance"]
+depends_on = ["scipy._lib", "scipy.spatial.distance"]
 
 [[modules]]
 path = "scipy.cluster.vq"
-depends_on = ["scipy._lib", "scipy.cluster", "scipy.spatial.distance"]
+depends_on = ["scipy._lib", "scipy.spatial.distance"]
 
 [[modules]]
 path = "scipy.constants"

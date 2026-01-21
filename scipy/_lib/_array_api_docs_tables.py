@@ -18,6 +18,10 @@ from scipy._lib._array_api import _make_sphinx_capabilities
 # tables since they would be redundant. There are also no docs pages to
 # link entries to.
 ALIASES = {
+    "scipy.cluster.vq": {
+        # Deprecated ~alias of `vq`
+        "py_vq",
+    },
     "scipy.linalg": {
         # Alias of scipy.linalg.solve_continuous_lyapunov
         "solve_lyapunov",
