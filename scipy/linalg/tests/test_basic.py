@@ -1314,7 +1314,7 @@ class TestInv:
         assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
         assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace 
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace
         a = a.astype(float).copy(order='F')
         a_inv = inv(a, overwrite_a=True)
         assert np.shares_memory(a, a_inv)
@@ -1480,6 +1480,63 @@ class TestInv:
         # This is at least consistent with solve.
         ainv_slv = solve(a, np.eye(2), assume_a="pos")
         assert_allclose(ainv_chol, ainv_slv, atol=1e-14)
+
+        # Repeat it for bunch of simple cases to cover more branches
+        # Real symmetric, positive definite
+        a = np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real symmetric, NOT positive definite
+        a = -np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real, not symmetric
+        a = -np.eye(4) + np.ones(4)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # | Test                                  | is_symm | is_herm | pos def |
+        # |---------------------------------------|---------|---------|---------|
+        # | Complex, both sym+herm, pos def       |    1    |    1    |   yes   |
+        # | Complex, symmetric only               |    1    |    0    |    -    |
+        # | Complex, both sym+herm, NOT pos def   |    1    |    1    |   no    |
+        # | Complex, neither                      |    0    |    0    |    -    |
+        # | Complex, hermitian only, pos def      |    0    |    1    |   yes   |
+        # | Complex, hermitian only, NOT pos def  |    0    |    1    |   no    |
+
+        # Complex, both symmetric and hermitian, positive definite
+        a = (np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, symmetric only (not hermitian)
+        a = (np.eye(4)*1.0j + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, both symmetric and hermitian, NOT positive definite
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, neither symmetric nor hermitian
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, hermitian only, positive definite
+        a = np.array([[2, 1+1j], [1-1j, 2]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
+
+        # Complex, hermitian only, NOT positive definite
+        a = np.array([[-1, 1+1j], [1-1j, -1]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
 
     @pytest.mark.parametrize('complex_', [False, True])
     @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
