@@ -327,21 +327,18 @@ class TestLinsolve:
         for b in bs:
             x = np.linalg.solve(A.toarray(), toarray(b))
             for spmattype in [csc_array, csr_array, dok_array, lil_array]:
-                x1 = spsolve(spmattype(A), b, use_umfpack=True)
-                x2 = spsolve(spmattype(A), b, use_umfpack=False)
-
-                # check solution
-                if x.ndim == 2 and x.shape[1] == 1:
-                    # interprets also these as "vectors"
-                    x = x.ravel()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', SparseEfficiencyWarning)
+                    x1 = spsolve(spmattype(A), b, use_umfpack=True)
+                    x2 = spsolve(spmattype(A), b, use_umfpack=False)
 
                 assert_array_almost_equal(toarray(x1), x,
                                           err_msg=repr((b, spmattype, 1)))
                 assert_array_almost_equal(toarray(x2), x,
                                           err_msg=repr((b, spmattype, 2)))
 
-                # dense vs. sparse output  ("vectors" are always dense)
-                if issparse(b) and x.ndim > 1:
+                # dense vs. sparse output
+                if issparse(b):
                     assert_(issparse(x1), repr((b, spmattype, 1)))
                     assert_(issparse(x2), repr((b, spmattype, 2)))
                 else:
@@ -349,14 +346,8 @@ class TestLinsolve:
                     assert_(isinstance(x2, np.ndarray), repr((b, spmattype, 2)))
 
                 # check output shape
-                if x.ndim == 1:
-                    # "vector"
-                    assert_equal(x1.shape, (A.shape[1],))
-                    assert_equal(x2.shape, (A.shape[1],))
-                else:
-                    # "matrix"
-                    assert_equal(x1.shape, x.shape)
-                    assert_equal(x2.shape, x.shape)
+                assert_equal(x1.shape, x.shape)
+                assert_equal(x2.shape, x.shape)
 
         A = csc_array((3, 3))
         b = csc_array((1, 3))

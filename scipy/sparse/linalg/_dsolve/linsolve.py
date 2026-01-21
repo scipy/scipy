@@ -223,11 +223,11 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         warn('spsolve requires A be CSC or CSR matrix format',
              SparseEfficiencyWarning, stacklevel=2)
 
-    # b is a vector only if b have shape (n,) or (n, 1)
+    # b is a vector only if b have shape (n,)
     b_is_sparse = issparse(b)
     if not b_is_sparse:
         b = asarray(b)
-    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
+    b_is_vector = b.ndim == 1
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -269,59 +269,59 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         umf = umfpack.UmfpackContext(umf_family)
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
-    else:
-        if b_is_vector and b_is_sparse:
-            b = b.toarray()
-            b_is_sparse = False
-
-        if not b_is_sparse:
-            if A.format == "csc":
-                flag = 1  # CSC format
-            else:
-                flag = 0  # CSR format
-
-            indices = A.indices.astype(np.intc, copy=False)
-            indptr = A.indptr.astype(np.intc, copy=False)
-            options = dict(ColPerm=permc_spec)
-            x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
-                                    b, flag, options=options)
-            if info != 0:
-                warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
-                x.fill(np.nan)
-            if b_is_vector:
-                x = x.ravel()
+    elif not b_is_sparse:
+        if A.format == "csc":
+            flag = 1  # CSC format
         else:
-            # b is sparse
-            Afactsolve = factorized(A)
+            flag = 0  # CSR format
 
-            if not (b.format == "csc" or is_pydata_spmatrix(b)):
-                warn('spsolve is more efficient when sparse b '
-                     'is in the CSC matrix format',
-                     SparseEfficiencyWarning, stacklevel=2)
-                b = csc_array(b)
+        indices = A.indices.astype(np.intc, copy=False)
+        indptr = A.indptr.astype(np.intc, copy=False)
+        options = dict(ColPerm=permc_spec)
+        x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
+                                b, flag, options=options)
+        if info != 0:
+            warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
+            x.fill(np.nan)
+    else:
+        # b is sparse
+        Afactsolve = factorized(A)
 
-            # Create a sparse output matrix by repeatedly applying
-            # the sparse factorization to solve columns of b.
-            data_segs = []
-            row_segs = []
-            col_segs = []
-            for j in range(b.shape[1]):
-                bj = b[:, j].toarray().ravel()
-                xj = Afactsolve(bj)
-                w = np.flatnonzero(xj)
-                segment_length = w.shape[0]
-                row_segs.append(w)
-                col_segs.append(np.full(segment_length, j, dtype=int))
-                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
-            sparse_data = np.concatenate(data_segs)
-            idx_dtype = get_index_dtype(maxval=max(b.shape))
-            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
-            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
-            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
-                           shape=b.shape, dtype=A.dtype)
+        if b_is_vector:
+            # convert to 2D sparse matrix with one column
+            b = b[:, np.newaxis]
 
-            if is_pydata_sparse:
-                x = pydata_sparse_cls.from_scipy_sparse(x)
+        if not (b.format == "csc" or is_pydata_spmatrix(b)):
+            warn('spsolve is more efficient when sparse b '
+                    'is in the CSC matrix format',
+                    SparseEfficiencyWarning, stacklevel=2)
+            b = csc_array(b)
+
+        # Create a sparse output matrix by repeatedly applying
+        # the sparse factorization to solve columns of b.
+        data_segs = []
+        row_segs = []
+        col_segs = []
+        for j in range(b.shape[1]):
+            bj = b[:, j].toarray().ravel()
+            xj = Afactsolve(bj)
+            w = np.flatnonzero(xj)
+            segment_length = w.shape[0]
+            row_segs.append(w)
+            col_segs.append(np.full(segment_length, j, dtype=int))
+            data_segs.append(np.asarray(xj[w], dtype=A.dtype))
+        sparse_data = np.concatenate(data_segs)
+        idx_dtype = get_index_dtype(maxval=max(b.shape))
+        sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
+        sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
+        x = A.__class__((sparse_data, (sparse_row, sparse_col)),
+                        shape=b.shape, dtype=A.dtype)
+
+        if b_is_vector:
+            x = x[:, 0]  # convert back to 1D sparse array
+
+        if is_pydata_sparse:
+            x = pydata_sparse_cls.from_scipy_sparse(x)
 
     return x
 
