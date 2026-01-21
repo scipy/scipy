@@ -1028,6 +1028,30 @@ class TestSolve:
         out = solve(a.T, b, assume_a='pos', lower=False)
         assert_allclose(out, result_np, atol=1e-15)
 
+    def test_pos_fails_sym_complex(self):
+        # regression test for the `solve` analog of gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+        b = np.eye(2)
+
+        ainv = solve(a, b)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = solve(a, b, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does solve.
+        ainv_chol = solve(a, b, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with inv.
+        ainv_inv = inv(a, assume_a="pos")
+        assert_allclose(ainv_chol, ainv_inv, atol=1e-14)
+
     def test_readonly(self):
         a = np.eye(3)
         a.flags.writeable = False
@@ -1306,7 +1330,7 @@ class TestInv:
         assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
         assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace 
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace
         a = a.astype(float).copy(order='F')
         a_inv = inv(a, overwrite_a=True)
         assert np.shares_memory(a, a_inv)
@@ -1449,6 +1473,86 @@ class TestInv:
             a = a + 1j*a
             b = a + a.T.conj() + np.eye(3)
             assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
+
+    def test_pos_fails_sym_complex(self):
+        # regression test for gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+
+        ainv = inv(a)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = inv(a, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does inv
+        ainv_chol = inv(a, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with solve.
+        ainv_slv = solve(a, np.eye(2), assume_a="pos")
+        assert_allclose(ainv_chol, ainv_slv, atol=1e-14)
+
+        # Repeat it for bunch of simple cases to cover more branches
+        # Real symmetric, positive definite
+        a = np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real symmetric, NOT positive definite
+        a = -np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real, not symmetric
+        a = -np.eye(4) + np.ones(4)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # | Test                                  | is_symm | is_herm | pos def |
+        # |---------------------------------------|---------|---------|---------|
+        # | Complex, both sym+herm, pos def       |    1    |    1    |   yes   |
+        # | Complex, symmetric only               |    1    |    0    |    -    |
+        # | Complex, both sym+herm, NOT pos def   |    1    |    1    |   no    |
+        # | Complex, neither                      |    0    |    0    |    -    |
+        # | Complex, hermitian only, pos def      |    0    |    1    |   yes   |
+        # | Complex, hermitian only, NOT pos def  |    0    |    1    |   no    |
+
+        # Complex, both symmetric and hermitian, positive definite
+        a = (np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, symmetric only (not hermitian)
+        a = (np.eye(4)*1.0j + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, both symmetric and hermitian, NOT positive definite
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, neither symmetric nor hermitian
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, hermitian only, positive definite
+        a = np.array([[2, 1+1j], [1-1j, 2]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
+
+        # Complex, hermitian only, NOT positive definite
+        a = np.array([[-1, 1+1j], [1-1j, -1]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
 
     @pytest.mark.parametrize('complex_', [False, True])
     @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
