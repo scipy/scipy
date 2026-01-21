@@ -8428,8 +8428,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)  # _rankdata incompatible with JAX JIT (return_ties)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8516,7 +8515,12 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
-    ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    if is_jax(xp):
+        ranked = stats.rankdata(alldata, method='average', axis=-1)
+        max_ranks = stats.rankdata(xp.sort(alldata, axis=-1), method='max', axis=-1)
+        t = xp.diff(max_ranks, axis=-1, prepend=0.)
+    else:
+        ranked, t = _rankdata(alldata, method='average', return_ties=True)
     # should adjust output dtype of _rankdata
     ranked = xp.astype(ranked, alldata.dtype, copy=False)
     t = xp.astype(t, alldata.dtype, copy=False)
