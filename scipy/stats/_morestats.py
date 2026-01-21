@@ -3797,7 +3797,10 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                jax_jit=False, cpu_only=True)  # null distribution is CPU only
+                 # getting ranks/ties with JAX JIT is no longer a problem, but
+                 # the exact null distribution is still NumPy-only
+                 jax_jit=False,
+                 cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
