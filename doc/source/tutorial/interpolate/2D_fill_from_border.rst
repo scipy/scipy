@@ -75,7 +75,7 @@ Another option is the solution to the Laplace equation:
    ...     plt.imshow(values, vmin=-2, vmax=2, cmap="RdBu_r")
    ...     plt.title(name)
    ...     error = values[mask] - border_values
-   ...     print(f"{name:14s}: Mean error: {np.mean(error):.3g} Error std: {np.std(error):.3g}")
+   ...     print(f"{name:14s}: Mean error: {np.mean(error):.2g} Error std: {np.std(error):.2g}")
    ...
    >>> sum_of_sines = np.sin(6 * np.pi * grid_x / L) + np.sin(6 * np.pi * grid_y / L)
    >>> plt.subplot(131)
@@ -84,14 +84,14 @@ Another option is the solution to the Laplace equation:
    >>> sine_of_sum = np.sin(6 * np.pi * (grid_x + grid_y) / L)
    >>> plt.subplot(132)
    >>> plot_and_check_filled_image(sine_of_sum, "Sine of sum")
-   Sine of sum   : Mean error: 4e-16 Error std: 1.28e-15
+   Sine of sum   : Mean error: 4e-16 Error std: 1.3e-15
    >>> laplace_solution = (
    ...     np.sin(6 * np.pi * grid_x / L) * np.cosh(6 * np.pi * (grid_y - L / 2) / L)
    ...     + np.sin(6 * np.pi * grid_y / L) * np.cosh(6 * np.pi * (grid_x - L / 2) / L)
    ... ) / np.cosh(3 * np.pi)
    >>> plt.subplot(133)
    >>> plot_and_check_filled_image(laplace_solution, "Laplace solution")
-   Laplace solution: Mean error: 3.4e-16 Error std: 3.61e-16
+   Laplace solution: Mean error: 3.4e-16 Error std: 3.6e-16
 
 Not every boundary so readily admits analytic solutions, so we broaden
 our search to other options.
@@ -129,46 +129,47 @@ every point.
    ...     ):
    ...         interpolator = interpolator_class((sparse_x, sparse_y), sparse_values)
    ...         values = interpolator(grid_x, grid_y)
-   ...         plt.subplot(3, 3, 3 * i + j + 1)
+   ...         # plt.subplot(3, 3, 3 * i + j + 1)
    ...         interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
    ...         plot_and_check_filled_image(values, f"{interpolator_name:s}\n1 pt. in {i+1:d}")
    ...         print("Number of NaNs:", np.count_nonzero(np.isnan(values)), end="\n\n")
    ...
-    Nearest
-    1 pt. in 1: Mean error: 0 Error std: 0
-    Number of NaNs: 0
-    <BLANKLINE>
-    Linear
-    1 pt. in 1: Mean error: nan Error std: nan
-    Number of NaNs: 104
-    <BLANKLINE>
-    CloughTocher
-    1 pt. in 1: Mean error: nan Error std: nan
-    Number of NaNs: 104
-    <BLANKLINE>
-    Nearest
-    1 pt. in 2: Mean error: 1.85e-05 Error std: 0.0157
-    Number of NaNs: 0
-    <BLANKLINE>
-    Linear
-    1 pt. in 2: Mean error: -1.51e-17 Error std: 0.000247
-    Number of NaNs: 2
-    <BLANKLINE>
-    CloughTocher
-    1 pt. in 2: Mean error: -2.79e-10 Error std: 2.18e-06
-    Number of NaNs: 2
-    <BLANKLINE>
-    Nearest
-    1 pt. in 3: Mean error: -5.66e-18 Error std: 0.0181
-    Number of NaNs: 0
-    <BLANKLINE>
-    Linear
-    1 pt. in 3: Mean error: -3.37e-17 Error std: 0.00057
-    Number of NaNs: 0
-    <BLANKLINE>
-    CloughTocher
-    1 pt. in 3: Mean error: -2.98e-09 Error std: 6.26e-06
-    Number of NaNs: 0
+   Nearest
+   1 pt. in 1: Mean error: 0 Error std: 0
+   Number of NaNs: 0
+   <BLANKLINE>
+   Linear
+   1 pt. in 1: Mean error: nan Error std: nan
+   Number of NaNs: 104
+   <BLANKLINE>
+   CloughTocher
+   1 pt. in 1: Mean error: nan Error std: nan
+   Number of NaNs: 104
+   <BLANKLINE>
+   Nearest
+   1 pt. in 2: Mean error: 1.9e-05 Error std: 0.016
+   Number of NaNs: 0
+   <BLANKLINE>
+   Linear
+   1 pt. in 2: Mean error: -1.5e-17 Error std: 0.00025
+   Number of NaNs: 2
+   <BLANKLINE>
+   CloughTocher
+   1 pt. in 2: Mean error: -2.8e-10 Error std: 2.2e-06
+   Number of NaNs: 2
+   <BLANKLINE>
+   Nearest
+   1 pt. in 3: Mean error: -5.7e-18 Error std: 0.018
+   Number of NaNs: 0
+   <BLANKLINE>
+   Linear
+   1 pt. in 3: Mean error: -3.4e-17 Error std: 0.00057
+   Number of NaNs: 0
+   <BLANKLINE>
+   CloughTocher
+   1 pt. in 3: Mean error: -3e-09 Error std: 6.3e-06
+   Number of NaNs: 0
+   <BLANKLINE>
 
 In other words, the linear interpolator has problems filling
 rectangles with more than two hundred points on a side.
@@ -233,10 +234,10 @@ interpolator to get back to the desired density.
    ...     values = refiner(np.stack([grid_x, grid_y], -1))
    ...     plot_and_check_filled_image(values, kernel)
    ...
-   linear        : Mean error: -1.57e-14 Error std: 0.00407
-   thin_plate_spline: Mean error: -2.57e-13 Error std: 0.00407
-   cubic         : Mean error: -2.86e-13 Error std: 0.00407
-   quintic       : Mean error: -3.92e-08 Error std: 0.00407
+   linear        : Mean error: -1.6e-14 Error std: 0.0041
+   thin_plate_spline: Mean error: -2.6e-13 Error std: 0.0041
+   cubic         : Mean error: -2.9e-13 Error std: 0.0041
+   quintic       : Mean error: -3.9e-08 Error std: 0.0041
 
 -----------------------
 Multi-linear regression
@@ -308,12 +309,12 @@ able to produce the six extrema of the boundary conditions.
    ...             scaled_grid_x[:, 0], scaled_grid_y[0, :], coeffs.reshape(num_coeffs, num_coeffs)
    ...         )
    ...         plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}")
-   legendre degree 7: Mean error: 1.21e-16 Error std: 0.408
-   chebyshev degree 7: Mean error: -2.66e-17 Error std: 0.408
-   legendre degree 11: Mean error: -9.44e-18 Error std: 0.0241
-   chebyshev degree 11: Mean error: -6.65e-17 Error std: 0.0241
-   legendre degree 15: Mean error: -1.01e-16 Error std: 0.000299
-   chebyshev degree 15: Mean error: -5.93e-17 Error std: 0.000299
+   legendre degree 7: Mean error: 1.2e-16 Error std: 0.41
+   chebyshev degree 7: Mean error: -2.7e-17 Error std: 0.41
+   legendre degree 11: Mean error: -9.4e-18 Error std: 0.024
+   chebyshev degree 11: Mean error: -6.7e-17 Error std: 0.024
+   legendre degree 15: Mean error: -1e-16 Error std: 0.0003
+   chebyshev degree 15: Mean error: -5.9e-17 Error std: 0.0003
 
 The higher-order polynomials produce interesting shapes in the
 interior of the domain, which are pretty, but slightly concerning.  We
@@ -350,12 +351,12 @@ produce results similar to that function.
    ...             coeffs.reshape(num_coeffs, num_coeffs) * coeff_multiplier[:, :]
    ...         )
    ...         plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}")
-   legendre degree 7: Mean error: -3.23e-16 Error std: 0.408
-   chebyshev degree 7: Mean error: 6.81e-17 Error std: 0.408
-   legendre degree 11: Mean error: 3.42e-16 Error std: 0.0241
-   chebyshev degree 11: Mean error: -2.64e-16 Error std: 0.0241
-   legendre degree 15: Mean error: 1.41e-16 Error std: 0.000299
-   chebyshev degree 15: Mean error: 7.43e-17 Error std: 0.000299
+   legendre degree 7: Mean error: -3.2e-16 Error std: 0.41
+   chebyshev degree 7: Mean error: 6.8e-17 Error std: 0.41
+   legendre degree 11: Mean error: 3.4e-16 Error std: 0.024
+   chebyshev degree 11: Mean error: -2.6e-16 Error std: 0.024
+   legendre degree 15: Mean error: 1.4e-16 Error std: 0.0003
+   chebyshev degree 15: Mean error: 7.4e-17 Error std: 0.0003
 
 
 A different way to restrict the polynomials to avoid interior extrema
@@ -394,7 +395,7 @@ equation, as do, for example,
    ...     coeffs, laplace_polynomials(scaled_grid_x, scaled_grid_y), 1
    ... )
    >>> plot_and_check_filled_image(values, "Laplace polynomial")
-   Laplace polynomial: Mean error: -3.55e-17 Error std: 0.663
+   Laplace polynomial: Mean error: -3.6e-17 Error std: 0.66
 
 --------------
 Other packages
