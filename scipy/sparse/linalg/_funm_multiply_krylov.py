@@ -86,7 +86,7 @@ def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
 
         H[k + 1, k] = norm(V[:, k + 1])
         if H[k + 1, k] < norm_tol:
-            return True, k
+            return True, k + 1
 
         V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
 
@@ -137,7 +137,7 @@ def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
         H[k + 1, k] = norm(V[:, k + 1])
 
         if H[k + 1, k] < norm_tol:
-            return True, k
+            return True, k + 1
 
         V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
         if k < m - 1:

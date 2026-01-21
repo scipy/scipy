@@ -110,6 +110,24 @@ class TestKrylovFunmv:
             observed = funm_multiply_krylov(f, aslinearoperator(A), b, assume_a = 'her')
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
+    def test_funm_multiply_krylov_eye_matrix(self):
+        rng = np.random.default_rng(1738151906092735)
+        A = np.eye(5)
+        b = rng.standard_normal(5)
+
+        expected = np.exp(1) * b
+        observed = funm_multiply_krylov(expm, A, b)
+        assert_allclose(observed, expected)
+
+    def test_funm_multiply_krylov_diag_matrix(self):
+        rng = np.random.default_rng(1738151906092735)
+        b = rng.standard_normal(5)
+        A = scipy.sparse.diags([1, 2, 3, 4, 5], dtype=float)
+
+        expected = np.exp([1, 2, 3, 4, 5]) * b
+        observed = funm_multiply_krylov(expm, A, b)
+        assert_allclose(observed, expected)
+
     def test_funm_multiply_krylov_breakdown(self):
         rng = np.random.default_rng(1738151906092735)
 
