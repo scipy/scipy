@@ -8429,7 +8429,7 @@ KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)  # rankdata incompatible with JIT
+                 jax_jit=False)  # _rankdata incompatible with JAX JIT (return_ties)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
