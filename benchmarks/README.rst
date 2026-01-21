@@ -40,6 +40,23 @@ Command-line help is available as usual via ``asv --help`` and
 .. _ASV documentation: https://asv.readthedocs.io/
 
 
+Array API benchmarks
+--------------------
+Like `spin test`, `spin bench` also supports Array API.
+The below will repeat selected tests for all installed Array API backends,
+and show results side by side::
+
+  spin bench -b all
+
+Unlike `spin test`, `spin bench` disregards the ``SCIPY_DEVICE`` flag. Instead, if a
+CUDA device is installed for backends that support both CPU and GPU (e.g. JAX, PyTorch),
+the benchmark will be run on both CPU and GPU and the results will be shown side by
+side.
+
+The JAX backend is compiled with `jax.jit` when supported; JIT warmup times are excluded
+from the benchmark results.
+
+
 Writing benchmarks
 ------------------
 
