@@ -1635,9 +1635,9 @@ def medfilt(volume, kernel_size=None):
     ...                 [1, 100, 1],
     ...                 [1, 1, 1]])
     >>> signal.medfilt(x2d, kernel_size=3)
-    array([[0., 1., 0.],
-           [1., 1., 1.],
-           [0., 1., 0.]])
+    array([[0, 1, 0],
+           [1, 1, 1],
+           [0, 1, 0]])
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
