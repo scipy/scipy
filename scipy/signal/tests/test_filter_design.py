@@ -5,7 +5,7 @@ import os
 
 from itertools import product
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
@@ -48,7 +48,7 @@ except ImportError:
 def mpmath_check(min_ver):
     return pytest.mark.skipif(
         mpmath is None
-        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        or version.parse(mpmath.__version__) < version.Version(min_ver),
         reason=f"mpmath version >= {min_ver} required",
     )
 
@@ -1128,6 +1128,7 @@ class TestFreqz_sos:
         with assert_raises(ValueError):
             freqz_sos(sos[:0, ...])
 
+    @make_xp_test_case(sosfreqz)
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
         N = 500

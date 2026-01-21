@@ -89,10 +89,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         within `bounds`.
 
         ``2`` : Semi-continuous variable; decision variable must be within
-        `bounds` or take value ``0``.
+        `bounds` or ``0``.
 
         ``3`` : Semi-integer variable; decision variable must be an integer
-        within `bounds` or take value ``0``.
+        within `bounds` or ``0``.
 
         By default, all variables are continuous.
 
@@ -157,10 +157,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         Currently, ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
-    mip_rel_gap : double (default: None)
+    mip_rel_gap : double, optional
         Termination criterion for MIP solver: solver will terminate when the
         gap between the primal objective value and the dual objective bound,
-        scaled by the primal objective value, is <= mip_rel_gap.
+        scaled by the primal objective value, is <= mip_rel_gap. Default: 0.0001.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing

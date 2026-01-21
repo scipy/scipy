@@ -74,11 +74,11 @@ class NonlinearConstraint:
         Whether to keep the constraint components feasible throughout
         iterations. A single value sets this property for all components.
         Default is False. Has no effect for equality constraints.
-    finite_diff_rel_step: None or array_like, optional
+    finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation. Default is
         None, which will select a reasonable value automatically depending
         on a finite difference scheme.
-    finite_diff_jac_sparsity: {None, array_like, sparse array}, optional
+    finite_diff_jac_sparsity : {None, array_like, sparse array}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
         difference estimation, its shape must be (m, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity

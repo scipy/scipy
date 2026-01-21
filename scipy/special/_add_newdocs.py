@@ -3572,7 +3572,7 @@ add_newdoc("gdtr",
 
     .. math::
 
-        F = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        F(x) = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3592,7 +3592,7 @@ add_newdoc("gdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The CDF of the gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
@@ -3690,7 +3690,7 @@ add_newdoc("gdtrc",
 
     .. math::
 
-        F = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        S(x) = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3710,7 +3710,7 @@ add_newdoc("gdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The survival function of the gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
@@ -4823,7 +4823,7 @@ add_newdoc("nbdtr",
 
     .. math::
 
-        F = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        F(k) = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that `k` or fewer failures precede the nth
@@ -4842,7 +4842,7 @@ add_newdoc("nbdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k` or fewer failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -4949,7 +4949,7 @@ add_newdoc("nbdtrc",
 
     .. math::
 
-        F = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        S(k) = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that more than `k` failures precede the nth
@@ -4968,7 +4968,7 @@ add_newdoc("nbdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -6247,6 +6247,12 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
     Notes
     -----
     This function relies on the ``gamma_q_inva`` function from the Boost
@@ -6255,12 +6261,6 @@ add_newdoc("pdtrik",
     References
     ----------
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrc : Poisson survival function
-    pdtri : inverse of `pdtr` with respect to `m`
 
     Examples
     --------
@@ -7705,9 +7705,9 @@ add_newdoc("owens_t",
 
     Parameters
     ----------
-    h: array_like
+    h : array_like
         Input value.
-    a: array_like
+    a : array_like
         Input value.
     out : ndarray, optional
         Optional output array for the function results

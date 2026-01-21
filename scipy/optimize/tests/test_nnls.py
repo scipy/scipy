@@ -429,14 +429,6 @@ class TestNNLS:
                         atol=5e-14)
         assert np.abs(np.linalg.norm(A@sol - b) - res) < 5e-14
 
-    def test_atol_deprecation_warning(self):
-        """Test that using atol parameter triggers deprecation warning"""
-        a = np.array([[1, 0], [1, 0], [0, 1]])
-        b = np.array([2, 1, 1])
-
-        with pytest.warns(DeprecationWarning, match="{'atol'}"):
-            nnls(a, b, atol=1e-8)
-
     def test_2D_singleton_RHS_input(self):
         # Test that a 2D singleton RHS input is accepted
         A = np.array([[1.0, 0.5, -1.],

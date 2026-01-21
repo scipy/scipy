@@ -51,6 +51,7 @@ class TestFFT:
             xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
 
     @skip_xp_backends(np_only=True, reason='significant overhead for some backends')
+    @make_xp_test_case(fft.ifft, fft.fft, fft.rfft, fft.irfft)
     def test_identity_extensive(self, xp):
         maxlen = 512
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
@@ -71,6 +72,7 @@ class TestFFT:
         xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
 
     @skip_xp_backends(np_only=True, reason='some backends allow `n=0`')
+    @make_xp_test_case(fft.fft)
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         assert_raises(ValueError, fft.fft, x, 0)
