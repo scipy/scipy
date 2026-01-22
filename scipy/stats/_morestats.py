@@ -3410,7 +3410,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')], jax_jit=False)
+                                ('cupy', 'no rankdata')])
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3545,7 +3545,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     Xibar = [func(sample) for sample in samples]
     Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
     Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
-    ranks = _stats_py._rankdata(Xij_Xibar, method='average', xp=xp)
+    ranks = stats.rankdata(Xij_Xibar, method='average', axis=-1)
     ranks = xp.astype(ranks, dtype)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
@@ -3638,8 +3638,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)  # JAX JIT incompatible with rankdata
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3751,7 +3750,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
     r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
 
-    if xp.any(t > 1):
+    if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
         z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
@@ -3789,7 +3788,9 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                jax_jit=False, cpu_only=True)  # null distribution is CPU only
+                 # the exact null distribution is NumPy-only
+                 jax_jit=False,
+                 cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,

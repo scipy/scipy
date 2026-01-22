@@ -1567,7 +1567,7 @@ class TestMood:
                         slice2 = x2[i, j, :]
 
                     ref = stats.mood(slice1, slice2)
-                    xp_assert_close(res.statistic[i, j], ref.statistic)
+                    xp_assert_close(res.statistic[i, j], ref.statistic, atol=1e-15)
                     xp_assert_close(res.pvalue[i, j], ref.pvalue)
 
     def test_mood_bad_arg(self, xp):
