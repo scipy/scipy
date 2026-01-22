@@ -36,6 +36,7 @@
 """
 
 import numpy as np
+import warnings
 from scipy.linalg import norm
 from ._isolve.iterative import _get_atol_rtol
 
@@ -72,7 +73,7 @@ def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
     """
 
     dotprod = np.vdot if np.iscomplexobj(b) else np.dot
-    norm_tol = np.finfo(b.dtype.char).eps ** 2
+    norm_tol = np.finfo(b.dtype.char).eps * 1E2
     V[:, 0] = b / bnorm
 
     for k in range(0, m):
@@ -122,7 +123,7 @@ def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
 
     """
     dotprod = np.vdot if np.iscomplexobj(b) else np.dot
-    norm_tol = np.finfo(b.dtype.char).eps ** 2
+    norm_tol = np.finfo(b.dtype.char).eps * 1E2
     V[:, 0] = b / bnorm
 
     for k in range(0, m):
@@ -277,8 +278,8 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
                          "argument 'restart_every_m' must be positive.")
 
     if max_restarts <= 0:
-            raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
-                             "argument 'max_restarts' must be positive.")
+        raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
+                         "argument 'max_restarts' must be positive.")
 
     m = restart_every_m
     max_restarts = min(max_restarts, int(n / m) + 1)
@@ -311,6 +312,10 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     y = bnorm * V[:, :j].dot(fH[:, 0])
 
     if breakdown:
+        warnings.warn("scipy.sparse.linalg.funm_multiply_krylov:"
+                      f"Arnoldi/Lanczos iteration broke down at iter = {j}"
+                      f" after {restart-1} restarts", category=RuntimeWarning,
+                      stacklevel=2)
         return y
 
     update_norm = norm(bnorm * fH[:, 0])
@@ -330,6 +335,11 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
             end = begin + j
             fH = f(t * H[:end, :end])
             y[:end] = y[:end] + bnorm * V[:, :m].dot(fH[begin:end, 0])
+
+            warnings.warn("scipy.sparse.linalg.funm_multiply_krylov:"
+                          f"Arnoldi/Lanczos iteration broke down at iter = {j}"
+                          f" after {restart-1} restarts",
+                          category=RuntimeWarning, stacklevel=2)
             return y
 
         fH = f(t * H[:end, :end])

@@ -2,6 +2,7 @@
 from functools import partial
 
 import numpy as np
+import warnings
 import pytest
 from numpy.testing import (assert_allclose)
 import scipy.sparse
@@ -110,23 +111,46 @@ class TestKrylovFunmv:
             observed = funm_multiply_krylov(f, aslinearoperator(A), b, assume_a = 'her')
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
-    def test_funm_multiply_krylov_eye_matrix(self):
+    @pytest.mark.parametrize("dtype", REAL_DTYPES)
+    def test_funm_multiply_krylov_eye_matrix(self, dtype):
         rng = np.random.default_rng(1738151906092735)
-        A = np.eye(5)
-        b = rng.standard_normal(5)
+        A = np.eye(5, dtype=dtype)
+        b = rng.standard_normal(5, dtype=dtype)
+        linop = scipy.sparse.linalg.LinearOperator(shape=(5, 5), dtype=dtype,
+                                                   matvec=lambda v: v)
 
-        expected = np.exp(1) * b
-        observed = funm_multiply_krylov(expm, A, b)
-        assert_allclose(observed, expected)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            expected = np.exp(1) * b
+            observed = funm_multiply_krylov(expm, A, b)
+            assert_allclose(observed, expected)
+            observed = funm_multiply_krylov(expm, linop, b)
+            assert_allclose(observed, expected)
+            observed = funm_multiply_krylov(expm, A, b, assume_a = 'her')
+            assert_allclose(observed, expected)
+            observed = funm_multiply_krylov(expm, linop, b, assume_a = 'her')
+            assert_allclose(observed, expected)
 
     def test_funm_multiply_krylov_diag_matrix(self):
+        dtype = np.float64
         rng = np.random.default_rng(1738151906092735)
-        b = rng.standard_normal(5)
-        A = scipy.sparse.diags([1, 2, 3, 4, 5], dtype=float)
+        b = rng.standard_normal(5, dtype=dtype)
+        u = np.array([1, 2, 3, 4, 5], dtype=dtype)
+        A = scipy.sparse.diags(u, dtype=dtype)
+        linop = scipy.sparse.linalg.LinearOperator(shape=(5, 5), dtype=dtype,
+                                                   matvec=lambda v: u * v)
 
-        expected = np.exp([1, 2, 3, 4, 5]) * b
-        observed = funm_multiply_krylov(expm, A, b)
-        assert_allclose(observed, expected)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            expected = np.exp(u) * b
+            observed = funm_multiply_krylov(expm, A, b)
+            assert_allclose(observed, expected)
+            observed = funm_multiply_krylov(expm, linop, b)
+            assert_allclose(observed, expected)
+            observed = funm_multiply_krylov(expm, A, b, assume_a = 'her')
+            assert_allclose(observed, expected)
+            observed = funm_multiply_krylov(expm, linop, b, assume_a = 'her')
+            assert_allclose(observed, expected)
 
     def test_funm_multiply_krylov_breakdown(self):
         rng = np.random.default_rng(1738151906092735)
@@ -145,10 +169,14 @@ class TestKrylovFunmv:
                       [0, 0, 0, 0, -1, 0, -0, -0, -0, -0, -1]], dtype = float)
         b = rng.standard_normal(A.shape[0])
 
-        fA = expm(A)
-        expected = fA @ b
-        observed = funm_multiply_krylov(expm, A, b, restart_every_m = 40)
-        assert_allclose(observed, expected)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            fA = expm(A)
+            expected = fA @ b
+            observed = funm_multiply_krylov(expm, A, b, restart_every_m = 40)
+            assert_allclose(observed, expected)
+            observed = funm_multiply_krylov(expm, A, b, restart_every_m = 5)
+            assert_allclose(observed, expected)
 
     def test_funm_multiply_krylov_invalid_input(self):
             A = np.array([[1, 2], [3, 4]])  # Non-hermitian matrix
