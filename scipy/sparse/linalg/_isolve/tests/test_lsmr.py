@@ -39,12 +39,12 @@ class TestLSMR:
 
     def testIdentityACase1(self):
         A = eye(self.n)
-        xtrue = zeros((self.n, 1))
+        xtrue = zeros((self.n,))
         self.assertCompatibleSystem(A, xtrue)
 
     def testIdentityACase2(self):
         A = eye(self.n)
-        xtrue = ones((self.n,1))
+        xtrue = ones((self.n,))
         self.assertCompatibleSystem(A, xtrue)
 
     def testIdentityACase3(self):

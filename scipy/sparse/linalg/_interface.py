@@ -42,6 +42,7 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 ``LinearOperator`` instances.
 """
 
+import os
 import types
 import warnings
 
@@ -262,7 +263,7 @@ class LinearOperator:
         # NOTE: we can't use `matvec` directly (for the unbatched case)
         # as we can't assume that user-defined `matvec` functions support batching.
         return np.concat(
-            [self.matvec(X[..., :, i, np.newaxis]) for i in range(X.shape[-1])],
+            [self.matvec(X[..., :, i])[..., np.newaxis] for i in range(X.shape[-1])],
             axis=-1
         )
 
@@ -295,13 +296,12 @@ class LinearOperator:
         x : {matrix, ndarray}
             An array with shape ``(..., N)`` representing a row vector
             (or batch of row vectors),
-            or an array with shape ``(..., N, 1)`` representing a column vector
-            (or batch of column vectors).
+            or an array with shape ``(N, 1)`` representing a column vector.
 
         Returns
         -------
         y : {matrix, ndarray}
-            An array with shape ``(..., M)`` or ``(..., M, 1)`` depending
+            An array with shape ``(..., M)`` or ``(M, 1)`` depending
             on the type and shape of `x`.
 
         Notes
@@ -311,9 +311,11 @@ class LinearOperator:
         
         If ``x.shape[-1] == N``, `x` is interpreted as a row vector
         (or batch of row vectors if there are leading batch dimensions).
-        Otherwise, if ``x.shape[-2:] == (N, 1)``,
-        `x` is interpreted as a column vector
-        (or batch of column vectors if there are leading batch dimensions).
+        Otherwise, if ``x.shape[-2] == (N, 1)``,
+        `x` is interpreted as a column vector.
+        
+        TODO: FutureWarning in docs
+        TODO: adapt other methods accordingly
 
         """
 
@@ -323,14 +325,24 @@ class LinearOperator:
 
         x_broadcast_dims: tuple[int, ...] = ()
         row_vector: bool = False
+        if column_vector := x.shape == (N, 1):
+            msg = (
+                "In the future, calling `matvec` on 'column vectors' of shape "
+                "`(N, 1)` will be deprecated. Please call `matmat` instead "
+                "for identical behaviour."
+            )
+            warnings.warn(
+                msg, FutureWarning,
+                skip_file_prefixes=(os.path.dirname(__file__),)
+            )
+            x_broadcast_dims = x.shape[:-2]
         if x.ndim >= 1 and (row_vector := x.shape[-1] == N):
             x_broadcast_dims = x.shape[:-1]
-        if column_vector := x.shape[-2:] == (N, 1):
-            x_broadcast_dims = x.shape[:-2]
+
         if not (row_vector or column_vector):
             msg = (
                 f"Dimension mismatch: `x` must have a shape ending in "
-                f"`({N},)` or `({N}, 1)`. Given shape: {x.shape}"
+                f"`({N},)`, or shape `({N}, 1)`. Given shape: {x.shape}"
             )
             raise ValueError(msg)
 
@@ -578,8 +590,8 @@ class LinearOperator:
         Parameters
         ----------
         x : array_like or `LinearOperator` or scalar
-            Array-like input will be interpreted as a dense column vector,
-            matrix, or row vector (or batch of such vectors or matrices)
+            Array-like input will be interpreted as a 1-D row vector or
+            2-D matrix (or batch of matrices)
             depending on its shape. See the Returns section for details.
 
         Returns
@@ -590,32 +602,23 @@ class LinearOperator:
             - For scalar input, a lazily scaled operator is returned.
 
             - Otherwise, the input is expected to take the form of a dense
-              vector or matrix (or batch of such vectors or matrices),
+              1-D vector or 2-D matrix (or batch of matrices),
               interpreted as follows
               (where ``self`` is an ``M`` by ``N`` linear operator):
                 
-              - If `x` has shape ``(N, 1)``
+              - If `x` has shape ``(N,)``
                 it is interpreted as a column vector
                 and `matvec` is called.
-              - Otherwise, if `x` has shape ``(..., N, K)`` for some
+              - If `x` has shape ``(..., N, K)`` for some
                 integer ``K``, it is interpreted as a matrix
                 (or batch of matrices if there are batch dimensions)
                 and `matmat` is called.
-              - Otherwise, if `x` has shape ``(..., N)``,
-                it is interpreted as a row vector
-                (or batch of row vectors if there are batch dimensions)
-                and `matvec` is called.
-            
-              .. warning ::
-                
-                  `x` of shape ``(..., N, N)`` will be interpreted as
-                  a batch of matrices of shape ``(N, N)``.
-                  If `x` is intended to be a batch of row vectors of
-                  where the batch shape happens to end in ``N``, please
-                  use the `.matvec` method instead.
 
         Notes
         -----
+        To perform matrix-vector multiplication on batches of vectors,
+        use `matvec`.
+        
         For clarity, it is recommended to use the `matvec` or
         `matmat` methods directly instead of this method
         when interacting with dense vectors and matrices.
@@ -639,30 +642,22 @@ class LinearOperator:
                 
             N = self.shape[-1]
     
-            # maintain column vector backwards-compatibility in 2-D case
-            column_vector = x.shape == (N, 1)
-            # otherwise, treat input as a matrix if the shape fits
-            matrix = x.ndim >= 2 and x.shape[-2] == N
-            # otherwise, treat as a row-vector
-            row_vector = x.shape[-1] == N
-            
-            # NOTE: for `x.ndim > 2`, `np.dot(a, b)` implements different semantics:
-            # sum product over the last axis of `a` and the second-to-last axis of `b`.
+            # treat 1-D input as a vector and >1-D input as a matrix, if the shape fits
+            vector = x.shape == (N,)
+            matrix = x.ndim >=2 and x.shape[-2] == N
 
-            if not (row_vector or column_vector or matrix):
+            if not (vector or matrix):
                 msg = (
-                    f"Dimension mismatch: `x` must have a shape ending in "
-                    f"`({N},)` or `({N}, 1)` or `({N}, K)` for some integer `K`. "
+                    f"Dimension mismatch: `x` must have shape `({N},)` "
+                    f"or a shape ending in `({N}, K)` for some integer `K`. "
                     f"Given shape: {x.shape}"
                 )
                 raise ValueError(msg)
             
-            if column_vector:
+            if vector:
                 return self.matvec(x)
             elif matrix:
                 return self.matmat(x)
-            elif row_vector:
-                return self.matvec(x)
 
     def __matmul__(self, other):
         """Matrix Multiplication.
@@ -695,6 +690,7 @@ class LinearOperator:
         """
         return self.rdot(x)
 
+    # TODO: decide on rdot API and update docs
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
         
@@ -766,24 +762,21 @@ class LinearOperator:
 
             M = self.shape[-2]
 
-            # treat 1-D input as a row-vector
-            row_vector = x.shape == (M,)
-            # maintain column vector backwards-compatibility in 2-D case
-            column_vector = x.shape == (1, M)
-            # otherwise, treat input as a matrix if the shape fits
+            # treat 1-D input as a vector and 2-D input as a matrix, if the shape fits
+            vector = x.shape == (M,)
             matrix = x.ndim == 2 and x.shape[-1] == M
 
-            if not (row_vector or column_vector or matrix):
+            if not (vector or matrix):
                 msg = (
-                    f"Dimension mismatch: `x` must have shape `({M},)`, "
-                    f"`(1, {M})`, or `(K, {M})` for some integer `K`. "
+                    f"Dimension mismatch: `x` must have shape `({M},)` "
+                    f"or `(K, {M})` for some integer `K`. "
                     f"Given shape: {x.shape}"
                 )
                 raise ValueError(msg)
-
+            
             # We use transpose instead of rmatvec/rmatmat to avoid
             # unnecessary complex conjugation if possible.
-            if row_vector or column_vector:
+            if vector:
                 return self.T.matvec(x.T).T
             elif matrix:
                 return self.T.matmat(x.T).T

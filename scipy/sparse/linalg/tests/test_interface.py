@@ -1,10 +1,12 @@
 """Test functions for the sparse.linalg._interface module
 """
 
+import contextlib
 from functools import partial
 from itertools import product
 import operator
 from typing import NamedTuple, Literal
+
 import pytest
 from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal, assert_allclose
@@ -73,13 +75,15 @@ class TestLinearOperator:
             assert_(A.args == ())
 
             assert_equal(A.matvec(np.array([1,2,3])), [14,32])
-            assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
+            with pytest.warns(FutureWarning, match="column vectors"):
+                assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
             assert_equal(A @ np.array([1,2,3]), [14,32])
             assert_equal(A @ np.array([[1],[2],[3]]), [[14],[32]])
             assert_equal(A.dot(np.array([1,2,3])), [14,32])
             assert_equal(A.dot(np.array([[1],[2],[3]])), [[14],[32]])
 
-            assert_equal(A.matvec(matrix([[1],[2],[3]])), [[14],[32]])
+            with pytest.warns(FutureWarning, match="column vectors"):
+                assert_equal(A.matvec(matrix([[1],[2],[3]])), [[14],[32]])
             assert_equal(A @ matrix([[1],[2],[3]]), [[14],[32]])
             assert_equal(A.dot(matrix([[1],[2],[3]])), [[14],[32]])
 
@@ -127,13 +131,15 @@ class TestLinearOperator:
             assert_(len(z.args) == 2 and z.args[0] is A and z.args[1] == 2)
 
             assert_(isinstance(A.matvec([1, 2, 3]), np.ndarray))
-            assert_(isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray))
+            with pytest.warns(FutureWarning, match="column vectors"):
+                assert_(isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray))
             assert_(isinstance(A @ np.array([1,2,3]), np.ndarray))
             assert_(isinstance(A @ np.array([[1],[2],[3]]), np.ndarray))
             assert_(isinstance(A.dot(np.array([1,2,3])), np.ndarray))
             assert_(isinstance(A.dot(np.array([[1],[2],[3]])), np.ndarray))
 
-            assert_(isinstance(A.matvec(matrix([[1],[2],[3]])), np.ndarray))
+            with pytest.warns(FutureWarning, match="column vectors"):
+                assert_(isinstance(A.matvec(matrix([[1],[2],[3]])), np.ndarray))
             assert_(isinstance(A @ matrix([[1],[2],[3]]), np.ndarray))
             assert_(isinstance(A.dot(matrix([[1],[2],[3]])), np.ndarray))
 
@@ -285,7 +291,6 @@ class TestDotTests:
 
     def check_matvec(
         self, op: interface.LinearOperator, data_dtype: str, complex_data: bool = False,
-        check_operators: bool = False, check_dot: bool = False
     ):
         """
         This check verifies the equivalence of the forward and adjoint computation,
@@ -327,20 +332,6 @@ class TestDotTests:
 
         op_u = op.matvec(u)
         opH_v = op.rmatvec(v)
-
-        if check_operators:
-            if len(u_shape) < 2 or u_shape[-2] != N: # interpreted as a batch of vectors
-                assert_allclose(op_u, op * u)
-                assert_allclose(op_u, op @ u)
-            if len(v_shape) < 2 or v_shape[-2] != M: # interpreted as a batch of vectors
-                assert_allclose(opH_v, op.H * v)
-                assert_allclose(opH_v, op.H @ v)
-
-        if check_dot:
-            if len(u_shape) < 2 or u_shape[-2] != N: # interpreted as a batch of vectors
-                assert_allclose(op_u, op.dot(u))
-            if len(v_shape) < 2 or v_shape[-2] != M: # interpreted as a batch of vectors
-                assert_allclose(opH_v, op.H.dot(v))
 
         op_u_H_v = np.vecdot(op_u, v, axis=-1)
         uH_opH_v = np.vecdot(u, opH_v, axis=-1)
@@ -508,14 +499,8 @@ class TestDotTests:
         op = interface.LinearOperator(
             shape=shape, dtype=args.op_dtype, matvec=scale, rmatvec=r_scale
         )
-        self.check_matvec(
-            op, data_dtype=args.data_dtype, complex_data=args.complex,
-            check_operators=True, check_dot=True
-        )
-        self.check_matmat(
-            op, data_dtype=args.data_dtype, complex_data=args.complex,
-            check_operators=True, check_dot=True
-        )
+        self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
+        self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
 
     # TODO: batch shape (0,)
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
@@ -555,14 +540,8 @@ class TestDotTests:
         dtype = "float64"
         op = RotOp(shape=(*batch_shape, 2, 2), dtype=dtype, theta=theta)
 
-        self.check_matvec(
-            op, data_dtype=dtype, complex_data=False,
-            check_operators=True, check_dot=True
-        )
-        self.check_matmat(
-            op, data_dtype=dtype, complex_data=False,
-            check_operators=True, check_dot=True
-        )
+        self.check_matvec(op, data_dtype=dtype, complex_data=False)
+        self.check_matmat(op, data_dtype=dtype, complex_data=False)
 
     # TODO: batch shape (0,)
     @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
@@ -685,17 +664,30 @@ class TestAsLinearOperator:
             x2 = np.array([[1, 4], [2, 5], [3, 6]])
 
             for x in xs:
-                assert_equal(A.matvec(x), A_array.dot(x))
+                ctx = (
+                    pytest.warns(FutureWarning, match="column vectors")
+                    if x.shape[-1] == 1
+                    else contextlib.nullcontext()
+                )
+                with ctx:
+                    assert_equal(A.matvec(x), A_array.dot(x))
+
                 assert_equal(A @ x, A_array.dot(x))
 
             assert_equal(A.matmat(x2), A_array.dot(x2))
             assert_equal(A @ x2, A_array.dot(x2))
 
             for y in ys:
-                assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
-                assert_equal(A.T.matvec(y), A_array.T.dot(y))
-                assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
-                assert_equal(A.adjoint().matvec(y), A_array.T.conj().dot(y))
+                ctx = (
+                    pytest.warns(FutureWarning, match="column vectors")
+                    if y.shape[-1] == 1
+                    else contextlib.nullcontext()
+                )
+                with ctx:
+                    assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
+                    assert_equal(A.T.matvec(y), A_array.T.dot(y))
+                    assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
+                    assert_equal(A.adjoint().matvec(y), A_array.T.conj().dot(y))
 
             for y in ys:
                 if y.ndim < 2:
