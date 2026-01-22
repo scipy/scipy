@@ -8,7 +8,7 @@ set -o errexit
 REPO_URL="https://github.com/libprima/prima"
 COMMIT_HASH="6fbf15d9b4aac20d2e3ee5b3fcb41f0ca17c4330"
 
-# XXX: run this from the repo top level like `./tools/vendor_pyprima.sh`
+# XXX: run this from the repo top level like `./tools/vendoring/vendor_pyprima.sh`
 ROOT_DIR="scipy/_lib/pyprima"
 
 rm -rf $ROOT_DIR

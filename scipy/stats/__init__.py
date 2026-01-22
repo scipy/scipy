@@ -460,10 +460,6 @@ tests) are listed above.
    combine_pvalues
    false_discovery_control
 
-
-The following functions are related to the tests above but do not belong in the
-above categories.
-
 Random Variables
 ================
 
@@ -482,32 +478,15 @@ Random Variables
    exp
    log
 
-Quasi-Monte Carlo
-=================
-
-.. toctree::
-   :maxdepth: 4
-
-   stats.qmc
-
-Contingency Tables
-==================
-
-.. toctree::
-   :maxdepth: 4
-
-   stats.contingency
-
-Masked statistics functions
-===========================
-
-.. toctree::
-
-   stats.mstats
-
-
 Other statistical functionality
 ===============================
+.. toctree::
+   :maxdepth: 1
+
+   stats.qmc
+   stats.contingency
+   stats.mstats
+   stats.sampling
 
 Transformations
 ---------------
@@ -538,14 +517,6 @@ Statistical distances
    wasserstein_distance
    wasserstein_distance_nd
    energy_distance
-
-Sampling
---------
-
-.. toctree::
-   :maxdepth: 4
-
-   stats.sampling
 
 Fitting / Survival Analysis
 ---------------------------

@@ -247,7 +247,7 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
 
 
 @xp_capabilities(cpu_only=True, exceptions=['jax.numpy'],
-    skip_backends=[('dask.array', 'not supported by rankdata (take_along_axis)')]
+    skip_backends=[('dask.array', 'not supported by rankdata (take_along_axis)')],
 )
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)

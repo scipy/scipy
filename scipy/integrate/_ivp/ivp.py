@@ -200,35 +200,35 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     method : string or `OdeSolver`, optional
         Integration method to use:
 
-        * 'RK45' (default): Explicit Runge-Kutta method of order 5(4) [1]_.
-            The error is controlled assuming accuracy of the fourth-order
-            method, but steps are taken using the fifth-order accurate
-            formula (local extrapolation is done). A quartic interpolation
-            polynomial is used for the dense output [2]_. Can be applied in
-            the complex domain.
-        * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
-            is controlled assuming accuracy of the second-order method, but
-            steps are taken using the third-order accurate formula (local
-            extrapolation is done). A cubic Hermite polynomial is used for the
-            dense output. Can be applied in the complex domain.
-        * 'DOP853': Explicit Runge-Kutta method of order 8 [13]_.
-            Python implementation of the "DOP853" algorithm originally
-            written in Fortran [14]_. A 7-th order interpolation polynomial
-            accurate to 7-th order is used for the dense output.
-            Can be applied in the complex domain.
-        * 'Radau': Implicit Runge-Kutta method of the Radau IIA family of
-            order 5 [4]_. The error is controlled with a third-order accurate
-            embedded formula. A cubic polynomial which satisfies the
-            collocation conditions is used for the dense output.
-        * 'BDF': Implicit multi-step variable-order (1 to 5) method based
-            on a backward differentiation formula for the derivative
-            approximation [5]_. The implementation follows the one described
-            in [6]_. A quasi-constant step scheme is used and accuracy is
-            enhanced using the NDF modification. Can be applied in the
-            complex domain.
-        * 'LSODA': Adams/BDF method with automatic stiffness detection and
-            switching [7]_, [8]_. This is a wrapper of the Fortran solver
-            from ODEPACK.
+        * **'RK45' (default)**: Explicit Runge-Kutta method of order 5(4) [1]_.
+          The error is controlled assuming accuracy of the fourth-order
+          method, but steps are taken using the fifth-order accurate
+          formula (local extrapolation is done). A quartic interpolation
+          polynomial is used for the dense output [2]_. Can be applied in
+          the complex domain.
+        * **'RK23'**: Explicit Runge-Kutta method of order 3(2) [3]_. The error
+          is controlled assuming accuracy of the second-order method, but
+          steps are taken using the third-order accurate formula (local
+          extrapolation is done). A cubic Hermite polynomial is used for the
+          dense output. Can be applied in the complex domain.
+        * **'DOP853'**: Explicit Runge-Kutta method of order 8 [13]_.
+          Python implementation of the "DOP853" algorithm originally
+          written in Fortran [14]_. A 7-th order interpolation polynomial
+          accurate to 7-th order is used for the dense output.
+          Can be applied in the complex domain.
+        * **'Radau'**: Implicit Runge-Kutta method of the Radau IIA family of
+          order 5 [4]_. The error is controlled with a third-order accurate
+          embedded formula. A cubic polynomial which satisfies the
+          collocation conditions is used for the dense output.
+        * **'BDF'**: Implicit multi-step variable-order (1 to 5) method based
+          on a backward differentiation formula for the derivative
+          approximation [5]_. The implementation follows the one described
+          in [6]_. A quasi-constant step scheme is used and accuracy is
+          enhanced using the NDF modification. Can be applied in the
+          complex domain.
+        * **'LSODA'**: Adams/BDF method with automatic stiffness detection and
+          switching [7]_, [8]_. This is a wrapper of the Fortran solver
+          from ODEPACK.
 
         Explicit Runge-Kutta methods ('RK23', 'RK45', 'DOP853') should be used
         for non-stiff problems and implicit methods ('Radau', 'BDF') for
@@ -326,15 +326,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ``d f_i / d y_j``.  There are three ways to define the Jacobian:
 
         * If array_like or sparse_matrix, the Jacobian is assumed to
-            be constant. Not supported by 'LSODA'.
+          be constant. Not supported by 'LSODA'.
         * If callable, the Jacobian is assumed to depend on both
-            t and y; it will be called as ``jac(t, y)``, as necessary.
-            Additional arguments have to be passed if ``args`` is
-            used (see documentation of ``args`` argument).
-            For 'Radau' and 'BDF' methods, the return value might be a
-            sparse matrix.
+          t and y; it will be called as ``jac(t, y)``, as necessary.
+          Additional arguments have to be passed if ``args`` is
+          used (see documentation of ``args`` argument).
+          For 'Radau' and 'BDF' methods, the return value might be a
+          sparse matrix.
         * If None (default), the Jacobian will be approximated by
-            finite differences.
+          finite differences.
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
@@ -363,38 +363,40 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     Returns
     -------
-    Bunch object with the following fields defined:
-    t : ndarray, shape (n_points,)
-        Time points.
-    y : ndarray, shape (n, n_points)
-        Values of the solution at `t`.
-    sol : `OdeSolution` or None
-        Found solution as `OdeSolution` instance; None if `dense_output` was
-        set to False.
-    t_events : list of ndarray or None
-        Contains for each event type a list of arrays at which an event of
-        that type event was detected. None if `events` was None.
-    y_events : list of ndarray or None
-        For each value of `t_events`, the corresponding value of the solution.
-        None if `events` was None.
-    nfev : int
-        Number of evaluations of the right-hand side.
-    njev : int
-        Number of evaluations of the Jacobian.
-    nlu : int
-        Number of LU decompositions.
-    status : int
-        Reason for algorithm termination:
+    result : OdeResult
+        Bunch object with the following fields defined:
 
-        * -1: Integration step failed.
-        *  0: The solver successfully reached the end of `tspan`.
-        *  1: A termination event occurred.
+        t : ndarray, shape (n_points,)
+            Time points.
+        y : ndarray, shape (n, n_points)
+            Values of the solution at `t`.
+        sol : `OdeSolution` or None
+            Found solution as `OdeSolution` instance; None if `dense_output` was
+            set to False.
+        t_events : list of ndarray or None
+            Contains for each event type a list of arrays at which an event of
+            that type event was detected. None if `events` was None.
+        y_events : list of ndarray or None
+            For each value of `t_events`, the corresponding value of the solution.
+            None if `events` was None.
+        nfev : int
+            Number of evaluations of the right-hand side.
+        njev : int
+            Number of evaluations of the Jacobian.
+        nlu : int
+            Number of LU decompositions.
+        status : int
+            Reason for algorithm termination:
 
-    message : string
-        Human-readable description of the termination reason.
-    success : bool
-        True if the solver reached the interval end or a termination event
-        occurred (``status >= 0``).
+            * -1: Integration step failed.
+            *  0: The solver successfully reached the end of `tspan`.
+            *  1: A termination event occurred.
+
+        message : string
+            Human-readable description of the termination reason.
+        success : bool
+            True if the solver reached the interval end or a termination event
+            occurred (``status >= 0``).
 
     References
     ----------

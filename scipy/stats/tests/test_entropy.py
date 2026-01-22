@@ -10,7 +10,7 @@ from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
-
+lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 @make_xp_test_case(stats.entropy)
@@ -21,7 +21,7 @@ class TestEntropy:
         qk = xp.asarray([0.1, 0.25, 0.65])
         eself = stats.entropy(pk, pk)
         edouble = stats.entropy(pk, qk)
-        xp_assert_equal(eself, xp.asarray(0.))
+        xp_assert_close(eself, xp.asarray(0.), atol=1e-16)
         xp_assert_less(-edouble, xp.asarray(0.))
 
     def test_entropy_base(self, xp):
@@ -102,8 +102,8 @@ class TestEntropy:
         x = xp.asarray(rng.random(3))
         y = xp.asarray(rng.random((2, 1)))
         res = stats.entropy(x, y, axis=-1)
-        xp_assert_equal(res[0], stats.entropy(x, y[0, ...]))
-        xp_assert_equal(res[1], stats.entropy(x, y[1, ...]))
+        xp_assert_close(res[0], stats.entropy(x, y[0, ...]))
+        xp_assert_close(res[1], stats.entropy(x, y[1, ...]))
 
     def test_entropy_shape_mismatch(self, xp):
         x = xp.ones((10, 1, 12))

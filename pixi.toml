@@ -19,6 +19,11 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
 solve-group = "default"
 
+[environments.smoke-docs]
+# tasks: smoke-docs
+features = ["run-deps", "test-deps", "smoke-docs"]
+solve-group = "default"
+
 [environments.docs]
 # tasks: docs
 features = ["docs"]
@@ -217,6 +222,22 @@ depends-on = "build"
 env.SCIPY_XSLOW = "1"
 description = "Test SciPy (full and x-slow)"
 
+[feature.test-tasks.tasks.check]
+cmd = "spin check --no-build"
+depends-on = "build"
+description = "Run SciPy-specific checks"
+
+
+[feature.smoke-docs.dependencies]
+hypothesis = "*"
+matplotlib = "*"
+scipy-doctest = "*"
+
+[feature.smoke-docs.tasks.smoke-docs]
+cmd = "spin smoke-docs --no-build"
+depends-on = "build"
+description = "Run doctests"
+
 
 ### Type Stubs ###
 
@@ -227,7 +248,7 @@ scipy-stubs = "*"
 ### Documentation ###
 
 [feature.docs.dependencies]
-sphinx = "*"
+sphinx = "<8.2.0"
 intersphinx-registry = "*"
 pydata-sphinx-theme = "*"
 sphinx-copybutton = "*"
@@ -241,6 +262,7 @@ jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
 scipy-doctest = "*"
 linkify-it-py = "*"
+make = ">=4.4.1,<5"
 
 
 [feature.docs.tasks.docs]

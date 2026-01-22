@@ -727,7 +727,7 @@ def _calc_oa_lens(s1, s2):
     in1_step : int
         The size of each step for the first array.
     in2_step : int
-        The size of each step for the first array.
+        The size of each step for the second array.
 
     """
     # Set up the arguments for the conventional FFT approach.
@@ -3039,9 +3039,9 @@ def unique_roots(p, tol=1e-3, rtype='min'):
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          - 'max', 'maximum': pick the maximum of those roots
-          - 'min', 'minimum': pick the minimum of those roots
-          - 'avg', 'mean': take the average of those roots
+        - 'max', 'maximum': pick the maximum of those roots
+        - 'min', 'minimum': pick the minimum of those roots
+        - 'avg', 'mean': take the average of those roots
 
         When finding minimum or maximum among complex roots they are compared
         first by the real part and then by the imaginary part.
@@ -4195,7 +4195,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    overwrite_data: bool, optional
+    overwrite_data : bool, optional
         If True, allow in place detrending and avoid a copy. Default is
         False. In place modification applies only if ``type == 'linear'``
         and `data` is of the floating point dtype ``float32``, ``float64``,

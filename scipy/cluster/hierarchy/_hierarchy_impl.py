@@ -1,95 +1,3 @@
-"""
-Hierarchical clustering (:mod:`scipy.cluster.hierarchy`)
-========================================================
-
-.. currentmodule:: scipy.cluster.hierarchy
-
-These functions cut hierarchical clusterings into flat clusterings
-or find the roots of the forest formed by a cut by providing the flat
-cluster ids of each observation.
-
-.. autosummary::
-   :toctree: generated/
-
-   fcluster
-   fclusterdata
-   leaders
-
-These are routines for agglomerative clustering.
-
-.. autosummary::
-   :toctree: generated/
-
-   linkage
-   single
-   complete
-   average
-   weighted
-   centroid
-   median
-   ward
-
-These routines compute statistics on hierarchies.
-
-.. autosummary::
-   :toctree: generated/
-
-   cophenet
-   from_mlab_linkage
-   inconsistent
-   maxinconsts
-   maxdists
-   maxRstat
-   to_mlab_linkage
-
-Routines for visualizing flat clusters.
-
-.. autosummary::
-   :toctree: generated/
-
-   dendrogram
-
-These are data structures and routines for representing hierarchies as
-tree objects.
-
-.. autosummary::
-   :toctree: generated/
-
-   ClusterNode
-   leaves_list
-   to_tree
-   cut_tree
-   optimal_leaf_ordering
-
-These are predicates for checking the validity of linkage and
-inconsistency matrices as well as for checking isomorphism of two
-flat cluster assignments.
-
-.. autosummary::
-   :toctree: generated/
-
-   is_valid_im
-   is_valid_linkage
-   is_isomorphic
-   is_monotonic
-   correspond
-   num_obs_linkage
-
-Utility routines for plotting:
-
-.. autosummary::
-   :toctree: generated/
-
-   set_link_color_palette
-
-Utility classes:
-
-.. autosummary::
-   :toctree: generated/
-
-   DisjointSet -- data structure for incremental connectivity queries
-
-"""
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
 # hierarchy.py (derived from cluster.py, http://scipy-cluster.googlecode.com)
@@ -144,7 +52,8 @@ _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
 _EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
 
-__all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
+__all__ = ['ClusterNode', 'ClusterWarning', 'DisjointSet',
+           'average', 'centroid', 'complete',
            'cophenet', 'correspond', 'cut_tree', 'dendrogram', 'fcluster',
            'fclusterdata', 'from_mlab_linkage', 'inconsistent',
            'is_isomorphic', 'is_monotonic', 'is_valid_im', 'is_valid_linkage',
@@ -155,6 +64,9 @@ __all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
 
 
 class ClusterWarning(UserWarning):
+    """
+    A ``UserWarning`` raised during clustering.
+    """
     pass
 
 
@@ -162,7 +74,7 @@ def _warning(s):
     warnings.warn(f'scipy.cluster: {s}', ClusterWarning, stacklevel=3)
 
 
-def int_floor(arr, xp):
+def _int_floor(arr, xp):
     # array_api_strict is strict about not allowing `int()` on a float array.
     # That's typically not needed, here it is - so explicitly convert
     return int(xp.asarray(arr, dtype=xp.int64))
@@ -615,19 +527,16 @@ def median(y):
     See `linkage` for more information on the return structure
     and algorithm.
 
-     The following are common calling conventions:
+    The following are common calling conventions:
 
-     1. ``Z = median(y)``
-
-        Performs median/WPGMC linkage on the condensed distance matrix
-        ``y``.  See ``linkage`` for more information on the return
-        structure and algorithm.
-
-     2. ``Z = median(X)``
-
-        Performs median/WPGMC linkage on the observation matrix ``X``
-        using Euclidean distance as the distance metric. See `linkage`
-        for more information on the return structure and algorithm.
+    1. ``Z = median(y)``:
+       Performs median/WPGMC linkage on the condensed distance matrix
+       ``y``.  See ``linkage`` for more information on the return
+       structure and algorithm.
+    2. ``Z = median(X)``:
+       Performs median/WPGMC linkage on the observation matrix ``X``
+       using Euclidean distance as the distance metric. See `linkage`
+       for more information on the return structure and algorithm.
 
     Parameters
     ----------
@@ -861,81 +770,75 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     The following are methods for calculating the distance between the
     newly formed cluster :math:`u` and each :math:`v`.
 
-      * method='single' assigns
+    * method='single' assigns
 
-        .. math::
-           d(u,v) = \\min(dist(u[i],v[j]))
+      .. math::
+          d(u,v) = \\min(dist(u[i],v[j]))
 
-        for all points :math:`i` in cluster :math:`u` and
-        :math:`j` in cluster :math:`v`. This is also known as the
-        Nearest Point Algorithm.
+      for all points :math:`i` in cluster :math:`u` and
+      :math:`j` in cluster :math:`v`. This is also known as the
+      Nearest Point Algorithm.
+    * method='complete' assigns
 
-      * method='complete' assigns
+      .. math::
+          d(u, v) = \\max(dist(u[i],v[j]))
 
-        .. math::
-           d(u, v) = \\max(dist(u[i],v[j]))
+      for all points :math:`i` in cluster u and :math:`j` in
+      cluster :math:`v`. This is also known by the Farthest Point
+      Algorithm or Voor Hees Algorithm.
+    * method='average' assigns
 
-        for all points :math:`i` in cluster u and :math:`j` in
-        cluster :math:`v`. This is also known by the Farthest Point
-        Algorithm or Voor Hees Algorithm.
+      .. math::
+          d(u,v) = \\sum_{ij} \\frac{d(u[i], v[j])}
+                                  {(|u|*|v|)}
 
-      * method='average' assigns
+      for all points :math:`i` and :math:`j` where :math:`|u|`
+      and :math:`|v|` are the cardinalities of clusters :math:`u`
+      and :math:`v`, respectively. This is also called the UPGMA
+      algorithm.
+    * method='weighted' assigns
 
-        .. math::
-           d(u,v) = \\sum_{ij} \\frac{d(u[i], v[j])}
-                                   {(|u|*|v|)}
+      .. math::
+          d(u,v) = (dist(s,v) + dist(t,v))/2
 
-        for all points :math:`i` and :math:`j` where :math:`|u|`
-        and :math:`|v|` are the cardinalities of clusters :math:`u`
-        and :math:`v`, respectively. This is also called the UPGMA
-        algorithm.
+      where cluster u was formed with cluster s and t and v
+      is a remaining cluster in the forest (also called WPGMA).
+    * method='centroid' assigns
 
-      * method='weighted' assigns
+      .. math::
+          dist(s,t) = ||c_s-c_t||_2
 
-        .. math::
-           d(u,v) = (dist(s,v) + dist(t,v))/2
+      where :math:`c_s` and :math:`c_t` are the centroids of
+      clusters :math:`s` and :math:`t`, respectively. When two
+      clusters :math:`s` and :math:`t` are combined into a new
+      cluster :math:`u`, the new centroid is computed over all the
+      original objects in clusters :math:`s` and :math:`t`. The
+      distance then becomes the Euclidean distance between the
+      centroid of :math:`u` and the centroid of a remaining cluster
+      :math:`v` in the forest. This is also known as the UPGMC
+      algorithm.
+    * method='median' assigns :math:`d(s,t)` like the ``centroid``
+      method. When two clusters :math:`s` and :math:`t` are combined
+      into a new cluster :math:`u`, the average of centroids s and t
+      give the new centroid :math:`u`. This is also known as the
+      WPGMC algorithm.
+    * method='ward' uses the Ward variance minimization algorithm.
+      The new entry :math:`d(u,v)` is computed as follows,
 
-        where cluster u was formed with cluster s and t and v
-        is a remaining cluster in the forest (also called WPGMA).
+      .. math::
 
-      * method='centroid' assigns
+          d(u,v) = \\sqrt{\\frac{|v|+|s|}
+                              {T}d(v,s)^2
+                      + \\frac{|v|+|t|}
+                              {T}d(v,t)^2
+                      - \\frac{|v|}
+                              {T}d(s,t)^2}
 
-        .. math::
-           dist(s,t) = ||c_s-c_t||_2
-
-        where :math:`c_s` and :math:`c_t` are the centroids of
-        clusters :math:`s` and :math:`t`, respectively. When two
-        clusters :math:`s` and :math:`t` are combined into a new
-        cluster :math:`u`, the new centroid is computed over all the
-        original objects in clusters :math:`s` and :math:`t`. The
-        distance then becomes the Euclidean distance between the
-        centroid of :math:`u` and the centroid of a remaining cluster
-        :math:`v` in the forest. This is also known as the UPGMC
-        algorithm.
-
-      * method='median' assigns :math:`d(s,t)` like the ``centroid``
-        method. When two clusters :math:`s` and :math:`t` are combined
-        into a new cluster :math:`u`, the average of centroids s and t
-        give the new centroid :math:`u`. This is also known as the
-        WPGMC algorithm.
-
-      * method='ward' uses the Ward variance minimization algorithm.
-        The new entry :math:`d(u,v)` is computed as follows,
-
-        .. math::
-
-           d(u,v) = \\sqrt{\\frac{|v|+|s|}
-                               {T}d(v,s)^2
-                        + \\frac{|v|+|t|}
-                               {T}d(v,t)^2
-                        - \\frac{|v|}
-                               {T}d(s,t)^2}
-
-        where :math:`u` is the newly joined cluster consisting of
-        clusters :math:`s` and :math:`t`, :math:`v` is an unused
-        cluster in the forest, :math:`T=|v|+|s|+|t|`, and
-        :math:`|*|` is the cardinality of its argument. This is also
-        known as the incremental algorithm.
+      where :math:`u` is the newly joined cluster consisting of
+      clusters :math:`s` and :math:`t`, :math:`v` is an unused
+      cluster in the forest, :math:`T=|v|+|s|+|t|`, and
+      :math:`|*|` is the cardinality of its argument. This is also
+      known as the incremental algorithm.
 
     Warning: When the minimum distance pair in the forest is chosen, there
     may be two or more pairs with the same minimum distance. This
@@ -1052,7 +955,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     def cy_linkage(y, validate):
         if validate and not np.all(np.isfinite(y)):
             raise ValueError("The condensed distance matrix must contain only "
-                            "finite values.")            
+                            "finite values.")
 
         if method == 'single':
             return _hierarchy.mst_single_linkage(y, n)
@@ -1472,8 +1375,8 @@ def to_tree(Z, rd=False):
     for i in range(Z.shape[0]):
         row = Z[i, :]
 
-        fi = int_floor(row[0], xp)
-        fj = int_floor(row[1], xp)
+        fi = _int_floor(row[0], xp)
+        fj = _int_floor(row[1], xp)
         if fi > i + n:
             raise ValueError('Corrupt matrix Z. Index to derivative cluster '
                               f'is used before it is formed. See row {fi}, '
@@ -1693,12 +1596,12 @@ def cophenet(Z, Y=None):
         zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
         _hierarchy.cophenetic_distances(Z, zz, n)
         return zz
-    
+
     n = Z.shape[0] + 1
     zz = xpx.lazy_apply(cy_cophenet, Z, validate=is_lazy_array(Z),
                         shape=((n * (n-1)) // 2, ), dtype=xp.float64,
                         as_numpy=True, xp=xp)
-                        
+
     if Y is None:
         return zz
 
@@ -2533,48 +2436,44 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         The criterion to use in forming flat clusters. This can
         be any of the following values:
 
-          ``inconsistent`` :
-              If a cluster node and all its
-              descendants have an inconsistent value less than or equal
-              to `t`, then all its leaf descendants belong to the
-              same flat cluster. When no non-singleton cluster meets
-              this criterion, every node is assigned to its own
-              cluster. (Default)
+        * ``inconsistent`` :
+          If a cluster node and all its
+          descendants have an inconsistent value less than or equal
+          to `t`, then all its leaf descendants belong to the
+          same flat cluster. When no non-singleton cluster meets
+          this criterion, every node is assigned to its own
+          cluster. (Default)
+        * ``distance`` :
+          Forms flat clusters so that the original
+          observations in each flat cluster have no greater a
+          cophenetic distance than `t`.
+        * ``maxclust`` :
+          Finds a minimum threshold ``r`` so that
+          the cophenetic distance between any two original
+          observations in the same flat cluster is no more than
+          ``r`` and no more than `t` flat clusters are formed.
+        * ``monocrit`` :
+          Forms a flat cluster from a cluster node c
+          with index i when ``monocrit[j] <= t``.
 
-          ``distance`` :
-              Forms flat clusters so that the original
-              observations in each flat cluster have no greater a
-              cophenetic distance than `t`.
+          For example, to threshold on the maximum mean distance
+          as computed in the inconsistency matrix R with a
+          threshold of 0.8 do::
 
-          ``maxclust`` :
-              Finds a minimum threshold ``r`` so that
-              the cophenetic distance between any two original
-              observations in the same flat cluster is no more than
-              ``r`` and no more than `t` flat clusters are formed.
+              MR = maxRstat(Z, R, 3)
+              fcluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
+        * ``maxclust_monocrit`` :
+          Forms a flat cluster from a
+          non-singleton cluster node ``c`` when ``monocrit[i] <=
+          r`` for all cluster indices ``i`` below and including
+          ``c``. ``r`` is minimized such that no more than ``t``
+          flat clusters are formed. monocrit must be
+          monotonic. For example, to minimize the threshold t on
+          maximum inconsistency values so that no more than 3 flat
+          clusters are formed, do::
 
-          ``monocrit`` :
-              Forms a flat cluster from a cluster node c
-              with index i when ``monocrit[j] <= t``.
-
-              For example, to threshold on the maximum mean distance
-              as computed in the inconsistency matrix R with a
-              threshold of 0.8 do::
-
-                  MR = maxRstat(Z, R, 3)
-                  fcluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
-
-          ``maxclust_monocrit`` :
-              Forms a flat cluster from a
-              non-singleton cluster node ``c`` when ``monocrit[i] <=
-              r`` for all cluster indices ``i`` below and including
-              ``c``. ``r`` is minimized such that no more than ``t``
-              flat clusters are formed. monocrit must be
-              monotonic. For example, to minimize the threshold t on
-              maximum inconsistency values so that no more than 3 flat
-              clusters are formed, do::
-
-                  MI = maxinconsts(Z, R)
-                  fcluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
+              MI = maxinconsts(Z, R)
+              fcluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
     depth : int, optional
         The maximum depth to perform the inconsistency calculation.
         It has no meaning for the other criteria. Default is 2.
@@ -3073,10 +2972,6 @@ def set_link_color_palette(palette):
         If ``None``, resets the palette to its default (which are matplotlib
         default colors C1 to C9).
 
-    Returns
-    -------
-    None
-
     See Also
     --------
     dendrogram
@@ -3565,18 +3460,18 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_contraction_marks(Z, iv, i, n, contraction_marks, xp):
-    _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 0], xp),
+    _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 0], xp),
                                   n, contraction_marks, xp)
-    _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 1], xp),
+    _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 1], xp),
                                   n, contraction_marks, xp)
 
 
 def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks, xp):
     if i >= n:
         contraction_marks.append((iv, Z[i - n, 2]))
-        _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 0], xp),
+        _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 0], xp),
                                       n, contraction_marks, xp)
-        _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 1], xp),
+        _append_contraction_marks_sub(Z, iv, _int_floor(Z[i - n, 1], xp),
                                       n, contraction_marks, xp)
 
 
@@ -3677,8 +3572,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # !!! Otherwise, we don't have a leaf node, so work on plotting a
     # non-leaf node.
     # Actual indices of a and b
-    aa = int_floor(Z[i - n, 0], xp)
-    ab = int_floor(Z[i - n, 1], xp)
+    aa = _int_floor(Z[i - n, 0], xp)
+    ab = _int_floor(Z[i - n, 1], xp)
     if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
@@ -4075,7 +3970,7 @@ def maxinconsts(Z, R):
     if Z.shape[0] != R.shape[0]:
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
-    
+
     def cy_maxinconsts(Z, R, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
@@ -4214,16 +4109,16 @@ def leaders(Z, T):
     this function finds the lowest cluster node :math:`i` in the linkage
     tree Z, such that:
 
-      * leaf descendants belong only to flat cluster j
-        (i.e., ``T[p]==j`` for all :math:`p` in :math:`S(i)`, where
-        :math:`S(i)` is the set of leaf ids of descendant leaf nodes
-        with cluster node :math:`i`)
+    * leaf descendants belong only to flat cluster j
+      (i.e., ``T[p]==j`` for all :math:`p` in :math:`S(i)`, where
+      :math:`S(i)` is the set of leaf ids of descendant leaf nodes
+      with cluster node :math:`i`)
 
-      * there does not exist a leaf that is not a descendant with
-        :math:`i` that also belongs to cluster :math:`j`
-        (i.e., ``T[q]!=j`` for all :math:`q` not in :math:`S(i)`). If
-        this condition is violated, ``T`` is not a valid cluster
-        assignment vector, and an exception will be thrown.
+    * there does not exist a leaf that is not a descendant with
+      :math:`i` that also belongs to cluster :math:`j`
+      (i.e., ``T[q]!=j`` for all :math:`q` not in :math:`S(i)`). If
+      this condition is violated, ``T`` is not a valid cluster
+      assignment vector, and an exception will be thrown.
 
     Parameters
     ----------

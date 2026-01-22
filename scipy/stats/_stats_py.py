@@ -71,6 +71,7 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
+    is_jax,
     is_marray,
     xp_size,
     xp_vector_norm,
@@ -233,7 +234,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return xp.exp(_xp_mean(log_a, axis=axis, weights=weights))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=1)
+@xp_capabilities()
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -321,11 +322,9 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if xp.any(negative_mask):
-        # `where` avoids having to be careful about dtypes and will work with
-        # JAX. This is the exceptional case, so it's OK to be a little slower.
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
-        a = xp.where(negative_mask, xp.nan, a)
+    a = xp.where(negative_mask, xp.nan, a)
+
+    if not is_lazy_array(negative_mask) and xp.any(negative_mask):
         message = ("The harmonic mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
@@ -334,7 +333,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         return 1.0 / _xp_mean(1.0 / a, axis=axis, weights=weights)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=1)
+@xp_capabilities()
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -453,14 +452,17 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if xp.any(negative_mask):
-        # `where` avoids having to be careful about dtypes and will work with
-        # JAX. This is the exceptional case, so it's OK to be a little slower.
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
-        a = xp.where(negative_mask, np.nan, a)
+    a = xp.where(negative_mask, np.nan, a)
+
+    if not is_lazy_array(negative_mask) and xp.any(negative_mask):
         message = ("The power mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+    # Linearized approximation for small p to avoid numerical issues; see gh-23407
+    p_threshold = 2e-6
+    if abs(p) <= p_threshold:
+        return _linearized_pmean(a, p, axis=axis, weights=weights, xp=xp)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         return _xp_mean(a**float(p), axis=axis, weights=weights)**(1/p)
@@ -483,8 +485,8 @@ def _mode_result(mode, count):
 
 
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
-                                ('jax.numpy', "relies on _axis_nan_policy"),
-                                ('cupy', "data-apis/array-api-compat#312")])
+                                ('cupy', "data-apis/array-api-compat#312")],
+                 jax_jit=False)  # would delegate, but jax-ml/jax#34486
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -1255,7 +1257,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     return var
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=2)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1356,7 +1358,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals[()] if vals.ndim == 0 else vals
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=2)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1470,7 +1472,7 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
@@ -1890,7 +1892,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(statistic, pvalue)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
     r"""Perform the Jarque-Bera goodness of fit test on sample data.
@@ -2596,7 +2598,7 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, too_small=1
 )
@@ -3065,8 +3067,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 _scale_conversions = {'normal': float(special.erfinv(0.5) * 2.0 * math.sqrt(2.0))}
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)'),
-                                ('jax.numpy', 'lazy -> no _axis_nan_policy)')])
+@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3236,8 +3237,7 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', 'not supported by `quantile`'),
-                                ('dask.array', 'not supported by `quantile`')])
+@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
 )
@@ -3386,7 +3386,7 @@ SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 @xp_capabilities(skip_backends=[('dask.array', "doesn't know array size")],
                  jax_jit=False)
-def sigmaclip(a, low=4., high=4.):
+def sigmaclip(a, low=4., high=4., *, nan_policy='propagate'):
     """Perform iterative sigma-clipping of array elements.
 
     Starting from the full sample, all elements outside the critical range are
@@ -3407,6 +3407,13 @@ def sigmaclip(a, low=4., high=4.):
         Lower bound factor of sigma clipping. Default is 4.
     high : float, optional
         Upper bound factor of sigma clipping. Default is 4.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the input, the clipped array will be
+          empty, and the upper and lower thresholds will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -3451,6 +3458,15 @@ def sigmaclip(a, low=4., high=4.):
     """
     xp = array_namespace(a)
     c = xp_ravel(xp.asarray(a))
+    contains_nan = _contains_nan(c, nan_policy, xp_omit_okay=True)
+    if contains_nan:
+        if nan_policy == 'propagate':
+            NaN = _get_nan(c, xp=xp)
+            clipped = xp.empty_like(c[0:0])
+            return SigmaclipResult(clipped, NaN, NaN)
+        elif nan_policy == 'omit':
+            c = c[~xp.isnan(c)]
+
     delta = 1
     while delta:
         c_std = xp.std(c)
@@ -3752,6 +3768,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
+# JAX JIT / Torch GPU need fdtrc
 @xp_capabilities(jax_jit=False, cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
@@ -3771,7 +3788,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     axis : int, optional
         Axis of the input arrays along which the test is applied.
         Default is 0.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If True (default), perform a standard one-way ANOVA test that
         assumes equal population variances [2]_.
         If False, perform Welch's ANOVA test, which does not assume
@@ -5066,14 +5083,14 @@ def fisher_exact(table, alternative=None, *, method=None):
             if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
                 return SignificanceResult(oddsratio, plower)
 
-            guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
+            guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n, xp=np)
             pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
             if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
                 return SignificanceResult(oddsratio, pupper)
 
-            guess = _binary_search(pmf, pexact * gamma, 0, mode)
+            guess = _binary_search(pmf, pexact * gamma, 0, mode, xp=np)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
     else:
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"
@@ -6029,12 +6046,13 @@ class TtestResult(TtestResultBase):
 
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
-    # this could be any number of dimensions (including 0d), but there is
-    # at most one unique non-NaN value
     xp = array_namespace(statistic, pvalue)
-    alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
-    alternative = alternative[xp.isfinite(alternative)]
-    alternative = alternative[0] if xp_size(alternative) != 0 else xp.nan
+    # Due to behavior of `_axis_nan_policy` decorator, `alternative` can be any number
+    # of dimensions, but there is at most one unique non-NaN value.
+    # `_xp_mean` with `nan_policy='omit'` is a JIT-compatible way to extract it.
+    alternative = xp.asarray(alternative)
+    alternative = (_xp_mean(alternative, axis=None, nan_policy='omit', warn=False)
+                   if xp_size(alternative) != 0 else xp.nan)
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
 
@@ -6044,8 +6062,7 @@ def unpack_TtestResult(res, _):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6464,10 +6481,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     """
     xp = array_namespace(mean1, std1, mean2, std2)
 
-    mean1 = xp.asarray(mean1)
-    std1 = xp.asarray(std1)
-    mean2 = xp.asarray(mean2)
-    std2 = xp.asarray(std2)
+    mean1, std1, nobs1, mean2, std2, nobs2 = xp_promote(
+        mean1, std1, nobs1, mean2, std2, nobs2, force_floating=True, xp=xp)
 
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
@@ -6865,8 +6880,7 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
@@ -6993,7 +7007,7 @@ def _pd_nsamples(kwargs):
     return 2 if kwargs.get('f_exp', None) is not None else 1
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -7184,18 +7198,22 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
             dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
             rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
             with np.errstate(invalid='ignore'):
-                f_obs_sum = xp.sum(f_obs_float, axis=axis)
-                f_exp_sum = xp.sum(f_exp, axis=axis)
+                f_obs_sum = xp.sum(f_obs_float, axis=axis, keepdims=True)
+                f_exp_sum = xp.sum(f_exp, axis=axis, keepdims=True)
                 relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
                                  xp.minimum(f_obs_sum, f_exp_sum))
-                diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
-            if diff_gt_tol:
+                diff_gt_tol = xp.any(relative_diff > rtol, axis=axis, keepdims=True)
+
+            if not is_lazy_array(diff_gt_tol) and xp.any(diff_gt_tol):
                 msg = (f"For each axis slice, the sum of the observed "
                        f"frequencies must agree with the sum of the "
                        f"expected frequencies to a relative tolerance "
                        f"of {rtol}, but the percent differences are:\n"
                        f"{relative_diff}")
                 raise ValueError(msg)
+            elif is_lazy_array(diff_gt_tol):
+                diff_gt_tol = xp.broadcast_to(diff_gt_tol, f_obs.shape)
+                f_obs = xpx.at(f_obs)[diff_gt_tol].set(xp.nan)
 
     else:
         # Avoid warnings with the edge case of a data set with length 0
@@ -7236,7 +7254,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
@@ -7266,9 +7284,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
         as a single data set.  Default is 0.
     sum_check : bool, optional
         Whether to perform a check that ``sum(f_obs) - sum(f_exp) == 0``. If True,
-        (default) raise an error when the relative difference exceeds the square root
-        of the precision of the data type. See Notes for rationale and possible
-        exceptions.
+        (default) raise an error (or, for lazy backends, return NaN) when the relative
+        difference exceeds the square root of the precision of the data type.
+        See Notes for rationale and possible exceptions.
 
     Returns
     -------
@@ -7433,6 +7451,7 @@ def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
+# JAX JIT / Torch GPU / CuPy need null distribution
 @xp_capabilities(cpu_only=True, jax_jit=False,
                  skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
@@ -8340,7 +8359,7 @@ def ranksums(x, y, alternative='two-sided'):
 
     Parameters
     ----------
-    x,y : array_like
+    x, y : array_like
         The data from the two samples.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
@@ -8409,8 +8428,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8521,8 +8539,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")])
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8624,8 +8641,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
                  skip_backends=[('dask.array', 'needs rankdata'),
-                                ('cupy', 'needs rankdata'),
-                                ('jax.numpy', 'needs _axis_nan_policy decorator')])
+                                ('cupy', 'needs rankdata')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate', *, axis=0):
@@ -8744,7 +8760,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
-        if xp.any(df_numer == 0) and xp.any(df_denom == 0):
+        if not is_lazy_array(df_numer) and not is_lazy_array(df_denom) and (
+                xp.any(df_numer == 0) and xp.any(df_denom == 0)):
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
@@ -8763,8 +8780,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.',
-    jax_jit=False, allow_dask_compute=True)
+    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.')
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
@@ -9925,8 +9941,7 @@ def _validate_distribution(values, weights):
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")],
-                 jax_jit=False)
+                                ("dask.array", "no `take_along_axis`")])
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
@@ -10035,12 +10050,17 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     x = xp_swapaxes(x, axis, -1, xp=xp)
     ranks = _rankdata(x, method, xp=xp)
 
-    if contains_nan:
+    # JIT won't allow use of `contains_nan` for control flow here, so we have to choose
+    # whether to always or never run this block with JIT.
+    # For now, *never* run it; otherwise, it would change dtype of `ranks`.
+    # When gh-19889 is resolved, dtype will already be `float`, so *always* run it.
+    # TODO then: broadcast `i_nan` to the shape of ranks before using `at.set`
+    if not is_lazy_array(x) and contains_nan:
         default_float = xp_default_dtype(xp)
         i_nan = (xp.isnan(x) if nan_policy == 'omit'
                  else xp.any(xp.isnan(x), axis=-1))
         ranks = xp.asarray(ranks, dtype=default_float)  # copy=False when implemented
-        ranks[i_nan] = xp.nan
+        ranks = xpx.at(ranks)[i_nan].set(xp.nan)
 
     ranks = xp_swapaxes(ranks, axis, -1, xp=xp)
     return ranks
@@ -10063,6 +10083,16 @@ def _order_ranks(ranks, j, *, xp):
 def _rankdata(x, method, return_ties=False, xp=None):
     # Rank data `x` by desired `method`; `return_ties` if desired
     xp = array_namespace(x) if xp is None else xp
+
+    if is_jax(xp):
+        import jax.scipy.stats as jax_stats
+        ranks = jax_stats.rankdata(x, method=method, axis=-1)
+        if return_ties:
+            max_ranks = jax_stats.rankdata(xp.sort(x, axis=-1), method='max', axis=-1)
+            t = xp.diff(max_ranks, axis=-1, prepend=0)
+            return ranks, t
+        return ranks
+
     shape = x.shape
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
@@ -10326,7 +10356,8 @@ def _prk(r, k):
 
 
 @xp_capabilities(skip_backends=[('dask.array', "too many issues")],
-                 jax_jit=False, cpu_only=True,  # torch doesn't have `binom`
+                 jax_jit=False,  # uses arange(max(order))
+                 cpu_only=True,  # torch doesn't have `binom`
                  exceptions=('cupy', 'jax.numpy'))
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
@@ -10616,9 +10647,20 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
                             pvalue=prob[()], stderr=slope_stderr[()],
                             intercept_stderr=intercept_stderr[()])
 
+def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
+    # pmean linearized as a function of p about p = 0; see gh-23407
+    M0 = gmean(a, axis=axis, weights=weights)
+
+    loga = xp.log(a)
+
+    ln_avg = _xp_mean(loga, axis=axis, weights=weights)
+    ln2_avg = _xp_mean(loga * loga, axis=axis, weights=weights)
+
+    return M0 * (1 + 0.5 * p * (ln2_avg - ln_avg * ln_avg))
+
 
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
-             dtype=None, xp=None):
+             dtype=None, warn=True, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
 
     Parameters
@@ -10711,7 +10753,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             res = xp.mean(x, axis=axis, keepdims=keepdims)
-        if xp_size(res) != 0:
+        if warn and xp_size(res) != 0:
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         return res
 
@@ -10729,7 +10771,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         nan_mask = xp.isnan(x)
         if weights is not None:
             nan_mask |= xp.isnan(weights)
-        if not lazy and xp.any(xp.all(nan_mask, axis=axis)):
+        if warn and not lazy and xp.any(xp.all(nan_mask, axis=axis)):
             message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
                        else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)

@@ -172,11 +172,12 @@ PKG_CONFIG_PATH = "{project}"
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
 
 [tool.spin.commands]
-"Build" = [
+"Build & Develop" = [
   ".spin/cmds.py:build",
   ".spin/cmds.py:test",
   ".spin/cmds.py:mypy",
   ".spin/cmds.py:lint",
+  ".spin/cmds.py:check",
   "spin.cmds.pip.install"
 ]
 "Environments" = [
