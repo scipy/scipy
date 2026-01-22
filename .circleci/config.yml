@@ -117,7 +117,6 @@ jobs:
           no_output_timeout: 25m
           command: |
             export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            export SCIPY_ARRAY_API=1
             spin docs -j2 2>&1 | tee sphinx_log.txt
 
       - run:

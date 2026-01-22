@@ -75,10 +75,12 @@ untested = {
     "argrelmax",
     "argrelmin",
     "band_stop_obj",
+    "bode",
     "check_NOLA",
     "chirp",
     "coherence",
     "csd",
+    "czt",
     "czt_points",
     "dbode",
     "dfreqresp",
@@ -88,16 +90,17 @@ untested = {
     "find_peaks_cwt",
     "freqresp",
     "gausspulse",
+    "iirdesign", # There's no reason this shouldn't work. It just needs tests.
+    "istft",
     "lombscargle",
     "lsim",
     "max_len_seq",
     "peak_prominences",
     "peak_widths",
     "periodogram",
-    "place_pols",
+    "place_poles",
     "sawtooth",
     "sepfir2d",
-    "square",
     "ss2tf",
     "ss2zpk",
     "step",
@@ -155,7 +158,14 @@ zpk2tf_extra_note = \
 
     """
 
+abcd_normalize_extra_note = \
+    """The result dtype when all array inputs are of integer dtype is the
+    backend's current default floating point dtype.
+
+    """
+
 capabilities_overrides = {
+    "abcd_normalize": xp_capabilities(extra_note=abcd_normalize_extra_note),
     "bessel": xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True),
     "bilinear": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
@@ -199,7 +209,6 @@ capabilities_overrides = {
                                       jax_jit=False, allow_dask_compute=True),
     "cspline2d": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                  jax_jit=False, allow_dask_compute=True),
-    "czt": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "deconvolve": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                   allow_dask_compute=True,
                                   skip_backends=[("jax.numpy", "item assignment")]),
@@ -321,13 +330,17 @@ capabilities_overrides = {
     "savgol_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False,
                                      reason="convolve1d is cpu-only"),
+    "sawtooth": xp_capabilities(jax_jit=False,
+                                skip_backends=[("dask.array", "dask tests fail")]),
     "sepfir2d": xp_capabilities(np_only=True),
     "sos2zpk": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
     "sos2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
-    "sosfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+    "sosfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
+    "sosfilt_zi": xp_capabilities(cpu_only=True, allow_dask_compute=True,
+                                  jax_jit=False),
     "sosfiltfilt": xp_capabilities(
         cpu_only=True, exceptions=["cupy"],
         skip_backends=[

@@ -1,3 +1,4 @@
+from types import GenericAlias
 import numpy as np
 
 
@@ -224,6 +225,9 @@ class CensoredData:
     (2.3575922823897315, 0, 30.40650074451254)
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, uncensored=None, *, left=None, right=None,
                  interval=None):

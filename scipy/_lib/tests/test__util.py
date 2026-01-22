@@ -342,6 +342,7 @@ class TestContainsNaN:
     @pytest.mark.skip_xp_backends(eager_only=True,
                                   reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
+    @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))
@@ -362,6 +363,7 @@ class TestContainsNaN:
     @pytest.mark.skip_xp_backends("cupy", reason="lazy backends only")
     @pytest.mark.skip_xp_backends("array_api_strict", reason="lazy backends only")
     @pytest.mark.skip_xp_backends("torch", reason="lazy backends only")
+    @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
     def test_array_api_lazy(self, xp):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))
