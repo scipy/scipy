@@ -388,38 +388,20 @@ def kstatvar(data, n=2, *, axis=None):
 
     Examples
     --------
-    Calculate the variance of k-statistics for a sample.
-
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(8675309)
 
-    Generate a sample and compute the variance of the first k-statistic:
+    Generate a sample and compute the variance of the first and second
+    k-statistics:
 
     >>> data = rng.normal(loc=0, scale=1, size=100)
-    >>> var_k1 = stats.kstatvar(data, n=1)
-    >>> var_k1 > 0
-    True
+    >>> stats.kstatvar(data, n=1)
+    0.009906279438657682
+    >>> stats.kstatvar(data, n=2)
+    0.01687735393525834
 
-    The variance of the second k-statistic:
-
-    >>> var_k2 = stats.kstatvar(data, n=2)
-    >>> var_k2 > 0
-    True
-
-    In experimental physics, k-statistics are used for robust moment estimation.
-    For example, analyzing measurement uncertainties:
-
-    >>> # Simulated measurements (e.g., particle energies in eV)
-    >>> measurements = rng.normal(loc=1000, scale=50, size=200)
-    >>> # Estimate variance of the mean (k1)
-    >>> uncertainty_mean = np.sqrt(stats.kstatvar(measurements, n=1))
-    >>> # Estimate variance of the variance (k2)
-    >>> uncertainty_var = np.sqrt(stats.kstatvar(measurements, n=2))
-    >>> uncertainty_mean > 0 and uncertainty_var > 0
-    True
-
-    """  # noqa: E501
+    """
     xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
