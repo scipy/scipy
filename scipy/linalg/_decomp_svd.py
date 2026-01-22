@@ -53,14 +53,14 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     U : ndarray
         Unitary matrix having left singular vectors as columns.
         Of shape ``(M, M)`` or ``(M, K)``, depending on `full_matrices`.
+        Only present when ``compute_uv=True``.
     s : ndarray
         The singular values, sorted in non-increasing order.
         Of shape (K,), with ``K = min(M, N)``.
     Vh : ndarray
         Unitary matrix having right singular vectors as rows.
         Of shape ``(N, N)`` or ``(K, N)`` depending on `full_matrices`.
-
-    For ``compute_uv=False``, only ``s`` is returned.
+        Only present when ``compute_uv=True``.
 
     Raises
     ------

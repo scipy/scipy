@@ -7,7 +7,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 from scipy._lib._util import rng_integers
 from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype,
-                                   xp_size, array_namespace, _xp_copy_to_numpy)
+                                   xp_size, array_namespace, _xp_copy_to_numpy,
+                                   is_lazy_array, eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib import array_api_extra as xpx
 from scipy import stats, special
@@ -16,6 +17,9 @@ from scipy.optimize import root
 
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
 import scipy.stats._resampling as _resampling
+
+
+lazy_xp_modules = [stats]
 
 
 @make_xp_test_case(bootstrap)
@@ -99,9 +103,9 @@ class TestBootstrap:
         res2 = bootstrap((xp.asarray(x),), xp.mean, batch=10, method=method,
                          axis=axis, n_resamples=100, random_state=rng)
 
-        xp_assert_equal(res2.confidence_interval.low, res1.confidence_interval.low)
-        xp_assert_equal(res2.confidence_interval.high, res1.confidence_interval.high)
-        xp_assert_equal(res2.standard_error, res1.standard_error)
+        xp_assert_close(res2.confidence_interval.low, res1.confidence_interval.low)
+        xp_assert_close(res2.confidence_interval.high, res1.confidence_interval.high)
+        xp_assert_close(res2.standard_error, res1.standard_error)
 
     @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
     def test_bootstrap_paired(self, method, xp):
@@ -471,7 +475,7 @@ class TestBootstrap:
         if method == "BCa":
             with np.errstate(invalid='ignore'):
                 msg = "The BCa confidence interval cannot be calculated"
-                with pytest.warns(stats.DegenerateDataWarning, match=msg):
+                with eager_warns(stats.DegenerateDataWarning, match=msg, xp=xp):
                     res = bootstrap([data, ], xp.mean, method=method)
                     xp_assert_equal(res.confidence_interval.low, xp.asarray(xp.nan))
                     xp_assert_equal(res.confidence_interval.high, xp.asarray(xp.nan))
@@ -479,7 +483,7 @@ class TestBootstrap:
             res = bootstrap([data, ], xp.mean, method=method)
             xp_assert_equal(res.confidence_interval.low, xp.asarray(10000.))
             xp_assert_equal(res.confidence_interval.high, xp.asarray(10000.))
-        xp_assert_equal(res.standard_error, xp.asarray(0.))
+        xp_assert_close(res.standard_error, xp.asarray(0.), atol=1e-12)
 
     @pytest.mark.parametrize("method", ["BCa", "basic", "percentile"])
     def test_bootstrap_gh15678(self, method, xp):
@@ -1153,11 +1157,15 @@ class TestPower:
         with pytest.raises(ValueError, match=message):
             power(test, rvs, (10,))
 
-        message = "`significance` must contain floats between 0 and 1."
+        message = "`significance` must be of floating point dtype."
         with pytest.raises(ValueError, match=message):
-            power(test, rvs, n_observations, significance=2)
-        with pytest.raises(ValueError, match=message):
-            power(test, rvs, n_observations, significance=xp.linspace(-1, 1, 50))
+            power(test, rvs, n_observations, significance=xp.asarray(True))
+
+        significance = xp.asarray(2.)
+        if not is_lazy_array(significance):
+            message = "All elements of `significance` must be between 0. and 1."
+            with pytest.raises(ValueError, match=message):
+                power(test, rvs, n_observations, significance=significance)
 
         message = "`kwargs` must be a dictionary"
         with pytest.raises(TypeError, match=message):
@@ -1399,24 +1407,24 @@ class TestPermutationTest:
         statistic.counter = 0
         statistic.batch_size = 0
 
-        kwds = {'n_resamples': 1000, 'permutation_type': permutation_type,
+        kwds = {'n_resamples': 100, 'permutation_type': permutation_type,
                 'vectorized': True}
         res1 = stats.permutation_test((x, y), statistic, batch=1,
                                       random_state=random_state(0), **kwds)
-        assert statistic.counter == 1001
+        assert statistic.counter == 101
         assert statistic.batch_size == 1
 
         statistic.counter = 0
         res2 = stats.permutation_test((x, y), statistic, batch=50,
                                       random_state=random_state(0), **kwds)
-        assert statistic.counter == 21
+        assert statistic.counter == 3
         assert statistic.batch_size == 50
 
         statistic.counter = 0
-        res3 = stats.permutation_test((x, y), statistic, batch=1000,
+        res3 = stats.permutation_test((x, y), statistic, batch=100,
                                       random_state=random_state(0), **kwds)
         assert statistic.counter == 2
-        assert statistic.batch_size == 1000
+        assert statistic.batch_size == 100
 
         xp_assert_equal(res1.pvalue, res3.pvalue)
         xp_assert_equal(res2.pvalue, res3.pvalue)
@@ -1985,6 +1993,32 @@ class TestPermutationTest:
         # y = c(2, 4, 6, 8)
         # cor.test(x, y, alternative = "t", method = "spearman")  # 0.333333333
         # cor.test(x, y, alternative = "t", method = "kendall")  # 0.333333333
+
+    def test_nan_statistic(self, xp):
+        # Where the observed statistic is NaN, the p-value should be NaN
+        # (Whether a single NaN in the permutation distribution should make the p-value
+        #  NaN is debatable. Users can choose for themselves.)
+        rng = np.random.default_rng(8951482112)
+        dtype = xp_default_dtype(xp)
+        x = xp.asarray(rng.random(5), dtype=dtype)
+        x_nan = xp.asarray([0, 0, 0, xp.nan, 0])
+        y = xp.asarray(rng.random(6), dtype=dtype)
+
+        def statistic(x, y, axis):
+            return xp.mean(x, axis=axis) - xp.mean(y, axis=axis)
+
+        kwds = {'permutation_type': 'independent', 'rng': rng, 'axis': -1}
+
+        ref = permutation_test((x, y), statistic, **kwds)
+
+        data = (xp.stack([x, x + x_nan]), y)
+        res = permutation_test(data, statistic, **kwds)
+
+        NaN = xp.asarray(xp.nan, dtype=dtype)
+        xp_assert_equal(res.statistic[0], ref.statistic)
+        xp_assert_equal(res.pvalue[0], ref.pvalue)
+        xp_assert_equal(res.statistic[1], NaN)
+        xp_assert_equal(res.pvalue[1], NaN)
 
 
 def test_all_partitions_concatenated():

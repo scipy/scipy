@@ -184,3 +184,8 @@ Name: prima
 Files: scipy/_lib/pyprima
 License: BSD-3-Clause
   For details, see scipy/_lib/pyprima/LICENCE.txt
+
+Name: packaging.version
+Files: scipy/_external/packaging_version/*
+License: BSD-3-Clause
+  For details, see scipy/_external/src/LICENSE.BSD

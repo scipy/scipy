@@ -19,6 +19,11 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
 solve-group = "default"
 
+[environments.smoke-docs]
+# tasks: smoke-docs
+features = ["run-deps", "test-deps", "smoke-docs"]
+solve-group = "default"
+
 [environments.docs]
 # tasks: docs
 features = ["docs"]
@@ -152,7 +157,6 @@ blas-devel = "*"
 ### Default building ###
 
 [feature.build-deps.dependencies]
-compilers = "*"
 ccache = "*"
 pkg-config = "*"
 ninja = "*"
@@ -165,9 +169,16 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
+[feature.build-deps.target.unix.dependencies]
+compilers = "*"
+
+[feature.build-deps.target.win-64.dependencies]
+# force flang 21 until https://github.com/conda-forge/compilers-feedstock/pull/76 is in
+flang_win-64 = "21.*"
+
 [feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
-blas-devel = { version = "*", build = "*openblas"}
+blas-devel = { version = "*", build = "*openblas" }
 
 # XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
@@ -177,7 +188,7 @@ description = "Build SciPy (default settings)"
 
 [feature.build-task.target.win-64.tasks.build]
 cmd = "spin build --setup-args=-Dblas=openblas --setup-args=-Dlapack=openblas --setup-args=-Duse-g77-abi=true && cp .pixi/envs/build/Library/bin/openblas.dll build-install/Lib/site-packages/scipy/linalg/openblas.dll"
-env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC", FC_LD = "lld-link" }
+env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC" }
 description = "Build SciPy (default settings)"
 
 
@@ -211,6 +222,22 @@ depends-on = "build"
 env.SCIPY_XSLOW = "1"
 description = "Test SciPy (full and x-slow)"
 
+[feature.test-tasks.tasks.check]
+cmd = "spin check --no-build"
+depends-on = "build"
+description = "Run SciPy-specific checks"
+
+
+[feature.smoke-docs.dependencies]
+hypothesis = "*"
+matplotlib = "*"
+scipy-doctest = "*"
+
+[feature.smoke-docs.tasks.smoke-docs]
+cmd = "spin smoke-docs --no-build"
+depends-on = "build"
+description = "Run doctests"
+
 
 ### Type Stubs ###
 
@@ -221,7 +248,7 @@ scipy-stubs = "*"
 ### Documentation ###
 
 [feature.docs.dependencies]
-sphinx = "*"
+sphinx = "<8.2.0"
 intersphinx-registry = "*"
 pydata-sphinx-theme = "*"
 sphinx-copybutton = "*"
@@ -235,6 +262,7 @@ jupyterlite-sphinx = "*"
 jupyterlite-pyodide-kernel = "*"
 scipy-doctest = "*"
 linkify-it-py = "*"
+make = ">=4.4.1,<5"
 
 
 [feature.docs.tasks.docs]
@@ -555,12 +583,12 @@ BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/include/
 BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/lib"
 
 [feature.system-libs.tasks.build-system-libs]
-cmd = "spin build --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cmd = "spin build --build-dir=build-system-libs --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with system libs (e.g. boost, qhull)"
 
 [feature.system-libs.tasks.test-system-libs]
-cmd = "spin test --no-build"
+cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
 

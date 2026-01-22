@@ -418,6 +418,49 @@ class TestUnivariateSpline:
 
         _run_concurrent_barrier(10, worker_fn, spl, x)
 
+    def test_curfit_2d_array_handling(self):
+        """Test that 2D arrays are flattened correctly in Fortran order."""
+
+        # Create 1D data
+        x_1d = np.array([0., 1., 2., 3., 4., 5.])
+        y_1d = np.array([0., 1., 4., 9., 16., 25.])  # y = x^2
+
+        # Column vector (shape (n, 1)); should work and give same result as 1D
+        x_col = x_1d.reshape(-1, 1)
+        y_col = y_1d.reshape(-1, 1)
+
+        spl_1d = InterpolatedUnivariateSpline(x_1d, y_1d)
+        spl_col = InterpolatedUnivariateSpline(x_col, y_col)
+
+        test_points = np.array([0.5, 1.5, 2.5, 3.5])
+        np.testing.assert_allclose(spl_1d(test_points), spl_col(test_points))
+
+        # Row vector (shape (1, n)) - should work and give same result as 1D
+        x_row = x_1d.reshape(1, -1)
+        y_row = y_1d.reshape(1, -1)
+
+        spl_row = InterpolatedUnivariateSpline(x_row, y_row)
+        np.testing.assert_allclose(spl_1d(test_points), spl_row(test_points))
+
+        # Verify F-order flattening for truly 2D case. Not a likely input but
+        # for general testing purposes.
+        #
+        # Create a 2x3 array where F-order and C-order give different results
+        # F-order: [1,4,2,5,3,6], C-order: [1,2,3,4,5,6]
+        x_2d = np.array([[1., 2., 3.],
+                        [4., 5., 6.]])
+        y_2d = np.array([[1., 4., 9.],
+                        [16., 25., 36.]])
+
+        # With F-order flattening: x = [1,4,2,5,3,6], y = [1,16,4,25,9,36]
+        # This would NOT be sorted, so the spline should fail or give different results
+        # than C-order which would give sorted x = [1,2,3,4,5,6]
+
+        # The F-order flattened x is not monotonic, so FITPACK returns ier=10
+        # and emits a UserWarning about erronous input.
+        with pytest.warns(UserWarning, match="x\\[0\\]<x\\[1\\]<"):
+            InterpolatedUnivariateSpline(x_2d, y_2d)
+
 
 class TestLSQBivariateSpline:
     # NOTE: The systems in this test class are rank-deficient

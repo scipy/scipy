@@ -181,6 +181,7 @@ class TestCircFuncs:
         xp_assert_close(actual, expected, rtol=1e-15, atol=0.0)
 
 
+@make_xp_test_case(stats.circmedian)
 class TestCircMedian:
     # Example data from references; e.g. `example_3_2` is [3] Example #2
     example_2 = [43, 45, 52, 61, 75, 88, 88, 279, 375]

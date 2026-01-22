@@ -15,7 +15,6 @@ import scipy.sparse as sparse
 import scipy.sparse.linalg._interface as interface
 from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
-from scipy._lib._util import np_vecdot
 
 
 class TestLinearOperator:
@@ -304,8 +303,8 @@ class TestDotTests:
             assert_allclose(op_u, op.dot(u))
             assert_allclose(opH_v, op.H.dot(v))
 
-        op_u_H_v = np_vecdot(op_u, v, axis=-1)
-        uH_opH_v = np_vecdot(u, opH_v, axis=-1)
+        op_u_H_v = np.vecdot(op_u, v, axis=-1)
+        uH_opH_v = np.vecdot(u, opH_v, axis=-1)
 
         rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
         assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol)

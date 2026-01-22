@@ -39,7 +39,7 @@ from scipy._lib._testutils import _run_concurrent_barrier
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
 
-from scipy.interpolate import _dfitpack as dfitpack
+from scipy.interpolate import _fitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
@@ -326,6 +326,11 @@ class TestBSpline:
 
         # 2nd derivative is not guaranteed to be continuous either
         assert not np.allclose(b(x - 1e-10, nu=2), b(x + 1e-10, nu=2))
+
+    def test_basis_element_invalid_too_short(self, xp):
+        # There should be at least 2 knots
+        assert_raises(ValueError, BSpline.basis_element, **dict(t=xp.asarray([0])))
+        assert_raises(ValueError, BSpline.basis_element, **dict(t=xp.asarray([])))
 
     def test_basis_element_quadratic(self, xp):
         xx = xp.linspace(-1, 4, 20)
@@ -1117,15 +1122,15 @@ class TestInterop:
         # automatically calculated parameters are non-increasing
         # see gh-7589
         x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             splprep([x])
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             _impl.splprep([x])
 
         # given non-increasing parameter values u
         x = [1, 3, 2, 4]
         u = [0, 0.3, 0.2, 1]
-        with assert_raises(ValueError, match="Invalid inputs"):
+        with assert_raises(ValueError, match="Error on input data"):
             splprep(*[[x], None, u])
 
     def test_sproot(self):

@@ -25,39 +25,23 @@ from numpy.exceptions import AxisError
 np_long: type
 np_ulong: type
 
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
-    try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                r".*In the future `np\.long` will be defined as.*",
-                FutureWarning,
-            )
-            np_long = np.long  # type: ignore[attr-defined]
-            np_ulong = np.ulong  # type: ignore[attr-defined]
-    except AttributeError:
-            np_long = np.int_
-            np_ulong = np.uint
-else:
-    np_long = np.int_
-    np_ulong = np.uint
+try:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            r".*In the future `np\.long` will be defined as.*",
+            FutureWarning,
+        )
+        np_long = np.long  # type: ignore[attr-defined]
+        np_ulong = np.ulong  # type: ignore[attr-defined]
+except AttributeError:
+        np_long = np.int_
+        np_ulong = np.uint
 
 IntNumber = int | np.integer
 DecimalNumber = float | np.floating | np.integer
 
-copy_if_needed: bool | None
-
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
-    copy_if_needed = None
-elif np.lib.NumpyVersion(np.__version__) < "1.28.0":
-    copy_if_needed = False
-else:
-    # 2.0.0 dev versions, handle cases where copy may or may not exist
-    try:
-        np.array([1]).__array__(copy=None)  # type: ignore[call-overload]
-        copy_if_needed = None
-    except TypeError:
-        copy_if_needed = False
+copy_if_needed: bool | None = None
 
 
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
@@ -123,32 +107,6 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
         temp = tuple(np.extract(cond, arr) for arr in arrays)
         np.place(out, cond, func(*temp))
     return out
-
-
-def _aligned_zeros(shape, dtype=float, order="C", align=None):
-    """Allocate a new ndarray with aligned memory.
-
-    Primary use case for this currently is working around a f2py issue
-    in NumPy 1.9.1, where dtype.alignment is such that np.zeros() does
-    not necessarily create arrays aligned up to it.
-
-    """
-    dtype = np.dtype(dtype)
-    if align is None:
-        align = dtype.alignment
-    if not hasattr(shape, '__len__'):
-        shape = (shape,)
-    size = functools.reduce(operator.mul, shape) * dtype.itemsize
-    buf = np.empty(size + align + 1, np.uint8)
-    offset = buf.__array_interface__['data'][0] % align
-    if offset != 0:
-        offset = align - offset
-    # Note: slices producing 0-size arrays do not necessarily change
-    # data pointer --- so we use and allocate size+1
-    buf = buf[offset:offset+size+1][:-1]
-    data = np.ndarray(shape, dtype, buf, order=order)
-    data.fill(0)
-    return data
 
 
 def _prune_array(array):
@@ -605,8 +563,9 @@ class _ScalarFunctionWrapper:
 
         # Make sure the function returns a true scalar
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError(
                     "The user-provided objective function "
@@ -822,20 +781,6 @@ def _rng_html_rewrite(func):
         return lines
 
     return _wrapped
-
-
-def _argmin(a, keepdims=False, axis=None):
-    """
-    argmin with a `keepdims` parameter.
-
-    See https://github.com/numpy/numpy/issues/8710
-
-    If axis is not None, a.shape[axis] must be greater than 0.
-    """
-    res = np.argmin(a, axis=axis)
-    if keepdims and axis is not None:
-        res = np.expand_dims(res, axis=axis)
-    return res
 
 
 def _contains_nan(
@@ -1225,18 +1170,6 @@ def _apply_over_batch(*argdefs):
 
         return wrapper
     return decorator
-
-
-def np_vecdot(x1, x2, /, *, axis=-1):
-    # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
-    # available. As functions are translated to Array API, `np_vecdot` can be
-    # replaced with `xp.vecdot`.
-    if np.__version__ > "2.0":
-        return np.vecdot(x1, x2, axis=axis)
-    else:
-        # of course there are other fancy ways of doing this (e.g. `einsum`)
-        # but let's keep it simple since it's temporary
-        return np.sum(x1.conj() * x2, axis=axis)
 
 
 def _dedent_for_py313(s):

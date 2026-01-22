@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from scipy import stats
-from packaging import version
 
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _length_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
@@ -67,6 +66,7 @@ def test_xmean(fun, kwargs, axis, xp):
 @skip_backend('torch', reason="marray#99")
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('keepdims', [False, True])
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 def test_xp_mean(axis, keepdims, xp):
     mxp, marrays, narrays = get_arrays(2, xp=xp)
     kwargs = dict(axis=axis, keepdims=keepdims)
@@ -96,7 +96,10 @@ def test_xp_mean(axis, keepdims, xp):
      make_xp_pytest_param(stats.circstd, {}),
      make_xp_pytest_param(stats.gstd, {}),
      make_xp_pytest_param(stats.variation, {}),
-     (_xp_var, {}),
+     pytest.param(
+         _xp_var, {},
+         marks=pytest.mark.uses_xp_capabilities(False, reason="private")
+     ),
      make_xp_pytest_param(stats.tmean, {'limits': (0.1, 0.9)}),
      make_xp_pytest_param(stats.tvar, {'limits': (0.1, 0.9)}),
      make_xp_pytest_param(stats.tmin, {'lowerlimit': 0.5}),
@@ -299,8 +302,6 @@ def test_ttest_ind_from_stats(xp):
     assert res.pvalue.shape == shape
 
 
-@pytest.mark.skipif(version.parse(np.__version__) < version.parse("2"),
-                    reason="Call to _getnamespace fails with AttributeError")
 def test_length_nonmasked_marray_iterable_axis_raises():
     xp = marray._get_namespace(np)
 
