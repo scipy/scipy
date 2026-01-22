@@ -1808,6 +1808,9 @@ class TestWilcoxon:
         ref = special.ndtri(res.pvalue/2)
         xp_assert_close(res.zstatistic, ref)
 
+        if is_jax(xp):
+            return
+
         res = stats.wilcoxon(x, y, method="exact")
         assert not hasattr(res, 'zstatistic')
 
@@ -1881,6 +1884,7 @@ class TestWilcoxon:
             assert_equal(sum(pmf1), 1)
             assert_array_almost_equal(pmf1, pmf2)
 
+    @skip_xp_backends("jax.numpy", reason="`method='exact'` is incompatible with JAX")
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_exact_pval(self, dtype, xp):
         # expected values computed with "R version 4.0.3 (2020-10-10)"
@@ -1916,6 +1920,7 @@ class TestWilcoxon:
     # even).  Also, the numbers are chosen so that the W statistic is the
     # sum of the positive values.
 
+    @skip_xp_backends("jax.numpy", reason="`method='exact'` is incompatible with JAX")
     @pytest.mark.parametrize('x', [[-1, -2, 3],
                                    [-1, 2, -3, -4, 5],
                                    [-1, -2, 3, -4, -5, -6, 7, 8]])
@@ -1930,19 +1935,27 @@ class TestWilcoxon:
         # auto default to exact if there are no ties and n <= 50
         x = xp.arange(0., 50.) + 0.5
         y = xp.arange(50., 0., -1.)
+
+        if is_jax(xp):  #
+            message = "When using `wilcoxon` with `jax.numpy` arrays..."
+            with pytest.raises(ValueError, match=message):
+                stats.wilcoxon(x, y, method="auto")
+            with pytest.raises(ValueError, match=message):
+                stats.wilcoxon(x, y, method="exact")
+            return
+
         xp_assert_equal(stats.wilcoxon(x, y).pvalue,
                         stats.wilcoxon(x, y, method="exact").pvalue)
 
-        if is_numpy(xp):  # PermutationMethod is NumPy-only until gh-23772 merges
-            # n <= 50: if there are zeros in d = x-y, use PermutationMethod
-            pm = stats.PermutationMethod()
-            d = np.arange(-2, 5)
-            w, p = stats.wilcoxon(d)
-            # rerunning the test gives the same results since n_resamples
-            # is large enough to get deterministic results if n <= 13
-            # so we do not need to use a seed. to avoid longer runtimes of the
-            # test, use n=7 only. For n=13, see test_auto_permutation_edge_case
-            assert_equal((w, p), stats.wilcoxon(d, method=pm))
+        # n <= 50: if there are zeros in d = x-y, use PermutationMethod
+        pm = stats.PermutationMethod()
+        d = np.arange(-2, 5)
+        w, p = stats.wilcoxon(d)
+        # rerunning the test gives the same results since n_resamples
+        # is large enough to get deterministic results if n <= 13
+        # so we do not need to use a seed. to avoid longer runtimes of the
+        # test, use n=7 only. For n=13, see test_auto_permutation_edge_case
+        assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
         # for larger vectors (n > 13) with ties/zeros, use asymptotic test
         d = xp.arange(-5, 9)  # zero
@@ -1977,16 +1990,14 @@ class TestWilcoxon:
         xp_assert_equal(res.statistic, w)
         xp_assert_equal(res.pvalue, p)
 
-
     @pytest.mark.parametrize('size', [3, 5, 10])
-    @pytest.mark.skip_xp_backends(np_only=True)
     def test_permutation_method(self, size, xp):
         rng = np.random.default_rng(92348034828501345)
-        x = xp.asarray(rng.random(size=size))
-        res = stats.wilcoxon(x, method=stats.PermutationMethod())
+        x = rng.random(size=size).tolist()
+        res = stats.wilcoxon(xp.asarray(x), method=stats.PermutationMethod())
         ref = stats.wilcoxon(x, method='exact')
-        xp_assert_equal(res.statistic, ref.statistic)
-        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_equal(res.pvalue, xp.asarray(ref.pvalue))
 
         x = xp.asarray(rng.random(size=size*10))
         rng = np.random.default_rng(59234803482850134)
@@ -1997,9 +2008,10 @@ class TestWilcoxon:
         pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
         res = stats.wilcoxon(x, method=pm)
 
-        xp_assert_equal(xp.round(res.pvalue, 2), res.pvalue)  # n_resamples used
+        xp_assert_equal(xp.round(res.pvalue*100)/100, res.pvalue)  # n_resamples used
         xp_assert_equal(res.pvalue, ref.pvalue)  # rng/random_state used
 
+    @skip_xp_backends("jax.numpy", reason="`method='auto'` is incompatible with JAX")
     def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self, xp):
         # When method!='asymptotic', nan_policy='propagate', and a slice of
         # a >1 dimensional array input contained NaN, the result object of
@@ -2020,6 +2032,8 @@ class TestWilcoxon:
 
     @pytest.mark.parametrize('method', ['exact', 'asymptotic'])
     def test_symmetry_gh19872_gh20752(self, method, xp):
+        if is_jax(xp) and method == 'exact':
+            pytest.skip("`method='exact'` is incompatible with JAX")
         # Check that one-sided exact tests obey required symmetry. Bug reported
         # in gh-19872 and again in gh-20752; example from gh-19872 is more concise:
         var1 = xp.asarray([62, 66, 61, 68, 74, 62, 68, 62, 55, 59])
@@ -2033,11 +2047,11 @@ class TestWilcoxon:
 
     @pytest.mark.parametrize("method", ('exact', stats.PermutationMethod()))
     def test_all_zeros_exact(self, method, xp):
+        if is_jax(xp) and method == 'exact':
+            pytest.skip("`method='exact'` is incompatible with JAX")
         # previously, this raised a RuntimeWarning when calculating Z, even
         # when the Z value was not needed. Confirm that this no longer
         # occurs when `method` is 'exact' or a `PermutationMethod`.
-        if method != "exact":
-            pytest.skip("PermutationMethod is NumPy-only until gh-23772 merges")
         res = stats.wilcoxon(xp.zeros(5), method=method)
         xp_assert_close(res.statistic, xp.asarray(0.))
         xp_assert_close(res.pvalue, xp.asarray(1.))
