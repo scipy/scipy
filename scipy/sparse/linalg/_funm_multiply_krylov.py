@@ -42,6 +42,7 @@ from ._isolve.iterative import _get_atol_rtol
 
 __all__ = ['funm_multiply_krylov']
 
+
 def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
     """
     The Arnoldi iteration for constructing the basis V and the projection H = V * A V
@@ -92,6 +93,7 @@ def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
         V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
 
     return False, m
+
 
 def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
     """
