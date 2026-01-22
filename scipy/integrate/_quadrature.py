@@ -372,8 +372,8 @@ def _basic_simpson(y, start, stop, x, dx, axis, *, xp):
         h = xp.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = h[sl0] if xp_size(h) else h[...]
-        h1 = h[sl1] if xp_size(h) else h[...]
+        h0 = h[sl0] if xp_size(h) else h
+        h1 = h[sl1] if xp_size(h) else h
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = xpx.apply_where(h1 != 0, (h0, h1), xp.divide, fill_value=0.)
@@ -478,7 +478,7 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
             slice2 = tupleset(slice_all, axis, -2)
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
-            val = val + 0.5 * last_dx * (y[slice1] + y[slice2])
+            val = 0.5 * last_dx * (y[slice1] + y[slice2])
         else:
             # use Simpson's rule on first intervals
             result = _basic_simpson(y, 0, N-3, x, dx, axis, xp=xp)
