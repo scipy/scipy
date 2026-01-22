@@ -234,10 +234,10 @@ interpolator to get back to the desired density.
    ...     values = refiner(np.stack([grid_x, grid_y], -1))
    ...     plot_and_check_filled_image(values, kernel)
    ...
-   linear        : Mean error: -1.6e-14 Error std: 0.0041
-   thin_plate_spline: Mean error: -2.6e-13 Error std: 0.0041
-   cubic         : Mean error: -2.9e-13 Error std: 0.0041
-   quintic       : Mean error: -3.9e-08 Error std: 0.0041
+   linear        : Mean error: -1.1e-15 Error std: 0.0041
+   thin_plate_spline: Mean error: 2.5e-12 Error std: 0.0041
+   cubic         : Mean error: -1.4e-13 Error std: 0.0041
+   quintic       : Mean error: 2.1e-06 Error std: 0.0041
 
 -----------------------
 Multi-linear regression
