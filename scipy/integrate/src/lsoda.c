@@ -864,7 +864,16 @@ stoda_handle_corrector_failure(double* yh, int nyh, int* ncf, double told, const
     return 0;  // Successful recovery - caller should retry
 }
 
-
+/**
+ * @brief Computes the predicted values for the next step.
+ *
+ * This function computes the predicted values by effectively multiplying
+ * the yh array by the pascal triangle matrix. It also updates the time
+ * and checks if the Jacobian needs updating based on step size ratio changes.
+ *
+ * @param S   Pointer to the common structure containing integrator state.
+ * @param yh1 Pointer to the Nordsieck history array.
+ */
 static void
 stoda_get_predicted_values(lsoda_common_struct_t* S, double* yh1)
 {
@@ -875,15 +884,10 @@ stoda_get_predicted_values(lsoda_common_struct_t* S, double* yh1)
     // to force pjac to be called, if a jacobian is involved.
     // in any case, pjac is called at least every msbp steps.
 
-    // NOTE: Only check rc/msbp conditions if Jacobian was NOT just computed.
-    // After prja sets rc=1.0 and jcur=1, we may retry with reduced step size
-    // which modifies rc. We should not request another Jacobian evaluation
-    // until jcur is reset to 0 (after corrector convergence at line 1124).
-    // This matches Fortran behavior and prevents excessive Jacobian evaluations.
-    if (S->jcur == 0) {
-        if (fabs(S->rc - 1.0) > S->ccmax) { S->ipup = S->miter; }
-        if (S->nst >= S->nslp + S->msbp) { S->ipup = S->miter; }
-    }
+    // Check if Jacobian needs updating based on rc changes or step count
+    // These checks match Fortran lines 232-233 in stoda.f
+    if (fabs(S->rc - 1.0) > S->ccmax) { S->ipup = S->miter; }
+    if (S->nst >= S->nslp + S->msbp) { S->ipup = S->miter; }
 
     S->tn = S->tn + S->h;
 
@@ -898,7 +902,27 @@ stoda_get_predicted_values(lsoda_common_struct_t* S, double* yh1)
     }
 }
 
-
+/**
+ * @brief Performs one step of the integration using the chosen method.
+ *
+ * This is the core stepping routine that implements the predictor-corrector
+ * algorithm. It handles both Adams (non-stiff) and BDF (stiff) methods,
+ * manages the corrector iteration, adjusts step size and order, and performs
+ * error control.
+ *
+ * @param neq  Pointer to the number of equations.
+ * @param y    Array containing the current solution vector.
+ * @param yh   Nordsieck history array.
+ * @param nyh  Leading dimension of the yh array.
+ * @param ewt  Error weight vector.
+ * @param savf Array containing f evaluated at the current state.
+ * @param acor Array containing the accumulated corrections.
+ * @param wm   Real work space for matrices.
+ * @param iwm  Integer work space for matrix operations.
+ * @param f    User-supplied function for evaluating dy/dt.
+ * @param jac  User-supplied Jacobian function.
+ * @param S    Pointer to the common structure containing integrator state.
+ */
 static void
 stoda(
     int* neq, double* y, double* yh, int nyh, double* ewt,
@@ -1179,7 +1203,7 @@ stoda(
                         if (pdh * rh1 > 0.00001) { rh1it = sm1[S->nq - 1] / pdh; }
                         rh1 = fmin(rh1, rh1it);
 
-                        if (S->nq <= S->mxords)
+                        if (S->nq > S->mxords)
                         {
                             nqm2 = S->mxords;
                             lm2 = S->mxords + 1;
@@ -1424,7 +1448,21 @@ stoda(
  *********************************************************************************
  */
 
-
+/**
+ * @brief Computes interpolated values of y and its derivatives.
+ *
+ * This function computes the k-th derivative of the interpolating polynomial
+ * at the time t. It is used to obtain values of the solution or its derivatives
+ * at times other than the integration steps.
+ *
+ * @param t      Time at which to evaluate the interpolant.
+ * @param k      Order of the derivative (0 for y itself, 1 for dy/dt, etc.).
+ * @param yh     Nordsieck history array.
+ * @param nyh    Leading dimension of the yh array.
+ * @param dky    Output array containing the computed derivative.
+ * @param iflag  Output flag: 0 if successful, -1 if k is out of range, -2 if t is out of range.
+ * @param S      Pointer to the common structure containing integrator state.
+ */
 static void
 intdy(const double t, const int k, double* yh, const int nyh, double* dky, int* iflag, lsoda_common_struct_t* S)
 {
@@ -1472,12 +1510,19 @@ intdy(const double t, const int k, double* yh, const int nyh, double* dky, int* 
 
 
 /**
+ * @brief Sets the error weight vector for error control.
  *
- * This subroutine sets the error weight vector ewt according to
+ * This function sets the error weight vector ewt according to
  *      ewt(i) = rtol(i)*abs(ycur(i)) + atol(i),  i = 1,...,n,
  *  with the subscript on rtol and/or atol possibly replaced by 1 above,
  *  depending on the value of itol.
  *
+ * @param n     Number of equations.
+ * @param itol  Tolerance type indicator (1-4).
+ * @param rtol  Relative tolerance array.
+ * @param atol  Absolute tolerance array.
+ * @param ycur  Current solution vector.
+ * @param ewt   Output error weight vector.
  */
 static void
 ewset(const int n, const int itol, double* rtol, double* atol, double* ycur, double* ewt)
@@ -1516,9 +1561,14 @@ ewset(const int n, const int itol, double* rtol, double* atol, double* ycur, dou
 }
 
 /**
+ * @brief Handles error state tracking for the lsoda integrator.
+ *
  * This helper function mimics the error handling at the end of lsoda
  * in the original FORTRAN code, setting istate and incrementing illin.
  * If illin reaches 5, istate is set to -8 to indicate a more severe error.
+ *
+ * @param istate Pointer to the integration state flag.
+ * @param illin  Pointer to the illegal input counter.
  */
 void lsoda_mark_error(int* istate, int* illin)
 {
@@ -1528,7 +1578,32 @@ void lsoda_mark_error(int* istate, int* illin)
     return;
 }
 
-
+/**
+ * @brief (L)ivermore (S)olver for (O)rdinary (D)ifferential Equations with (A)utomatic method switching.
+ *
+ * LSODA solves the initial value problem for stiff or non-stiff systems of first-order ODEs,
+ * dy/dt = f(t,y). It automatically selects between non-stiff (Adams) and stiff (BDF) methods
+ * based on the problem characteristics.
+ *
+ * @param f      User-supplied function to evaluate dy/dt = f(t,y).
+ * @param neq    Number of first-order ODEs.
+ * @param y      Array of length neq containing the solution vector.
+ * @param t      Pointer to the independent variable (time).
+ * @param tout   The next point where output is desired.
+ * @param itol   Tolerance type indicator (1-4).
+ * @param rtol   Relative tolerance array.
+ * @param atol   Absolute tolerance array.
+ * @param itask  Task indicator (1-5).
+ * @param istate State indicator: 1 for first call, 2 for subsequent calls, negative for errors.
+ * @param iopt   Optional input flag (0 or 1).
+ * @param rwork  Real working array.
+ * @param lrw    Length of rwork.
+ * @param iwork  Integer working array.
+ * @param liw    Length of iwork.
+ * @param jac    User-supplied Jacobian function (optional, depends on jt).
+ * @param jt     Jacobian type indicator.
+ * @param S      Pointer to the common structure containing integrator state.
+ */
 void lsoda(
     lsoda_func_t f, int neq, double* restrict y, double* t, double* tout, int itol, double* rtol, double* atol,
     int* itask, int* istate, int* iopt, double* restrict rwork, int lrw, int* restrict iwork, int liw, lsoda_jac_t jac,

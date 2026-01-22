@@ -6,7 +6,6 @@
 #include "_common_array_utils.hh"
 
 
-#define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 static PyObject* _linalg_inv_error;
 
 
@@ -45,7 +44,8 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];                // Slice size
     if (n != shape[ndim - 2]) {
-        PYERR(PyExc_ValueError, "Last two dimensions of the input must be the same.")
+        PyErr_SetString(PyExc_ValueError, "Last two dimensions of the input must be the same.");
+        return NULL;
     }
 
     overwrite_a = 0; // TODO: enable it
@@ -79,13 +79,15 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
             info = _inverse<npy_complex128>(ap_Am, (npy_complex128 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         default:
-            PYERR(PyExc_RuntimeError, "Unknown array type.")
+            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
+            return NULL;
     }
 
     if (info < 0) {
         // Either OOM or internal LAPACK error.
         Py_DECREF(ap_Ainv);
-        PYERR(PyExc_RuntimeError, "Memory error in scipy.linalg.inv.")
+        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.inv.");
+        return NULL;
     }
     PyObject *ret_lst = convert_vec_status(vec_status);
 
@@ -127,7 +129,8 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp* shape = PyArray_SHAPE(ap_Am);
     if ((ndim < 2) || (shape[ndim - 1] != shape[ndim - 2])) {
-        PYERR(PyExc_ValueError, "Last two dimensions of `a` must be the same.")
+        PyErr_SetString(PyExc_ValueError, "Last two dimensions of `a` must be the same.");
+        return NULL;
     }
 
     // At the python call site, 
@@ -171,13 +174,15 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
             info = _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, lower, transposed, overwrite_a, vec_status);
             break;
         default:
-            PYERR(PyExc_RuntimeError, "Unknown array type.")
+            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
+            return NULL;
     }
 
     if (info < 0) {
-        // Either OOM or internal LAPACK error.
+        // Either OOM error or requiested lwork too large.
         Py_DECREF(ap_x);
-        PYERR(PyExc_RuntimeError, "Memory error in scipy.linalg.solve.")
+        PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.solve.");
+        return NULL;
     }
     PyObject *ret_lst = convert_vec_status(vec_status);
 

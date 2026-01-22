@@ -247,7 +247,7 @@ sepfir_dtype_map = {np.uint8: np.float32, int: np.float64,
                     np.complex64: np.complex64, complex: complex}
 
 
-@skip_xp_backends(np_only=True)
+@make_xp_test_case(signal.sepfir2d)
 class TestSepfir2d:
     def test_sepfir2d_invalid_filter(self, xp):
         filt = xp.asarray([1.0, 2.0, 4.0, 2.0, 1.0])
@@ -337,6 +337,7 @@ class TestSepfir2d:
 
     @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
+    @pytest.mark.fail_asan
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )

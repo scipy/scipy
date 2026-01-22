@@ -65,7 +65,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     x : ndarray
         The argument that minimises `f`.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'COBYLA' `method` in particular.
@@ -97,10 +97,10 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     how these issues are resolved, as well as how the points v_i are
     updated, refer to the source code or the references below.
 
-        .. versionchanged:: 1.16.0
-            The original Powell implementation was replaced by a pure
-            Python version from the PRIMA package, with bug fixes and
-            improvements being made.
+    .. versionchanged:: 1.16.0
+        The original Powell implementation was replaced by a pure
+        Python version from the PRIMA package, with bug fixes and
+        improvements being made.
 
 
     References

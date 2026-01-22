@@ -3,6 +3,7 @@
 import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
+from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 from . import _signaltools
 from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
 from .windows import get_window
@@ -15,13 +16,14 @@ __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
+@_deprecate_positional_args(version="1.19.0")
 def lombscargle(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
     freqs: npt.ArrayLike,
-    precenter: bool = False,
-    normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     *,
+    precenter: bool = _NoValue,
+    normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     weights: npt.NDArray | None = None,
     floating_mean: bool = False,
 ) -> npt.NDArray:
@@ -255,13 +257,15 @@ def lombscargle(
     weights = weights * (1.0 / weights.sum())
 
     # if requested, perform precenter
-    if precenter:
+    if precenter is not _NoValue:
         msg = ("Use of parameter 'precenter' is deprecated as of SciPy 1.17.0 and "
                "will be removed in 1.19.0. Please leave 'precenter' unspecified. "
-               "It can be exactly substituted by passing 'y = (y - y.mean())' into "
+               "Passing True to 'precenter' "
+               "can be exactly substituted by passing 'y = (y - y.mean())' into "
                "the input. Consider setting `floating_mean` to True instead.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        y = y - y.mean()
+        if precenter:
+            y = y - y.mean()
 
     # transform arrays
     # row vector
@@ -709,7 +713,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None` and may
         not be greater than `nperseg`.
@@ -1490,7 +1494,7 @@ def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=Non
     axis : int, optional
         Axis along which the STFT is computed; the default is over the
         last axis (i.e. ``axis=-1``).
-    scaling: {'spectrum', 'psd'}
+    scaling : {'spectrum', 'psd'}
         The default 'spectrum' scaling allows each frequency line of `Zxx` to
         be interpreted as a magnitude spectrum. The 'psd' option scales each
         line to a power spectral density - it allows to calculate the signal's
@@ -1680,7 +1684,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     freq_axis : int, optional
         Where the frequency axis of the STFT is located; the default is
         the penultimate axis (i.e. ``axis=-2``).
-    scaling: {'spectrum', 'psd'}
+    scaling : {'spectrum', 'psd'}
         The default 'spectrum' scaling allows each frequency line of `Zxx` to
         be interpreted as a magnitude spectrum. The 'psd' option scales each
         line to a power spectral density - it allows to calculate the signal's
@@ -1947,7 +1951,7 @@ def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional

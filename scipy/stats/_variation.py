@@ -43,9 +43,9 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         Defines how to handle when input contains ``nan``.
         The following options are available:
 
-          * 'propagate': return ``nan``
-          * 'raise': raise an exception
-          * 'omit': perform the calculation with ``nan`` values omitted
+        * 'propagate': return ``nan``
+        * 'raise': raise an exception
+        * 'omit': perform the calculation with ``nan`` values omitted
 
         The default is 'propagate'.
     ddof : int, optional
