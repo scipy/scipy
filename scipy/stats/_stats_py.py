@@ -10051,7 +10051,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     ranks = _rankdata(x, method, xp=xp)
 
     # JIT won't allow use of `contains_nan` for control flow here, so we have to choose
-    # whether to always or never run this block wit JIT.
+    # whether to always or never run this block with JIT.
     # For now, *never* run it; otherwise, it would change dtype of `ranks`.
     # When gh-19889 is resolved, dtype will already be `float`, so *always* run it.
     # TODO then: broadcast `i_nan` to the shape of ranks before using `at.set`

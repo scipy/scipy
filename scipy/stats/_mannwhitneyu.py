@@ -217,8 +217,7 @@ MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 @xp_capabilities(cpu_only=True,  # exact calculation only implemented in NumPy
                  skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
-                 # getting ranks/ties with JAX JIT is no longer a problem, but
-                 # the exact null distribution is still NumPy-only
+                 # the exact null distribution is NumPy-only
                  jax_jit=False)
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
