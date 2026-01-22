@@ -137,6 +137,7 @@ class TestMvsdist:
             [x.mean() for x in stats.mvsdist([1, 2, 3, 4, 5])]
 
 
+@make_xp_test_case(stats.shapiro)
 class TestShapiro:
     def test_basic(self, xp):
         # reference values generated using R shapiro.test, e.g.
