@@ -1782,7 +1782,6 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # in case of ties, use midrank (see [1])
     r = scipy.stats.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
-    r = xp.astype(r, dtype, copy=False)
     rx = r[..., :nx]
     ry = r[..., nx:]
 

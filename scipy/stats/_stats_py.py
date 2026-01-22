@@ -8515,9 +8515,6 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     alldata = xp.concat(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
-    # should adjust output dtype of _rankdata
-    ranked = xp.astype(ranked, alldata.dtype, copy=False)
-    t = xp.astype(t, alldata.dtype, copy=False)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
@@ -8620,7 +8617,6 @@ def friedmanchisquare(*samples, axis=0):
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
     data, t = _rankdata(data, method='average', return_ties=True)
-    data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
