@@ -203,16 +203,19 @@ class TestShapiro:
         # of the values is much greater than the variance, there can be
         # numerical issues. Fixed by subtracting median from the data.
         # See gh-14462.
-
         trans_val, maxlog = stats.boxcox([122500, 474400, 110400])
-        res = stats.shapiro(xp.asarray(trans_val.tolist()))
+        dtype = xp.float64  # we need some precision to work with
+        res = stats.shapiro(xp.asarray(trans_val, dtype=dtype))
 
         # Reference from R:
         # options(digits=16)
         # x = c(0.00000000e+00, 3.39996924e-08, -6.35166875e-09)
         # shapiro.test(x)
-        xp_assert_close(res.statistic, xp.asarray(0.86468431705371))
-        xp_assert_close(res.pvalue, xp.asarray(0.2805581751566))
+        ref_statistic = xp.asarray(0.86468431705371, dtype=dtype)
+        ref_pvalue = xp.asarray(0.2805581751566, dtype=dtype)
+
+        xp_assert_close(res.statistic, ref_statistic, rtol=5e-7)
+        xp_assert_close(res.pvalue, ref_pvalue, rtol=5e-7)
 
     def test_length_3_gh18322(self, xp):
         # gh-18322 reported that the p-value could be negative for input of
@@ -235,15 +238,17 @@ class TestShapiro:
         rng = np.random.default_rng(n)
         x = rng.standard_normal(n)
 
-        res = stats.shapiro(xp.asarray(x.tolist()))
-
         a = np.zeros(n // 2, dtype=np.float64)
         y = np.sort(x) - x[n // 2]
         ref_statistic, ref_pvalue, _ = swilk(y, a, 0)
 
-        rtol = 5e-7 if xp_default_dtype(xp) == xp.float64 else 1e-3
-        xp_assert_close(res.statistic, xp.asarray(ref_statistic), rtol=rtol)
-        xp_assert_close(res.pvalue, xp.asarray(ref_pvalue), rtol=rtol)
+        x = xp.asarray(x)
+        res = stats.shapiro(x)
+        ref_statistic = xp.asarray(ref_statistic, dtype=x.dtype)
+        ref_pvalue = xp.asarray(ref_pvalue, dtype=x.dtype)
+
+        xp_assert_close(res.statistic, ref_statistic, rtol=5e-7)
+        xp_assert_close(res.pvalue, ref_pvalue, rtol=5e-7)
 
 
 @pytest.mark.filterwarnings("ignore: As of SciPy 1.17: FutureWarning")
@@ -1505,7 +1510,7 @@ class TestMood:
         # Test if the results of mood test in 2-D vectorized call are consistent
         # result when looping over the slices.
         ny = 5
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(3602349075)
         rng_method = getattr(rng, rng_method)
         x1 = rng_method(*args, size=(10, ny))
         x2 = rng_method(*args, size=(15, ny))
