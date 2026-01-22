@@ -9993,7 +9993,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     -------
     ranks : ndarray
          An array of size equal to the size of `a`, containing rank
-         scores.
+         scores. The dtype is the result dtype of `a` and a Python float.
 
     References
     ----------
@@ -10004,18 +10004,18 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     >>> import numpy as np
     >>> from scipy.stats import rankdata
     >>> rankdata([0, 2, 3, 2])
-    array([ 1. ,  2.5,  4. ,  2.5])
+    array([1. , 2.5, 4. , 2.5])
     >>> rankdata([0, 2, 3, 2], method='min')
-    array([ 1,  2,  4,  2])
+    array([1., 2., 4., 2.])
     >>> rankdata([0, 2, 3, 2], method='max')
-    array([ 1,  3,  4,  3])
+    array([1., 3., 4., 3.])
     >>> rankdata([0, 2, 3, 2], method='dense')
-    array([ 1,  2,  3,  2])
+    array([1., 2., 3., 2.])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
-    array([ 1,  2,  4,  3])
-    >>> rankdata([[0, 2], [3, 2]]).reshape(2,2)
+    array([1., 2., 4., 3.])
+    >>> rankdata([[0, 2], [3, 2]]).reshape(2, 2)
     array([[1. , 2.5],
-          [4. , 2.5]])
+           [4. , 2.5]])
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
