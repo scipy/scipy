@@ -105,7 +105,10 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
 
     Examples
     --------
-    Test whether two samples come from the same distribution.
+    Test whether two samples come from the same distribution. The null
+    hypothesis is that the two samples were drawn from the same distribution.
+    We consider a p-value of 0.05 or less as evidence to reject the null
+    hypothesis in favor of the alternative that the distributions differ.
 
     >>> import numpy as np
     >>> from scipy import stats
