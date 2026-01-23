@@ -8672,6 +8672,7 @@ class TestBrunnerMunzel:
         xp_assert_equal(statistic, xp.asarray(xp.nan))
         xp_assert_equal(pvalue, xp.asarray(xp.nan))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_brunnermunzel_nan_input_propagate(self, xp):
         X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, xp.nan])
         Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])

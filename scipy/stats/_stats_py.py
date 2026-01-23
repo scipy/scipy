@@ -71,6 +71,7 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
+    is_jax,
     is_marray,
     xp_size,
     xp_vector_norm,
@@ -485,7 +486,7 @@ def _mode_result(mode, count):
 
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
-                 jax_jit=False)  # doesn't really support unique_counts
+                 jax_jit=False)  # would delegate, but jax-ml/jax#34486
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -8427,8 +8428,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)  # rankdata incompatible with JIT
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8539,8 +8539,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
-                 jax_jit=False)  # rankdata incompatible with JIT
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")])
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8642,8 +8641,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
                  skip_backends=[('dask.array', 'needs rankdata'),
-                                ('cupy', 'needs rankdata')],
-                 jax_jit=False)  # rankdata incompatible with JIT
+                                ('cupy', 'needs rankdata')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate', *, axis=0):
@@ -8762,7 +8760,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
-        if xp.any(df_numer == 0) and xp.any(df_denom == 0):
+        if not is_lazy_array(df_numer) and not is_lazy_array(df_denom) and (
+                xp.any(df_numer == 0) and xp.any(df_denom == 0)):
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
@@ -9942,8 +9941,7 @@ def _validate_distribution(values, weights):
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")],
-                 jax_jit=False)
+                                ("dask.array", "no `take_along_axis`")])
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
@@ -10052,7 +10050,12 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     x = xp_swapaxes(x, axis, -1, xp=xp)
     ranks = _rankdata(x, method, xp=xp)
 
-    if contains_nan:
+    # JIT won't allow use of `contains_nan` for control flow here, so we have to choose
+    # whether to always or never run this block with JIT.
+    # For now, *never* run it; otherwise, it would change dtype of `ranks`.
+    # When gh-19889 is resolved, dtype will already be `float`, so *always* run it.
+    # TODO then: broadcast `i_nan` to the shape of ranks before using `at.set`
+    if not is_lazy_array(x) and contains_nan:
         default_float = xp_default_dtype(xp)
         i_nan = (xp.isnan(x) if nan_policy == 'omit'
                  else xp.any(xp.isnan(x), axis=-1))
@@ -10080,6 +10083,16 @@ def _order_ranks(ranks, j, *, xp):
 def _rankdata(x, method, return_ties=False, xp=None):
     # Rank data `x` by desired `method`; `return_ties` if desired
     xp = array_namespace(x) if xp is None else xp
+
+    if is_jax(xp):
+        import jax.scipy.stats as jax_stats
+        ranks = jax_stats.rankdata(x, method=method, axis=-1)
+        if return_ties:
+            max_ranks = jax_stats.rankdata(xp.sort(x, axis=-1), method='max', axis=-1)
+            t = xp.diff(max_ranks, axis=-1, prepend=0)
+            return ranks, t
+        return ranks
+
     shape = x.shape
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
