@@ -19,7 +19,8 @@ from scipy._lib._util import wrapped_inspect_signature
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
-                        _minimize_scalar_golden, MemoizeJac, OptimizeResult,
+                        _minimize_scalar_golden, _minimize_scalar_linewalker,
+                        MemoizeJac, OptimizeResult,
                         _wrap_callback, _recover_from_bracket_error)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
@@ -49,7 +50,7 @@ MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
                            'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla', 'slsqp']
 
-MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
+MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden', 'linewalker']
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
@@ -854,6 +855,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         (see `scipy.optimize.bracket`).
         The minimizer ``res.x`` will not necessarily satisfy
         ``xa <= res.x <= xb``.
+        For method 'linewalker', `bracket` defines the bracketing
+        interval pair only (xa, xb) and is required.
     bounds : sequence, optional
         For method 'bounded', `bounds` is mandatory and must have two finite
         items corresponding to the optimization bounds.
@@ -865,6 +868,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         - :ref:`Brent <optimize.minimize_scalar-brent>`
         - :ref:`Bounded <optimize.minimize_scalar-bounded>`
         - :ref:`Golden <optimize.minimize_scalar-golden>`
+        - :ref:`Linewalker <optimize.minimize_scalar-linewalker>`
         - custom - a callable object (added in version 0.14.0), see below
 
         Default is "Bounded" if bounds are provided and "Brent" otherwise.
@@ -924,6 +928,25 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     only for local minimization. When the function of interest has more than
     one local minimum, consider :ref:`global_optimization`.
 
+    Method :ref:`Linewalker <optimize.minimize_scalar-linewalker>` uses the
+    linewalker search technique [4]_ [5]_. Linewalker is a sampling method
+    for optimizing and learning a discrete approximation (or surrogate) of
+    univariate function [4]_. The method constructs a smooth surrogate on
+    a set of equally-spaced grid points by evaluating the true function at
+    a sparse set of judiciously chosen grid points. At each iteration, the
+    surrogate's non-tabu local minima and maxima are identified as candidates
+    for sampling. Tabu search constructs are also used to promote
+    diversification. If no non-tabu extrema are identified, a simple exploration
+    step is taken by sampling the midpoint of the largest unexplored interval.
+    The algorithm continues until a user-defined function evaluation limit
+    is reached. Reference [4]_ includes numerous examples to illustrate
+    linewalker's efficacy and superiority relative to state-of-the-art
+    derivative-free optimization methods, including Bayesian optimization,
+    Bobyqa, fminbnd, fminsearch, MCS, NOMAD, and SnobFit, on primarily
+    nonconvex (multimodal) test functions. Linewalker is particularly well-suited
+    for nonconvex functions. If the underlying function is known to be
+    convex, a less sophisticated method should be used.
+
     **Custom minimizers**
 
     It may be useful to pass a custom minimization method, for example
@@ -952,6 +975,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
            Computation 259 (1977).
     .. [3] Brent, Richard P. Algorithms for Minimization Without Derivatives.
            Courier Corporation, 2013.
+    .. [4] Papageorgiou, D.J., Kronqvist, J. and Kumaran, K. (2024).
+           Linewalker: line search for black box derivative-free optimization
+           and surrogate model construction. Optimization and Engineering, pp.1-65.
+    .. [5] Papageorgiou, D.J., Kronqvist, J., Ramanujam, A., Kor, J., Kim, Y. and 
+           Li, C. (2024). Solution polishing via path relinking for continuous 
+           black-box optimization. Optimization Letters, pp.1-42.
 
     Examples
     --------
@@ -994,7 +1023,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     if options is None:
         options = {}
 
-    if bounds is not None and meth in {'brent', 'golden'}:
+    if bounds is not None and meth in {'brent', 'golden', 'linewalker'}:
         message = f"Use of `bounds` is incompatible with 'method={method}'."
         raise ValueError(message)
 
@@ -1028,6 +1057,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     elif meth == 'golden':
         res = _recover_from_bracket_error(_minimize_scalar_golden,
                                           fun, bracket, args, **options)
+    elif meth == 'linewalker':
+        res = _minimize_scalar_linewalker(fun, bracket, args, **options)
+        res.fun = np.reshape(res.fun, ())
     else:
         raise ValueError(f'Unknown solver {method}')
 
