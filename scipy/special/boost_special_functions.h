@@ -13,7 +13,6 @@
 
 #include "boost/math/distributions.hpp"
 #include <boost/math/distributions/inverse_gaussian.hpp>
-#include <boost/math/distributions/negative_binomial.hpp>
 
 typedef boost::math::policies::policy<
     boost::math::policies::promote_float<false >,
