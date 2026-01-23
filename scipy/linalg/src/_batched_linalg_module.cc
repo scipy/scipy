@@ -328,6 +328,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_S = NULL;
     PyArrayObject *ap_x = NULL;
     PyArrayObject *ap_rank = NULL;
+    PyObject *ret_lst = NULL, *s_ret = NULL;
     double rcond;
     const char *lapack_driver = NULL;
 
@@ -399,7 +400,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
     if (!ap_x) {
         PyErr_NoMemory();
-        return NULL;
+        goto fail;
     }
 
     // S array is not used by ?gelsy
@@ -414,7 +415,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         ap_S = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S);
         if (!ap_S) {
             PyErr_NoMemory();
-            return NULL;
+            goto fail;
         }
     }
 
@@ -422,7 +423,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     ap_rank = (PyArrayObject *)PyArray_SimpleNew(ndim-2, shape_1, NPY_INT64);
     if (!ap_rank) {
         PyErr_NoMemory();
-        return NULL;
+        goto fail;
     }
 
     switch(typenum) {
@@ -440,22 +441,25 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
-            return NULL;
+            goto fail;
     }
 
     if (info < 0) {
         // Some fatal error: OOM, LWORK query failed or lwork needed is too large
-        Py_DECREF(ap_x);
-        Py_DECREF(ap_rank);
-        Py_XDECREF(ap_S);
         PyErr_SetString(PyExc_MemoryError, get_err_mesg("lstsq", lapack_driver, info).c_str());
-        return NULL;
+        goto fail;
     }
-    PyObject *ret_lst = convert_vec_status(vec_status);
+    ret_lst = convert_vec_status(vec_status);
     // with 'gelsy', we return None for `s`
-    PyObject *s_ret = ap_S != NULL ? PyArray_Return(ap_S) : Py_None;  // XXX incref None on python==3.11?
+    s_ret = ap_S != NULL ? PyArray_Return(ap_S) : Py_None;
 
     return Py_BuildValue("NNNN", PyArray_Return(ap_x), PyArray_Return(ap_rank), s_ret, ret_lst);
+
+fail:
+    Py_XDECREF(ap_x);
+    Py_XDECREF(ap_rank);
+    Py_XDECREF(ap_S);
+    return NULL;
 }
 
 

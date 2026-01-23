@@ -75,7 +75,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     T *work = &buffer[m*n + ldb*nrhs];
 
     real_type *rwork = NULL;
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(5*min_mn*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -200,7 +200,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     T *work = &buffer[m*n + ldb*nrhs];
 
     real_type *rwork = NULL;
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(lrwork*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -224,7 +224,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
         copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
 
-        // copy the r.h.s, too; NB: gelss needs LDB=max(1, m, n)
+        // copy the r.h.s, too; NB: gelsd needs LDB=max(1, m, n)
         T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
         copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
 
@@ -325,7 +325,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     T *work = &buffer[m*n + ldb*nrhs];
 
     real_type *rwork = NULL;
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(2*n*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -368,12 +368,12 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
             goto done;
         }
 
-        // copy results from temp buffers (S is filled in-place already)
+        // copy results from temp buffers
         copy_slice_F_to_C(ptr_x, data_b, n, nrhs, ldb);
         *ptr_rank = (npy_int64)rank;
         // XXX we discard the column residuals, b[n:]
 
-        // advance the output pointers: S, x and rank arrays are C-ordered by construction
+        // advance the output pointers: x and rank arrays are C-ordered by construction
         ptr_x += n*nrhs;
         ptr_rank += 1;
     }
