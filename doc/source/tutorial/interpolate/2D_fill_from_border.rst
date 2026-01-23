@@ -7,14 +7,22 @@ Filling an image from a border
 ==============================
 
 Suppose we have values for a function only on the border of a region,
-either to estimate the background of an image from the parts not
-covered by the sample, or as part of a boundary-value problem.  As a
-concrete example, consider the estimation of the (possibly uneven)
-background illumination on a microscope slide from the edge of the
-image, away from the specimen.
+and we want to extend this function into the interior of the region.
+We might do this to estimate the background of a microscope image from
+the parts not covered by the sample, or as part of a boundary-value
+problem.  As a concrete example, consider the estimation of the
+(possibly uneven) background illumination on a microscope slide from
+the edge of the image, away from the specimen.  We might not have a
+model for how the function behaves in the interior of the region, so
+we must either make assumptions about that behavior or turn to
+interpolation.  Naturally, different assumptions about the function's
+behavior on the interior of the region and different interpolation
+methods will yield different estimates of the function's value in the
+region.  This tutorial explores many interpolation methods and a few
+assumptions to show the effects on behavior.
 
-In particular, consider a square with sides of length :math:`L`, with
-function values on the boundary given by
+As a concrete example, consider a square with sides of length
+:math:`L`, with function values on the boundary given by
 
 .. math::
 
@@ -43,16 +51,31 @@ coordinates before taking the sine:
 
 .. math:: \sin(6\pi (x+y)/L)
 
-Another option is the solution to the Laplace equation:
+Another option is the solution to the Laplace equation.  The Laplace equation is
+
+.. math:: \frac{\partial^2 f}{\partial x^2} + \frac{\partial^2 f}{\partial y^2} = 0.
+
+Solutions to the Laplace equaiton are such that each point has a value
+close to the mean of the values of the points around it.  As a result,
+solutions to the Laplace equation have no extrema in the interior of
+the region in which they are defined.
+
+We could build an iterative solver based on this property, or we could
+remember some complementary properties of the circular and hyperbolic
+trigonometric functions and verify that the following satisfies the
+Laplace equation:
 
 .. math:: (\sin(6\pi x/L) \cosh(6\pi (y-L/2)/L) + \sin(6\pi y/L)\cosh(6\pi (x-L/2)/L))/\cosh(3\pi)
+
+We now plot these functions to get a sense of their behavior.
 
 .. plot::
    :alt: "A visual comparison of the functions given above"
    :context: close-figs
 
    First, a bit of setup.  I choose :math:`L = 600` because it has
-   many divisors.
+   many divisors, so the zeros of the boundary will fall on the grid
+   points.
 
    >>> import numpy as np
    >>> L = 600
@@ -92,6 +115,12 @@ Another option is the solution to the Laplace equation:
    >>> plt.subplot(133)
    >>> plot_and_check_filled_image(laplace_solution, "Laplace solution")
    Laplace solution: Mean error: 3.4e-16 Error std: 3.6e-16
+
+The sum of the boundary conditions produces values up to :math:`\pm
+2`, while the others are bounded by :math:`\pm 1`, which is the same
+range as the boundary.  The magnitudes of the mismatches are on the
+order of :math:`10^{-15}`, which is about as small as we can expect
+from double-precision floating-point numbers.
 
 Not every boundary so readily admits analytic solutions, so we broaden
 our search to other options.
@@ -171,8 +200,14 @@ every point.
    Number of NaNs: 0
    <BLANKLINE>
 
-In other words, the linear interpolator has problems filling
-rectangles with more than two hundred points on a side.
+In other words, the linear and cubic interpolators have problems
+filling rectangles with more than two hundred points on a side.
+
+The errors in estimating the points on the boundary from the points
+around them are larger, and decrease as the order of the interpolator
+increases, from :math:`\approx 10^{-2}` for the zeroth-order
+nearest-neighbor interpolator to :math:`\approx 10^{-6}` for the
+third-order clough-tocher interpolator.
 
 Simplex tolerance
 -----------------
