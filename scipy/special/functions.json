@@ -522,8 +522,9 @@
             "nbdtrik": "ddd->d"        }
     },
     "nbdtrin": {
-        "_cdflib_wrappers.pxd": {
-            "nbdtrin": "ddd->d"
+        "boost_special_functions.h++": {
+            "nbinom_invn_float": "fff->f",
+            "nbinom_invn_double": "ddd->d"
         }
     },
     "ncfdtr": {

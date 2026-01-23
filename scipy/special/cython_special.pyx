@@ -1702,10 +1702,6 @@ from ._cdflib_wrappers cimport nbdtrik as _func_nbdtrik
 ctypedef double _proto_nbdtrik_t(double, double, double) noexcept nogil
 cdef _proto_nbdtrik_t *_proto_nbdtrik_t_var = &_func_nbdtrik
 
-from ._cdflib_wrappers cimport nbdtrin as _func_nbdtrin
-ctypedef double _proto_nbdtrin_t(double, double, double) noexcept nogil
-cdef _proto_nbdtrin_t *_proto_nbdtrin_t_var = &_func_nbdtrin
-
 from ._cdflib_wrappers cimport ncfdtridfd as _func_ncfdtridfd
 ctypedef double _proto_ncfdtridfd_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfd_t *_proto_ncfdtridfd_t_var = &_func_ncfdtridfd
@@ -3075,9 +3071,14 @@ cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrik"""
     return _func_nbdtrik(x0, x1, x2)
 
-cpdef double nbdtrin(double x0, double x1, double x2) noexcept nogil:
+cpdef df_number_t nbdtrin(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrin"""
-    return _func_nbdtrin(x0, x1, x2)
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_invn_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_invn_double)(x0, x1, x2)
+    else:
+        return NAN
 
 cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtr"""
