@@ -480,7 +480,7 @@ class DCSRCH:
             self.stmax = stp + xtrapu * (stp - self.stx)
 
         # Force the step to be within the bounds stpmax and stpmin.
-        stp = np.clip(stp, self.stpmin, self.stpmax)
+        stp = max(min(stp, self.stpmax), self.stpmin)
 
         # If further progress is not possible, let stp be the best
         # point obtained during the search.

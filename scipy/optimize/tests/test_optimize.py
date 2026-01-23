@@ -3653,7 +3653,7 @@ def test_minimize_float_precision(method, _dtype):
         g = None
 
     xx = np.array([2.], dtype=_dtype)**(-2/3)
-    for x0 in np.linspace(-1., 1, 21, dtype=_dtype):
-        res = optimize.minimize(fun, [x0], method=method, jac=g)
+    for x0 in np.linspace(-1., 1, 113, dtype=_dtype):
+        res = optimize.minimize(fun, [x0], method=method, jac=g, tol=1e-6)
         assert res.x.dtype == _dtype
-        # assert_allclose(fun(res.x), fun(xx), rtol=1e-3)
+        assert_allclose(fun(res.x), fun(xx), rtol=2e-3)
