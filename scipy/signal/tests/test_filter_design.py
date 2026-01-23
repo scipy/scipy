@@ -304,6 +304,29 @@ class TestZpk2Tf:
         xp_assert_close(b, b_ref, atol=1e-14)
         xp_assert_close(a, a_ref, atol=1e-14)
 
+    @skip_xp_backends("jax.numpy",
+                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
+    def test_zpk2tf_complex_k_multi_dim_z(self, xp):
+        k = 1j
+        z = xp.asarray([[1., 2.], [0., -1.]])
+        p = xp.asarray([3., 4.])
+
+        b, a = zpk2tf(z, p, k)
+
+        z1 = xp.asarray([1., 2.])
+        b1, a1 = zpk2tf(z1, p, k)
+
+        z2 = xp.asarray([0., -1.])
+        b2, a2 = zpk2tf(z2, p, k)
+
+        xp_assert_close(a, a1)
+        xp_assert_close(a, a2)
+        xp_assert_close(b[0], b1)
+        xp_assert_close(b[1], b2)
+        assert xp.isdtype(b.dtype, 'complex floating')
+
 
 @make_xp_test_case(sos2zpk)
 class TestSos2Zpk:

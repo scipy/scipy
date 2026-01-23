@@ -1290,7 +1290,8 @@ def zpk2tf(z, p, k):
 
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
-        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
+        result_dtype = xp.result_type(temp.dtype, k.dtype)
+        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=result_dtype)
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
