@@ -188,6 +188,18 @@ Additional tools
    `scipy.ndimage.map_coordinates`,
    `scipy.ndimage.spline_filter`,
 
+
+Concurrency Notes
+=================
+
+Most interpolation objects in ``scipy.interpolate`` are thread-safe for read-only
+operations (evaluation at new points). For details on thread-safety, see
+:ref:`scipy_thread_safety`.
+
+Interpolator objects created by calling one of the interpolation functions should
+not be mutated from multiple threads simultaneously. Read-only operations (e.g.,
+calling the interpolator to evaluate at new points) are generally safe.
+
 """  # noqa: E501
 from ._interpolate import *
 from ._fitpack_py import *

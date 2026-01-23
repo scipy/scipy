@@ -39,30 +39,16 @@ with `multiprocessing`.
 Thread-Safe Operations
 ----------------------
 
-The following operations have inherent thread-safety guarantees; see the
-:ref:`terminology <py-free-threading:free-threading-terminology>`. Unless
-specified otherwise safety can be assumed to be achieved using
-:ref:`Thread locals <term-thread-local>` :
-
-Thread local:
-  - :func:`scipy.integrate.ode` with ``method='lsoda'``
-  - :func:`scipy.integrate.solve_ivp` with ``method='LSODA'``
-  - :func:`scipy.sparse.linalg.spsolve` (SuperLU backend)
-
+Unless specified otherwise scipy functionalities should be thread safe and  can
+be assumed to be achieved so by using :ref:`Thread locals <term-thread-local>`.
 
 NOT Thread-Safe (Caller Responsibility)
 ---------------------------------------
 
-The following operations are **not inherently thread-safe** and should be
-:ref:`term-externally-synchronized`. Caller must ensure proper synchronization:
-
-**Integration**:
-  - :func:`scipy.integrate.ode` with ``method='vode'`` - use separate instance per thread or lock
-
-**File I/O** (protect with `threading.Lock` or use separate file handles per thread):
-  - :func:`scipy.io.netcdf_file`
-  - :func:`scipy.io.loadmat`, :func:`scipy.io.savemat`, :func:`scipy.io.whosmat`
-  - :func:`scipy.io.mmread`, :func:`scipy.io.mmwrite`, :func:`scipy.io.mminfo`
+Many operations are **not inherently thread-safe** and should be
+:ref:`term-externally-synchronized`. Caller must ensure proper synchronization.
+Each scipy module API reference will have proper notes on concurrency and, if
+relevant a list of its functionalities.
 
 **Data Structures**:
 
@@ -73,13 +59,14 @@ a data structure, like using item or slice assignment on sparse arrays, while
 the data is shared across multiple threads. That may result in data corruption,
 crashes, or other unwanted behavior.
 
-Per-Thread Behavior
--------------------
+Global and Per-Thread State
+---------------------------
 
 These operations are thread-safe but have per-thread configuration:
 
   - :func:`scipy.sparse.linalg.use_solver` - sets thread-local solver preference
   - :func:`scipy.sparse.linalg.spsolve` - respects thread-local preference set by ``use_solver()``
+  - `scipy.special.errstate <error_handling>` - control error handling.
 
 Each thread can independently configure solver preferences without locks or contention.
 
