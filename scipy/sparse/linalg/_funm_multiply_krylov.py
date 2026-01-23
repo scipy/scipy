@@ -45,7 +45,7 @@ __all__ = ['funm_multiply_krylov']
 
 def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
     """
-    The Arnoldi iteration for constructing the basis V and the projection H = V * A V
+    The Arnoldi iteration for constructing the basis V and the projection H = V* A V
     for the Krylov subspace Km(A, b) of order m.
 
     Parameters
@@ -97,7 +97,7 @@ def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
 
 def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
     """
-    The Lanczos iteration for constructing the basis V and the projection H = V * A V
+    The Lanczos iteration for constructing the basis V and the projection H = V* A V
     for the Krylov subspace Km(A, b) of order m. A must be Hermitian.
 
     Parameters
@@ -149,8 +149,8 @@ def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
     return False, m
 
 
-def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
-                         rtol = 1e-6, restart_every_m = None, max_restarts = 20):
+def funm_multiply_krylov(f, A, b, *, assume_a="general", t=1.0, atol=0.0,
+                         rtol=1e-6, restart_every_m=None, max_restarts=20):
     """
     A restarted Krylov method for evaluating ``y = f(tA) b`` from [1]_ [2]_.
 
@@ -298,26 +298,22 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     # Using the column major order here since we work with
     # each individual column separately.
     internal_type = np.common_type(A, b)
-    V = np.zeros((n, m + 1), dtype = internal_type, order = 'F')
-    H = np.zeros((mmax + 1, mmax), dtype = internal_type, order = 'F')
+    V = np.zeros((n, m + 1), dtype=internal_type, order='F')
+    H = np.zeros((mmax + 1, mmax), dtype=internal_type, order='F')
 
     restart = 1
 
     if is_hermitian:
         breakdown, j = _funm_multiply_krylov_lanczos(A, b, bnorm, V,
-                                                        H[:m + 1, :m], m)
+                                                     H[:m + 1, :m], m)
     else:
         breakdown, j = _funm_multiply_krylov_arnoldi(A, b, bnorm, V,
-                                                        H[:m + 1, :m], m)
+                                                     H[:m + 1, :m], m)
 
     fH = f(t * H[:j, :j])
     y = bnorm * V[:, :j].dot(fH[:, 0])
 
     if breakdown:
-        warnings.warn("scipy.sparse.linalg.funm_multiply_krylov:"
-                      f"Arnoldi/Lanczos iteration broke down at iter = {j}"
-                      f" after {restart-1} restarts", category=RuntimeWarning,
-                      stacklevel=2)
         return y
 
     update_norm = norm(bnorm * fH[:, 0])
@@ -337,11 +333,6 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
             end = begin + j
             fH = f(t * H[:end, :end])
             y[:end] = y[:end] + bnorm * V[:, :m].dot(fH[begin:end, 0])
-
-            warnings.warn("scipy.sparse.linalg.funm_multiply_krylov:"
-                          f"Arnoldi/Lanczos iteration broke down at iter = {j}"
-                          f" after {restart-1} restarts",
-                          category=RuntimeWarning, stacklevel=2)
             return y
 
         fH = f(t * H[:end, :end])
