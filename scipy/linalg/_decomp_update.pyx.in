@@ -1417,7 +1417,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
         Index of the first row or column to delete.
     p : int, optional
         Number of rows or columns to delete, defaults to 1.
-    which: {'row', 'col'}, optional
+    which : {'row', 'col'}, optional
         Determines if rows or columns will be deleted, defaults to 'row'
     overwrite_qr : bool, optional
         If True, consume Q and R, overwriting their contents with their
@@ -1634,7 +1634,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
         Rows or columns to insert
     k : int
         Index before which `u` is to be inserted.
-    which: {'row', 'col'}, optional
+    which : {'row', 'col'}, optional
         Determines if rows or columns will be inserted, defaults to 'row'
     rcond : float
         Lower bound on the reciprocal condition number of ``Q`` augmented with

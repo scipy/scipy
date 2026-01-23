@@ -428,7 +428,7 @@ add_newdoc("bdtrik",
     """)
 
 add_newdoc("bdtrin",
-    """
+    r"""
     bdtrin(k, y, p, out=None)
 
     Inverse function to `bdtr` with respect to `n`.
@@ -460,24 +460,35 @@ add_newdoc("bdtrin",
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
-    distribution to the cumulative incomplete beta distribution.
-
-    Computation of `n` involves a search for a value that produces the desired
-    value of `y`. The search relies on the monotonicity of `y` with `n`.
-
-    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
+    This function uses the `find_minimum_number_of_trials` method of the
+    `binomial_distribution` class of the Boost.Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.5#E5
-    .. [3] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    How often do we have to flip a fair coin to have at least a 90% chance
+    of getting 10 heads? `bdtrin` answers this question:
+
+    >>> import scipy.special as sc
+    >>> k = 10  # number of times we want heads
+    >>> p = 0.5  # probability of flipping heads
+    >>> y = 0.9  # cumulative probability
+    >>> result = sc.bdtrin(k, y, p)
+    >>> result
+    15.90442928275109
+
+    To verify, compute the cumulative probability of getting 10 or fewer
+    successes in 16 trials with probability 0.5 using the binomial
+    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
+    number of trials, we round up to the next integer:
+
+    >>> from scipy.stats import Binomial
+    >>> Binomial(n=16, p=p).cdf(k)
+    0.8949432373046875
+
     """)
 
 add_newdoc("btdtria",
@@ -1604,8 +1615,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E6
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1720,8 +1730,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E5
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1812,8 +1821,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E1
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1911,8 +1919,7 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E1
@@ -2036,27 +2043,24 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.20.iii
     .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
            Integrands with the Square Root of Two Quadratic Factors," J.
            Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
-           https://doi.org/10.1016/S0377-0427(00)00282-X
+           :doi:`10.1016/S0377-0427(00)00282-X`.
     .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
            Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
            Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
            Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
-           Switzerland: Springer Nature Switzerland)
-           https://arxiv.org/abs/1806.06725
-           https://doi.org/10.1007/978-3-030-04480-0
+           Switzerland: Springer Nature Switzerland).
+           :doi:`10.1007/978-3-030-04480-0`. https://arxiv.org/abs/1806.06725
     .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
            Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
-           pp. 288-303, 1994.
+           pp. 288-303, 1994. :doi:`10.1137/S0036141092228477`.
            https://arxiv.org/abs/math/9310223
-           https://doi.org/10.1137/S0036141092228477
 
     Examples
     --------
@@ -2140,7 +2144,7 @@ add_newdoc("entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -3579,7 +3583,7 @@ add_newdoc("gdtr",
 
     .. math::
 
-        F = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        F(x) = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3599,7 +3603,7 @@ add_newdoc("gdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The CDF of the gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
@@ -3697,7 +3701,7 @@ add_newdoc("gdtrc",
 
     .. math::
 
-        F = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        S(x) = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3717,7 +3721,7 @@ add_newdoc("gdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The survival function of the gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
@@ -3934,7 +3938,7 @@ add_newdoc("gdtrib",
            "A new hybrid quadratic/bisection algorithm for finding the zero of a
            nonlinear function without using derivatives".
            Advances in Engineering Software, 28(3), 145-149.
-           https://doi.org/10.1016/s0965-9978(96)00051-8
+           :doi:`10.1016/s0965-9978(96)00051-8`.
 
     Examples
     --------
@@ -4396,7 +4400,7 @@ add_newdoc("kl_div",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -4444,7 +4448,7 @@ add_newdoc("kn",
            http://netlib.org/amos/
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
-           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
+           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265.
 
     Examples
     --------
@@ -4830,7 +4834,7 @@ add_newdoc("nbdtr",
 
     .. math::
 
-        F = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        F(k) = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that `k` or fewer failures precede the nth
@@ -4849,7 +4853,7 @@ add_newdoc("nbdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k` or fewer failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -4956,7 +4960,7 @@ add_newdoc("nbdtrc",
 
     .. math::
 
-        F = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        S(k) = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that more than `k` failures precede the nth
@@ -4975,7 +4979,7 @@ add_newdoc("nbdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -6254,6 +6258,12 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
     Notes
     -----
     This function relies on the ``gamma_q_inva`` function from the Boost
@@ -6262,12 +6272,6 @@ add_newdoc("pdtrik",
     References
     ----------
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrc : Poisson survival function
-    pdtri : inverse of `pdtr` with respect to `m`
 
     Examples
     --------
@@ -6604,7 +6608,7 @@ add_newdoc("rel_entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
@@ -7712,9 +7716,9 @@ add_newdoc("owens_t",
 
     Parameters
     ----------
-    h: array_like
+    h : array_like
         Input value.
-    a: array_like
+    a : array_like
         Input value.
     out : ndarray, optional
         Optional output array for the function results

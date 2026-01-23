@@ -472,7 +472,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -624,7 +624,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
@@ -1032,7 +1032,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):

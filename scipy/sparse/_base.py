@@ -355,7 +355,7 @@ class _spbase(SparseABC):
         axis : {-2, -1, 0, 1, None} optional
             Report stored values for the whole array, or along a specified axis.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero entries
         """
@@ -366,7 +366,7 @@ class _spbase(SparseABC):
     def nnz(self) -> int:
         """Number of stored values, including explicit zeros.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero entries
         """
@@ -376,7 +376,7 @@ class _spbase(SparseABC):
     def size(self) -> int:
         """Number of stored values.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero values.
         """
@@ -1427,7 +1427,7 @@ class _spbase(SparseABC):
 
             .. versionadded:: 1.0
 
-        See also
+        See Also
         --------
         numpy.diagonal : Equivalent numpy function.
 

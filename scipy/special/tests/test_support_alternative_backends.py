@@ -49,12 +49,6 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
-    if (
-            f_name == "sinc" and "float32" in dtypes
-            and version.parse(np.__version__) < version.parse("2")
-    ):
-        pytest.xfail("https://github.com/numpy/numpy/issues/11204")
-
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 

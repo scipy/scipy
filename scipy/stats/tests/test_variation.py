@@ -3,6 +3,7 @@ import math
 import numpy as np
 import pytest
 
+from scipy import stats
 from scipy.stats import variation
 from scipy._lib._util import AxisError
 
@@ -11,6 +12,7 @@ from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
 
+lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 

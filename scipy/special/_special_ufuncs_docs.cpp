@@ -287,7 +287,7 @@ const char *cosdg_doc = R"(
 const char *cosm1_doc = R"(
     cosm1(x, out=None)
 
-    cos(x) - 1 for use when `x` is near zero.
+    Compute ``cos(x) - 1``, especially when `x` is near zero.
 
     Parameters
     ----------
@@ -373,7 +373,9 @@ const char *zetac_doc = R"(
 
     This function is defined as
 
-    .. math:: \zeta(x) = \sum_{k=2}^{\infty} 1 / k^x
+    .. math::
+
+        \zeta(x) - 1 = \sum_{k=2}^{\infty} \frac{1}{k^x}
 
     where ``x > 1``.  For ``x < 1`` the analytic continuation is
     computed. For more information on the Riemann zeta function, see
@@ -750,7 +752,7 @@ const char *binom_doc = R"(
 
     Parameters
     ----------
-    x, y: array_like
+    x, y : array_like
        Real arguments to :math:`\binom{x}{y}`.
     out : ndarray, optional
         Optional output array for the function values
@@ -1533,7 +1535,7 @@ const char *exp1_doc = R"(
 
     Parameters
     ----------
-    z: array_like
+    z : array_like
         Real or complex argument.
     out : ndarray, optional
         Optional output array for the function results
@@ -2074,7 +2076,7 @@ const char *fresnel_doc = R"(
 const char *gamma_doc = R"(
     gamma(z, out=None)
 
-    gamma function.
+    Compute the gamma function.
 
     The gamma function is defined as
 
