@@ -294,7 +294,7 @@ class lti(LinearTimeInvariant):
         U : array_like
             An input array describing the input at each time `T`
             (interpolation is assumed between given times).  If there are
-            multiple inputs, then each column of the rank-2 array
+            multiple inputs, then each column of the 2D array
             represents an input.  If U = 0 or None, a zero input is used.
         T : 1D array_like
             The time steps at which the input is defined and at which the
@@ -331,6 +331,7 @@ class lti(LinearTimeInvariant):
             Number of frequency points to compute if `w` is not given. The `n`
             frequencies are logarithmically spaced in an interval chosen to
             include the influence of the poles and zeros of the system.
+            Defaults to 100.
 
         Returns
         -------
@@ -376,6 +377,7 @@ class lti(LinearTimeInvariant):
             Number of frequency points to compute if `w` is not given. The `n`
             frequencies are logarithmically spaced in an interval chosen to
             include the influence of the poles and zeros of the system.
+            Defaults to 10000.
 
         Returns
         -------
@@ -595,7 +597,7 @@ class dlti(LinearTimeInvariant):
         u : array_like
             An input array describing the input at each time `t` (interpolation is
             assumed between given times).  If there are multiple inputs, then each
-            column of the rank-2 array represents an input.
+            column of the 2D array represents an input.
         t : array_like, optional
             The time steps at which the input is defined.  If `t` is given, it
             must be the same length as `u`, and the final value in `t` determines
@@ -634,6 +636,7 @@ class dlti(LinearTimeInvariant):
             Number of frequency points to compute if `w` is not given. The `n`
             frequencies are logarithmically spaced in an interval chosen to
             include the influence of the poles and zeros of the system.
+            Defaults to 100.
 
         Returns
         -------

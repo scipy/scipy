@@ -2038,9 +2038,9 @@ class ShortTimeFFT:
         ----------
         k : int
             Sample index for which the nearest slice center index is sought.
-        left : bool
+        left : bool, optional
             If ``True`` then the nearest smaller index is returned, else the
-            nearest larger index is returned.
+            nearest larger index is returned. Defaults to ``True``.
 
         Returns
         -------
