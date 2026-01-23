@@ -174,18 +174,6 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Notes
     -----
-    **Thread-safety:** This function respects thread-local solver preferences set
-    by ``use_solver()``. Each thread can independently configure its preferred
-    solver (UMFPACK or SuperLU) using ``use_solver(useUmfpack=True/False)``, and
-    subsequent calls to ``spsolve()`` in that thread will use the configured
-    preference. This provides thread-safe configuration without requiring locks.
-
-    Note that when using UMFPACK, thread-safety also depends on the thread-safety
-    properties of the underlying `scikit-umfpack` package. SuperLU is always
-    available as a thread-safe fallback.
-
-    See :ref:`scipy_thread_safety` for more details.
-
     For solving the matrix expression AX = B, this solver assumes the resulting
     matrix X is sparse, as is often the case for very sparse inputs.  If the
     resulting X is dense, the construction of this sparse result will be

@@ -55,12 +55,6 @@ Submodules
 Sparse array classes
 ====================
 
-.. warning::
-
-    :mod:`scipy.sparse` arrays are generally not thread safe, and must be
-    :ref:`term-externally-synchronized`.
-    See :ref:`scipy_thread_safety`.
-
 .. autosummary::
    :toctree: generated/
 
@@ -128,11 +122,6 @@ Identifying sparse arrays
 
 Sparse matrix classes
 =====================
-
-.. warning::
-
-    :mod:`scipy.sparse` matrices are generally not thread safe, and must be
-    :ref:`term-externally-synchronized`. See :ref:`scipy_thread_safety`.
 
 .. autosummary::
    :toctree: generated/
