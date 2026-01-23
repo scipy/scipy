@@ -670,7 +670,7 @@ GEN_OR_UN_GQR(zun, npy_complex128)
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
 #define GEN_GELSS_SD(PREFIX, TYPE, RTYPE) \
 inline void \
-gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gelss)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, info); \
 };
@@ -681,7 +681,7 @@ GEN_GELSS_SD(d, double, double)
 
 #define GEN_GELSS_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gelss)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, info); \
 };
@@ -693,7 +693,7 @@ GEN_GELSS_CZ(z, npy_complex128, double)
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
 #define GEN_GELSD_SD(PREFIX, TYPE, RTYPE) \
 inline void \
-gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
+call_gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gelsd)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, iwork, info); \
 };
@@ -704,7 +704,7 @@ GEN_GELSD_SD(d, double, double)
 
 #define GEN_GELSD_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
+call_gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gelsd)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, iwork, info); \
 };
@@ -713,17 +713,10 @@ GEN_GELSD_CZ(c, npy_complex64, float)
 GEN_GELSD_CZ(z, npy_complex128, double)
 
 
-/*
-void sgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, s *a, CBLAS_INT *lda, s *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, s *rcond, CBLAS_INT *rank, s *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void dgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, d *a, CBLAS_INT *lda, d *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, d *rcond, CBLAS_INT *rank, d *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void cgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, c *a, CBLAS_INT *lda, c *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, s *rcond, CBLAS_INT *rank, c *work, CBLAS_INT *lwork, s *rwork, CBLAS_IT *info);
-void zgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, z *a, CBLAS_INT *lda, z *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, d *rcond, CBLAS_INT *rank, z *work, CBLAS_INT *lwork, d *rwork, CBLAS_INT *info);
-*/
-
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
 #define GEN_GELSY_SD(PREFIX, TYPE, RTYPE) \
 inline void \
-gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gelsy)(m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, info); \
 };
@@ -734,7 +727,7 @@ GEN_GELSY_SD(d, double, double)
 
 #define GEN_GELSY_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+call_gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gelsy)(m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, rwork, info); \
 };

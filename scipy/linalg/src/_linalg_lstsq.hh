@@ -57,7 +57,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
     // query LWORK
     T tmp = numeric_limits<T>::zero;
-    gelss(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
+    call_gelss(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
     if(info != 0) { return -100; }
 
     lwork = _calc_lwork(tmp);
@@ -97,7 +97,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
 
         // perform the least squares
-        gelss(&intm, &intn, &int_nrhs, data, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, &info);
+        call_gelss(&intm, &intn, &int_nrhs, data, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, &info);
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -180,7 +180,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     T tmp = numeric_limits<T>::zero;
     real_type tmp_lrwork = 0;
     CBLAS_INT liwork = 0, lrwork = 0;
-    gelsd(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, &tmp_lrwork, &liwork, &info);
+    call_gelsd(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, &tmp_lrwork, &liwork, &info);
 
     if(info != 0) { return -100; }
     lwork = _calc_lwork(tmp);
@@ -229,7 +229,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
 
         // perform the least squares
-        gelsd(&intm, &intn, &int_nrhs, data, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, iwork, &info);
+        call_gelsd(&intm, &intn, &int_nrhs, data, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, iwork, &info);
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -307,7 +307,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
 
     // query LWORK
     T tmp = numeric_limits<T>::zero;
-    gelsy(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
+    call_gelsy(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
     if(info != 0) { return -100; }
 
     lwork = _calc_lwork(tmp);
@@ -358,7 +358,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
         for(npy_intp i=0; i<n; i++) {jpvt[i] = 0;}
 
         // perform the least squares
-        gelsy(&intm, &intn, &int_nrhs, data, &lda, data_b, &ldb, jpvt, &r_rcond, &rank, work, &lwork, rwork, &info);
+        call_gelsy(&intm, &intn, &int_nrhs, data, &lda, data_b, &ldb, jpvt, &r_rcond, &rank, work, &lwork, rwork, &info);
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
