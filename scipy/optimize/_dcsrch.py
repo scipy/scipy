@@ -688,7 +688,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
                 stpf = stpc
             else:
                 stpf = stpq
-            stpf = np.clip(stpf, stpmin, stpmax)
+            stpf = max(min(stpf, stpmax), stpmin)
 
     else:
         # Fourth case: A lower function value, derivatives of the same sign,
