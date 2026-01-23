@@ -650,7 +650,10 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
 
         # The case gamma = 0 only arises if the cubic does not tend
         # to infinity in the direction of the step.
-        gamma = s * np.sqrt(max(0, (theta / s) ** 2 - (dx / s) * (dp / s)))
+        gamma = max(0, (theta / s) ** 2 - (dx / s) * (dp / s))
+        if gamma > 0:
+            gamma = s * np.sqrt(gamma)
+
         if stp > stx:
             gamma = -gamma
         p = (gamma - dp) + theta
