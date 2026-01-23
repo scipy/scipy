@@ -86,7 +86,6 @@ class LinearOperator:
     The defined operator may have additional "batch" dimensions
     prepended to the core shape, to represent a batch of 2-D operators;
     see :ref:`linalg_batch` for details.
-    TODO: check whether we need to add any caveats for broadcasting.
 
     Parameters
     ----------
@@ -95,20 +94,16 @@ class LinearOperator:
         where ``...`` represents any additional batch dimensions.
     matvec : callable f(v)
         Returns ``A @ v``, where ``v`` is a dense vector
-        with shape ``(..., N)`` or ``(..., N, 1)``.
-        If `shape` contains batch dimensions, this must handle batched input.
+        with shape ``(..., N)``.
     rmatvec : callable f(v)
         Returns ``A^H @ v``, where ``A^H`` is the conjugate transpose of ``A``,
-        and ``v`` is a dense vector of shape ``(..., M)`` or ``(..., M, 1)``.
-        If `shape` contains batch dimensions, this must handle batched input.
+        and ``v`` is a dense vector of shape ``(..., M)``.
     matmat : callable f(V)
         Returns ``A @ V``, where ``V`` is a dense matrix
         with dimensions ``(..., N, K)``.
-        If `shape` contains batch dimensions, this must handle batched input.
     rmatmat : callable f(V)
         Returns ``A^H @ V``, where ``V`` is a dense matrix
         with dimensions ``(..., M, K)``.
-        If `shape` contains batch dimensions, this must handle batched input.
     dtype : dtype
         Data type of the matrix or matrices.
 
@@ -149,8 +144,7 @@ class LinearOperator:
     Notes
     -----
     The user-defined `matvec` function must properly handle the case
-    where ``v`` has shape ``(..., N)`` as well as the ``(..., N, 1)`` case.
-    The shape of the return type is handled internally by `LinearOperator`.
+    where ``v`` has shape ``(..., N)``.
 
     It is highly recommended to explicitly specify the `dtype`, otherwise
     it is determined automatically at the cost of a single matvec application
@@ -249,7 +243,7 @@ class LinearOperator:
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
         
-        If self is a linear operator of shape ``(..., M, N)``,
+        If ``self`` is a linear operator of shape ``(..., M, N)``,
         then this method will be called on a shape ``(..., N, K)`` array,
         and should return a shape ``(..., M, K)`` array.
 
@@ -260,29 +254,25 @@ class LinearOperator:
         if X.ndim == 1:
             X = X[np.newaxis]
 
-        # NOTE: we can't use `matvec` directly (for the unbatched case)
+        # NOTE: we can't use `_matvec` directly (for the unbatched case)
         # as we can't assume that user-defined `matvec` functions support batching.
-        return np.concat(
-            [self.matvec(X[..., :, i])[..., np.newaxis] for i in range(X.shape[-1])],
+        return np.stack(
+            [self._matvec(X[..., :, i]) for i in range(X.shape[-1])],
             axis=-1
         )
 
     def _matvec(self, x):
         """Default matrix-vector multiplication handler.
 
-        If self is a linear operator of shape ``(..., M, N)``,
+        If ``self`` is a linear operator of shape ``(..., M, N)``,
         then this method will be called on a shape
-        ``(..., N)`` or ``(..., N, 1)`` array,
-        and should return a shape ``(..., M)`` or ``(..., M, 1)`` array.
+        ``(..., N)`` array,
+        and should return a shape ``(..., M)`` array.
 
         Falls back to `matmat`, so defining that
         will define matrix-vector multiplication as well.
         """
-        N = self.shape[-1]
-        # matmat expects 2-D core
-        if x.shape[-1] == N:
-            x = x[..., np.newaxis]
-        return self.matmat(x) 
+        return np.squeeze(self._matmat(x[..., np.newaxis]), axis=-1)
 
     def matvec(self, x):
         """Matrix-vector multiplication.
@@ -298,6 +288,11 @@ class LinearOperator:
             (or batch of row vectors),
             or an array with shape ``(N, 1)`` representing a column vector.
 
+            .. versionadded:: 1.18.0
+                A ``FutureWarning`` is now emitted for column vector input of shape
+                ``(N, 1)``. `matmat` can be called instead for identical behaviour
+                on such input.
+
         Returns
         -------
         y : {matrix, ndarray}
@@ -308,20 +303,18 @@ class LinearOperator:
         -----
         This method wraps the user-specified ``matvec`` routine or overridden
         ``_matvec`` method to ensure that `y` has the correct shape and type.
-        
-        If ``x.shape[-1] == N``, `x` is interpreted as a row vector
-        (or batch of row vectors if there are leading batch dimensions).
-        Otherwise, if ``x.shape[-2] == (N, 1)``,
-        `x` is interpreted as a column vector.
-        
-        TODO: FutureWarning in docs
-        TODO: adapt other methods accordingly
-
         """
 
         x = np.asanyarray(x)
 
         *self_broadcast_dims, M, N = self.shape
+
+        # TODO: deprecate `np.matrix` support
+        if isinstance(x, np.matrix):
+            y = self._matvec(x)
+            if x.shape == (N, 1):
+                y = y.reshape(M, 1)
+            return asmatrix(y)
 
         x_broadcast_dims: tuple[int, ...] = ()
         row_vector: bool = False
@@ -335,8 +328,8 @@ class LinearOperator:
                 msg, FutureWarning,
                 skip_file_prefixes=(os.path.dirname(__file__),)
             )
-            x_broadcast_dims = x.shape[:-2]
-        if x.ndim >= 1 and (row_vector := x.shape[-1] == N):
+            x = np.reshape(x, (N,))
+        elif x.ndim >= 1 and (row_vector := x.shape[-1] == N):
             x_broadcast_dims = x.shape[:-1]
 
         if not (row_vector or column_vector):
@@ -347,11 +340,6 @@ class LinearOperator:
             raise ValueError(msg)
 
         y = self._matvec(x)
-
-        if isinstance(x, np.matrix):
-            y = asmatrix(y)
-        else:
-            y = np.asarray(y)
 
         broadcasted_dims = np.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
         if row_vector:
@@ -373,51 +361,60 @@ class LinearOperator:
         x : {matrix, ndarray}
             An array with shape ``(..., M)`` representing a row vector
             (or batch of row vectors),
-            or an array with shape ``(..., M, 1)`` representing a column vector
-            (or batch of column vectors).
+            or an array with shape ``(M, 1)`` representing a column vector.
+
+            .. versionadded:: 1.18.0
+                A ``FutureWarning`` is now emitted for column vector input of
+                shape ``(M, 1)``.
+                `rmatmat` can be called instead for identical behaviour
+                on such input.
 
         Returns
         -------
         y : {matrix, ndarray}
-            An array with shape ``(..., N)`` or ``(..., N, 1)`` depending
-            on the type and shape of `x`.
+            An array with shape ``(..., N)`` or ``(N, 1)`` depending
+            on the shape of `x`.
 
         Notes
         -----
         This method wraps the user-specified ``rmatvec`` routine or overridden
         ``_rmatvec`` method to ensure that `y` has the correct shape and type.
-        
-        If ``x.shape[-1] == M``, `x` is interpreted as a row vector
-        (or batch of row vectors if there are leading batch dimensions).
-        Otherwise, if ``x.shape[-2:] == (M, 1)``,
-        `x` is interpreted as a column vector
-        (or batch of column vectors if there are leading batch dimensions).
-
         """
 
         x = np.asanyarray(x)
 
         *self_broadcast_dims, M, N = self.shape
 
+        # TODO: deprecate `np.matrix` support
+        if isinstance(x, np.matrix):
+            y = self._rmatvec(x)
+            if x.shape == (M, 1):
+                y = y.reshape(N, 1)
+            return asmatrix(y)
+
         x_broadcast_dims: tuple[int, ...] = ()
         row_vector: bool = False
-        if x.ndim >= 1 and (row_vector := x.shape[-1] == M):
+        if column_vector := x.shape == (M, 1):
+            msg = (
+                "In the future, calling `rmatvec` on 'column vectors' of shape "
+                "`(M, 1)` will be deprecated. Please call `rmatmat` instead "
+                "for identical behaviour."
+            )
+            warnings.warn(
+                msg, FutureWarning,
+                skip_file_prefixes=(os.path.dirname(__file__),)
+            )
+            x = np.reshape(x, (M,))
+        elif x.ndim >= 1 and (row_vector := x.shape[-1] == M):
             x_broadcast_dims = x.shape[:-1]
-        if column_vector := x.shape[-2:] == (M, 1):
-            x_broadcast_dims = x.shape[:-2]
         if not (row_vector or column_vector):
             msg = (
                 f"Dimension mismatch: `x` must have a shape ending in "
-                f"`({M},)` or `({M}, 1)`. Given shape: {x.shape}"
+                f"`({M},)`, or shape `({M}, 1)`. Given shape: {x.shape}"
             )
             raise ValueError(msg)
 
         y = self._rmatvec(x)
-
-        if isinstance(x, np.matrix):
-            y = asmatrix(y)
-        else:
-            y = np.asarray(y)
 
         broadcasted_dims = np.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
         if row_vector:
@@ -435,12 +432,7 @@ class LinearOperator:
             if (hasattr(self, "_rmatmat")
                     and type(self)._rmatmat != LinearOperator._rmatmat):
                 # Try to use _rmatmat as a fallback
-                M = self.shape[-2]
-                # _rmatmat expects 2-D core
-                if x.shape[-1] == M:
-                    return self._rmatmat(x[..., np.newaxis]).reshape(*x.shape)
-                else:
-                    return self._rmatmat(x)
+                return np.squeeze(self._rmatmat(x[..., np.newaxis]), axis=-1)
             raise NotImplementedError
         else:
             return self.H.matvec(x)
@@ -469,7 +461,6 @@ class LinearOperator:
         -----
         This method wraps any user-specified ``matmat`` routine or overridden
         ``_matmat`` method to ensure that `Y` has the correct type.
-
         """
         if not (issparse(X) or is_pydata_spmatrix(X)):
             X = np.asanyarray(X)
@@ -486,7 +477,7 @@ class LinearOperator:
             if issparse(X) or is_pydata_spmatrix(X):
                 raise TypeError(
                     "Unable to multiply a LinearOperator with a sparse matrix."
-                    " Wrap the matrix in aslinearoperator first."
+                    " Wrap the matrix with `aslinearoperator` first."
                 ) from e
             raise
 
@@ -551,10 +542,10 @@ class LinearOperator:
             if X.ndim == 1:
                 X = X[np.newaxis]
 
-            # NOTE: we can't use `rmatvec` directly as we can't assume that user-defined
-            # `rmatvec` functions support batching.
-            return np.concat(
-                [self.rmatvec(X[..., :, i, np.newaxis]) for i in range(X.shape[-1])],
+            # NOTE: we can't use `_rmatvec` directly as we can't assume that
+            # user-defined `rmatvec` functions support batching.
+            return np.stack(
+                [self._rmatvec(X[..., :, i]) for i in range(X.shape[-1])],
                 axis=-1
             )
         else:
@@ -607,7 +598,7 @@ class LinearOperator:
               (where ``self`` is an ``M`` by ``N`` linear operator):
                 
               - If `x` has shape ``(N,)``
-                it is interpreted as a column vector
+                it is interpreted as a row vector
                 and `matvec` is called.
               - If `x` has shape ``(..., N, K)`` for some
                 integer ``K``, it is interpreted as a matrix
@@ -618,11 +609,11 @@ class LinearOperator:
         -----
         To perform matrix-vector multiplication on batches of vectors,
         use `matvec`.
-        
+
         For clarity, it is recommended to use the `matvec` or
         `matmat` methods directly instead of this method
         when interacting with dense vectors and matrices.
-        
+
         See Also
         --------
         __mul__ : Equivalent method used by the ``*`` operator.
@@ -690,30 +681,28 @@ class LinearOperator:
         """
         return self.rdot(x)
 
-    # TODO: decide on rdot API and update docs
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
-        
+
         .. note ::
-          
+
             For complex data, this does not perform conjugation,
             returning ``xA`` rather than ``x A^H``.
             To calculate adjoint multiplication instead, use one of
             `rmatvec` or `rmatmat`, or take the adjoint first,
             like ``self.H.rdot(x)`` or ``x * self.H``.
-        
+
         .. note ::
             
-            Array-like input to this function is unsupported for linear operators
-            with batch shapes.
+            Batched (>2-D) input to this function is unsupported.
             It is recommended to transpose data separately
             and then use forward operations like `matvec` and `matmat` directly.
-        
+
         Parameters
         ----------
         x : array_like or `LinearOperator` or scalar
-            Array-like input will be interpreted as a dense row vector,
-            matrix, or column vector, depending on its shape.
+            Array-like input will be interpreted as a dense row vector
+            or matrix depending on its shape.
             See the Returns section for details.
 
         Returns
@@ -729,8 +718,6 @@ class LinearOperator:
 
               - If `x` has shape ``(M,)``
                 it is interpreted as a row vector.
-              - Otherwise, if `x` has shape ``(1, M)``
-                it is interpreted as a column vector.
               - Otherwise, if `x` has shape ``(K, M)`` for some
                 integer ``K``, it is interpreted as a matrix.
 
@@ -748,10 +735,9 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            if self.ndim > 2:
+            if x.ndim > 2:
                 msg = (
-                    "Array-like input is unsupported in `rdot` for batched"
-                    "operators (with `ndim > 2`).\n"
+                    "Batched (>2-D) input is unsupported by `rdot`.\n"
                     "It is recommended to transpose data separately and then"
                     "use forward operations like `matvec` and `matmat` directly."
                 )

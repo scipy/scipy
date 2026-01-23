@@ -82,8 +82,7 @@ class TestLinearOperator:
             assert_equal(A.dot(np.array([1,2,3])), [14,32])
             assert_equal(A.dot(np.array([[1],[2],[3]])), [[14],[32]])
 
-            with pytest.warns(FutureWarning, match="column vectors"):
-                assert_equal(A.matvec(matrix([[1],[2],[3]])), [[14],[32]])
+            assert_equal(A.matvec(matrix([[1],[2],[3]])), [[14],[32]])
             assert_equal(A @ matrix([[1],[2],[3]]), [[14],[32]])
             assert_equal(A.dot(matrix([[1],[2],[3]])), [[14],[32]])
 
@@ -138,8 +137,7 @@ class TestLinearOperator:
             assert_(isinstance(A.dot(np.array([1,2,3])), np.ndarray))
             assert_(isinstance(A.dot(np.array([[1],[2],[3]])), np.ndarray))
 
-            with pytest.warns(FutureWarning, match="column vectors"):
-                assert_(isinstance(A.matvec(matrix([[1],[2],[3]])), np.ndarray))
+            assert_(isinstance(A.matvec(matrix([[1],[2],[3]])), np.ndarray))
             assert_(isinstance(A @ matrix([[1],[2],[3]]), np.ndarray))
             assert_(isinstance(A.dot(matrix([[1],[2],[3]])), np.ndarray))
 
@@ -718,7 +716,7 @@ class TestAsLinearOperator:
 
 
 def test_repr():
-    A = interface.LinearOperator(shape=(1, 1), matvec=lambda x: 1)
+    A = interface.LinearOperator(shape=(1, 1), matvec=lambda x: np.asarray([1]))
     repr_A = repr(A)
     assert_('unspecified dtype' not in repr_A, repr_A)
 
