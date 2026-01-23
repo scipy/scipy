@@ -3604,7 +3604,8 @@ def test_multiprocessing_too_many_open_files_23080():
 
 
 @pytest.mark.parametrize('method', MINIMIZE_METHODS)
-def test_optimize_32bit(method):
+def test_optimize_32bit_input(method):
+    # examines whether methods work with a 32-bit x0
     x0 = np.ones(2, dtype=np.float32)
 
     def fun(p):
@@ -3636,12 +3637,23 @@ def test_optimize_32bit(method):
 
 
 @pytest.mark.parametrize('method', ['BFGS', 'CG', 'L-BFGS-B', 'nelder-mead'])
-@pytest.mark.parametrize('_dtype', [np.float32])
+@pytest.mark.parametrize('_dtype', [np.float32, np.float64])
 def test_minimize_float_precision(method, _dtype):
-    # purely a smoke test to check output dtypes
+    # examines minimize methods to check they work in different precisions.
+    # we're looking for an output the same dtype as that being supplied by x0.
+    # uses an example from gh22865
     def fun(x):
         return x**4 - x
+    def grad(x):
+        return (4*x**3 - 1)
 
+    if method in ['CG']:
+        g = grad
+    else:
+        g = None
+
+    xx = np.array([2.], dtype=_dtype)**(-2/3)
     for x0 in np.linspace(-1., 1, 21, dtype=_dtype):
-        res = optimize.minimize(fun, [x0], method=method)
+        res = optimize.minimize(fun, [x0], method=method, jac=g)
         assert res.x.dtype == _dtype
+        # assert_allclose(fun(res.x), fun(xx), rtol=1e-3)
