@@ -1974,7 +1974,7 @@ Real nbinom_invn_wrap(Real k, Real y, Real p)
         return NAN;
     }
     try {
-        num_trials = boost::math::negative_binomial_distribution<Real>::find_minimum_number_of_trials(k, p, y);
+        num_trials = boost::math::negative_binomial_distribution<Real, SpecialPolicy()>::find_minimum_number_of_trials(k, p, y);
         n = num_trials - k;
     } catch (const std::domain_error& e) {
         sf_error("nbdtrik", SF_ERROR_DOMAIN, NULL);
@@ -1987,6 +1987,9 @@ Real nbinom_invn_wrap(Real k, Real y, Real p)
         n = 0;
     } catch (...) {
         sf_error("nbdtrik", SF_ERROR_OTHER, NULL);
+        n = NAN;
+    }
+    if (n < 0) {
         n = NAN;
     }
     return n;
