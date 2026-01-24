@@ -1718,6 +1718,13 @@ def _yeojohnson_transform(x, lmbda, xp=None):
     out = xp.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
 
+    if is_jax(xp):
+        return xp.select(
+            [(abs(lmbda) < eps) & pos, (abs(lmbda - 2) < eps) & ~pos, pos],
+            [xp.log1p(x), -xp.log1p(-x), xp.expm1(lmbda * xp.log1p(x)) / lmbda],
+            -xp.expm1((2 - lmbda) * xp.log1p(-x)) / (2 - lmbda),
+        )
+
     # when x >= 0
     if abs(lmbda) < eps:
         out = xpx.at(out)[pos].set(xp.log1p(x[pos]))
@@ -1735,8 +1742,7 @@ def _yeojohnson_transform(x, lmbda, xp=None):
     return out
 
 
-@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")],
-                 jax_jit=False)  # branches based on presence of +/- values
+@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")])
 def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False):
     r"""The Yeo-Johnson log-likelihood function.
 
@@ -1868,13 +1874,13 @@ def _yeojohnson_llf(data, *, lmb, axis=0):
     pos = data >= 0  # binary mask
 
     # There exists numerical instability when abs(lmb) or abs(lmb - 2) is very small
-    if xp.all(pos):
+    if not is_lazy_array(pos) and xp.all(pos):
         if abs(lmb) < eps:
             logvar = xp.log(xp.var(xp.log1p(data), axis=axis))
         else:
             logvar = _log_var(lmb * xp.log1p(data), xp, axis) - 2 * math.log(abs(lmb))
 
-    elif xp.all(~pos):
+    elif not is_lazy_array(pos) and xp.all(~pos):
         if abs(lmb - 2) < eps:
             logvar = xp.log(xp.var(xp.log1p(-data), axis=axis))
         else:
