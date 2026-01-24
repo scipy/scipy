@@ -320,7 +320,6 @@ def circstd(samples, high=2*math.pi, low=0, axis=None, nan_policy='propagate', *
     return res
 
 
-@xp_capabilities()
 def _circmeandev(sample, alpha, *, high=2*math.pi, low=0):
     r"""Compute the circular mean (absolute) deviation of an angular sample.
 
@@ -612,7 +611,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         of the data is a vector observation.
     axis : int, default: 0
         Axis along which the directional mean is computed.
-    normalize: boolean, default: True
+    normalize : boolean, default: True
         If True, normalize the input to ensure that each observation is a
         unit vector. It the observations are already unit vectors, consider
         setting this to False to avoid unnecessary computation.
