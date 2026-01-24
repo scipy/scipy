@@ -36,7 +36,6 @@
 """
 
 import numpy as np
-import warnings
 from scipy.linalg import norm
 from ._isolve.iterative import _get_atol_rtol
 
