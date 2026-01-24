@@ -97,10 +97,8 @@ class _spbase(SparseABC):
     nnz : int
         Number of stored values.
     size : int
-        Number of elements in the array.
-    format : str
-        Sparse storage format of the array (e.g. 'csr', 'csc', 'coo', 'dia').
-    """
+        Number of elements in the array. """
+    
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
