@@ -309,17 +309,15 @@ class TestZpk2Tf:
     @skip_xp_backends("cupy",
                       reason="multi-dim arrays not supported yet on cupy")
     def test_zpk2tf_complex_k_multi_dim_z(self, xp):
+        # Regression test for gh-24395
         k = 1j
         z = xp.asarray([[1., 2.], [0., -1.]])
         p = xp.asarray([3., 4.])
 
         b, a = zpk2tf(z, p, k)
 
-        z1 = xp.asarray([1., 2.])
-        b1, a1 = zpk2tf(z1, p, k)
-
-        z2 = xp.asarray([0., -1.])
-        b2, a2 = zpk2tf(z2, p, k)
+        b1, a1 = zpk2tf(z[0, :], p, k)
+        b2, a2 = zpk2tf(z[1, :], p, k)
 
         xp_assert_close(a, a1)
         xp_assert_close(a, a2)
