@@ -77,6 +77,15 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
+ext_val = np.array([
+        [
+            1.28000000e002,
+            3.27670000e004,
+            8.38822400e006,
+            3.13740168e057,
+            1.12357916e164,
+        ]
+])
 
 @make_xp_test_case(whiten)
 class TestWhiten:
@@ -87,7 +96,7 @@ class TestWhiten:
                             [4.51041982, 0.02640918],
                             [4.38567074, 0.95120889],
                             [2.32191480, 1.63195503]])
-
+)
         obs = xp.asarray([[0.98744510, 0.82766775],
                           [0.62093317, 0.19406729],
                           [0.87545741, 0.00735733],
@@ -365,6 +374,10 @@ class TestKMeans:
                 orig_cov = xpx.cov(data.T, xp=xp)
                 init_cov = xpx.cov(init.T, xp=xp)
                 xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
+
+    def test_kmeans_extreme_values(self, xp):
+        assert_raises(ValueError, kmeans, xp.asarray(ext_val), 1)
+        assert_raises(ValueError, kmeans2, xp.asarray(ext_val), 1)
 
     def test_kmeans2_empty(self, xp):
         # Regression test for gh-1032.
