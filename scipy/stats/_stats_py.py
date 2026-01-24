@@ -8049,13 +8049,6 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     d_sign = np.where(selector, -1, 1).astype(np.int8)
     prob = _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative)
 
-    if mode == 'exact' or (max(n1, n2) <= MAX_AUTO_N):
-        g = np.gcd(n1, n2)
-        lcm = (n1 // g) * n2
-        h = np.round(d * lcm)
-        d = h / lcm
-        h_zero = (h == 0)
-        prob[h_zero] = 1.0
 
     # Currently, `d` is a Python float. We want it to be a NumPy type, so
     # float64 is appropriate. An enhancement would be for `d` to respect the
