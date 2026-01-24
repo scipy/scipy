@@ -713,6 +713,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     Returns
     -------
     gaussian_filter1d : ndarray
+        Returned array of same shape as `input`.
 
     Notes
     -----

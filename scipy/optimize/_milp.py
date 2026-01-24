@@ -201,10 +201,10 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         within `bounds`.
 
         ``2`` : Semi-continuous variable; decision variable must be within
-        `bounds` or take value ``0``.
+        `bounds` or ``0``.
 
         ``3`` : Semi-integer variable; decision variable must be an integer
-        within `bounds` or take value ``0``.
+        within `bounds` or ``0``.
 
         By default, all variables are continuous. `integrality` is converted
         to an array of integers before the problem is solved.
@@ -248,6 +248,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
             Termination criterion for MIP solver: solver will terminate when
             the gap between the primal objective value and the dual objective
             bound, scaled by the primal objective value, is <= mip_rel_gap.
+            Default: 0.0001.
 
     Returns
     -------

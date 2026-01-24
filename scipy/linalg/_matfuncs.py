@@ -8,7 +8,6 @@ from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
 from scipy._lib._util import _apply_over_batch
-from scipy._lib.deprecation import _NoValue
 
 # Local imports
 from scipy.linalg import LinAlgError, LinAlgWarning
@@ -145,7 +144,7 @@ def fractional_matrix_power(A, t):
 
 
 @_apply_over_batch(('A', 2))
-def logm(A, disp=_NoValue):
+def logm(A):
     """
     Compute matrix logarithm.
 
@@ -156,23 +155,11 @@ def logm(A, disp=_NoValue):
     ----------
     A : (N, N) array_like
         Matrix whose logarithm to evaluate
-    disp : bool, optional
-        Emit warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
-
-        .. deprecated:: 1.16.0
-            The `disp` argument is deprecated and will be
-            removed in SciPy 1.18.0. The previously returned error estimate
-            can be computed as ``norm(expm(logm(A)) - A, 1) / norm(A, 1)``.
 
     Returns
     -------
     logm : (N, N) ndarray
         Matrix logarithm of `A`
-    errest : float
-        (if disp == False)
-
-        1-norm of the estimated error, ||err||_1 / ||A||_1
 
     References
     ----------
@@ -205,12 +192,6 @@ def logm(A, disp=_NoValue):
            [ 1.,  4.]])
 
     """
-    if disp is _NoValue:
-        disp = True
-    else:
-        warnings.warn("The `disp` argument is deprecated "
-                      "and will be removed in SciPy 1.18.0.",
-                      DeprecationWarning, stacklevel=2)
     A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
@@ -220,13 +201,10 @@ def logm(A, disp=_NoValue):
     # TODO use a better error approximation
     with np.errstate(divide='ignore', invalid='ignore'):
         errest = norm(expm(F)-A, 1) / np.asarray(norm(A, 1), dtype=A.dtype).real[()]
-    if disp:
-        if not isfinite(errest) or errest >= errtol:
-            message = f"logm result may be inaccurate, approximate err = {errest}"
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-        return F
-    else:
-        return F, errest
+    if not isfinite(errest) or errest >= errtol:
+        message = f"logm result may be inaccurate, approximate err = {errest}"
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+    return F
 
 
 def expm(A):
@@ -343,7 +321,7 @@ def expm(A):
     return eA
 
 
-def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
+def sqrtm(A):
     """
     Compute, if exists, the matrix square root.
 
@@ -363,32 +341,11 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     ----------
     A : ndarray
         Input with last two dimensions are square ``(..., n, n)``.
-    disp : bool, optional
-        Print warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
-
-        .. deprecated:: 1.16.0
-            The `disp` argument is deprecated and will be
-            removed in SciPy 1.18.0. The previously returned error estimate
-            can be computed as ``norm(X @ X - A, 'fro')**2 / norm(A, 'fro')``
-
-    blocksize : integer, optional
-
-        .. deprecated:: 1.16.0
-            The `blocksize` argument is deprecated as it is unused by the algorithm
-            and will be removed in SciPy 1.18.0.
 
     Returns
     -------
     sqrtm : ndarray
         Computed matrix squareroot of `A` with same size ``(..., n, n)``.
-
-    errest : float
-        Frobenius norm of the estimated error, ||err||_F / ||A||_F. Only
-        returned, if ``disp`` is set to ``False``. This return argument will be
-        removed in version 1.20.0 and only the sqrtm result will be returned.
-
-        .. deprecated:: 1.16.0
 
     Notes
     -----
@@ -427,17 +384,6 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
            [ 1.,  4.]])
 
     """
-    if disp is _NoValue:
-        disp = True
-    else:
-        warnings.warn("The `disp` argument is deprecated and will be removed in SciPy "
-                      "1.18.0.",
-                      DeprecationWarning, stacklevel=2)
-    if blocksize is not _NoValue:
-        warnings.warn("The `blocksize` argument is deprecated and will be removed in "
-                      "SciPy 1.18.0.",
-                      DeprecationWarning, stacklevel=2)
-
     a = np.asarray(A)
     if a.size == 1 and a.ndim < 2:
         return np.array([[np.exp(a.item())]])
@@ -482,15 +428,7 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
                    " or the array might not have a square root.")
         warnings.warn(msg, LinAlgWarning, stacklevel=2)
 
-    if disp is False:
-        try:
-            arg2 = norm(res @ res - A, 'fro')**2 / norm(A, 'fro')
-        except ValueError:
-            # NaNs in matrix
-            arg2 = np.inf
-        return res, arg2
-    else:
-        return res
+    return res
 
 
 @_apply_over_batch(('A', 2))
@@ -831,7 +769,7 @@ def funm(A, func, disp=True):
 
 
 @_apply_over_batch(('A', 2))
-def signm(A, disp=_NoValue):
+def signm(A):
     """
     Matrix sign function.
 
@@ -841,23 +779,11 @@ def signm(A, disp=_NoValue):
     ----------
     A : (N, N) array_like
         Matrix at which to evaluate the sign function
-    disp : bool, optional
-        Print warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
-
-        .. deprecated:: 1.16.0
-            The `disp` argument is deprecated and will be
-            removed in SciPy 1.18.0. The previously returned error estimate
-            can be computed as ``norm(signm @ signm - signm, 1)``.
 
     Returns
     -------
     signm : (N, N) ndarray
         Value of the sign function at `A`
-    errest : float
-        (if disp == False)
-
-        1-norm of the estimated error, ||err||_1 / ||A||_1
 
     Examples
     --------
@@ -869,13 +795,6 @@ def signm(A, disp=_NoValue):
     array([-1.+0.j,  1.+0.j,  1.+0.j])
 
     """
-    if disp is _NoValue:
-        disp = True
-    else:
-        warnings.warn("The `disp` argument is deprecated "
-                      "and will be removed in SciPy 1.18.0.",
-                      DeprecationWarning, stacklevel=2)
-
     A = _asarray_square(A)
 
     def rounded_sign(x):
@@ -915,12 +834,9 @@ def signm(A, disp=_NoValue):
         if errest < errtol or prev_errest == errest:
             break
         prev_errest = errest
-    if disp:
-        if not isfinite(errest) or errest >= errtol:
-            print("signm result may be inaccurate, approximate err =", errest)
-        return S0
-    else:
-        return S0, errest
+    if not isfinite(errest) or errest >= errtol:
+        print("signm result may be inaccurate, approximate err =", errest)
+    return S0
 
 
 @_apply_over_batch(('a', 2), ('b', 2))

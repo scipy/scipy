@@ -1103,13 +1103,3 @@ class TestKhatriRao:
         b = np.empty((5, 0))
         res = khatri_rao(a, b)
         assert_allclose(res, np.empty((15, 0)))
-
-@pytest.mark.parametrize('func',
-                         [logm, sqrtm, signm])
-def test_disp_dep(func):
-    with pytest.deprecated_call():
-        func(np.eye(2), disp=False)
-
-def test_blocksize_dep():
-    with pytest.deprecated_call():
-        sqrtm(np.eye(2), blocksize=10)

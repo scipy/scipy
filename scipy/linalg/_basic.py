@@ -277,6 +277,9 @@ def solve(a, b, lower=False, overwrite_a=False,
         return x
 
     if a_is_scalar:
+        if a1.item() == 0:
+            raise LinAlgError("A singular matrix detected.")
+
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
 
@@ -890,7 +893,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     matrices.
 
     The matrix ``a`` is stored in `ab` either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
@@ -1197,15 +1200,8 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     Notes
     -----
-    For a 1-D vector `c` with length `m`, and an array `b`
-    with shape ``(m, ...)``,
-
-        solve_circulant(c, b)
-
-    returns the same result as
-
-        solve(circulant(c), b)
-
+    For a 1-D vector `c` with length `m`, and an array `b` with shape ``(m, ...)``,
+    ``solve_circulant(c, b)`` returns the same result as ``solve(circulant(c), b)``
     where `solve` and `circulant` are from `scipy.linalg`.
 
     .. versionadded:: 0.16.0
@@ -1396,6 +1392,16 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     ValueError
         If `a` is not square, or not 2D.
 
+    Notes
+    -----
+
+    The input array ``a`` may represent a single matrix or a collection (a.k.a.
+    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
+    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
+
+    This routine checks the condition number of the `a` matrix and emits a
+    `LinAlgWarning` for ill-conditioned inputs.
+
     Examples
     --------
     >>> import numpy as np
@@ -1407,17 +1413,6 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     >>> np.dot(a, linalg.inv(a))
     array([[ 1.,  0.],
            [ 0.,  1.]])
-
-    Notes
-    -----
-
-    The input array ``a`` may represent a single matrix or a collection (a.k.a.
-    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
-    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
-
-    This routine checks the condition number of the `a` matrix and emits a
-    `LinAlgWarning` for ill-conditioned inputs.
-
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
 

@@ -708,7 +708,7 @@ def sum(input, labels=None, index=None):
     reasons, for new code please prefer `sum_labels`.  See the `sum_labels`
     docstring for more details.
 
-    """
+    """  # numpydoc ignore=RT01
     return sum_labels(input, labels, index)
 
 

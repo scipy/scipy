@@ -125,7 +125,7 @@ class ode:
     y : ndarray
         Current variable values.
 
-    See also
+    See Also
     --------
     odeint : an integrator with a simpler interface based on lsoda from ODEPACK
     quad : for finding the area under a curve
@@ -286,6 +286,13 @@ class ode:
 
         Options and references the same as "dopri5".
 
+    References
+    ----------
+    .. [HNW93] E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
+        Differential Equations i. Nonstiff Problems. 2nd edition.
+        Springer Series in Computational Mathematics,
+        Springer-Verlag (1993)
+
     Examples
     --------
 
@@ -318,14 +325,6 @@ class ode:
     8.0 [-0.15986733-0.61234476j  0.06060616+0.j        ]
     9.0 [0.64850462+0.15048982j 0.05405414+0.j        ]
     10.0 [-0.38404699+0.56382299j  0.04878055+0.j        ]
-
-    References
-    ----------
-    .. [HNW93] E. Hairer, S.P. Norsett and G. Wanner, Solving Ordinary
-        Differential Equations i. Nonstiff Problems. 2nd edition.
-        Springer Series in Computational Mathematics,
-        Springer-Verlag (1993)
-
     """
 
     # generic type compatibility with scipy-stubs

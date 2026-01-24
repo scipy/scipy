@@ -440,7 +440,7 @@ class FastGeneratorInversion:
         The default is None. In that case, the random variates are not
         truncated, and the domain is inferred from the support of the
         distribution.
-    ignore_shape_range : boolean, optional.
+    ignore_shape_range : boolean, optional
         If False, shape parameters that are outside of the valid range
         of values to ensure that the numerical accuracy (see Notes) is
         high, raise a ValueError. If True, any shape parameters that are valid
@@ -1140,7 +1140,7 @@ class RatioUniforms:
         The lower bound of the bounding rectangle in the v-direction.
     vmax : float
         The upper bound of the bounding rectangle in the v-direction.
-    c : float, optional.
+    c : float, optional
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
