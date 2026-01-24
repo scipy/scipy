@@ -1995,9 +1995,10 @@ class TestWilcoxon:
         rng = np.random.default_rng(92348034828501345)
         x = rng.random(size=size).tolist()
         res = stats.wilcoxon(xp.asarray(x), method=stats.PermutationMethod())
-        ref = stats.wilcoxon(x, method='exact')
-        xp_assert_equal(res.statistic, xp.asarray(ref.statistic))
-        xp_assert_equal(res.pvalue, xp.asarray(ref.pvalue))
+        ref = stats.wilcoxon(x, method='exact')  # all backends test against NumPy
+        dtype = xp_default_dtype(xp)
+        xp_assert_equal(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
+        xp_assert_equal(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
 
         x = xp.asarray(rng.random(size=size*10))
         rng = np.random.default_rng(59234803482850134)
