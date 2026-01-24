@@ -148,6 +148,23 @@ class BatchedSolveBench(Benchmark):
             sl.solve(self.a, self.b, check_finite=False, **self.kwd)
 
 
+class BatchedSVDBench(Benchmark):
+    params = [
+        [(10, 10, 10, 2), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_svd(self, shape, module):
+        if module == 'numpy':
+            nl.svd(self.a)
+        else:
+            sl.svd(self.a)
+
+
 class Norm(Benchmark):
     params = [
         [(20, 20), (100, 100), (1000, 1000), (20, 1000), (1000, 20)],
