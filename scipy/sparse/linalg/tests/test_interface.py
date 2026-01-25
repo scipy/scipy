@@ -315,28 +315,31 @@ class TestDotTests:
         *batch_shape, M, N = op.shape
         
         # TODO: handle empty batches
-        # Test `u` and `v` with the batch shape of `op` + 3-D broadcast dims
-        # TODO: test `u` and `v` with no batch dims even when `op` is batched?
         u_broadcast, v_broadcast = generate_broadcastable_shapes(
             2, ndim=3, min=0, max=5
         )
-        u_shape = (*u_broadcast, *batch_shape, N)
-        v_shape = (*v_broadcast, *batch_shape, M)
-        u = rng.standard_normal(u_shape, dtype=dtype)
-        v = rng.standard_normal(v_shape, dtype=dtype)
-        if complex_data:
-            u = u + (1j * rng.standard_normal(u_shape, dtype=dtype))
-            v = v + (1j * rng.standard_normal(v_shape, dtype=dtype))
 
-        op_u = op.matvec(u)
-        opH_v = op.rmatvec(v)
-
-        op_u_H_v = np.vecdot(op_u, v, axis=-1)
-        uH_opH_v = np.vecdot(u, opH_v, axis=-1)
-
-        rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
-        atol = 1e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
-        assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol, atol=atol)
+        for u_shape, v_shape in (
+            # test broadcasting for unbatched RHS
+            ((N,), (M,)),
+            # as well as with the batch shape of `op` + 3-D broadcast dims
+            ((*u_broadcast, *batch_shape, N), (*v_broadcast, *batch_shape, M))
+        ):
+            u = rng.standard_normal(u_shape, dtype=dtype)
+            v = rng.standard_normal(v_shape, dtype=dtype)
+            if complex_data:
+                u = u + (1j * rng.standard_normal(u_shape, dtype=dtype))
+                v = v + (1j * rng.standard_normal(v_shape, dtype=dtype))
+    
+            op_u = op.matvec(u)
+            opH_v = op.rmatvec(v)
+    
+            op_u_H_v = np.vecdot(op_u, v, axis=-1)
+            uH_opH_v = np.vecdot(u, opH_v, axis=-1)
+    
+            rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+            atol = 1e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+            assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol, atol=atol)
 
     def check_matmat(
         self, op: interface.LinearOperator, data_dtype: str, complex_data: bool = False,
@@ -408,7 +411,8 @@ class TestDotTests:
         Tests batches of RHS via `args.batch_shape`.
         """
         def identity(x):
-            return x
+            shape = (*np.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            return np.full(shape, x)
 
         shape = batch_shape + args.shape
         op = interface.LinearOperator(
@@ -439,16 +443,18 @@ class TestDotTests:
 
             match np.sign(x.shape[-1] - M):
                 case 0:  # square
-                    return x
+                    pass
                 case 1:  # crop x to size
-                    return x[..., :M]
+                    x = x[..., :M]
                 case -1:  # pad with zeros
                     no_padding = [(0, 0)] * len(x_broadcast_dims)
                     pad_width = (0, M - x.shape[-1])
-                    return np.pad(
+                    x = np.pad(
                         x, (*no_padding, pad_width),
                         mode='constant', constant_values=0
                     )
+            shape = (*np.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            return np.full(shape, x)
 
         def rmv(x):
             # handle column vectors too
@@ -460,16 +466,19 @@ class TestDotTests:
             
             match np.sign(N - x.shape[-1]):
                 case 0:  # square
-                    return x
+                    pass
                 case 1:  # pad with zeros
                     no_padding = [(0, 0)] * len(x_broadcast_dims)
                     pad_width = (0, N - x.shape[-1])
-                    return np.pad(
+                    x = np.pad(
                         x, (*no_padding, pad_width),
                         mode='constant', constant_values=0
                     )
                 case -1:  # crop x to size
-                    return x[..., :N]
+                    x = x[..., :N]
+
+            shape = (*np.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            return np.full(shape, x)
 
         shape = batch_shape + args.shape
         op = interface.LinearOperator(
@@ -488,10 +497,14 @@ class TestDotTests:
         Tests batches of RHS via `args.batch_shape`.
         """
         def scale(x):
-            return (3 + 2j) * x
+            b = (3 + 2j) * x
+            shape = (*np.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            return np.full(shape, b)
 
         def r_scale(x):
-            return (3 - 2j) * x
+            b = (3 - 2j) * x
+            shape = (*np.broadcast_shapes(batch_shape, x.shape[:-1]), x.shape[-1])
+            return np.full(shape, b)
 
         shape = batch_shape + args.shape
         op = interface.LinearOperator(
@@ -508,32 +521,26 @@ class TestDotTests:
         subclassing `LinearOperator`.
         Tests batches of RHS via `batch_shape`.
         """
-        def rmatmat(X):
-            theta = np.pi / 2
-            R_inv = np.array([
-                [np.cos(theta),  np.sin(theta)],
-                [-np.sin(theta), np.cos(theta)]
-            ])
-            return R_inv @ X
-
         class RotOp(interface.LinearOperator):
-            
+
             def __init__(self, dtype, shape, theta):
                 self._theta = theta
                 super().__init__(dtype, shape)
-            
+
             def _matmat(self, X):
                 theta = self._theta
                 R = np.array([
                     [np.cos(theta), -np.sin(theta)],
                     [np.sin(theta),  np.cos(theta)]
                 ])
-                return R @ X
+                B = R @ X
+                shape = np.broadcast_shapes(batch_shape, X.shape[:-2]) + X.shape[-2:]
+                return np.full(shape, B)
 
             def _adjoint(self):
                 negative_theta = -self._theta
                 return RotOp(self.dtype, self.shape, negative_theta)
-            
+
         theta = np.pi / 2
         dtype = "float64"
         op = RotOp(shape=(*batch_shape, 2, 2), dtype=dtype, theta=theta)
