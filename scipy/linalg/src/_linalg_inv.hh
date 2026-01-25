@@ -275,7 +275,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
-    if (type_traits<T>::is_complex) {
+    if constexpr(type_traits<T>::is_complex) {
         irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
@@ -306,14 +306,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     // Main loop to traverse the slices
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
 
-        npy_intp offset = 0;
-        npy_intp temp_idx = idx;
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset += (temp_idx % shape[i]) * strides[i];
-            temp_idx /= shape[i];
-        }
-        T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
         copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
         swap_cf(scratch, data, n, n, n);
 
@@ -370,13 +364,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             case St::DIAGONAL:
             {
                 invert_slice_diagonal(intn, data, slice_status);
-
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
+                    // fail fast and loud
                     goto free_exit;
-                }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
                 }
                 break;
             }
@@ -386,12 +376,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 char diag = 'N';
                 invert_slice_triangular(uplo, diag, intn, data, work, irwork, slice_status);
 
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
                     goto free_exit;
-                }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
                 }
                 zero_other_triangle(uplo, data, intn);
                 break;
@@ -436,12 +422,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, !is_herm, slice_status);
                 }
 
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
                     goto free_exit;
-                }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
                 }
 
                 if constexpr (!type_traits<T>::is_complex) {
@@ -464,16 +446,10 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 // general matrix inverse
                 invert_slice_general(intn, data, ipiv, irwork, work, lwork, slice_status);
 
-                if ((slice_status.lapack_info != 0) || slice_status.is_singular || slice_status.is_ill_conditioned) {
-                    // some problem detected, store data to report
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
+                    goto free_exit;
                 }
             }
-        }
-
-        if (slice_status.is_singular == 1) {
-            // nan_matrix(data, n);
-            goto free_exit;     // fail fast and loud
         }
 
         // Swap back to original order

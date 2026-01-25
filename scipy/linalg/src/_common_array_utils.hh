@@ -781,6 +781,30 @@ typedef std::vector<SliceStatus> SliceStatusVec;
 
 
 /*
+ * When looping over slices, each `solve_slice_XYZ` return the `status` struct,
+ * which records one of three possible outcomes:
+ *
+ *  - the slice is singular or LAPACK returned non-zero `info`
+ *  - the slice is detected to be ill-conditioned
+ *  - all is well
+ *
+ * In the first two cases, we record the `status` in `vec_status`.
+ * For non-recoverable errors (singularity of non-zero info), we terminate the loop over the slices.
+ */
+int
+_detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
+    if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
+        vec_status.push_back(slice_status);
+        return 1;
+    }
+    else if (slice_status.is_ill_conditioned) {
+        vec_status.push_back(slice_status);
+    }
+    return 0;
+}
+
+
+/*
  * lwork defensive handler :
  *  cf https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/lapack.py#L1004
  *

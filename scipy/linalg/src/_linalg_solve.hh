@@ -10,7 +10,6 @@
 #include "_common_array_utils.hh"
 
 
-
 // Dense array solve with getrf, gecon and getrs
 template<typename T>
 inline void solve_slice_general(
@@ -317,7 +316,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
@@ -348,25 +347,13 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     // Main loop to traverse the slices
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-
-        npy_intp offset = 0;
-        npy_intp temp_idx = idx;
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset += (temp_idx % shape[i]) * strides[i];
-            temp_idx /= shape[i];
-        }
-        T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
+        // copy the slice
+        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
         copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
         swap_cf(scratch, data, n, n, n);
 
-        // copy the r.h.s, too; XXX: dedupe
-        offset = 0;
-        temp_idx = idx;
-        for (int i = ndim_b - 3; i >= 0; i--) {
-            offset += (temp_idx % shape_b[i]) * strides_b[i];
-            temp_idx /= shape_b[i];
-        }
-        T *slice_ptr_b = (T *)(bm_data + (offset/sizeof(T)));
+        // copy the r.h.s, too;
+        T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
         copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
 
         // detect the structure if not given
@@ -413,29 +400,18 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             case St::DIAGONAL:
             {
                 solve_slice_diagonal(intn, int_nrhs, data, data_b, slice_status);
-
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
+                    // fail fast and loud
                     goto free_exit;
                 }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
-                }
-
                 break;
             }
             case St::TRIDIAGONAL:
             {
                 solve_slice_tridiag(intn, int_nrhs, data, ipiv, trans, data_b, work, work2, irwork, slice_status);
-
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
                     goto free_exit;
                 }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
-                }
-
                 break;
             }
             case St::UPPER_TRIANGULAR:
@@ -443,16 +419,9 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             {
                 char diag = 'N';
                 solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork, slice_status);
-
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
                     goto free_exit;
                 }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
-                }
-
-                zero_other_triangle(uplo, data, intn);
                 break;
             }
             case St::POS_DEF:
@@ -464,7 +433,6 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                     if(slice_status.is_ill_conditioned) {
                         vec_status.push_back(slice_status);
                     }
-                    fill_other_triangle(uplo, data, intn);
                     break;
                 }
                 else { // potrf failed
@@ -487,20 +455,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             case St::HER:
             {
                 solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv, work, irwork, lwork, (is_symm && !is_herm), slice_status);
-
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
                     goto free_exit;
-                }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
-                }
-
-                if (is_symm && !is_herm) {
-                    fill_other_triangle_noconj(uplo, data, intn);
-                }
-                else {
-                    fill_other_triangle(uplo, data, intn);
                 }
                 break;
             }
@@ -508,18 +464,10 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             {
                 // general matrix solve
                 solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, slice_status);
-
-                if ((slice_status.lapack_info != 0) || slice_status.is_singular || slice_status.is_ill_conditioned) {
-                    // some problem detected, store data to report
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
+                    goto free_exit;
                 }
-
             }
-        }
-
-        if (slice_status.is_singular == 1) {
-            // nan_matrix(data, n);
-            goto free_exit;     // fail fast and loud
         }
 
         // Swap back to the C order
