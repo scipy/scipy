@@ -57,7 +57,7 @@ The value of this statistic tends to be high (close to 1) for samples with a str
 
 The test is performed by comparing the observed value of the statistic against the null distribution: the distribution of statistic values derived under the null hypothesis that total collagen and free proline measurements are drawn from independent normal distributions.
 
-Under the null hypothesis, the population correlation coefficient is zero, and the sample correlation coefficent follows the beta distribution on the interval $(-1, 1)$ with shape parameters $a = b = \frac{n}{2}-1$, where $n$ is the number of observations in each sample.
+Under the null hypothesis, the population correlation coefficient is zero, and the sample correlation coefficient follows the beta distribution on the interval $(-1, 1)$ with shape parameters $a = b = \frac{n}{2}-1$, where $n$ is the number of observations in each sample.
 
 ```{code-cell} ipython3
 n = len(x)  # len(x) == len(y)

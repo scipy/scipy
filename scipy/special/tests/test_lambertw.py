@@ -8,7 +8,7 @@
 
 import pytest
 import numpy as np
-from numpy.testing import assert_, assert_equal, assert_array_almost_equal
+from numpy.testing import assert_, assert_equal, assert_allclose
 from scipy.special import lambertw
 from numpy import nan, inf, pi, e, isnan, log, r_, array, complex128
 
@@ -85,8 +85,8 @@ def test_values():
 
 
 def test_ufunc():
-    assert_array_almost_equal(
-        lambertw(r_[0., e, 1.]), r_[0., 1., 0.567143290409783873])
+    assert_allclose(lambertw(r_[0., e, 1.]), r_[0., 1., 0.567143290409783873],
+                    atol=1.5e-7, rtol=0)
 
 
 def test_lambertw_ufunc_loop_selection():

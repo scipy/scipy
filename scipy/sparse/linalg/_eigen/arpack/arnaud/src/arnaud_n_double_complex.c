@@ -364,7 +364,8 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC, multiply with reciprocal
-            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / cabs(workl[iheig + k]));
+            double mag_sq = pow(cabs(workl[iheig + k]), 2.0);
+            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / mag_sq);
             workl[ihbds + k] = _Cmulcc(_Cmulcc(workl[ihbds + k], temp), temp);
 #else
             temp = workl[iheig + k];
@@ -386,7 +387,8 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC
-            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / cabs(workl[iheig + k]));
+            double mag_sq = pow(cabs(workl[iheig + k]), 2.0);
+            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / mag_sq);
             d[k] = ARNAUD_cplx(creal(temp) + creal(sigma), cimag(temp) + cimag(sigma));
 #else
             d[k] = 1.0 / workl[iheig + k] + sigma;
@@ -415,10 +417,11 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
             {
 #if defined(_MSC_VER)
                 // Complex division is not supported in MSVC
-                temp = _Cmulcr(conj(workl[iheig + j]), 1.0 / cabs(workl[iheig + j]));
-                workev[j] = _Cmulcc(workl[invsub + j*ldq + V->ncv], temp);
+                double mag_sq = pow(cabs(workl[iheig + j]), 2.0);
+                temp = _Cmulcr(conj(workl[iheig + j]), 1.0 / mag_sq);
+                workev[j] = _Cmulcc(workl[invsub + j*ldq + V->ncv - 1], temp);
 #else
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheig+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheig+j];
 #endif
             }
         }
@@ -537,7 +540,7 @@ ARNAUD_znaupd(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
 }
 
 
-void
+static void
 znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
        ARNAUD_CPLX_TYPE* v, int ldv, ARNAUD_CPLX_TYPE* h, int ldh,
        ARNAUD_CPLX_TYPE* ritz, ARNAUD_CPLX_TYPE* bounds,
@@ -551,7 +554,8 @@ znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
 
     if (V->ido == ido_FIRST)
     {
-        V->aup2_nev0 = V->nev;
+        V->aup2_nev = V->nev;
+        V->aup2_nev0 = V->aup2_nev;
         V->aup2_np0 = V->np;
 
         //  kplusp is the bound on the largest
@@ -561,7 +565,7 @@ znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
         //  iter is the counter on the current
         //       iteration step.
 
-        V->aup2_kplusp = V->nev + V->np;
+        V->aup2_kplusp = V->aup2_nev + V->np;
         V->nconv = 0;
         V->aup2_iter = 0;
 
@@ -619,7 +623,7 @@ znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
 
     //  Compute the first NEV steps of the Arnoldi factorization
 
-    znaitr(V, 0, V->nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    znaitr(V, 0, V->aup2_nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -648,13 +652,13 @@ LINE1000:
     //  Adjust NP since NEV might have been updated by last call
     //  to the shift application routine dnapps .
 
-    V->np = V->aup2_kplusp - V->nev;
+    V->np = V->aup2_kplusp - V->aup2_nev;
     V->ido = ido_FIRST;
 
 LINE20:
     V->aup2_update = 1;
 
-    znaitr(V, V->nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    znaitr(V, V->aup2_nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -688,7 +692,7 @@ LINE20:
     //  error bounds are in the last NEV loc. of RITZ,
     //  and BOUNDS respectively.
 
-    V->nev = V->aup2_nev0;
+    V->aup2_nev = V->aup2_nev0;
     V->np = V->aup2_np0;
 
     //  Make a copy of Ritz values and the corresponding
@@ -704,7 +708,7 @@ LINE20:
     //  bounds are in the last NEV loc. of RITZ
     //  BOUNDS respectively.
 
-    zngets(V, &V->nev, &V->np, ritz, bounds);
+    zngets(V, &V->aup2_nev, &V->np, ritz, bounds);
 
     //  Convergence test: currently we use the following criteria.
     //  The relative accuracy of a Ritz value is considered
@@ -713,7 +717,7 @@ LINE20:
     //  error_bounds(i) .le. tol*max(eps23, magnitude_of_ritz(i)).
     //
     V->nconv = 0;
-    for (i = 0; i < V->nev; i++)
+    for (i = 0; i < V->aup2_nev; i++)
     {
         rtemp = fmax(eps23, cabs(ritz[V->np + i]));
         if (cabs(bounds[V->np + i]) <= V->tol*rtemp)
@@ -739,7 +743,7 @@ LINE20:
         if ((creal(bounds[j]) == 0.0) && (cimag(bounds[j]) == 0.0))
         {
             V->np -= 1;
-            V->nev += 1;
+            V->aup2_nev += 1;
         }
     }
     // 30
@@ -825,7 +829,7 @@ LINE20:
 
         V->np = V->nconv;
         V->iter = V->aup2_iter;
-        V->nev = V->nconv;
+        V->aup2_nev = V->nconv;
         V->ido = ido_DONE;
         return;
 
@@ -835,21 +839,21 @@ LINE20:
         //  To prevent possible stagnation, adjust the size
         //  of NEV.
 
-        int nevbef = V->nev;
-        V->nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
-        if ((V->nev == 1) && (V->aup2_kplusp >= 6)) {
-            V->nev = V->aup2_kplusp / 2;
-        } else if ((V->nev == 1) && (V->aup2_kplusp > 3)) {
-            V->nev = 2;
+        int nevbef = V->aup2_nev;
+        V->aup2_nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
+        if ((V->aup2_nev == 1) && (V->aup2_kplusp >= 6)) {
+            V->aup2_nev = V->aup2_kplusp / 2;
+        } else if ((V->aup2_nev == 1) && (V->aup2_kplusp > 3)) {
+            V->aup2_nev = 2;
         }
 
-        V->np = V->aup2_kplusp - V->nev;
+        V->np = V->aup2_kplusp - V->aup2_nev;
 
         // If the size of NEV was just increased
         // resort the eigenvalues.
 
-        if (nevbef < V->nev) {
-            zngets(V, &V->nev, &V->np, ritz, bounds);
+        if (nevbef < V->aup2_nev) {
+            zngets(V, &V->aup2_nev, &V->np, ritz, bounds);
         }
     }
 
@@ -887,7 +891,7 @@ LINE50:
     //  matrix H.
     //  The first 2*N locations of WORKD are used as workspace.
 
-    znapps(V->n, &V->nev, V->np, ritz, v, ldv, h, ldh, resid, q, ldq, workl, workd);
+    znapps(V->n, &V->aup2_nev, V->np, ritz, v, ldv, h, ldh, resid, q, ldq, workl, workd);
 
     //  Compute the B-norm of the updated residual.
     //  Keep B*RESID in WORKD(1:N) to be used in
@@ -1312,10 +1316,6 @@ znapps(int n, int* kev, int np, ARNAUD_CPLX_TYPE* shift, ARNAUD_CPLX_TYPE* v,
     double tmp_dbl;
     ARNAUD_CPLX_TYPE f, g, h11, h21, sigma, s, s2, r, t, tmp_cplx;
 
-#if defined(_MSC_VER)
-    ARNAUD_CPLX_TYPE tmp_cplx2;
-#endif
-
     ARNAUD_CPLX_TYPE cdbl1 = ARNAUD_cplx(1.0, 0.0);
     ARNAUD_CPLX_TYPE cdbl0 = ARNAUD_cplx(0.0, 0.0);
 
@@ -1513,7 +1513,8 @@ zneigh(double* rnorm, int n, ARNAUD_CPLX_TYPE* h, int ldh, ARNAUD_CPLX_TYPE* rit
     int select[1] = { 0 };
     int int1 = 1, j;
     double temp;
-    ARNAUD_CPLX_TYPE vl[1] = { 0.0 };
+    ARNAUD_CPLX_TYPE vl[1];
+    vl[0] = ARNAUD_cplx(0.0, 0.0);
     ARNAUD_CPLX_TYPE c1 = ARNAUD_cplx(1.0, 0.0), c0 = ARNAUD_cplx(0.0, 0.0);
 
     //  1. Compute the eigenvalues, the last components of the
@@ -1560,7 +1561,7 @@ zneigh(double* rnorm, int n, ARNAUD_CPLX_TYPE* h, int ldh, ARNAUD_CPLX_TYPE* rit
 }
 
 
-void
+static void
 zngets(struct ARNAUD_state_d *V, int* kev, int* np,
        ARNAUD_CPLX_TYPE* ritz, ARNAUD_CPLX_TYPE* bounds)
 {
@@ -1754,7 +1755,7 @@ LINE40:
 static void
 zsortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLX_TYPE* x, ARNAUD_CPLX_TYPE* y)
 {
-    int i, igap, j;
+    int i, gap, pos;
     ARNAUD_CPLX_TYPE temp;
     ARNAUD_compare_cfunc *f;
 
@@ -1783,31 +1784,29 @@ zsortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLX_TYPE
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
@@ -1831,6 +1830,8 @@ zdotc_(const int* n, const ARNAUD_CPLX_TYPE* restrict x, const int* incx, const 
     ARNAUD_CPLX_TYPE temp = ARNAUD_cplx(0.0, 0.0);
 #endif
     if (*n <= 0) { return result; }
+
+    int ix, iy;
     if ((*incx == 1) && (*incy == 1))
     {
         for (int i = 0; i < *n; i++)
@@ -1844,15 +1845,20 @@ zdotc_(const int* n, const ARNAUD_CPLX_TYPE* restrict x, const int* incx, const 
         }
 
     } else {
+        // Handle negative increments correctly
+        ix = (*incx >= 0) ? 0 : (-(*n-1) * (*incx));
+        iy = (*incy >= 0) ? 0 : (-(*n-1) * (*incy));
 
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _Cmulcc(x[i * (*incx)], conj(y[i * (*incy)]));
+            temp = _Cmulcc(x[ix], conj(y[iy]));
             result = ARNAUD_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
-            result = result + (x[i * (*incx)] * conj(y[i * (*incy)]));
+            result = result + (x[ix] * conj(y[iy]));
 #endif
+            ix += *incx;
+            iy += *incy;
         }
     }
 

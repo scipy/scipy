@@ -3,6 +3,7 @@
 #
 
 from functools import reduce
+import sysconfig
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -21,10 +22,6 @@ from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
 import scipy.sparse as sps
-try:
-    from scipy.__config__ import CONFIG
-except ImportError:
-    CONFIG = None
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -33,14 +30,14 @@ except ImportError:
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
+from scipy.__config__ import CONFIG
+blas_provider = blas_version = None
+blas_provider = CONFIG['Build Dependencies']['blas']['name']
+blas_version = CONFIG['Build Dependencies']['blas']['version']
+
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
-
-blas_provider = blas_version = None
-if CONFIG is not None:
-    blas_provider = CONFIG['Build Dependencies']['blas']['name']
-    blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 def generate_random_dtype_array(shape, dtype, rng):
@@ -72,6 +69,12 @@ def test_lapack_documented():
                 name not in names):
             missing.append(name)
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
+
+
+def test_ilp64_blas_lapack_both_or_none():
+    from scipy.linalg.blas import HAS_ILP64 as blas_has_ilp64
+    from scipy.linalg.lapack import HAS_ILP64 as lapack_has_ilp64
+    assert blas_has_ilp64 == lapack_has_ilp64
 
 
 class TestFlapackSimple:
@@ -500,7 +503,7 @@ class TestDlasd4:
             roots.append(res[1])
 
             assert_(
-                (res[3] <= 0), 
+                (res[3] <= 0),
                 f"LAPACK root finding dlasd4 failed to find the singular value {i}"
             )
         roots = np.array(roots)[::-1]
@@ -3489,6 +3492,9 @@ def test_sy_hetrs(mtype, dtype, lower):
 def test_sy_he_tri(dtype, lower, mtype):
     if mtype == 'he' and dtype in REAL_DTYPES:
         pytest.skip("hetri not for real dtypes.")
+    if sysconfig.get_platform() == 'win-arm64' and dtype in COMPLEX_DTYPES:
+        pytest.skip("Test segfaulting on win-arm64 in CI, see gh-23133")
+
     rng = np.random.default_rng(1723059677121834)
     n = 20
     A = rng.random((n, n)) + rng.random((n, n))*1j

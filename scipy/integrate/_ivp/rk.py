@@ -1,5 +1,3 @@
-from types import GenericAlias
-
 import numpy as np
 from .base import OdeSolver, DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
@@ -83,9 +81,6 @@ class RungeKutta(OdeSolver):
     order: int = NotImplemented
     error_estimator_order: int = NotImplemented
     n_stages: int = NotImplemented
-
-    # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False,

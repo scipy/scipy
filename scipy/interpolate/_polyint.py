@@ -682,7 +682,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
     >>> plt.show()
 
-    Next, we show how using Chebyshev points of the second kind avoids the avoids the
+    Next, we show how using Chebyshev points of the second kind avoids the
     Runge phenomenon. In this example, we also compute the weights explicitly.
 
     >>> n = 20

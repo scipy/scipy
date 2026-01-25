@@ -10,12 +10,248 @@ import subprocess
 import itertools
 import random
 
+from asv_runner.benchmarks.mark import SkipNotImplemented
+
 
 class Benchmark:
     """
     Base class with sensible options
     """
-    pass
+
+
+class XPBenchmark(Benchmark):
+    """
+    Base class for benchmarks that are run on multiple Array API backends
+    and devices. Supports multiple devices, jax.jit, and lazy/asynchronous
+    evaluation.
+
+    Basic usage
+    -----------
+    ::
+        def myfunc(x):
+            return x + 1
+
+        class MyFunc(XPBenchmark):
+            def setup(self, backend):
+                super().setup(backend, myfunc)
+                x = self.xp.arange(5)
+                self.x = self.synchronize(x)
+                if self.warmup:
+                    self.func(self.x)
+
+            def time_myfunc(self, backend):
+                self.func(self.x)
+
+    Adding parameters
+    -----------------
+    In the below example:
+    - We add a `size` asv parameter
+    - We add a `plus` function parameter which can't be traced by jax.jit
+
+    ::
+        def myfunc(x, plus=True):
+            return x + 1 if plus else x - 1
+
+        class MyFunc(XPBenchmark):
+            param_names = (*XPBenchmark.param_names, "size")
+            params = (*XPBenchmark.params, [5, 10])
+
+            def setup(self, backend, size):
+                super().setup(backend, myfunc, static_argnames=("plus",))
+                x = self.xp.arange(size)
+                self.x = self.synchronize(x)
+                if self.warmup:
+                    self.func(self.x, plus=True)
+                    self.func(self.x, plus=False)
+
+            def time_myfunc_plus(self, backend, size):
+                self.func(self.x, plus=True)
+
+            def time_myfunc_minus(self, backend, size):
+                self.func(self.x, plus=False)
+    """
+    backends = ["numpy", "array_api_strict", "cupy", "torch:cpu", "torch:cuda",
+                "dask.array", "jax.numpy:cpu", "jax.numpy:cuda"]
+
+    # subclasses can override these
+    param_names = ("backend",)
+    params = (backends, )
+
+    def setup(self, backend, func, *, static_argnums=None, static_argnames=None):
+        """Skip benchmark if backend/device combination is not available.
+        Configure namespace.
+        Potentially wrap func with jax.jit and ensure timings are correct
+        for lazy backends.
+
+        Parameters
+        ----------
+        backend : str
+            backend name from asv parameterization
+        func : callable
+            function to benchmark
+        static_argnums : Sequence[int], optional
+            Parameter for jax.jit. Note that, unlike in the unit tests,
+            we can't use the automatic parameter and return value wrap/unwrap
+            from `array_api_extra.testing.lazy_xp_function`, as it comes with a
+            substantial performance overhead.
+        static_argnames : Sequence[str], optional
+            Parameter for jax.jit
+
+        Sets attributes
+        ---------------
+        backend : str
+            As the parameter (for convenience of helper functions)
+        xp : namespace
+            array namespace, potentially wrapped by array_api_compat
+        func : callable
+            function to benchmark, potentially wrapped
+        warmup : bool
+            Whether setup() should run a warmup iteration
+        """
+        self.backend = backend
+        if ":" in backend:
+            backend, device = backend.split(":")
+        else:
+            device = "cuda" if backend == "cupy" else "cpu"
+
+        with safe_import() as array_api_imports:
+            # Requires scipy >=1.16
+            from scipy._lib._array_api import array_namespace, xp_capabilities_table
+            from scipy.conftest import xp_available_backends, xp_known_backends
+
+            if isinstance(xp_available_backends, dict):  # scipy == 1.16
+                backends = xp_available_backends
+            else:  # scipy >= 1.17
+                backends = {p.id: p.values[0] for p in xp_available_backends}
+        if array_api_imports.error:
+            # On older scipy versions, disregard SCIPY_ARRAY_API
+            import numpy as np
+            def array_namespace(*args, **kwargs):
+                return np
+            xp_capabilities_table = {}
+            backends = {"numpy": np}
+            xp_known_backends = {"numpy"}
+
+        # If new backends are added to conftest.py, you need to add them here too
+        assert not xp_known_backends - set(n.split(":")[0] for n in self.backends)
+
+        try:
+            xp = backends[backend]
+        except KeyError:
+            raise SkipNotImplemented(
+                f"{backend} not available or skipped by SCIPY_ARRAY_API")
+
+        if func and func in xp_capabilities_table:
+            capabilities = xp_capabilities_table[func]
+            skips = {n for n, _ in capabilities["skip_backends"]}
+            skips |= {n for n, _ in capabilities["xfail_backends"]}
+            if (((capabilities["cpu_only"] and device != "cpu")
+                 or (capabilities["np_only"] and backend != "numpy"))
+                and backend not in capabilities["exceptions"]):
+                skips.add(backend)
+            if backend in skips:
+                raise SkipNotImplemented(f"{backend} skipped by @xp_capabilities")
+        else:
+            capabilities = {"jax_jit": False}
+
+        # Potentially wrap namespace with array_api_compat
+        xp = array_namespace(xp.empty(0))
+
+        self.xp = xp
+        self.func = func
+        self.warmup = False
+
+        if backend == "torch":
+            import torch
+
+            torch.set_default_dtype(torch.float64)
+            try:
+                torch.empty(0, device=device)
+            except (RuntimeError, AssertionError):
+                raise SkipNotImplemented(f"{device=} not available")
+            torch.set_default_device(device)
+
+            if device == "cuda":
+                def wrapper(*args, **kwargs):
+                    res = func(*args, **kwargs)
+                    torch.cuda.synchronize()
+                    return res
+
+                self.func = wrapper
+
+        elif backend == "jax.numpy":
+            import jax
+
+            jax.config.update("jax_enable_x64", True)
+            try:
+                jax_device = jax.devices(device)[0]
+            except RuntimeError:
+                raise SkipNotImplemented(f"{device=} not available")
+            jax.config.update("jax_default_device", jax_device)
+
+            if capabilities["jax_jit"]:
+                func = jax.jit(func, static_argnames=static_argnames,
+                               static_argnums=static_argnums)
+                self.warmup = True
+
+            def wrapper(*args, **kwargs):
+                res = func(*args, **kwargs)
+                jax.block_until_ready(res)
+                return res
+
+            self.func = wrapper
+
+        elif backend == "dask.array":
+            import dask
+
+            def wrapper(*args, **kwargs):
+                res = func(*args, **kwargs)
+                return dask.compute(res)[0]
+
+            self.func = wrapper
+
+        elif backend == "cupy":
+            import cupy
+            # The default stream is non-blocking.
+            # As of CuPy 13.4.1, explicit non-blocking streams
+            # are substantially slower.
+            # cupy.cuda.Stream(non_blocking=True).use()
+
+            def wrapper(*args, **kwargs):
+                res = func(*args, **kwargs)
+                cupy.cuda.get_current_stream().synchronize()
+                return res
+
+            self.func = wrapper
+
+        else:
+            assert backend in ("numpy", "array_api_strict")
+
+    def synchronize(self, *arrays):
+        """Wait until the given arrays have finished generating and return a
+        synchronized instance of them.
+        You need to call this on all arrays that your setup() function creates.
+        """
+        if self.backend == "dask.array":
+            import dask
+
+            arrays = dask.persist(*arrays)
+        elif self.backend in ("jax.numpy:cpu", "jax.numpy:cuda"):
+            import jax
+
+            jax.block_until_ready(arrays)
+        elif self.backend == "torch:cuda":
+            import torch
+
+            torch.cuda.synchronize()
+        elif self.backend == "cupy":
+            import cupy
+
+            cupy.cuda.get_current_stream().synchronize()
+        else:
+            assert self.backend in ("numpy", "array_api_strict", "torch:cpu")
+
+        return arrays[0] if len(arrays) == 1 else arrays
 
 
 def is_xslow():

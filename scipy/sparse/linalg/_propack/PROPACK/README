@@ -1,0 +1,27 @@
+PROPACK in C
+============
+
+This project is a C adaptation and rewrite of the well-known Fortran77 PROPACK library
+which is designed to efficiently compute the singular values and singular vectors of a
+large, sparse and/or structured matrix.
+
+PROPACK is written by Rasmus Munk Larsen and the original code, at the time of writing,
+lives in
+
+    https://github.com/rmlarsen/propack
+
+Original Fortran77 PROPACK license can be found in the "PROPACK_LICENSE.txt" file
+and also at the original code location. The rewrite license is derived from SciPy
+project license BSD-3, and provided here again, for convenience in the LICENSE file
+for external use.
+
+While the original intention is to be used within the SciPy project, the C code here is
+also kept as a separate C library without any SciPy specifics such that the code can be
+extracted to other projects.
+
+The major differences between the original PROPACK and this rewrite are;
+
+ - the removal of all SAVE'd Fortran77 variables
+ - some changes in the main function signatures
+ - the randomization is changed to xoshiro256+ and seeds are externalized to the user
+ - many routines are cleaned up from antiquated GOTO-based flows

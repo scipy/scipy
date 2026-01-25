@@ -41,6 +41,7 @@ def norm(x, ord=None, axis=None):
     Returns
     -------
     n : float or ndarray
+        The selected norm of `x`.
 
     Notes
     -----
@@ -69,7 +70,7 @@ def norm(x, ord=None, axis=None):
 
     The Frobenius norm is given by [1]_:
 
-        :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
+    :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
 
     References
     ----------
@@ -143,8 +144,7 @@ def norm(x, ord=None, axis=None):
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
-            # Only solver="lobpcg" supports all numpy dtypes
-            _, s, _ = svds(x, k=1, solver="lobpcg")
+            _, s, _ = svds(x, k=1, solver="arpack", rng=None)
             return s[0]
         elif ord == -2:
             raise NotImplementedError

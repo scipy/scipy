@@ -305,7 +305,7 @@ def mmread(source, *, spmatrix=True):
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
 
     Returns
     -------
@@ -394,10 +394,6 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         If symmetry is None the symmetry type of 'a' is determined by its
         values. If symmetry is 'AUTO' the symmetry type of 'a' is either
         determined or set to 'general', at mmwrite's discretion.
-
-    Returns
-    -------
-    None
 
     Notes
     -----

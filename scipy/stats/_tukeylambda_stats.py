@@ -96,7 +96,7 @@ def tukeylambda_variance(lam):
     if reg.size > 0:
         v[reg_mask] = (2.0 / reg**2) * (1.0 / (1.0 + 2 * reg) -
                                         beta(reg + 1, reg + 1))
-    v.shape = shp
+    v = v.reshape(shp)
     return v
 
 
@@ -195,5 +195,5 @@ def tukeylambda_kurtosis(lam):
 
     # The return value will be a numpy array; resetting the shape ensures that
     # if `lam` was a scalar, the return value is a 0-d array.
-    k.shape = shp
+    k = k.reshape(shp)
     return k

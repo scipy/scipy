@@ -1,5 +1,3 @@
-from types import GenericAlias
-
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import issparse, csc_matrix, eye
@@ -123,14 +121,14 @@ class BDF(OdeSolver):
         element (i, j) is equal to ``d f_i / d y_j``.
         There are three ways to define the Jacobian:
 
-            * If array_like or sparse_matrix, the Jacobian is assumed to
-              be constant.
-            * If callable, the Jacobian is assumed to depend on both
-              t and y; it will be called as ``jac(t, y)`` as necessary.
-              For the 'Radau' and 'BDF' methods, the return value might be a
-              sparse matrix.
-            * If None (default), the Jacobian will be approximated by
-              finite differences.
+        * If array_like or sparse_matrix, the Jacobian is assumed to
+          be constant.
+        * If callable, the Jacobian is assumed to depend on both
+          t and y; it will be called as ``jac(t, y)`` as necessary.
+          For the 'Radau' and 'BDF' methods, the return value might be a
+          sparse matrix.
+        * If None (default), the Jacobian will be approximated by
+          finite differences.
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
@@ -196,9 +194,6 @@ class BDF(OdeSolver):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
-
-    # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,

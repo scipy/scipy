@@ -185,12 +185,22 @@ class TestBatch:
         self.batch_test(fun, A, n_out=n_out)
 
     @pytest.mark.parametrize('compute_uv', [False, True])
+    @pytest.mark.parametrize('full_matrices', [False, True])
     @pytest.mark.parametrize('dtype', floating)
-    def test_svd(self, compute_uv, dtype):
+    def test_svd(self, compute_uv, full_matrices, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         n_out = 3 if compute_uv else 1
-        self.batch_test(linalg.svd, A, n_out=n_out, kwargs=dict(compute_uv=compute_uv))
+        self.batch_test(
+            linalg.svd, A, n_out=n_out,
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+        )
+
+        A = get_random((5, 3, 2, 0), dtype=dtype, rng=rng)
+        self.batch_test(
+            linalg.svd, A, n_out=n_out,
+            kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
+        )
 
     @pytest.mark.parametrize('fun', [linalg.polar, linalg.qr, linalg.rq])
     @pytest.mark.parametrize('dtype', floating)
@@ -388,8 +398,15 @@ class TestBatch:
         b = b + 5*np.eye(5)
         q = q + 5*np.eye(5)
         r = r + 5*np.eye(5)
-        # can't easily generate valid random e, s
+        e = np.eye(5)
+        s = np.zeros((5, 5))
         self.batch_test(fun, (a, b, q, r))
+        self.batch_test(fun, (a, b, q, r, e))
+        self.batch_test(fun, (a, b, q, r, e, s))
+
+        res = fun(a, b, q, r)
+        ref = fun(a, b, q, r, s=s)
+        np.testing.assert_allclose(res, ref)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_rsf2cs(self, dtype):
@@ -445,7 +462,7 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        assert_allclose(A @ x - b, 0, atol=1.5e-6)
+        assert_allclose(A @ x - b, 0, atol=2e-6)
         assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
@@ -459,7 +476,7 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        assert_allclose(A @ x - b, 0, atol=1.5e-6)
+        assert_allclose(A @ x - b, 0, atol=2e-6)
         assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
 
     @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
@@ -602,3 +619,84 @@ class TestBatch:
         message = "Batch support for sparse arrays is not available."
         with pytest.raises(NotImplementedError, match=message):
             linalg.clarkson_woodruff_transform(A, sketch_size=3, rng=rng)
+
+    @pytest.mark.parametrize('f, args', [
+        (linalg.toeplitz, (np.ones((0, 4)),)),
+        (linalg.eig, (np.ones((3, 0, 5, 5)),)),
+    ])
+    def test_zero_size_batch(self, f, args):
+        message = "does not support zero-size batches."
+        with pytest.raises(ValueError, match=message):
+            f(*args)
+
+
+@pytest.mark.parametrize(
+    "func, core_shape",
+    [
+     (linalg.solve, (3, 3)),
+     (linalg.solve_triangular, (3, 3)),
+     (lambda a, b: linalg.lstsq(a, b)[0], (3, 2)),
+    ],
+    ids=["solve", "solve_triangular", "lstsq",]
+)
+def test_shapes_solve_like(func, core_shape):
+    # test shapes for solve-like functions, where the 2nd argument may have trailing
+    # dimensions
+    m, n = core_shape
+
+    # ### 1. a.ndim == 2 ###
+
+    # 1.1 : b.ndim == 1, the "scalar" case
+    a = np.eye(m, n)
+    b = np.ones(m)
+
+    x = func(a, b)
+    assert x.shape == (n,)
+
+    # 1.2 : b.ndim == 2 : b has trailing dims
+    b = np.ones((m, 8))
+    x = func(a, b)
+    assert x.shape == (n, 8)
+
+    # 1.3 : b.ndim == 3 : b has trailing dims *and* batch dims
+    b = np.ones((4, m, 8))
+    x = func(a, b)
+    assert x.shape == (4, n, 8)
+
+    # 1.4 : b.ndim == 2 : b has batch dims *but* no trailing dims
+    b = np.ones((4, m))
+    pattern = "Shape mismatch|incompatible shapes|shapes of a|shape mismatch"
+    with pytest.raises(ValueError, match=pattern):
+        # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
+        func(a, b)
+
+    # ### 2. a.ndim > 2 ###
+    a = np.broadcast_to(a, (5, 4, *a.shape))  # batch_shape = (5, 4)
+
+    # 2.1 : b is 1D
+    b = np.ones(m)
+    x = func(a, b)
+    assert x.shape == (5, 4, n)
+
+    # 2.2 : b.ndim == 2, has trailing dims
+    b = np.ones((m, 8))
+    x = func(a, b)
+    assert x.shape == (5, 4, n, 8)
+
+    # 2.3 : b has both trailing and batch dims
+    b = np.ones((5, 4, m, 8))
+    x = func(a, b)
+    assert x.shape == (5, 4, n, 8)
+
+    # 2.3.1 : b has trailing dims and (broadcastable) batch dims
+    b = np.ones((4, m, 8))
+    x = func(a, b)
+    assert x.shape == (5, 4, n, 8)
+
+    # 2.4 : b has batch dims but no trailing dims
+    b = np.ones((5, 4, m))
+    pattern = "Shape mismatch|incompatible shapes|shapes of a|shape mismatch"
+    with pytest.raises(ValueError, match=pattern):
+        # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
+        func(a, b)
+

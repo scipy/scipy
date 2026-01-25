@@ -36,8 +36,8 @@ def test_hdmedian():
 
 
 def test_rsh():
-    np.random.seed(132345)
-    x = np.random.randn(100)
+    rng = np.random.default_rng(806795795)
+    x = rng.standard_normal(100)
     res = ms.rsh(x)
     # Just a sanity check that the code runs and output shape is correct.
     # TODO: check that implementation is correct.

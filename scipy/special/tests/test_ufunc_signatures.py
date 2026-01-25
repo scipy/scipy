@@ -13,9 +13,15 @@ import pytest
 import scipy.special._ufuncs
 import scipy.special._gufuncs
 
+
+# Single precision is not implemented for these ufuncs;
+# floating point inputs must be float64.
+exceptions = ['_gen_harmonic', '_normalized_gen_harmonic']
+
 _ufuncs = []
 for funcname in dir(scipy.special._ufuncs):
-    _ufuncs.append(getattr(scipy.special._ufuncs, funcname))
+    if funcname not in exceptions:
+        _ufuncs.append(getattr(scipy.special._ufuncs, funcname))
 for funcname in dir(scipy.special._gufuncs):
     _ufuncs.append(getattr(scipy.special._gufuncs, funcname))
 

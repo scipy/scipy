@@ -65,16 +65,20 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
           tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
-    MESON_ARGS are passed through e.g.:
+    MESON_ARGS can be passed via `--setup-args` e.g.:
 
-    spin build -- -Dpkg_config_path=/lib64/pkgconfig
+        spin build --setup-args=-Dpkg_config_path=/lib64/pkgconfig
 
     The package is installed to build-install
 
-    By default builds for release, to be able to use a debugger set CFLAGS
-    appropriately. For example, for linux use
+    By default builds for release.
+    To use alternative build types, you can set the corresponding flags in `-Dc_args`.
+    For example, for a debug build, use:
 
-    CFLAGS="-O0 -g" spin build
+        spin build --setup-args=-Dc_args="-O0 -g"
+
+    Note that `-Dbuildtype=debug` is not sufficient when using default compilers from
+    conda-forge, as this will not override the `-O2` set by the compiler activation.
     """
     MESON_ARGS = "meson_args"
     MESON_COMPILE_ARGS = "meson_compile_args"
@@ -299,9 +303,13 @@ def _set_pythonpath(pythonpath):
 def python(*, parent_callback, pythonpath, **kwargs):
     """🐍 Launch Python shell with PYTHONPATH set
 
-    OPTIONS are passed through directly to Python, e.g.:
+    OPTIONS refers to the spin command options (see below).
 
-    spin python -c 'import sys; print(sys.path)'
+    The optional PYTHON_ARGS, which must be separated from the
+    spin command options with `--`, are passed directly through to
+    the Python command.  For example,
+
+    spin python -- -c 'import sys; print(sys.path)'
     """
     _set_pythonpath(pythonpath)
     parent_callback(**kwargs)
@@ -313,9 +321,13 @@ def python(*, parent_callback, pythonpath, **kwargs):
 def ipython(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch IPython shell with PYTHONPATH set
 
-    OPTIONS are passed through directly to IPython, e.g.:
+    OPTIONS refers to the spin command options (see below).
 
-    spin ipython -i myscript.py
+    The optional IPYTHON_ARGS, which must be separated from the
+    spin command options with `--`, are passed directly through to
+    the IPython command.  For example,
+
+    spin ipython -- -i myscript.py
     """
     _set_pythonpath(pythonpath)
     parent_callback(**kwargs)
@@ -484,6 +496,11 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
     os.environ['PYTHONPATH'] = install_dir
     util.run(cmd)
 
+    cmd_numpydoc_lint =  [f'{sys.executable}',
+        os.path.join('tools', 'numpydoc_lint.py')
+    ]
+    util.run(cmd_numpydoc_lint)
+
 @click.command()
 @click.argument(
     'pytest_args', nargs=-1, metavar='PYTEST-ARGS', required=False
@@ -600,7 +617,7 @@ def authors(ctx_obj, revision_args):
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    cmd_prefix = [sys.executable] if sys.platform == "win32" else []
+    cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
         os.path.join('tools', 'lint.py'),
@@ -625,6 +642,76 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         os.path.join('tools', 'check_test_name.py')
     ]
     util.run(cmd_check_test_name)
+
+
+@click.command()
+@click.option(
+    '--xp-markers', default=False, is_flag=True,
+    help='For each function using `xp_capabilities`, ensure non-numpy backends are '
+         'actually tested')
+@click.option(
+    '--installed-files', default=False, is_flag=True,
+    help='Ensure all test and stub files are installed correctly.')
+@click.option(
+    '--symbol-hiding', default=False, is_flag=True,
+    help='Check whether symbol hiding in extension modules is correct (GCC-only)')
+@click.option(
+    '--no-build', default=False, is_flag=True,
+    help='Build SciPy before running checks')
+@meson.build_dir_option
+@click.pass_context
+def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=None):
+    """🔧  Run checks specific to the SciPy code base.
+
+    Exactly one check can be run at once. Example:
+
+      \b
+      spin check --xp-markers
+
+    """
+    # Checks are typically useful enough to run in CI or maintain a custom script for,
+    # but not deserving of their own top-level command in the spin CLI interface.
+    #
+    # We only run a single check per invocation, since they're so different and not all
+    # checks are expected to pass on all platforms.
+    #
+    # These checks, unlike the `lint` ones, are allowed (but don't have to) require
+    # building or importing `scipy`.
+    options = [xp_markers, installed_files, symbol_hiding]
+    if not sum(options) == 1:
+        click.secho(
+            f"Exactly one option to `check` should be given, found {sum(options)} - "
+            "exiting",
+            fg="bright_red",
+        )
+        sys.exit(1)
+
+    if not no_build:
+        click.secho(
+                "Invoking `build` prior to running checks:",
+                bold=True, fg="bright_green"
+            )
+        ctx.invoke(build)
+
+    build_dir = os.path.abspath(build_dir)
+    install_dir = meson._get_site_packages(build_dir)
+    os.environ['PYTHONPATH'] = install_dir
+
+    if xp_markers:
+        os.environ['SCIPY_ARRAY_API'] = '1'
+        cmd = [sys.executable, os.path.join('tools', 'check_xp_untested.py')]
+        util.run(cmd)
+
+    if installed_files:
+        cmd = [sys.executable, os.path.join('tools', 'check_installation.py'),
+               install_dir]
+        util.run(cmd)
+
+    if symbol_hiding:
+        script = os.path.join(os.path.abspath('tools'),
+                              'check_pyext_symbol_hiding.sh')
+        util.run([script, install_dir])
+
 
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):
@@ -721,10 +808,19 @@ def _dirty_git_working_dir():
     required=False,
     nargs=-1
 )
+@click.option(
+    '--array-api-backend', '-b', default=None, metavar='ARRAY_BACKEND',
+    multiple=True,
+    help=(
+        "Array API backend "
+        "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', "
+        "'jax.numpy', 'dask.array')."
+    )
+)
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build_dir=None, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -760,6 +856,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
+    if len(array_api_backend) != 0:
+        os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
+
     if not compare:
         # No comparison requested; we build and benchmark the current version
 
@@ -767,7 +866,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             "Invoking `build` prior to running benchmarks:",
             bold=True, fg="bright_green"
         )
-        ctx.invoke(build)
+        ctx.invoke(build, build_dir=build_dir)
 
         meson._set_pythonpath(build_dir)
 

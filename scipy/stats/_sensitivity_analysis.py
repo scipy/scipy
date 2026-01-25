@@ -9,6 +9,7 @@ from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._resampling import BootstrapResult
 from scipy.stats import qmc, bootstrap
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import _transition_to_rng
 
 
@@ -92,11 +93,13 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """AB matrix.
 
     AB: rows of B into A. Shape (d, d, n).
+
     - Copy A into d "pages"
     - In the first page, replace 1st rows of A with 1st row of B.
     ...
     - In the dth page, replace dth row of A with dth row of B.
     - return the stack of pages
+
     """
     d, n = A.shape
     AB = np.tile(A, (d, 1, 1))
@@ -236,6 +239,8 @@ class SobolResult:
             first_order=first_order, total_order=total_order
         )
 
+
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state', replace_doc=False)
 def sobol_indices(
     *,

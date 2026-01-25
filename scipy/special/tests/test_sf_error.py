@@ -54,7 +54,6 @@ def test_geterr():
         assert_(value in _sf_error_actions)
 
 
-@pytest.mark.thread_unsafe
 def test_seterr():
     entry_err = sc.geterr()
     try:
@@ -73,7 +72,7 @@ def test_seterr():
         sc.seterr(**entry_err)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="module refcounts are not stable in multiple threads")
 @pytest.mark.skipif(not HAS_REFCOUNT, reason="Python lacks refcounts")
 def test_sf_error_special_refcount():
     # Regression test for gh-16233.
@@ -127,7 +126,6 @@ def test_errstate_cpp_alt_ufunc_machinery():
     assert_equal(olderr, sc.geterr())
 
 
-@pytest.mark.thread_unsafe
 def test_errstate():
     for category, error_code in _sf_error_code_map.items():
         for action in _sf_error_actions:
@@ -144,3 +142,12 @@ def test_errstate_all_but_one():
         with assert_raises(sc.SpecialFunctionError):
             sc.spence(-1.0)
     assert_equal(olderr, sc.geterr())
+
+
+def test_check_overflow_message():
+    # Regression test for a bug where the overflow and underflow
+    # messages were switched.
+    with pytest.raises(sc.SpecialFunctionError, match="overflow"):
+        with sc.errstate(all='raise'):
+            # This should trigger an overflow:
+            sc.yn(3, 1e-105)

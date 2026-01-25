@@ -36,7 +36,7 @@ direct(PyObject *self, PyObject *args)
 
     dimension = PyArray_DIMS((PyArrayObject*)lb)[0];
     x = (double *) malloc(sizeof(double) * (dimension + 1));
-    if (!(x)) {
+    if (!x) {
         ret_code = DIRECT_OUT_OF_MEMORY;
     }
     PyObject *x_seq = PyList_New(dimension);
@@ -46,17 +46,24 @@ direct(PyObject *self, PyObject *args)
     force_stop = 0;
     direct_return_info info;
 
-    if (!direct_optimize(f, x, x_seq, f_args, dimension, lower_bounds,
+    PyObject *direct_ret = direct_optimize(f, x, x_seq, f_args, dimension, lower_bounds,
                          upper_bounds, &minf, max_feval, max_iter,
                          magic_eps, magic_eps_abs, volume_reltol,
                          sigma_reltol, &force_stop, fglobal, fglobal_reltol,
-                         logfile, algorithm, &info, &ret_code, callback)) {
+                         logfile, algorithm, &info, &ret_code, callback);
+    if (!direct_ret) {
+        Py_DECREF(x_seq);
         if (x)
             free(x);
         return NULL;
     }
+    /* DECREF the return value from direct_optimize - we only needed it for error checking */
+    Py_DECREF(direct_ret);
     PyObject* ret_py = Py_BuildValue("Odiii", x_seq, minf, (int) ret_code,
                                      info.numfunc, info.numiter);
+    /* Py_BuildValue with "O" increments refcount. We need to DECREF our
+       original reference since the tuple now owns it. */
+    Py_DECREF(x_seq);
     if (x)
         free(x);
     return ret_py;
@@ -66,38 +73,46 @@ direct(PyObject *self, PyObject *args)
  * Standard Python module interface
  */
 
-static PyMethodDef
-DIRECTMethods[] = {
+static struct PyMethodDef direct_module_methods[] = {
     {"direct", direct, METH_VARARGS, "DIRECT Optimization Algorithm"},
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_direct",
-    NULL,
-    -1,
-    DIRECTMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
 
-PyMODINIT_FUNC
-PyInit__direct(void)
-{
-    PyObject *module;
+static int module_exec(PyObject *module) {
+    (void)module;  /* unused */
 
-    import_array();
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return module;
-    }
+    if (_import_array() < 0) { return -1; }
 
 #if Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
+    return 0;
+}
 
-    return module;
+
+static struct PyModuleDef_Slot direct_slots[] = {
+    {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    /* signal that this module supports running without an active GIL */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
+static struct PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_direct",
+    .m_size = 0,
+    .m_methods = direct_module_methods,
+    .m_slots = direct_slots
+};
+
+
+PyMODINIT_FUNC
+PyInit__direct(void)
+{
+    return PyModuleDef_Init(&moduledef);
 }

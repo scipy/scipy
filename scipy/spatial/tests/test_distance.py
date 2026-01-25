@@ -32,14 +32,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-import os.path
-
 from functools import wraps, partial
+import os.path
+import sys
+import sysconfig
+import warnings
 import weakref
 
 import numpy as np
-import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
@@ -411,7 +411,6 @@ class TestCdist:
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
-    @pytest.mark.thread_unsafe
     def test_cdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
 
@@ -609,7 +608,7 @@ class TestCdist:
                     y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.thread_unsafe
+    @pytest.mark.skipif(sysconfig.get_platform() == 'win-arm64', reason="numpy#29442")
     def test_cdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
@@ -649,7 +648,6 @@ class TestCdist:
         with pytest.raises(ValueError):
             cdist(X1, X2, metric, out=out5, **kwargs)
 
-    @pytest.mark.thread_unsafe
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
@@ -676,7 +674,6 @@ class TestCdist:
         # test that output is numerically equivalent
         assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.thread_unsafe
     def test_cdist_refcount(self, metric):
         x1 = np.random.rand(10, 10)
         x2 = np.random.rand(10, 10)
@@ -708,7 +705,6 @@ class TestPdist:
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
-    @pytest.mark.thread_unsafe
     def test_pdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
         X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
@@ -1424,7 +1420,6 @@ class TestPdist:
                     y2 = pdist(new_type(X1), metric=metric)
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.thread_unsafe
     def test_pdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
@@ -1459,7 +1454,6 @@ class TestPdist:
         with pytest.raises(ValueError):
             pdist(X, metric, out=out5, **kwargs)
 
-    @pytest.mark.thread_unsafe
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
@@ -1545,7 +1539,6 @@ class TestSomeDistanceFunctions:
         dist = correlation(x, y)
         assert 0 <= dist <= 10 * np.finfo(np.float64).eps
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings('ignore:Casting complex')
     @pytest.mark.parametrize("func", [correlation, cosine])
     def test_corr_dep_complex(self, func):
@@ -1995,7 +1988,6 @@ def test_sqeuclidean_dtypes():
         assert_equal(d.dtype, dtype)
 
 
-@pytest.mark.thread_unsafe
 def test_modifies_input(metric):
     # test whether cdist or pdist modifies input arrays
     X1 = np.asarray([[1., 2., 3.],
@@ -2008,7 +2000,6 @@ def test_modifies_input(metric):
     assert_array_equal(X1, X1_copy)
 
 
-@pytest.mark.thread_unsafe
 def test_Xdist_deprecated_args(metric):
     # testing both cdist and pdist deprecated warnings
     X1 = np.asarray([[1., 2., 3.],
@@ -2037,7 +2028,6 @@ def test_Xdist_deprecated_args(metric):
             pdist(X1, metric, **kwargs)
 
 
-@pytest.mark.thread_unsafe
 def test_Xdist_non_negative_weights(metric):
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
@@ -2132,7 +2122,6 @@ def test_gh_17703():
     assert_allclose(actual, expected)
 
 
-@pytest.mark.thread_unsafe
 def test_immutable_input(metric):
     if metric in ("jensenshannon", "mahalanobis", "seuclidean"):
         pytest.skip("not applicable")

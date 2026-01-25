@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.testing import (assert_array_equal,
-        assert_array_almost_equal_nulp, assert_almost_equal)
+from numpy.testing import (assert_array_equal, assert_array_almost_equal_nulp,
+                           assert_allclose)
 from pytest import raises as assert_raises
 
 from scipy.special import gammaln, multigammaln
@@ -21,7 +21,7 @@ class TestMultiGammaLn:
         a = np.array([2.5, 10.0])
         result = multigammaln(a, 2)
         expected = np.log(np.sqrt(np.pi)) + gammaln(a) + gammaln(a - 0.5)
-        assert_almost_equal(result, expected)
+        assert_allclose(result, expected, atol=1.5e-7, rtol=0)
 
     def test_bararg(self):
         assert_raises(ValueError, multigammaln, 0.5, 1.2)

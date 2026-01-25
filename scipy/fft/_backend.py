@@ -1,4 +1,5 @@
 import scipy._lib.uarray as ua
+from scipy._lib._array_api import xp_capabilities
 from . import _basic_backend
 from . import _realtransforms_backend
 from . import _fftlog_backend
@@ -48,6 +49,7 @@ def _backend_from_arg(backend):
     return backend
 
 
+@xp_capabilities(out_of_scope=True)
 def set_global_backend(backend, coerce=False, only=False, try_last=False):
     """Sets the global fft backend
 
@@ -92,6 +94,7 @@ def set_global_backend(backend, coerce=False, only=False, try_last=False):
     ua.set_global_backend(backend, coerce=coerce, only=only, try_last=try_last)
 
 
+@xp_capabilities(out_of_scope=True)
 def register_backend(backend):
     """
     Register a backend for permanent use.
@@ -132,6 +135,7 @@ def register_backend(backend):
     ua.register_backend(backend)
 
 
+@xp_capabilities(out_of_scope=True)
 def set_backend(backend, coerce=False, only=False):
     """Context manager to set the backend within a fixed scope.
 
@@ -153,6 +157,11 @@ def set_backend(backend, coerce=False, only=False):
         BackendNotImplemented error will be raised immediately. Ignoring any
         lower priority backends.
 
+    Returns
+    -------
+    context : uarray._SetBackendContext
+        Context manager that sets the backend.
+
     Examples
     --------
     >>> import scipy.fft as fft
@@ -164,6 +173,7 @@ def set_backend(backend, coerce=False, only=False):
     return ua.set_backend(backend, coerce=coerce, only=only)
 
 
+@xp_capabilities(out_of_scope=True)
 def skip_backend(backend):
     """Context manager to skip a backend within a fixed scope.
 
@@ -177,6 +187,11 @@ def skip_backend(backend):
         The backend to skip.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'} or an object that implements the uarray protocol.
+
+    Returns
+    -------
+    context : uarray._SetBackendContext
+        Context manager that skips the backend.
 
     Examples
     --------

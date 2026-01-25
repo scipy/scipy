@@ -9,7 +9,7 @@ __all__ = ['Model', 'exponential', 'multilinear', 'unilinear', 'quadratic',
 
 def _lin_fcn(B, x):
     a, b = B[0], B[1:]
-    b.shape = (b.shape[0], 1)
+    b = b.reshape((b.shape[0], 1))
 
     return a + (x*b).sum(axis=0)
 
@@ -17,15 +17,13 @@ def _lin_fcn(B, x):
 def _lin_fjb(B, x):
     a = np.ones(x.shape[-1], float)
     res = np.concatenate((a, x.ravel()))
-    res.shape = (B.shape[-1], x.shape[-1])
-    return res
+    return res.reshape((B.shape[-1], x.shape[-1]))
 
 
 def _lin_fjd(B, x):
     b = B[1:]
     b = np.repeat(b, (x.shape[-1],)*b.shape[-1], axis=0)
-    b.shape = x.shape
-    return b
+    return b.reshape(x.shape)
 
 
 def _lin_est(data):
@@ -43,7 +41,7 @@ def _lin_est(data):
 
 def _poly_fcn(B, x, powers):
     a, b = B[0], B[1:]
-    b.shape = (b.shape[0], 1)
+    b = b.reshape((b.shape[0], 1))
 
     return a + np.sum(b * np.power(x, powers), axis=0)
 
@@ -51,13 +49,12 @@ def _poly_fcn(B, x, powers):
 def _poly_fjacb(B, x, powers):
     res = np.concatenate((np.ones(x.shape[-1], float),
                           np.power(x, powers).flat))
-    res.shape = (B.shape[-1], x.shape[-1])
-    return res
+    return res.reshape((B.shape[-1], x.shape[-1]))
 
 
 def _poly_fjacd(B, x, powers):
     b = B[1:]
-    b.shape = (b.shape[0], 1)
+    b = b.reshape((b.shape[0], 1))
 
     b = b * powers
 
@@ -74,8 +71,7 @@ def _exp_fjd(B, x):
 
 def _exp_fjb(B, x):
     res = np.concatenate((np.ones(x.shape[-1], float), x * np.exp(B[1] * x)))
-    res.shape = (2, x.shape[-1])
-    return res
+    return res.reshape((2, x.shape[-1]))
 
 
 def _exp_est(data):
@@ -86,6 +82,12 @@ def _exp_est(data):
 class _MultilinearModel(Model):
     r"""
     Arbitrary-dimensional linear model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
 
     This model is defined by :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
 
@@ -120,6 +122,11 @@ multilinear = _MultilinearModel()
 def polynomial(order):
     """
     Factory function for a general polynomial model.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     Parameters
     ----------
@@ -163,7 +170,7 @@ def polynomial(order):
         # Scalar.
         powers = np.arange(1, powers + 1)
 
-    powers.shape = (len(powers), 1)
+    powers = powers.reshape((len(powers), 1))
     len_beta = len(powers) + 1
 
     def _poly_est(data, len_beta=len_beta):
@@ -181,6 +188,11 @@ def polynomial(order):
 class _ExponentialModel(Model):
     r"""
     Exponential model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     This model is defined by :math:`y=\beta_0 + e^{\beta_1 x}`
 
@@ -221,9 +233,7 @@ def _unilin_fjd(B, x):
 
 def _unilin_fjb(B, x):
     _ret = np.concatenate((x, np.ones(x.shape, float)))
-    _ret.shape = (2,) + x.shape
-
-    return _ret
+    return _ret.reshape((2,) + x.shape)
 
 
 def _unilin_est(data):
@@ -240,9 +250,7 @@ def _quad_fjd(B, x):
 
 def _quad_fjb(B, x):
     _ret = np.concatenate((x*x, x, np.ones(x.shape, float)))
-    _ret.shape = (3,) + x.shape
-
-    return _ret
+    return _ret.reshape((3,) + x.shape)
 
 
 def _quad_est(data):
@@ -252,6 +260,11 @@ def _quad_est(data):
 class _UnilinearModel(Model):
     r"""
     Univariate linear model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     This model is defined by :math:`y = \beta_0 x + \beta_1`
 
@@ -285,6 +298,11 @@ unilinear = _UnilinearModel()
 class _QuadraticModel(Model):
     r"""
     Quadratic model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     This model is defined by :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
 

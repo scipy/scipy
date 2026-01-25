@@ -1,5 +1,6 @@
 import sys
 import warnings
+import platform
 
 import numpy as np
 import numpy.testing as npt
@@ -56,20 +57,20 @@ xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
 slow_fit_mle = {'exponweib', 'genexpon', 'genhyperbolic', 'johnsonsb',
                 'kappa4', 'powerlognorm', 'tukeylambda'}
 xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'recipinvgauss', 'vonmises_line'}
-xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto', 'irwinhall'}
+xfail_fit_mle = {'ksone', 'kstwo', 'truncpareto', 'irwinhall'}
 skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'truncnorm',
-                'truncweibull_min', 'wrapcauchy'}
+                'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'trapezoid',
+                'truncnorm', 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
                 'crystalball', 'dpareto_lognorm', 'exponweib', 'f', 'fisk',
                 'foldcauchy', 'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                 'irwinhall', 'jf_skew_t', 'johnsonsu', 'kappa3', 'kappa4', 'landau',
                 'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke', 'ncf', 'nct',
                 'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
-                'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
+                'skewcauchy', 't', 'truncexpon', 'truncpareto',
                 'tukeylambda', 'vonmises', 'vonmises_line'}
 skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
                'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
@@ -87,7 +88,7 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'cauchy', 'chi', 'chi2', 'cosine',
                'logistic', 'loguniform', 'maxwell', 'nakagami',
                'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
                'powerlaw', 'rdist', 'reciprocal', 'rice',
-               'skewnorm', 't', 'truncweibull_min',
+               'skewnorm', 't', 'truncpareto', 'truncweibull_min',
                'tukeylambda', 'vonmises', 'vonmises_line',
                'rv_histogram_instance', 'truncnorm', 'studentized_range',
                'johnsonsb', 'halflogistic', 'rel_breitwigner'}
@@ -205,7 +206,8 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
     check_meth_dtype(distfn, arg, meths)
     check_ppf_dtype(distfn, arg)
 
-    if distname not in fails_cmplx:
+    # complex special functions known to fail on sparc64 (gh-22577)
+    if distname not in fails_cmplx and platform.machine() != 'sparc64':
         check_cmplx_deriv(distfn, arg)
 
     if distname != 'truncnorm':
@@ -287,7 +289,7 @@ def test_rvs_scalar(distname, arg):
     assert np.isscalar(distfn.rvs(*arg, size=None))
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe(reason="global rng")
 def test_levy_stable_random_state_property():
     # levy_stable only implements rvs(), so it is skipped in the
     # main loop in test_cont_basic(). Here we apply just the test
@@ -587,7 +589,6 @@ def test_gh1320_regression():
 
 def test_method_of_moments():
     # example from https://en.wikipedia.org/wiki/Method_of_moments_(statistics)
-    np.random.seed(1234)
     x = [0, 0, 0, 0, 1]
     a = 1/5 - 2*np.sqrt(3)/5
     b = 1/5 + 2*np.sqrt(3)/5
@@ -1003,8 +1004,7 @@ def test_kappa4_array_gh13582():
     assert res2.shape == (4, 4, 3)
 
 
-@pytest.mark.parallel_threads(1)
-def test_frozen_attributes():
+def test_frozen_attributes(monkeypatch):
     # gh-14827 reported that all frozen distributions had both pmf and pdf
     # attributes; continuous should have pdf and discrete should have pmf.
     message = "'rv_continuous_frozen' object has no attribute"
@@ -1012,10 +1012,10 @@ def test_frozen_attributes():
         stats.norm().pmf
     with pytest.raises(AttributeError, match=message):
         stats.norm().logpmf
-    stats.norm.pmf = "herring"
+    monkeypatch.setattr(stats.norm, "pmf", "herring", raising=False)
     frozen_norm = stats.norm()
     assert isinstance(frozen_norm, rv_continuous_frozen)
-    delattr(stats.norm, 'pmf')
+    assert not hasattr(frozen_norm, "pmf")
 
 
 def test_skewnorm_pdf_gh16038():

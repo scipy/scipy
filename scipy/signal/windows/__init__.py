@@ -9,7 +9,7 @@ The suite of window functions for filtering and spectral estimation.
 .. autosummary::
    :toctree: generated/
 
-   get_window              -- Return a window of a given length and type.
+   get_window              -- Convenience function for creating various windows.
 
    barthann                -- Bartlett-Hann window
    bartlett                -- Bartlett window

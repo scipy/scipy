@@ -8,8 +8,8 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     r"""
     Ellipsoidal harmonic functions E^p_n(l)
 
-    These are also known as Lame functions of the first kind, and are
-    solutions to the Lame equation:
+    These are also known as Lamé functions of the first kind, and are
+    solutions to the Lamé equation:
 
     .. math:: (s^2 - h^2)(s^2 - k^2)E''(s)
               + s(2s^2 - h^2 - k^2)E'(s) + (a - q s^2)E(s) = 0
@@ -78,7 +78,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     >>> w
     2.5
 
-    Check that the functions indeed are solutions to the Lame equation:
+    Check that the functions indeed are solutions to the Lamé equation:
 
     >>> import numpy as np
     >>> from scipy.interpolate import UnivariateSpline
@@ -106,8 +106,8 @@ def ellip_harm_2(h2, k2, n, p, s):
     r"""
     Ellipsoidal harmonic functions F^p_n(l)
 
-    These are also known as Lame functions of the second kind, and are
-    solutions to the Lame equation:
+    These are also known as Lamé functions of the second kind, and are
+    solutions to the Lamé equation:
 
     .. math:: (s^2 - h^2)(s^2 - k^2)F''(s)
               + s(2s^2 - h^2 - k^2)F'(s) + (a - q s^2)F(s) = 0
@@ -139,7 +139,7 @@ def ellip_harm_2(h2, k2, n, p, s):
 
     Notes
     -----
-    Lame functions of the second kind are related to the functions of the first kind:
+    Lamé functions of the second kind are related to the functions of the first kind:
 
     .. math::
 

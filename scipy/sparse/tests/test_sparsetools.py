@@ -21,7 +21,6 @@ def int_to_int8(n):
     return (n + 128) % 256 - 128
 
 
-@pytest.mark.thread_unsafe  # Exception handling in CPython 3.13 has races
 def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
 
@@ -69,7 +68,6 @@ def test_regression_std_vector_dtypes():
 
 
 @pytest.mark.slow
-@pytest.mark.thread_unsafe
 @pytest.mark.xfail_on_32bit("Can't create large array for test")
 def test_nnz_overflow():
     # Regression test for gh-7230 / gh-7871, checking that coo_toarray
@@ -90,7 +88,6 @@ def test_nnz_overflow():
     assert_allclose(d, [[4]])
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.skipif(
     not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
     reason="test requires 64-bit Linux"
@@ -274,7 +271,6 @@ class TestInt32Overflow:
         m2.dot(m)  # shouldn't SIGSEGV
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.skip(reason="64-bit indices in sparse matrices not available")
 def test_csr_matmat_int64_overflow():
     n = 3037000500

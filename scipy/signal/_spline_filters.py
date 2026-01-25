@@ -115,12 +115,11 @@ def gauss_spline(x, n):
        F.A. (2007) Fast and Accurate Gaussian Derivatives Based on B-Splines. In:
        Sgallari F., Murli A., Paragios N. (eds) Scale Space and Variational
        Methods in Computer Vision. SSVM 2007. Lecture Notes in Computer
-       Science, vol 4485. Springer, Berlin, Heidelberg
-    .. [2] http://folk.uio.no/inf3330/scripting/doc/python/SciPy/tutorial/old/node24.html
+       Science, vol 4485. Springer, Berlin, Heidelberg.
 
     Examples
     --------
-    We can calculate B-Spline basis functions approximated by a gaussian
+    We can calculate B-Spline basis functions approximated by a Gaussian
     distribution:
 
     >>> import numpy as np
@@ -444,7 +443,7 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
 
     Parameters
     ----------
-    input : ndarray
+    signal : ndarray
         The input signal.
     lamb : float
         Specifies the amount of smoothing in the transfer function.
@@ -485,7 +484,7 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
 
     Parameters
     ----------
-    input : ndarray
+    signal : ndarray
         The input signal.
     lamb : float
         Specifies the amount of smoothing in the transfer function.
@@ -529,7 +528,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     `dx` is the old sample-spacing while `x0` was the old origin. In
     other-words the old-sample points (knot-points) for which the `cj`
-    represent spline coefficients were at equally-spaced points of:
+    represent spline coefficients were at equally-spaced points of::
 
       oldx = x0 + j*dx  j=0...N-1, with N=len(cj)
 

@@ -10,10 +10,10 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
-import inspect
 from warnings import warn
 
 import numpy as np
+from scipy._lib._util import wrapped_inspect_signature
 
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
@@ -47,7 +47,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla']
+                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla', 'slsqp']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -188,7 +188,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
-        Note that COBYLA only supports inequality constraints.
 
     tol : float, optional
         Tolerance for termination. When `tol` is specified, the selected
@@ -211,7 +210,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     callback : callable, optional
         A callable called after each iteration.
 
-        All methods except TNC and SLSQP support a callable with
+        All methods except TNC support a callable with
         the signature::
 
             callback(intermediate_result: OptimizeResult)
@@ -241,7 +240,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     minimize_scalar : Interface to minimization algorithms for scalar
         univariate functions
@@ -739,7 +738,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 fun = _Remove_From_Func(fun, i_fixed, x_fixed)
 
                 if callable(callback):
-                    sig = inspect.signature(callback)
+                    sig = wrapped_inspect_signature(callback)
                     if set(sig.parameters) == {'intermediate_result'}:
                         # callback(intermediate_result)
                         print(callback)
@@ -893,7 +892,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     minimize : Interface to minimization algorithms for scalar multivariate
         functions

@@ -170,6 +170,11 @@ def test_error_handling():
     with pytest.raises(ValueError):
         s(np.arange(10).reshape(5, 2))
 
+    r = Rotation.from_quat(np.array([[[0.0, 0, 0, 1], [1, 0, 0 ,0]]]))
+    t = np.arange(2)
+    with pytest.raises(ValueError):
+        RotationSpline(t, r)  # More than 2 dimensions
+
 
 @pytest.mark.skip_xp_backends("numpy")
 def test_xp_errors(xp):

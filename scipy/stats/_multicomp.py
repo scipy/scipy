@@ -10,6 +10,7 @@ from scipy.optimize import minimize_scalar
 from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._stats_py import _var
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import _transition_to_rng, DecimalNumber, SeedType
 
 
@@ -179,6 +180,7 @@ class DunnettResult:
         return self._ci
 
 
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state', replace_doc=False)
 def dunnett(
     *samples: "npt.ArrayLike",  # noqa: D417

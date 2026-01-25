@@ -177,7 +177,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
     eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
         band matrices
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
@@ -374,7 +374,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     --------
     eigvalsh : eigenvalues of symmetric or Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Notes
@@ -670,7 +670,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         v.H v    = identity
 
     The matrix a is stored in a_band either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)
@@ -1045,7 +1045,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         v.H v    = identity
 
     The matrix a is stored in a_band either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)
@@ -1189,7 +1189,7 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
 
     See Also
     --------
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
@@ -1510,6 +1510,10 @@ def cdf2rdf(w, v):
 
     .. versionadded:: 1.1.0
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+    
     Parameters
     ----------
     w : (..., M) array_like

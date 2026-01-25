@@ -3,7 +3,8 @@ import io
 import numpy as np
 
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_array_almost_equal, assert_almost_equal
+    xp_assert_equal, xp_assert_close, assert_array_almost_equal, assert_almost_equal,
+    make_xp_test_case
 )
 from pytest import raises as assert_raises
 import pytest
@@ -15,6 +16,9 @@ from scipy.interpolate import (
     PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
     make_interp_spline)
 from scipy._lib._testutils import _run_concurrent_barrier
+
+skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
@@ -314,12 +318,10 @@ class TestKrogh:
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         xp_assert_close(cmplx, cmplx2, atol=1e-15)
 
-    @pytest.mark.thread_unsafe
     def test_high_degree_warning(self):
         with pytest.warns(UserWarning, match="40 degrees provided,"):
             KroghInterpolator(np.arange(40), np.ones(40))
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         P = KroghInterpolator(self.xs, self.ys)
 
@@ -519,7 +521,6 @@ class TestBarycentric:
         # at the nodes
         assert_almost_equal(yi, P.yi.ravel())
 
-    @pytest.mark.thread_unsafe
     def test_repeated_node(self):
         # check that a repeated node raises a ValueError
         # (computing the weights requires division by xi[i] - xi[j])
@@ -529,7 +530,6 @@ class TestBarycentric:
                            match="Interpolation points xi must be distinct."):
             BarycentricInterpolator(xis, ys)
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         P = BarycentricInterpolator(self.xs, self.ys)
 
@@ -625,7 +625,6 @@ class TestPCHIP:
             for t in (x[0], x[-1]):
                 assert pp(t, 1) != 0
 
-    @pytest.mark.thread_unsafe
     def test_all_zeros(self):
         x = np.arange(10)
         y = np.zeros_like(x)
@@ -667,6 +666,7 @@ class TestPCHIP:
         xp_assert_close(r, np.asarray([0.5]))
 
 
+@make_xp_test_case(CubicSpline)
 class TestCubicSpline:
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
@@ -785,11 +785,14 @@ class TestCubicSpline:
             S = CubicSpline(x, Y, axis=1, bc_type='periodic')
             self.check_correctness(S, 'periodic', 'periodic')
 
-    def test_periodic_eval(self):
-        x = np.linspace(0, 2 * np.pi, 10)
-        y = np.cos(x)
+    def test_periodic_eval(self, xp):
+        x = xp.linspace(0, 2 * xp.pi, 10, dtype=xp.float64)
+        y = xp.cos(x)
         S = CubicSpline(x, y, bc_type='periodic')
-        assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
+        assert_almost_equal(S(1), S(1 + 2 * xp.pi), decimal=15)
+
+        S = CubicSpline(x, y)
+        assert_almost_equal(S(x), xp.cos(x), decimal=15)
 
     def test_second_derivative_continuity_gh_11758(self):
         # gh-11758: C2 continuity fail
@@ -890,10 +893,11 @@ class TestCubicSpline:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
-def test_CubicHermiteSpline_correctness():
-    x = [0, 2, 7]
-    y = [-1, 2, 3]
-    dydx = [0, 3, 7]
+@make_xp_test_case(CubicHermiteSpline)
+def test_CubicHermiteSpline_correctness(xp):
+    x = xp.asarray([0, 2, 7])
+    y = xp.asarray([-1, 2, 3])
+    dydx = xp.asarray([0, 3, 7])
     s = CubicHermiteSpline(x, y, dydx)
     xp_assert_close(s(x), y, check_shape=False, check_dtype=False, rtol=1e-15)
     xp_assert_close(s(x, 1), dydx, check_shape=False, check_dtype=False, rtol=1e-15)

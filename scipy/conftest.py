@@ -1,6 +1,8 @@
 # Pytest customization
 import json
+import multiprocessing
 import os
+import sys
 import warnings
 import tempfile
 from contextlib import contextmanager
@@ -8,7 +10,11 @@ from typing import Literal
 
 import numpy as np
 import pytest
-import hypothesis
+try:
+    import hypothesis
+    hypothesis_available = True
+except ImportError:
+    hypothesis_available = False
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
@@ -17,7 +23,7 @@ from scipy._lib._array_api import (
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 try:
     from scipy_doctest.conftest import dt_config
@@ -57,6 +63,12 @@ def pytest_configure(config):
         ("xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
          "eager_only=False, exceptions=None): mark the desired xfail configuration " +
          "for the `xfail_xp_backends` fixture"))
+    config.addinivalue_line("markers",
+                            ("uses_xp_capabilities(status, funcs=None, " +
+                             "reason=None): mark " +
+                            "whether pytest markers for array API backends are " +
+                            " generated from the xp_capabilities entries for one or "
+                             " more functions"))
 
     try:
         import pytest_timeout  # noqa:F401
@@ -74,7 +86,7 @@ def pytest_configure(config):
     if not PARALLEL_RUN_AVAILABLE:
         config.addinivalue_line(
             'markers',
-            'parallel_threads(n): run the given test function in parallel '
+            'parallel_threads_limit(n): run the given test function in parallel '
             'using `n` threads.')
         config.addinivalue_line(
             "markers",
@@ -84,6 +96,12 @@ def pytest_configure(config):
             "markers",
             "iterations(n): run the given test function `n` times in each thread",
         )
+
+    if os.name == 'posix' and sys.version_info < (3, 14) and sys.platform != "cygwin":
+        # On POSIX, Python 3.13 and older uses the 'fork' context by
+        # default. Calling fork() from multiple threads leads to
+        # deadlocks. This has been changed in 3.14 to 'forkserver'.
+        multiprocessing.set_start_method('forkserver', force=True)
 
 
 def pytest_runtest_setup(item):
@@ -172,7 +190,7 @@ if SCIPY_ARRAY_API:
         xp_available_backends.append(
             pytest.param(array_api_strict, id='array_api_strict',
                          marks=pytest.mark.array_api_backends))
-        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.3'):
+        if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
             api_version='2024.12'
@@ -297,6 +315,20 @@ def xp(request):
     # Read all @pytest.marks.xfail_xp_backends markers that decorate the test,
     # if any, and raise pytest.xfail() if the current xp is in the list.
     skip_or_xfail_xp_backends(request, "xfail")
+
+    # Check if ``uses_xp_capabilities`` mark is present.
+    # ``scipy._lib._array_api.make_xp_pytest_marks``, which draws from
+    # ``xp_capabilities``, will set ``pytest.mark.uses_xp_capabilities(True)``.
+    # Tests which are unconverted or which are for private functions without
+    # ``xp_capabilities`` entries should have
+    # ``pytest.mark.uses_xp_capabilities(False)`` explicitly set.
+    if request.node.get_closest_marker("uses_xp_capabilities") is None:
+        warnings.warn(
+            "test uses `xp` fixture without drawing from `xp_capabilities` "
+            " but is not explicitly marked with"
+            " ``pytest.mark.uses_xp_capabilities(False)``",
+            stacklevel=0,
+        )
 
     xp = request.param
     # Potentially wrap namespace with array_api_compat
@@ -487,31 +519,32 @@ def devices(xp):
     return xp.__array_namespace_info__().devices() + [None]
 
 
-# Following the approach of NumPy's conftest.py...
-# Use a known and persistent tmpdir for hypothesis' caches, which
-# can be automatically cleared by the OS or user.
-hypothesis.configuration.set_hypothesis_home_dir(
-    os.path.join(tempfile.gettempdir(), ".hypothesis")
-)
+if hypothesis_available:
+    # Following the approach of NumPy's conftest.py...
+    # Use a known and persistent tmpdir for hypothesis' caches, which
+    # can be automatically cleared by the OS or user.
+    hypothesis.configuration.set_hypothesis_home_dir(
+        os.path.join(tempfile.gettempdir(), ".hypothesis")
+    )
 
-# We register two custom profiles for SciPy - for details see
-# https://hypothesis.readthedocs.io/en/latest/settings.html
-# The first is designed for our own CI runs; the latter also
-# forces determinism and is designed for use via scipy.test()
-hypothesis.settings.register_profile(
-    name="nondeterministic", deadline=None, print_blob=True,
-)
-hypothesis.settings.register_profile(
-    name="deterministic",
-    deadline=None, print_blob=True, database=None, derandomize=True,
-    suppress_health_check=list(hypothesis.HealthCheck),
-)
+    # We register two custom profiles for SciPy - for details see
+    # https://hypothesis.readthedocs.io/en/latest/settings.html
+    # The first is designed for our own CI runs; the latter also
+    # forces determinism and is designed for use via scipy.test()
+    hypothesis.settings.register_profile(
+        name="nondeterministic", deadline=None, print_blob=True,
+    )
+    hypothesis.settings.register_profile(
+        name="deterministic",
+        deadline=None, print_blob=True, database=None, derandomize=True,
+        suppress_health_check=list(hypothesis.HealthCheck),
+    )
 
-# Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
-# In the future, it would be good to work the choice into `.spin/cmds.py`.
-SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
-                                          "deterministic")
-hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
+    # Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
+    # In the future, it would be good to work the choice into `.spin/cmds.py`.
+    SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
+                                              "deterministic")
+    hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
 
 
 ############################################################################
@@ -593,6 +626,7 @@ if HAVE_SCPDT:
                     yield
                 else:
                     warnings.simplefilter('error', Warning)
+                    warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
     dt_config.user_context_mgr = warnings_errors_and_rng
@@ -615,28 +649,6 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabFunction.dtype'
     ])
 
-    # these are affected by NumPy 2.0 scalar repr: rely on string comparison
-    if np.__version__ < "2":
-        dt_config.skiplist.update(set([
-            'scipy.io.hb_read',
-            'scipy.io.hb_write',
-            'scipy.sparse.csgraph.connected_components',
-            'scipy.sparse.csgraph.depth_first_order',
-            'scipy.sparse.csgraph.shortest_path',
-            'scipy.sparse.csgraph.floyd_warshall',
-            'scipy.sparse.csgraph.dijkstra',
-            'scipy.sparse.csgraph.bellman_ford',
-            'scipy.sparse.csgraph.johnson',
-            'scipy.sparse.csgraph.yen',
-            'scipy.sparse.csgraph.breadth_first_order',
-            'scipy.sparse.csgraph.reverse_cuthill_mckee',
-            'scipy.sparse.csgraph.structural_rank',
-            'scipy.sparse.csgraph.construct_dist_matrix',
-            'scipy.sparse.csgraph.reconstruct_path',
-            'scipy.ndimage.value_indices',
-            'scipy.stats.mstats.describe',
-    ]))
-
     # help pytest collection a bit: these names are either private
     # (distributions), or just do not need doctesting.
     dt_config.pytest_extra_ignore = [
@@ -649,6 +661,7 @@ if HAVE_SCPDT:
         "scipy/interpolate/_interpnd_info.py",
         "scipy/interpolate/_rbfinterp_pythran.py",
         "scipy/_build_utils/tempita.py",
+        "scipy/_external",
         "scipy/_lib/array_api_compat",
         "scipy/_lib/highs",
         "scipy/_lib/unuran",

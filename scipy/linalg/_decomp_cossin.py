@@ -39,6 +39,11 @@ def cossin(X, p=None, q=None, separate=False,
     subblocks in an iterable from which the shapes would be derived. See the
     examples below.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     X : array_like, iterable
@@ -79,13 +84,6 @@ def cossin(X, p=None, q=None, separate=False,
         matrix consisting of the blocks ``V1H`` (``q`` x ``q``) and ``V2H``
         (``m-q`` x ``m-q``) orthogonal/unitary matrices. If ``separate=True``,
         this contains the tuple of ``(V1H, V2H)``.
-
-    Notes
-    -----
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     References
     ----------

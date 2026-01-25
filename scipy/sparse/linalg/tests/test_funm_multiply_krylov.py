@@ -49,11 +49,11 @@ class TestKrylovFunmv:
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
     @pytest.mark.parametrize("f", FUNCS)
-    def test_funm_multiply_krylov_nonhermitian_sparse(self, f):
+    def test_funm_multiply_krylov_nonhermitian_sparse(self, f, num_parallel_threads):
 
         rng = np.random.default_rng(1738151906092735)
         n = 100
-        nsamples = 10
+        nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
             D = scipy.sparse.diags(rng.standard_normal(n))
@@ -88,11 +88,11 @@ class TestKrylovFunmv:
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
     @pytest.mark.parametrize("f", FUNCS)
-    def test_funm_multiply_krylov_hermitian_sparse(self, f):
+    def test_funm_multiply_krylov_hermitian_sparse(self, f, num_parallel_threads):
 
         rng = np.random.default_rng(1738151906092735)
         n = 100
-        nsamples = 10
+        nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
             D = scipy.sparse.diags(rng.standard_normal(n))

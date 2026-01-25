@@ -393,16 +393,13 @@ class NonSymmetricParams:
         self.complex_test_cases = [SNC, GNC]
 
 
-@pytest.mark.iterations(1)
 @pytest.mark.parametrize("sigma, mode", [(None, 'normal'), (0.5, 'normal'),
                                          (0.5, 'buckling'), (0.5, 'cayley')])
 @pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
 @pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA', 'BE'])
 @pytest.mark.parametrize("typ", ['f', 'd'])
 @pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
-def test_symmetric_modes(num_parallel_threads, D, typ, which, mattype,
-                         sigma, mode):
-    assert num_parallel_threads == 1
+def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
     rng = np.random.default_rng(1749531508689996)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, None, mode, rng=rng)
@@ -548,19 +545,21 @@ def test_linearoperator_deallocation():
         pass
 
 
-def test_parallel_threads():
+def test_parallel_threads(num_parallel_threads):
     results = []
-    v0 = np.random.rand(50)
+    rng = np.random.default_rng(1234)
+    v0 = rng.random(50)
 
     def worker():
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=3, v0=v0)
         results.append(w)
 
         w, v = eigsh(x, k=3, v0=v0)
         results.append(w)
 
-    threads = [threading.Thread(target=worker) for k in range(10)]
+    nthreads = 9 // num_parallel_threads + 1
+    threads = [threading.Thread(target=worker) for _ in range(nthreads)]
     for t in threads:
         t.start()
     for t in threads:
@@ -575,7 +574,7 @@ def test_parallel_threads():
 def test_reentering():
     # Just some linear operator that calls eigs recursively
     def A_matvec(x):
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=1)
         return v.real / w[0].real
     A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
@@ -611,7 +610,7 @@ def test_regression_arpackng_1315():
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = rng.random((4, 4))
     M_sparse = generate_matrix(4, sparse=True, rng=rng)
@@ -638,7 +637,7 @@ def test_eigs_for_k_greater():
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = generate_matrix_symmetric(4, pos_definite=True, rng=rng)
     M_sparse = generate_matrix_symmetric(
@@ -689,3 +688,21 @@ def test_real_eigs_real_k_subset():
             assert_allclose(dist, 0, atol=np.sqrt(eps))
 
             prev_w = w
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_gh24358(dtype):
+    # gh-24358: eigs with which="SR" returned zeros due to nev variable was modifed
+    #  after naupd calls in the C ARPACK implementation. This was due to hitting a
+    # complex valued eig but requesting only one of them.
+
+    # Test the specific issue in gh-24358
+    A = csr_array(np.array([[-1.3, 2.7, 0.2],
+                            [0.8, 4.1, 2.2],
+                            [2.1, 4.4, -1.9]], dtype=dtype))
+    w, z = eigs(A, 1, which="SR")
+    atol = 1e-4 if dtype in [np.float32, np.complex64] else 1e-6
+    assert_allclose(w.real, -2.495689365014214, atol=atol, rtol=0.0)
+    # ARPACK can sometimes pick up the conjugate
+    assert_allclose(np.abs(w.imag), 0.5173365219668336, atol=atol, rtol=0.0)
+    assert_allclose(A @ z, w * z, atol=atol, rtol=0.0)

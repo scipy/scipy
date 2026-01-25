@@ -850,7 +850,8 @@ class TestFindRoot:
             find_root(func, bracket)
 
         # raised by `np.broadcast, but the traceback is readable IMO
-        message = "...not be broadcast..."  # all messages include this part
+        # all messages include this part
+        message = "(not be broadcast|Attempting to broadcast a dimension of length)"
         with pytest.raises((ValueError, RuntimeError), match=message):
             bracket = xp.asarray([-2, -3]), xp.asarray([3, 4, 5])
             find_root(func, bracket)

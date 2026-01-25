@@ -40,8 +40,10 @@ import pytest
 
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_assert_close, array_namespace
+    xp_assert_close, array_namespace, _xp_copy_to_numpy, is_cupy,
+    make_xp_test_case
 )
+from scipy._lib.array_api_compat import numpy as np_compat
 from scipy.signal import upfirdn, firwin
 from scipy.signal._upfirdn import _output_len, _upfirdn_modes
 from scipy.signal._upfirdn_apply import _pad_test
@@ -65,12 +67,15 @@ def upfirdn_naive(x, h, up=1, down=1):
 
 class UpFIRDnCase:
     """Test _UpFIRDn object"""
-    def __init__(self, up, down, h, x_dtype):
+    def __init__(self, up, down, h, x_dtype, *, xp=None):
+        if xp is None:
+            xp = np_compat
         self.up = up
         self.down = down
         self.h = np.atleast_1d(h)
         self.x_dtype = x_dtype
         self.rng = np.random.RandomState(17)
+        self.xp = xp
 
     def __call__(self):
         # tiny signal
@@ -85,6 +90,9 @@ class UpFIRDnCase:
         # ramp
         self.scrub(np.arange(10).astype(self.x_dtype))
         # 3D, random
+        if is_cupy(self.xp):
+            # ndim > 2 is unsupported in CuPy.
+            return
         size = (2, 3, 5)
         x = self.rng.randn(*size).astype(self.x_dtype)
         if self.x_dtype in (np.complex64, np.complex128):
@@ -96,31 +104,34 @@ class UpFIRDnCase:
             self.scrub(x, axis=axis)
 
     def scrub(self, x, axis=-1):
+        xp = self.xp
         yr = np.apply_along_axis(upfirdn_naive, axis, x,
                                  self.h, self.up, self.down)
         want_len = _output_len(len(self.h), x.shape[axis], self.up, self.down)
         assert yr.shape[axis] == want_len
-        y = upfirdn(self.h, x, self.up, self.down, axis=axis)
+        y = upfirdn(xp.asarray(self.h), xp.asarray(x), self.up, self.down,
+                    axis=axis)
         assert y.shape[axis] == want_len
         assert y.shape == yr.shape
         dtypes = (self.h.dtype, x.dtype)
         if all(d == np.complex64 for d in dtypes):
-            assert y.dtype == np.complex64
+            assert y.dtype == xp.complex64
         elif np.complex64 in dtypes and np.float32 in dtypes:
-            assert y.dtype == np.complex64
+            assert y.dtype == xp.complex64
         elif all(d == np.float32 for d in dtypes):
-            assert y.dtype == np.float32
+            assert y.dtype == xp.float32
         elif np.complex128 in dtypes or np.complex64 in dtypes:
-            assert y.dtype == np.complex128
+            assert y.dtype == xp.complex128
         else:
-            assert y.dtype == np.float64
-        xp_assert_close(yr.astype(y.dtype), y)
+            assert y.dtype == xp.float64
+        yr = xp.asarray(yr, dtype=y.dtype)
+        xp_assert_close(yr, y)
 
 
 _UPFIRDN_TYPES = ("int64", "float32", "complex64", "float64", "complex128")
 
 
-@skip_xp_backends(cpu_only=True, reason='Cython implementation')
+@make_xp_test_case(upfirdn)
 class TestUpfirdn:
 
     @skip_xp_backends(np_only=True, reason="enough to only test on numpy")
@@ -190,30 +201,30 @@ class TestUpfirdn:
         x = xp.asarray(x, dtype=dtype)
 
         h = xp.asarray(firwin(31, 1. / down, window='hamming'))
-        yl = xp.asarray(upfirdn_naive(x, h, 1, down))
+        yl = xp.asarray(
+            upfirdn_naive(_xp_copy_to_numpy(x), _xp_copy_to_numpy(h), 1, down)
+        )
         y = upfirdn(h, x, up=1, down=down)
         assert y.shape == (want_len,)
         assert yl.shape[0] == y.shape[0]
         xp_assert_close(yl, y, atol=1e-7, rtol=1e-7)
 
-    @skip_xp_backends(np_only=True, reason="apply_along_axis")
     @pytest.mark.parametrize('x_dtype', _UPFIRDN_TYPES)
     @pytest.mark.parametrize('h', (1., 1j))
     @pytest.mark.parametrize('up, down', [(1, 1), (2, 2), (3, 2), (2, 3)])
     def test_vs_naive_delta(self, x_dtype, h, up, down, xp):
-        UpFIRDnCase(up, down, h, x_dtype)()
+        UpFIRDnCase(up, down, h, x_dtype, xp=xp)()
 
-    @skip_xp_backends(np_only=True, reason="apply_along_axis")
     @pytest.mark.parametrize('x_dtype', _UPFIRDN_TYPES)
     @pytest.mark.parametrize('h_dtype', _UPFIRDN_TYPES)
     @pytest.mark.parametrize('p_max, q_max',
                              list(product((10, 100), (10, 100))))
     def test_vs_naive(self, x_dtype, h_dtype, p_max, q_max, xp):
-        tests = self._random_factors(p_max, q_max, h_dtype, x_dtype)
+        tests = self._random_factors(p_max, q_max, h_dtype, x_dtype, xp=xp)
         for test in tests:
             test()
 
-    def _random_factors(self, p_max, q_max, h_dtype, x_dtype):
+    def _random_factors(self, p_max, q_max, h_dtype, x_dtype, *, xp):
         n_rep = 3
         longest_h = 25
         random_state = np.random.RandomState(17)
@@ -233,7 +244,7 @@ class TestUpfirdn:
             if h_dtype is complex:
                 h += 1j * random_state.randint(len_h)
 
-            tests.append(UpFIRDnCase(p, q, h, x_dtype))
+            tests.append(UpFIRDnCase(p, q, h, x_dtype, xp=xp))
 
         return tests
 
@@ -262,7 +273,7 @@ class TestUpfirdn:
             concat = array_namespace(left).concat
             y_expected = concat((left, x, right))
         else:
-            y_expected = np.pad(np.asarray(x), (npre, npost), mode=mode)
+            y_expected = np.pad(_xp_copy_to_numpy(x), (npre, npost), mode=mode)
             y_expected = xp.asarray(y_expected)
 
         y_expected = xp.asarray(y_expected, dtype=xp.float64)
@@ -278,6 +289,8 @@ class TestUpfirdn:
         )
     )
     def test_modes(self, size, h_len, mode, dtype, xp):
+        if is_cupy(xp) and mode != "constant":
+            pytest.skip(reason="only mode='constant' supported by CuPy")
         dtype_np = getattr(np, dtype)
         dtype_xp = getattr(xp, dtype)
 
@@ -295,9 +308,9 @@ class TestUpfirdn:
         npad = h_len - 1
         if mode in ['antisymmetric', 'antireflect', 'smooth', 'line']:
             # use _pad_test test function for modes not supported by np.pad.
-            xpad = _pad_test(np.asarray(x), npre=npad, npost=npad, mode=mode)
+            xpad = _pad_test(_xp_copy_to_numpy(x), npre=npad, npost=npad, mode=mode)
         else:
-            xpad = np.pad(np.asarray(x), npad, mode=mode)
+            xpad = np.pad(_xp_copy_to_numpy(x), npad, mode=mode)
 
         xpad = xp.asarray(xpad)
         ypad = upfirdn(h, xpad, up=1, down=1, mode='constant')
@@ -307,7 +320,7 @@ class TestUpfirdn:
         xp_assert_close(y, y_expected, atol=atol, rtol=rtol)
 
 
-@skip_xp_backends(cpu_only=True, reason='Cython implementation')
+@make_xp_test_case(upfirdn)
 def test_output_len_long_input(xp):
     # Regression test for gh-17375.  On Windows, a large enough input
     # that should have been well within the capabilities of 64 bit integers

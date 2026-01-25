@@ -1,6 +1,5 @@
 import numpy as np
-from numpy.testing import (assert_equal, assert_almost_equal,
-                           assert_allclose)
+from numpy.testing import assert_equal, assert_allclose
 from scipy.special import logit, expit, log_expit
 
 
@@ -61,7 +60,7 @@ class TestExpit:
         a = np.linspace(-4, 4, 10)
         a = np.array(a, dtype=dtype)
         actual = expit(a)
-        assert_almost_equal(actual, expected)
+        assert_allclose(actual, expected, atol=1.5e-7, rtol=0)
         assert_equal(actual.dtype, np.dtype(dtype))
 
     def test_float32(self):

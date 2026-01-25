@@ -467,7 +467,7 @@ def hb_read(path_or_open_file, *, spmatrix=True):
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
 
     Returns
     -------
@@ -479,9 +479,9 @@ def hb_read(path_or_open_file, *, spmatrix=True):
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
 
-        - assembled, non-symmetric, real matrices
-        - integer for pointer/indices
-        - exponential format for float values, and int format
+    - assembled, non-symmetric, real matrices
+    - integer for pointer/indices
+    - exponential format for float values, and int format
 
     Examples
     --------
@@ -526,18 +526,14 @@ def hb_write(path_or_open_file, m, hb_info=None):
     hb_info : HBInfo
         contains the meta-data for write
 
-    Returns
-    -------
-    None
-
     Notes
     -----
     At the moment not the full Harwell-Boeing format is supported. Supported
     features are:
 
-        - assembled, non-symmetric, real matrices
-        - integer for pointer/indices
-        - exponential format for float values, and int format
+    - assembled, non-symmetric, real matrices
+    - integer for pointer/indices
+    - exponential format for float values, and int format
 
     Examples
     --------
@@ -562,10 +558,10 @@ def hb_write(path_or_open_file, m, hb_info=None):
 
     def _set_matrix(fid):
         hb = HBFile(fid, hb_info)
-        return hb.write_matrix(m)
+        hb.write_matrix(m)
 
     if hasattr(path_or_open_file, 'write'):
-        return _set_matrix(path_or_open_file)
+        _set_matrix(path_or_open_file)
     else:
         with open(path_or_open_file, 'w') as f:
-            return _set_matrix(f)
+            _set_matrix(f)

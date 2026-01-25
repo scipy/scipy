@@ -2201,7 +2201,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         ft = np.ravel(ft)
         for ii in range(tmp2.shape[0]):
             rtmp = np.ravel(tmp2[ii, ...])[ft]
-            rtmp.shape = tmp1.shape
+            rtmp = rtmp.reshape(tmp1.shape)
             tmp2[ii, ...] = rtmp
         ft = tmp2
 
@@ -2390,8 +2390,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
     rank = dt.ndim
     if return_indices:
-        ft = np.arange(dt.size, dtype=np.int32)
-        ft.shape = dt.shape
+        ft = np.arange(dt.size, dtype=np.int32).reshape(dt.shape)
     else:
         ft = None
 
@@ -2414,7 +2413,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
             tmp = np.indices(dt.shape, dtype=np.int32)
         for ii in range(tmp.shape[0]):
             rtmp = np.ravel(tmp[ii, ...])[ft]
-            rtmp.shape = dt.shape
+            rtmp = rtmp.reshape(dt.shape)
             tmp[ii, ...] = rtmp
         ft = tmp
 

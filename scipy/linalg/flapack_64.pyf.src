@@ -16,10 +16,7 @@
 
 python module _flapack_64
     usercode '''
-#if defined(BLAS_SYMBOL_PREFIX) || defined(BLAS_SYMBOL_SUFFIX)
-#include "blas64-prefix-defines.h"
-#endif
-#define F_INT npy_int64
+#include "_blas64_defines.h"
 '''
 
 interface

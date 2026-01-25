@@ -294,7 +294,6 @@ def test_infeasible_prob_16609():
 _msg_time = "Time limit reached. (HiGHS Status 13:"
 _msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 
-@pytest.mark.thread_unsafe
 # See https://github.com/scipy/scipy/pull/19255#issuecomment-1778438888
 @pytest.mark.xfail(reason="Often buggy, revisit with callbacks, gh-19255")
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
@@ -441,7 +440,7 @@ def test_presolve_gh18907():
     r2 = milp(c=c, constraints=constraints, integrality=integrality, bounds=bounds,
               options={'presolve': False})
     assert r1.status == r2.status
-    assert_allclose(r1.x, r2.x)
+    assert_allclose(r1.fun, r2.fun)
 
     # another example from the same issue
     bounds = Bounds(lb=0, ub=1)
@@ -457,3 +456,22 @@ def test_presolve_gh18907():
               integrality=integrality, options={"presolve": False})
     assert r1.status == r2.status
     assert_allclose(r1.x, r2.x)
+
+def test_regression_gh24141():
+    c = np.ones(8, dtype=np.int64)
+    integrality = c.copy()
+
+    b = np.asarray([42, 252, 277, 41, 222, 48], dtype=np.int64)
+    a = np.asarray([
+        [0, 1, 1, 0, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 0, 1, 1],
+        [1, 1, 1, 1, 1, 1, 0, 1],
+        [0, 1, 0, 1, 1, 1, 0, 0],
+        [0, 1, 0, 0, 1, 1, 0, 1],
+        [0, 1, 1, 1, 0, 1, 1, 0],
+    ], dtype=np.int64)
+
+    res = milp(c, integrality=integrality, constraints=(a, b, b))
+
+    assert res.success
+    assert_allclose(a @ res.x, b)

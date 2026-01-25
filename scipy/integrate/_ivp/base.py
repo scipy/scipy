@@ -1,3 +1,4 @@
+from types import GenericAlias
 import numpy as np
 
 
@@ -30,39 +31,39 @@ class OdeSolver:
 
     In order to implement a new solver you need to follow the guidelines:
 
-        1. A constructor must accept parameters presented in the base class
-           (listed below) along with any other parameters specific to a solver.
-        2. A constructor must accept arbitrary extraneous arguments
-           ``**extraneous``, but warn that these arguments are irrelevant
-           using `common.warn_extraneous` function. Do not pass these
-           arguments to the base class.
-        3. A solver must implement a private method `_step_impl(self)` which
-           propagates a solver one step further. It must return tuple
-           ``(success, message)``, where ``success`` is a boolean indicating
-           whether a step was successful, and ``message`` is a string
-           containing description of a failure if a step failed or None
-           otherwise.
-        4. A solver must implement a private method `_dense_output_impl(self)`,
-           which returns a `DenseOutput` object covering the last successful
-           step.
-        5. A solver must have attributes listed below in Attributes section.
-           Note that ``t_old`` and ``step_size`` are updated automatically.
-        6. Use `fun(self, t, y)` method for the system rhs evaluation, this
-           way the number of function evaluations (`nfev`) will be tracked
-           automatically.
-        7. For convenience, a base class provides `fun_single(self, t, y)` and
-           `fun_vectorized(self, t, y)` for evaluating the rhs in
-           non-vectorized and vectorized fashions respectively (regardless of
-           how `fun` from the constructor is implemented). These calls don't
-           increment `nfev`.
-        8. If a solver uses a Jacobian matrix and LU decompositions, it should
-           track the number of Jacobian evaluations (`njev`) and the number of
-           LU decompositions (`nlu`).
-        9. By convention, the function evaluations used to compute a finite
-           difference approximation of the Jacobian should not be counted in
-           `nfev`, thus use `fun_single(self, t, y)` or
-           `fun_vectorized(self, t, y)` when computing a finite difference
-           approximation of the Jacobian.
+    1. A constructor must accept parameters presented in the base class
+       (listed below) along with any other parameters specific to a solver.
+    2. A constructor must accept arbitrary extraneous arguments
+       ``**extraneous``, but warn that these arguments are irrelevant
+       using `common.warn_extraneous` function. Do not pass these
+       arguments to the base class.
+    3. A solver must implement a private method ``_step_impl(self)`` which
+       propagates a solver one step further. It must return tuple
+       ``(success, message)``, where ``success`` is a boolean indicating
+       whether a step was successful, and ``message`` is a string
+       containing description of a failure if a step failed or None
+       otherwise.
+    4. A solver must implement a private method ``_dense_output_impl(self)``,
+       which returns a `DenseOutput` object covering the last successful
+       step.
+    5. A solver must have attributes listed below in Attributes section.
+       Note that ``t_old`` and ``step_size`` are updated automatically.
+    6. Use ``fun(self, t, y)`` method for the system rhs evaluation, this
+       way the number of function evaluations (`nfev`) will be tracked
+       automatically.
+    7. For convenience, a base class provides ``fun_single(self, t, y)`` and
+       ``fun_vectorized(self, t, y)`` for evaluating the rhs in
+       non-vectorized and vectorized fashions respectively (regardless of
+       how `fun` from the constructor is implemented). These calls don't
+       increment `nfev`.
+    8. If a solver uses a Jacobian matrix and LU decompositions, it should
+       track the number of Jacobian evaluations (`njev`) and the number of
+       LU decompositions (`nlu`).
+    9. By convention, the function evaluations used to compute a finite
+       difference approximation of the Jacobian should not be counted in
+       `nfev`, thus use ``fun_single(self, t, y)`` or
+       ```fun_vectorized(self, t, y)`` when computing a finite difference
+       approximation of the Jacobian.
 
     Parameters
     ----------
@@ -127,6 +128,9 @@ class OdeSolver:
         Number of LU decompositions.
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, fun, t0, y0, t_bound, vectorized,
                  support_complex=False):
@@ -242,6 +246,10 @@ class DenseOutput:
     t_min, t_max : float
         Time range of the interpolation.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, t_old, t):
         self.t_old = t_old
         self.t = t

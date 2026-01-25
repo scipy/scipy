@@ -79,11 +79,6 @@ py3.extension_module('_specfun',
   subdir: 'scipy/special'
 )
 
-# TODO: this installs all generated files, while we want to install only:
-#       _ufuncs.pyi, cython_special.pxd
-#       There's no good way around this currently, because py3.install_sources
-#       doesn't accept generated targets. See TODO near the end of
-#       scipy/linalg/meson.build for more details.
 _generate_pyx = find_program('_generate_pyx.py')
 cython_special = custom_target('cython_special',
   output: [
@@ -95,9 +90,7 @@ cython_special = custom_target('cython_special',
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [_generate_pyx, '-o', '@OUTDIR@'],
-  install: true,
-  install_dir: py3.get_install_dir() / 'scipy/special',
-  install_tag: 'devel',
+  install: false,
 )
 
 cython_special_pxd = fs.copyfile('cython_special.pxd')
@@ -124,7 +117,7 @@ py3.extension_module('_ufuncs',
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
     xsf_dep,
-    lapack_dep,
+    lapack_lp64_dep,
     npymath_lib,
     np_dep,
   ],
@@ -176,7 +169,7 @@ py3.extension_module('_ellip_harm_2',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, lapack_dep, np_dep],
+  dependencies: [xsf_dep, lapack_lp64_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
 )
@@ -193,7 +186,7 @@ py3.extension_module('cython_special',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep, npymath_lib, lapack_dep],
+  dependencies: [xsf_dep, np_dep, npymath_lib, lapack_lp64_dep],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
@@ -222,8 +215,6 @@ py3.install_sources(
   install_tag: 'tests'
 )
 
-# Must use `custom_target`, because `py3.install_sources` does not work with
-# generated sources - see https://github.com/mesonbuild/meson/issues/7372
 npz_files = [
   [
     '_data_boost',

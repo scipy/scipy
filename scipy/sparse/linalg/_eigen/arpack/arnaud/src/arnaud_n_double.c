@@ -477,17 +477,17 @@ ARNAUD_dneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
         {
             if ((workl[iheigi+j] == 0.0) && (workl[iheigr+j] != 0.0))
             {
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheigr+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheigr+j];
             } else if (iconj == 0) {
 
                 temp = hypot(workl[iheigr+j], workl[iheigi+j]);
                 if (temp != 0.0)
                 {
-                    workev[j] = (workl[invsub + j*ldq + V->ncv]*workl[iheigr+j] +
-                                 workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j] = (workl[invsub + j*ldq + V->ncv - 1]*workl[iheigr+j] +
+                                 workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
-                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigr+j] -
-                                 workl[invsub + j*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigr+j] -
+                                 workl[invsub + j*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
                 }
                 iconj = 1;
@@ -617,7 +617,8 @@ dnaup2(struct ARNAUD_state_d *V, double* resid, double* v, int ldv,
 
     if (V->ido == ido_FIRST)
     {
-        V->aup2_nev0 = V->nev;
+        V->aup2_nev = V->nev;
+        V->aup2_nev0 = V->aup2_nev;
         V->aup2_np0 = V->np;
 
         //  kplusp is the bound on the largest
@@ -627,7 +628,7 @@ dnaup2(struct ARNAUD_state_d *V, double* resid, double* v, int ldv,
         //  iter is the counter on the current
         //       iteration step.
 
-        V->aup2_kplusp = V->nev + V->np;
+        V->aup2_kplusp = V->aup2_nev + V->np;
         V->nconv = 0;
         V->aup2_iter = 0;
 
@@ -685,7 +686,7 @@ dnaup2(struct ARNAUD_state_d *V, double* resid, double* v, int ldv,
 
     //  Compute the first NEV steps of the Arnoldi factorization
 
-    dnaitr(V, 0, V->nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    dnaitr(V, 0, V->aup2_nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -714,7 +715,7 @@ LINE1000:
     //  Adjust NP since NEV might have been updated by last call
     //  to the shift application routine dnapps .
 
-    V->np = V->aup2_kplusp - V->nev;
+    V->np = V->aup2_kplusp - V->aup2_nev;
 
     //  Compute NP additional steps of the Arnoldi factorization.
 
@@ -723,7 +724,7 @@ LINE1000:
 LINE20:
     V->aup2_update = 1;
 
-    dnaitr(V, V->nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    dnaitr(V, V->aup2_nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -772,18 +773,18 @@ LINE20:
     //  NOTE: The last two arguments of dngets  are no
     //  longer used as of version 2.1.
 
-    V->nev = V->aup2_nev0;
+    V->aup2_nev = V->aup2_nev0;
     V->np = V->aup2_np0;
-    V->aup2_numcnv = V->nev;
+    V->aup2_numcnv = V->aup2_nev;
 
-    dngets(V, &V->nev, &V->np, ritzr, ritzi, bounds);
+    dngets(V, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
 
-    if (V->nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_nev0 + 1;}
+    if (V->aup2_nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_nev0 + 1;}
 
     //  Convergence test.
 
-    dcopy_(&V->nev, &bounds[V->np], &int1, &workl[2*V->np], &int1);
-    dnconv(V->nev, &ritzr[V->np], &ritzi[V->np], &workl[2*V->np], V->tol, &V->nconv);
+    dcopy_(&V->aup2_nev, &bounds[V->np], &int1, &workl[2*V->np], &int1);
+    dnconv(V->aup2_nev, &ritzr[V->np], &ritzi[V->np], &workl[2*V->np], V->tol, &V->nconv);
 
     //  Count the number of unwanted Ritz values that have zero
     //  Ritz estimates. If any Ritz estimates are equal to zero
@@ -801,7 +802,7 @@ LINE20:
         if (bounds[j] == 0.0)
         {
             V->np -= 1;
-            V->nev += 1;
+            V->aup2_nev += 1;
         }
     }
     // 30
@@ -898,7 +899,7 @@ LINE20:
 
         V->np = V->nconv;
         V->iter = V->aup2_iter;
-        V->nev = V->aup2_numcnv;
+        V->aup2_nev = V->aup2_numcnv;
         V->ido = ido_DONE;
         return;
 
@@ -908,12 +909,12 @@ LINE20:
         //  To prevent possible stagnation, adjust the size
         //  of NEV.
 
-        int nevbef = V->nev;
-        V->nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
-        if ((V->nev == 1) && (V->aup2_kplusp >= 6)) {
-            V->nev = V->aup2_kplusp / 2;
-        } else if ((V->nev == 1) && (V->aup2_kplusp > 3)) {
-            V->nev = 2;
+        int nevbef = V->aup2_nev;
+        V->aup2_nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
+        if ((V->aup2_nev == 1) && (V->aup2_kplusp >= 6)) {
+            V->aup2_nev = V->aup2_kplusp / 2;
+        } else if ((V->aup2_nev == 1) && (V->aup2_kplusp > 3)) {
+            V->aup2_nev = 2;
         }
 
         //  SciPy Fix
@@ -921,15 +922,15 @@ LINE20:
         //  np == 0 (note that dngets below can bump nev by 1). If np == 0,
         // the next call to `dnaitr` will write out-of-bounds.
 
-        if (V->nev > (V->aup2_kplusp - 2)) {
-            V->nev = V->aup2_kplusp - 2;
+        if (V->aup2_nev > (V->aup2_kplusp - 2)) {
+            V->aup2_nev = V->aup2_kplusp - 2;
         }
         //  SciPy Fix End
 
-        V->np = V->aup2_kplusp - V->nev;
+        V->np = V->aup2_kplusp - V->aup2_nev;
 
-        if (nevbef < V->nev) {
-            dngets(V, &V->nev, &V->np, ritzr, ritzi, bounds);
+        if (nevbef < V->aup2_nev) {
+            dngets(V, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
         }
 
     }
@@ -970,7 +971,7 @@ LINE50:
     //  matrix H.
     //  The first 2*N locations of WORKD are used as workspace.
 
-    dnapps(V->n, &V->nev, V->np, ritzr, ritzi, v, ldv, h, ldh, resid, q, ldq, workl, workd);
+    dnapps(V->n, &V->aup2_nev, V->np, ritzr, ritzi, v, ldv, h, ldh, resid, q, ldq, workl, workd);
 
     //  Compute the B-norm of the updated residual.
     //  Keep B*RESID in WORKD(1:N) to be used in
@@ -1997,10 +1998,11 @@ LINE40:
     return;
 }
 
-void
+
+static void
 dsortc(const enum ARNAUD_which w, const int apply, const int n, double* xreal, double* ximag, double* y)
 {
-    int i, igap, j;
+    int i, gap, pos;
     double temp;
     ARNAUD_compare_cfunc *f;
 
@@ -2029,36 +2031,35 @@ dsortc(const enum ARNAUD_which w, const int apply, const int n, double* xreal, d
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(xreal[j], ximag[j], xreal[j+igap], ximag[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(xreal[pos], ximag[pos], xreal[pos+gap], ximag[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = xreal[j];
-                xreal[j] = xreal[j+igap];
-                xreal[j+igap] = temp;
-                temp = ximag[j];
-                ximag[j] = ximag[j+igap];
-                ximag[j+igap] = temp;
+                temp = xreal[pos];
+                xreal[pos] = xreal[pos+gap];
+                xreal[pos+gap] = temp;
+                temp = ximag[pos];
+                ximag[pos] = ximag[pos+gap];
+                ximag[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
+
 
 // The void casts are to avoid compiler warnings for unused parameters
 int

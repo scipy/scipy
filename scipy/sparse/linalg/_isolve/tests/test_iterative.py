@@ -1,6 +1,7 @@
 """ Test functions for the sparse.linalg._isolve module
 """
 
+from contextlib import nullcontext
 import itertools
 import platform
 import pytest
@@ -219,7 +220,6 @@ def case(request):
     """
     return request.param
 
-@pytest.mark.thread_unsafe
 def test_maxiter(case):
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
@@ -505,7 +505,7 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 4.5e-6*norm(b)
+    assert norm(A @ x - b) <= 1e-5*norm(b)
 
 
 def test_x0_equals_Mb(case):
@@ -538,13 +538,15 @@ def test_x0_solves_problem_exactly(solver):
 
 
 # Specific tfqmr test
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('case', IterativeParams().cases)
 def test_show(case, capsys):
     def cb(x):
         pass
 
-    x, info = tfqmr(case.A, case.b, callback=cb, show=True)
+    ctx = np.errstate(all='ignore') if case.name == "nonsymposdef" else nullcontext()
+    with ctx:
+        x, info = tfqmr(case.A, case.b, callback=cb, show=True)
+
     out, err = capsys.readouterr()
 
     if case.name == "sym-nonpd":

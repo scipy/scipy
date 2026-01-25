@@ -1,17 +1,19 @@
 import warnings
-
-import pytest
+from types import GenericAlias
 
 import numpy as np
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
-    assert_almost_equal, xp_assert_equal, xp_assert_close
+    assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case,
+    xp_result_type
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
+
 from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -187,7 +189,6 @@ class TestPlacePoles:
         assert fsf.rtol == 0
         assert fsf.nb_iter == 0
 
-    @pytest.mark.thread_unsafe
     def test_errors(self):
         # Test input mistakes from user
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
@@ -719,6 +720,13 @@ class TestStateSpace:
         StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
                    np.array([[1, 0]]), np.array([[0]]))
 
+        # Verify that parameter are casted correctly:
+        AA = np.array([1], dtype=np.int64)
+        ss0 = StateSpace(AA, 1, 1, 1)
+        assert ss0.A.dtype == ss0.B.dtype == ss0.C.dtype == ss0.D.dtype == np.float64
+        ss1 = StateSpace(AA, 1, 1, 1+1j)
+        assert ss1.A.dtype == ss1.B.dtype == ss1.C.dtype == ss1.D.dtype == np.complex128
+
     def test_conversion(self):
         # Check the conversion functions
         s = StateSpace(1, 2, 3, 4)
@@ -915,138 +923,196 @@ class TestZerosPolesGain:
         assert s.to_zpk() is not s
 
 
+@make_xp_test_case(abcd_normalize)
 class Test_abcd_normalize:
-    def setup_method(self):
-        self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
-        self.B = np.array([[-1.0], [5.0]])
-        self.C = np.array([[4.0, 5.0]])
-        self.D = np.array([[2.5]])
+    A = [[1.0, 2.0], [3.0, 4.0]]
+    B = [[-1.0], [5.0]]
+    C = [[4.0, 5.0]]
+    D = [[2.5]]
 
     def test_no_matrix_fails(self):
         assert_raises(ValueError, abcd_normalize)
 
     def test_A_nosquare_fails(self):
-        assert_raises(ValueError, abcd_normalize, [1, -1],
-                      self.B, self.C, self.D)
+        assert_raises(ValueError, abcd_normalize,
+                      [1, -1], self.B, self.C, self.D)
 
     def test_AB_mismatch_fails(self):
-        assert_raises(ValueError, abcd_normalize, self.A, [-1, 5],
-                      self.C, self.D)
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, [-1, 5], self.C, self.D)
 
     def test_AC_mismatch_fails(self):
-        assert_raises(ValueError, abcd_normalize, self.A, self.B,
-                      [[4.0], [5.0]], self.D)
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, self.B, [[4.0], [5.0]], self.D)
 
     def test_CD_mismatch_fails(self):
-        assert_raises(ValueError, abcd_normalize, self.A, self.B,
-                      self.C, [2.5, 0])
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, self.B, self.C, [2.5, 0])
 
-    def test_BD_mismatch_fails(self):
-        assert_raises(ValueError, abcd_normalize, self.A, [-1, 5],
-                      self.C, self.D)
+    def test_BD_mismatch_fails(self, xp):
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, [-1, 5], self.C, self.D)
 
-    def test_normalized_matrices_unchanged(self):
-        A, B, C, D = abcd_normalize(self.A, self.B, self.C, self.D)
-        xp_assert_equal(A, self.A)
-        xp_assert_equal(B, self.B)
-        xp_assert_equal(C, self.C)
-        xp_assert_equal(D, self.D)
+    def test_normalized_matrices_unchanged(self, xp):
+        A_, B_, C_, D_ = map(
+            lambda t: xp.asarray(t, dtype=xp.float64),
+            (self.A, self.B, self.C, self.D),
+        )
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_)
+        xp_assert_equal(A, A_)
+        xp_assert_equal(B, B_)
+        xp_assert_equal(C, C_)
+        xp_assert_equal(D, D_)
 
     def test_shapes(self):
         A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)
-        xp_assert_equal(A.shape[0], A.shape[1])
-        xp_assert_equal(A.shape[0], B.shape[0])
-        xp_assert_equal(A.shape[0], C.shape[1])
-        xp_assert_equal(C.shape[0], D.shape[0])
-        xp_assert_equal(B.shape[1], D.shape[1])
+        assert A.shape[0] == A.shape[1]
+        assert A.shape[0] == B.shape[0]
+        assert A.shape[0] == C.shape[1]
+        assert C.shape[0] == D.shape[0]
+        assert B.shape[1] == D.shape[1]
 
-    def test_zero_dimension_is_not_none1(self):
-        B_ = np.zeros((2, 0))
-        D_ = np.zeros((0, 0))
-        A, B, C, D = abcd_normalize(A=self.A, B=B_, D=D_)
-        xp_assert_equal(A, self.A)
+    def test_zero_dimension_is_not_none1(self, xp):
+        A_ = xp.asarray(self.A, dtype=xp.float64)
+        B_ = xp.zeros((2, 0), dtype=xp.float64)
+        D_ = xp.zeros((0, 0), dtype=xp.float64)
+        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
+        xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(D, D_)
         assert C.shape[0] == D_.shape[0]
-        assert C.shape[1] == self.A.shape[0]
+        assert C.shape[1] == A_.shape[0]
 
-    def test_zero_dimension_is_not_none2(self):
-        B_ = np.zeros((2, 0))
-        C_ = np.zeros((0, 2))
-        A, B, C, D = abcd_normalize(A=self.A, B=B_, C=C_)
-        xp_assert_equal(A, self.A)
+    def test_zero_dimension_is_not_none2(self, xp):
+        A_ = xp.asarray(self.A, dtype=xp.float64)
+        B_ = xp.zeros((2, 0), dtype=xp.float64)
+        C_ = xp.zeros((0, 2), dtype=xp.float64)
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_)
+        xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
         assert D.shape[0] == C_.shape[0]
         assert D.shape[1] == B_.shape[1]
 
-    def test_missing_A(self):
-        A, B, C, D = abcd_normalize(B=self.B, C=self.C, D=self.D)
+    def test_missing_A(self, xp):
+        B_, C_, D_ = map(
+            lambda t: xp.asarray(t, dtype=xp.float64),
+            (self.B, self.C, self.D),
+        )
+        A, B, C, D = abcd_normalize(B=B_, C=C_, D=D_)
         assert A.shape[0] == A.shape[1]
         assert A.shape[0] == B.shape[0]
-        assert A.shape == (self.B.shape[0], self.B.shape[0])
+        assert A.shape == (B_.shape[0], B_.shape[0])
 
-    def test_missing_B(self):
-        A, B, C, D = abcd_normalize(A=self.A, C=self.C, D=self.D)
+    def test_missing_B(self, xp):
+        A_, C_, D_ = map(xp.asarray, (self.A, self.C, self.D))
+        A, B, C, D = abcd_normalize(A=A_, C=C_, D=D_)
         assert B.shape[0] == A.shape[0]
         assert B.shape[1] == D.shape[1]
-        assert B.shape == (self.A.shape[0], self.D.shape[1])
+        assert B.shape == (A_.shape[0], D_.shape[1])
 
-    def test_missing_C(self):
-        A, B, C, D = abcd_normalize(A=self.A, B=self.B, D=self.D)
+    def test_missing_C(self, xp):
+        A_, B_, D_ = map(
+            lambda t: xp.asarray(t, dtype=xp.float64),
+            (self.A, self.B, self.D),
+        )
+        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
         assert C.shape[0] == D.shape[0]
         assert C.shape[1] == A.shape[0]
-        assert C.shape == (self.D.shape[0], self.A.shape[0])
+        assert C.shape == (D_.shape[0], A_.shape[0])
 
-    def test_missing_D(self):
-        A, B, C, D = abcd_normalize(A=self.A, B=self.B, C=self.C)
+    def test_missing_D(self, xp):
+        A_, B_, C_ = map(xp.asarray, (self.A, self.B, self.C))
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_)
         assert D.shape[0] == C.shape[0]
         assert D.shape[1] == B.shape[1]
-        assert D.shape == (self.C.shape[0], self.B.shape[1])
+        assert D.shape == (C_.shape[0], B_.shape[1])
 
-    def test_missing_AB(self):
-        A, B, C, D = abcd_normalize(C=self.C, D=self.D)
+    def test_missing_AB(self, xp):
+        C_, D_ = map(xp.asarray, (self.C, self.D))
+        A, B, C, D = abcd_normalize(C=C_, D=D_)
         assert A.shape[0] == A.shape[1]
         assert A.shape[0] == B.shape[0]
         assert B.shape[1] == D.shape[1]
-        assert A.shape == (self.C.shape[1], self.C.shape[1])
-        assert B.shape == (self.C.shape[1], self.D.shape[1])
+        assert A.shape == (C_.shape[1], C_.shape[1])
+        assert B.shape == (C_.shape[1], D_.shape[1])
 
-    def test_missing_AC(self):
-        A, B, C, D = abcd_normalize(B=self.B, D=self.D)
+    def test_missing_AC(self, xp):
+        B_, D_ = map(xp.asarray, (self.B, self.D))
+        A, B, C, D = abcd_normalize(B=B_, D=D_)
         assert A.shape[0] == A.shape[1]
         assert A.shape[0] == B.shape[0]
         assert C.shape[0] == D.shape[0]
         assert C.shape[1] == A.shape[0]
-        assert A.shape == (self.B.shape[0], self.B.shape[0])
-        assert C.shape == (self.D.shape[0], self.B.shape[0])
+        assert A.shape == (B_.shape[0], B_.shape[0])
+        assert C.shape == (D_.shape[0], B_.shape[0])
 
-    def test_missing_AD(self):
-        A, B, C, D = abcd_normalize(B=self.B, C=self.C)
+    def test_missing_AD(self, xp):
+        B_, C_ = map(xp.asarray, (self.B, self.C))
+        A, B, C, D = abcd_normalize(B=B_, C=C_)
         assert A.shape[0] == A.shape[1]
         assert A.shape[0] == B.shape[0]
         assert D.shape[0] == C.shape[0]
         assert D.shape[1] == B.shape[1]
-        assert A.shape == (self.B.shape[0], self.B.shape[0])
-        assert D.shape == (self.C.shape[0], self.B.shape[1])
+        assert A.shape == (B_.shape[0], B_.shape[0])
+        assert D.shape == (C_.shape[0], B_.shape[1])
 
-    def test_missing_BC(self):
-        A, B, C, D = abcd_normalize(A=self.A, D=self.D)
+    def test_missing_BC(self, xp):
+        A_, D_ = map(xp.asarray, (self.A, self.D))
+        A, B, C, D = abcd_normalize(A=A_, D=D_)
         assert B.shape[0] == A.shape[0]
         assert B.shape[1] == D.shape[1]
         assert C.shape[0] == D.shape[0]
-        assert C.shape[1], A.shape[0]
-        assert B.shape == (self.A.shape[0], self.D.shape[1])
-        assert C.shape == (self.D.shape[0], self.A.shape[0])
+        assert C.shape[1] == A.shape[0]
+        assert B.shape == (A_.shape[0], D_.shape[1])
+        assert C.shape == (D_.shape[0], A_.shape[0])
 
-    def test_missing_ABC_fails(self):
-        assert_raises(ValueError, abcd_normalize, D=self.D)
+    def test_missing_ABC_fails(self, xp):
+        assert_raises(ValueError, abcd_normalize, D=xp.asarray(self.D))
 
-    def test_missing_BD_fails(self):
-        assert_raises(ValueError, abcd_normalize, A=self.A, C=self.C)
+    def test_missing_BD_fails(self, xp):
+        A, C = xp.asarray(self.A),xp.asarray(self.C)
+        assert_raises(ValueError, abcd_normalize, A=A, C=C)
 
-    def test_missing_CD_fails(self):
-        assert_raises(ValueError, abcd_normalize, A=self.A, B=self.B)
+    def test_missing_CD_fails(self, xp):
+        A, B = xp.asarray(self.A), xp.asarray(self.B)
+        assert_raises(ValueError, abcd_normalize, A=A, B=B)
+
+
+    @pytest.mark.parametrize(
+        "A_dtype",
+        # A_dtype=None here means to pass None as the value for A
+        [None, "int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "B_dtype",
+        [None, "int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "C_dtype",
+        ["int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "D_dtype",
+        ["int64", "float32", "float64", "complex64", "complex128"],
+    )
+    # Also check case where one input array has size zero.
+    @pytest.mark.parametrize("D", [[[2.5]], [[]]])
+    def test_dtypes(self, D, A_dtype, B_dtype, C_dtype, D_dtype, xp):
+       
+        args = []
+        for X, X_dtype in zip(
+                [self.A, self.B, self.C, D],
+                [A_dtype, B_dtype, C_dtype, D_dtype]
+        ):
+            args.append(
+                xp.asarray(X, dtype=getattr(xp, X_dtype))
+                if X_dtype is not None else None
+            )
+        A, B, C, D = args
+        expected_dtype = xp_result_type(A, B, C, D, xp=xp, force_floating=True)
+        A, B, C, D = abcd_normalize(A=A, B=B, C=C, D=D)
+        assert A.dtype == B.dtype == C.dtype == D.dtype == expected_dtype
 
 
 class Test_bode:
@@ -1223,3 +1289,9 @@ class Test_freqresp:
         expected = 1 / (s + 1)**4
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
+
+@pytest.mark.parametrize(
+    "cls", [StateSpace, TransferFunction, ZerosPolesGain, lti, dlti]
+)
+def test_subscriptable_generic_types(cls):
+    assert isinstance(cls[np.float64], GenericAlias)

@@ -48,7 +48,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
             if arg1.ndim == 1:
                 if dtype is not None:
-                    arg1 = arg1.astype(dtype)
+                    arg1 = arg1.astype(dtype, copy=False)
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
                 self.dtype = getdtype(arg1.dtype)
             else:
@@ -58,8 +58,34 @@ class _dok_base(_spbase, IndexMixin, dict):
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
     def update(self, val):
-        # Prevent direct usage of update
-        raise NotImplementedError("Direct update to DOK sparse format is not allowed.")
+        """Update values from a dict, sparse dok or iterable of 2-tuples like .items()
+
+        Keys of the input must be sequences of nonnegative integers less than the shape
+        for each axis.
+        """
+        if isinstance(val, dict):
+            inputs = val.items()
+        else:
+            inputs = val
+
+        for key, value in inputs:
+            index = (key,) if isintlike(key) else tuple(key)
+            if len(index) != self.ndim:
+                raise IndexError(f'Index {key} length needs to match self.shape')
+            if not all(
+                isintlike(idx) and 0 <= idx < max_idx
+                for idx, max_idx in zip(index, self.shape)
+            ):
+                # Error handling. Re-search to find which error occured
+                for idx, max_idx in zip(index, self.shape):
+                    if not isintlike(idx):
+                        raise IndexError(f'integer keys required for update. Got {key}')
+                    if idx < 0:
+                        raise IndexError(f'negative index {key} not allowed in update')
+                    if idx >= max_idx:
+                        raise IndexError(f'index {key} is too large for self.shape')
+        # do the update
+        self._dict.update(inputs)
 
     def _getnnz(self, axis=None):
         if axis is not None:

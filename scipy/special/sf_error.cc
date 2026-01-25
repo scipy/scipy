@@ -134,10 +134,10 @@ void sf_error_check_fpe(const char *func_name) {
         sf_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
     }
     if (status & NPY_FPE_OVERFLOW) {
-        sf_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
+        sf_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
     }
     if (status & NPY_FPE_UNDERFLOW) {
-        sf_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
+        sf_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
     }
     if (status & NPY_FPE_INVALID) {
         sf_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");

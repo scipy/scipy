@@ -134,6 +134,11 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     """Solve an equation system, a x = b, given the LU factorization of a
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     (lu, piv)
@@ -222,9 +227,13 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     ``True`` then ``L`` is returned already permuted and hence satisfying
     ``A = L @ U``.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Array to decompose
     permute_l : bool, optional
         Perform the multiplication P*L (Default: do not permute)
@@ -240,23 +249,19 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     Returns
     -------
-    **(If `permute_l` is ``False``)**
+    (p, l, u) | (pl, u):
+        The tuple `(p, l, u)` is returned if `permute_l` is ``False`` (default) else
+        the tuple `(pl, u)` is returned, where:
 
-    p : (..., M, M) ndarray
-        Permutation arrays or vectors depending on `p_indices`
-    l : (..., M, K) ndarray
-        Lower triangular or trapezoidal array with unit diagonal.
-        ``K = min(M, N)``
-    u : (..., K, N) ndarray
-        Upper triangular or trapezoidal array
-
-    **(If `permute_l` is ``True``)**
-
-    pl : (..., M, K) ndarray
-        Permuted L matrix.
-        ``K = min(M, N)``
-    u : (..., K, N) ndarray
-        Upper triangular or trapezoidal array
+        p : (..., M, M) ndarray
+            Permutation arrays or vectors depending on `p_indices`.
+        l : (..., M, K) ndarray
+            Lower triangular or trapezoidal array with unit diagonal, where the last
+            dimension is ``K = min(M, N)``.
+        pl : (..., M, K) ndarray
+            Permuted L matrix with last dimension being ``K = min(M, N)``.
+        u : (..., K, N) ndarray
+            Upper triangular or trapezoidal array.
 
     Notes
     -----

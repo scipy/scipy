@@ -120,7 +120,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             # which should follow the C99 standard for complex values.
             b_exp_a = xp.exp(a) if b is None else b * xp.exp(a)
             sum_ = xp.sum(b_exp_a, axis=axis, keepdims=True)
-            sgn_inf = _sign(sum_, xp=xp) if return_sign else None
+            sgn_inf = xp.sign(sum_) if return_sign else None
             sum_ = xp.abs(sum_) if return_sign else sum_
             out_inf = xp.log(sum_)
 
@@ -198,10 +198,6 @@ def _elements_and_indices_with_max_real(a, *, axis=-1, xp):
     return max_, mask
 
 
-def _sign(x, *, xp):
-    return x / xp.where(x == 0, 1., xp.abs(x))
-
-
 def _logsumexp(a, b, *, axis, return_sign, xp):
     # This has been around for about a decade, so let's consider it a feature:
     # Even if element of `a` is infinite or NaN, it adds nothing to the sum if
@@ -231,9 +227,7 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     # However, this is also needed if any elements of `m < 0` or `s < -1`.
     # An improvement would be to perform the calculations only on these entries.
 
-    # Use the numpy>=2.0 convention for sign.
-    # When all array libraries agree, this can become sng = xp.sign(s).
-    sgn = _sign(s + 1, xp=xp) * _sign(m, xp=xp)
+    sgn = xp.sign(s + 1) * xp.sign(m)
 
     if xp.isdtype(s.dtype, "real floating"):
         # The log functions need positive arguments

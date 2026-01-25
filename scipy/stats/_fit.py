@@ -2,6 +2,7 @@ import warnings
 from collections import namedtuple
 import numpy as np
 from scipy import optimize, stats
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import check_random_state, _transition_to_rng
 
 
@@ -313,6 +314,7 @@ class FitResult:
         return ax
 
 
+@xp_capabilities(out_of_scope=True)
 def fit(dist, data, bounds=None, *, guess=None, method='mle',
         optimizer=optimize.differential_evolution):
     r"""Fit a discrete or continuous distribution to data
@@ -738,6 +740,7 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                   'null_distribution'))
 
 
+@xp_capabilities(out_of_scope=True)
 @_transition_to_rng('random_state')
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', n_mc_samples=9999,
@@ -965,7 +968,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
     >>> x = stats.uniform.rvs(size=75, random_state=rng)
 
     were sampled from a normal distribution. To perform a KS test, the
@@ -1025,8 +1028,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     calculated exactly and is tyically approximated using Monte Carlo methods
     as described above. This is where `goodness_of_fit` excels.
 
-    >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ks',
-    ...                             rng=rng)
+    >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ks', rng=rng)
     >>> res.statistic, res.pvalue
     (0.1119257570456813, 0.0196)
 
@@ -1040,25 +1042,21 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     statistic - resulting in a higher test power - can be used now that we can
     approximate the null distribution
     computationally. The Anderson-Darling statistic [1]_ tends to be more
-    sensitive, and critical values of the this statistic have been tabulated
+    sensitive, and critical values of this statistic have been tabulated
     for various significance levels and sample sizes using Monte Carlo methods.
 
-    >>> res = stats.anderson(x, 'norm')
+    >>> res = stats.anderson(x, 'norm', method='interpolate')
     >>> print(res.statistic)
     1.2139573337497467
-    >>> print(res.critical_values)
-    [0.549 0.625 0.75  0.875 1.041]
-    >>> print(res.significance_level)
-    [15.  10.   5.   2.5  1. ]
+    >>> print(res.pvalue)
+    0.01
 
     Here, the observed value of the statistic exceeds the critical value
     corresponding with a 1% significance level. This tells us that the p-value
-    of the observed data is less than 1%, but what is it? We could interpolate
-    from these (already-interpolated) values, but `goodness_of_fit` can
+    of the observed data is 1% or less, but what is it? `goodness_of_fit` can
     estimate it directly.
 
-    >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ad',
-    ...                             rng=rng)
+    >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ad', rng=rng)
     >>> res.statistic, res.pvalue
     (1.2139573337497467, 0.0034)
 

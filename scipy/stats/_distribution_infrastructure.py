@@ -8,7 +8,7 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._array_api import xp_promote
+from scipy._lib._array_api import xp_capabilities, xp_promote
 from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
@@ -2348,7 +2348,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _median_icdf(self, **params):
-        return self._icdf_dispatch(0.5, **params)
+        return self._icdf_dispatch(np.asarray(0.5, dtype=self._dtype), **params)
 
     @_set_invalid_nan_property
     def mode(self, *, method=None):
@@ -3865,6 +3865,7 @@ _distribution_names = {
 
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
+@xp_capabilities(np_only=True)
 def make_distribution(dist):
     """Generate a `UnivariateDistribution` class from a compatible object
 
@@ -4113,7 +4114,7 @@ def _make_distribution_rv_generic(dist):
     support = getattr(dist, '_support', (dist.a, dist.b))
     for shape_info in dist._shape_info():
         domain = _RealInterval(endpoints=shape_info.endpoints,
-                             inclusive=shape_info.inclusive)
+                               inclusive=shape_info.inclusive)
         param = _RealParameter(shape_info.name, domain=domain)
         parameters.append(param)
         names.append(shape_info.name)
@@ -4533,6 +4534,7 @@ class TruncatedDistribution(TransformedDistribution):
                     f"lb={str(self.lb)}, ub={str(self.ub)})")
 
 
+@xp_capabilities(np_only=True)
 def truncate(X, lb=-np.inf, ub=np.inf):
     """Truncate the support of a random variable.
 
@@ -4958,6 +4960,7 @@ class OrderStatisticDistribution(TransformedDistribution):
                     f"n={str(self.n)})")
 
 
+@xp_capabilities(np_only=True)
 def order_statistic(X, /, *, r, n):
     r"""Probability distribution of an order statistic
 
@@ -5621,6 +5624,7 @@ class FoldedDistribution(TransformedDistribution):
             return f"abs({str(self._dist)})"
 
 
+@xp_capabilities(np_only=True)
 def abs(X, /):
     r"""Absolute value of a random variable
 
@@ -5663,6 +5667,7 @@ def abs(X, /):
     return FoldedDistribution(X)
 
 
+@xp_capabilities(np_only=True)
 def exp(X, /):
     r"""Natural exponential of a random variable
 
@@ -5709,6 +5714,7 @@ def exp(X, /):
                                             logdh=lambda u: -np.log(u))
 
 
+@xp_capabilities(np_only=True)
 def log(X, /):
     r"""Natural logarithm of a non-negative random variable
 
@@ -5720,7 +5726,7 @@ def log(X, /):
     Returns
     -------
     Y : `ContinuousDistribution`
-        A random variable :math:`Y = \exp(X)`.
+        A random variable :math:`Y = \log(X)`.
 
     Examples
     --------
@@ -5731,7 +5737,7 @@ def log(X, /):
     >>> Gamma = stats.make_distribution(stats.gamma)
     >>> X = Gamma(a=1.0)
 
-    We wish to have a exp-gamma distributed random variable :math:`Y`,
+    We wish to have an exp-gamma distributed random variable :math:`Y`,
     a random variable whose natural exponential is :math:`X`.
     If :math:`X` is to be the natural exponential of :math:`Y`, then we
     must take :math:`Y` to be the natural logarithm of :math:`X`.

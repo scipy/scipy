@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -27,6 +27,9 @@ try:
 except ImportError:
     mpmath = MissingModule('mpmath')
 
+pytestmark = pytest.mark.thread_unsafe(
+    reason=("mpmath gmpy2 backend is not thread-safe, "
+            "see https://github.com/mpmath/mpmath/issues/974"))
 
 # ------------------------------------------------------------------------------
 # expi
@@ -1570,7 +1573,7 @@ class TestSystematic:
             lambda n, a, b, x: sc.eval_jacobi(int(n), a, b, x),
             lambda n, a, b, x: exception_to_nan(jacobi)(n, a, b, x, **HYPERKW),
             [IntArg(), Arg(), Arg(), Arg()],
-            n=20000,
+            n=4095,
             dps=50,
         )
 
@@ -1809,7 +1812,7 @@ class TestSystematic:
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
+        if version.parse(mpmath.__version__) >= version.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:

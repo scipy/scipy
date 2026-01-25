@@ -7,7 +7,6 @@ import numpy as np
 
 from scipy._lib._util import (check_random_state, rng_integers,
                               _transition_to_rng, _apply_over_batch)
-from scipy.sparse import csc_matrix, issparse
 
 __all__ = ['clarkson_woodruff_transform']
 
@@ -45,6 +44,8 @@ def cwt_matrix(n_rows, n_columns, rng=None):
     .. math:: \|SA\| = (1 \pm \epsilon)\|A\|
     Where the error epsilon is related to the size of S.
     """
+    # lazy import to prevent to prevent sparse dependency for whole module (gh-23420)
+    from scipy.sparse import csc_matrix
     rng = check_random_state(rng)
     rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
@@ -65,6 +66,11 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
 
     with high probability via the Clarkson-Woodruff Transform, otherwise
     known as the CountSketch matrix.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -174,6 +180,8 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     166.58473879945151
 
     """
+    # lazy import to prevent to prevent sparse dependency for whole module (gh-23420)
+    from scipy.sparse import issparse
     if issparse(input_matrix) and input_matrix.ndim > 2:
         message = "Batch support for sparse arrays is not available."
         raise NotImplementedError(message)

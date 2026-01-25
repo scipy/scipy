@@ -591,13 +591,14 @@ dsaup2(struct ARNAUD_state_d *V, double* resid, double* v, int ldv,
     if (V->ido == ido_FIRST)
     {
         // nev0 and np0 are integer variables hold the initial values of NEV & NP
-        V->aup2_nev0 = V->nev;
+        V->aup2_nev = V->nev;
+        V->aup2_nev0 = V->aup2_nev;
         V->aup2_np0 = V->np;
 
         // kplusp is the bound on the largest Lanczos factorization built.
         // nconv is the current number of "converged" eigenvalues.
         // iter is the counter on the current iteration step.
-        V->aup2_kplusp = V->nev + V->np;
+        V->aup2_kplusp = V->aup2_nev + V->np;
         V->nconv = 0;
         V->aup2_iter = 0;
 
@@ -685,7 +686,7 @@ LINE1000:
 LINE20:
     V->aup2_update = 1;
 
-    dsaitr(V, V->nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    dsaitr(V, V->aup2_nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
      /*--------------------------------------------------*
      | ido .ne. 99 implies use of reverse communication  |
@@ -730,15 +731,15 @@ LINE20:
     // * Wanted Ritz values := RITZ(NP+1:NEV+NP)
     // * Shifts := RITZ(1:NP) := WORKL(1:NP)
 
-    V->nev = V->aup2_nev0;
+    V->aup2_nev = V->aup2_nev0;
     V->np = V->aup2_np0;
 
-    dsgets(V, &V->nev, &V->np, ritz, bounds, workl);
+    dsgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
 
     // Convergence test
 
-    dcopy_(&V->nev, &bounds[V->np], &int1, &workl[V->np], &int1);
-    dsconv(V->nev, &ritz[V->np], &workl[V->np], V->tol, &V->nconv);
+    dcopy_(&V->aup2_nev, &bounds[V->np], &int1, &workl[V->np], &int1);
+    dsconv(V->aup2_nev, &ritz[V->np], &workl[V->np], V->tol, &V->nconv);
 
     // Count the number of unwanted Ritz values that have zero
     // Ritz estimates. If any Ritz estimates are equal to zero
@@ -754,7 +755,7 @@ LINE20:
         if (bounds[j] == 0.0)
         {
             V->np -= 1;
-            V->nev += 1;
+            V->aup2_nev += 1;
         }
     }
     // 30
@@ -780,7 +781,7 @@ LINE20:
             dsortr(which_SA, 1, V->aup2_kplusp, ritz, bounds);
             nevd2 = V->aup2_nev0 / 2;
             nevm2 = V->aup2_nev0 - nevd2;
-            if (V->nev > 1)
+            if (V->aup2_nev > 1)
             {
                 V->np = V->aup2_kplusp - V->aup2_nev0;
 
@@ -865,7 +866,7 @@ LINE20:
 
         // Max iterations have been exceeded.
 
-        if ((V->aup2_iter > V->maxiter) && (V->nconv < V->nev))
+        if ((V->aup2_iter > V->maxiter) && (V->nconv < V->aup2_nev))
         {
             V->info = 1;
         }
@@ -878,33 +879,33 @@ LINE20:
         }
 
         V->np = V->nconv;
-        V->nev = V->nconv;
+        V->aup2_nev = V->nconv;
         V->iter = V->aup2_iter;
         V->ido = ido_DONE;
         return;
 
-    } else if ((V->nconv < V->nev) && (V->shift == 1)) {
+    } else if ((V->nconv < V->aup2_nev) && (V->shift == 1)) {
 
         // Do not have all the requested eigenvalues yet.
         // To prevent possible stagnation, adjust the number
         // of Ritz values and the shifts.
 
-        int nevbef = V->nev;
-        V->nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
-        if ((V->nev == 1) && (V->aup2_kplusp >= 6))
+        int nevbef = V->aup2_nev;
+        V->aup2_nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
+        if ((V->aup2_nev == 1) && (V->aup2_kplusp >= 6))
         {
-            V->nev = V->aup2_kplusp / 2;
-        } else if ((V->nev == 1) && (V->aup2_kplusp > 2))
+            V->aup2_nev = V->aup2_kplusp / 2;
+        } else if ((V->aup2_nev == 1) && (V->aup2_kplusp > 2))
         {
-            V->nev = 2;
+            V->aup2_nev = 2;
         }
-        V->np = V->aup2_kplusp - V->nev;
+        V->np = V->aup2_kplusp - V->aup2_nev;
 
         // If the size of NEV was just increased resort the eigenvalues.
 
-        if (nevbef < V->nev)
+        if (nevbef < V->aup2_nev)
         {
-            dsgets(V, &V->nev, &V->np, ritz, bounds, workl);
+            dsgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
         }
     }
 
@@ -941,7 +942,7 @@ LINE50:
      | factorization of length NEV.                            |
      *--------------------------------------------------------*/
 
-    dsapps(V->n, &V->nev, V->np, ritz, v, ldv, h, ldh, resid, q, ldq, workd);
+    dsapps(V->n, &V->aup2_nev, V->np, ritz, v, ldv, h, ldh, resid, q, ldq, workd);
 
     // Compute the B-norm of the updated residual.
     // Keep B*RESID in WORKD(1:N) to be used in
@@ -1801,10 +1802,10 @@ LINE40:
 }
 
 
-void
+static void
 dsortr(const enum ARNAUD_which w, const int apply, const int n, double* x1, double* x2)
 {
-    int i, igap, j;
+    int i, gap, pos;
     double temp;
     ARNAUD_compare_rfunc *f;
 
@@ -1827,39 +1828,37 @@ dsortr(const enum ARNAUD_which w, const int apply, const int n, double* x1, doub
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x1[j], x1[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x1[pos], x1[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x1[j];
-                x1[j] = x1[j+igap];
-                x1[j+igap] = temp;
+                temp = x1[pos];
+                x1[pos] = x1[pos+gap];
+                x1[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = x2[j];
-                    x2[j] = x2[j+igap];
-                    x2[j+igap] = temp;
+                    temp = x2[pos];
+                    x2[pos] = x2[pos+gap];
+                    x2[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
 
-void
+static void
 dsesrt(const enum ARNAUD_which w, const int apply, const int n, double* x, int na, double* a, const int lda)
 {
-    int i, igap, j, int1 = 1;
+    int i, gap, pos, int1 = 1;
     double temp;
     ARNAUD_compare_rfunc *f;
 
@@ -1882,31 +1881,28 @@ dsesrt(const enum ARNAUD_which w, const int apply, const int n, double* x, int n
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j + igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos + gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    dswap_(&na, &a[lda*j], &int1, &a[lda*(j+igap)], &int1);
+                    dswap_(&na, &a[lda*pos], &int1, &a[lda*(pos+gap)], &int1);
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
-    // 10, 40, 70, 120
 }
 
 

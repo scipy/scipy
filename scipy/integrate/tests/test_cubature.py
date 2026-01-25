@@ -10,6 +10,7 @@ from scipy._lib._array_api import (
     xp_size,
     np_compat,
     is_array_api_strict,
+    make_xp_test_case,
 )
 from scipy.integrate import cubature
 from scipy.integrate._cubature import _InfiniteLimitsTransform
@@ -372,6 +373,7 @@ def f_with_problematic_points(x_arr, points, xp):
     return xp.ones(x_arr.shape[0])
 
 
+@make_xp_test_case(cubature)
 class TestCubature:
     """
     Tests related to the interface of `cubature`.
@@ -397,9 +399,7 @@ class TestCubature:
             atol=0,
         )
 
-    @skip_xp_backends(np_only=True,
-                      reason='array-likes only supported for NumPy backend')
-    def test_pass_array_like_not_array(self, xp):
+    def test_pass_array_like_not_array(self):
         n = np_compat.arange(5, dtype=np_compat.float64)
         a = [0]
         b = [2]
@@ -408,12 +408,12 @@ class TestCubature:
             basic_1d_integrand,
             a,
             b,
-            args=(n, xp)
+            args=(n, np_compat)
         )
 
         xp_assert_close(
             res.estimate,
-            basic_1d_integrand_exact(n, xp),
+            basic_1d_integrand_exact(n, np_compat),
             rtol=1e-8,
             atol=0,
         )
@@ -521,6 +521,7 @@ class TestCubature:
         assert result_dtype == xp.float64
 
 
+@make_xp_test_case(cubature)
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
 @pytest.mark.parametrize("rule", [
@@ -1190,6 +1191,7 @@ class TestCubatureProblems:
         )
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestRules:
     """
     Tests related to the general Rule interface (currently private).
@@ -1230,6 +1232,7 @@ class TestRules:
                 base_class.estimate(basic_1d_integrand, a, b, args=(xp,))
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestRulesQuadrature:
     """
     Tests underlying quadrature rules (ndim == 1).
@@ -1302,6 +1305,7 @@ class TestRulesQuadrature:
             quadrature(1, xp=xp)
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestRulesCubature:
     """
     Tests underlying cubature rules (ndim >= 2).
@@ -1325,6 +1329,7 @@ class TestRulesCubature:
 
 @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
         (

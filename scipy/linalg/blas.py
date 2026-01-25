@@ -227,12 +227,12 @@ try:
 except ImportError:
     _cblas = None
 
-try:
+from scipy.__config__ import CONFIG
+HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
+del CONFIG
+_fblas_64 = None
+if HAS_ILP64:
     from scipy.linalg import _fblas_64
-    HAS_ILP64 = True
-except ImportError:
-    HAS_ILP64 = False
-    _fblas_64 = None
 
 # Expose all functions (only fblas --- cblas is an implementation detail)
 empty_module = None

@@ -105,9 +105,9 @@ def run_cython_lint(files):
 
 
 def run_cython_lint_all():
-    pyx_files = glob.glob("**/*.pyx", recursive=True)
-    pxd_files = glob.glob("**/*.pxd", recursive=True)
-    pxi_files = glob.glob("**/*.pxi", recursive=True)
+    pyx_files = glob.glob("scipy/**/*.pyx", recursive=True)
+    pxd_files = glob.glob("scipy/**/*.pxd", recursive=True)
+    pxi_files = glob.glob("scipy/**/*.pxi", recursive=True)
     files = pyx_files + pxd_files + pxi_files
 
     res = subprocess.run(
@@ -119,7 +119,7 @@ def run_cython_lint_all():
 
 
 def check_ruff_version():
-    min_version = packaging.version.parse('0.0.292')
+    min_version = packaging.version.parse('0.12.0')
     res = subprocess.run(
         ['ruff', '--version'],
         stdout=subprocess.PIPE,
@@ -127,7 +127,7 @@ def check_ruff_version():
     )
     version = res.stdout.replace('ruff ', '')
     if packaging.version.parse(version) < min_version:
-        raise RuntimeError("Linting requires `ruff>=0.0.292`. Please upgrade `ruff`.")
+        raise RuntimeError("Linting requires `ruff>=0.12.0`. Please upgrade `ruff`.")
 
 
 def main():
@@ -168,7 +168,7 @@ def main():
         if rc == 0 and rc_cy != 0:
             rc = rc_cy
         sys.exit(rc)
-    
+
     if not ((args.files is None) ^ (args.branch is None)):
         print('Specify either `--diff-against` or `--files`. Aborting.')
         sys.exit(1)

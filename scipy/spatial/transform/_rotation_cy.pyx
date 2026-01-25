@@ -124,9 +124,11 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline void _get_angles(
+cdef inline int _get_angles(
     double[:] angles, bint extrinsic, bint symmetric, bint sign,
-    double lamb, double a, double b, double c, double d):
+    double lamb, double a, double b, double c, double d) noexcept:
+    # Returns 1 if a gimbal warning is detected and 0 otherwise (so that
+    # warnings can be handled at a higher level)
 
     # intrinsic/extrinsic conversion helpers
     cdef int angle_first, angle_third
@@ -180,15 +182,17 @@ cdef inline void _get_angles(
             angles[idx] -= 2 * pi
 
     if case != 0:
-        warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                      "since it is not possible to uniquely determine "
-                      "all angles.", stacklevel=3)
+        return 1
+    return 0
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_quat(
-    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic
+    np.ndarray[double, ndim=2] quat,
+    const uchar[:] seq,
+    bint extrinsic,
+    bint suppress_warnings
 ) noexcept:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -216,6 +220,7 @@ cdef double[:, :] _compute_euler_from_quat(
     # some forward definitions
     cdef double a, b, c, d
     cdef double[:, :] angles = _empty2(num_rotations, 3)
+    cdef int n_gimbal_warnings = 0
 
     for ind in range(num_rotations):
 
@@ -232,7 +237,14 @@ cdef double[:, :] _compute_euler_from_quat(
             c = quat[ind, j] + quat[ind, 3]
             d = quat[ind, k] * sign - quat[ind, i]
 
-        _get_angles(angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d)
+        n_gimbal_warnings += _get_angles(
+            angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d
+        )
+
+    if n_gimbal_warnings > 0 and not suppress_warnings:
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=2)
 
     return angles
 
@@ -241,7 +253,8 @@ cdef double[:, :] _compute_euler_from_quat(
 cdef double[:, :] _compute_davenport_from_quat(
     np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
     np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
-    bint extrinsic
+    bint extrinsic,
+    bint suppress_warnings
 ):
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -278,6 +291,7 @@ cdef double[:, :] _compute_davenport_from_quat(
     cdef double[:, :] angles = _empty2(num_rotations, 3)
     cdef double[:] quat_transformed = _empty1(4)
     cdef double a, b, c, d
+    cdef int n_gimbal_warnings = 0
 
     for ind in range(num_rotations):
         _compose_quat_single(quat_lamb, quat[ind], quat_transformed)
@@ -289,10 +303,15 @@ cdef double[:, :] _compute_davenport_from_quat(
         c = _dot3(quat_transformed[:3], n2)
         d = _dot3(quat_transformed[:3], n_cross)
 
-        _get_angles(angles[ind], extrinsic, False, 1, lamb, a, b, c, d)
+        n_gimbal_warnings += _get_angles(angles[ind], extrinsic, False, 1, lamb, a, b, c, d)
 
         if correct_set:
             angles[ind, 1] = -angles[ind, 1]
+
+    if n_gimbal_warnings > 0 and not suppress_warnings:
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=2)
 
     return angles
 
@@ -371,67 +390,31 @@ cdef double[:, :] _elementary_quat_compose(
                 result)
     return result
 
-def _format_angles(angles, degrees, num_axes):
-    angles = np.asarray(angles, dtype=float)
-    if degrees:
-        angles = np.deg2rad(angles)
-
-    is_single = False
-    # Prepare angles to have shape (num_rot, num_axes)
-    if num_axes == 1:
-        if angles.ndim == 0:
-            # (1, 1)
-            angles = angles.reshape((1, 1))
-            is_single = True
-        elif angles.ndim == 1:
-            # (N, 1)
-            angles = angles[:, None]
-        elif angles.ndim == 2 and angles.shape[-1] != 1:
-            raise ValueError("Expected `angles` parameter to have shape "
-                             "(N, 1), got {}.".format(angles.shape))
-        elif angles.ndim > 2:
-            raise ValueError("Expected float, 1D array, or 2D array for "
-                             "parameter `angles` corresponding to `seq`, "
-                             "got shape {}.".format(angles.shape))
-    else:  # 2 or 3 axes
-        if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
-            raise ValueError("Expected `angles` to be at most "
-                             "2-dimensional with width equal to number "
-                             "of axes specified, got "
-                             "{} for shape".format(angles.shape))
-
-        if angles.ndim == 1:
-            # (1, num_axes)
-            angles = angles[None, :]
-            is_single = True
-
-    # By now angles should have shape (num_rot, num_axes)
-    # sanity check
-    if angles.ndim != 2 or angles.shape[-1] != num_axes:
-        raise ValueError("Expected angles to have shape (num_rotations, "
-                         "num_axes), got {}.".format(angles.shape))
-
-    return angles, is_single
-
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_quat(double[:, :] quat, bint normalize=True, bint copy=True, bint scalar_first=False):
+def from_quat(const double[:, :] quat, bint normalize=True, bint copy=True, bint scalar_first=False):
     if quat.ndim != 2 or quat.shape[1] != 4:
         raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
+    cdef double[:, :] quat_mut  # Non-const to enable in-place normalization
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
     if num_rotations > 0:  # Avoid 0-sized axis errors
         if scalar_first:
-            quat = np.roll(quat, -1, axis=1)
+            quat_mut = np.roll(quat, -1, axis=1)
         elif normalize or copy:
-            quat = quat.copy()
+            quat_mut = quat.copy()
+        else:  
+            # quat is not altered, so we return directly using quat instead of quat_mut
+            return np.asarray(quat, dtype=float)
 
         if normalize:
             for ind in range(num_rotations):
-                if isnan(_normalize4(quat[ind, :])):
+                if isnan(_normalize4(quat_mut[ind, :])):
                     raise ValueError("Found zero norm quaternions in `quat`.")
+
+        return np.asarray(quat_mut, dtype=float)
 
     return np.asarray(quat, dtype=float)
 
@@ -455,20 +438,33 @@ def from_euler(seq, angles, bint degrees=False):
                             "got {}".format(seq))
 
     seq = seq.lower()
+    
+    angles = np.asarray(angles, dtype=float)
 
-    angles, is_single = _format_angles(angles, degrees, num_axes)
+    if angles.ndim > 2:  # The backend should never be called with these inputs
+        raise ValueError("Cython backend is only compatible with up to 2D inputs")
+
+    if degrees:
+        angles = np.deg2rad(angles)
+
+    is_single = angles.ndim < 2
+    angles = np.atleast_2d(angles)  # Ensure 0, 1 and 2D arrays are 2D
+    
+    if angles.shape[1] != num_axes:
+        raise ValueError("Expected last dimension of `angles` to match number of"
+                         f" sequence axes specified, got {angles.shape[1]}.")
 
     quat = _elementary_quat_compose(seq.encode(), angles, intrinsic)
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
 
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_matrix(matrix):
+def from_matrix(matrix, bint assume_valid=False):
     cdef int ind
     is_single = False
     matrix = np.array(matrix, dtype=float)
@@ -485,40 +481,55 @@ def from_matrix(matrix):
         matrix = matrix[np.newaxis, :, :]
         is_single = True
 
-    # Calculate the determinant of the rotation matrix
-    # (should be positive for right-handed rotations)
-    dets = np.linalg.det(matrix)
-    if np.any(dets <= 0):
-        ind = np.where(dets <= 0)[0][0]
-        raise ValueError("Non-positive determinant (left-handed or null "
-                            f"coordinate frame) in rotation matrix {ind}: "
-                            f"{matrix[ind]}.")
+    if not assume_valid:
+        # Calculate the determinant of the rotation matrix
+        # (should be positive for right-handed rotations)
+        dets = np.linalg.det(matrix)
+        if np.any(dets <= 0):
+            ind = np.where(dets <= 0)[0][0]
+            raise ValueError("Non-positive determinant (left-handed or null "
+                                f"coordinate frame) in rotation matrix {ind}: "
+                                f"{matrix[ind]}.")
 
-    # Gramian orthogonality check
-    # (should be the identity matrix for orthogonal matrices)
-    # Note that we have already ruled out left-handed cases above
-    gramians = matrix @ np.transpose(matrix, (0, 2, 1))
-    is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
-                            axis=(1, 2))
-    indices_to_orthogonalize = np.where(~is_orthogonal)[0]
+        # Gramian orthogonality check
+        # (should be the identity matrix for orthogonal matrices)
+        # Note that we have already ruled out left-handed cases above
+        gramians = matrix @ np.transpose(matrix, (0, 2, 1))
+        is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
+                                axis=(1, 2))
+        indices_to_orthogonalize = np.where(~is_orthogonal)[0]
 
-    # Orthogonalize the rotation matrices where necessary
-    if len(indices_to_orthogonalize) > 0:
-        # Exact solution to the orthogonal Procrustes problem using singular
-        # value decomposition
-        U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
-        matrix[indices_to_orthogonalize, :, :] = U @ Vt
+        # Orthogonalize the rotation matrices where necessary
+        if len(indices_to_orthogonalize) > 0:
+            # Exact solution to the orthogonal Procrustes problem using singular
+            # value decomposition
+            U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
+            matrix[indices_to_orthogonalize, :, :] = U @ Vt
 
     # Convert the orthogonal rotation matrices to quaternions using the
     # algorithm described in [3]_. This will also apply another
     # orthogonalization step to correct for any small errors in the matrices
     # that skipped the SVD step above.
+    if is_single:
+        return _from_matrix_orthogonal(matrix[0])
+    return _from_matrix_orthogonal(matrix)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _from_matrix_orthogonal(matrix):
+    is_single = False
+    if matrix.shape == (3, 3):
+        matrix = matrix[np.newaxis, :, :]
+        is_single = True
+
     cdef double[:, :, :] cmatrix
     cmatrix = matrix
     cdef Py_ssize_t num_rotations = cmatrix.shape[0]
     cdef Py_ssize_t i, j, k
     cdef double[:] decision = _empty1(4)
     cdef int choice
+    cdef int ind
 
     cdef double[:, :] quat = _empty2(num_rotations, 4)
 
@@ -549,8 +560,8 @@ def from_matrix(matrix):
         _normalize4(quat[ind])
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
 
 
 @cython.embedsignature(True)
@@ -595,8 +606,8 @@ def from_rotvec(rotvec, bint degrees=False):
         quat[ind, 3] = cos(angle / 2)
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
 
 
 @cython.embedsignature(True)
@@ -735,6 +746,7 @@ def as_mrp(double[:, :] quat) -> double[:, :]:
     cdef int sign
     cdef double denominator
 
+    # TODO: Check if broadcasting is possible similar to the xp backend
     for ind in range(num_rotations):
 
         # Ensure we are calculating the set of MRPs that correspond
@@ -751,7 +763,12 @@ def as_mrp(double[:, :] quat) -> double[:, :]:
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_euler(double[:, :] quat, seq, bint degrees=False) -> double[:, :]:
+def as_euler(
+    double[:, :] quat,
+    seq,
+    bint degrees=False,
+    bint suppress_warnings=False
+) -> double[:, :]:
     # Prepare axis sequence to call Euler angles conversion algorithm.
     if len(seq) != 3:
         raise ValueError("Expected 3 axes, got {}.".format(seq))
@@ -795,6 +812,7 @@ def as_euler(double[:, :] quat, seq, bint degrees=False) -> double[:, :]:
     # some forward definitions
     cdef double a, b, c, d
     cdef double[:, :] angles = _empty2(num_rotations, 3)
+    cdef int n_gimbal_warnings = 0
 
     for ind in range(num_rotations):
 
@@ -811,7 +829,14 @@ def as_euler(double[:, :] quat, seq, bint degrees=False) -> double[:, :]:
             c = quat[ind, j] + quat[ind, 3]
             d = quat[ind, k] * sign - quat[ind, i]
 
-        _get_angles(angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d)
+        n_gimbal_warnings += _get_angles(
+            angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d
+        )
+
+    if n_gimbal_warnings > 0 and not suppress_warnings:
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=2)
 
     if degrees:
         angles = np.rad2deg(angles)
@@ -821,7 +846,13 @@ def as_euler(double[:, :] quat, seq, bint degrees=False) -> double[:, :]:
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_davenport(double[:, :] quat, double[:, :] axes, order, bint degrees=False) -> double[:, :]:
+def as_davenport(
+    double[:, :] quat,
+    double[:, :] axes,
+    order,
+    bint degrees=False,
+    bint suppress_warnings=False
+) -> double[:, :]:
     cdef np.ndarray[double, ndim=2] q = np.asarray(quat)
 
     cdef bint extrinsic
@@ -854,7 +885,8 @@ def as_davenport(double[:, :] quat, double[:, :] axes, order, bint degrees=False
         raise ValueError("Consecutive axes must be orthogonal.")
 
     angles = np.asarray(_compute_davenport_from_quat(
-            q, n1, n2, n3, extrinsic))
+        q, n1, n2, n3, extrinsic, suppress_warnings
+    ))
 
     if degrees:
         angles = np.rad2deg(angles)
@@ -874,24 +906,36 @@ def inv(double[:, :] quat) -> double[:, :]:
 
 
 @cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
 @_transition_to_rng('random_state', position_num=1)
-def random(num=None, rng=None):
+def random(num: int | None = None, rng=None, shape: int | tuple[int, ...] | None = None):
     rng = check_random_state(rng)
-
-    if num is None:
-        sample = rng.normal(size=4)
-    else:
-        sample = rng.normal(size=(num, 4))
-
-    return sample
+    if num is None and shape is None:
+        shape = ()
+    elif num is not None:
+        shape = (num,)
+    elif isinstance(shape, int):
+        shape = (shape,)
+    elif not isinstance(shape, tuple):
+        raise ValueError("`shape` must be an int or a tuple of ints or None.")
+    return rng.normal(size=shape + (4,))
 
 
 @cython.embedsignature(True)
-def identity(num: int | None = None) -> double[:, :]:
-    if num is None:
-        return np.array([0, 0, 0, 1])
-    q = np.zeros((num, 4))
-    q[:, 3] = 1
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def identity(num: int | None, shape: int | tuple[int, ...] | None = None):
+    if num is None and shape is None:
+        shape = ()
+    elif num is not None:
+        shape = (num,)
+    elif isinstance(shape, int):
+        shape = (shape,)
+    elif not isinstance(shape, tuple):
+        raise ValueError("`shape` must be an int or a tuple of ints or None.")
+    q = np.zeros(shape + (4,), dtype=np.float64)
+    q[..., 3] = 1
     return q
 
 
@@ -916,9 +960,8 @@ def approx_equal(double[:, :] quat, double[:, :] other, atol = None, bint degree
     len_other = len(other)
     if not(len_self == 1 or len_other == 1 or len_self == len_other):
         raise ValueError(
-            "Expected equal number of rotations in both or a single "
-            f"rotation in either object, got {len_self} rotations in "
-            f"first and {len_other} rotations in second object."
+            f"Expected broadcastable shapes in both rotations, got {len_self} "
+            f"rotations in first and {len_other} rotations in second object."
         )
 
     if atol is None:
@@ -935,24 +978,43 @@ def approx_equal(double[:, :] quat, double[:, :] other, atol = None, bint degree
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def mean(double[:, :] quat, weights=None):
+def mean(double[:, :] quat, weights=None, axis=None):
     if quat.shape[0] == 0:
         raise ValueError("Mean of an empty rotation set is undefined.")
+    # The Cython path assumes quat is Nx4, so axis has to be None, 0, -1, (0,), (-1,),
+    # or (). The code path is unchanged for any of the options except (), where we
+    # immediately return the quaternion
+    if axis == ():
+        return quat
+
+    if axis is None:
+        axis = (0,)
+    if isinstance(axis, int):
+        axis = (axis,)
+    if not isinstance(axis, tuple):  # Must be tuple by now
+        raise ValueError("`axis` must be None, int, or tuple of ints.")
+    if min(axis) < -1 or max(axis) > 0:
+        raise ValueError(
+            f"axis {axis} is out of bounds for rotation with shape "
+            f"{np.asarray(quat).shape[:-1]}."
+        )
+    # Axis must be 0 for the cython backend. Everything else should have raised an
+    # error during validation.
+    axis = (0,)
 
     if weights is None:
         weights = np.ones(quat.shape[0])
     else:
         weights = np.asarray(weights)
-        if weights.ndim != 1:
-            raise ValueError("Expected `weights` to be 1 dimensional, got "
-                                "shape {}.".format(weights.shape))
-        if weights.shape[0] != quat.shape[0]:
-            raise ValueError("Expected `weights` to have number of values "
-                                "equal to number of rotations, got "
-                                "{} values and {} rotations.".format(
-                                weights.shape[0], quat.shape[0]))
         if np.any(weights < 0):
             raise ValueError("`weights` must be non-negative.")
+        if weights.ndim != 1:
+            raise ValueError(f"Expected `weights` to be 1 dimensional, got "
+                             f"{weights.shape}.")
+        if weights.shape[0] != quat.shape[0]:
+            raise ValueError("Expected `weights` to have number of values equal to "
+                             f"number of rotations, got {weights.shape[0]} values and "
+                             f"{quat.shape[0]} rotations.")
 
     quat = np.asarray(quat)
     K = np.dot(weights * quat.T, quat)
@@ -1018,10 +1080,9 @@ def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double
     cdef Py_ssize_t n_rotations = len(quat)
 
     if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
-        raise ValueError("Expected equal numbers of rotations and vectors "
-                            ", or a single rotation, or a single vector, got "
-                            "{} rotations and {} vectors.".format(
-                            n_rotations, n_vectors))
+        raise ValueError(
+            f"Cannot broadcast {n_rotations} rotations to {n_vectors} vectors."
+        )
 
     cdef np.ndarray matrix = as_matrix(quat)
 
@@ -1097,7 +1158,7 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
     # other secondary vectors
     if n_inf > 1:
         raise ValueError("Only one infinite weight is allowed")
-    elif n_inf == 1:
+    elif n_inf == 1:  # TODO: Refactor into _align_vectors_fixed as in the xp backend
         if return_sensitivity:
             raise ValueError("Cannot return sensitivity matrix with an "
                                 "infinite weight or one vector pair")
@@ -1218,14 +1279,16 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
         with np.errstate(divide='ignore', invalid='ignore'):
             sensitivity = np.mean(weights) / zeta * (
                     kappa * np.eye(3) + np.dot(B, B.T))
-        return from_matrix(C), rssd, sensitivity
-    return from_matrix(C), rssd, None
+        return _from_matrix_orthogonal(C), rssd, sensitivity
+    return _from_matrix_orthogonal(C), rssd, None
 
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def pow(double[:, :] quat, n) -> double[:, :]:
+    if isinstance(n, np.ndarray) and n.ndim != 0 and n.shape != (1,):
+        raise ValueError("Array exponent must be a scalar")
     # Exact short-cuts
     if n == 0:
         return identity(quat.shape[0])
@@ -1240,7 +1303,7 @@ def pow(double[:, :] quat, n) -> double[:, :]:
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_davenport(axes, order: str, angles, bint degrees=False) -> double[:, :]:
+def from_davenport(axes, order: str, angles, bint degrees=False):
     if order in ['e', 'extrinsic']:
         extrinsic = True
     elif order in ['i', 'intrinsic']:
@@ -1270,7 +1333,17 @@ def from_davenport(axes, order: str, angles, bint degrees=False) -> double[:, :]
         num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7):
         raise ValueError("Consecutive axes must be orthogonal.")
 
-    angles, is_single = _format_angles(angles, degrees, num_axes)
+    angles = np.asarray(angles, dtype=float)
+    if degrees:
+        angles = np.deg2rad(angles)
+
+    is_single = angles.ndim < 2
+    if angles.ndim != 2:
+        angles = np.atleast_2d(angles)
+
+    if angles.shape[1] != axes.shape[0]:
+        raise ValueError("Expected `angles` to match number of axes, got "
+                         f"{angles.shape[1]} angles and {axes.shape[0]} axes.")
 
     q = identity(len(angles))
     for i in range(num_axes):
@@ -1280,4 +1353,6 @@ def from_davenport(axes, order: str, angles, bint degrees=False) -> double[:, :]
         else:
             q = compose_quat(q, qi)
 
-    return q[0] if is_single else q
+    if is_single:
+        return np.asarray(q, dtype=float)[0]
+    return np.asarray(q, dtype=float)

@@ -91,7 +91,7 @@ def mmread(source, *, spmatrix=True):
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
 
     Returns
     -------
@@ -153,10 +153,6 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
-
-    Returns
-    -------
-    None
 
     Examples
     --------
@@ -571,7 +567,7 @@ class MMFile:
             Matrix Market filename (extensions .mtx, .mtz.gz)
             or open file object.
         spmatrix : bool, optional (default: True)
-            If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+            If ``True``, return sparse matrix. Otherwise return sparse array.
 
         Returns
         -------

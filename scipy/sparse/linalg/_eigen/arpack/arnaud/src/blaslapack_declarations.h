@@ -1,18 +1,7 @@
 #ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
 
-#include <complex.h>
-
-#if defined(_MSC_VER)
-    // MSVC definition
-    typedef _Fcomplex ARNAUD_CPLXF_TYPE;
-    typedef _Dcomplex ARNAUD_CPLX_TYPE;
-#else
-    // C99 compliant compilers
-    typedef float complex ARNAUD_CPLXF_TYPE;
-    typedef double complex ARNAUD_CPLX_TYPE;
-#endif
-
+#include "arnaud/types.h"
 
 // BLAS
 void saxpy_(int* n, float* alpha, float* x, int* incx, float* y, int* incy);

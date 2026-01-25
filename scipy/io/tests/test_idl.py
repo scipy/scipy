@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-                           assert_)
+                           assert_, assert_allclose)
 import pytest
 
 from scipy.io import readsav
@@ -278,7 +278,6 @@ class TestStructures:
         assert_identical(s.fc.r, np.array([0], dtype=np.int16))
         assert_identical(s.fc.c, np.array([4], dtype=np.int16))
 
-    @pytest.mark.thread_unsafe
     def test_arrays_corrupt_idl80(self):
         # test byte arrays with missing nbyte information from IDL 8.0 .sav file
         with warnings.catch_warnings():
@@ -456,7 +455,6 @@ def test_null_pointer():
     assert_identical(s.check, np.int16(5))
 
 
-@pytest.mark.thread_unsafe
 def test_invalid_pointer():
     # Regression test for invalid pointers (gh-4613).
 
@@ -482,3 +480,19 @@ def test_attrdict():
         d['two']
     with pytest.raises(AttributeError, match='has no attribute'):
         d.two
+
+
+def test_identification(capsys):
+    """Test that .sav file with IDENTIFICATION section read correctly."""
+    # gh-24278
+    s = readsav(path.join(DATA_PATH, 'identification.sav'), verbose=True)
+    # Check array read correctly
+    pattern = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0])
+    expected = np.sqrt(pattern[:, np.newaxis] ** 2 + pattern[np.newaxis, :] ** 2)
+    expected = expected.astype('float32')
+    assert_allclose(expected, s.a)
+    # Check that the correct identification fields were printed out by verbose mode
+    captured = capsys.readouterr()
+    assert "Author: x86_64" in captured.out
+    assert "Title: linux" in captured.out
+    assert "ID Code: 8.4" in captured.out

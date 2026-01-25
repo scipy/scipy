@@ -51,14 +51,12 @@ class TestGetSet1D:
         assert A[1, None, :].shape == (1, 4)
         assert A[1, :, None].shape == (4, 1)
 
-        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[None, 2, 1, None, None]
-        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[None, 0:2, None, 1]
-        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[0:1, 1:, None]
-        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[1:, 1, None, None]
+        # output is >2D
+        if A.format == "coo":
+            assert A[None, 2, 1, None, None].shape == (1, 1, 1)
+            assert A[None, 0:2, None, 1].shape == (1,2,1)
+            assert A[0:1, 1:, None].shape == (1,3,1)
+            assert A[1:, 1, None, None].shape == (3,1,1)
 
     def test_getelement(self, spcreator):
         D = np.array([4, 3, 0])
@@ -78,7 +76,12 @@ class TestGetSet1D:
         with pytest.raises(IndexError, match='index (.*) out of (range|bounds)'):
             A.__getitem__((4,))
 
-    def test_setelement(self, spcreator):
+    @pytest.mark.parametrize(
+        "scalar_container",
+        [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x],
+        ids=["sparse", "dense", "scalar"]
+    )
+    def test_setelement(self, spcreator, scalar_container):
         dtype = np.float64
         A = spcreator((12,), dtype=dtype)
         with warnings.catch_warnings():
@@ -87,14 +90,14 @@ class TestGetSet1D:
                 "Changing the sparsity structure of .* is expensive",
                 SparseEfficiencyWarning,
             )
-            A[0] = dtype(0)
-            A[1] = dtype(3)
-            A[8] = dtype(9.0)
-            A[-2] = dtype(7)
-            A[5] = 9
+            A[0] = scalar_container(dtype(0))
+            A[1] = scalar_container(dtype(3))
+            A[8] = scalar_container(dtype(9.0))
+            A[-2] = scalar_container(dtype(7))
+            A[5] = scalar_container(9)
 
-            A[-9,] = dtype(8)
-            A[1,] = dtype(5)  # overwrite using 1-tuple index
+            A[-9,] = scalar_container(dtype(8))
+            A[1,] = scalar_container(dtype(5))  # overwrite using 1-tuple index
 
             for ij in [13, -14, (13,), (14,)]:
                 with pytest.raises(IndexError, match='out of (range|bounds)'):
@@ -578,7 +581,7 @@ class TestSlicingAndFancy1D:
             )
             with check_remains_sorted(A):
                 A[i0] = B[i0]
-                msg = "too many indices for array|tuple index out of range"
+                msg = "Too many indices for array|tuple index out of range"
                 with pytest.raises(IndexError, match=msg):
                     B.__getitem__(i1)
                 A[i2] = B[i2]

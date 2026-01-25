@@ -292,6 +292,11 @@ class TestDerivative:
             if key == 'status':
                 assert res[key] == eim._ECONVERR
                 assert res2[key] == eim._ECALLBACK
+            elif key == 'error':
+                # switched from equality check to accommodate
+                # macosx-x86_64/Accelerate
+                xp_assert_close(res2[key], res[key], atol=1e-14)
+                xp_assert_close(callback.res[key], res[key], atol=1e-14)
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
@@ -677,7 +682,6 @@ class TestHessian(JacobianHessianTest):
         # assert np.unique(res.nfev).size == 3
 
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.skip_xp_backends(np_only=True,
                                   reason='Python list input uses NumPy backend')
     def test_small_rtol_warning(self, xp):

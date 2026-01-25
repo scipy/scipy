@@ -180,10 +180,11 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   const int type_num = (flag & TYPE_MASK) >> TYPE_SHIFT;
   /*type_size*/
 
+  if (type_num < 0 || type_num >= MAXTYPES) return -4;  /* Invalid type */
+
   OneMultAddFunction *mult_and_add = OneMultAdd[type_num];
   if (mult_and_add == NULL) return -5;  /* Not available for this type */
 
-  if (type_num < 0 || type_num > MAXTYPES) return -4;  /* Invalid type */
   const int type_size = elsizes[type_num];
 
   int64_t Os[2];

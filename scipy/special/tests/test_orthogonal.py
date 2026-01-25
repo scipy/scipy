@@ -3,8 +3,7 @@ from pytest import raises as assert_raises
 
 import numpy as np
 from numpy import array, sqrt
-from numpy.testing import (assert_array_almost_equal, assert_equal,
-                           assert_almost_equal, assert_allclose)
+from numpy.testing import assert_equal, assert_allclose
 
 from scipy import integrate
 import scipy.special as sc
@@ -22,12 +21,12 @@ class TestCheby:
             C4 = orth.chebyc(4)
             C5 = orth.chebyc(5)
 
-        assert_array_almost_equal(C0.c,[2],13)
-        assert_array_almost_equal(C1.c,[1,0],13)
-        assert_array_almost_equal(C2.c,[1,0,-2],13)
-        assert_array_almost_equal(C3.c,[1,0,-3,0],13)
-        assert_array_almost_equal(C4.c,[1,0,-4,0,2],13)
-        assert_array_almost_equal(C5.c,[1,0,-5,0,5,0],13)
+        assert_allclose(C0.c, [2], atol=1.5e-13, rtol=0)
+        assert_allclose(C1.c, [1, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(C2.c, [1, 0, -2], atol=1.5e-13, rtol=0)
+        assert_allclose(C3.c, [1, 0, -3, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(C4.c, [1, 0, -4, 0, 2], atol=1.5e-13, rtol=0)
+        assert_allclose(C5.c, [1, 0, -5, 0, 5, 0],atol=1.5e-13, rtol=0)
 
     def test_chebys(self):
         S0 = orth.chebys(0)
@@ -36,12 +35,12 @@ class TestCheby:
         S3 = orth.chebys(3)
         S4 = orth.chebys(4)
         S5 = orth.chebys(5)
-        assert_array_almost_equal(S0.c,[1],13)
-        assert_array_almost_equal(S1.c,[1,0],13)
-        assert_array_almost_equal(S2.c,[1,0,-1],13)
-        assert_array_almost_equal(S3.c,[1,0,-2,0],13)
-        assert_array_almost_equal(S4.c,[1,0,-3,0,1],13)
-        assert_array_almost_equal(S5.c,[1,0,-4,0,3,0],13)
+        assert_allclose(S0.c, [1], atol=1.5e-13, rtol=0)
+        assert_allclose(S1.c, [1, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(S2.c, [1, 0, -1], atol=1.5e-13, rtol=0)
+        assert_allclose(S3.c, [1, 0, -2, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(S4.c, [1, 0, -3, 0, 1], atol=1.5e-13, rtol=0)
+        assert_allclose(S5.c, [1, 0, -4, 0, 3, 0], atol=1.5e-13, rtol=0)
 
     def test_chebyt(self):
         T0 = orth.chebyt(0)
@@ -50,12 +49,12 @@ class TestCheby:
         T3 = orth.chebyt(3)
         T4 = orth.chebyt(4)
         T5 = orth.chebyt(5)
-        assert_array_almost_equal(T0.c,[1],13)
-        assert_array_almost_equal(T1.c,[1,0],13)
-        assert_array_almost_equal(T2.c,[2,0,-1],13)
-        assert_array_almost_equal(T3.c,[4,0,-3,0],13)
-        assert_array_almost_equal(T4.c,[8,0,-8,0,1],13)
-        assert_array_almost_equal(T5.c,[16,0,-20,0,5,0],13)
+        assert_allclose(T0.c, [1], atol=1.5e-13, rtol=0)
+        assert_allclose(T1.c, [1, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(T2.c, [2, 0, -1], atol=1.5e-13, rtol=0)
+        assert_allclose(T3.c, [4, 0, -3, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(T4.c, [8, 0, -8, 0, 1], atol=1.5e-13, rtol=0)
+        assert_allclose(T5.c, [16, 0, -20, 0, 5, 0], atol=1.5e-13, rtol=0)
 
     def test_chebyu(self):
         U0 = orth.chebyu(0)
@@ -64,12 +63,12 @@ class TestCheby:
         U3 = orth.chebyu(3)
         U4 = orth.chebyu(4)
         U5 = orth.chebyu(5)
-        assert_array_almost_equal(U0.c,[1],13)
-        assert_array_almost_equal(U1.c,[2,0],13)
-        assert_array_almost_equal(U2.c,[4,0,-1],13)
-        assert_array_almost_equal(U3.c,[8,0,-4,0],13)
-        assert_array_almost_equal(U4.c,[16,0,-12,0,1],13)
-        assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
+        assert_allclose(U0.c, [1], atol=1.5e-13, rtol=0)
+        assert_allclose(U1.c, [2, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(U2.c, [4, 0, -1], atol=1.5e-13, rtol=0)
+        assert_allclose(U3.c, [8, 0, -4, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(U4.c, [16, 0, -12, 0, 1], atol=1.5e-13, rtol=0)
+        assert_allclose(U5.c, [32, 0, -32, 0, 6, 0], atol=1.5e-13, rtol=0)
 
 
 class TestGegenbauer:
@@ -85,15 +84,18 @@ class TestGegenbauer:
         Ca4 = orth.gegenbauer(4,a)
         Ca5 = orth.gegenbauer(5,a)
 
-        assert_array_almost_equal(Ca0.c,array([1]),13)
-        assert_array_almost_equal(Ca1.c,array([2*a,0]),13)
-        assert_array_almost_equal(Ca2.c,array([2*a*(a+1),0,-a]),13)
-        assert_array_almost_equal(Ca3.c,array([4*sc.poch(a,3),0,-6*a*(a+1),
-                                               0])/3.0,11)
-        assert_array_almost_equal(Ca4.c,array([4*sc.poch(a,4),0,-12*sc.poch(a,3),
-                                               0,3*a*(a+1)])/6.0,11)
-        assert_array_almost_equal(Ca5.c,array([4*sc.poch(a,5),0,-20*sc.poch(a,4),
-                                               0,15*sc.poch(a,3),0])/15.0,11)
+        assert_allclose(Ca0.c, array([1]), atol=1.5e-13, rtol=0)
+        assert_allclose(Ca1.c, array([2*a, 0]), atol=1.5e-13, rtol=0)
+        assert_allclose(Ca2.c, array([2*a*(a + 1), 0, -a]),
+                        atol=1.5e-13, rtol=0)
+        assert_allclose(Ca3.c, array([4*sc.poch(a, 3), 0,-6*a*(a + 1), 0])/3.0,
+                        atol=1.5e-11, rtol=0)
+        assert_allclose(Ca4.c, array([4*sc.poch(a, 4), 0, -12*sc.poch(a, 3),
+                                      0, 3*a*(a + 1)])/6.0,
+                        atol=1.5e-11, rtol=0)
+        assert_allclose(Ca5.c, array([4*sc.poch(a, 5), 0, -20*sc.poch(a, 4),
+                                      0, 15*sc.poch(a, 3), 0])/15.0,
+                        atol=1.5e-11, rtol=0)
 
     @pytest.mark.parametrize('a', [0, 1])
     def test_n_zero_gh8888(self, a):
@@ -120,12 +122,12 @@ class TestHermite:
         H3 = orth.hermite(3)
         H4 = orth.hermite(4)
         H5 = orth.hermite(5)
-        assert_array_almost_equal(H0.c,[1],13)
-        assert_array_almost_equal(H1.c,[2,0],13)
-        assert_array_almost_equal(H2.c,[4,0,-2],13)
-        assert_array_almost_equal(H3.c,[8,0,-12,0],13)
-        assert_array_almost_equal(H4.c,[16,0,-48,0,12],12)
-        assert_array_almost_equal(H5.c,[32,0,-160,0,120,0],12)
+        assert_allclose(H0.c, [1], atol=1.5e-13, rtol=0)
+        assert_allclose(H1.c, [2, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(H2.c, [4, 0, -2], atol=1.5e-13, rtol=0)
+        assert_allclose(H3.c, [8, 0, -12, 0], atol=1.5e-13, rtol=0)
+        assert_allclose(H4.c, [16, 0, -48, 0, 12], atol=1.5e-12, rtol=0)
+        assert_allclose(H5.c, [32, 0, -160, 0, 120, 0], atol=1.5e-12, rtol=0)
 
     def test_hermitenorm(self):
         # He_n(x) = 2**(-n/2) H_n(x/sqrt(2))
@@ -143,12 +145,12 @@ class TestHermite:
         he4 = orth.hermite(4)(psub) / 4.0
         he5 = orth.hermite(5)(psub) / (4.0*sqrt(2))
 
-        assert_array_almost_equal(H0.c,he0.c,13)
-        assert_array_almost_equal(H1.c,he1.c,13)
-        assert_array_almost_equal(H2.c,he2.c,13)
-        assert_array_almost_equal(H3.c,he3.c,13)
-        assert_array_almost_equal(H4.c,he4.c,13)
-        assert_array_almost_equal(H5.c,he5.c,13)
+        assert_allclose(H0.c, he0.c, atol=1.5e-13, rtol=0)
+        assert_allclose(H1.c, he1.c, atol=1.5e-13, rtol=0)
+        assert_allclose(H2.c, he2.c, atol=1.5e-13, rtol=0)
+        assert_allclose(H3.c, he3.c, atol=1.5e-13, rtol=0)
+        assert_allclose(H4.c, he4.c, atol=1.5e-13, rtol=0)
+        assert_allclose(H5.c, he5.c, atol=1.5e-13, rtol=0)
 
 
 class TestShLegendre:
@@ -167,12 +169,12 @@ class TestShLegendre:
         pse3 = orth.legendre(3)(psub)
         pse4 = orth.legendre(4)(psub)
         pse5 = orth.legendre(5)(psub)
-        assert_array_almost_equal(Ps0.c,pse0.c,13)
-        assert_array_almost_equal(Ps1.c,pse1.c,13)
-        assert_array_almost_equal(Ps2.c,pse2.c,13)
-        assert_array_almost_equal(Ps3.c,pse3.c,13)
-        assert_array_almost_equal(Ps4.c,pse4.c,12)
-        assert_array_almost_equal(Ps5.c,pse5.c,12)
+        assert_allclose(Ps0.c, pse0.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ps1.c, pse1.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ps2.c, pse2.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ps3.c, pse3.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ps4.c, pse4.c, atol=1.5e-12, rtol=0)
+        assert_allclose(Ps5.c, pse5.c, atol=1.5e-12, rtol=0)
 
 
 class TestShChebyt:
@@ -191,12 +193,12 @@ class TestShChebyt:
         tse3 = orth.chebyt(3)(psub)
         tse4 = orth.chebyt(4)(psub)
         tse5 = orth.chebyt(5)(psub)
-        assert_array_almost_equal(Ts0.c,tse0.c,13)
-        assert_array_almost_equal(Ts1.c,tse1.c,13)
-        assert_array_almost_equal(Ts2.c,tse2.c,13)
-        assert_array_almost_equal(Ts3.c,tse3.c,13)
-        assert_array_almost_equal(Ts4.c,tse4.c,12)
-        assert_array_almost_equal(Ts5.c,tse5.c,12)
+        assert_allclose(Ts0.c, tse0.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ts1.c, tse1.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ts2.c, tse2.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ts3.c, tse3.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Ts4.c, tse4.c, atol=1.5e-12, rtol=0)
+        assert_allclose(Ts5.c, tse5.c, atol=1.5e-12, rtol=0)
 
 
 class TestShChebyu:
@@ -215,12 +217,12 @@ class TestShChebyu:
         use3 = orth.chebyu(3)(psub)
         use4 = orth.chebyu(4)(psub)
         use5 = orth.chebyu(5)(psub)
-        assert_array_almost_equal(Us0.c,use0.c,13)
-        assert_array_almost_equal(Us1.c,use1.c,13)
-        assert_array_almost_equal(Us2.c,use2.c,13)
-        assert_array_almost_equal(Us3.c,use3.c,13)
-        assert_array_almost_equal(Us4.c,use4.c,12)
-        assert_array_almost_equal(Us5.c,use5.c,11)
+        assert_allclose(Us0.c, use0.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Us1.c, use1.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Us2.c, use2.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Us3.c, use3.c, atol=1.5e-13, rtol=0)
+        assert_allclose(Us4.c, use4.c, atol=1.5e-12, rtol=0)
+        assert_allclose(Us5.c, use5.c, atol=1.5e-11, rtol=0)
 
 
 class TestShJacobi:
@@ -245,12 +247,12 @@ class TestShJacobi:
         ge4 = orth.jacobi(4,p-q,q-1)(psub) * conv(4,p)
         ge5 = orth.jacobi(5,p-q,q-1)(psub) * conv(5,p)
 
-        assert_array_almost_equal(G0.c,ge0.c,13)
-        assert_array_almost_equal(G1.c,ge1.c,13)
-        assert_array_almost_equal(G2.c,ge2.c,13)
-        assert_array_almost_equal(G3.c,ge3.c,13)
-        assert_array_almost_equal(G4.c,ge4.c,13)
-        assert_array_almost_equal(G5.c,ge5.c,13)
+        assert_allclose(G0.c, ge0.c, atol=1.5e-13, rtol=0)
+        assert_allclose(G1.c, ge1.c, atol=1.5e-13, rtol=0)
+        assert_allclose(G2.c, ge2.c, atol=1.5e-13, rtol=0)
+        assert_allclose(G3.c, ge3.c, atol=1.5e-13, rtol=0)
+        assert_allclose(G4.c, ge4.c, atol=1.5e-13, rtol=0)
+        assert_allclose(G5.c, ge5.c, atol=1.5e-13, rtol=0)
 
 
 class TestCall:
@@ -278,8 +280,8 @@ class TestCall:
         with np.errstate(all='ignore'):
             for pstr in poly:
                 p = eval(pstr)
-                assert_almost_equal(p(0.315), np.poly1d(p.coef)(0.315),
-                                    err_msg=pstr)
+                assert_allclose(p(0.315), np.poly1d(p.coef)(0.315),
+                                atol=1.5e-7, rtol=0, err_msg=pstr)
 
 
 class TestGenlaguerre:

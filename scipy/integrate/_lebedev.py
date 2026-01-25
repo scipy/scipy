@@ -29,6 +29,8 @@
 import numpy as np
 from numpy import pi, zeros, sqrt
 
+from scipy._lib._array_api import xp_capabilities
+
 
 __all__ = ['lebedev_rule']
 
@@ -5355,6 +5357,7 @@ def get_lebedev_recurrence_points(type_, start, a, b, v, leb):
     return leb, start
 
 
+@xp_capabilities(np_only=True)
 def lebedev_rule(n):
     r"""Lebedev quadrature.
 

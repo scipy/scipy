@@ -48,10 +48,12 @@ import numpy as np
 from scipy import linalg
 from scipy.special import xlogy
 from scipy.spatial.distance import cdist, pdist, squareform
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['Rbf']
 
 
+@xp_capabilities(out_of_scope=True)
 class Rbf:
     """
     Rbf(*args, **kwargs)

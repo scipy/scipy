@@ -8,11 +8,12 @@ from numpy.testing import assert_allclose
 
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy, is_numpy
+from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
+                                   is_numpy, make_xp_test_case)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
 from scipy.integrate._tanhsinh import _pair_cache
-from scipy.stats._discrete_distns import _gen_harmonic_gt1
+from scipy.special._ufuncs import _gen_harmonic
 
 
 def norm_pdf(x, xp=None):
@@ -43,15 +44,7 @@ def _vectorize(xp):
     return decorator
 
 
-@pytest.mark.skip_xp_backends(
-    'array_api_strict', reason='Currently uses fancy indexing assignment.'
-)
-@pytest.mark.skip_xp_backends(
-    'dask.array', reason='boolean indexing assignment'
-)
-@pytest.mark.skip_xp_backends(
-    'jax.numpy', reason='JAX arrays do not support item assignment.'
-)
+@make_xp_test_case(_tanhsinh)
 class TestTanhSinh:
 
     # Test problems from [1] Section 6
@@ -764,13 +757,7 @@ class TestTanhSinh:
         xp_assert_close(res.integral, ref.integral, rtol=1e-15)
 
 
-@pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
-@pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing.')
-@pytest.mark.skip_xp_backends('jax.numpy', reason='No mutation.')
-@pytest.mark.skip_xp_backends(
-    'dask.array',
-    reason='Data-dependent shapes in boolean index assignment'
-)
+@make_xp_test_case(nsum)
 class TestNSum:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10).tolist()
@@ -798,7 +785,7 @@ class TestNSum:
 
     f3.a = 1
     f3.b = rng.integers(5, 15, size=(3, 1))
-    f3.ref = _gen_harmonic_gt1(f3.b, p)
+    f3.ref = _gen_harmonic(f3.b, p)
     f3.args = (p,)
 
     def test_input_validation(self, xp):
@@ -1129,7 +1116,7 @@ class TestNSum:
         assert res.error.dtype == dtype
 
         rtol = 1e-12 if dtype == xp.float64 else 1e-6
-        ref = _gen_harmonic_gt1(np.asarray([10, xp.inf]), 2)
+        ref = [_gen_harmonic(10, 2), special.zeta(2, 1)]
         xp_assert_close(res.sum, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
     @pytest.mark.parametrize('case', [(10, 100), (100, 10)])

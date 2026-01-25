@@ -10,7 +10,6 @@ from .test_public_api import PUBLIC_MODULES
 
 @pytest.mark.fail_slow(40)
 @pytest.mark.slow
-@pytest.mark.thread_unsafe
 def test_public_modules_importable():
     pids = [subprocess.Popen([sys.executable, '-c', f'import {module}'])
             for module in PUBLIC_MODULES]

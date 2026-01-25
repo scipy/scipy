@@ -38,7 +38,7 @@ pytestmark = pytest.mark.thread_unsafe
 def mlarr(*args, **kwargs):
     """Convenience function to return matlab-compatible 2-D array."""
     arr = np.array(*args, **kwargs)
-    arr.shape = matdims(arr)
+    arr = arr.reshape(matdims(arr))
     return arr
 
 

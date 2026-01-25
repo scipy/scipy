@@ -372,10 +372,11 @@ def directed_hausdorff(u, v, rng=0):
     (as with the brute force algorithm), this is unlikely in practice
     as the input data would have to require the algorithm to explore
     every single point interaction, and after the algorithm shuffles
-    the input points at that. The best case performance is O(m), which
-    is satisfied by selecting an inner loop distance that is less than
-    cmax and leads to an early break as often as possible. The authors
-    have formally shown that the average runtime is closer to O(m).
+    the input points at that. The best case performance is ``O(m)``,
+    which is satisfied by selecting an inner loop distance that is
+    less than cmax and leads to an early break as often as possible.
+    The authors have formally shown that the average runtime is
+    closer to ``O(m)``.
 
     .. versionadded:: 0.19.0
 
@@ -383,8 +384,8 @@ def directed_hausdorff(u, v, rng=0):
     ----------
     .. [1] A. A. Taha and A. Hanbury, "An efficient algorithm for
            calculating the exact Hausdorff distance." IEEE Transactions On
-           Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
-           2015.
+           Pattern Analysis And Machine Intelligence, vol. 37, no. 11,
+           pp. 2153-63, 2015. :doi:`10.1109/TPAMI.2015.2408351`.
 
     Examples
     --------
@@ -916,7 +917,7 @@ def seuclidean(u, v, V):
     v : (N,) array_like
         Input array.
     V : (N,) array_like
-        `V` is an 1-D array of component variances. It is usually computed
+        `V` is a 1-D array of component variances. It is usually computed
         among a larger collection of vectors.
 
     Returns
@@ -2182,7 +2183,7 @@ def squareform(X, force="no", checks=True):
     1. ``v = squareform(X)``
 
        Given a square n-by-n symmetric distance matrix ``X``,
-       ``v = squareform(X)`` returns a ``n * (n-1) / 2``
+       ``v = squareform(X)`` returns an ``n * (n-1) / 2``
        (i.e. binomial coefficient n choose 2) sized vector `v`
        where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        is the distance between distinct points ``i`` and ``j``.
@@ -2190,9 +2191,9 @@ def squareform(X, force="no", checks=True):
 
     2. ``X = squareform(v)``
 
-       Given a ``n * (n-1) / 2`` sized vector ``v``
+       Given an ``n * (n-1) / 2`` sized vector ``v``
        for some integer ``n >= 1`` encoding distances as described,
-       ``X = squareform(v)`` returns a n-by-n distance matrix ``X``.
+       ``X = squareform(v)`` returns an n-by-n distance matrix ``X``.
        The ``X[i, j]`` and ``X[j, i]`` values are set to
        :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        and all diagonal elements are zero.
@@ -2305,39 +2306,52 @@ def squareform(X, force="no", checks=True):
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     """
-    Return True if input array is a valid distance matrix.
+    Return True if input array satisfies basic distance matrix properties
+    (symmetry and zero diagonal).
 
-    Distance matrices must be 2-dimensional numpy arrays.
-    They must have a zero-diagonal, and they must be symmetric.
+    This function checks whether the input is a 2-dimensional square NumPy array
+    with a zero diagonal and symmetry within a specified tolerance. These are
+    necessary properties for a distance matrix but not sufficient -- in particular,
+    this function does **not** check the triangle inequality, which is required
+    for a true metric distance matrix.
 
+    The triangle inequality states that for any three points ``i``, ``j``, and ``k``:
+    ``D[i,k] <= D[i,j] + D[j,k]``
+    
     Parameters
     ----------
     D : array_like
-        The candidate object to test for validity.
+        The candidate object to test for basic distance matrix properties.
     tol : float, optional
-        The distance matrix should be symmetric. `tol` is the maximum
-        difference between entries ``ij`` and ``ji`` for the distance
-        metric to be considered symmetric.
+        The distance matrix is considered symmetric if the absolute difference
+        between entries ``ij`` and ``ji`` is less than or equal to `tol`. The same
+        tolerance is used to determine whether diagonal entries are effectively zero.
     throw : bool, optional
-        An exception is thrown if the distance matrix passed is not valid.
+        If True, raises an exception when the input is invalid.
     name : str, optional
-        The name of the variable to checked. This is useful if
-        throw is set to True so the offending variable can be identified
-        in the exception message when an exception is thrown.
+        The name of the variable to check. This is used in exception messages when
+        `throw` is True to identify the offending variable.
     warning : bool, optional
-        Instead of throwing an exception, a warning message is
-        raised.
-
+        If True, a warning message is raised instead of throwing an exception.
+        
     Returns
     -------
     valid : bool
-        True if the variable `D` passed is a valid distance matrix.
+        True if the input satisfies the symmetry and zero-diagonal conditions.
+
+    Raises
+    ------
+    ValueError
+        If `throw` is True and `D` is not a valid distance matrix.
+    UserWarning
+        If `warning` is True and `D` is not a valid distance matrix.
 
     Notes
     -----
-    Small numerical differences in `D` and `D.T` and non-zeroness of
-    the diagonal are ignored if they are within the tolerance specified
-    by `tol`.
+    This function does not check the triangle inequality, which is required for
+    a complete validation of a metric distance matrix. Only structural properties
+    (symmetry and zero diagonal) are verified. Small numerical deviations from symmetry
+    or exact zero diagonal are tolerated within the `tol` parameter.
 
     Examples
     --------

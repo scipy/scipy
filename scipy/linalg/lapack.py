@@ -875,12 +875,12 @@ try:
 except ImportError:
     _clapack = None
 
-try:
+from scipy.__config__ import CONFIG
+HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
+del CONFIG
+_flapack_64 = None
+if HAS_ILP64:
     from scipy.linalg import _flapack_64
-    HAS_ILP64 = True
-except ImportError:
-    HAS_ILP64 = False
-    _flapack_64 = None
 
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
