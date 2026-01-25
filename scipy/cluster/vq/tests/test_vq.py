@@ -77,15 +77,11 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
-ext_val = np.array([
-        [
-            1.28000000e002,
-            3.27670000e004,
-            8.38822400e006,
-            3.13740168e057,
-            1.12357916e164,
-        ]
-])
+ext_val = np.array([[1.28000000e002,
+                     3.27670000e004,
+                     8.38822400e006,
+                     3.13740168e057,
+                     1.12357916e164]])
 
 @make_xp_test_case(whiten)
 class TestWhiten:
@@ -376,6 +372,7 @@ class TestKMeans:
                 xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
 
     def test_kmeans_extreme_values(self, xp):
+        # Regression test for gh-24216.
         assert_raises(ValueError, kmeans, xp.asarray(ext_val), 1)
         assert_raises(ValueError, kmeans2, xp.asarray(ext_val), 1)
 

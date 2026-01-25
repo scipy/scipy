@@ -72,13 +72,6 @@ def _check_finite(array: Array, xp: ModuleType) -> None:
         msg = "array must not contain infs or NaNs"
         raise ValueError(msg)
 
-def _check_extreme_val(array: Array, xp: ModuleType) -> None:
-    """ Check for extreme values."""
-    max_val = xp.max(xp.abs(array))
-    if max_val ** 2 > xp.finfo(xp.float64).max:
-        msg = "array must not contain very large or infs values"
-        raise ValueError(msg)
-
 def _asarray(
         array: ArrayLike,
         dtype: Any = None,
@@ -87,7 +80,6 @@ def _asarray(
         *,
         xp: ModuleType | None = None,
         check_finite: bool = False,
-        check_extreme_val: bool = False,
         subok: bool = False,
     ) -> Array:
     """SciPy-specific replacement for `np.asarray` with `order`, `check_finite`, and
@@ -123,9 +115,6 @@ def _asarray(
 
     if check_finite:
         _check_finite(array, xp)
-
-    if check_extreme_val:
-        _check_extreme_val(array, xp)
 
     return array
 

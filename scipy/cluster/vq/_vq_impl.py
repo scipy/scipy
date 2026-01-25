@@ -410,8 +410,14 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         xp = array_namespace(obs)
     else:
         xp = array_namespace(obs, k_or_guess)
-    obs = _asarray(obs, xp=xp, check_finite=check_finite, check_extreme_val=True)
-    guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite, check_extreme_val=True)
+    obs = _asarray(obs, xp=xp, check_finite=check_finite)
+    guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
+
+    max_val = xp.max(xp.abs(obs))
+    max_float64 = xp.finfo(xp.float64).max
+    if max_val > xp.sqrt(max_float64):
+        raise ValueError("array must not contain very large or infs values")
+
     if iter < 1:
         raise ValueError(f"iter must be at least 1, got {iter}")
 
@@ -724,8 +730,14 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         xp = array_namespace(data)
     else:
         xp = array_namespace(data, k)
-    data = _asarray(data, xp=xp, check_finite=check_finite, check_extreme_val=True)
+    data = _asarray(data, xp=xp, check_finite=check_finite)
     code_book = xp_copy(k, xp=xp)
+
+    max_val = xp.max(xp.abs(data))
+    max_float64 = xp.finfo(xp.float64).max
+    if max_val > xp.sqrt(max_float64):
+        raise ValueError("array must not contain very large or infs values")
+
     if data.ndim == 1:
         d = 1
     elif data.ndim == 2:
