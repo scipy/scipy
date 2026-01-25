@@ -58,7 +58,7 @@ class _dok_base(_spbase, IndexMixin, dict):
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
     def update(self, val):
-        """Update values from a dict, sparse dok or iterable of 2-tuples like .items()
+        """Update values from a dict, sparse dok or iterable of 2-tuples like .items().
 
         Keys of the input must be sequences of nonnegative integers less than the shape
         for each axis.

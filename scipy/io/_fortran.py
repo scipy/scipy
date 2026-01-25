@@ -340,10 +340,11 @@ class FortranFile:
 
     def close(self):
         """
-        Closes the file. It is unsupported to call any other methods off this
-        object after closing it. Note that this class supports the 'with'
-        statement in modern versions of Python, to call this automatically
+        Closes the file.
 
+        It is unsupported to call any other methods off this
+        object after closing it. Note that this class supports the 'with'
+        statement in modern versions of Python, to call this automatically.
         """
         self._fp.close()
 

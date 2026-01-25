@@ -38,7 +38,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
 
 
 class BadCoefficients(UserWarning):
-    """Warning about badly conditioned filter coefficients"""
+    """Warning about badly conditioned filter coefficients."""
     pass
 
 
@@ -1244,7 +1244,7 @@ def tf2zpk(b, a):
 
 def zpk2tf(z, p, k):
     r"""
-    Return polynomial transfer function representation from zeros and poles
+    Return polynomial transfer function representation from zeros and poles.
 
     Parameters
     ----------
@@ -1314,7 +1314,7 @@ def zpk2tf(z, p, k):
 
 def tf2sos(b, a, pairing=None, *, analog=False):
     r"""
-    Return second-order sections from transfer function representation
+    Return second-order sections from transfer function representation.
 
     Parameters
     ----------
@@ -1371,7 +1371,7 @@ def tf2sos(b, a, pairing=None, *, analog=False):
 
 def sos2tf(sos):
     r"""
-    Return a single transfer function from a series of second-order sections
+    Return a single transfer function from a series of second-order sections.
 
     Parameters
     ----------
@@ -1422,7 +1422,7 @@ def sos2tf(sos):
 
 def sos2zpk(sos):
     """
-    Return zeros, poles, and gain of a series of second-order sections
+    Return zeros, poles, and gain of a series of second-order sections.
 
     Parameters
     ----------
@@ -1485,7 +1485,7 @@ def _single_zpksos(z, p, k):
 
 
 def zpk2sos(z, p, k, pairing=None, *, analog=False):
-    """Return second-order sections from zeros, poles, and gain of a system
+    """Return second-order sections from zeros, poles, and gain of a system.
 
     Parameters
     ----------

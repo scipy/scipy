@@ -14,7 +14,6 @@ skip_errors = [
     "GL02",  # inconsistent standards; see gh-24348
     "GL03",  # overlaps with GL02; see gh-24348
     "GL09",
-    "SS03",
     "SS05",  # inconsistent standards; see gh-24348
     "SS06",
     "ES01",
@@ -53,6 +52,7 @@ legacy_functions = [
     "scipy.interpolate.InterpolatedUnivariateSpline",
     "scipy.interpolate.LSQUnivariateSpline",
     "scipy.interpolate.UnivariateSpline",
+    "scipy.interpolate.splder",
     "scipy.sparse.lil_matrix",
     "scipy.sparse.dok_matrix",
     "scipy.sparse.dia_matrix",
@@ -60,6 +60,14 @@ legacy_functions = [
     "scipy.sparse.csr_matrix",
     "scipy.sparse.coo_matrix",
     "scipy.sparse.bsr_matrix",
+    "scipy.sparse.isspmatrix_lil",
+    "scipy.sparse.isspmatrix_dok",
+    "scipy.sparse.isspmatrix_dia",
+    "scipy.sparse.isspmatrix_csr",
+    "scipy.sparse.isspmatrix_csc",
+    "scipy.sparse.isspmatrix_coo",
+    "scipy.sparse.isspmatrix_bsr",
+    "scipy.sparse.isspmatrix",
     "scipy.sparse.spmatrix",
     "scipy.optimize.BroydenFirst",
     "scipy.optimize.KrylovJacobian"

@@ -130,7 +130,7 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
-    Class for 2D interpolation (deprecated and removed)
+    Class for 2D interpolation (deprecated and removed).
 
     .. versionremoved:: 1.14.0
 
@@ -1881,7 +1881,7 @@ class BPoly(_PPolyBase):
 
 class NdPPoly:
     """
-    Piecewise tensor product polynomial
+    Piecewise tensor product polynomial.
 
     The value at point ``xp = (x', y', z', ...)`` is evaluated by first
     computing the interval indices `i` such that::
@@ -2204,7 +2204,7 @@ class NdPPoly:
 
     def integrate_1d(self, a, b, axis, extrapolate=None):
         r"""
-        Compute NdPPoly representation for one dimensional definite integral
+        Compute NdPPoly representation for one dimensional definite integral.
 
         The result is a piecewise polynomial representing the integral:
 

@@ -325,7 +325,7 @@ def diagsvd(s, M, N):
 @_apply_over_batch(('A', 2))
 def orth(A, rcond=None):
     """
-    Construct an orthonormal basis for the range of A using SVD
+    Construct an orthonormal basis for the range of A using SVD.
 
     Parameters
     ----------
@@ -375,7 +375,7 @@ def orth(A, rcond=None):
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """
-    Construct an orthonormal basis for the null space of A using SVD
+    Construct an orthonormal basis for the null space of A using SVD.
 
     Parameters
     ----------

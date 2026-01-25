@@ -73,7 +73,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
                iprint=1, disp=None, full_output=0, epsilon=_epsilon,
                callback=None):
     """
-    Minimize a function using Sequential Least Squares Programming
+    Minimize a function using Sequential Least Squares Programming.
 
     Python interface function for the SLSQP Optimization subroutine
     originally implemented by Dieter Kraft.

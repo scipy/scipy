@@ -202,7 +202,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     >>> i, q, e = signal.gausspulse(t, fc=5, retquad=True, retenv=True)
     >>> plt.plot(t, i, t, q, t, e, '--')
 
-    """
+    """  # numpydoc ignore=SS03
     if fc < 0:
         raise ValueError(f"Center frequency (fc={fc:.2f}) must be >=0.")
     if bw <= 0:

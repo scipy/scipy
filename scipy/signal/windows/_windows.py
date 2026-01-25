@@ -68,7 +68,7 @@ def _general_cosine_impl(M, a, xp, device, sym=True):
 @xp_capabilities()
 def general_cosine(M, a, sym=True):
     r"""
-    Generic weighted sum of cosine terms window
+    Generic weighted sum of cosine terms window.
 
     Parameters
     ----------

@@ -19,7 +19,7 @@ def _adjust_bounds(ax, points):
 
 def delaunay_plot_2d(tri, ax=None):
     """
-    Plot the given Delaunay triangulation in 2-D
+    Plot the given Delaunay triangulation in 2-D.
 
     Parameters
     ----------
@@ -77,7 +77,7 @@ def delaunay_plot_2d(tri, ax=None):
 
 def convex_hull_plot_2d(hull, ax=None):
     """
-    Plot the given convex hull diagram in 2-D
+    Plot the given convex hull diagram in 2-D.
 
     Parameters
     ----------
@@ -137,7 +137,7 @@ def convex_hull_plot_2d(hull, ax=None):
 
 def voronoi_plot_2d(vor, ax=None, **kw):
     """
-    Plot the given Voronoi diagram in 2-D
+    Plot the given Voronoi diagram in 2-D.
 
     Parameters
     ----------

@@ -504,7 +504,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.prune()
 
     def sum_duplicates(self):
-        """Eliminate duplicate array/matrix entries by adding them together
+        """Eliminate duplicate array/matrix entries by adding them together.
 
         The is an *in place* operation
         """
@@ -537,7 +537,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.has_canonical_format = True
 
     def sort_indices(self):
-        """Sort the indices of this array/matrix *in place*
+        """Sort the indices of this array/matrix *in place*.
         """
         if self.has_sorted_indices:
             return
