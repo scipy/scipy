@@ -66,7 +66,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
     return x, logdet, info
 
 
-def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
+def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
