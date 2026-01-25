@@ -154,6 +154,10 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                        "verbose": verbose,
                        **kwargs})
 
+
+build_cmd = build
+
+
 @click.option(
     '--durations', '-d', default=None, metavar="NUM_TESTS",
     help="Show timing for the given number of slowest tests"
@@ -809,9 +813,6 @@ def _dirty_git_working_dir():
     nargs=-1
 )
 @click.option(
-    '--no-build', default=False, is_flag=True,
-    help='Build SciPy before running benchmarks')
-@click.option(
     '--array-api-backend', '-b', default=None, metavar='ARRAY_BACKEND',
     multiple=True,
     help=(
@@ -820,10 +821,11 @@ def _dirty_git_working_dir():
         "'jax.numpy', 'dask.array')."
     )
 )
+@meson.build_option
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, no_build, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build, build_dir=None, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -865,12 +867,12 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if not compare:
         # No comparison requested; we build and benchmark the current version
 
-        if not no_build:
+        if build:
             click.secho(
                 "Invoking `build` prior to running benchmarks:",
                 bold=True, fg="bright_green"
             )
-            ctx.invoke(build, build_dir=build_dir)
+            ctx.invoke(build_cmd, build_dir=build_dir)
 
         meson._set_pythonpath(build_dir)
 
