@@ -1994,7 +1994,7 @@ class ShortTimeFFT:
         Returns
         -------
         t : ndarray
-            1d array of times of the STFT slices from `p0` to `p1` - 1.
+            1D array of times of the STFT slices from `p0` to `p1` - 1.
 
         See Also
         --------
