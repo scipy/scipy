@@ -106,7 +106,7 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                         # Will raise an exception in the first call,
                         # or when the matrix changes due to a new problem
                         _get_solver.cholmod_factor.cholesky_inplace(M)
-                    except Exception:
+                    except (AttributeError, ValueError, RuntimeError):
                         _get_solver.cholmod_factor = cholmod_analyze(M)
                         _get_solver.cholmod_factor.cholesky_inplace(M)
                 solve = _get_solver.cholmod_factor
@@ -139,7 +139,7 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
     # inputs, and a new routine will try to factorize the matrix.
     except KeyboardInterrupt:
         raise
-    except Exception:
+    except (ValueError, RuntimeError, np.linalg.LinAlgError, AttributeError):
         return None
     return solve
 

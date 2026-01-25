@@ -93,12 +93,9 @@ def parse_ipp_file(filename):
 
 
 def dump_dataset(filename, data):
-    fid = open(filename, 'w')
-    try:
+    with open(filename, 'w') as fid:
         for line in data:
-            fid.write(f"{' '.join(line)}\n")
-    finally:
-        fid.close()
+            fid.write(f\"{' '.join(line)}\\n\")
 
 
 def dump_datasets(filename):

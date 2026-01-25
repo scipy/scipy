@@ -511,8 +511,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
             plot.title(title)
             plot.xlabel(xlabel)
             plot.ylabel(ylabel)
-    except Exception:
-        # Not an MPL object or something that looks (enough) like it.
+    except (AttributeError, TypeError):\n        # Not an MPL object or something that looks (enough) like it.
         # Don't crash on adding labels or title
         pass
 
@@ -4239,7 +4238,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         # is "ignore", that would result in a column of zeros in `table`.  We
         # check for that case here.
         zero_cols = np.nonzero((table == 0).all(axis=0))[0]
-        if len(zero_cols) > 0:
+        if zero_cols.size > 0:
             raise ValueError(
                 f"All values in sample {zero_cols[0] + 1} are equal to the grand "
                 f"median ({grand_median!r}), so they are ignored, resulting in an "

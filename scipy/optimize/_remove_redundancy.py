@@ -192,7 +192,7 @@ def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
         try:  # fails for i==0 and any time it gets ill-conditioned
             j = b[i-1]
             lu = bg_update_dense(lu, perm_r, A[:, j], i-1)
-        except Exception:
+        except (ValueError, np.linalg.LinAlgError, IndexError):
             lu = scipy.linalg.lu_factor(A[:, b])
             LU, p = lu
             perm_r = list(range(m))
@@ -331,7 +331,7 @@ def _remove_redundancy_pivot_sparse(A, rhs):
         # is found.
 
         c = (np.abs(A[:, js].transpose().dot(pi)) > tolapiv).nonzero()[0]
-        if len(c) > 0:  # independent
+        if c.size > 0:  # independent
             j = js[c[0]]
             # in a previous commit, the previous line was changed to choose
             # index j corresponding with the maximum dot product.

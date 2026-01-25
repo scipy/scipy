@@ -4,8 +4,7 @@ import numpy as np
 
 
 def parse_txt_data(filename):
-    f = open(filename)
-    try:
+    with open(filename) as f:
         reader = csv.reader(f, delimiter=',')
         data = [list(map(float, row)) for row in reader]
         nc = len(data[0])
@@ -23,8 +22,6 @@ def parse_txt_data(filename):
         #                     "guessed data size %dx%d" % (data.size, nlines, nc))
         #data = data.reshape((nlines, nc))
         #return data
-    finally:
-        f.close()
 
     return np.array(data)
 

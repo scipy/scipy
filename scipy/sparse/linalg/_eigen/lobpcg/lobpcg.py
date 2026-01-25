@@ -82,7 +82,7 @@ def _matmul_inplace(x, y, verbosityLevel=0):
         # try if it works, and fall back to overwriting if necessary
         try:
             np.matmul(x, y, out=x)
-        except Exception:
+        except (TypeError, ValueError):
             if verbosityLevel:
                 warnings.warn(
                     "Inplace update of x = x @ y failed, "

@@ -452,7 +452,7 @@ class FieldWrapper:
     def func(self, v_x_a):
         try:
             v_f = self.field(v_x_a, *self.field_args)
-        except Exception:
+        except (ValueError, TypeError, RuntimeError):
             v_f = np.inf
         if np.isnan(v_f):
             v_f = np.inf

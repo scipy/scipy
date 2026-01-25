@@ -307,7 +307,7 @@ def splev(x, tck, der=0, ext=0):
     try:
         c[0][0]
         parametric = True
-    except Exception:
+    except (TypeError, IndexError, KeyError):
         parametric = False
     if parametric:
         return list(map(lambda c, x=x, t=t, k=k, der=der:
@@ -342,7 +342,7 @@ def splint(a, b, tck, full_output=0):
     try:
         c[0][0]
         parametric = True
-    except Exception:
+    except (TypeError, IndexError, KeyError):
         parametric = False
     if parametric:
         return list(map(lambda c, a=a, b=b, t=t, k=k:
@@ -363,7 +363,7 @@ def sproot(tck, mest=10):
     try:
         c[0][0]
         parametric = True
-    except Exception:
+    except (TypeError, IndexError, KeyError):
         parametric = False
     if parametric:
         return list(map(lambda c, t=t, k=k, mest=mest:
@@ -390,7 +390,7 @@ def spalde(x, tck):
     try:
         c[0][0]
         parametric = True
-    except Exception:
+    except (TypeError, IndexError, KeyError):
         parametric = False
     if parametric:
         return list(map(lambda c, x=x, t=t, k=k:
@@ -736,7 +736,7 @@ def insert(x, tck, m=1, per=0):
     try:
         c[0][0]
         parametric = True
-    except Exception:
+    except (TypeError, IndexError, KeyError):
         parametric = False
     if parametric:
         cc = []

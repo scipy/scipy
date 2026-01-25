@@ -656,7 +656,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             simplefilter("ignore", RuntimeWarning)
             try:
                 null = statistic([])
-            except Exception:
+            except (TypeError, ValueError, IndexError):
                 null = np.nan
         if np.iscomplexobj(null):
             result = result.astype(np.complex128)

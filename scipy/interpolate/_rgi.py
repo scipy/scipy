@@ -299,8 +299,7 @@ class RegularGridInterpolator:
             xp = array_namespace(*points) # still forbid mixed namespaces in `points`
             try:
                 xp_v = array_namespace(values)
-            except Exception:
-                # "duck-type" values indeed, continue with `xp` as the namespace
+            except (TypeError, ValueError):\n                # "duck-type" values indeed, continue with `xp` as the namespace
                 pass
             else:
                 # both `points` and `values` are array API objects, check consistency

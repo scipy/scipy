@@ -710,7 +710,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     singleton_row = np.array(np.sum(A_eq != 0, axis=1) == 1).flatten()
     rows = where(singleton_row)[0]
     cols = where(A_eq[rows, :])[1]
-    if len(rows) > 0:
+    if rows.size > 0:
         for row, col in zip(rows, cols):
             val = b_eq[row] / A_eq[row, col]
             if not lb[col] - tol <= val <= ub[col] + tol:
@@ -738,7 +738,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     singleton_row = np.array(np.sum(A_ub != 0, axis=1) == 1).flatten()
     cols = where(A_ub[singleton_row, :])[1]
     rows = where(singleton_row)[0]
-    if len(rows) > 0:
+    if rows.size > 0:
         for row, col in zip(rows, cols):
             val = b_ub[row] / A_ub[row, col]
             if A_ub[row, col] > 0:  # upper bound
@@ -876,7 +876,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
         try:  # TODO: use results of first SVD in _remove_redundancy_svd
             rank = np.linalg.matrix_rank(A_eq)
         # oh well, we'll have to go with _remove_redundancy_pivot_dense
-        except Exception:
+        except (np.linalg.LinAlgError, ValueError, RuntimeError):
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning, stacklevel=3)
@@ -1161,7 +1161,7 @@ def _get_Abc(lp, c0):
     c[i_nolb] *= -1
     if x0 is not None:
         x0[i_nolb] *= -1
-    if len(i_nolb) > 0:
+    if i_nolb.size > 0:
         if A_ub.shape[0] > 0:  # sometimes needed for sparse arrays... weird
             A_ub[:, i_nolb] *= -1
         if A_eq.shape[0] > 0:

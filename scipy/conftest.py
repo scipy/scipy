@@ -34,7 +34,7 @@ except ModuleNotFoundError:
 try:
     import pytest_run_parallel  # noqa:F401
     PARALLEL_RUN_AVAILABLE = True
-except Exception:
+except (ImportError, AttributeError):
     PARALLEL_RUN_AVAILABLE = False
 
 
@@ -72,14 +72,14 @@ def pytest_configure(config):
 
     try:
         import pytest_timeout  # noqa:F401
-    except Exception:
+    except (ImportError, AttributeError):
         config.addinivalue_line(
             "markers", 'timeout: mark a test for a non-default timeout')
     try:
         # This is a more reliable test of whether pytest_fail_slow is installed
         # When I uninstalled it, `import pytest_fail_slow` didn't fail!
         from pytest_fail_slow import parse_duration  # type: ignore[import-not-found] # noqa:F401,E501
-    except Exception:
+    except (ImportError, AttributeError):
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
 
@@ -127,7 +127,7 @@ def pytest_runtest_setup(item):
             from threadpoolctl import threadpool_limits
 
             HAS_THREADPOOLCTL = True
-        except Exception:  # observed in gh-14441: (ImportError, AttributeError)
+        except (ImportError, AttributeError):  # observed in gh-14441
             # Optional dependency only. All exceptions are caught, for robustness
             HAS_THREADPOOLCTL = False
 
@@ -147,9 +147,9 @@ def pytest_runtest_setup(item):
                 threads_per_worker = max(max_openmp_threads // xdist_worker_count, 1)
                 try:
                     threadpool_limits(threads_per_worker, user_api='blas')
-                except Exception:
+                except (AttributeError, ImportError, RuntimeError):
                     # May raise AttributeError for older versions of OpenBLAS.
-                    # Catch any error for robustness.
+                    # Catch specific errors for robustness.
                     return
 
 

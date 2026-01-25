@@ -70,7 +70,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
         )
     try:
         coeffs = xp.linalg.solve(lhs, rhs)
-    except Exception:
+    except (np.linalg.LinAlgError, ValueError, RuntimeError):
         # Best-effort attempt to emit a helpful message.
         # `_rbfinterp_np` backend gives better diagnostics; it is hard to
         # match it in a backend-agnostic way: e.g. jax emits no error at all,
