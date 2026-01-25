@@ -235,7 +235,7 @@ void BLAS_FUNC(zgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex1
  */
 #define GEN_GETRF(PREFIX, TYPE) \
 inline void \
-getrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, CBLAS_INT *info) \
+call_getrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## getrf)(m, n, a, lda, ipiv, info); \
 };
@@ -248,7 +248,7 @@ GEN_GETRF(z,npy_complex128)
 
 #define GEN_GETRS(PREFIX, TYPE) \
 inline void \
-getrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+call_getrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## getrs)(trans, n, nrhs, a, lda, ipiv, b, ldb, info); \
 };
@@ -261,7 +261,7 @@ GEN_GETRS(z,npy_complex128)
 
 #define GEN_GETRI(PREFIX, TYPE) \
 inline void \
-getri(CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+call_getri(CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## getri)(n, a, lda, ipiv, work, lwork, info); \
 };
@@ -275,7 +275,7 @@ GEN_GETRI(z,npy_complex128)
 // NB: iwork for real arrays or rwork for complex arrays
 #define GEN_GECON(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
-gecon(char* norm, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+call_gecon(char* norm, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## gecon)(norm, n, a, lda, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
@@ -288,7 +288,7 @@ GEN_GECON(z, npy_complex128, double, double)
 
 #define GEN_TRTRI(PREFIX, TYPE) \
 inline void \
-trtri(char* uplo, char *diag, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
+call_trtri(char* uplo, char *diag, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## trtri)(uplo, diag, n, a, lda, info); \
 };
@@ -301,7 +301,7 @@ GEN_TRTRI(z, npy_complex128)
 
 #define GEN_TRCON(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
-trcon(char* norm, char *uplo, char *diag, CBLAS_INT *n, CTYPE *a, CBLAS_INT *lda, RTYPE *rcond, CTYPE *work, void *irwork, CBLAS_INT *info) \
+call_trcon(char* norm, char *uplo, char *diag, CBLAS_INT *n, CTYPE *a, CBLAS_INT *lda, RTYPE *rcond, CTYPE *work, void *irwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## trcon)(norm, uplo, diag, n, a, lda, rcond, work, (WTYPE *)irwork, info); \
 };
@@ -314,7 +314,7 @@ GEN_TRCON(z, npy_complex128, double, double)
 
 #define GEN_TRTRS(PREFIX, TYPE) \
 inline void \
-trtrs(char* uplo, char *trans, char *diag, CBLAS_INT* n, CBLAS_INT* nrhs, TYPE* a, CBLAS_INT* lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+call_trtrs(char* uplo, char *trans, char *diag, CBLAS_INT* n, CBLAS_INT* nrhs, TYPE* a, CBLAS_INT* lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## trtrs)(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info); \
 };
@@ -327,7 +327,7 @@ GEN_TRTRS(z, npy_complex128)
 
 #define GEN_POTRF(PREFIX, TYPE) \
 inline void \
-potrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
+call_potrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## potrf)(uplo, n, a, lda, info); \
 };
@@ -340,7 +340,7 @@ GEN_POTRF(z, npy_complex128)
 
 #define GEN_POTRI(PREFIX, TYPE) \
 inline void \
-potri(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
+call_potri(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## potri)(uplo, n, a, lda, info); \
 };
@@ -354,7 +354,7 @@ GEN_POTRI(z, npy_complex128)
 // NB: iwork for real arrays or rwork for complex arrays
 #define GEN_POCON(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
-pocon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+call_pocon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## pocon)(uplo, n, a, lda, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
@@ -367,7 +367,7 @@ GEN_POCON(z, npy_complex128, double, double)
 
 #define GEN_POTRS(PREFIX, TYPE) \
 inline void \
-potrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+call_potrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## potrs)(uplo, n, nrhs, a, lda, b, ldb, info); \
 };
@@ -380,7 +380,7 @@ GEN_POTRS(z, npy_complex128)
 
 #define GEN_SYTRF(PREFIX, TYPE) \
 inline void \
-sytrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
+call_sytrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## sytrf)(uplo, n, a, lda, ipiv, work, lwork, info); \
 };
@@ -394,7 +394,7 @@ GEN_SYTRF(z, npy_complex128)
 // dispatch to sSYtrf for "float hermitian"
 #define GEN_HETRF(PREFIX, L_PREFIX, TYPE) \
 inline void \
-hetrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
+call_hetrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## L_PREFIX ## trf)(uplo, n, a, lda, ipiv, work, lwork, info); \
 };
@@ -407,7 +407,7 @@ GEN_HETRF(z, he, npy_complex128)
 
 #define GEN_SYTRI(PREFIX, TYPE) \
 inline void \
-sytri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
+call_sytri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## sytri)(uplo, n, a, lda, ipiv, work, info); \
 };
@@ -421,7 +421,7 @@ GEN_SYTRI(z, npy_complex128)
 // dispatch to sSYtri for "float hermitian"
 #define GEN_HETRI(PREFIX, L_PREFIX, TYPE) \
 inline void \
-hetri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
+call_hetri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## L_PREFIX ## tri)(uplo, n, a, lda, ipiv, work, info); \
 };
@@ -435,7 +435,7 @@ GEN_HETRI(z, he, npy_complex128)
 // NB: iwork for real arrays only, no rwork for complex routines (10 arguments for s- d- variants; 9 arguments for c- and z- variants)
 #define GEN_SYCON(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
-sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+call_sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
@@ -445,7 +445,7 @@ GEN_SYCON(d, double, double, CBLAS_INT)
 
 #define GEN_SYCON_CZ(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
-sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+call_sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, info); \
 };
@@ -457,7 +457,7 @@ GEN_SYCON_CZ(z, npy_complex128, double, double)
 // dispatch to sSYcon for "float hermitian"
 #define GEN_HECON(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
-hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+call_hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
@@ -467,7 +467,7 @@ GEN_HECON(d, double, double, CBLAS_INT)
 
 #define GEN_HECON_CZ(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
-hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
+call_hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## hecon)(uplo, n, a, lda, ipiv, anorm, rcond, work, info); \
 };
@@ -478,7 +478,7 @@ GEN_HECON_CZ(z, npy_complex128, double, double)
 
 #define GEN_SYTRS(PREFIX, TYPE) \
 inline void \
-sytrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+call_sytrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## sytrs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
 };
@@ -492,7 +492,7 @@ GEN_SYTRS(z, npy_complex128)
 // dispatch to sSYtrs for "float hermitian"
 #define GEN_HETRS(PREFIX, L_PREFIX, TYPE) \
 inline void \
-hetrs(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+call_hetrs(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
 { \
     BLAS_FUNC(PREFIX ## L_PREFIX ## trs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
 };
@@ -505,7 +505,7 @@ GEN_HETRS(z, he, npy_complex128)
 
 #define GEN_GTTRF(PREFIX, TYPE) \
 inline void \
-gttrf(CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, CBLAS_INT *info) \
+call_gttrf(CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gttrf)(n, dl, d, du, du2, ipiv, info); \
 };
@@ -518,7 +518,7 @@ GEN_GTTRF(z, npy_complex128)
 
 #define GEN_GTTRS(PREFIX, TYPE) \
 inline void \
-gttrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+call_gttrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gttrs)(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info); \
 };
@@ -531,7 +531,7 @@ GEN_GTTRS(z, npy_complex128)
 
 #define GEN_GTCON(PREFIX, TYPE) \
 inline void \
-gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *anorm, TYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
+call_gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *anorm, TYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, iwork, info); \
 };
@@ -543,7 +543,7 @@ GEN_GTCON(d, double)
 // NB: `iwork` is not used for c- and z- variants of ?gtcon
 #define GEN_GTCON_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
+call_gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, info); \
 };
@@ -734,9 +734,6 @@ call_gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
 
 GEN_GELSY_CZ(c, npy_complex64, float)
 GEN_GELSY_CZ(z, npy_complex128, double)
-
-
-
 
 
 // Structure tags; python side maps assume_a strings to these values
