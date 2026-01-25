@@ -3,9 +3,7 @@
  */
 #include "Python.h"
 #include <iostream>
-#include "cpython/code.h"
 #include "numpy/arrayobject.h"
-#include "numpy/ndarraytypes.h"
 #include "numpy/npy_math.h"
 #include "npy_cblas.h"
 #include "_npymath.hh"
@@ -219,18 +217,18 @@ inline void solve_slice_banded(
     real_type rcond;
     real_type anorm = norm1_banded(ab, kl, ku, work2, N);
 
-    gbtrf(&N, &N, &kl, &ku, ab, &ldab, ipiv, &info);
+    call_gbtrf(&N, &N, &kl, &ku, ab, &ldab, ipiv, &info);
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // gbtrf success, check condition number
-        gbcon(&norm, &N, &kl, &ku, ab, &ldab, ipiv, &anorm, &rcond, work2, irwork, &info);
+        call_gbcon(&norm, &N, &kl, &ku, ab, &ldab, ipiv, &anorm, &rcond, work2, irwork, &info);
 
         status.rcond = (double)rcond;
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
             // finally, solve
-            gbtrs(&trans, &N, &kl, &ku, &NRHS, ab, &ldab, ipiv, b_data, &N, &info);
+            call_gbtrs(&trans, &N, &kl, &ku, &NRHS, ab, &ldab, ipiv, b_data, &N, &info);
             status.is_singular = (info > 0);
         }
     }
@@ -334,7 +332,10 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         return int(info);
     }
 
-    // Bandwidth detection per slice
+    // Bandwidth detection per slice. Required to first do a pass to find the
+    // maximal `kl` and `ku` to find the minimal size the array will need to
+    // have. To avoid having to call `bandwidth` twice per slice, the results
+    // are stored in these arrays.
     npy_intp kl_max = 0;
     npy_intp ku_max = 0;
     ks = (npy_intp *)malloc(2 * outer_size * sizeof(npy_intp));
@@ -342,7 +343,6 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     if (ks == NULL) {
         free(ipiv);
         free(irwork);
-        free(ks);
         info = -102;
         return (int)info;
     }
@@ -357,44 +357,31 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         free(ipiv);
         free(irwork);
         free(ks);
-        free(buffer);
         info = -102;
         return int(info);
     }
 
     // Chop up buffer
     T* b_data = &buffer[0];
-    T* work2 = &buffer[n * nrhs]; // for `gbcon` call
+    T* work = &buffer[n * nrhs]; // for `gbcon` call
     T *ab = &buffer[n * nrhs + 3 * n];
 
     // Main loop traversal, taken from `_solve`
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
-        npy_intp offset = 0;
-        npy_intp temp_idx = idx;
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset += (temp_idx % shape[i]) * strides[i];
-            temp_idx /= shape[i];
-        }
-        T* slice_ptr = (T *)(Am_data + (offset / sizeof(T)));
+        T* slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+        T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
 
         // Directly take into banded storage
         npy_intp ldab = 2 * kls[idx] + kus[idx] + 1;
         to_banded(slice_ptr, n, kls[idx], kus[idx], ldab, ab, strides[ndim-2], strides[ndim-1]);
 
-        // XXX: dedupe (cfr. _solve)
-        offset = 0;
-        temp_idx = idx;
-        for (int i = ndim_b - 3; i >= 0; i--) {
-            offset += (temp_idx & shape_b[i]) * strides_b[i];
-            temp_idx /= shape_b[i];
-        }
-        T* slice_ptr_b = (T *)(bm_data + (offset / sizeof(T)));
+        // Copy slice of b
         copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
 
         // structure is known to be banded
         init_status(slice_status, idx, St::BANDED);
-        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work2, irwork, kls[idx], kus[idx], slice_status);
+        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work, irwork, kls[idx], kus[idx], slice_status);
 
         if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
             vec_status.push_back(slice_status);
