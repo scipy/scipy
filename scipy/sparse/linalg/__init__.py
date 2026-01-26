@@ -34,6 +34,8 @@ Matrix norms
    norm -- Norm of a sparse matrix
    onenormest -- Estimate the 1-norm of a sparse matrix
 
+.. solving_linear_problems::
+
 Solving linear problems
 -----------------------
 

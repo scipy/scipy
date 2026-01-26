@@ -39,7 +39,7 @@ with `multiprocessing`.
 Thread-Safe Operations
 ----------------------
 
-Unless specified otherwise scipy functionalities should be thread safe and  can
+Unless specified otherwise scipy functionalities should be thread safe and can
 be assumed to be achieved so by using :ref:`Thread locals <term-thread-local>`.
 
 NOT Thread-Safe (Caller Responsibility)
@@ -62,10 +62,9 @@ crashes, or other unwanted behavior.
 Global and Per-Thread State
 ---------------------------
 
-These operations are thread-safe but have per-thread configuration:
+These operations use per-thread configuration:
 
-  - :func:`scipy.sparse.linalg.use_solver` - sets thread-local solver preference
-  - :func:`scipy.sparse.linalg.spsolve` - respects thread-local preference set by ``use_solver()``
+  - :ref:`scipy.sparse.linalg thread-local solver preference <solving_linear_problems>`
   - :ref:`scipy.special.errstate <error_handling>` - control error handling.
 
 Each thread can independently configure solver preferences without locks or contention.
