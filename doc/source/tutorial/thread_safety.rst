@@ -66,7 +66,7 @@ These operations are thread-safe but have per-thread configuration:
 
   - :func:`scipy.sparse.linalg.use_solver` - sets thread-local solver preference
   - :func:`scipy.sparse.linalg.spsolve` - respects thread-local preference set by ``use_solver()``
-  - `scipy.special.errstate <error_handling>` - control error handling.
+  - :ref:`scipy.special.errstate <error_handling>` - control error handling.
 
 Each thread can independently configure solver preferences without locks or contention.
 
