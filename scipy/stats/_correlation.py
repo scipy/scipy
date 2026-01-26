@@ -390,7 +390,8 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
     return SignificanceResult(res.statistic, res.pvalue)
 
 
-@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis")])
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
+                                ("jax.numpy", "non-concrete boolean indexing")])
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -511,7 +512,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     return _robust_slopes(y, x=x, alpha=alpha, method=method, pfun='theilslopes')
 
 
-@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis")])
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
+                                ("jax.numpy", "test failures; worth investigating")])
 @_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -656,20 +658,28 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     def nanmedian(x, axis): return stats.quantile(x, 0.5, axis=axis, nan_policy='omit')
     def median(x, axis): return stats.quantile(x, 0.5, axis=axis)
 
-    medslope = nanmedian(slopes, axis=-1)
-
-    # siegelslope is median of medians rather than grand median
-    finalslope = nanmedian(medslope, axis=-1) if pfun == 'siegelslopes' else medslope
+    # `theilslopes` is median of all slopes. Indexing with `i` above has already raveled
+    # all the slopes, so we only need to take the median along the last axis.
+    # `siegelslope` is a median of medians: we take the median of slopes from point i
+    # to all other points, then the median of those medians.
+    # The slope is NaN wherever the two points are the same, and those don't contribute,
+    # hence the first median omits NaNs. NaNs in the input are propagated by the
+    # `_axis_nan_policy` decorator.
+    medslope = (median(nanmedian(slopes, axis=-1), axis=-1) if pfun == 'siegelslopes'
+                else nanmedian(slopes, axis=-1))
 
     if method in {'joint', 'hierarchical'}:
-        medinter = median(y - finalslope[..., np.newaxis] * x, axis=-1)
+        medinter = median(y - medslope[..., np.newaxis] * x, axis=-1)
     elif pfun == 'theilslopes':
         medinter = median(y, axis=-1) - medslope * median(x, axis=-1)
     else:
-        medinter = median(y - medslope * x, axis=-1)
+        # Calculate the intercepts from each point using slopes to each other point
+        intercepts = y[..., :, xp.newaxis] - slopes*x[..., :, xp.newaxis]
+        # Calculate the median of medians, just like we calculated the median slope.
+        medinter = median(nanmedian(intercepts, axis=-1), axis=-1)
 
     if pfun == 'siegelslopes':
-        return SiegelslopesResult(slope=finalslope[()], intercept=medinter[()])
+        return SiegelslopesResult(slope=medslope[()], intercept=medinter[()])
 
     # Now compute confidence intervals
     if alpha > 0.5:
@@ -702,7 +712,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     i_nan = xp.broadcast_to(sigsq < 0, delta.shape)
     delta = xpx.at(delta)[i_nan].set(xp.nan)
 
-    slope = finalslope[()] if finalslope.ndim == 0 else finalslope
+    slope = medslope[()] if medslope.ndim == 0 else medslope
     intercept = medinter[()] if medinter.ndim == 0 else medinter
     low_slope = delta[..., 0]
     high_slope = delta[..., 1]

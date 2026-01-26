@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from scipy.conftest import skip_xp_invalid_arg
 import scipy._lib.array_api_extra as xpx
@@ -257,15 +257,16 @@ class RobustSlopesTest:
         assert_allclose(res.intercept, ref.intercept)
 
     def test_degenerate(self, xp):
-        # Test `theilslopes` with degenerate input; see gh-15943
+        # Test with degenerate input; see gh-15943
         pfun = getattr(stats, self.pfun)
         res = pfun(xp.asarray([0, 1]), xp.asarray([0, 0]))
         assert xp.all(xp.isnan(xp.stack(res)))
-        res = stats.theilslopes(xp.asarray([0, 0, 0]), xp.asarray([0, 1, 0]))
+        res = pfun(xp.asarray([0, 0, 0]), xp.asarray([0, 1, 0]))
         xp_assert_equal(res[0], xp.asarray(0.))
         xp_assert_equal(res[1], xp.asarray(0.))
-        xp_assert_equal(res[2], xp.asarray(xp.nan))
-        xp_assert_equal(res[3], xp.asarray(xp.nan))
+        if pfun == stats.theilslopes:
+            xp_assert_equal(res[2], xp.asarray(xp.nan))
+            xp_assert_equal(res[3], xp.asarray(xp.nan))
 
     def test_namedtuple_consistency(self, xp):
         """
@@ -391,7 +392,6 @@ class TestSiegelslopes(RobustSlopesTest):
 
         # method is robust to outliers: breakdown point of 50%
         y = xpx.at(y)[:4].set(1000.)
-        y[:4] = 1000
         xp_assert_close(slope, xp.asarray(5.0))
         xp_assert_close(intercept, xp.asarray(-3.0))
 
@@ -408,3 +408,15 @@ class TestSiegelslopes(RobustSlopesTest):
         slope, intercept = stats.siegelslopes(y, x, method='separate')
         xp_assert_close(slope, xp.asarray(slope_ols), rtol=0.1)
         xp_assert_close(intercept, xp.asarray(intercept_ols), rtol=0.1)
+
+    def test_method(self, xp):
+        # Test that distinguishes between the methods. Reference values generated with
+        # SciPy 1.17 (results unchanged since at least 1.12, so assumed "correct") to
+        # detect *changes*.
+        y = xp.asarray([2, 1, 3, 0, 4])
+        slope, intercept = stats.siegelslopes(y, method='separate')
+        xp_assert_close(slope, xp.asarray(0.25))
+        xp_assert_close(intercept, xp.asarray(1.75))
+        slope, intercept = stats.siegelslopes(y, method='hierarchical')
+        xp_assert_close(slope, xp.asarray(0.25))  # always the same between the methods
+        xp_assert_close(intercept, xp.asarray(2.0))
