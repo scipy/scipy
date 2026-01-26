@@ -64,8 +64,8 @@ Global and Per-Thread State
 
 These operations use per-thread configuration:
 
-  - :ref:`scipy.sparse.linalg thread-local solver preference <solving_linear_problems>`
-  - :ref:`scipy.special.errstate <error_handling>` - control error handling.
+- :ref:`scipy.sparse.linalg thread-local solver preference <solving_linear_problems>`.
+- :ref:`scipy.special.errstate <error_handling>` - control error handling.
 
 Each thread can independently configure solver preferences without locks or contention.
 
