@@ -1,16 +1,8 @@
 /*
  * Templated loops for `linalg.qr`
  */
- #include "Python.h"
- #include <iostream>
- #include "numpy/arrayobject.h"
-#include "numpy/ndarraytypes.h"
- #include "numpy/npy_math.h"
- #include "npy_cblas.h"
- #include "_npymath.hh"
- #include "_common_array_utils.hh"
 
-template<typename T>
+ template<typename T>
 int
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_P, int overwrite_a, int lwork, QR_mode mode, int pivot, SliceStatusVec &vec_status)
 {
