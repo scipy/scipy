@@ -41,7 +41,7 @@ from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng,
                               wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote, xp_result_type
 from scipy._lib import array_api_extra as xpx
 
 
@@ -1197,6 +1197,17 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
     return ret
 
+def _line_search_wolfe_bracket_for_dtype(dtype):
+    for amin,amax in ((1e-100,1e100),(1e-30,1e30),(1e-4,1e4)):
+        if float(np.finfo(dtype).tiny) < amin and amax < float(np.finfo(dtype).max):
+            break
+    else:
+        raise ValueError(f'No good step bracket for {dtype}')
+
+    kwargs = {}
+    kwargs['amin'] = amin
+    kwargs['amax'] = amax
+    return kwargs
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
@@ -1408,6 +1419,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     retall = return_all
 
     x0 = asarray(x0).flatten()
+    dtype=xp_result_type(x0, force_floating=True, xp=array_namespace(x0))
+
     if x0.ndim == 0:
         x0 = x0.reshape((1,))
     if maxiter is None:
@@ -1441,8 +1454,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval, amin=1e-100,
-                                          amax=1e100, c1=c1, c2=c2)
+                                          old_fval, old_old_fval,
+                                          c1=c1, c2=c2,
+                                          **_line_search_wolfe_bracket_for_dtype(dtype))
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -1769,6 +1783,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     retall = return_all
 
     x0 = asarray(x0).flatten()
+    dtype=xp_result_type(x0, force_floating=True, xp=array_namespace(x0))
+
     if maxiter is None:
         maxiter = len(x0) * 200
 
@@ -1805,7 +1821,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
             if gfkp1 is None:
                 gfkp1 = myfprime(xkp1)
             yk = gfkp1 - gfk
-            beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            if deltak != 0:
+                beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            else:
+                beta_k = 1.
             pkp1 = -gfkp1 + beta_k * pk
             gnorm = vecnorm(gfkp1, ord=norm)
             return (alpha, xkp1, pkp1, gfkp1, gnorm)
@@ -1830,8 +1849,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c1=c1, c2=c2, amin=1e-100,
-                                          amax=1e100, extra_condition=descent_condition)
+                                          old_old_fval, c1=c1, c2=c2,
+                                          extra_condition=descent_condition,
+                                          **_line_search_wolfe_bracket_for_dtype(dtype))
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
