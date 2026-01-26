@@ -20,6 +20,7 @@ from scipy.signal import _polyutils as _pu
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
+    xp_result_type,
 )
 from scipy._lib.array_api_compat import numpy as np_compat
 
@@ -1290,19 +1291,14 @@ def zpk2tf(z, p, k):
 
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
-        # Determine output dtype considering both polynomial and gain types.
-        # If temp is integral, use k.dtype directly (k is already float/complex).
-        # Otherwise use result_type to handle float/complex promotion.
-        if xp.isdtype(temp.dtype, "integral"):
-            result_dtype = k.dtype
-        else:
-            result_dtype = xp.result_type(temp.dtype, k.dtype)
+        result_dtype = xp_result_type(temp, k, force_floating=True, xp=xp)
         b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=result_dtype)
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            k_i = xp.asarray(k[i], dtype=b.dtype)
-            b_i = k_i * _pu.poly(z[i, ...], xp=xp)
+            k_i = xp.asarray(k[i], dtype=result_dtype)
+            poly_i = xp.asarray(_pu.poly(z[i, ...], xp=xp), dtype=result_dtype)
+            b_i = k_i * poly_i
             b = xpx.at(b)[i, ...].set(b_i)
     else:
         # Use xp.multiply to work around torch type promotion
