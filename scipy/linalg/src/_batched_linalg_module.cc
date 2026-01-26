@@ -812,22 +812,16 @@ static char doc_inv[] = ("Compute the matrix inverse.");
 static char doc_solve[] = ("Solve the linear system of equations.");
 static char doc_svd[] = ("SVD factorization.");
 static char doc_lstsq[] = ("linear least squares.");
-<<<<<<< HEAD
 static char doc_eig[] = ("eigenvalue solver.");
-=======
 static char doc_qr[] = ("Compute the qr decomposition.");
->>>>>>> 66000c198d (Full mode QR is implemented now)
 
 static struct PyMethodDef inv_module_methods[] = {
   {"_inv", _linalg_inv, METH_VARARGS, doc_inv},
   {"_solve", _linalg_solve, METH_VARARGS, doc_solve},
   {"_svd", _linalg_svd, METH_VARARGS, doc_svd},
   {"_lstsq", _linalg_lstsq, METH_VARARGS, doc_lstsq},
-<<<<<<< HEAD
   {"_eig", _linalg_eig, METH_VARARGS, doc_eig},
-=======
   {"_qr", _linalg_qr, METH_VARARGS, doc_qr},
->>>>>>> 66000c198d (Full mode QR is implemented now)
   {NULL, NULL, 0, NULL}
 };
 

@@ -674,27 +674,18 @@ GEN_GEQP3_CZ(c, npy_complex64, float);
 GEN_GEQP3_CZ(z, npy_complex128, double);
 
 
-// N.B. Different names for real and complex case, but unified calling signatures
-#define GEN_ORGQR(PREFIX, TYPE) \
+// NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
+#define GEN_OR_UN_GQR(PREFIX, TYPE) \
 inline void \
-orungqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
 { \
-    BLAS_FUNC(PREFIX ## orgqr)(m, n, k, a, lda, tau, work, lwork, info); \
+    BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
 };
 
-GEN_ORGQR(s, float);
-GEN_ORGQR(d, double);
-
-
-#define GEN_UNGQR(PREFIX, TYPE) \
-inline void \
-orungqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## ungqr)(m, n, k, a, lda, tau, work, lwork, info); \
-};
-
-GEN_UNGQR(c, npy_complex64);
-GEN_UNGQR(z, npy_complex128);
+GEN_OR_UN_GQR(sor, float)
+GEN_OR_UN_GQR(dor, double)
+GEN_OR_UN_GQR(cun, npy_complex64)
+GEN_OR_UN_GQR(zun, npy_complex128)
 
 
 /*
@@ -778,37 +769,6 @@ inline void call_gesdd(
 {
     BLAS_FUNC(zgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info);
 };
-
-
-
-
-#define GEN_GEQRF(PREFIX, TYPE) \
-inline void \
-geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
-};
-
-GEN_GEQRF(s, float)
-GEN_GEQRF(d, double)
-GEN_GEQRF(c, npy_complex64)
-GEN_GEQRF(z, npy_complex128)
-
-
-
-// NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
-#define GEN_OR_UN_GQR(PREFIX, TYPE) \
-inline void \
-or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
-};
-
-GEN_OR_UN_GQR(sor, float)
-GEN_OR_UN_GQR(dor, double)
-GEN_OR_UN_GQR(cun, npy_complex64)
-GEN_OR_UN_GQR(zun, npy_complex128)
-
 
 
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
