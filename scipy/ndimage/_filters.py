@@ -2253,10 +2253,9 @@ def generic_filter1d(input, function, filter_size, axis=-1,
 
     Examples
     --------
-    Apply a custom one-dimensional filter to an array.
-
-    The filtering function operates on one-dimensional input and output
-    lines and must modify the output in-place.
+    This example defines and applies a custom callback function that computes the
+    range of values within a sliding window of size 3 and writes the result directly
+    into the provided ``output_line`` array.
 
     >>> import numpy as np
     >>> from scipy.ndimage import generic_filter1d
