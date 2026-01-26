@@ -45,7 +45,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // compute it. Logic is taken from `_linalg_solve()`.
     if (lwork == -1) {
         T tmp = numeric_limits<T>::zero;
-        geqrf(&intm, &intn, NULL, &intm, NULL, &tmp, &lwork, &info);
+        call_geqrf(&intm, &intn, NULL, &intm, NULL, &tmp, &lwork, &info);
         if (info != 0) { info = -100; return (int)info; }
 
         lwork = _calc_lwork(tmp);
@@ -120,13 +120,13 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         // Factorization step is identical for each algorithm so do not delegate
         if (pivot) {
             memset(slice_ptr_P, 0, intn * sizeof(int)); // geqp3 also takes in pivoting elements
-            geqp3(&intm, &intn, data_A, &intm, slice_ptr_P, slice_ptr_tau, work, &lwork, rwork, &info);
+            call_geqp3(&intm, &intn, data_A, &intm, slice_ptr_P, slice_ptr_tau, work, &lwork, rwork, &info);
             for (int i = 0; i < intn; i++) {
                 slice_ptr_P[i] -= 1; // geqp3 returns a 1-based index array, so subtract 1
             }
         }
         else {
-            geqrf(&intm, &intn, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
+            call_geqrf(&intm, &intn, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
         }
 
         if (info != 0) {
@@ -143,7 +143,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
                 // Full mode QR, hence Q will be MxM.
                 // N.B. the number of reflectors is limited by the smallest dimension (= `K`)
-                or_un_gqr(&intm, &intm, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
+                call_or_un_gqr(&intm, &intm, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
 
                 if (info != 0) {
                     slice_status.lapack_info = (Py_ssize_t)info;
@@ -177,7 +177,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
                 extract_upper_triangle(slice_ptr_R, data_A, K, intn, intm);
 
                 // Economic mode QR, hence Q is MxK
-                or_un_gqr(&intm, &K, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
+                call_or_un_gqr(&intm, &K, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
 
                 if (info != 0) {
                     slice_status.lapack_info = (Py_ssize_t)info;

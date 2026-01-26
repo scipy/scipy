@@ -640,7 +640,7 @@ GEN_GBCON_CZ(z, npy_complex128, double)
 
 #define GEN_GEQRF(PREFIX, TYPE) \
 inline void \
-geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+call_geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
 };
@@ -651,10 +651,10 @@ GEN_GEQRF(c, npy_complex64);
 GEN_GEQRF(z, npy_complex128);
 
 
-// N.B. `rwork` is not used for `s` and `d` variants
+// N.B. `rwork` is not used for `s` and `d` variants, so swallowed prior to calling LAPACK
 #define GEN_GEQP3(PREFIX, TYPE) \
 inline void \
-geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, info); \
 };
@@ -665,7 +665,7 @@ GEN_GEQP3(d, double);
 
 #define GEN_GEQP3_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
-geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, (RTYPE *)rwork, info); \
 };
@@ -677,7 +677,7 @@ GEN_GEQP3_CZ(z, npy_complex128, double);
 // NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
 #define GEN_OR_UN_GQR(PREFIX, TYPE) \
 inline void \
-or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+call_or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
 { \
     BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
 };
