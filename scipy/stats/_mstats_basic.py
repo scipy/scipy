@@ -2433,6 +2433,7 @@ def _mask_to_limits(a, limits, inclusive):
     Parameters
     ----------
     a : array
+        The input array.
     limits : (float or None, float or None)
     A tuple consisting of the (lower limit, upper limit).  Values in the
     input array less than the lower limit or greater than the upper limit

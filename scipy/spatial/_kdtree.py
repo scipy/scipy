@@ -817,7 +817,7 @@ class KDTree(cKDTree):
         Parameters
         ----------
         other : KDTree
-
+            The other KDTree to compute distances against.
         max_distance : positive float
 
         p : float, 1<=p<=infinity
