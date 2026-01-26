@@ -151,7 +151,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
                 // Full mode QR, hence Q will be MxM.
                 // N.B. the number of reflectors is limited by the smallest dimension (= `K`)
-                orungqr(&intm, &intm, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
+                or_un_gqr(&intm, &intm, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
 
                 if (info != 0) {
                     slice_status.lapack_info = (Py_ssize_t)info;
@@ -185,7 +185,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
                 extract_upper_triangle(slice_ptr_R, data_A, K, intn, intm);
 
                 // Economic mode QR, hence Q is MxK
-                orungqr(&intm, &K, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
+                or_un_gqr(&intm, &K, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
 
                 if (info != 0) {
                     slice_status.lapack_info = (Py_ssize_t)info;
