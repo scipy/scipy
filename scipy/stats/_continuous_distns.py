@@ -9729,26 +9729,13 @@ class skewnorm_gen(rv_continuous):
             lambda x, a: np.log(2)+_norm_logpdf(x)+_norm_logcdf(a*x))
 
     def _cdf(self, x, a):
-        a = np.atleast_1d(a)
-        cdf = scu._skewnorm_cdf(x, 0.0, 1.0, a)
-        # for some reason, a isn't broadcasted if some of x are invalid
-        a = np.broadcast_to(a, cdf.shape)
-        # Boost is not accurate in left tail when a > 0
-        i_small_cdf = (cdf < 1e-6) & (a > 0)
-        cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
-        return np.clip(cdf, 0, 1)
+        return scu._skewnorm_cdf(x, 0.0, 1.0, a)
 
     def _ppf(self, x, a):
         return scu._skewnorm_ppf(x, 0.0, 1.0, a)
 
     def _sf(self, x, a):
-        # gh-24438: Use the direct formula for positive skew (`a > 0`) to preserve precision.
-        # For negative skew (`a < 0`), the direct formula involves subtraction of two small
-        # quantities (sf(x) - 2*|T(x, a)|), leading to cancellation and negative results.
-        # Fallback to the symmetric CDF mapping for a < 0 to maintain stability.
-        return np.where(a > 0, 
-                        _norm_sf(x) + 2 * sc.owens_t(x, a), 
-                        self._cdf(-x, -a))
+        return self._cdf(-x, -a)
 
     def _isf(self, x, a):
         return scu._skewnorm_isf(x, 0.0, 1.0, a)
