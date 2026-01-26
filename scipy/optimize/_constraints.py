@@ -75,7 +75,7 @@ class NonlinearConstraint:
         iteration. A single value sets this property for all components.
         Default is False. Has no effect for equality constraints. Note that intervening
         computations of the objective (not constraint) function may be located within
-        an infeasible region
+        an infeasible region.
     finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation. Default is
         None, which will select a reasonable value automatically depending
@@ -159,7 +159,7 @@ class LinearConstraint:
         iteration. A single value sets this property for all components.
         Default is False. Has no effect for equality constraints. Note that intervening
         computations of the objective (not constraint) function may be located within
-        an infeasible region
+        an infeasible region.
     """
     def _input_validation(self):
         if self.A.ndim != 2:
