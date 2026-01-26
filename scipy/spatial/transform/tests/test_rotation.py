@@ -2469,7 +2469,7 @@ def test_pow(xp, ndim: int):
         q = p ** n
         q_identity = xp.asarray([0., 0, 0, 1])
         # Regression test for gh-24436 
-        assert isinstance(q._quat, type(q_identity))  # still xp array
+        assert isinstance(q._quat, type(q_identity))
         r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
         for _ in range(abs(n)):
             if n > 0:
