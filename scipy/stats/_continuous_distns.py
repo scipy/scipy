@@ -9742,9 +9742,7 @@ class skewnorm_gen(rv_continuous):
         return scu._skewnorm_ppf(x, 0.0, 1.0, a)
 
     def _sf(self, x, a):
-        # Boost's SF is implemented this way. Use whatever customizations
-        # we made in the _cdf.
-        return self._cdf(-x, -a)
+        return sc.ndtr(-x) + 2 * sc.owens_t(x, a)
 
     def _isf(self, x, a):
         return scu._skewnorm_isf(x, 0.0, 1.0, a)
