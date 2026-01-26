@@ -4,7 +4,7 @@
 
  template<typename T>
 int
-_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_P, int overwrite_a, int lwork, QR_mode mode, int pivot, SliceStatusVec &vec_status)
+_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_P, int overwrite_a, int lwork, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
 {
     using real_type = typename type_traits<T>::real_type;
 
@@ -60,12 +60,12 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         lwork = (3 * N + 1 > lwork ? 3 * N + 1 : lwork);  // `s/dgeqp3` needs lwork of at least 3n + 1
         lwork = (M > lwork ? M : lwork);  // guard for the call to `or/ungqr`.
     }
-    else if (!pivot && lwork < std::max(M, N)) {
+    else if (!pivoting && lwork < std::max(M, N)) {
         // The assigned `lwork` would not be enough to perform computations
         PyErr_SetString(PyExc_ValueError, "Without pivoting an lwork of at least max(M, N) is required.");
         return 1;
     }
-    else if (pivot && lwork < std::max(M, 3 * N + 1)) {
+    else if (pivoting && lwork < std::max(M, 3 * N + 1)) {
         PyErr_SetString(PyExc_ValueError, "With pivoting and real arrays, an lwork of at least max(M, 3 * N + 1) is required.");
         return 1;
     }
@@ -80,7 +80,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
     // `c/zgeqp3` needs rwork
     void *rwork = NULL;
-    if (pivot && type_traits<T>::is_complex) {
+    if (pivoting && type_traits<T>::is_complex) {
         rwork = malloc(2 * N * sizeof(real_type));
 
         if (rwork == NULL) {
@@ -118,7 +118,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         init_status(slice_status, idx, St::GENERAL);
 
         // Factorization step is identical for each algorithm so do not delegate
-        if (pivot) {
+        if (pivoting) {
             memset(slice_ptr_P, 0, intn * sizeof(int)); // geqp3 also takes in pivoting elements
             call_geqp3(&intm, &intn, data_A, &intm, slice_ptr_P, slice_ptr_tau, work, &lwork, rwork, &info);
             for (int i = 0; i < intn; i++) {
