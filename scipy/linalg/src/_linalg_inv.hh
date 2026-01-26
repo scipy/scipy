@@ -257,14 +257,47 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     lwork = (4*n > lwork ? 4*n : lwork);
 
-    // Finally, can start allocating memory
-    T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
+    /*
+     * Finally, we can start allocating memory.
+     *
+     * The key point is that LAPACK always operates on F-ordered arrays.
+     * The memory strategy thus depends on the `overwrite_a` value.
+     *
+     * For `overwrite_a=False` (default), we:
+     *   - allocate a temp buffer (`scratch` and `data` below) once
+     *   - for each slice, we
+     *       - copy-and-transpose the slice into the temp buffer,
+     *       - feed the buffer to LAPACK
+     *       - copy-and-transpose the result back to the C-ordered result array
+     *
+     * For `overwrite_a=True`, we assume that
+     *   - `ret_data` may point to the same memory as `ap_Am` array
+     *   - the caller had ensured that the input array is Fortran-ordered
+     *   - the caller wants to get the result also Fortran ordered
+     *
+     * It's a caller's responsibility to make sure that these pre-conditions are met,
+     * none of them is checked here.
+     * Therefore, if `overwrite_a = True`, we skip the copy-and-transpose steps above,
+     * and fill the output `ret_data` straight with the output from LAPACK.
+     *
+     */
+    CBLAS_INT buf_size = overwrite_a ? lwork : 2*n*n + lwork;
+
+    T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
-    // Chop buffer into parts, one for data and one for work
-    T* data = &buffer[0];
-    T* scratch = &buffer[n*n];
-    T* work = &buffer[2*n*n];
+    T *data=NULL, *scratch=NULL, *work=NULL;
+    if (overwrite_a) {
+        // work in-place 
+        data = ret_data;
+        work = &buffer[0];
+    }
+    else {
+        // Chop buffer into parts, one for data and one for work
+        data = &buffer[0];
+        scratch = &buffer[n*n];
+        work = &buffer[2*n*n];
+    }
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
@@ -287,7 +320,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         return (int)info;
     }
 
-    // normalize the structure detection inputs
+    /*
+     * Normalize the structure detection inputs.
+     */
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
     }
@@ -304,12 +339,16 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         uplo = 'U';
     }
 
-    // Main loop to traverse the slices
+    /*
+     * Main loop to traverse the slices.
+     */
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
 
-        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-        swap_cf(scratch, data, n, n, n);
+        if (!overwrite_a) {
+            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+            swap_cf(scratch, data, n, n, n);
+        }
 
         // detect the structure if not given
         slice_structure = structure;
@@ -360,6 +399,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
         init_status(slice_status, idx, slice_structure);
 
+        // Use the appropriate LAPACK function for the `slice_structure`.
         switch(slice_structure) {
             case St::DIAGONAL:
             {
@@ -450,11 +490,13 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     goto free_exit;
                 }
             }
-        }
+        } // end of `switch(slice_structure)`
 
-        // Swap back to original order
-        swap_cf(data, &ret_data[idx*n*n], n, n, n);
-    }
+        if (!overwrite_a) {
+            // Swap back to original order
+            swap_cf(data, &ret_data[idx*n*n], n, n, n);
+        }
+    } // end of `for(idx=...)`
 
 free_exit:
     free(buffer);

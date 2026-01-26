@@ -28,7 +28,8 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 parametrize_overwrite_arg = pytest.mark.parametrize(
-    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}],
+    ids=["True", "False", "None"]
 )
 
 
@@ -1352,17 +1353,35 @@ class TestInv:
         a_inv = inv(a)
         assert a_inv.shape == (3, 1, 0, 0)
 
-    @pytest.mark.xfail(reason="TODO: re-enable overwrite_a")
-    def test_overwrite_a(self):
-        a = np.arange(1, 5).reshape(2, 2)
-        a_inv = inv(a, overwrite_a=True)
-        assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
-        assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
+    @parametrize_overwrite_arg
+    def test_overwrite_a(self, overwrite_kw):
+        n = 3
+        a0 = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace
-        a = a.astype(float).copy(order='F')
-        a_inv = inv(a, overwrite_a=True)
-        assert np.shares_memory(a, a_inv)
+        # int arrays are copied internally
+        a = a0.copy()
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # float C ordered arrays are copied, too
+        a = a0.copy().astype(float)
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: inv works inplace.
+        # IOW, the output is always the inverse, and the original input may be
+        # destroyed, depending on the `overwrite_a` kwarg value
+        a = a0.astype(float).copy(order='F')
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        assert (a == a0).all() != overwrite_a
+        assert np.shares_memory(a, a_inv) == overwrite_a
 
     def test_readonly(self):
         a = np.eye(3)

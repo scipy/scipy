@@ -52,8 +52,6 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    overwrite_a = 0; // TODO: enable it
-
     if(!overwrite_a) {
         /* Allocate the output */
         ap_Ainv = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, typenum);

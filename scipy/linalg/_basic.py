@@ -1050,6 +1050,9 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
+    # XXX can relax a1.ndim == 2?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
+
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
         None: -1,
