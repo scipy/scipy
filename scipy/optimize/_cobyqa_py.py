@@ -50,15 +50,6 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         to be within the range :math:`[-1, 1]`. If any of the lower or upper
         bounds is infinite, the variables are not scaled. Default is ``False``.
 
-    Notes
-    -----
-    **Thread-safety:** The COBYQA implementation uses :ref:`internal
-    synchronization <term-internally-synchronized>` (a module-level lock) to
-    serialize access to the underlying C++ library. Multiple threads can call
-    this function, but only one thread will execute the optimization at a time.
-    The objective function and constraint functions must be thread-safe if they
-    access shared state. See :ref:`scipy_thread_safety` for more details.
-
     References
     ----------
     .. [1] COBYQA
