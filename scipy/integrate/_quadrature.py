@@ -9,7 +9,7 @@ from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
                                    xp_capabilities, xp_promote, xp_swapaxes, is_numpy,
-                                   is_lazy_array)
+                                   is_lazy_array, xp_device)
 import scipy._lib.array_api_extra as xpx
 
 
@@ -988,7 +988,7 @@ _builtincoeffs = {
     }
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def newton_cotes(rn, equal=0):
     r"""
     Return weights and error coefficient for Newton-Cotes integration.
@@ -1008,7 +1008,7 @@ def newton_cotes(rn, equal=0):
 
     Parameters
     ----------
-    rn : int
+    rn : int or array-like
         The integer order for equally-spaced data or the relative positions of
         the samples with the first sample at 0 and the last at N, where N+1 is
         the length of `rn`. N is the order of the Newton-Cotes integration.
@@ -1055,46 +1055,53 @@ def newton_cotes(rn, equal=0):
 
     """
     try:
-        N = len(rn)-1
+        xp = array_namespace(rn)
+        N = rn.shape[0]-1
+        rn = xp_promote(rn, force_floating=True, xp=xp)
         if equal:
-            rn = np.arange(N+1)
-        elif np.all(np.diff(rn) == 1):
+            rn = xp.arange(N+1, dtype=rn.dtype, device=xp_device(rn))
+        elif not is_lazy_array(rn) and xp.all(xp.diff(rn) == 1):
             equal = 1
     except Exception:
+        xp = np
         N = rn
-        rn = np.arange(N+1)
+        rn = xp.arange(N+1.)
         equal = 1
+
+    dtype = rn.dtype
+    device = xp_device(rn)
 
     if equal and N in _builtincoeffs:
         na, da, vi, nb, db = _builtincoeffs[N]
-        an = na * np.array(vi, dtype=float) / da
-        return an, float(nb)/db
+        an = na * xp.asarray(vi, dtype=dtype, device=device) / da
+        return an, xp.asarray(nb/db, dtype=dtype, device=device)[()]
 
-    if (rn[0] != 0) or (rn[-1] != N):
-        raise ValueError("The sample positions must start at 0"
-                         " and end at N")
-    yi = rn / float(N)
+    if not is_lazy_array(rn) and ((rn[0] != 0) or (rn[-1] != N)):
+        raise ValueError("The sample positions must start at 0 and end at N")
+    yi = rn / N
     ti = 2 * yi - 1
-    nvec = np.arange(N+1)
-    C = ti ** nvec[:, np.newaxis]
-    Cinv = np.linalg.inv(C)
+    nvec = xp.arange(N+1, dtype=dtype, device=device)
+    C = ti ** nvec[:, xp.newaxis]
+    Cinv = xp.linalg.inv(C)
     # improve precision of result
     for i in range(2):
-        Cinv = 2*Cinv - Cinv.dot(C).dot(Cinv)
+        Cinv = 2*Cinv - Cinv @ C @ Cinv
     vec = 2.0 / (nvec[::2]+1)
-    ai = Cinv[:, ::2].dot(vec) * (N / 2.)
+    ai = Cinv[:, ::2] @ vec * (N / 2.)
 
-    if (N % 2 == 0) and equal:
+    N_even = (N % 2 == 0)
+    N = xp.asarray(N, dtype=dtype, device=device)
+    if N_even and equal:
         BN = N/(N+3.)
         power = N+2
     else:
         BN = N/(N+2.)
         power = N+1
 
-    BN = BN - np.dot(yi**power, ai)
+    BN = BN - (yi**power) @ ai
     p1 = power+1
-    fac = power*math.log(N) - gammaln(p1)
-    fac = math.exp(fac)
+    fac = power*xp.log(N) - gammaln(p1)
+    fac = xp.exp(fac)
     return ai, BN*fac
 
 
