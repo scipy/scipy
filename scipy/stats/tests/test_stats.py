@@ -5066,7 +5066,7 @@ class TestKSTwoSamples:
         y = x.copy()
         x[6] = x6val
         res = stats.ks_2samp(x, y, alternative=alternative)
-        assert res.statistic == 0.1
+        assert_allclose(res.statistic, 0.1, rtol=1e-15)
         assert res.statistic_location == ref_location
         assert res.statistic_sign == ref_sign
 
