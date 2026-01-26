@@ -1,4 +1,3 @@
-import warnings
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
@@ -256,18 +255,13 @@ class RobustSlopesTest:
         assert_allclose(res.slope, ref.slope)
         assert_allclose(res.intercept, ref.intercept)
 
-    def test_warnings(self):
+    def test_degenerate(self):
         # Test `theilslopes` with degenerate input; see gh-15943
         pfun = getattr(stats, self.pfun)
-        msg = "All-NaN slice.*|Mean of empty slice|invalid value encountered.*"
-        with pytest.warns(RuntimeWarning, match=msg):
-            res = pfun([0, 1], [0, 0])
-            assert np.all(np.isnan(res))
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "invalid value encountered...", RuntimeWarning)
-            res = stats.theilslopes([0, 0, 0], [0, 1, 0])
-            assert_allclose(res, (0, 0, np.nan, np.nan))
+        res = pfun([0, 1], [0, 0])
+        assert np.all(np.isnan(res))
+        res = stats.theilslopes([0, 0, 0], [0, 1, 0])
+        assert_allclose(res, (0, 0, np.nan, np.nan))
 
     def test_namedtuple_consistency(self):
         """
