@@ -7,7 +7,6 @@ The following functions still need tests:
 - ncfdtridfd
 - ncfdtrinc
 - nbdtrik
-- nbdtrin
 - nctdtridf
 - nctdtrinc
 
@@ -156,6 +155,9 @@ def _binomial_cdf(k, n, p):
     onemp = mpmath.fsub(1, p, exact=True)
     return mpmath.betainc(n - k, k + 1, x2=onemp, regularized=True)
 
+def _negative_binomial_cdf(k, r, p):
+    k, r, p = mpmath.mpf(k), mpmath.mpf(r), mpmath.mpf(p)
+    return mpmath.betainc(r, k+1, x1=0, x2=p, regularized=True)
 
 def _f_cdf(dfn, dfd, x):
     if x < 0:
@@ -717,6 +719,38 @@ class TestNoncentralTFunctions:
     def test_nctdtrit(self, df, nc, x, expected_cdf):
         assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
 
+
+class TestNegativeBinomialFunctions:
+
+    @pytest.mark.parametrize("args",
+        [(np.nan, 1, 1), (1, np.nan, 1), (1, 1, np.nan),
+         (np.nan, np.nan, 1), (np.nan, 1, np.nan), (1, np.nan, np.nan),
+         (np.nan, np.nan, np.nan)]
+    )
+    def test_nan_propagation(self, args):
+        assert np.isnan(sp.nbdtrin(*args))
+
+    @pytest.mark.parametrize("args",
+        [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
+         (-1, 1, -1), (1, -1, -1), (-1, -1, -1),
+         (1, 1.1, 0.9), (1, 0.9, 1.1)]
+    )  
+    def test_domain_error(self, args):
+        with sp.errstate(domain="raise"):
+            with pytest.raises(sp.SpecialFunctionError, match="domain"):
+                sp.nbdtrin(*args)
+
+    @pytest.mark.parametrize(
+            "k, y, p, n, rtol",
+            [(5, 0.3214569091796875, 0.25, 3, 1e-18),
+             (10, 3.820379007878081089302022753626e-70, 0.15, 100, 1e-15),
+             (100, 0.97557472292704298255653906603083, 0.15, 10, 1e-14),
+             (2, 3.5032532500000018230123192269914e-73, 0.001, 25, 1e-18),
+             (2, 0.99999932710299546878804333774717, 0.999, 15, 1e-10),
+             (500, 0.99999999986031784927135792193089, 0.1, 15, 1e-8),
+             (0, 1.0000000000000005551115123125784e-10, 0.1, 10, 1e-18)])
+    def test_inverse_n(self, k, y, p, n, rtol):
+        assert_allclose(sp.nbdtrin(k, y, p), n, rtol)
 
 class TestNoncentralChiSquaredFunctions:
 
