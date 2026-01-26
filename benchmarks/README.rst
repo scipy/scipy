@@ -56,6 +56,9 @@ side.
 The JAX backend is compiled with `jax.jit` when supported; JIT warmup times are excluded
 from the benchmark results.
 
+When writing Array API benchmarks, you should subclass ``common.XPBenchmark`` instead of
+``common.Benchmark``. See docstring of ``XPBenchmark`` for details and examples.
+
 
 Writing benchmarks
 ------------------
