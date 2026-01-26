@@ -743,13 +743,28 @@ class TestNegativeBinomialFunctions:
     @pytest.mark.parametrize(
             "k, y, p, n, rtol",
             [(5, 0.3214569091796875, 0.25, 3, 1e-18),
-             (10, 3.820379007878081089302022753626e-70, 0.15, 100, 1e-15),
-             (100, 0.97557472292704298255653906603083, 0.15, 10, 1e-14),
-             (2, 3.5032532500000018230123192269914e-73, 0.001, 25, 1e-18),
-             (2, 0.99999932710299546878804333774717, 0.999, 15, 1e-10),
-             (500, 0.99999999986031784927135792193089, 0.1, 15, 1e-8),
-             (0, 1.0000000000000005551115123125784e-10, 0.1, 10, 1e-18)])
+             (10, 3.8203790078780810893e-70, 0.15, 100, 1e-15),
+             (100, 0.97557472292704298255, 0.15, 10, 1e-14),
+             (2, 3.5032532500000018230e-73, 0.001, 25, 1e-18),
+             (2, 0.99999932710299546878, 0.999, 15, 1e-10),
+             (500, 0.99999999986031784927, 0.1, 15, 1e-8),
+             (0, 1.0000000000000005551e-10, 0.1, 10, 1e-18)])
     def test_inverse_n(self, k, y, p, n, rtol):
+        # The following code was used to generate the values. 
+        # import mpmath
+        # import scipy
+        # mpmath.mp.dps = 1000
+
+        # def neg_binomial_cdf(k, n, p):
+        #     return mpmath.betainc(n, k+1, x1=0, x2=p, regularized=True)
+        # n = 3
+        # p = 0.25
+        # k = 5
+        # cdf = neg_binomial_cdf(k, n, p)
+        # print("y = ", mpmath.nstr(cdf, 20))
+        # nval = (scipy.special.nbdtrin(k, float(cdf), p))
+        # print("Relative Error:", (n - nval) / n)
+
         assert_allclose(sp.nbdtrin(k, y, p), n, rtol)
 
 class TestNoncentralChiSquaredFunctions:
