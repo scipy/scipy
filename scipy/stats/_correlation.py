@@ -390,7 +390,7 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
     return SignificanceResult(res.statistic, res.pvalue)
 
 
-@xp_capabilities()
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis")])
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -511,12 +511,12 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     return _robust_slopes(y, x=x, alpha=alpha, method=method, pfun='theilslopes')
 
 
-@xp_capabilities()
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis")])
 @_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
                           too_small=1)
-def siegelslopes(y, x=None, method='separate', *, axis=None):
+def siegelslopes(y, x=None, method='hierarchical', *, axis=None):
     r"""
     Computes the Siegel estimator for a set of points (x, y).
 
@@ -675,7 +675,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     if alpha > 0.5:
         alpha = 1. - alpha
 
-    z = special.ndtri(alpha / 2.)
+    z = xp.asarray(special.ndtri(alpha / 2.), dtype=y.dtype)
     # This implements (2.6) from Sen (1968)
     # we don't actually need ranks, so an enhancement could be to have
     # `rankdata` return only the second output. In the meantime, use the
@@ -683,6 +683,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     _, nxreps = _rankdata(x, method='min', return_ties=True)
     _, nyreps = _rankdata(y, method='min', return_ties=True)
     nt = xp.count_nonzero(xp.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
+    nt = xp.asarray(nt, dtype=y.dtype)
     ny = y.shape[-1]                                                    # n in Sen 1968
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (
@@ -690,12 +691,14 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
         - xp.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
         - xp.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
     # Find the confidence interval indices in `slopes`
-    sigma = xp.sqrt(xp.maximum(sigsq, 0.))
-    Ru = xp.minimum(xp.astype(xp.round((nt - z*sigma)/2.), xp.int64), nt-1)
-    Rl = xp.maximum(xp.astype(xp.round((nt + z*sigma)/2.), xp.int64) - 1, 0)
+    sigma = xp.sqrt(xp.maximum(sigsq, xp.zeros_like(sigsq)))
+    Ru = xp.minimum(xp.astype(xp.round((nt - z*sigma)/2.), xp.int64),
+                    xp.astype(nt, xp.int64)-1)
+    Rl = xp.maximum(xp.astype(xp.round((nt + z*sigma)/2.), xp.int64) - 1,
+                    xp.asarray(0, dtype=xp.int64))
     R = xp.concat((xpx.atleast_nd(Rl, ndim=1), xpx.atleast_nd(Ru, ndim=1)), axis=-1)
     slopes = xp.sort(slopes, axis=-1)
-    delta = np.take_along_axis(slopes, R, axis=-1)
+    delta = xp.take_along_axis(slopes, R, axis=-1)
     i_nan = xp.broadcast_to(sigsq < 0, delta.shape)
     delta = xpx.at(delta)[i_nan].set(xp.nan)
 

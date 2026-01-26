@@ -3,9 +3,10 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy.conftest import skip_xp_invalid_arg
+import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_jax,
-                                   eager_warns)
-from scipy._lib._array_api_no_0d import xp_assert_close
+                                   eager_warns, xp_result_type, is_array_api_strict)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats
 from scipy.stats._axis_nan_policy import SmallSampleWarning
 
@@ -231,13 +232,13 @@ class TestSpearmanRho:
 
 class RobustSlopesTest:
     #  'iv, mask, warnings, consistency, gh19678, mstats'
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         pfun = getattr(stats, self.pfun)
         other_method = 'joint' if pfun == stats.theilslopes else 'hierarchical'
         msg = (f"method must be either '{other_method}' or 'separate'. "
                "'joint_separate' is invalid.")
         with pytest.raises(ValueError, match=msg):
-            pfun([0, 1, 1], method='joint_separate')
+            pfun(xp.asarray([0, 1, 1]), method='joint_separate')
 
     @skip_xp_invalid_arg
     @pytest.mark.parametrize("method", ['separate', 'other'])
@@ -255,44 +256,47 @@ class RobustSlopesTest:
         assert_allclose(res.slope, ref.slope)
         assert_allclose(res.intercept, ref.intercept)
 
-    def test_degenerate(self):
+    def test_degenerate(self, xp):
         # Test `theilslopes` with degenerate input; see gh-15943
         pfun = getattr(stats, self.pfun)
-        res = pfun([0, 1], [0, 0])
-        assert np.all(np.isnan(res))
-        res = stats.theilslopes([0, 0, 0], [0, 1, 0])
-        assert_allclose(res, (0, 0, np.nan, np.nan))
+        res = pfun(xp.asarray([0, 1]), xp.asarray([0, 0]))
+        assert xp.all(xp.isnan(xp.stack(res)))
+        res = stats.theilslopes(xp.asarray([0, 0, 0]), xp.asarray([0, 1, 0]))
+        xp_assert_equal(res[0], xp.asarray(0.))
+        xp_assert_equal(res[1], xp.asarray(0.))
+        xp_assert_equal(res[2], xp.asarray(xp.nan))
+        xp_assert_equal(res[3], xp.asarray(xp.nan))
 
-    def test_namedtuple_consistency(self):
+    def test_namedtuple_consistency(self, xp):
         """
         Simple test to ensure tuple backwards-compatibility of the returned object.
         """
         pfun = getattr(stats, self.pfun)
 
-        y = [1, 2, 4]
-        x = [4, 6, 8]
+        y = xp.asarray([1, 2, 4])
+        x = xp.asarray([4, 6, 8])
 
         result = pfun(y, x)
 
         # note both returned values are distinct here
-        assert_equal(result[0], result.slope)
-        assert_equal(result[1], result.intercept)
+        xp_assert_equal(result[0], result.slope)
+        xp_assert_equal(result[1], result.intercept)
         if pfun == stats.theilslopes:
-            assert_equal(result[2], result.low_slope)
-            assert_equal(result[3], result.high_slope)
+            xp_assert_equal(result[2], result.low_slope)
+            xp_assert_equal(result[3], result.high_slope)
 
-    def test_gh19678_uint8(self):
+    def test_gh19678_uint8(self, xp):
         # `theilslopes` returned unexpected results when `y` was an unsigned type.
         # Check that this is resolved.
         pfun = getattr(stats, self.pfun)
         rng = np.random.default_rng(2549824598234528)
-        y = rng.integers(0, 255, size=10, dtype=np.uint8)
+        y = xp.asarray(rng.integers(0, 255, size=10, dtype=np.uint8))
         res = pfun(y, y)
-        np.testing.assert_allclose(res.slope, 1)
+        xp_assert_close(res.slope, xp.asarray(1.))
 
     @pytest.mark.parametrize("method", ['separate', 'other'])
     @pytest.mark.parametrize("case_number", [0, 1, 2, 3])
-    def test_against_mstats(self, method, case_number):
+    def test_against_mstats(self, method, case_number, xp):
         pfun = getattr(stats, self.pfun)
         if method == 'other':
             method = 'joint' if self.pfun =='theilslopes' else 'hierarchical'
@@ -311,71 +315,96 @@ class RobustSlopesTest:
             case 3:  # ties in x and y
                 x = rng.integers(25, size=100)
                 y = rng.integers(50, size=100)
-        res = pfun(y, x, method=method, axis=-1)
+
         ref = pfun(y, x, method=method)
-        assert res.slope != 0  # avoid trivial cases
-        assert_allclose(res.slope, ref.slope)
-        assert_allclose(res.intercept, ref.intercept)
+
+        y, x = xp.asarray(y), x if x is None else xp.asarray(x)
+        if (is_array_api_strict(xp) and xp.isdtype(y.dtype, 'integral')
+                and xp.isdtype(x.dtype, 'real floating')):
+            # array API strict doesn't allow mixed type promotion, so promote for it
+            y = xp.astype(y, xp.float64)
+
+        dtype = xp_result_type(y, x, force_floating=True, xp=xp)
+
+        res = pfun(y, x, method=method, axis=-1)
+
+        assert res.slope != 0  # ensure randomly generated test case isn't trivial
+        xp_assert_close(res.slope, xp.asarray(ref.slope, dtype=dtype))
+        xp_assert_close(res.intercept, xp.asarray(ref.intercept, dtype=dtype))
         if pfun == stats.theilslopes:
-            assert_allclose(res.low_slope, ref.low_slope)
-            assert_allclose(res.high_slope, ref.high_slope)
+            xp_assert_close(res.low_slope, xp.asarray(ref.low_slope, dtype=dtype))
+            xp_assert_close(res.high_slope, xp.asarray(ref.high_slope, dtype=dtype))
 
 
+@make_xp_test_case(stats.theilslopes)
 class TestTheilslopes(RobustSlopesTest):
     pfun = 'theilslopes'
-    def test_theilslopes(self):
+    def test_theilslopes(self, xp):
         # Test for basic slope and intercept.
-        slope, intercept, lower, upper = stats.theilslopes([0, 1, 1])
-        assert_allclose(slope, 0.5)
-        assert_allclose(intercept, 0.5)
+        y = xp.asarray([0, 1, 1])
+        slope, intercept, lower, upper = stats.theilslopes(y)
+        xp_assert_close(slope, xp.asarray(0.5))
+        xp_assert_close(intercept, xp.asarray(0.5))
 
-        slope, intercept, lower, upper = stats.theilslopes([0, 1, 1], method='joint')
-        assert_allclose(slope, 0.5)
-        assert_allclose(intercept, 0.0)
+        slope, intercept, lower, upper = stats.theilslopes(y, method='joint')
+        xp_assert_close(slope, xp.asarray(0.5))
+        xp_assert_close(intercept, xp.asarray(0.0))
 
         # Test of confidence intervals from example in Sen (1968).
-        x = [1, 2, 3, 4, 10, 12, 18]
-        y = [9, 15, 19, 20, 45, 55, 78]
+        x = xp.asarray([1, 2, 3, 4, 10, 12, 18])
+        y = xp.asarray([9, 15, 19, 20, 45, 55, 78])
         slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07)
-        assert_allclose(slope, 4)
-        assert_allclose(intercept, 4.0)
-        assert_allclose(upper, 4.38, rtol=5e-3)
-        assert_allclose(lower, 3.71, rtol=5e-3)
+        xp_assert_close(slope, xp.asarray(4.0))
+        xp_assert_close(intercept, xp.asarray(4.0))
+        xp_assert_close(upper, xp.asarray(4.38), rtol=5e-3)
+        xp_assert_close(lower, xp.asarray(3.71), rtol=5e-3)
 
         slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07,
                                                            method='joint')
-        assert_allclose(slope, 4)
-        assert_allclose(intercept, 6.0)
-        assert_allclose(upper, 4.38, rtol=5e-3)
-        assert_allclose(lower, 3.71, rtol=5e-3)
+        xp_assert_close(slope, xp.asarray(4.0))
+        xp_assert_close(intercept, xp.asarray(6.0))
+        xp_assert_close(upper, xp.asarray(4.38), rtol=5e-3)
+        xp_assert_close(lower, xp.asarray(3.71), rtol=5e-3)
 
 
+@make_xp_test_case(stats.siegelslopes)
 class TestSiegelslopes(RobustSlopesTest):
     pfun = 'siegelslopes'
-    def test_siegelslopes(self):
+    def test_siegelslopes(self, xp):
         # method should be exact for straight line
-        y = 2 * np.arange(10) + 0.5
-        assert_equal(stats.siegelslopes(y), (2.0, 0.5))
-        assert_equal(stats.siegelslopes(y, method='separate'), (2.0, 0.5))
+        y = 2 * xp.arange(10.) + 0.5
+        slope, intercept = stats.siegelslopes(y)
+        xp_assert_close(slope, xp.asarray(2.0))
+        xp_assert_close(intercept, xp.asarray(0.5))
+        slope, intercept = stats.siegelslopes(y, method='separate')
+        xp_assert_close(slope, xp.asarray(2.0))
+        xp_assert_close(intercept, xp.asarray(0.5))
 
-        x = 2 * np.arange(10)
+        x = 2 * xp.arange(10.)
         y = 5 * x - 3.0
-        assert_equal(stats.siegelslopes(y, x), (5.0, -3.0))
-        assert_equal(stats.siegelslopes(y, x, method='separate'), (5.0, -3.0))
+        slope, intercept = stats.siegelslopes(y, x)
+        xp_assert_close(slope, xp.asarray(5.0))
+        xp_assert_close(intercept, xp.asarray(-3.0))
+        slope, intercept = stats.siegelslopes(y, x, method='separate')
+        xp_assert_close(slope, xp.asarray(5.0))
+        xp_assert_close(intercept, xp.asarray(-3.0))
 
-        # method is robust to outliers: brekdown point of 50%
+        # method is robust to outliers: breakdown point of 50%
+        y = xpx.at(y)[:4].set(1000.)
         y[:4] = 1000
-        assert_equal(stats.siegelslopes(y, x), (5.0, -3.0))
+        xp_assert_close(slope, xp.asarray(5.0))
+        xp_assert_close(intercept, xp.asarray(-3.0))
 
         # if there are no outliers, results should be comparable to linregress
-        x = np.arange(10)
+        x = np.arange(10.)
         y = -2.3 + 0.3 * x + stats.norm.rvs(size=10, random_state=231)
         slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)
 
+        y, x = xp.asarray(y), xp.asarray(x)
         slope, intercept = stats.siegelslopes(y, x)
-        assert_allclose(slope, slope_ols, rtol=0.1)
-        assert_allclose(intercept, intercept_ols, rtol=0.1)
+        xp_assert_close(slope, xp.asarray(slope_ols), rtol=0.1)
+        xp_assert_close(intercept, xp.asarray(intercept_ols), rtol=0.1)
 
         slope, intercept = stats.siegelslopes(y, x, method='separate')
-        assert_allclose(slope, slope_ols, rtol=0.1)
-        assert_allclose(intercept, intercept_ols, rtol=0.1)
+        xp_assert_close(slope, xp.asarray(slope_ols), rtol=0.1)
+        xp_assert_close(intercept, xp.asarray(intercept_ols), rtol=0.1)
