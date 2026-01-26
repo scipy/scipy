@@ -9742,7 +9742,13 @@ class skewnorm_gen(rv_continuous):
         return scu._skewnorm_ppf(x, 0.0, 1.0, a)
 
     def _sf(self, x, a):
-        return sc.ndtr(-x) + 2 * sc.owens_t(x, a)
+        # gh-24438: Use the direct formula for positive skew (`a > 0`) to preserve precision.
+        # For negative skew (`a < 0`), the direct formula involves subtraction of two small
+        # quantities (sf(x) - 2*|T(x, a)|), leading to cancellation and negative results.
+        # Fallback to the symmetric CDF mapping for a < 0 to maintain stability.
+        return np.where(a > 0, 
+                        _norm_sf(x) + 2 * sc.owens_t(x, a), 
+                        self._cdf(-x, -a))
 
     def _isf(self, x, a):
         return scu._skewnorm_isf(x, 0.0, 1.0, a)

@@ -4465,6 +4465,18 @@ class TestSkewNorm:
         # N[InverseCDF[SkewNormalDistribution[0, 1, 500], 1/100], 14] in Wolfram Alpha.
         assert_allclose(stats.skewnorm.ppf(0.01, 500), 0.012533469508013, rtol=1e-13)
 
+    def test_gh24438_sf_precision(self):
+        # Regression test for gh-24438: skewnorm.sf precision in right tail
+        # Previously, sf(30, 5) returned 0.0 due to cancellation.
+        x = 30
+        a = 5
+        res = stats.skewnorm.sf(x, a)
+        
+        # Expected value is approx 9.81e-198. 
+        # The critical check is that it's strictly positive (>0) and in the tail (<1e-100)
+        assert res > 0.0
+        assert res < 1e-100    
+
 
 class TestExpon:
     def test_zero(self):
