@@ -1290,7 +1290,13 @@ def zpk2tf(z, p, k):
 
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
-        result_dtype = xp.result_type(temp.dtype, k.dtype)
+        # Determine output dtype considering both polynomial and gain types.
+        # If temp is integral, use k.dtype directly (k is already float/complex).
+        # Otherwise use result_type to handle float/complex promotion.
+        if xp.isdtype(temp.dtype, "integral"):
+            result_dtype = k.dtype
+        else:
+            result_dtype = xp.result_type(temp.dtype, k.dtype)
         b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=result_dtype)
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]

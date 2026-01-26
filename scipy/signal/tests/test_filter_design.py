@@ -321,8 +321,8 @@ class TestZpk2Tf:
 
         xp_assert_close(a, a1)
         xp_assert_close(a, a2)
-        xp_assert_close(b[0], b1)
-        xp_assert_close(b[1], b2)
+        xp_assert_close(b[0, :], b1)
+        xp_assert_close(b[1, :], b2)
         assert xp.isdtype(b.dtype, 'complex floating')
 
 
