@@ -1433,6 +1433,9 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
         overwrite_a = True
         a1 = a1.copy()
 
+    # XXX can relax a1.ndim == 2?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
+
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
         None: -1,
