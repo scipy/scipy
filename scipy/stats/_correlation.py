@@ -391,7 +391,8 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
 
 
 @xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
-                                ("jax.numpy", "non-concrete boolean indexing")])
+                                ("jax.numpy", "non-concrete boolean indexing"),
+                                ('cupy', 'no rankdata (xp.repeats limitation)')])
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -673,9 +674,9 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     elif pfun == 'theilslopes':
         medinter = median(y, axis=-1) - medslope * median(x, axis=-1)
     else:
-        # Calculate the intercepts from each point using slopes to each other point
+        # Calculate pairwise intercepts given each point (row i) and the slope to each
+        # other point (column j). Then calculate the median of (row) medians.
         intercepts = y[..., :, xp.newaxis] - slopes*x[..., :, xp.newaxis]
-        # Calculate the median of medians, just like we calculated the median slope.
         medinter = median(nanmedian(intercepts, axis=-1), axis=-1)
 
     if pfun == 'siegelslopes':
@@ -685,7 +686,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     if alpha > 0.5:
         alpha = 1. - alpha
 
-    z = xp.asarray(special.ndtri(alpha / 2.), dtype=y.dtype)
+    z = float(special.ndtri(alpha / 2.))
     # This implements (2.6) from Sen (1968)
     # we don't actually need ranks, so an enhancement could be to have
     # `rankdata` return only the second output. In the meantime, use the
