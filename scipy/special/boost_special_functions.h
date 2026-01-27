@@ -1969,7 +1969,8 @@ Real nbinom_invn_wrap(Real k, Real y, Real p)
     if (std::isnan(k) || std::isnan(y) || std::isnan(p)) {
         return NAN;
     }
-    if ((k < 0) || (y < 0) || (y > 1) || (p < 0) || (p > 1)) {
+    // The edge cases of p=0,1 is handled in boost 
+    if ((k < 0) || (y <= 0) || (y >= 1) || (p < 0) || (p > 1)) {
         sf_error("nbdtrik", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
