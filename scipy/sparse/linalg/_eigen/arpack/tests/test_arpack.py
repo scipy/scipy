@@ -410,17 +410,7 @@ def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
 @pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA'])
 @pytest.mark.parametrize("typ", ['F', 'D'])
 @pytest.mark.parametrize("D", SymmetricParams().complex_test_cases)
-def test_hermitian_modes(D, typ, which, mattype, sigma):
-    # Skip problematic which values for generalized problems without sigma
-    # (ARPACK mode=2 does not preserve real/imaginary part ordering)
-    # For complex hermitian, LA->LR and SA->SR, so skip those too
-    if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI', 'LA', 'SA']:
-        # Skips the test if the which value is problematic for generalized 
-        # eigenvalue problems without sigma
-        pytest.skip(
-            f"which={which} is unreliable for generalized eigenvalue "
-            f"problem without sigma"
-        ) 
+def test_hermitian_modes(D, typ, which, mattype, sigma): 
     rng = np.random.default_rng(1749531706842957)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
@@ -457,16 +447,7 @@ def test_symmetric_no_convergence():
 @pytest.mark.parametrize("typ", ['f', 'd'])
 @pytest.mark.parametrize("D", NonSymmetricParams().real_test_cases)
 def test_real_nonsymmetric_modes(D, typ, which, mattype,
-                                 sigma, OPpart):
-    # Skip problematic which values for generalized problems without sigma
-    # (ARPACK mode=2 does not preserve real/imaginary part ordering)
-    if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
-        # Skips the test if the which value is problematic for generalized 
-        # eigenvalue problems without sigma
-        pytest.skip(
-            f"which={which} is unreliable for generalized eigenvalue "
-            f"problem without sigma"
-        )
+                                 sigma, OPpart): 
     rng = np.random.default_rng(174953334412726)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
@@ -478,16 +459,7 @@ def test_real_nonsymmetric_modes(D, typ, which, mattype,
 @pytest.mark.parametrize("typ", ['F', 'D'])
 @pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
 def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
-    # Skip problematic which values for generalized problems without sigma
-    # (ARPACK mode=2 does not preserve real/imaginary part ordering)
-    if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
-        # Skips the test if the which value is problematic for generalized 
-        # eigenvalue problems without sigma
-        pytest.skip(
-            f"which={which} is unreliable for generalized eigenvalue "
-            f"problem without sigma"
-        )
-    rng = np.random.default_rng(1749533536274527)
+    rng = np.random.default_rng(1749533536274527) 
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
 
@@ -717,24 +689,24 @@ def test_real_eigs_real_k_subset():
 
             prev_w = w
 
-# Test all cases where the fix should raise an error
-# Generalized problems with LR/SR/LI/SI and no sigma must raise,
-# because ARPACK mode=2 does not preserve real/imaginary ordering.
-@pytest.mark.parametrize("which", ['LR', 'SR', 'LI', 'SI']) 
-def test_generalized_eigs_which_real_imag_raises(which):
-    """Generalized problems with LR/SR/LI/SI and no sigma must raise."""
+
+def test_generalized_eigs_non_hermitian_M_raises():
+    """Generalized problems with non-Hermitian M must raise ValueError."""
     A = np.array([[1., 2., 3.],
                   [4., 5., 6.],
                   [7., 8., 9.]])
-    B = np.array([[1., 2., 0.],
-                  [0., 1., 0.],
-                  [0., 0., 1.]])
+    
+    # Non-Hermitian M: M[0,1]=2 but M[1,0]=0 (not symmetric)
+    M_non_hermitian = np.array([[1., 2., 0.],
+                                [0., 1., 0.],
+                                [0., 0., 1.]])
+    
+    # Should raise ValueError because M is not Hermitian
+    with pytest.raises(ValueError, match="M must be Hermitian"):
+        eigs(A, M=M_non_hermitian, k=1, which='LM')
+    
+    # Also test with eigsh
+    with pytest.raises(ValueError, match="M must be Hermitian"):
+        eigsh(A, M=M_non_hermitian, k=1, which='LM')
 
-    # Unless the fix is in place, this will not raise an error 
-    # and will return garbage values.
-
-    # This should raise ValueError because sigma is None and
-    # which is LR/SR/LI/SI
-    with pytest.raises(ValueError):
-        eigs(A, M=B, k=1, which=which)
         
