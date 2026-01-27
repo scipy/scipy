@@ -709,13 +709,21 @@ def test_generalized_eigs_which_real_imag_raises(which):
     A = np.array([[1., 2., 3.],
                   [4., 5., 6.],
                   [7., 8., 9.]])
-    B = np.array([[1., 2., 0.],
-                  [0., 1., 0.],
-                  [0., 0., 1.]])
-
-    #Unless the fix is in place, this will not raise an error and will return garbage values.
-    with pytest.raises(ValueError):
-        eigs(A, M=B, k=1, which=which)  #This should raise ValueError because sigma is None and which is LR/SR/LI/SI
+    
+    # Non-Hermitian M: M[0,1]=2 but M[1,0]=0 (not symmetric)
+    M_non_hermitian = np.array([[1., 2., 0.],
+                                [0., 1., 0.],
+                                [0., 0., 1.]])
+    
+    # Should raise ValueError because M is not Hermitian
+    with pytest.raises(ValueError, match="M must be Hermitian"):
+        eigs(A, M=M_non_hermitian, k=1, which='LM')
+    
+    # Also test with eigsh
+    with pytest.raises(ValueError, match="M must be Hermitian"):
+        eigsh(A, M=M_non_hermitian, k=1, which='LM')
+    
+    
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_gh24358(dtype):
