@@ -819,6 +819,7 @@ class KDTree(cKDTree):
         other : KDTree
             The other `KDTree` to compute distances against.
         max_distance : positive float
+        Maximum distance within which neighbors are returned.
 
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
