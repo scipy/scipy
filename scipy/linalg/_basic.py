@@ -233,9 +233,15 @@ def solve(a, b, lower=False, overwrite_a=False,
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
 
+    # XXX a1.ndim > 2 ; b1.ndim > 2
+    # XXX a1 C ordered & transposed==True ?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"]) and not transposed
+    overwrite_b = overwrite_b and (b1.ndim <= 2) and (b1.flags["F_CONTIGUOUS"])
+
     # heavy lifting
-    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed,
-                                        overwrite_a, overwrite_b)
+    x, err_lst = _batched_linalg._solve(
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)

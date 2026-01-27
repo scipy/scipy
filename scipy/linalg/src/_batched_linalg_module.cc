@@ -113,7 +113,13 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int lower=0;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!O!|npppp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &lower, &transposed, &overwrite_a, &overwrite_b)) {
+    if (!PyArg_ParseTuple(args, "O!O!|npppp",
+        &PyArray_Type, (PyObject **)&ap_Am,
+        &PyArray_Type, (PyObject **)&ap_b,
+        &structure,
+        &lower, &transposed,
+        &overwrite_a, &overwrite_b)
+    ){
         return NULL;
     }
 
@@ -155,26 +161,33 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Allocate the output
-    ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum);
-    if(!ap_x) {
-        PyErr_NoMemory();
-        return NULL;
+    if (!overwrite_b) {
+        /* Allocate the output */
+        ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum);
+        if(!ap_x) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+    else {
+        /* Reuse the memory buffer of the input array. */
+        ap_x = ap_b;
+        Py_INCREF(ap_b);
     }
 
     void *buf = PyArray_DATA(ap_x);
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _solve<float>(ap_Am, ap_b, (float *)buf, structure, lower, transposed, overwrite_a, vec_status);
+            info = _solve<float>(ap_Am, ap_b, (float *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _solve<double>(ap_Am, ap_b, (double *)buf, structure, lower, transposed, overwrite_a, vec_status);
+            info = _solve<double>(ap_Am, ap_b, (double *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, lower, transposed, overwrite_a, vec_status);
+            info = _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, lower, transposed, overwrite_a, vec_status);
+            info = _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");

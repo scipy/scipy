@@ -33,6 +33,12 @@ parametrize_overwrite_arg = pytest.mark.parametrize(
 )
 
 
+parametrize_overwrite_b_arg = pytest.mark.parametrize(
+    "overwrite_b_kw", [{"overwrite_b": True}, {"overwrite_b": False}, {}],
+    ids=["True", "False", "None"]
+)
+
+
 def _eps_cast(dtyp):
     """Get the epsilon for dtype, possibly downcast to BLAS types."""
     dt = dtyp
@@ -810,7 +816,6 @@ class TestSolve:
         with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
             solve(A, b, assume_a=structure)
 
-
     @pytest.mark.parametrize('b', [0, 1, [0, 1]])
     def test_singular_scalar(self, b):
         # regression test for gh-24355: scalar a=0 is singular
@@ -1131,6 +1136,45 @@ class TestSolve:
         x = solve(a, b, **overwrite_kw)
         assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize('a_dtype', [int, float])
+    @pytest.mark.parametrize('a_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_dtype', [int, float])
+    @pytest.mark.parametrize('b_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
+    # XXX add transposed={True,False}
+    def test_overwrite_args(
+        self, overwrite_kw, overwrite_b_kw, a_dtype, a_order, b_dtype, b_order, b_ndim
+    ):
+        n = 3
+        a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
+        a = a.astype(a_dtype, order=a_order)
+
+        b = np.arange(n)
+        if b_ndim > 1:
+            b = np.stack([b*j for j in range(b_ndim)]).T
+        b = b.astype(b_dtype, order=b_order)
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        # solve and check that the solution is correct for all parameters
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw)
+        assert_allclose(a_ref @ x, b_ref, atol=1e-14)
+
+        # now check that it worked in-place where expected
+        overwrite_a = overwrite_kw.get('overwrite_a', False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags['F_CONTIGUOUS']
+
+        overwrite_b = overwrite_b_kw.get('overwrite_b', False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags['F_CONTIGUOUS']
+
+        assert np.shares_memory(x, b) == b_inplace
+
+        assert (b == b_ref).all() != b_inplace
+        assert (a == a_ref).all() != a_inplace
 
     def test_posdef_not_posdef(self):
         # the `b` matrix is invertible but not positive definite
