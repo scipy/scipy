@@ -278,7 +278,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
      * It's a caller's responsibility to make sure that these pre-conditions are met,
      * none of them is checked here.
      * Therefore, if `overwrite_a = True`, we skip the copy-and-transpose steps above,
-     * and fill the output `ret_data` straight with the output from LAPACK.
+     * and `ret_data` will simply contain the result from the LAPACK call.
      *
      */
     CBLAS_INT buf_size = overwrite_a ? lwork : 2*n*n + lwork;
