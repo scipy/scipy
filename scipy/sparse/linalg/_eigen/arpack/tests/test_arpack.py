@@ -709,4 +709,3 @@ def test_generalized_eigs_non_hermitian_M_raises():
     with pytest.raises(ValueError, match="M must be Hermitian"):
         eigsh(A, M=M_non_hermitian, k=1, which='LM')
 
-        
