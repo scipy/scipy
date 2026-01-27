@@ -155,9 +155,6 @@ def _binomial_cdf(k, n, p):
     onemp = mpmath.fsub(1, p, exact=True)
     return mpmath.betainc(n - k, k + 1, x2=onemp, regularized=True)
 
-def _negative_binomial_cdf(k, r, p):
-    k, r, p = mpmath.mpf(k), mpmath.mpf(r), mpmath.mpf(p)
-    return mpmath.betainc(r, k+1, x1=0, x2=p, regularized=True)
 
 def _f_cdf(dfn, dfd, x):
     if x < 0:
