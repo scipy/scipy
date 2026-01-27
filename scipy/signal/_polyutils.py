@@ -6,7 +6,7 @@ namespace, and "new-style", np.polynomial.polynomial, routines.
 To distinguish the two sets, the "new-style" routine names start with `npp_`
 """
 import warnings
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_promote, xp_default_dtype, xp_size, xp_device, is_numpy
 )

@@ -9,7 +9,7 @@ from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
     xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from . import _basic
 from . import _spfun_stats
 from . import _ufuncs

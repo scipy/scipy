@@ -6,7 +6,7 @@ from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
 from scipy._lib._util import (check_random_state, rng_integers,
                               _transition_to_rng)
 from scipy._lib.deprecation import _deprecated
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy.spatial.distance import cdist
 
 from . import _vq

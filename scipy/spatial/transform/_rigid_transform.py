@@ -17,8 +17,8 @@ from scipy.spatial.transform import Rotation
 from scipy.spatial.transform._rotation import _promote
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy.spatial.transform._rigid_transform_xp as xp_backend
-import scipy._lib.array_api_extra as xpx
-from scipy._lib.array_api_compat import device
+import scipy._external.array_api_extra as xpx
+from scipy._external.array_api_compat import device
 from scipy._lib._array_api import xp_promote
 from scipy._lib._util import broadcastable
 

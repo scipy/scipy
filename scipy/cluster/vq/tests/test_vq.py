@@ -13,7 +13,7 @@ from scipy.cluster.vq import ClusterError, kmeans, kmeans2, vq, whiten
 from scipy.cluster.vq._vq_impl import _py_vq, _krandinit, _vq
 from scipy.sparse._sputils import matrix
 
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, eager_warns, is_lazy_array, make_xp_test_case,
     xp_copy, xp_assert_close, xp_assert_equal
