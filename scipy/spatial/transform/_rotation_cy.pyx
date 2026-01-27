@@ -1295,7 +1295,7 @@ def pow(double[:, :] quat, n) -> double[:, :]:
     elif n == -1:
         return inv(quat)
     elif n == 1:
-        return quat
+        return np.asarray(quat)
     # general scaling of rotation angle
     return from_rotvec(n * as_rotvec(quat))
 

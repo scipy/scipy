@@ -824,6 +824,8 @@ def test_pow(xp, ndim: int):
     # Test the short-cuts and other integers
     for n in [-5, -2, -1, 0, 1, 2, 5]:
         q = p**n
+        # Regression test for gh-24436
+        assert isinstance(q._matrix, type(p._matrix))
         r = RigidTransform.from_matrix(xp.tile(xp.eye(4), shape + (1, 1)))
         for _ in range(abs(n)):
             if n > 0:
