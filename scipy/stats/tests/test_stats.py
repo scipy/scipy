@@ -34,14 +34,14 @@ from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy.stats._stats_py import (_chk_asarray, _moment,
+from scipy.stats._stats_py import (_chk_asarray, _moment, _obrientransform,
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes, xp_result_type)
+                                   xp_swapaxes, xp_result_type, is_cupy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -6629,47 +6629,108 @@ def test_pointbiserial():
     assert_equal(res.correlation, res.statistic)
 
 
-def test_obrientransform():
-    # A couple tests calculated by hand.
-    x1 = np.array([0, 2, 4])
-    t1 = stats.obrientransform(x1)
-    expected = [7, -2, 7]
-    assert_allclose(t1[0], expected)
+@make_xp_test_case(stats.obrientransform)
+@pytest.mark.filterwarnings("ignore:Beginning in SciPy 1.20.0:FutureWarning")
+class TestObrientransform:
+    def test_basic(self, xp):
+        # A couple tests calculated by hand.
+        x1 = xp.asarray([0, 2, 4])
+        t1 = stats.obrientransform(x1)
+        expected = xp.asarray([7., -2., 7.])
+        xp_assert_close(t1[0][:], expected)
 
-    x2 = np.array([0, 3, 6, 9])
-    t2 = stats.obrientransform(x2)
-    expected = np.array([30, 0, 0, 30])
-    assert_allclose(t2[0], expected)
+        x2 = xp.asarray([0, 3, 6, 9])
+        t2 = stats.obrientransform(x2)
+        expected = xp.asarray([30., 0., 0., 30.])
+        xp_assert_close(t2[0][:], expected)
 
-    # Test two arguments.
-    a, b = stats.obrientransform(x1, x2)
-    assert_equal(a, t1[0])
-    assert_equal(b, t2[0])
+        # Test two arguments.
+        a, b = stats.obrientransform(x1, x2)
+        xp_assert_close(a, t1[0][:])
+        xp_assert_close(b, t2[0][:])
 
-    # Test three arguments.
-    a, b, c = stats.obrientransform(x1, x2, x1)
-    assert_equal(a, t1[0])
-    assert_equal(b, t2[0])
-    assert_equal(c, t1[0])
+        # Test three arguments.
+        a, b, c = stats.obrientransform(x1, x2, x1)
+        xp_assert_close(a, t1[0][:])
+        xp_assert_close(b, t2[0][:])
+        xp_assert_close(c, t1[0][:])
 
-    # This is a regression test to check np.var replacement.
-    # The author of this test didn't separately verify the numbers.
-    x1 = np.arange(5)
-    result = np.array(
-      [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
-       [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
-    assert_array_almost_equal(stats.obrientransform(x1, 2*x1), result, decimal=8)
+    def test_something(self, xp):
+        # This is a regression test to check np.var replacement.
+        # The author of this test didn't separately verify the numbers.
+        x1 = xp.arange(5)
+        ref = xp.asarray(
+          [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
+           [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
+        res = stats.obrientransform(x1, 2*x1)
+        xp_assert_close(res[0], ref[0, ...])
+        xp_assert_close(res[1], ref[1, ...])
 
-    # Example from "O'Brien Test for Homogeneity of Variance"
-    # by Herve Abdi.
-    values = range(5, 11)
-    reps = np.array([5, 11, 9, 3, 2, 2])
-    data = np.repeat(values, reps)
-    transformed_values = np.array([3.1828, 0.5591, 0.0344,
-                                   1.6086, 5.2817, 11.0538])
-    expected = np.repeat(transformed_values, reps)
-    result = stats.obrientransform(data)
-    assert_array_almost_equal(result[0], expected, decimal=4)
+    @skip_xp_backends("dask.array", reason="trouble with xp.repeat")
+    def test_reference(self, xp):
+        # Example from "O'Brien Test for Homogeneity of Variance" by Herve Abdi.
+        values = xp.arange(5, 11)
+        reps = [5, 11, 9, 3, 2, 2]
+        reps = reps if is_cupy(xp) else xp.asarray(reps)
+        data = xp.repeat(values, reps)
+        transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
+                                         1.6086, 5.2817, 11.0538])
+        expected = xp.repeat(transformed_values, reps)
+        result = stats.obrientransform(data)
+        xp_assert_close(result[0][:], expected, rtol=1e-3)
+
+    def test_nan_policy(self, xp):
+        rng = np.random.default_rng(4284359689201882838835)
+        x = rng.random(10)
+        x[3] = np.nan
+        x = xp.asarray(x)
+
+        # nan_policy='raise'
+        if not is_lazy_array(x):
+            with pytest.raises(ValueError, match="The input contains nan values"):
+                stats.obrientransform(x, nan_policy='raise')
+        else:
+            with pytest.raises(TypeError, match="nan_policy='raise' is not supported"):
+                stats.obrientransform(x, nan_policy='raise')
+
+        # nan_policy='propagate'
+        res = stats.obrientransform(x, nan_policy='propagate')[0]
+        xp_assert_equal(res, xp.full_like(x, xp.nan))
+
+        # nan_policy='omit'
+        i = xp.isnan(x)
+        res = stats.obrientransform(x, nan_policy='omit')[0]
+        ref = stats.obrientransform(x[~i])[0]
+        xp_assert_equal(res[i], x[i])
+        xp_assert_close(res[~i], ref)
+
+    @pytest.mark.parametrize('nan_policy', [None, 'propagate', 'omit'])
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_new_vs_old(self, nan_policy, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(4284359689201882838835)
+        x = rng.random(10)
+        if nan_policy is not None:
+            x[3] = np.nan
+        else:
+            nan_policy = 'propagate'
+        res = stats.obrientransform(xp.asarray(x.tolist(), dtype=dtype),
+                                    nan_policy=nan_policy)
+        ref = _obrientransform(x, nan_policy=nan_policy)
+        xp_assert_close(res[0], xp.asarray(ref[0].tolist(), dtype=dtype))
+
+        if SCIPY_ARRAY_API:
+            assert isinstance(res, tuple)
+        else:
+            assert isinstance(res, np.ndarray)
+
+
+@skip_xp_invalid_arg
+def test_obrientransform_warning():
+    x = np.ones(10)
+    message = "Beginning in SciPy 1.20.0..."
+    with pytest.warns(FutureWarning, match=message):
+        stats.obrientransform(x)
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,

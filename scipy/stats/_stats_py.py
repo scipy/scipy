@@ -72,6 +72,7 @@ from scipy._lib._array_api import (
     is_cupy,
     is_jax,
     is_marray,
+    SCIPY_ARRAY_API,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -2507,8 +2508,10 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-@xp_capabilities(np_only=True)
-def obrientransform(*samples):
+@xp_capabilities(extra_note=("When `SCIPY_ARRAY_API=1, `obrientransform` returns a "
+                             "tuple of arrays."))
+
+def obrientransform(*samples, nan_policy='propagate'):
     """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
@@ -2520,6 +2523,14 @@ def obrientransform(*samples):
     ----------
     sample1, sample2, ... : array_like
         Any number of arrays.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in a sample, all elements of the
+          transformed sample will be NaN.
+        - ``omit``: NaNs will be omitted when computing reducing statistics for the
+          transform, but NaNs in the sample will remain NaNs in the transformed sample.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -2565,6 +2576,40 @@ def obrientransform(*samples):
     that the variances are different.
 
     """
+    # Decided to split the implementations for two reasons:
+    # - The original returns an object array in some circumstances; the SCIPY_ARRAY_API
+    #   version can't do that. Branching based on the environment variable allows
+    #   us to move forward while the old behavior is deprecated.
+    # - The separate, new SCIPY_ARRAY_API implementation can be tested against the
+    #   original.
+    if SCIPY_ARRAY_API:
+        return _xp_obrientransform(*samples, nan_policy=nan_policy)
+    else:
+        message =  ("Beginning in SciPy 1.20.0, `obrientransform` will return a tuple "
+                    "of arrays rather than a 2-D array or 1-D object array of arrays.")
+        warnings.warn(message, FutureWarning, stacklevel=2)
+        return _obrientransform(*samples, nan_policy=nan_policy)
+
+
+def _xp_obrientransform(*samples, nan_policy):
+    xp = array_namespace(*samples)
+    n_samples = len(samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    samples = (samples,) if n_samples == 1 else samples
+    return tuple(_xp_obrientransform_one_sample(sample, xp=xp, nan_policy=nan_policy)
+                 for sample in samples)
+
+
+def _xp_obrientransform_one_sample(a, *, xp, nan_policy):
+    _contains_nan(a, nan_policy, xp_omit_okay=True)  # handle `nan_policy='raise'`
+    n = xp.asarray(xp.count_nonzero(~xp.isnan(a)), dtype=a.dtype)
+    mu = _xp_mean(a, nan_policy=nan_policy)
+    sq = (a - mu)**2
+    sumsq = _xp_mean(sq, nan_policy=nan_policy) * n
+    return ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
+
+
+def _obrientransform(*samples, nan_policy):
     TINY = np.sqrt(np.finfo(float).eps)
 
     # `arrays` will hold the transformed arguments.
@@ -2572,11 +2617,17 @@ def obrientransform(*samples):
     sLast = None
 
     for sample in samples:
+        contains_nan = _contains_nan(sample, nan_policy, xp_omit_okay=True)
+        if nan_policy == 'omit' and contains_nan:
+            _mean, _sum = np.nanmean, np.nansum
+            def _len(x): return int(np.count_nonzero(~np.isnan(x)))
+        else:
+            _mean, _sum, _len = np.mean, np.sum, len
         a = np.asarray(sample)
-        n = len(a)
-        mu = np.mean(a)
+        n = _len(a)
+        mu = _mean(a)
         sq = (a - mu)**2
-        sumsq = sq.sum()
+        sumsq = _sum(sq)
 
         # The O'Brien transform.
         t = ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
@@ -2584,7 +2635,7 @@ def obrientransform(*samples):
         # Check that the mean of the transformed data is equal to the
         # original variance.
         var = sumsq / (n - 1)
-        if abs(var - np.mean(t)) > TINY:
+        if abs(var - _mean(t)) > TINY:
             raise ValueError('Lack of convergence in obrientransform.')
 
         arrays.append(t)
