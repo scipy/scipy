@@ -107,26 +107,24 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     # Ideally this code will always be run for lazy arrays, but JAX JIT is having
     # some trouble. For now, it's useful to have the rest of `quantile` working with
     # JIX, so we can come back to this later.
-    if not is_lazy_array(y) and contains_nans:
+    if is_lazy_array(y) or contains_nans:
         nans = xp.isnan(y)
 
         # Note that if length along `axis` were 0 to begin with,
         # it is now length 1 and filled with NaNs.
         if nan_policy == 'propagate':
-            nan_out = xp.any(nans, axis=-1)
+            nan_out = xp.any(nans, axis=-1, keepdims=True)
         else:  # 'omit'
             n_int = n - xp.count_nonzero(nans, axis=-1, keepdims=True)
             n = xp.astype(n_int, dtype)
             # NaNs are produced only if slice is empty after removing NaNs
-            nan_out = xp.any(n == 0, axis=-1)
+            nan_out = xp.any(n == 0, axis=-1, keepdims=True)
             n = xpx.at(n, nan_out).set(y.shape[-1])  # avoids pytorch/pytorch#146211
 
-        if xp.any(nan_out):
-            y = xp.asarray(y, copy=True)  # ensure writable
-            y = xpx.at(y, nan_out).set(xp.nan)
-        elif xp.any(nans) and method == 'harrell-davis':
-            y = xp.asarray(y, copy=True)  # ensure writable
-            y = xpx.at(y, nans).set(0)  # any non-nan will prevent NaN from propagating
+        if is_lazy_array(y) or xp.any(nan_out):
+            y = xp.where(xp.broadcast_to(nan_out, y.shape), xp.nan, y)
+        if (is_lazy_array(y) or xp.any(nans)) and method == 'harrell-davis':
+            y = xp.where(nans, 0., y)  # any non-nan will prevent NaN from propagating
 
     n = xp.asarray(n, dtype=dtype, device=xp_device(y))
 
