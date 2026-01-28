@@ -552,6 +552,55 @@ GEN_GTCON_CZ(c, npy_complex64, float)
 GEN_GTCON_CZ(z, npy_complex128, double)
 
 
+#define GEN_GEQRF(PREFIX, TYPE) \
+inline void \
+call_geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
+};
+
+GEN_GEQRF(s, float);
+GEN_GEQRF(d, double);
+GEN_GEQRF(c, npy_complex64);
+GEN_GEQRF(z, npy_complex128);
+
+
+// N.B. `rwork` is not used for `s` and `d` variants, so swallowed prior to calling LAPACK
+#define GEN_GEQP3(PREFIX, TYPE) \
+inline void \
+call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, info); \
+};
+
+GEN_GEQP3(s, float);
+GEN_GEQP3(d, double);
+
+
+#define GEN_GEQP3_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt, TYPE *tau, TYPE *work, CBLAS_INT *lwork, void *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, (RTYPE *)rwork, info); \
+};
+
+GEN_GEQP3_CZ(c, npy_complex64, float);
+GEN_GEQP3_CZ(z, npy_complex128, double);
+
+
+// NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
+#define GEN_OR_UN_GQR(PREFIX, TYPE) \
+inline void \
+call_or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
+};
+
+GEN_OR_UN_GQR(sor, float)
+GEN_OR_UN_GQR(dor, double)
+GEN_OR_UN_GQR(cun, npy_complex64)
+GEN_OR_UN_GQR(zun, npy_complex128)
+
 
 /*
  * ?GESVD wrappers.
@@ -636,37 +685,6 @@ inline void call_gesdd(
 };
 
 
-
-
-#define GEN_GEQRF(PREFIX, TYPE) \
-inline void \
-geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
-};
-
-GEN_GEQRF(s, float)
-GEN_GEQRF(d, double)
-GEN_GEQRF(c, npy_complex64)
-GEN_GEQRF(z, npy_complex128)
-
-
-
-// NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
-#define GEN_OR_UN_GQR(PREFIX, TYPE) \
-inline void \
-or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
-{ \
-    BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
-};
-
-GEN_OR_UN_GQR(sor, float)
-GEN_OR_UN_GQR(dor, double)
-GEN_OR_UN_GQR(cun, npy_complex64)
-GEN_OR_UN_GQR(zun, npy_complex128)
-
-
-
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
 #define GEN_GELSS_SD(PREFIX, TYPE, RTYPE) \
 inline void \
@@ -748,6 +766,15 @@ enum St : Py_ssize_t
     POS_DEF = 101,
     SYM = 201,
     HER = 211
+};
+
+// QR mode tags; python side maps mode strings to these values
+enum QR_mode : Py_ssize_t
+{
+    FULL = 1,
+    R = 11,
+    RAW = 21,
+    ECONOMIC = 31
 };
 
 
@@ -911,6 +938,29 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
     for (npy_intp i = 0; i < n; i++) {
         for (npy_intp j = 0; j < m; j++) {
             dst[i*m + j] = src[i + j*ldb];
+        }
+    }
+}
+
+
+/*
+ * Extract only the upper triangle of an F-ordered ldaxN `src` to a C-ordered MxN
+ * `dst`. The rest is put to 0. This function is reminiscent of `zero_other_triangle`,
+ * but contains copying, swapping of ordering and zeroing in one.
+ *
+ * It is assumed that `lda` >= M
+ */
+template<typename T>
+void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_intp n, const npy_intp lda) {
+
+    for (npy_intp i = 0; i < n; i++) {
+        npy_intp stop = std::min(i + 1, m);
+        for (npy_intp j = 0; j < stop; j++) {
+            dst[j*n + i] = src[i*lda + j];
+        }
+
+        for (npy_intp j = stop; j < m; j++) {
+            dst[j*n + i] = numeric_limits<T>::zero;
         }
     }
 }
@@ -1230,7 +1280,3 @@ nan_matrix(T * data, npy_intp n) {
     }
 }
 #endif
-
-
-
-
