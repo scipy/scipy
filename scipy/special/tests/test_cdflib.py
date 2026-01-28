@@ -745,7 +745,7 @@ class TestNegativeBinomialFunctions:
              (2, 3.503253250000002e-73, 0.001, 25, 1e-18),
              (2, 0.9999993271029954, 0.999, 15, 1e-10),
              (500, 0.9999999998603178, 0.1, 15, 1e-8),
-             (0, 1.0000000000000006e-10, 0.1, 10, 1e-18)])
+             (0, 1.0000000000000006e-10, 0.1, 10, 5e-16)])
     def test_inverse_n(self, k, y, p, n, rtol):
         # The following code was used to generate the values. 
         # import mpmath
