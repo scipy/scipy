@@ -78,6 +78,12 @@ class Bench(Benchmark):
         else:
             sl.eigvals(self.a)
 
+    def time_geneig(self, size, contig, module):
+        if module == 'numpy':
+            pass
+        else:
+            sl.eig(self.a, self.a, check_finite=True)
+
     def time_svd(self, size, contig, module):
         if module == 'numpy':
             nl.svd(self.a)
@@ -177,6 +183,24 @@ class BatchedLstsqBench(Benchmark):
 
     def time_lstsq(self, shape):
         sl.lstsq(self.a, self.b, check_finite=False)
+
+
+class BatchedEigBench(Benchmark):
+    params = [
+        [(10, 10, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_eig(self, shape, module):
+        if module == 'numpy':
+            nl.eig(self.a)
+        else:
+            sl.eig(self.a)
+
 
 
 class Norm(Benchmark):
