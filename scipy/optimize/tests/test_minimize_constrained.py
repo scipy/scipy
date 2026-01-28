@@ -747,9 +747,6 @@ def test_gh11649():
     assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
 
 
-# Remove xfail when gh-24424 is resolved
-@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-24424.",
-                   strict=True)
 def test_gh24424():
     def calculate_intermediates(a, b, c, data):
         result = np.empty(

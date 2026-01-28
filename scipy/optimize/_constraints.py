@@ -71,11 +71,12 @@ class NonlinearConstraint:
         ``hess(x, v) -> {LinearOperator, sparse array, array_like}, shape (n, n)``.
         Here ``v`` is ndarray with shape (m,) containing Lagrange multipliers.
     keep_feasible : array_like of bool, optional
-        Whether to keep the constraint components feasible at the end of each
-        iteration. A single value sets this property for all components.
-        Default is False. Has no effect for equality constraints. Note that intervening
-        computations of the objective (not constraint) function may be located within
-        an infeasible region.
+        Whether to keep the constraint components feasible throughout
+        iterations. A single value sets this property for all components.
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
     finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation. Default is
         None, which will select a reasonable value automatically depending
@@ -155,11 +156,12 @@ class LinearConstraint:
         `lb` and `ub` as  necessary. Defaults to ``lb = -np.inf``
         and ``ub = np.inf`` (no limits).
     keep_feasible : dense array_like of bool, optional
-        Whether to keep the constraint components feasible at the end of each
-        iteration. A single value sets this property for all components.
-        Default is False. Has no effect for equality constraints. Note that intervening
-        computations of the objective (not constraint) function may be located within
-        an infeasible region.
+        Whether to keep the constraint components feasible throughout
+        iterations. A single value sets this property for all components.
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
     """
     def _input_validation(self):
         if self.A.ndim != 2:
