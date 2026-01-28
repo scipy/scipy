@@ -110,9 +110,8 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
         // Factorization step is identical for each algorithm so do not delegate
         if (pivoting) {
-            memset(slice_ptr_P, 0, intn * sizeof(int)); // geqp3 also takes in pivoting elements
             call_geqp3(&intm, &intn, data_A, &intm, slice_ptr_P, slice_ptr_tau, work, &lwork, rwork, &info);
-            for (int i = 0; i < intn; i++) {
+            for (CBLAS_INT i = 0; i < intn; i++) {
                 slice_ptr_P[i] -= 1; // geqp3 returns a 1-based index array, so subtract 1
             }
         }
