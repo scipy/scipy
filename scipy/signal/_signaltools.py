@@ -1628,7 +1628,7 @@ def medfilt(volume, kernel_size=None):
     >>> from scipy.signal import medfilt
     >>> x = np.array([5, 2, 100, 2, 5])
     >>> medfilt(x, kernel_size=3)
-    array([0, 5, 2, 5, 0])
+    array([2, 5, 2, 5, 2])
 
     """
     xp = array_namespace(volume)
