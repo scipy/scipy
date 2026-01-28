@@ -1620,6 +1620,16 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
 
+    Examples
+--------
+    Apply a median filter to a 1D array with an outlier:
+
+    >>> import numpy as np
+    >>> from scipy.signal import medfilt
+    >>> x = np.array([5, 2, 100, 2, 5])
+    >>> medfilt(x, kernel_size=3)
+    array([0, 5, 2, 5, 0])
+
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
