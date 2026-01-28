@@ -18,7 +18,7 @@ from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
 from . import _covariance, _rcont
 from ._qmvnt import _qmvt, _qmvn, _qauto
-from ._morestats import directional_stats
+from ._circstats import directional_stats
 from scipy.optimize import root_scalar
 
 __all__ = ['multivariate_normal',
