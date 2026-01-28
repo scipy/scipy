@@ -1297,7 +1297,7 @@ def zpk2tf(z, p, k):
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
             k_i = xp.asarray(k[i], dtype=result_dtype)
-            poly_i = _pu.poly(z[i, ...], xp=xp)
+            poly_i = xp.asarray(_pu.poly(z[i, ...], xp=xp), dtype=result_dtype)
             b_i = k_i * poly_i
             b = xpx.at(b)[i, ...].set(b_i)
     else:
