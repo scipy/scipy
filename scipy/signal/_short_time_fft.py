@@ -1986,7 +1986,7 @@ class ShortTimeFFT:
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
             slice.
-        p1 : int or None
+        p1 : int, optional
             The end of the array. If ``None`` then `p_max(n)` is used.
         k_offset : int
             Index of first sample (t = 0) in `x`.
