@@ -81,14 +81,14 @@ def test_whittaker_small_data():
     # Should work on order + 1 data points. The first 2*order+1 are special.
     la = 1
     y = np.arange(2)
-    x = whittaker_henderson(y, order=1, lamb=la)
+    wh = whittaker_henderson(y, order=1, lamb=la)
     # Analytical solution for order=1 and n=2
     res = (np.array([[1 + la, la], [la, 1 + la]]) / (1 + 2 * la)) @ y
-    assert_allclose(x, res, atol=1e-15)
+    assert_allclose(wh.x, res, atol=1e-15)
     whittaker_henderson(np.arange(3), order=1, lamb=la)
 
     y = np.arange(3)
-    x = whittaker_henderson(y, order=2, lamb=la)
+    wh = whittaker_henderson(y, order=2, lamb=la)
     # Analytical solution for order=2 and n=3
     res = (
         np.array([
@@ -96,7 +96,8 @@ def test_whittaker_small_data():
             [    2 * la, 1 + 2 * la,     2 * la],
             [       -la,     2 * la, 1 + 5 * la],
         ]) / (1 + 6 * la)) @ y
-    assert_allclose(x, res, atol=1e-15)
+    assert_allclose(wh.x, res, atol=1e-15)
+    assert wh.lamb == la
     whittaker_henderson(np.arange(4), order=2, lamb=la)
     whittaker_henderson(np.arange(5), order=2, lamb=la)
 
@@ -124,20 +125,21 @@ def test_whittaker_limit_penalty(order):
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
     noise = rng.standard_normal(n)
     signal = y + noise
-    x = whittaker_henderson(signal, lamb=1e-7, order=order)
-    assert_allclose(x, signal, rtol=1e-4, atol=1e-5)
+    wh = whittaker_henderson(signal, lamb=1e-7, order=order)
+    assert_allclose(wh.x, signal, rtol=1e-4, atol=1e-5)
+    assert wh.lamb == 1e-7
 
     # In the limit of an infinite penalty, the smoothing results in an interpolation
     # polynom of degree = penalty order - 1 (order=2 => linear)
-    x = whittaker_henderson(y, lamb=1e11, order=order)
+    wh = whittaker_henderson(y, lamb=1e11, order=order)
     x_poly = np.arange(len(y))
     poly = np.polynomial.Polynomial.fit(x=x_poly, y=y, deg=order - 1)
-    assert_allclose(x, poly(x_poly), rtol=10**(-6 + order), atol=1e-5)
+    assert_allclose(wh.x, poly(x_poly), rtol=10**(-6 + order), atol=1e-5)
     if order == 2:
         # Linear interpolation:
         # As the sine is positive fom 0 to pi and negative from pi to 2*pi, we expect
         # a negative slope.
-        assert np.diff(x)[0] < 0
+        assert np.diff(wh.x)[0] < 0
 
     if order > 2:
         # Very large lambda should trigger a user warning and produce the exact
@@ -146,19 +148,19 @@ def test_whittaker_limit_penalty(order):
             UserWarning,
             match="The linear solver in Whittaker-Henderson smoothing detected",
         ):
-            x = whittaker_henderson(y, lamb=1e15, order=order)
+            wh = whittaker_henderson(y, lamb=1e15, order=order)
     else:
-        x = whittaker_henderson(y, lamb=1e20, order=order)
-    assert_allclose(x, poly(x_poly), rtol=1e-10)
+        wh = whittaker_henderson(y, lamb=1e20, order=order)
+    assert_allclose(wh.x, poly(x_poly), rtol=1e-10)
 
 
 def test_whittaker_unpenalized():
     """Test whittaker for lamb=0."""
     n = 10
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
-    x = whittaker_henderson(y, lamb=0)
-    assert_allclose(x, y)
-    assert not np.may_share_memory(x, y)
+    wh = whittaker_henderson(y, lamb=0)
+    assert_allclose(wh.x, y)
+    assert not np.may_share_memory(wh.x, y)
 
 
 def test_whittaker_weights():
@@ -168,14 +170,14 @@ def test_whittaker_weights():
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
     noise = rng.standard_normal(n)
     signal = y + noise
-    x1 = whittaker_henderson(signal, lamb=1)
+    wh1 = whittaker_henderson(signal, lamb=1)
     w = np.ones_like(signal)
-    x2 = whittaker_henderson(signal, lamb=1, weights=w)
-    assert_allclose(x1, x2)
+    wh2 = whittaker_henderson(signal, lamb=1, weights=w)
+    assert_allclose(wh1.x, wh2.x)
 
     # Multiplying penalty and weights by the same number does not change the result.
-    x3 = whittaker_henderson(signal, lamb=3, weights=3*w)
-    assert_allclose(x3, x1)
+    wh3 = whittaker_henderson(signal, lamb=3, weights=3*w)
+    assert_allclose(wh3.x, wh1.x)
 
 
 def test_whittaker_zero_weight_interpolation():
@@ -189,16 +191,16 @@ def test_whittaker_zero_weight_interpolation():
     # Note: interpolation is a polynomial of degree = 2 * order - 1.
 
     # order = 1 => linear interpolation
-    x = whittaker_henderson(signal, lamb=1, order=1, weights=w)
-    interp = np.interp(np.arange(40, 60), [39, 60], [x[39], x[60]])
-    assert_allclose(x[40:60], interp)
+    wh = whittaker_henderson(signal, lamb=1, order=1, weights=w)
+    interp = np.interp(np.arange(40, 60), [39, 60], [wh.x[39], wh.x[60]])
+    assert_allclose(wh.x[40:60], interp)
 
     # order = 2 => cubic interpolation
-    x = whittaker_henderson(signal, lamb=1, order=2, weights=w)
+    wh = whittaker_henderson(signal, lamb=1, order=2, weights=w)
     poly = np.polynomial.Polynomial.fit(
-        x=[38, 39, 60, 61], y=[x[38], x[39], x[60], x[61]], deg=3
+        x=[38, 39, 60, 61], y=[wh.x[38], wh.x[39], wh.x[60], wh.x[61]], deg=3
     )
-    assert_allclose(x[40:60], poly(np.arange(40, 60)))
+    assert_allclose(wh.x[40:60], poly(np.arange(40, 60)))
 
 
 @pytest.mark.parametrize("order", [1, 2, 3])
@@ -232,5 +234,6 @@ def test_whittaker_reml():
     # add some (deterministic) noise
     y[::2] += 0.2
     y[1::2] -= 0.2
-    whittaker_henderson(y, lamb="reml", order=order)
+    wh = whittaker_henderson(y, lamb="reml", order=order)
+    assert wh.lamb > 0
     # TODO: validate against another implementation (e.g. in R)

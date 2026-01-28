@@ -1,5 +1,6 @@
 import warnings
 import numpy as np
+from scipy._lib._util import _RichResult
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
@@ -98,8 +99,16 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
     Returns
     -------
-    x : ndarray
-        The WH smoothed signal.
+     res : _RichResult
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes.
+
+        x : ndarray
+            The WH smoothed signal.
+        lamb : float
+            The penalty parameter. If the input ``lamb`` is a number, this value is
+            returned. If the input was ``"reml"``, the penalty parameter that minimized
+            the REML criterion is returned.
 
     Notes
     -----
@@ -150,18 +159,18 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     >>> x = year[0] + np.arange(len(y)) / 12
     >>> w = np.ones_like(y)
     >>> w[np.isnan(y)] = 0
-    >>> z = whittaker_henderson(y, weights=w)
+    >>> res = whittaker_henderson(y, weights=w)
     >>> y[:5]
     array([-0.19, -0.25, -0.1 , -0.17, -0.11])
-    >>> z[:5]
+    >>> res.x[:5]
     array([-0.18743163, -0.18403575, -0.18066452, -0.17797578, -0.17585308]))
 
     Let us plot measurements and Whittaker-Henderson smoothing.
 
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, label="measurement")
-    >>> plt.plot(x, z, label="WH smooth")
-    >>> plt.plot(x[w==0], z[w==0], color="red", label="inter-/extrapolation")
+    >>> plt.plot(x, res.x, label="WH smooth")
+    >>> plt.plot(x[w==0], res.x[w==0], color="red", label="inter-/extrapolation")
     >>> plt.xlabel("year")
     >>> plt.ylabel("temperatur deviation [°C]")
     >>> plt.title("Global Temperature Anomalies (ref. 1951-1980)")
@@ -220,7 +229,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
         # If performance matters and p == 2, think about a C++/Pybind implementation of
         # x = _solve_WH_order2_fast(signal, lamb=lamb)
         x, _ = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
-    return x
+    return _RichResult(x=x, lamb=lamb)
 
 
 def _polynomial_fit(y, lamb, order=2, weights=None, calc_logdet=False):
