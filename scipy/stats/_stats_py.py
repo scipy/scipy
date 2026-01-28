@@ -7810,7 +7810,9 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
+                                ('dask.array', 'no rankdata')],
+                 jax_jit=False, cpu_only=True)  # null distribution is NumPy-only
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -7988,73 +7990,74 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
 
-    data1 = np.sort(data1, axis=-1)
-    data2 = np.sort(data2, axis=-1)
+    xp = array_namespace(data1, data2)
+    data1 = xp.sort(data1, axis=-1)
+    data2 = xp.sort(data2, axis=-1)
     n1 = data1.shape[-1]
     n2 = data2.shape[-1]
     if min(n1, n2) == 0:
         raise ValueError('Data passed to ks_2samp must not be empty')
     n = n1 + n2
 
-    data_all = np.concatenate([data1, data2], axis=-1)
+    data_all = xp.concat((data1, data2), axis=-1)
     batch_shape = data_all.shape[:-1]
 
     # Previously, this part of the code was just:
     # cdf1 = _xp_searchsorted(data1, data_all, side='right') / n1
     # cdf2 = _xp_searchsorted(data2, data_all, side='right') / n2
     # cddiffs = cdf1 - cdf2
-    # but the switch from `np.searchsorted` to `_xp_searchsorted` would come with a
-    # pretty steep performance hit. When `np.searchsorted` is vectorized, we can
+    # but the switch from `xp.searchsorted` to `_xp_searchsorted` would come with a
+    # pretty steep performance hit. When `xp.searchsorted` is vectorized, we can
     # probably use that. In the meantime, the following algorithm is typically faster.
 
     # We want the ECDF of each sample evaluated at *all* the points in the pooled
     # sample. The values each ECDF can assume are given by:
-    cdf1_vals = np.broadcast_to(np.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
-    cdf2_vals = np.broadcast_to(np.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+    cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
+    cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
     # Now we "just" need to know how many times each of these values *will* be assumed
     # when we evaluate the ECDFs at all points in the pooled sample.
     # These counts are given by the differences between consecutive ("min" or "max")
     # ranks corresponding with the observations in the (sorted) samples.
     ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
-    cdf1_counts = np.diff(ranks[..., :n1], prepend=1, append=n + 1, axis=-1)
-    cdf2_counts = np.diff(ranks[..., -n2:], prepend=1, append=n + 1, axis=-1)
+    one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype, device=xp_device(ranks))
+    cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
+    cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
     # Repeat isn't vectorized - in general, this would produce a ragged array. However,
     # In our case, the sum of repeats for each slice is the same, so we can do a
     # vectorized repeat by raveling, repeating, then restoring the shape.
-    cdf1 = np.repeat(np.ravel(cdf1_vals), np.ravel(cdf1_counts), axis=-1)
-    cdf2 = np.repeat(np.ravel(cdf2_vals), np.ravel(cdf2_counts), axis=-1)
-    cddiffs = np.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
+    cdf1 = xp.repeat(xp_ravel(cdf1_vals), xp_ravel(cdf1_counts), axis=-1)
+    cdf2 = xp.repeat(xp_ravel(cdf2_vals), xp_ravel(cdf2_counts), axis=-1)
+    cddiffs = xp.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
 
     # Identify the location of the statistic
-    argminS = np.argmin(cddiffs, axis=-1, keepdims=True)
-    argmaxS = np.argmax(cddiffs, axis=-1, keepdims=True)
-    loc_minS = np.squeeze(np.take_along_axis(data_all, argminS, axis=-1), axis=-1)
-    loc_maxS = np.squeeze(np.take_along_axis(data_all, argmaxS, axis=-1), axis=-1)
+    argminS = xp.argmin(cddiffs, axis=-1, keepdims=True)
+    argmaxS = xp.argmax(cddiffs, axis=-1, keepdims=True)
+    loc_minS = xp.squeeze(xp.take_along_axis(data_all, argminS, axis=-1), axis=-1)
+    loc_maxS = xp.squeeze(xp.take_along_axis(data_all, argmaxS, axis=-1), axis=-1)
 
     # Ensure sign of minS is not negative.
-    minS = -np.squeeze(np.take_along_axis(cddiffs, argminS, axis=-1), axis=-1)
-    maxS = np.squeeze(np.take_along_axis(cddiffs, argmaxS, axis=-1), axis=-1)
-    minS = np.clip(minS, 0., 1.)
+    minS = -xp.squeeze(xp.take_along_axis(cddiffs, argminS, axis=-1), axis=-1)
+    maxS = xp.squeeze(xp.take_along_axis(cddiffs, argmaxS, axis=-1), axis=-1)
+    minS = xp.clip(minS, 0., 1.)
 
     if alternative == 'less':
-        selector = np.ones(minS.shape, dtype=bool)
+        selector = xp.ones(minS.shape, dtype=xp.bool)
     elif alternative == 'two-sided':
         selector = minS > maxS
     else:
-        selector = np.zeros(minS.shape, dtype=bool)
+        selector = xp.zeros(minS.shape, dtype=xp.bool)
 
-    d = np.where(selector, minS, maxS)
-    d_location = np.where(selector, loc_minS, loc_maxS)
-    d_sign = np.where(selector, -1, 1).astype(np.int8)
-    prob = _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative)
-
-
-    # Currently, `d` is a Python float. We want it to be a NumPy type, so
-    # float64 is appropriate. An enhancement would be for `d` to respect the
-    # dtype of the input.
-    d = d.astype(np.float64, copy=False)
-    return KstestResult(d[()], prob[()], statistic_location=d_location[()],
-                        statistic_sign=d_sign[()])
+    d = xp.where(selector, minS, maxS)
+    d_location = xp.where(selector, loc_minS, loc_maxS)
+    one = xp.asarray(1, dtype=xp.int8)
+    d_sign = xp.where(selector, -one, one)
+    prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
+    dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
+    prob = xp.asarray(prob, dtype=dtype)
+    d = xp.astype(d, dtype, copy=False)
+    if d.ndim == 0:
+        d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
+    return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
 
 
 @np.vectorize(excluded={1, 2, 3, 4, 5}, otypes=[np.float64])
@@ -10130,11 +10133,15 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     if is_jax(xp):
         import jax.scipy.stats as jax_stats
         ranks = jax_stats.rankdata(x, method=method, axis=-1)
+        out = [ranks]
+        y = xp.sort(x, axis=-1) if (return_ties or return_sorted) else None
+        if return_sorted:
+            out.append(y)
         if return_ties:
-            max_ranks = jax_stats.rankdata(xp.sort(x, axis=-1), method='max', axis=-1)
+            max_ranks = jax_stats.rankdata(y, method='max', axis=-1)
             t = xp.diff(max_ranks, axis=-1, prepend=0)
-            return ranks, t
-        return ranks
+            out.append(t)
+        return out[0] if len(out) == 1 else tuple(out)
 
     shape = x.shape
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
