@@ -1551,7 +1551,7 @@ class TestPermutationTest:
         expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
 
         def statistic(x, y, axis):
-            # todo: use `xp` as backend when `ks_2samp` is translated to array API
+            # todo: use `xp` as backend when `ks_2samp` supports more backends
             x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
             res = stats.ks_2samp(x, y, axis=axis, mode='asymp', alternative=alternative)
             res = xp.asarray(res.statistic)
