@@ -3,6 +3,8 @@ import numpy as np
 
 from scipy._lib._util import _apply_over_batch
 
+import warnings
+
 # Local imports
 from .lapack import _normalize_lapack_dtype, get_lapack_funcs
 from ._misc import _datacopied
@@ -156,7 +158,24 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
     if a1.ndim < 2:
         raise ValueError("expected at least a 2-D array")
 
+    # Bookkeeping to throw errors for backwards compat, else raise DeprecationWarning
     M, N = a1.shape[-2], a1.shape[-1]
+    if lwork is not None and lwork != -1:
+        # Checks for backwards compat
+        if (pivoting and lwork < max(3 * N + 1, M)):
+            raise ValueError(
+                "When pivoting an lwork of at least max(3M + 1, N) is required."
+            )
+        elif (not pivoting and lwork < max(M, N)):
+            raise ValueError(
+                "Without pivoting an lwork of at least max(N, M) is required."
+            )
+        else:
+            warnings.warn(
+                "The `lwork` keyword is no longer in use and will be deprecated.",
+                DeprecationWarning,
+                stacklevel=2
+            )
 
     # accommodate empty arrays
     if a1.size == 0:
