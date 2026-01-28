@@ -94,24 +94,15 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
         // Bundle all looping for the slice pointers into one large loop.
-        // The shape of all matrices is the same across the batching dimensions.
-        npy_intp offset_A = 0, offset_Q = 0, offset_R = 0, offset_tau = 0, offset_P = 0;
-        npy_intp temp_idx = idx;
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset_A += (temp_idx % shape[i]) * strides[i];
-            offset_Q += (temp_idx % shape[i]) * strides_Q[i];
-            offset_R += (temp_idx % shape[i]) * strides_R[i];
-            offset_tau += (temp_idx % shape[i]) * strides_tau[i];
-            offset_P += (temp_idx % shape[i]) * strides_P[i];
-
-            temp_idx /= shape[i];
-        }
-
-        T *slice_ptr_A = (T *)(A_data + (offset_A / sizeof(T)));
-        T *slice_ptr_Q = (T *)(Q_data + (offset_Q / sizeof(T)));
-        T *slice_ptr_R = (T *)(R_data + (offset_R / sizeof(T)));
-        T *slice_ptr_tau = (T *)(tau_data + (offset_tau / sizeof(T)));
-        CBLAS_INT *slice_ptr_P = (CBLAS_INT *)(P_data + (offset_P/sizeof(CBLAS_INT)));
+        // The shape of all matrices is the same across the batching dimensions,
+        // so reuse for all slices. `P` has one less dimension than the other pointers,
+        // but use the same `ndim` and `shape` since the looping should still happen
+        // in the same way.
+        T *slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
+        T *slice_ptr_Q = compute_slice_ptr(idx, Q_data, ndim, shape, strides_Q);
+        T *slice_ptr_R = compute_slice_ptr(idx, R_data, ndim, shape, strides_R);
+        T *slice_ptr_tau = compute_slice_ptr(idx, tau_data, ndim, shape, strides_tau);
+        CBLAS_INT *slice_ptr_P = compute_slice_ptr(idx, P_data, ndim, shape, strides_P);
 
         copy_slice_F(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
 
