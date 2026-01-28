@@ -1144,9 +1144,10 @@ class TestSolve:
     @pytest.mark.parametrize('b_dtype', [int, float])
     @pytest.mark.parametrize('b_order', ['C', 'F'])
     @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
-    # XXX add transposed={True,False}
+    @pytest.mark.parametrize('transposed', [True, False])
     def test_overwrite_args(
-        self, overwrite_kw, overwrite_b_kw, a_dtype, a_order, b_dtype, b_order, b_ndim
+        self, overwrite_kw, overwrite_b_kw, a_dtype, a_order,
+        b_dtype, b_order, b_ndim, transposed
     ):
         n = 3
         a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
@@ -1161,8 +1162,9 @@ class TestSolve:
         b_ref = b.copy()
 
         # solve and check that the solution is correct for all parameters
-        x = solve(a, b, **overwrite_kw, **overwrite_b_kw)
-        assert_allclose(a_ref @ x, b_ref, atol=1e-14)
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw, transposed=transposed)
+        a_or_aT = a_ref.T if transposed else a_ref
+        assert_allclose(a_or_aT @ x, b_ref, atol=1e-14)
 
         # now check that it worked in-place where expected
         overwrite_a = overwrite_kw.get('overwrite_a', False)

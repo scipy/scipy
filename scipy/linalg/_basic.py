@@ -234,8 +234,8 @@ def solve(a, b, lower=False, overwrite_a=False,
         return out[..., 0] if b_is_1D else out
 
     # XXX a1.ndim > 2 ; b1.ndim > 2
-    # XXX a1 C ordered & transposed==True ?
-    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"]) and not transposed
+    # XXX can do something if a1 C ordered & transposed==True ?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
     overwrite_b = overwrite_b and (b1.ndim <= 2) and (b1.flags["F_CONTIGUOUS"])
 
     # heavy lifting
