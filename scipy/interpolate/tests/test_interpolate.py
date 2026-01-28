@@ -243,6 +243,7 @@ class TestInterp1D:
         y = np.array([[0.0, 0.0], [0.0004164930555555557, 0.0]])
         yp = interp1d(x, y)(x)
         xp_assert_close(yp, y, atol=1e-20)
+        assert np.all(yp >= 0) # less stable computations result in yp[1,1] = -5e-20
 
     def test_slinear_dtypes(self):
         # regression test for gh-7273: 1D slinear interpolation fails with
