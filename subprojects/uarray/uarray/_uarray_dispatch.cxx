@@ -17,28 +17,27 @@ namespace {
 
 template <typename T>
 class immortal {
-    alignas(T) std::byte storage[sizeof(T)];
+  alignas(T) std::byte storage[sizeof(T)];
 
 public:
-    template <typename... Args>
-    immortal(Args&&... args) {
-       // Construct new T in storage
-       new(&storage) T(std::forward<Args>(args)...);
-    }
-    ~immortal() {
-        // Intentionally don't call destructor
-    }
+  template <typename... Args>
+  immortal(Args &&... args) {
+    // Construct new T in storage
+    new (&storage) T(std::forward<Args>(args)...);
+  }
+  ~immortal() {
+    // Intentionally don't call destructor
+  }
 
-    T* get() { return reinterpret_cast<T*>(&storage); }
-    const T* get() const { return reinterpret_cast<const T*>(&storage); }
-    const T* get_const() const { return reinterpret_cast<const T*>(&storage); }
+  T * get() { return reinterpret_cast<T *>(&storage); }
+  const T * get() const { return reinterpret_cast<const T *>(&storage); }
+  const T * get_const() const { return reinterpret_cast<const T *>(&storage); }
 
-    const T* operator ->() const { return get(); }
-    T* operator ->() { return get(); }
+  const T * operator->() const { return get(); }
+  T * operator->() { return get(); }
 
-    T& operator*() { return *get(); }
-    const T& operator*() const { return *get(); }
-
+  T & operator*() { return *get(); }
+  const T & operator*() const { return *get(); }
 };
 
 /** Handle to a python object that automatically DECREFs */
@@ -1196,7 +1195,8 @@ py_ref Function::canonicalize_kwargs(PyObject * kwargs) {
 
 py_func_args Function::replace_dispatchables(
     PyObject * backend, PyObject * args, PyObject * kwargs, PyObject * coerce) {
-  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert->get());
+  auto has_ua_convert =
+      PyObject_HasAttr(backend, identifiers.ua_convert->get());
   if (!has_ua_convert) {
     return {py_ref::ref(args), py_ref::ref(kwargs)};
   }
@@ -1548,8 +1548,8 @@ PyObject * set_state(PyObject * /* self */, PyObject * args) {
   local_domain_map = state->locals;
   bool use_thread_local_globals =
       (!reset_allowed) || state->use_thread_local_globals;
-  current_global_state =
-      use_thread_local_globals ? &thread_local_domain_map : global_domain_map.get();
+  current_global_state = use_thread_local_globals ? &thread_local_domain_map
+                                                  : global_domain_map.get();
 
   if (use_thread_local_globals)
     thread_local_domain_map = state->globals;
@@ -1845,7 +1845,7 @@ PyMODINIT_FUNC PyInit__uarray(void) {
     return nullptr;
 
 #if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m.get(), Py_MOD_GIL_NOT_USED);
+  PyUnstable_Module_SetGIL(m.get(), Py_MOD_GIL_NOT_USED);
 #endif
 
   return m.release();
