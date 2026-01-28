@@ -957,14 +957,14 @@ class UnivariateSpline:
             Spline of order k2=k+n representing the antiderivative of this
             spline.
 
+        See Also
+        --------
+        splantider, derivative
+
         Notes
         -----
 
         .. versionadded:: 0.13.0
-
-        See Also
-        --------
-        splantider, derivative
 
         Examples
         --------
@@ -1301,6 +1301,11 @@ class _BivariateSplineBase:
     def get_residual(self):
         """ Return weighted sum of squared residuals of the spline
         approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
+
+        Returns
+        -------
+        float
+            Weighted sum of squared residuals of the spline approximation.
         """
         return self.fp
 
@@ -1309,11 +1314,22 @@ class _BivariateSplineBase:
         of the spline with respect to x-, y-variable, respectively.
         The position of interior and additional knots are given as
         t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
+
+        Returns
+        -------
+        tuple of 1D arrays
+            Spline knots with respect to x- and y-variable.
         """
         return self.tck[:2]
 
     def get_coeffs(self):
-        """ Return spline coefficients."""
+        """ Return spline coefficients.
+
+        Returns
+        -------
+        1D array
+            Spline coefficients.
+        """
         return self.tck[2]
 
     def __call__(self, x, y, dx=0, dy=0, grid=True):
@@ -1583,6 +1599,11 @@ class BivariateSpline(_BivariateSplineBase):
             Order of y-derivative
 
             .. versionadded:: 0.14.0
+
+        Returns
+        -------
+        z : ndarray
+            Evaluated values. Shape is the result of broadcasting `xi` and `yi`.
 
         Examples
         --------
@@ -2135,6 +2156,11 @@ class SphereBivariateSpline(_BivariateSplineBase):
             Order of phi-derivative
 
             .. versionadded:: 0.14.0
+
+        Returns
+        -------
+        z : ndarray
+            Evaluated values. Shape is the result of broadcasting `theta` and `phi`.
 
         Examples
         --------

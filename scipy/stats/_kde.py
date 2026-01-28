@@ -519,7 +519,13 @@ class gaussian_kde:
     covariance_factor.__doc__ = """Computes the bandwidth factor `factor`.
         The default is `scotts_factor`.  A subclass can overwrite this
         method to provide a different method, or set it through a call to
-        `set_bandwidth`."""
+        `set_bandwidth`.
+
+        Returns
+        -------
+        factor : float
+            The bandwidth factor.
+        """
 
     def set_bandwidth(self, bw_method=None):
         """Compute the bandwidth factor with given method.
@@ -618,6 +624,16 @@ class gaussian_kde:
         """
         Evaluate the estimated pdf on a provided set of points.
 
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the pdf.
+
+        Returns
+        -------
+        pdf : ndarray
+            The pdf evaluated at `x`.
+
         Notes
         -----
         This is an alias for `gaussian_kde.evaluate`.  See the ``evaluate``
@@ -629,6 +645,16 @@ class gaussian_kde:
     def logpdf(self, x):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
+
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the log-pdf.
+
+        Returns
+        -------
+        logpdf : ndarray
+            The log-pdf evaluated at `x`.
         """
         points = atleast_2d(x)
 

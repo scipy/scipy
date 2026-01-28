@@ -77,6 +77,11 @@ class Covariance:
         diagonal : array_like
             The diagonal elements of a diagonal matrix.
 
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing `diagonal`.
+
         Notes
         -----
         Let the diagonal elements of a diagonal covariance matrix :math:`D` be
@@ -144,6 +149,12 @@ class Covariance:
             cumulative distribution function of
             `scipy.stats.multivariate_normal`) by inverting `precision`.
 
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `precision`.
+
         Notes
         -----
         Let the covariance matrix be :math:`A`, its precision matrix be
@@ -200,6 +211,12 @@ class Covariance:
         ----------
         cholesky : array_like
             The lower triangular Cholesky factor of the covariance matrix.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `cholesky`.
 
         Notes
         -----
@@ -260,6 +277,12 @@ class Covariance:
             A sequence (nominally a tuple) containing the eigenvalue and
             eigenvector arrays as computed by `scipy.linalg.eigh` or
             `numpy.linalg.eigh`.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `eigendecomposition`.
 
         Notes
         -----
