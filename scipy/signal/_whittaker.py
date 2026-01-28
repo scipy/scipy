@@ -163,7 +163,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     >>> y[:5]
     array([-0.19, -0.25, -0.1 , -0.17, -0.11])
     >>> res.x[:5]
-    array([-0.18743163, -0.18403575, -0.18066452, -0.17797578, -0.17585308]))
+    array([-0.18743163, -0.18403575, -0.18066452, -0.17797578, -0.17585308])
 
     Let us plot measurements and Whittaker-Henderson smoothing.
 
