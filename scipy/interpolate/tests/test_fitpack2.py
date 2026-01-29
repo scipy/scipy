@@ -1424,7 +1424,7 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl_custom).any())
         xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
 
-    @pytest.mark.slow()
+    @pytest.mark.xslow()
     @pytest.mark.skipif(sys.platform == "win32", reason="Fails intermittently "
                                                         "on Windows;"
                                                         "investigation pending.")
