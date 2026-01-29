@@ -1306,6 +1306,57 @@ def test_opaque_simplify():
     assert isinstance(data['parabola'], MatlabFunction)
 
 
+def test_matlab_string_opaque():
+    """Test that we can read multiple MatlabOpaque objects from same file"""
+    data = loadmat(pjoin(test_data_path, 'testmatlabstring_7_WIN64.mat'))
+    assert "matstring1" in data
+    assert isinstance(data['matstring1'], MatlabOpaque)
+    assert data['matstring1'][0]['_Class'] == "string"
+    assert data['matstring1'][0]['_TypeSystem'] == "MCOS"
+    assert data['matstring1'][0]['_ObjectMetadata'].dtype == np.uint32
+
+    assert "matstring2" in data
+    assert isinstance(data['matstring2'], MatlabOpaque)
+    assert data['matstring2'][0]['_Class'] == "string"
+    assert data['matstring2'][0]['_TypeSystem'] == "MCOS"
+    assert data['matstring2'][0]['_ObjectMetadata'].dtype == np.uint32
+
+    # Ensure different object IDs
+    assert data['matstring1'][0]['_ObjectMetadata'][4, 0] == 1
+    assert data['matstring2'][0]['_ObjectMetadata'][4, 0] == 2
+
+
+def test_write_matlab_opaque():
+    """Test that we can write a MatlabOpaque object"""
+    stream = BytesIO()
+    arr = np.empty((1, 1), dtype=mio5p.OPAQUE_DTYPE)
+    arr[0, 0]['_Class'] = "string"
+    arr[0, 0]['_TypeSystem'] = "MCOS"
+    arr[0, 0]['_ObjectMetadata'] = np.array([[0xDD000000, 2, 1, 1, 1, 1]],
+                                            dtype=np.uint32)
+    arr = MatlabOpaque(arr)
+    savemat(stream, {'matstring1': arr})
+
+    stream.seek(0)
+    data = loadmat(stream)
+    assert "matstring1" in data
+    assert isinstance(data['matstring1'], MatlabOpaque)
+    assert data['matstring1'][0]['_Class'] == "string"
+    assert data['matstring1'][0]['_TypeSystem'] == "MCOS"
+    assert data['matstring1'][0]['_ObjectMetadata'].dtype == np.uint32
+
+
+def test_write_function_workspace():
+    """Test that we can write function workspace to a MAT-file"""
+
+    workspace = "This is not the actual workspace contents. Just a test"
+    stream = BytesIO()
+    savemat(stream, {'__function_workspace__': workspace})
+    stream.seek(0)
+    data = loadmat(stream)
+    assert "__function_workspace__" in data
+
+
 def test_deprecation():
     """Test that access to previous attributes still works."""
     # This should be accessible immediately from scipy.io import
