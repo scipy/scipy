@@ -108,8 +108,7 @@ def _check_svds_n(A, k, u, s, vh, which="LM", check_res=True,
 class CheckingLinearOperator(LinearOperator):
     def __init__(self, A):
         self.A = A
-        self.dtype = A.dtype
-        self.shape = A.shape
+        super().__init__(dtype=A.dtype, shape=A.shape)
 
     def _matvec(self, x):
         assert_equal(max(x.shape), np.size(x))
@@ -133,7 +132,7 @@ class SVDSCommonTests:
     _A_empty_msg = "`A` must not be empty."
     _A_dtype_msg = "`A` must be of numeric data type"
     _A_type_msg = "type not understood"
-    _A_ndim_msg = "array must have ndim <= 2"
+    _A_ndim_msg = "Only 2-D input"
     _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
         (np.array([['a', 'b'], ['c', 'd']], dtype='object'), ValueError, _A_dtype_msg),

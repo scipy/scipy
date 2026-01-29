@@ -273,7 +273,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     True
 
     """
-    A,M,x,b = make_system(A,M,x0,b)
+    A,M,x,b,xp = make_system(A,M,x0,b)
 
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")

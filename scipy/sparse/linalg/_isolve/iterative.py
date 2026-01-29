@@ -1,13 +1,19 @@
 import warnings
+import functools
+
 import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
 
+from scipy._lib._array_api import (
+    is_lazy_array, xp_copy, xp_vector_norm, is_pydata_sparse_array,
+)
+
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 
-def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
+def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5, xp=np):
     """
     A helper function to handle tolerance normalization
     """
@@ -16,7 +22,9 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
                "if set, `atol` must be a real, non-negative number.")
         raise ValueError(msg)
 
-    atol = max(float(atol), float(rtol) * float(b_norm))
+    xp = np if xp.__name__ == 'sparse' else xp
+    # TODO: handle atol and rtol properly in the batched case
+    atol = xp.max(xp.stack((xp.asarray(float(atol)), float(rtol) * xp.min(b_norm))))
 
     return atol, rtol
 
@@ -87,7 +95,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicg', bnrm2, atol, rtol)
@@ -226,7 +234,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicgstab', bnrm2, atol, rtol)
@@ -376,44 +384,71 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
-    bnrm2 = np.linalg.norm(b)
+    A, M, x, b, xp = make_system(A, M, x0, b, nd_support=True)
+    batched = A.ndim > 2
+    bnrm2 = xp_vector_norm(b, axis=-1)
 
-    atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol)
+    atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol, xp=xp)
 
-    if bnrm2 == 0:
+    if not xp.any(bnrm2):
         return b, 0
 
-    n = len(b)
-
     if maxiter is None:
-        maxiter = n*10
+        maxiter = b.shape[-1] * 10
 
-    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
+    # TOOD: correct dotprod in complex case
+    dotprod = (
+        np.vdot if xp.isdtype(x.dtype, "complex floating")
+        else functools.partial(xp.vecdot, axis=-1)
+    )
 
     matvec = A.matvec
     psolve = M.matvec
-    r = b - matvec(x) if x.any() else b.copy()
+    r = b - matvec(x) if xp.any(x) else xp_copy(b)
 
     # Dummy value to initialize var, silences warnings
     rho_prev, p = None, None
 
     for iteration in range(maxiter):
-        if np.linalg.norm(r) < atol:  # Are we done?
+        converged = xp_vector_norm(r, axis=-1) < atol
+        if xp.all(converged):
             return x, 0
 
         z = psolve(r)
         rho_cur = dotprod(r, z)
+
         if iteration > 0:
-            beta = rho_cur / rho_prev
+            if is_lazy_array(converged):
+                beta = xp.where(~converged, rho_cur / rho_prev, 0.0)
+            elif not batched:
+                beta = rho_cur / rho_prev
+            else:
+                beta = xp.zeros_like(rho_cur, dtype=xp.float64)
+                mask = ~converged
+                beta[mask] = rho_cur[mask] / rho_prev[mask]
+            beta = beta[..., xp.newaxis]
+
             p *= beta
             p += z
         else:  # First spin
-            p = np.empty_like(r)
-            p[:] = z[:]
+            if is_pydata_sparse_array(z):
+                p = z.copy()
+            else:
+                p = xp_copy(z)
 
         q = matvec(p)
-        alpha = rho_cur / dotprod(p, q)
+        c = dotprod(p, q)
+
+        if is_lazy_array(converged):
+            alpha = xp.where(~converged, rho_cur / c, 0.0)
+        elif not batched:
+            alpha = rho_cur / c
+        else:
+            alpha = xp.zeros_like(rho_cur, dtype=xp.float64)
+            mask = ~converged
+            alpha[mask] = rho_cur[mask] / c[mask]
+        alpha = alpha[..., xp.newaxis]
+
         x += alpha*p
         r -= alpha*q
         rho_prev = rho_cur
@@ -496,7 +531,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('cgs', bnrm2, atol, rtol)
@@ -694,7 +729,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     if callback is None:
         callback_type = None
 
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp = make_system(A, M, x0, b)
     matvec = A.matvec
     psolve = M.matvec
     n = len(b)
@@ -907,7 +942,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     True
     """
     A_ = A
-    A, M, x, b = make_system(A, None, x0, b)
+    A, M, x, b, xp = make_system(A, None, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('qmr', bnrm2, atol, rtol)
