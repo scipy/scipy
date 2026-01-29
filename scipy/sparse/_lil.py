@@ -285,8 +285,7 @@ class _lil_base(_spbase, IndexMixin):
         else:
             res_dtype = upcast_scalar(self.dtype, other)
 
-            new = self.copy()
-            new = new.astype(res_dtype)
+            new = self.astype(res_dtype)  # sure to make a copy
             # Multiply this scalar by every element.
             for j, rowvals in enumerate(new.data):
                 new.data[j] = [val*other for val in rowvals]

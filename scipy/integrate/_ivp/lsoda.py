@@ -165,7 +165,10 @@ class LSODA(OdeSolver):
 
         if solver.successful():
             self.t = solver.t
-            self.y = solver._y
+            # IMPORTANT: Must copy solver._y because the C code reuses the same
+            # array object across calls (for in-place modification). Without copy,
+            # solve_ivp would store references to the same array.
+            self.y = solver._y.copy()
             # From LSODA Fortran source njev is equal to nlu.
             self.njev = integrator.iwork[12]
             self.nlu = integrator.iwork[12]
@@ -193,7 +196,7 @@ class LSODA(OdeSolver):
 
         # rwork[20:20 + (iwork[14] + 1) * self.n] contains entries of the
         # Nordsieck array in state needed for next iteration. We want
-        # the entries up to order for the last successful step so use the 
+        # the entries up to order for the last successful step so use the
         # following.
         yh = np.reshape(rwork[20:20 + (order + 1) * self.n],
                         (self.n, order + 1), order='F').copy()

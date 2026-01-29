@@ -15,7 +15,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal
 from collections.abc import Iterable
 
 import numpy as np
@@ -62,8 +62,8 @@ __all__ = [
 ]
 
 
-Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
-ArrayLike: TypeAlias = Array | npt.ArrayLike
+type Array = Any  # To be changed to a Protocol later (see array-api#589)
+type ArrayLike = Array | npt.ArrayLike
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -157,7 +157,7 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     for the specific purpose mentioned above. In production code, attempts
     to copy device arrays to NumPy arrays should fail, or else functions
     may appear to be working on the GPU when they actually aren't.
-    
+
     Parameters
     ----------
     x : array
@@ -425,7 +425,7 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
 
 # maybe use `scipy.linalg` if/when array API support is added
 def xp_vector_norm(x: Array, /, *,
-                   axis: int | tuple[int] | None = None,
+                   axis: int | tuple[int, int] | None = None,
                    keepdims: bool = False,
                    ord: int | float = 2,
                    xp: ModuleType | None = None) -> Array:
@@ -488,17 +488,14 @@ def xp_result_type(*args, force_floating=False, xp):
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
     """
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
-            for arg in args]
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
+    args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
+            else arg) for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
     if force_floating:
         args_not_none.append(1.0)
-
-    if is_numpy(xp) and xp.__version__ < '2.0':
-        # Follow NEP 50 promotion rules anyway
-        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
-                         for arg in args_not_none]
-        return xp.result_type(*args_not_none)
 
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
@@ -539,8 +536,11 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
-            for arg in args]  # solely to prevent double conversion of iterable to array
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
+    args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
+            else arg) for arg in args]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
@@ -770,7 +770,9 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
-    """ + (extra_note or "") + "    See :ref:`dev-arrayapi` for more information."
+    {extra_note or ""}
+    See :ref:`dev-arrayapi` for more information.
+    """
 
     return textwrap.dedent(note)
 
@@ -880,7 +882,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
 
     The above is equivalent to::
         @pytest.mark.skip_xp_backends(...)
-        @pytest.mark.skip_xp_backends(...)        
+        @pytest.mark.skip_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         def test_f1(xp):
@@ -972,7 +974,7 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
         def test(xp):
             ...
-    
+
     See Also
     --------
     xp_capabilities
@@ -985,6 +987,9 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
     import pytest
 
     marks = []
+    # Inject a marker which will help us identify tests using the xp
+    # fixture which do not use xp_capabilities.
+    marks.append(pytest.mark.uses_xp_capabilities(True, funcs=funcs))
     for func in funcs:
         capabilities = capabilities_table[func]
         exceptions = capabilities['exceptions']

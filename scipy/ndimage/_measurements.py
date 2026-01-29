@@ -450,7 +450,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default,
     out_dtype : dtype
         Dtype to use for `result`.
     default : int, float or None
-        Default return value when a element of `index` does not exist
+        Default return value when an element of `index` does not exist
         in `labels`.
     pass_positions : bool, optional
         If True, pass linear indices to `func` as a second argument.
@@ -708,7 +708,7 @@ def sum(input, labels=None, index=None):
     reasons, for new code please prefer `sum_labels`.  See the `sum_labels`
     docstring for more details.
 
-    """
+    """  # numpydoc ignore=RT01
     return sum_labels(input, labels, index)
 
 

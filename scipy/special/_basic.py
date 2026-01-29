@@ -109,6 +109,7 @@ def diric(x, n):
     Returns
     -------
     diric : ndarray
+        Value of periodic sinc function.
 
     Examples
     --------
@@ -1865,10 +1866,26 @@ def euler(n):
 
 
 def lqn(n, z):
-    """Legendre function of the second kind.
+    """Legendre functions of the second kind.
 
-    Compute sequence of Legendre functions of the second kind, Qn(z) and
-    derivatives for all degrees from 0 to n (inclusive).
+    Compute sequence of Legendre functions of the second kind, ``Qn(z)`` and
+    derivatives for all degrees from 0 to `n` (inclusive).
+    Returns two arrays of size ``(n+1,) + z.shape`` containing ``Qn(z)`` and
+    ``Qn'(z)``.
+
+    Parameters
+    ----------
+    n : int
+        Maximum degree of the Legendre functions.
+    z : array_like, complex
+        Real or complex input values.
+
+    Returns
+    -------
+    Qn_z : ndarray, shape (n+1,) + shape(z)
+        Values for all degrees ``0..n``
+    Qn_d_z : ndarray, shape (n+1,) + shape(z)
+        Derivatives for all degrees ``0..n``
 
     References
     ----------
@@ -1876,6 +1893,35 @@ def lqn(n, z):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute :math:`Q_n(x)` and its derivatives on an interval.
+
+    >>> import numpy as np
+    >>> from scipy.special import lqn
+    >>> import matplotlib.pyplot as plt
+
+    >>> xs = np.linspace(-2, 2, 200)
+    >>> n_max = 3
+    >>> Qn, dQn = lqn(n_max, xs)
+
+    Plot the Legendre functions of the second kind :math:`Q_n(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, Qn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
+
+    Plot the derivatives :math:`Q_n'(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, dQn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n'(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
@@ -2409,8 +2455,11 @@ def keip_zeros(nt):
 def kelvin_zeros(nt):
     """Compute nt zeros of all Kelvin functions.
 
-    Returned in a length-8 tuple of arrays of length nt.  The tuple contains
-    the arrays of zeros of (ber, bei, ker, kei, ber', bei', ker', kei').
+    Returns
+    -------
+    zeros : tuple of arrays
+        Length-8 tuple of arrays of length nt.  The tuple contains the arrays of zeros
+        of (ber, bei, ker, kei, ber', bei', ker', kei').
 
     References
     ----------
@@ -2438,6 +2487,11 @@ def pro_cv_seq(m, n, c):
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
 
+    Returns
+    -------
+    cv : array of floats
+        Characteristic values.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -2461,6 +2515,11 @@ def obl_cv_seq(m, n, c):
     Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    Returns
+    -------
+    cv : array of floats
+        Characteristic values.
 
     References
     ----------
@@ -2528,6 +2587,21 @@ def comb(N, k, *, exact=False, repetition=False):
 
     """
     if repetition:
+        # Special case: C(n, 0) with repetition = 1 for n >= 0
+        # Without this check, comb(0, 0, repetition=True) would compute
+        # comb(-1, 0) which incorrectly returns 0
+        if exact:
+            if k == 0 and int(N) == N and N >= 0:
+                return 1
+        else:
+            k, N = asarray(k), asarray(N)
+            cond = (k == 0) & (N >= 0)
+            vals = binom(N + k - 1, k)
+            if isinstance(vals, np.ndarray):
+                vals[cond] = 1.0
+            elif cond:
+                vals = np.float64(1.0)
+            return vals
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
@@ -2979,7 +3053,8 @@ def factorial(n, exact=False, extend="zero"):
 
 
 def factorial2(n, exact=False, extend="zero"):
-    """Double factorial.
+    """
+    Double factorial.
 
     This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
     * 3 * 1``.  It can be approximated numerically as::
@@ -3018,6 +3093,11 @@ def factorial2(n, exact=False, extend="zero"):
         Double factorial of ``n``, as integer, float or complex (depending on
         ``exact`` and ``extend``). Array inputs are returned as arrays.
 
+    References
+    ----------
+    .. [1] Complex extension to double factorial
+            https://en.wikipedia.org/wiki/Double_factorial#Complex_arguments
+
     Examples
     --------
     >>> from scipy.special import factorial2
@@ -3025,17 +3105,13 @@ def factorial2(n, exact=False, extend="zero"):
     np.float64(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
-
-    References
-    ----------
-    .. [1] Complex extension to double factorial
-            https://en.wikipedia.org/wiki/Double_factorial#Complex_arguments
     """
     return _factorialx_wrapper("factorial2", n, k=2, exact=exact, extend=extend)
 
 
 def factorialk(n, k, exact=False, extend="zero"):
-    """Multifactorial of n of order k, n(!!...!).
+    """
+    Multifactorial of n of order k, n(!!...!).
 
     This is the multifactorial of n skipping k values.  For example,
 
@@ -3077,18 +3153,6 @@ def factorialk(n, k, exact=False, extend="zero"):
         Multifactorial (order ``k``) of ``n``, as integer, float or complex (depending
         on ``exact`` and ``extend``). Array inputs are returned as arrays.
 
-    Examples
-    --------
-    >>> from scipy.special import factorialk
-    >>> factorialk(5, k=1, exact=True)
-    120
-    >>> factorialk(5, k=3, exact=True)
-    10
-    >>> factorialk([5, 7, 9], k=3, exact=True)
-    array([ 10,  28, 162])
-    >>> factorialk([5, 7, 9], k=3, exact=False)
-    array([ 10.,  28., 162.])
-
     Notes
     -----
     While less straight-forward than for the double-factorial, it's possible to
@@ -3114,6 +3178,18 @@ def factorialk(n, k, exact=False, extend="zero"):
     ----------
     .. [1] Complex extension to multifactorial
             https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
+
+    Examples
+    --------
+    >>> from scipy.special import factorialk
+    >>> factorialk(5, k=1, exact=True)
+    120
+    >>> factorialk(5, k=3, exact=True)
+    10
+    >>> factorialk([5, 7, 9], k=3, exact=True)
+    array([ 10,  28, 162])
+    >>> factorialk([5, 7, 9], k=3, exact=False)
+    array([ 10.,  28., 162.])
     """
     return _factorialx_wrapper("factorialk", n, k=k, exact=exact, extend=extend)
 
@@ -3260,7 +3336,7 @@ def zeta(x, q=None, out=None):
 
     Parameters
     ----------
-    x : array_like of float or complex.
+    x : array_like of float or complex
         Input data
     q : array_like of float, optional
         Input data, must be real.  Defaults to Riemann zeta. When `q` is

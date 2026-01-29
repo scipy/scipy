@@ -175,7 +175,6 @@ def test_duplicate_timestamps():
     assert_equal(sol.status, 1)
 
 
-@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -771,7 +770,6 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
-@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_t_eval_early_event():
     def early_event(t, y):
         return t - 7

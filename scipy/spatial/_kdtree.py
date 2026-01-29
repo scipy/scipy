@@ -204,7 +204,8 @@ class Rectangle:
 
 
 class KDTree(cKDTree):
-    """kd-tree for quick nearest-neighbor lookup.
+    """
+    kd-tree for quick nearest-neighbor lookup.
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
@@ -240,6 +241,27 @@ class KDTree(cKDTree):
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
 
+    Attributes
+    ----------
+    data : ndarray, shape (n,m)
+        The n data points of dimension m to be indexed. This array is
+        not copied unless this is necessary to produce a contiguous
+        array of doubles. The data are also copied if the kd-tree is built
+        with ``copy_data=True``.
+    leafsize : positive int
+        The number of points at which the algorithm switches over to
+        brute-force.
+    m : int
+        The dimension of a single data-point.
+    n : int
+        The number of data points.
+    maxes : ndarray, shape (m,)
+        The maximum value in each dimension of the n data points.
+    mins : ndarray, shape (m,)
+        The minimum value in each dimension of the n data points.
+    size : int
+        The number of nodes in the tree.
+
     Notes
     -----
     The algorithm used is described in [1]_.
@@ -266,29 +288,7 @@ class KDTree(cKDTree):
     .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
            nearest neighbor searching with clustered point sets,"
            Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
-
-    Attributes
-    ----------
-    data : ndarray, shape (n,m)
-        The n data points of dimension m to be indexed. This array is
-        not copied unless this is necessary to produce a contiguous
-        array of doubles. The data are also copied if the kd-tree is built
-        with ``copy_data=True``.
-    leafsize : positive int
-        The number of points at which the algorithm switches over to
-        brute-force.
-    m : int
-        The dimension of a single data-point.
-    n : int
-        The number of data points.
-    maxes : ndarray, shape (m,)
-        The maximum value in each dimension of the n data points.
-    mins : ndarray, shape (m,)
-        The minimum value in each dimension of the n data points.
-    size : int
-        The number of nodes in the tree.
-
-    """
+    """  # numpydoc ignore=SS02
 
     class node:
         @staticmethod
@@ -817,16 +817,16 @@ class KDTree(cKDTree):
         Parameters
         ----------
         other : KDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            values are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
-
         output_type : string, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            Which container to use for output data. Options: ``'dok_matrix'``,
+            ``'coo_matrix'``, ``'dict'``, or ``'ndarray'``. Default: ``'dok_matrix'``.
 
             .. versionadded:: 1.6.0
 
@@ -834,9 +834,9 @@ class KDTree(cKDTree):
         -------
         result : dok_matrix, coo_matrix, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------

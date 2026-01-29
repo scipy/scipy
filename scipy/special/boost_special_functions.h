@@ -535,7 +535,7 @@ powm1_double(double x, double y)
 //
 // This wrapper of hypergeometric_pFq is here because there are a couple
 // edge cases where hypergeometric_1F1 in Boost version 1.80 and earlier
-// has a either bug or an inconsistent behavior.  It turns out that
+// has either a bug or an inconsistent behavior.  It turns out that
 // hypergeometric_pFq does the right thing in those cases, so we'll use
 // it until our copy of Boost is updated.
 //
@@ -1655,12 +1655,18 @@ template<typename Real>
 Real
 binom_cdf_wrap(const Real x, const Real n, const Real p)
 {
+
     if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        try {
+            return boost::math::cdf(
+                boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        } catch (...) {
+            /* Boost was unable to produce a result. */
+            return NAN;
+        }
     }
     if (std::isnan(x)) {
-	return std::numeric_limits<double>::quiet_NaN();
+	    return NAN;
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
@@ -1682,8 +1688,13 @@ template<typename Real>
 Real
 binom_ppf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::quantile(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+    try {
+        return boost::math::quantile(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1702,8 +1713,13 @@ template<typename Real>
 Real
 binom_sf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    try {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1722,8 +1738,13 @@ template<typename Real>
 Real
 binom_isf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    try {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1736,6 +1757,51 @@ double
 binom_isf_double(double x, double n, double p)
 {
     return binom_isf_wrap(x, n, p);
+}
+
+template<typename Real>
+Real
+bdtrin_wrap(const Real k, const Real y, const Real p)
+{
+    if (std::isnan(p) || std::isnan(k) || std::isnan(y)) {
+        return NAN;
+    }
+    if (k < 0 || y < 0 || y > 1 || p < 0 || p > 1) {
+        sf_error("bdtrin", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real n;
+    try {
+        n = boost::math::binomial_distribution<Real, SpecialPolicy>::find_minimum_number_of_trials(
+            k, p, y);
+    } catch (const std::domain_error& e) {
+        sf_error("bdtrin", SF_ERROR_DOMAIN, NULL);
+        n = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("bdtrin", SF_ERROR_OVERFLOW, NULL);
+        n = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("bdtrin", SF_ERROR_UNDERFLOW, NULL);
+        n = 0;
+    } catch (...) {
+        sf_error("bdtrin", SF_ERROR_OTHER, NULL);
+        n = NAN;
+    }
+    if (n < 0) {
+        sf_error("bdtrin", SF_ERROR_NO_RESULT, NULL);
+        n = NAN;
+    }
+    return n;
+}
+
+double bdtrin_double(double k, double y, double p)
+{
+    return bdtrin_wrap(k, y, p);
+}
+
+float bdtrin_float(float k, float y, float p)
+{
+    return bdtrin_wrap(k, y, p);
 }
 
 template<typename Real>

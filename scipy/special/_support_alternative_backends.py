@@ -138,9 +138,10 @@ class _FuncInfo:
 
             _f = globals()[self.name]  # Allow nested wrapping
             def f(*args, _f=_f, xp=xp, **kwargs):
-                data_args = [arg.data for arg in args]
+                data_args = [getattr(arg, 'data', arg) for arg in args]
                 out = _f(*data_args, **kwargs)
-                mask = functools.reduce(operator.or_, (arg.mask for arg in args))
+                mask = functools.reduce(operator.or_,
+                                        (getattr(arg, 'mask', False) for arg in args))
                 return xp.asarray(out, mask=mask)
 
             return f

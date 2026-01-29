@@ -10,10 +10,10 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
-import inspect
 from warnings import warn
 
 import numpy as np
+from scipy._lib._util import wrapped_inspect_signature
 
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
@@ -240,7 +240,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     minimize_scalar : Interface to minimization algorithms for scalar
         univariate functions
@@ -738,7 +738,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 fun = _Remove_From_Func(fun, i_fixed, x_fixed)
 
                 if callable(callback):
-                    sig = inspect.signature(callback)
+                    sig = wrapped_inspect_signature(callback)
                     if set(sig.parameters) == {'intermediate_result'}:
                         # callback(intermediate_result)
                         print(callback)
@@ -892,7 +892,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     minimize : Interface to minimization algorithms for scalar multivariate
         functions

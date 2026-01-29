@@ -73,12 +73,15 @@ class NonlinearConstraint:
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
         iterations. A single value sets this property for all components.
-        Default is False. Has no effect for equality constraints.
-    finite_diff_rel_step: None or array_like, optional
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
+    finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation. Default is
         None, which will select a reasonable value automatically depending
         on a finite difference scheme.
-    finite_diff_jac_sparsity: {None, array_like, sparse array}, optional
+    finite_diff_jac_sparsity : {None, array_like, sparse array}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
         difference estimation, its shape must be (m, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity
@@ -155,7 +158,10 @@ class LinearConstraint:
     keep_feasible : dense array_like of bool, optional
         Whether to keep the constraint components feasible throughout
         iterations. A single value sets this property for all components.
-        Default is False. Has no effect for equality constraints.
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
     """
     def _input_validation(self):
         if self.A.ndim != 2:

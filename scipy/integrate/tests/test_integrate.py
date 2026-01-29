@@ -142,8 +142,10 @@ class TestOde(TestODEClass):
                 continue
             self._do_problem(problem, 'dop853')
 
-    @pytest.mark.thread_unsafe(reason="fails in parallel")
     def test_concurrent_fail(self):
+        # Test concurrent usage behavior for different solvers
+        # All solvers (vode, zvode, lsoda) now support concurrent usage
+        # with state persistence via explicit state parameters
         for sol in ('vode', 'zvode', 'lsoda'):
             def f(t, y):
                 return 1.0
@@ -157,7 +159,9 @@ class TestOde(TestODEClass):
             r.integrate(r.t + 0.1)
             r2.integrate(r2.t + 0.1)
 
-            assert_raises(RuntimeError, r.integrate, r.t + 0.1)
+            # With state persistence, r should still work correctly
+            r.integrate(r.t + 0.1)
+            assert r.successful()
 
     def test_concurrent_ok(self, num_parallel_threads):
         def f(t, y):

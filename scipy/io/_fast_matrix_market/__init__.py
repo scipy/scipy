@@ -395,10 +395,6 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         values. If symmetry is 'AUTO' the symmetry type of 'a' is either
         determined or set to 'general', at mmwrite's discretion.
 
-    Returns
-    -------
-    None
-
     Notes
     -----
     .. versionchanged:: 1.12.0

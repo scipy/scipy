@@ -62,3 +62,22 @@ def test_landau():
 
 def test_gh22956():
     _ = scu._ncx2_pdf(30, 1e307, 16)
+
+@pytest.mark.parametrize("func", [scu._binom_cdf, scu._binom_sf])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_extreme_inputs_for_binomial_probabilities(func, dtype):
+    # certain inputs caused C++ exceptions in boost
+    # resulting in Python interpreter crashes
+    k = 3e18
+    n = 10e18
+    p = 0.3
+    func(dtype(k), dtype(n), dtype(p))
+
+@pytest.mark.parametrize("func", [scu._binom_ppf, scu._binom_isf])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_extreme_inputs_for_binomial_quantiles(func, dtype):
+    # certain inputs caused C++ exceptions in boost
+    # resulting in Python interpreter crashes
+    n = 10e18
+    p = 0.5
+    func(dtype(p), dtype(n), dtype(p))

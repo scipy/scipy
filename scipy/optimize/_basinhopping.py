@@ -5,7 +5,8 @@ import numpy as np
 import math
 import inspect
 import scipy.optimize
-from scipy._lib._util import check_random_state, _transition_to_rng
+from scipy._lib._util import (check_random_state, _transition_to_rng,
+                              wrapped_inspect_signature)
 
 __all__ = ['basinhopping']
 
@@ -129,7 +130,7 @@ class BasinHoppingRunner:
         # steps are not sufficient.
         accept = True
         for test in self.accept_tests:
-            if inspect.signature(test) == _new_accept_test_signature:
+            if wrapped_inspect_signature(test) == _new_accept_test_signature:
                 testres = test(res_new=minres, res_old=self.incumbent_minres)
             else:
                 testres = test(f_new=energy_after_quench, x_new=x_after_quench,

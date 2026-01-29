@@ -19,8 +19,8 @@ meson.add_dist_script('tools/trim_sdist_content.py')
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
-min_numpy_version = '1.26.4'  # keep in sync with pyproject.toml
-min_python_version = '3.11'   # keep in sync with pyproject.toml
+min_numpy_version = '2.0.0'  # keep in sync with pyproject.toml
+min_python_version = '3.12'   # keep in sync with pyproject.toml
 
 python_version = py3.language_version()
 if python_version.version_compare(f'<@min_python_version@')
@@ -119,6 +119,13 @@ if host_machine.system() == 'darwin'
   if cc.has_link_argument('-Wl,-dead_strip')
     # Allow linker to strip unused symbols
     add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp', 'fortran'])
+  endif
+endif
+
+if get_option('b_sanitize') != 'none'
+  if cc.get_id() == 'clang'
+    ignore_file = meson.current_source_dir() / 'tools' / 'asan-ignore.txt'
+    add_global_arguments('-fsanitize-ignorelist=' + ignore_file, language: ['c', 'cpp'])
   endif
 endif
 

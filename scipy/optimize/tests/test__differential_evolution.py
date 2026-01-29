@@ -5,6 +5,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 import platform
 import warnings
 
+from scipy._lib._gcutils import assert_deallocated
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
 from scipy.optimize import differential_evolution, OptimizeResult
@@ -261,7 +262,7 @@ class TestDifferentialEvolutionSolver:
         # test that the getter property method for the best solution works.
         solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
         result = solver.solve()
-        assert_equal(result.x, solver.x)
+        assert_allclose(result.x, solver.x, atol=1e-15, rtol=0)
 
     def test_intermediate_result(self):
         # Check that intermediate result object passed into the callback
@@ -1751,3 +1752,7 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
+
+    def test_reference_cycles(self):
+        with assert_deallocated(DifferentialEvolutionSolver, rosen, [(0, 10)]*2):
+            pass

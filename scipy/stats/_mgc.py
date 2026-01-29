@@ -175,13 +175,13 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         mgc_dict : dict
             Contains additional useful results:
 
-                - mgc_map : ndarray
-                    A 2D representation of the latent geometry of the
-                    relationship.
-                - opt_scale : (int, int)
-                    The estimated optimal scale as a ``(x, y)`` pair.
-                - null_dist : list
-                    The null distribution derived from the permuted matrices.
+            - mgc_map : ndarray
+                A 2D representation of the latent geometry of the
+                relationship.
+            - opt_scale : (int, int)
+                The estimated optimal scale as a ``(x, y)`` pair.
+            - null_dist : list
+                The null distribution derived from the permuted matrices.
 
     See Also
     --------
@@ -398,16 +398,16 @@ def _mgc_stat(distx, disty):
         Contains additional useful additional returns containing the following
         keys:
 
-            - stat_mgc_map : ndarray
-                MGC-map of the statistics.
-            - opt_scale : (float, float)
-                The estimated optimal scale as a ``(x, y)`` pair.
+        - stat_mgc_map : ndarray
+            MGC-map of the statistics.
+        - opt_scale : (float, float)
+            The estimated optimal scale as a ``(x, y)`` pair.
 
     """
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
 
-    n, m = stat_mgc_map.shape
+    m, n = stat_mgc_map.shape
     if m == 1 or n == 1:
         # the global scale at is the statistic calculated at maximal nearest
         # neighbors. There is not enough local scale to search over, so

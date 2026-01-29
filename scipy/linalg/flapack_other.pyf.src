@@ -2214,16 +2214,21 @@ function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
 
 end function <prefix>lantr
 
-subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
+subroutine <prefix>larfg(n, alpha, x, incx, tau)
+    callstatement (*f2py_func)(&n,&alpha,x,&incx,&tau)
+    callprotoargument F_INT*, <ctype>*, <ctype>*, F_INT*, <ctype>*
+
     integer intent(in), check(n>=1) :: n
     <ftype> intent(in,out) :: alpha
-    <ftype> intent(in,copy,out), dimension(lx) :: x
+    <ftype> intent(in,copy,out), dimension(1+(n-2)*abs(incx)), depend(n,incx) :: x
     integer intent(in), check(incx>0||incx<0) :: incx = 1
     <ftype> intent(out) :: tau
-    integer intent(hide),depend(x,n,incx),check(lx > (n-2)*incx) :: lx = len(x)
 end subroutine <prefix>larfg
 
-subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
+subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work)
+    callstatement (*f2py_func)(&side,&m,&n,v,&incv,&tau,c,&ldc,work)
+    callprotoargument char*, F_INT*, F_INT*, <ctype>*, F_INT*, <ctype>*, <ctype>*, F_INT*, <ctype>*
+
     character intent(in), check(side[0]=='L'||side[0]=='R') :: side = 'L'
     integer intent(in,hide), depend(c) :: m = shape(c,0)
     integer intent(in,hide), depend(c) :: n = shape(c,1)
@@ -2233,8 +2238,7 @@ subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
     <ftype> dimension(m,n), intent(in,copy,out) :: c
     integer intent(in,hide) :: ldc = max(1,shape(c,0))
     ! FIXME: work should not have been an input argument but kept here for backwards compatibility!
-    <ftype> intent(in),dimension(lwork),depend(side,m,n) :: work
-    integer intent(hide),depend(work),check(lwork >= (side[0]=='L'?n:m)) :: lwork = len(work)
+    <ftype> intent(in), dimension((side[0]=='L'?n:m)), depend(side,m,n) :: work
 end subroutine <prefix>larf
 
 subroutine <prefix>lartg(f,g,cs,sn,r)
