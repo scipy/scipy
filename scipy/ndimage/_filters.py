@@ -2253,18 +2253,20 @@ def generic_filter1d(input, function, filter_size, axis=-1,
 
     Examples
     --------
-    This example defines and applies a custom callback function that computes the
-    range of values within a sliding window of size 3 and writes the result directly
-    into the provided ``output_line`` array.
+    This example defines and applies a custom callback function that computes
+    the range (maximum minus minimum) within a sliding window of size 3.
+    It utilizes ``sliding_window_view`` and demonstrates the required in-place
+    modification of the ``output_line`` array.
 
     >>> import numpy as np
     >>> from scipy.ndimage import generic_filter1d
+    >>> from numpy.lib.stride_tricks import sliding_window_view
 
     >>> def local_range(input_line, output_line):
     ...     # input_line includes padded values according to `filter_size` and `mode`
-    ...     for i in range(len(output_line)):
-    ...         window = input_line[i:i + 3]
-    ...         output_line[i] = window.max() - window.min()
+    ...     v = sliding_window_view(input_line, 3)
+    ...     # modify `output_line` in-place rather than returning the result
+    ...     output_line[:] = v.max(axis=1) - v.min(axis=1)
 
     >>> x = np.array([1, 2, 3, 4, 5], dtype=np.float64)
     >>> generic_filter1d(x, local_range, filter_size=3)
