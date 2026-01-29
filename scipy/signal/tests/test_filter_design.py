@@ -304,6 +304,27 @@ class TestZpk2Tf:
         xp_assert_close(b, b_ref, atol=1e-14)
         xp_assert_close(a, a_ref, atol=1e-14)
 
+    @skip_xp_backends("jax.numpy",
+                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
+    def test_zpk2tf_complex_k_multi_dim_z(self, xp):
+        # Regression test for gh-24395
+        k = 1j
+        z = xp.asarray([[1., 2.], [0., -1.]])
+        p = xp.asarray([3., 4.])
+
+        b, a = zpk2tf(z, p, k)
+
+        b1, a1 = zpk2tf(z[0, :], p, k)
+        b2, a2 = zpk2tf(z[1, :], p, k)
+
+        xp_assert_close(a, a1)
+        xp_assert_close(a, a2)
+        xp_assert_close(b[0, :], b1)
+        xp_assert_close(b[1, :], b2)
+        assert xp.isdtype(b.dtype, 'complex floating')
+
 
 @make_xp_test_case(sos2zpk)
 class TestSos2Zpk:
