@@ -795,7 +795,7 @@ GEN_GEEV_CZ(z, npy_complex128, double)
 /*
  * Wrappers for ?GGEV
  *
- * The design is similar to that of ?GGEV wrappers: all overloads receive *rwork and *alphar, *alphai,
+ * The design is similar to that of ?GEEV wrappers: all overloads receive *rwork and *alphar, *alphai,
  */
 #define GEN_GGEV_SD(PREFIX, TYPE) \
 inline void \

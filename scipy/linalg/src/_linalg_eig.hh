@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Templated loops for linalg.eig
  */
@@ -85,7 +86,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     }
 
     // query LWORK
-    call_geev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
+    call_geev(&jobvl, &jobvr, &intn, NULL, &lda, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
     if (info != 0) { free(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
@@ -237,7 +238,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     }
 
     // query LWORK
-    call_ggev(&jobvr, &jobvl, &intn, NULL, &lda, NULL, &ldb, NULL, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
+    call_ggev(&jobvl, &jobvr, &intn, NULL, &lda, NULL, &ldb, NULL, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
     if (info != 0) { free(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
