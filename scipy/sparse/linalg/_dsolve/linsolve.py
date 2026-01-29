@@ -285,9 +285,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             options = dict(ColPerm=permc_spec)
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
-            if info != 0:
+            if info == 0:
+                pass  # Success
+            elif 0 < info <= N:
                 warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
                 x.fill(np.nan)
+            elif info > N:
+                raise MemoryError("Out of memory during gssv")
+            else:
+                # gssv is not supposed to return any info < 0
+                # However, it calls gstrf, which can set info < 0
+                raise Exception(f"gssv exited with unknown exit code {info}")
             if b_is_vector:
                 x = x.ravel()
         else:
