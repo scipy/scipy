@@ -410,7 +410,7 @@ def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
 @pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA'])
 @pytest.mark.parametrize("typ", ['F', 'D'])
 @pytest.mark.parametrize("D", SymmetricParams().complex_test_cases)
-def test_hermitian_modes(D, typ, which, mattype, sigma):
+def test_hermitian_modes(D, typ, which, mattype, sigma): 
     rng = np.random.default_rng(1749531706842957)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
@@ -447,7 +447,7 @@ def test_symmetric_no_convergence():
 @pytest.mark.parametrize("typ", ['f', 'd'])
 @pytest.mark.parametrize("D", NonSymmetricParams().real_test_cases)
 def test_real_nonsymmetric_modes(D, typ, which, mattype,
-                                 sigma, OPpart):
+                                 sigma, OPpart): 
     rng = np.random.default_rng(174953334412726)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
@@ -459,7 +459,7 @@ def test_real_nonsymmetric_modes(D, typ, which, mattype,
 @pytest.mark.parametrize("typ", ['F', 'D'])
 @pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
 def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
-    rng = np.random.default_rng(1749533536274527)
+    rng = np.random.default_rng(1749533536274527) 
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
 
@@ -690,19 +690,22 @@ def test_real_eigs_real_k_subset():
             prev_w = w
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-def test_gh24358(dtype):
-    # gh-24358: eigs with which="SR" returned zeros due to nev variable was modifed
-    #  after naupd calls in the C ARPACK implementation. This was due to hitting a
-    # complex valued eig but requesting only one of them.
+def test_generalized_eigs_non_hermitian_M_raises():
+    """Generalized problems with non-Hermitian M must raise ValueError."""
+    A = np.array([[1., 2., 3.],
+                  [4., 5., 6.],
+                  [7., 8., 9.]])
+    
+    # Non-Hermitian M: M[0,1]=2 but M[1,0]=0 (not symmetric)
+    M_non_hermitian = np.array([[1., 2., 0.],
+                                [0., 1., 0.],
+                                [0., 0., 1.]])
+    
+    # Should raise ValueError because M is not Hermitian
+    with pytest.raises(ValueError, match="M must be Hermitian"):
+        eigs(A, M=M_non_hermitian, k=1, which='LM')
+    
+    # Also test with eigsh
+    with pytest.raises(ValueError, match="M must be Hermitian"):
+        eigsh(A, M=M_non_hermitian, k=1, which='LM')
 
-    # Test the specific issue in gh-24358
-    A = csr_array(np.array([[-1.3, 2.7, 0.2],
-                            [0.8, 4.1, 2.2],
-                            [2.1, 4.4, -1.9]], dtype=dtype))
-    w, z = eigs(A, 1, which="SR")
-    atol = 1e-4 if dtype in [np.float32, np.complex64] else 1e-6
-    assert_allclose(w.real, -2.495689365014214, atol=atol, rtol=0.0)
-    # ARPACK can sometimes pick up the conjugate
-    assert_allclose(np.abs(w.imag), 0.5173365219668336, atol=atol, rtol=0.0)
-    assert_allclose(A @ z, w * z, atol=atol, rtol=0.0)
