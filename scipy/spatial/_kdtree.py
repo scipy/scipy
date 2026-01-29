@@ -283,6 +283,10 @@ class KDTree(cKDTree):
     significantly faster than brute force. High-dimensional nearest-neighbor
     queries are a substantial open problem in computer science.
 
+    .. warning::
+
+        Not thread safe, see :mod:`scipy.spatial`.
+
     References
     ----------
     .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate

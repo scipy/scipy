@@ -89,7 +89,7 @@ test = [
 ]
 doc = [
     "sphinx>=5.0.0,<8.2.0",
-    "intersphinx_registry",
+    "intersphinx_registry>=0.2601.5",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
     "sphinx-design>=0.4.0",
