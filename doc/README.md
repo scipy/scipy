@@ -3,7 +3,7 @@
 ## How work with the docs
 
 Have a look at
-https://scipy.github.io/devdocs/dev/contributor/rendering_documentation.html
+source/dev/contributor/rendering_documentation.rst
 
 ## Building documentation for a release
 
