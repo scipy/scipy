@@ -993,3 +993,26 @@ def test_bisect_special_parameter(method):
        method(f, -1e8, 1e7, args=args, xtol=-1e-6, rtol=TOL)
     with pytest.raises(ValueError, match="rtol too small"):
        method(f, -1e8, 1e7, args=args, xtol=1e-6, rtol=rtolbad)
+
+class TestRidderUnderflow:
+    def test_gh_issue_underflow(self):
+        # Regression test for underflow in Ridder's method.
+        # Previously, intermediate calculations (fm*fm) would underflow 
+        # to zero before the ratio converged, causing the algorithm to 
+        # stall or fail. See Ridders' Eq 6.
+        
+        def f(x):
+            return x**5
+
+        # This specific configuration with tight tolerance forces 
+        # deep recursion where values get extremely small.
+        # Before the fix, this raised a RuntimeError.
+        root, result = optimize.ridder(
+            f, -1, 5, 
+            xtol=1e-300, 
+            full_output=True, 
+            maxiter=10000
+        )
+        
+        assert result.converged
+        assert abs(root) < 1e-10  # Ensuring zero is found
