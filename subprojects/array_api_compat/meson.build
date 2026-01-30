@@ -1,4 +1,7 @@
-project('array_api_compat')
+project(
+  'array_api_compat',
+  version: '1.13.0',
+)
 
 sources = {
   'array_api_compat': files(

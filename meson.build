@@ -190,7 +190,7 @@ if use_pythran
   xsimd_dep = dependency('xsimd', required: false)
 endif
 
-### Subprojects ### 
+# Subprojects
 if not fs.exists('subprojects/array_api_compat/array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -244,7 +244,8 @@ unuran = subproject('unuran')
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
-### System libraries / subprojects ###
+# System libraries / subprojects
+
 use_system_libraries = get_option('use-system-libraries')
 all_system_libraries = false
 auto_system_libraries = false
@@ -280,7 +281,5 @@ else
   qhull_r = subproject('qhull_r', version : '8.0.2')
   qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
-
-###
 
 subdir('scipy')
