@@ -2482,15 +2482,11 @@ class HistFunctionsTest:
                             xp.asarray(xp.cumulative_sum(ref_hist), dtype=dtype),
                             check_dtype=False, rtol=rtol)
         else:
-            den = a.shape[0]  # if weights is None else np.sum(weights)
-            xp_assert_close(res.frequency, xp.asarray(ref_hist/den, dtype=dtype),
-                            check_dtype=False, rtol=rtol)
-        xp_assert_close(res.lowerlimit, xp.asarray(ref_bins[0], dtype=dtype),
-                        check_dtype=False)
-        xp_assert_close(res.binsize, xp.asarray(ref_bins[1] - ref_bins[0], dtype=dtype),
-                        check_dtype=False)
-        xp_assert_close(res.extrapoints, a.size - np.sum(bin_counts),
-                        check_dtype=False)
+            den = a.shape[0] if weights is None else np.sum(weights)
+            xp_assert_close(res.frequency, xp.asarray(ref_hist/den, dtype=dtype))
+        xp_assert_close(res.lowerlimit, xp.asarray(ref_bins[0], dtype=dtype))
+        xp_assert_close(res.binsize, xp.asarray(ref_bins[1] - ref_bins[0], dtype=dtype))
+        xp_assert_close(res.extrapoints, a.size - np.sum(bin_counts))
 
 
 @make_xp_test_case(stats.cumfreq)
