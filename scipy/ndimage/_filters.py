@@ -2255,8 +2255,8 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     --------
     This example defines and applies a custom callback function that computes
     the range (maximum minus minimum) within a sliding window of size 3.
-    It utilizes ``sliding_window_view`` and demonstrates the required in-place
-    modification of the ``output_line`` array.
+    It utilizes `numpy.lib.stride_tricks.sliding_window_view` and demonstrates the
+    required in-place modification of the ``output_line`` array.
 
     >>> import numpy as np
     >>> from scipy.ndimage import generic_filter1d
