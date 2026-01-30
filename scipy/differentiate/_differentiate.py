@@ -4,7 +4,7 @@ import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import array_namespace, xp_copy, xp_promote, xp_capabilities
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
 

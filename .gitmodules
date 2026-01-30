@@ -1,31 +1,34 @@
 [submodule "doc/source/_static/scipy-mathjax"]
 	path = doc/source/_static/scipy-mathjax
 	url = https://github.com/scipy/scipy-mathjax.git
-[submodule "scipy/_lib/unuran"]
-	path = scipy/_lib/unuran
-	url = https://github.com/scipy/unuran.git
-[submodule "scipy/_lib/array_api_compat"]
-	path = scipy/_lib/array_api_compat
+
+[submodule "subprojects/array_api_compat"]
+	path = subprojects/array_api_compat/array_api_compat
 	url = https://github.com/data-apis/array-api-compat.git
-[submodule "scipy/_lib/pocketfft"]
-	path = scipy/_lib/pocketfft
-	url = https://github.com/scipy/pocketfft
-[submodule "scipy/_lib/cobyqa"]
-	path = scipy/_lib/cobyqa
-	url = https://github.com/cobyqa/cobyqa.git
-[submodule "scipy/_lib/array_api_extra"]
-	path = scipy/_lib/array_api_extra
-	url = https://github.com/data-apis/array-api-extra.git
-# All submodules used as a Meson `subproject` are required to be under the
-# subprojects/ directory - see:
-# https://mesonbuild.com/Subprojects.html#why-must-all-subprojects-be-inside-a-single-directory
-[submodule "subprojects/highs"]
-	path = subprojects/highs
-	url = https://github.com/scipy/HiGHs
+
+[submodule "subprojects/array_api_extra"]
+	path = subprojects/array_api_extra
+	url = https://github.com/data-apis/array-api-extra
 
 [submodule "subprojects/boost_math/math"]
 	path = subprojects/boost_math/math
 	url = https://github.com/boostorg/math.git
+
+[submodule "subprojects/cobyqa"]
+	path = subprojects/cobyqa/cobyqa
+	url = https://github.com/cobyqa/cobyqa.git
+
+[submodule "subprojects/highs"]
+	path = subprojects/highs
+	url = https://github.com/scipy/HiGHs
+
+[submodule "subprojects/pocketfft"]
+	path = subprojects/pocketfft
+	url = https://github.com/scipy/pocketfft
+
+[submodule "subprojects/unuran"]
+	path = subprojects/unuran
+	url = https://github.com/scipy/unuran
 
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
