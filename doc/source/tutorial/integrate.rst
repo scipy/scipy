@@ -774,3 +774,37 @@ References
 ~~~~~~~~~~
 
 .. [MOL] https://en.wikipedia.org/wiki/Method_of_lines
+
+
+Differential-algebraic equations (:func:`solve_ivp`)
+---------------------------------------------------
+
+A system of differential-algebraic equations (DAEs) generally is written in the following form :
+.. math::
+
+    F \left( t, \frac{d\mathbf{y}}{dt}, \mathbf{y} \right) = 0
+
+Often, the DAE system can be recast in the simpler form :
+.. math::
+
+    M \frac{d\mathbf{y}}{dt} = \mathbf{f}( \mathbf{y}, t \right)
+
+where 
+
+.. math::
+
+    \frac{d\mathbf{y}}{dt}=\mathbf{f}\left(\mathbf{y},t\right),
+
+given initial conditions :math:`\mathbf{y}\left(0\right)=\mathbf{y}_{0}`, where
+:math:`\mathbf{y}` is a length :math:`N` vector and :math:`\mathbf{f}`
+is a mapping from :math:`\mathbb{R}^{N}` to :math:`\mathbb{R}^{N}.`
+A higher-order ordinary differential equation can always be reduced to
+a differential equation of this type by introducing intermediate
+derivatives into the :math:`\mathbf{y}` vector.
+
+
+
+References
+~~~~~~~~~~
+
+.. [TODO] 
