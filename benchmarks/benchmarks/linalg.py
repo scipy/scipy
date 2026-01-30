@@ -105,7 +105,7 @@ class Bench(Benchmark):
 class BatchedSolveBench(Benchmark):
     params = [
         [(100, 10, 10), (100, 20, 20), (100, 100)],
-        ["gen", "pos", "sym", "diagonal", "tridiagonal"],
+        ["gen", "pos", "sym", "diagonal", "tridiagonal", "banded"],
         ["scipy/detect", "scipy/assume", "numpy"]
     ]
     param_names = ["shape", "structure" ,"module"]
@@ -132,6 +132,9 @@ class BatchedSolveBench(Benchmark):
                 self.a[..., i+1, i] = a[..., i+1, i]
             for i in range(shape[-1]-1):
                 self.a[..., i, i+1] = a[..., i, i+1]
+        elif structure == "banded":
+            self.a = np.zeros_like(a)
+            self.a += np.triu(np.tril(a, k=5), k=-5)
         else:
             self.a = a
 
