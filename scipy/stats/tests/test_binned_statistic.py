@@ -553,10 +553,12 @@ class TestBinnedStatistic:
         assert_allclose(stat, ref)
         assert stat.dtype == np.result_type(ref.dtype, np.float64)
 
-    def test_nan_gh17154(self):
+    @pytest.mark.parametrize('bins', [10, (10, 10, 10), [np.arange(10)]*3])
+    def test_nan_gh17154(self, bins):
         # gh-17154 reported that `binned_statistic_dd` raised an error when `samples`
-        # contains NaNs and argued that this was an inappropriate default. Test that
-        # NaNs are now ignored by default.
+        # contains NaNs and argued that this was an inappropriate default. gh-23751
+        # decided that it was indeed an appropriate choice, and went further, ensuring
+        # that the same error would be raised regardless of how `bins` is specified.
 
         # Generate a samples (with NaNs) and values
         rng = np.random.default_rng(529847529874529829)
@@ -565,21 +567,9 @@ class TestBinnedStatistic:
         i = rng.random(samples.shape) < 0.05
         samples[i] = np.nan
 
-        # Compute results
-        message = "`sample` contains NaNs..."
-        with pytest.warns(UserWarning, match=message):
-            res = binned_statistic_dd(samples, values)
-
-        # Compute reference values (filter NaNs first)
-        keep = ~i.any(axis=1)
-        samples = samples[keep]
-        values = values[keep]
-        ref = binned_statistic_dd(samples, values)
-
-        # Compare results against reference values
-        np.testing.assert_allclose(res[0], ref[0])
-        np.testing.assert_allclose(res[1], ref[1])
-        np.testing.assert_allclose(res[2], ref[2])
+        message = "The sample on which `values` is to be binned..."
+        with pytest.raises(ValueError, match=message):
+            binned_statistic_dd(samples, values)
 
     def test_inf_gh17154(self):
         # While addressing gh-17154, it seemed that `inf`s should not be ignored

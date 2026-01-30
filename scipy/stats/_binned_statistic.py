@@ -1,5 +1,5 @@
 import builtins
-from warnings import catch_warnings, simplefilter, warn
+from warnings import catch_warnings, simplefilter
 import numpy as np
 from operator import index
 from collections import namedtuple
@@ -550,6 +550,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
         pass
     # If bins was an integer-like object, now it is an actual Python int.
 
+    # For context: see gh-23751 and linked issues/PRs
+    if np.isnan(sample).any():
+        message = ("The sample on which `values` is to be binned contains at least one "
+                   "NaN, and the meaning is ambiguous. Consider removing or replacing "
+                   "with numerical outliers.")
+        raise ValueError(message)
+
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.
     # This code is based on np.histogramdd
@@ -572,15 +579,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if statistic != 'count' and Vlen != Dlen:
         raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
-
-    # NOTE: for _bin_edges(), see e.g. gh-11365
-    i_numeric = ~(np.isnan(sample).any(axis=1))
-    if not i_numeric.all():
-        sample = sample[i_numeric]
-        values = values[:, i_numeric]
-        message = ("`sample` contains NaNs; corresponding `values` will '"
-                   "not be considered as elements of any bin.")
-        warn(message, stacklevel=2)
 
     try:
         M = len(bins)
