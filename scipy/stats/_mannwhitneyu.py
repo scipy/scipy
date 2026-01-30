@@ -309,6 +309,12 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     statistic corresponding with sample `y` is
     ``U2 = x.shape[axis] * y.shape[axis] - U1``.
 
+    The p-value and standardized z-statistic produced by the Mann-Whitney U test is
+    identical to that produced by a Wilcoxon *rank sum* test, but different raw
+    statistics are associated with the tests. Specifically, the rank sum statistic
+    corresponding with the first sample is
+    ``R1 = U1 + x.shape[axis] * (x.shape[axis] + 1) / 2``.
+
     `mannwhitneyu` is for independent samples. For related / paired samples,
     consider `scipy.stats.wilcoxon`.
 
@@ -345,6 +351,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
            or t-test? On assumptions for hypothesis tests and multiple \
            interpretations of decision rules." Statistics surveys, Vol. 4, pp.
            1-39, 2010. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2857732/
+    .. [6] MathWorks. "ranksum - Wilcoxon rank sum test - MATLAB".
+           https://www.mathworks.com/help/stats/ranksum.html.
 
     Examples
     --------
