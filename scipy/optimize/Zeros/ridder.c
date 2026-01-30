@@ -47,22 +47,22 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
         xm = xa + dm;
         fm = (*f)(xm, func_data_param);
         
-        /* * Exiting if the midpoint is the root, to avoid zero division errors
+        /* * If the midpoint lands exactly on the root, exit immediately.
+         * This prevents potential issues with ratio calculation if fm is 0.
          */
         if (fm == 0.0) {
             solver_stats->error_num = CONVERGED;
+            solver_stats->funcalls++;
             return xm;
         }
 
-        /* * FIX: Implement Equation 6 from Ridders' paper to avoid underflow.
-         * Normalizing by fa to avoid underflow in intermediate terms (fm*fm).
-         * Using -dm because the sign of (fm/fa) is opposite to 
-         * the logic used in the faulty SIGN(fb-fa) implementation.
+        /* * Implement Equation 6 from Ridders' paper to avoid underflow.
+         * We normalize by fa to avoid underflow in intermediate terms (fm*fm).
          */
         double ratio = fm / fa;
-        dn = -dm * ratio / sqrt(ratio * ratio - fb / fa);
+        dn = dm * ratio / sqrt(ratio * ratio - fb / fa);
 
-        xn = xm - SIGN(dn) * MIN(fabs(dn), fabs(dm) - .5*tol);
+        xn = xm + SIGN(dn) * MIN(fabs(dn), fabs(dm) - .5*tol);
         fn = (*f)(xn, func_data_param);
         solver_stats->funcalls += 2;
         if (signbit(fn) != signbit(fm)) {
