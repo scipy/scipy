@@ -538,6 +538,7 @@ Directional statistical functions
    circmean
    circvar
    circstd
+   circmedian
 
 Sensitivity Analysis
 --------------------
@@ -610,6 +611,7 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData
+from ._circstats import *
 from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
