@@ -670,7 +670,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         v.H v    = identity
 
     The matrix a is stored in a_band either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)
@@ -1045,7 +1045,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         v.H v    = identity
 
     The matrix a is stored in a_band either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         a_band[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         a_band[    i - j, j] == a[i,j]        (if lower form; i >= j)

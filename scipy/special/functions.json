@@ -87,8 +87,10 @@
         }
     },
     "bdtrin": {
-        "_cdflib_wrappers.pxd": {
-            "bdtrin": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "bdtrin_double": "ddd->d",
+            "bdtrin_float": "fff->f"
+        }
     },
     "betainc": {
         "boost_special_functions.h++": {
@@ -370,8 +372,8 @@
         }
     },
     "gdtria": {
-        "_cdflib_wrappers.pxd": {
-            "gdtria": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtria": "ddd->d"
         }
     },
     "gdtrib": {
@@ -380,8 +382,8 @@
         }
     },
     "gdtrix": {
-        "_cdflib_wrappers.pxd": {
-            "gdtrix": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtrix": "ddd->d"
         }
     },
     "huber": {

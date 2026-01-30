@@ -856,7 +856,7 @@ class netcdf_variable:
     isrec, shape
         Properties
 
-    See also
+    See Also
     --------
     isrec, shape
 

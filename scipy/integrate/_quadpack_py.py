@@ -1029,13 +1029,13 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
-          - epsabs = 1.49e-08
-          - epsrel = 1.49e-08
-          - limit  = 50
-          - points = None
-          - weight = None
-          - wvar   = None
-          - wopts  = None
+        - ``epsabs = 1.49e-08``
+        - ``epsrel = 1.49e-08``
+        - ``limit  = 50``
+        - ``points = None``
+        - ``weight = None``
+        - ``wvar   = None``
+        - ``wopts  = None``
 
         For more information on these options, see `quad`.
 
@@ -1091,7 +1091,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types. The integration is is performed using a 21-point Gauss-Kronrod 
+        several types. The integration is is performed using a 21-point Gauss-Kronrod
         quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is

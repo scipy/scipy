@@ -500,18 +500,18 @@ def bisect(f, a, b, args=(),
     Find root of a function within an interval using bisection.
 
     Basic bisection routine to find a root of the function `f` between the
-    arguments `a` and `b`. `f(a)` and `f(b)` cannot have the same signs.
+    arguments `a` and `b`. ``f(a)`` and ``f(b)`` cannot have the same signs.
     Slow but sure.
 
     Parameters
     ----------
     f : function
         Python function returning a number.  `f` must be continuous, and
-        f(a) and f(b) must have opposite signs.
+        ``f(a)`` and ``f(b)`` must have opposite signs.
     a : scalar
-        One end of the bracketing interval [a,b].
+        One end of the bracketing interval ``[a,b]``.
     b : scalar
-        The other end of the bracketing interval [a,b].
+        The other end of the bracketing interval ``[a,b]``.
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -544,6 +544,13 @@ def bisect(f, a, b, args=(),
         Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
+    See Also
+    --------
+    brentq, brenth, bisect, newton
+    fixed_point : scalar fixed-point finder
+    fsolve : n-dimensional root-finding
+    elementwise.find_root : efficient elementwise 1-D root-finder
+
     Notes
     -----
     As mentioned in the parameter documentation, the computed root ``x0`` will
@@ -575,14 +582,6 @@ def bisect(f, a, b, args=(),
     >>> root = optimize.bisect(f, -2, 0)
     >>> root
     -1.0
-
-    See Also
-    --------
-    brentq, brenth, bisect, newton
-    fixed_point : scalar fixed-point finder
-    fsolve : n-dimensional root-finding
-    elementwise.find_root : efficient elementwise 1-D root-finder
-
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -1429,7 +1428,7 @@ def toms748(f, a, b, args=(), k=1,
        Alefeld, G. E. and Potra, F. A. and Shi, Yixun,
        *Algorithm 748: Enclosing Zeros of Continuous Functions*,
        ACM Trans. Math. Softw. Volume 221(1995)
-       doi = {10.1145/210089.210111}
+       https://doi.org/10.1145/210089.210111
 
     Examples
     --------

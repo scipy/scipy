@@ -20,6 +20,7 @@ time invariant systems.
 #   Merged discrete systems and added dlti
 
 import warnings
+from types import GenericAlias
 
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
@@ -44,6 +45,9 @@ __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
 
 
 class LinearTimeInvariant:
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __new__(cls, *system, **kwargs):
         """Create a new object, don't allow direct instances."""
         if cls is LinearTimeInvariant:
@@ -140,9 +144,9 @@ class lti(LinearTimeInvariant):
         The following gives the number of arguments and the corresponding
         continuous-time subclass that is created:
 
-            * 2: `TransferFunction`:  (numerator, denominator)
-            * 3: `ZerosPolesGain`: (zeros, poles, gain)
-            * 4: `StateSpace`:  (A, B, C, D)
+        * 2: `TransferFunction`:  (numerator, denominator)
+        * 3: `ZerosPolesGain`: (zeros, poles, gain)
+        * 4: `StateSpace`:  (A, B, C, D)
 
         Each argument can be an array or a sequence.
 
@@ -173,10 +177,10 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti(1, 2, 3, 4)
     StateSpaceContinuous(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: None
     )
 
@@ -302,17 +306,17 @@ class dlti(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `dlti` class can be instantiated with either 2, 3 or 4 arguments.
         The following gives the number of arguments and the corresponding
         discrete-time subclass that is created:
 
-            * 2: `TransferFunction`:  (numerator, denominator)
-            * 3: `ZerosPolesGain`: (zeros, poles, gain)
-            * 4: `StateSpace`:  (A, B, C, D)
+        * 2: `TransferFunction`:  (numerator, denominator)
+        * 3: `ZerosPolesGain`: (zeros, poles, gain)
+        * 4: `StateSpace`:  (A, B, C, D)
 
         Each argument can be an array or a sequence.
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to ``True``
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -346,19 +350,19 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti(1, 2, 3, 4)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: True
     )
 
     >>> signal.dlti(1, 2, 3, 4, dt=0.1)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: 0.1
     )
 
@@ -502,15 +506,15 @@ class TransferFunction(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 2: array_like: (numerator, denominator)
-    dt: float, optional
+        * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
+          `ZerosPolesGain`)
+        * 2: array_like: (numerator, denominator)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -747,14 +751,13 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 2: array_like: (numerator, denominator)
+        * 1: `lti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 2: array_like: (numerator, denominator)
 
     See Also
     --------
@@ -787,8 +790,8 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     >>> signal.TransferFunction(num, den)
     TransferFunctionContinuous(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: None
     )
 
@@ -824,15 +827,14 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 2: array_like: (numerator, denominator)
-    dt: float, optional
+        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 2: array_like: (numerator, denominator)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -867,8 +869,8 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
 
     >>> signal.TransferFunction(num, den, dt=0.5)
     TransferFunctionDiscrete(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: 0.5
     )
 
@@ -894,10 +896,10 @@ class ZerosPolesGain(LinearTimeInvariant):
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 3: array_like: (zeros, poles, gain)
-    dt: float, optional
+        * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
+          `ZerosPolesGain`)
+        * 3: array_like: (zeros, poles, gain)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -1095,9 +1097,8 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 3: array_like: (zeros, poles, gain)
+        * 1: `lti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 3: array_like: (zeros, poles, gain)
 
     See Also
     --------
@@ -1165,10 +1166,9 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 3: array_like: (zeros, poles, gain)
-    dt: float, optional
+        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 3: array_like: (zeros, poles, gain)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -1230,15 +1230,15 @@ class StateSpace(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 4 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 4: array_like: (A, B, C, D)
-    dt: float, optional
+        * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
+          `ZerosPolesGain`)
+        * 4: array_like: (A, B, C, D)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -1250,11 +1250,22 @@ class StateSpace(LinearTimeInvariant):
 
     Notes
     -----
+    If the parameter `system` is a tuple (A, B, C, D) with four state space matrices,
+    then those matrices are converted into two-dimensional arrays of the same dtype
+    by calling `abcd_normalize`. The resulting dtype will be based on NumPy's dtype
+    promotion rules, except in the case where each of `A`, `B`, `C`, and `D` has
+    integer dtype, in which case the resulting dtype will be the default floating point
+    dtype of ``float64``.
+
     Changing the value of properties that are not part of the
     `StateSpace` system representation (such as `zeros` or `poles`) is very
     inefficient and may lead to numerical inaccuracies.  It is better to
     convert to the specific system representation first. For example, call
     ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
+
+    The :ref:`tutorial_signal_state_space_representation` section of the
+    :ref:`user_guide` presents the corresponding definitions of continuous-time and
+    disrcete time state space systems.
 
     Examples
     --------
@@ -1268,12 +1279,12 @@ class StateSpace(LinearTimeInvariant):
     >>> sys = signal.StateSpace(a, b, c, d)
     >>> print(sys)
     StateSpaceContinuous(
-    array([[0, 1],
-           [0, 0]]),
-    array([[0],
-           [1]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[0., 1.],
+           [0., 0.]]),
+    array([[0.],
+           [1.]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: None
     )
 
@@ -1283,8 +1294,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1297,8 +1308,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1340,6 +1351,7 @@ class StateSpace(LinearTimeInvariant):
         self._C = None
         self._D = None
 
+        # Convert A, B, C, D into 2d arrays of dtype float64 or complex128:
         self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
     def __repr__(self):
@@ -1633,14 +1645,13 @@ class StateSpaceContinuous(StateSpace, lti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 4: array_like: (A, B, C, D)
+        * 1: `lti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 4: array_like: (A, B, C, D)
 
     See Also
     --------
@@ -1668,12 +1679,12 @@ class StateSpaceContinuous(StateSpace, lti):
     >>> sys = signal.StateSpace(a, b, c, d)
     >>> print(sys)
     StateSpaceContinuous(
-    array([[0, 1],
-           [0, 0]]),
-    array([[0],
-           [1]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[0., 1.],
+           [0., 0.]]),
+    array([[0.],
+           [1.]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: None
     )
 
@@ -1707,15 +1718,14 @@ class StateSpaceDiscrete(StateSpace, dlti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 4: array_like: (A, B, C, D)
-    dt: float, optional
+        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 4: array_like: (A, B, C, D)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -1745,12 +1755,12 @@ class StateSpaceDiscrete(StateSpace, dlti):
 
     >>> signal.StateSpace(a, b, c, d, dt=0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1. ,  0.1],
+           [0. ,  1. ]]),
+    array([[0.005],
+           [0.1  ]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1764,7 +1774,7 @@ def lsim(system, U, T, X0=None, interp=True):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -2014,10 +2024,10 @@ def impulse(system, X0=None, T=None, N=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     X0 : array_like, optional
         Initial state-vector.  Defaults to zero.
@@ -2084,10 +2094,10 @@ def step(system, X0=None, T=None, N=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     X0 : array_like, optional
         Initial state-vector (default is zero).
@@ -2147,14 +2157,14 @@ def bode(system, w=None, n=100):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     w : array_like, optional
         Array of frequencies (in rad/s). Magnitude and phase data is calculated
@@ -2210,14 +2220,14 @@ def freqresp(system, w=None, n=10000):
 
     Parameters
     ----------
-    system : an instance of the `lti` class or a tuple describing the system.
+    system : an instance of the `lti` class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     w : array_like, optional
         Array of frequencies (in rad/s). Magnitude and phase data is
@@ -2699,19 +2709,19 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     poles : array_like
         Desired real poles and/or complex conjugates poles.
         Complex poles are only supported with ``method="YT"`` (default).
-    method: {'YT', 'KNV0'}, optional
+    method : {'YT', 'KNV0'}, optional
         Which method to choose to find the gain matrix K. One of:
 
-            - 'YT': Yang Tits
-            - 'KNV0': Kautsky, Nichols, Van Dooren update method 0
+        - 'YT': Yang Tits
+        - 'KNV0': Kautsky, Nichols, Van Dooren update method 0
 
         See References and Notes for details on the algorithms.
-    rtol: float, optional
+    rtol : float, optional
         After each iteration the determinant of the eigenvectors of
         ``A - B*K`` is compared to its previous value, when the relative
         error between these two values becomes lower than `rtol` the algorithm
         stops.  Default is 1e-3.
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations to compute the gain matrix.
         Default is 30.
 
@@ -2719,7 +2729,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     -------
     full_state_feedback : Bunch object
         full_state_feedback is composed of:
-            gain_matrix : 1-D ndarray
+            gain_matrix : 2-D ndarray
                 The closed loop matrix K such as the eigenvalues of ``A-BK``
                 are as close as possible to the requested poles.
             computed_poles : 1-D ndarray

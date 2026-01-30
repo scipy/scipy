@@ -713,6 +713,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     Returns
     -------
     gaussian_filter1d : ndarray
+        Returned array of same shape as `input`.
 
     Notes
     -----
@@ -1650,7 +1651,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
 
     References
     ----------
-    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777.
     .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
 
 
@@ -1708,7 +1709,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
 
     References
     ----------
-    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777.
     .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
 
     Examples
@@ -2249,6 +2250,27 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
+
+    Examples
+    --------
+    This example defines and applies a custom callback function that computes
+    the range (maximum minus minimum) within a sliding window of size 3.
+    It utilizes `numpy.lib.stride_tricks.sliding_window_view` and demonstrates the
+    required in-place modification of the ``output_line`` array.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import generic_filter1d
+    >>> from numpy.lib.stride_tricks import sliding_window_view
+
+    >>> def local_range(input_line, output_line):
+    ...     # input_line includes padded values according to `filter_size` and `mode`
+    ...     v = sliding_window_view(input_line, 3)
+    ...     # modify `output_line` in-place rather than returning the result
+    ...     output_line[:] = v.max(axis=1) - v.min(axis=1)
+
+    >>> x = np.array([1, 2, 3, 4, 5], dtype=np.float64)
+    >>> generic_filter1d(x, local_range, filter_size=3)
+    array([1., 2., 2., 2., 1.])
 
     """
     if extra_keywords is None:

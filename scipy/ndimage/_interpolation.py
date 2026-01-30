@@ -502,18 +502,18 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         dimensions of ``input``, the given matrix must have one of the
         following shapes:
 
-            - ``(ndim, ndim)``: the linear transformation matrix for each
-              output coordinate.
-            - ``(ndim,)``: assume that the 2-D transformation matrix is
-              diagonal, with the diagonal specified by the given value. A more
-              efficient algorithm is then used that exploits the separability
-              of the problem.
-            - ``(ndim + 1, ndim + 1)``: assume that the transformation is
-              specified using homogeneous coordinates [1]_. In this case, any
-              value passed to ``offset`` is ignored.
-            - ``(ndim, ndim + 1)``: as above, but the bottom row of a
-              homogeneous transformation matrix is always ``[0, 0, ..., 1]``,
-              and may be omitted.
+        - ``(ndim, ndim)``: the linear transformation matrix for each
+          output coordinate.
+        - ``(ndim,)``: assume that the 2-D transformation matrix is
+          diagonal, with the diagonal specified by the given value. A more
+          efficient algorithm is then used that exploits the separability
+          of the problem.
+        - ``(ndim + 1, ndim + 1)``: assume that the transformation is
+          specified using homogeneous coordinates [1]_. In this case, any
+          value passed to ``offset`` is ignored.
+        - ``(ndim, ndim + 1)``: as above, but the bottom row of a
+          homogeneous transformation matrix is always ``[0, 0, ..., 1]``,
+          and may be omitted.
 
     offset : float or sequence, optional
         The offset into the array where the transform is applied. If a float,

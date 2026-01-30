@@ -669,7 +669,7 @@ class SVDSCommonTests:
 
     @pytest.mark.filterwarnings("ignore:Exited at iteration")
     @pytest.mark.filterwarnings("ignore:Exited postprocessing")
-    @pytest.mark.parallel_threads(4)  # Very slow
+    @pytest.mark.parallel_threads_limit(4)  # Very slow
     @pytest.mark.parametrize("shape", SHAPES)
     @pytest.mark.parametrize("dtype", (np.float32, np.float64,
                                        np.complex64, np.complex128))

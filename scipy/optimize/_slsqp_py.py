@@ -153,7 +153,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     smode : string, if full_output is true
         Message describing the exit mode from the optimizer.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'SLSQP' `method` in particular.

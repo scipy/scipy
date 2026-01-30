@@ -80,7 +80,7 @@ class _dia_base(_data_matrix):
 
         if dtype is not None:
             newdtype = getdtype(dtype)
-            self.data = self.data.astype(newdtype)
+            self.data = self.data.astype(newdtype, copy=False)
 
         # check format
         if self.offsets.ndim != 1:
@@ -246,7 +246,7 @@ class _dia_base(_data_matrix):
             other_rows, other_cols = other.shape
             rows, cols = self.shape
             L = min(self.data.shape[1], cols)
-            data = self.data[:, :L].astype(np.result_type(self.data, other))
+            data = self.data[:, :L].astype(np.result_type(self.data, other))  # copy
             if other_rows == 1:
                 data *= other[0, :L]
             elif other_rows != rows:

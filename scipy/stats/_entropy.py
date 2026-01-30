@@ -93,7 +93,7 @@ def entropy(pk: np.typing.ArrayLike,
     ----------
     .. [1] Shannon, C.E. (1948), A Mathematical Theory of Communication.
            Bell System Technical Journal, 27: 379-423.
-           https://doi.org/10.1002/j.1538-7305.1948.tb01338.x
+           :doi:`10.1002/j.1538-7305.1948.tb01338.x`.
     .. [2] Thomas M. Cover and Joy A. Thomas. 2006. Elements of Information
            Theory (Wiley Series in Telecommunications and Signal Processing).
            Wiley-Interscience, USA.

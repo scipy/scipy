@@ -81,6 +81,7 @@ struct ARNAUD_state_s {
     int aup2_getv0;          /** naupd2 flow control              internal              */
     int aup2_cnorm;          /** naupd2 flow control              internal              */
     int aup2_kplusp;         /** naupd2 flow control              internal              */
+    int aup2_nev;            /** naupd2 working nev variable      internal              */
     int aup2_nev0;           /** naupd2 internal compute          internal              */
     int aup2_np0;            /** naupd2 internal compute          internal              */
     int aup2_numcnv;         /** naupd2 internal compute          internal              */
@@ -137,6 +138,7 @@ struct ARNAUD_state_d {
     int aup2_getv0;          /** naupd2 flow control              internal              */
     int aup2_cnorm;          /** naupd2 flow control              internal              */
     int aup2_kplusp;         /** naupd2 flow control              internal              */
+    int aup2_nev;            /** naupd2 working nev variable      internal              */
     int aup2_nev0;           /** naupd2 internal compute          internal              */
     int aup2_np0;            /** naupd2 internal compute          internal              */
     int aup2_numcnv;         /** naupd2 internal compute          internal              */

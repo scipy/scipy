@@ -12,7 +12,7 @@ from pytest import raises as assert_raises
 from scipy.conftest import skip_xp_invalid_arg
 
 from scipy._lib._array_api import xp_assert_equal
-from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _workers_wrapper)
@@ -22,42 +22,6 @@ from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
 lazy_xp_function(_contains_nan)
-
-
-@pytest.mark.slow
-def test__aligned_zeros():
-    niter = 10
-
-    def check(shape, dtype, order, align):
-        err_msg = repr((shape, dtype, order, align))
-        x = _aligned_zeros(shape, dtype, order, align=align)
-        if align is None:
-            align = np.dtype(dtype).alignment
-        assert_equal(x.__array_interface__['data'][0] % align, 0)
-        if hasattr(shape, '__len__'):
-            assert_equal(x.shape, shape, err_msg)
-        else:
-            assert_equal(x.shape, (shape,), err_msg)
-        assert_equal(x.dtype, dtype)
-        if order == "C":
-            assert_(x.flags.c_contiguous, err_msg)
-        elif order == "F":
-            if x.size > 0:
-                # Size-0 arrays get invalid flags on NumPy 1.5
-                assert_(x.flags.f_contiguous, err_msg)
-        elif order is None:
-            assert_(x.flags.c_contiguous, err_msg)
-        else:
-            raise ValueError()
-
-    # try various alignments
-    for align in [1, 2, 3, 4, 8, 16, 32, 64, None]:
-        for n in [0, 1, 3, 11]:
-            for order in ["C", "F", None]:
-                for dtype in [np.uint8, np.float64]:
-                    for shape in [n, (1, 2, 3, n)]:
-                        for j in range(niter):
-                            check(shape, dtype, order, align)
 
 
 def test_check_random_state():
@@ -378,6 +342,7 @@ class TestContainsNaN:
     @pytest.mark.skip_xp_backends(eager_only=True,
                                   reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
+    @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))
@@ -398,6 +363,7 @@ class TestContainsNaN:
     @pytest.mark.skip_xp_backends("cupy", reason="lazy backends only")
     @pytest.mark.skip_xp_backends("array_api_strict", reason="lazy backends only")
     @pytest.mark.skip_xp_backends("torch", reason="lazy backends only")
+    @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
     def test_array_api_lazy(self, xp):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))

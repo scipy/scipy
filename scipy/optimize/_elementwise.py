@@ -144,7 +144,7 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         "A new hybrid quadratic/bisection algorithm for finding the zero of a
         nonlinear function without using derivatives".
         Advances in Engineering Software, 28(3), 145-149.
-        https://doi.org/10.1016/s0965-9978(96)00051-8
+        :doi:`10.1016/s0965-9978(96)00051-8`.
 
     See Also
     --------
@@ -365,7 +365,7 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
         "An efficient quadratic fit-sectioning algorithm for minimization
         without derivatives".
         Computer Methods in Applied Mechanics and Engineering, 152 (1-2),
-        211-217. https://doi.org/10.1016/S0045-7825(97)00190-4
+        211-217. :doi:`10.1016/S0045-7825(97)00190-4`.
 
     See Also
     --------
@@ -497,7 +497,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
         `f` must be an elementwise function: each element ``f(x)[i]``
         must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
         array ``x`` or the arrays in ``args``.
-    xl0, xr0: float array_like
+    xl0, xr0 : float array_like
         Starting guess of bracket, which need not contain a root. If `xr0` is
         not provided, ``xr0 = xl0 + 1``. Must be broadcastable with all other
         array inputs.
@@ -667,9 +667,9 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         `f` must be an elementwise function: each element ``f(x)[i]``
         must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
         array ``x`` or the arrays in ``args``.
-    xm0: float array_like
+    xm0 : float array_like
         Starting guess for middle point of bracket.
-    xl0, xr0: float array_like, optional
+    xl0, xr0 : float array_like, optional
         Starting guesses for left and right endpoints of the bracket. Must
         be broadcastable with all other array inputs.
     xmin, xmax : float array_like, optional
