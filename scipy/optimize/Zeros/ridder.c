@@ -56,7 +56,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
             return xm;
         }
 
-        /* * Implement Equation 6 from Ridders' paper to avoid underflow.
+        /* * Implementing the equation from Ridders' paper to avoid underflow.
          * We normalize by fa to avoid underflow in intermediate terms (fm*fm).
          */
         double ratio = fm / fa;
