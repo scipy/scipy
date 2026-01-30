@@ -998,14 +998,10 @@ class TestRidderUnderflow:
     def test_gh_issue_underflow(self):
         # Regression test for underflow in Ridder's method.
         # Previously, intermediate calculations (fm*fm) would underflow 
-        # to zero before the ratio converged, causing the algorithm to 
-        # stall or fail. See Ridders' Eq 6.
+        # to zero before the ratio converged, causing a Runtime Error.
         
-        def f(x):
-            return x**5
+        def f(x): return x**5
 
-        # This specific configuration with tight tolerance forces 
-        # deep recursion where values get extremely small.
         # Before the fix, this raised a RuntimeError.
         root, result = optimize.ridder(
             f, -1, 5, 
@@ -1016,3 +1012,16 @@ class TestRidderUnderflow:
         
         assert result.converged
         assert abs(root) < 1e-10  # Ensuring zero is found
+
+    def test_early_exit_funcalls(self):
+        # Test case for when midpoint is reached early (fm == 0).
+        def f(x): return x
+
+        root, result = optimize.ridder(
+            f, -1, 1, 
+            full_output=True
+        )
+        
+        assert result.converged
+        assert root == 0.0
+        assert result.function_calls == 3
