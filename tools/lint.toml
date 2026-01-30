@@ -4,6 +4,7 @@ exclude = [
   "scipy/_lib/pyprima",
   "scipy/datasets/_registry.py",
   "scipy/_external/",
+  "subprojects",
 ]
 
 force-exclude = true

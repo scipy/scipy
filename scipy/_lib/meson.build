@@ -322,5 +322,4 @@ py3.install_sources(
   subdir: 'scipy/_lib/pyprima/cobyla'
 )
 
-subdir('_uarray')
 subdir('tests')

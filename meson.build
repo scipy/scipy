@@ -193,8 +193,12 @@ if not fs.exists('subprojects/xsf/README.md')
   error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
 endif
 
+external_dir = 'scipy/_external'
+
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
+
+uarray = subproject('uarray')
 
 use_system_libraries = get_option('use-system-libraries')
 all_system_libraries = false

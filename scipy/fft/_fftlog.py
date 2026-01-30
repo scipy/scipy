@@ -6,7 +6,7 @@ added: 14/11/2020 Nicolas Tessore <n.tessore@ucl.ac.uk>
 """
 
 from ._basic import _dispatch
-from scipy._lib.uarray import Dispatchable
+from scipy._external.uarray import Dispatchable
 from ._fftlog_backend import fhtoffset
 from scipy._lib._array_api import xp_capabilities
 

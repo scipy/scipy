@@ -667,7 +667,6 @@ if HAVE_SCPDT:
         "scipy/_lib/unuran",
         "scipy/_lib/_gcutils.py",
         "scipy/_lib/doccer.py",
-        "scipy/_lib/_uarray",
         "scipy/linalg/_cython_signature_generator.py",
         "scipy/linalg/_generate_pyx.py",
         "scipy/linalg/_linalg_pythran.py",
