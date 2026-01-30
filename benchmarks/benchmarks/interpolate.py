@@ -263,7 +263,7 @@ class RectBivariateSplineVsRegridPython(Benchmark):
     """
     param_names = ["size", "s"]
     params = [
-        [(256, 512), (512, 1024), (1024, 1024)],
+        [(256, 512), (512, 512), (512, 1024)],
         [1e-12, 3.0],
     ]
 
@@ -285,7 +285,8 @@ class RectBivariateSplineVsRegridPython(Benchmark):
 
     def time_rect_bivariate_spline(self, size, s):
         interpolate.RectBivariateSpline(
-            self.x, self.y, self.z, kx=self.kx, ky=self.ky, s=self.s
+            self.x, self.y, self.z, kx=self.kx, ky=self.ky, s=self.s,
+            maxit=30
         )
 
     def time_regrid_python(self, size, s):
