@@ -13,7 +13,9 @@ from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
 
+import threading
 import itertools
+
 
 @pytest.fixture(params=[KDTree, cKDTree])
 def kdtree_type(request):
@@ -444,6 +446,61 @@ def test_query_ball_point_multithreading(kdtree_type):
     for i in range(n):
         if l1[i] or l3[i]:
             assert_array_equal(l1[i], l3[i])
+
+
+@pytest.mark.thread_unsafe
+def test_concurrent_access(kdtree_type):
+    rng = np.random.default_rng(0)
+    n = 10000
+    k = 2
+    points = rng.random((n, k))
+    T = kdtree_type(points)
+
+    workers = []
+    for _ in range(0, 5):
+        workers.append(threading.Thread(
+            target=T.query_ball_point,
+            args=(points, 0.003),
+            kwargs={'workers': 1}))
+
+    for worker in workers:
+        worker.start()
+
+    for worker in workers:
+        worker.join()
+
+
+@pytest.mark.thread_unsafe
+def test_tree_concurrent_access(kdtree_type):
+    barrier = threading.Barrier(10)
+    rng = np.random.default_rng(0)
+    n = 10000
+    k = 2
+    points = rng.random((n, k))
+    T = kdtree_type(points)
+    tree_ids = []
+
+    def closure():
+        barrier.wait()
+        tree = T.tree
+        if kdtree_type is KDTree:
+            tree = tree._node
+        tree_ids.append(id(tree))
+
+    workers = []
+    for _ in range(0, 10):
+        workers.append(threading.Thread(target=closure))
+
+    for worker in workers:
+        worker.start()
+
+    for worker in workers:
+        worker.join()
+
+    prev_id = tree_ids[0]
+    for i in range(1, 10):
+        assert prev_id == tree_ids[i]
+        prev_id = tree_ids[i]
 
 
 class two_trees_consistency:
@@ -886,6 +943,8 @@ def test_kdtree_copy_data(kdtree_type):
     T2 = T.query(q, k=5)[-1]
     assert_array_equal(T1, T2)
 
+
+@pytest.mark.thread_unsafe
 def test_ckdtree_parallel(kdtree_type, monkeypatch):
     # check if parallel=True also generates correct query results
     np.random.seed(0)
