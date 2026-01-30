@@ -132,6 +132,12 @@ class netcdf_file:
 
     Notes
     -----
+    **Thread-safety:** NetCDF file operations are NOT thread-safe. Do not access
+    the same NetCDF file from multiple threads concurrently. Instead, use one of:
+    (1) Serialize access with external synchronization (e.g., `threading.Lock`),
+    or (2) Have each thread open its own independent copy of the file.
+    See :ref:`scipy_thread_safety` for more details.
+
     This module is derived from
     `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
     The major advantage of this module over other modules is that it doesn't

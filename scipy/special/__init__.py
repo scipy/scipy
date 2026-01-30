@@ -22,6 +22,7 @@ in the section description.
 
    `scipy.special.cython_special` -- Typed Cython versions of special functions
 
+.. _error_handling:
 
 Error handling
 ==============
@@ -32,6 +33,8 @@ exceptions when an error occurs. By default this is disabled, except
 for memory allocation errors, which result in an exception being raised.
 To query and control the current error handling state the following
 functions are provided.
+
+This is stored using a :ref:`term-thread-local` and is controlled on a per-thread basis.
 
 .. autosummary::
    :toctree: generated/
