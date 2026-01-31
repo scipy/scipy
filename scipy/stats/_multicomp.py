@@ -418,7 +418,7 @@ def _statistic_dunnett(
     all_means = np.concatenate([[mean_control], mean_samples])
 
     # Variance estimate s^2 from [1] Eq. 1
-    s2 = np.sum([_var(sample, center=mean)*sample.size
+    s2 = np.sum([_var(sample, mean=mean)*sample.size
                  for sample, mean in zip(all_samples, all_means)]) / df
     std = np.sqrt(s2)
 

@@ -3687,16 +3687,20 @@ class TestMoments:
         y = stats.moment(x, order=order)
         xp_assert_equal(y, xp.asarray(expect, dtype=dtype))
 
-        y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
-        xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
+        message = "Precision loss occurred in moment calculation"
+        with eager_warns(RuntimeWarning, match=message, xp=xp):
+            y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
+            xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
 
-        y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
-                         order=order)
-        xp_assert_equal(y, xp.full((1, 2, 4, 5), expect, dtype=dtype))
+        with eager_warns(RuntimeWarning, match=message, xp=xp):
+            y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
+                             order=order)
+            xp_assert_equal(y, xp.full((1, 2, 4, 5), expect, dtype=dtype))
 
         y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
                          order=order)
         xp_assert_equal(y, xp.full((), expect, dtype=dtype))
+
 
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
@@ -3760,7 +3764,7 @@ class TestSkew(SkewKurtosisTest):
         return stats.skew(x)
 
     @pytest.mark.filterwarnings(
-        "ignore:invalid value encountered in scalar divide:RuntimeWarning:dask"
+        "ignore:invalid value encountered:RuntimeWarning:dask"
     )
     def test_skewness(self, xp):
         # Scalar test case
@@ -3857,7 +3861,7 @@ class TestKurtosis(SkewKurtosisTest):
     def stat_fun(self, x):
         return stats.kurtosis(x)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_kurtosis(self, xp):
         # Scalar test case
         y = stats.kurtosis(xp.asarray(self.scalar_testcase))

@@ -1180,10 +1180,11 @@ def _moment(a, order, axis, *, center=None, xp=None):
     """
     xp = array_namespace(a) if xp is None else xp
 
+    order = xp.asarray(order, dtype=a.dtype, device=xp_device(a))
     order_0 = order == 0
     order_1 = (order == 1) & (center is None)
     center = xp.mean(a, axis=axis, keepdims=True) if center is None else center
-    a_zero_mean = _demean(a, center, axis, precision_warning=False, xp=xp)
+    a_zero_mean = _demean(a, center, axis, xp=xp)
     res = xp.mean(a_zero_mean**order, axis=axis, keepdims=True)
     if is_lazy_array(res) or xp.any(order_0) or xp.any(order_1):
         res = xp.where(order_0, xp.ones_like(res), res)
@@ -1511,6 +1512,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)
+    v = v[()] if v.ndim == 0 else v
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
 
