@@ -7,10 +7,11 @@ from scipy._external import array_api_extra as xpx
 from scipy import special
 from scipy.special import _ufuncs as scu
 from scipy.stats._distribution_infrastructure import (
-    ContinuousDistribution, DiscreteDistribution, _RealInterval, _IntegerInterval,
-    _RealParameter, _Parameterization, _combine_docs)
+    ContinuousDistribution, DiscreteDistribution, CircularDistribution,
+    _RealInterval, _IntegerInterval, _RealParameter, _Parameterization, _combine_docs)
+from scipy.stats._stats import von_mises_cdf
 
-__all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial']
+__all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
 
 class Normal(ContinuousDistribution):
@@ -530,6 +531,138 @@ class Binomial(DiscreteDistribution):
             return n*p*(1 - p)*(1 + (3*n - 6)*p*(1 - p))
         return None
     _moment_central_formula.orders = [1, 2, 3, 4]  # type: ignore[attr-defined]
+
+
+class VonMises(ContinuousDistribution, CircularDistribution):
+    r"""von Mises distribution.
+
+    Denoting the modified Bessel function of the first kind of order zero as
+    :math:`I_0(\cdot)`, the probability density function of the von Mises distribution
+    is:
+
+    .. math::
+
+         f(x; \mu, \kappa) = \frac{\exp( \kappa \cos(x - \mu))}
+                                  {2\pi I_0(\kappa)           }
+    """
+
+    _mu_domain = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
+    _kappa_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
+
+    _mu_param = _RealParameter('mu', domain=_mu_domain, symbol=r'\mu',
+                               typical=(0, 2*np.pi))
+    _kappa_param = _RealParameter('kappa', domain=_kappa_domain, symbol=r'\kappa',
+                                  typical=(0.5, 5))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0, 2*np.pi))
+
+    _x_support.define_parameters(_mu_param, _kappa_param)
+
+    _parameterizations = [_Parameterization(_mu_param, _kappa_param)]
+    _variable = _x_param
+
+    def __init__(self, *, mu=None, kappa=None, **kwargs):
+        super().__init__(mu=mu, kappa=kappa, **kwargs)
+
+    # could use _process_parameters to cache i_0(kappa), etc..., but let's leave
+    # that to future optimizations
+
+    def _pdf_formula(self, x, *, mu, kappa, **kwargs):
+        return np.exp(kappa * np.cos(x - mu)) / (2 * np.pi * special.i0(kappa))
+
+    def _cdf_formula(self, x, *, mu, kappa, **kwargs):
+        # compensate for von_mises_cdf defined on [-pi, pi) and =0 at x = mu
+        # x0 = x.copy()
+        # x = (x + np.pi) % (2*np.pi) - np.pi
+        x = np.where(x < 0, x + 2*np.pi, x)
+        res = np.asarray(von_mises_cdf(kappa, x - mu) - von_mises_cdf(kappa, -mu))
+        # return res % 1  # doesn't work because 1 % 1 = 0
+        res[res < 0] += 1
+        return res
+
+    def _entropy_formula(self, *, mu, kappa, **kwargs):
+        i0k = special.i0(kappa)
+        i1k = special.i1(kappa)
+        return -kappa * i1k/i0k + np.log(np.abs(2*np.pi*i0k))
+
+    def _median_formula(self, *, mu, kappa, **kwargs):
+        return mu
+
+    def _mode_formula(self, *, mu, kappa, **kwargs):
+        return mu
+
+    def _moment_raw_formula(self, order, *, mu, kappa, **kwargs):
+        if order == 0:
+            return np.ones_like(mu)
+        else:
+            i0k = special.i0(kappa)
+            ink = special.iv(order, kappa)
+            return ink/i0k * np.exp(1j*order*mu)
+
+    def _moment_central_formula(self, order, *, mu, kappa, **kwargs):
+        if order == 0:
+            return np.ones_like(mu)
+        else:
+            i0k = special.i0(kappa)
+            ink = special.iv(order, kappa)
+            return ink/i0k
+
+    def _sample_formula(self, full_shape, rng, *, mu, kappa, **kwargs):
+        return rng.vonmises(mu=mu, kappa=kappa, size=full_shape)[()]
+
+
+class _TestCircular(ContinuousDistribution, CircularDistribution):
+    r"""Distribution with very simple formulas for testing.
+    """
+
+    _x_support = _RealInterval(endpoints=(-1, 1), inclusive=(True, True))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
+    _variable = _x_param
+    _parameterizations = []
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _logpdf_formula(self, x, **kwargs):
+        return np.log(0.75) + np.log(1 - x**2)
+
+    def _pdf_formula(self, x, **kwargs):
+        return 0.75 * (1 - x**2)
+
+    def _cdf_formula(self, x, **kwargs):
+        return 0.5 + 0.75*x - 0.25*x**3
+
+    def _ccdf_formula(self, x, **kwargs):
+        return 0.5 - 0.75*x + 0.25*x**3
+
+    def _icdf_formula(self, p, **kwargs):
+        return 2*np.cos(1/3 * np.arccos(1 - 2*p) + 4*np.pi/3)
+
+    def _iccdf_formula(self, p, **kwargs):
+        return 2*np.cos(1/3 * np.arccos(2*p - 1) + 4*np.pi/3)
+
+    def _moment_raw_formula(self, order, **kwargs):
+        if order == 0:
+            return 1.0 + 0.0j
+        return 3/order**3 * (np.sin(order) - order*np.cos(order)) + 0j
+
+    def _moment_central_formula(self, order, **kwargs):
+        return self._moment_raw_formula(order, **kwargs)
+
+    def _entropy_formula(self):
+        return 5/3 - np.log(3)
+
+    def _logentropy_formula(self, **kwargs):
+        return np.log(5/3 - np.log(3))
+
+    def _median_formula(self, **kwargs):
+        return 0.0
+
+    def _mode_formula(self, **kwargs):
+        return 0.0
+
+    def _sample_formula(self, full_shape, rng, **kwargs):
+        return self._icdf_formula(rng.random(size=full_shape), **kwargs)
 
 
 # Distribution classes need only define the summary and beginning of the extended
