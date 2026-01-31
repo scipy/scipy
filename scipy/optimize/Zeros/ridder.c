@@ -21,11 +21,14 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     double dm,dn,xm,xn=0.0,fn,fm,fa,fb,tol;
     solver_stats->error_num = INPROGRESS;
+    solver_stats->funcalls = 0;
 
     tol = xtol + rtol*MIN(fabs(xa), fabs(xb));
+    solver_stats->funcalls++;
     fa = (*f)(xa, func_data_param);
+    solver_stats->funcalls++;
     fb = (*f)(xb, func_data_param);
-    solver_stats->funcalls = 2;
+    
     if (fa == 0) {
         solver_stats->error_num = CONVERGED;
         return xa;
@@ -45,6 +48,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
         
         dm = 0.5*(xb - xa);
         xm = xa + dm;
+        solver_stats->funcalls++;
         fm = (*f)(xm, func_data_param);
         
         /* * If the midpoint lands exactly on the root, exit immediately.
@@ -52,7 +56,6 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
          */
         if (fm == 0.0) {
             solver_stats->error_num = CONVERGED;
-            solver_stats->funcalls++;
             return xm;
         }
 
@@ -63,8 +66,9 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
         dn = dm * ratio / sqrt(ratio * ratio - fb / fa);
 
         xn = xm + SIGN(dn) * MIN(fabs(dn), fabs(dm) - .5*tol);
+        solver_stats->funcalls++;
         fn = (*f)(xn, func_data_param);
-        solver_stats->funcalls += 2;
+        
         if (signbit(fn) != signbit(fm)) {
             xa = xn; fa = fn; xb = xm; fb = fm;
         }
