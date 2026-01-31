@@ -157,6 +157,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     array([ True,  True,  True], dtype=bool)
 
     Batches of matrices are supported, with and without structure detection:
+    (See :ref:`linalg_batch` for further details of handling batched inputs.)
 
     >>> a = np.arange(12).reshape(3, 2, 2)   # a batch of 3 2x2 matrices
     >>> A = a.transpose(0, 2, 1) @ a    # A is a batch of 3 positive definite matrices
@@ -169,6 +170,17 @@ def solve(a, b, lower=False, overwrite_a=False,
     array([[ 1. , -0.5],
            [ 3. , -2.5],
            [ 5. , -4.5]])
+
+    Note that the structure detection runs per-slice: in the example above, each of the
+    two slices will be independently discovered as being positive definite. Setting an
+    explicit ``assume_a`` argument bypasses structure detection and uses the provided
+    value without checking:
+
+    >>> a = np.stack((np.eye(2), np.arange(1, 5).reshape(2, 2)))
+    >>> b = [1, 1]
+    >>> solve(a, b, assume_a="diagonal")
+    array([[1.  , 1.  ],
+           [1.  , 0.25]])   # the second row is incorrect
     """
     # keep the numbers in sync with C
     structure = {
