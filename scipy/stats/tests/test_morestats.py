@@ -29,7 +29,7 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
                                    is_numpy, xp_default_dtype, is_array_api_strict,
-                                   is_jax)
+                                   is_jax, is_lazy_array)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -754,7 +754,7 @@ class TestAnsari:
     def test_small(self, xp):
         x = xp.asarray([1, 2, 3, 3, 4])
         y = xp.asarray([3, 2, 6, 1, 6, 1, 4, 1])
-        W, pval = stats.ansari(x, y)
+        W, pval = stats.ansari(x, y, method='asymptotic')
         xp_assert_close(W, xp.asarray(23.5))
         xp_assert_close(pval, xp.asarray(0.13499256881897437))
 
@@ -765,13 +765,13 @@ class TestAnsari:
                              100, 96, 108, 103, 104, 114, 114, 113, 108,
                              106, 99])
 
-        W, pval = stats.ansari(ramsay, parekh)
+        W, pval = stats.ansari(ramsay, parekh, method='asymptotic')
         xp_assert_close(W, xp.asarray(185.5))
         xp_assert_close(pval, xp.asarray(0.18145819972867083))
 
     def test_exact(self, xp):
         x, y = xp.asarray([1, 2, 3, 4]), xp.asarray([15, 5, 20, 8, 10, 12])
-        W, pval = stats.ansari(x, y)
+        W, pval = stats.ansari(x, y, method='exact')
         xp_assert_close(W, xp.asarray(10.0))
         xp_assert_close(pval, xp.asarray(0.533333333333333333))
 
@@ -797,9 +797,9 @@ class TestAnsari:
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
-        statistic, pval = stats.ansari(x1, x2)
-        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
-        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        statistic, pval = stats.ansari(x1, x2, method='exact')
+        pval_l = stats.ansari(x1, x2, alternative='less', method='exact').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater', method='exact').pvalue
         assert pval_l > 0.95
         assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the probability
@@ -814,8 +814,10 @@ class TestAnsari:
         xp_assert_close(pval_l, 1+prob-pval/2, atol=1e-12)
         # sanity check. The result should flip if
         # we exchange x and y.
-        pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
-        pval_g_reverse = stats.ansari(x2, x1, alternative='greater').pvalue
+        pval_l_reverse = stats.ansari(x2, x1, alternative='less',
+                                      method='exact').pvalue
+        pval_g_reverse = stats.ansari(x2, x1, alternative='greater',
+                                      method='exact').pvalue
         assert pval_l_reverse < 0.05
         assert pval_g_reverse > 0.95
 
@@ -848,7 +850,7 @@ class TestAnsari:
         #
         # ```
         x, y = xp.asarray(x), xp.asarray(y)
-        pval = stats.ansari(x, y, alternative=alternative).pvalue
+        pval = stats.ansari(x, y, alternative=alternative, method='exact').pvalue
         xp_assert_close(pval, xp.asarray(expected), atol=1e-12)
 
     def test_alternative_approx(self, xp):
@@ -857,8 +859,8 @@ class TestAnsari:
         x2 = xp.asarray(stats.norm.rvs(0, 2, size=100, random_state=123))
         # for m > 55 or n > 55, the test should automatically
         # switch to approximation.
-        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
-        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        pval_l = stats.ansari(x1, x2, alternative='less', method='asymptotic').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater', method='asymptotic').pvalue
         xp_assert_close(pval_l, xp.asarray(1.0, dtype=xp.float64), atol=1e-12)
         xp_assert_close(pval_g, xp.asarray(0.0, dtype=xp.float64), atol=1e-12)
         # also check if one of the one-sided p-value equals half the
@@ -866,9 +868,9 @@ class TestAnsari:
         # compliment.
         x1 = xp.asarray(stats.norm.rvs(0, 2, size=60, random_state=123))
         x2 = xp.asarray(stats.norm.rvs(0, 1.5, size=60, random_state=123))
-        pval = stats.ansari(x1, x2).pvalue
-        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
-        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        pval = stats.ansari(x1, x2, method='asymptotic').pvalue
+        pval_l = stats.ansari(x1, x2, alternative='less', method='asymptotic').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater', method='asymptotic').pvalue
         xp_assert_close(pval_g, pval/2, atol=1e-12)
         xp_assert_close(pval_l, 1-pval/2, atol=1e-12)
 
@@ -876,13 +878,74 @@ class TestAnsari:
     @pytest.mark.parametrize('n', [10, 100])  # affects code path
     @pytest.mark.parametrize('ties', [False, True])  # affects code path
     def test_dtypes(self, dtype, n, ties, xp):
+        if is_jax(xp) and dtype != 'float64':
+            pytest.xfail("p-value calculation works natively with 'float64 only")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(78587342806484)
         x, y = rng.integers(6, size=(2, n)) if ties else rng.random(size=(2, n))
-        ref = stats.ansari(x, y)
-        res = stats.ansari(xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype))
+        method = {'method': 'exact' if ((n <= 55) and not ties) else 'asymptotic'}
+        ref = stats.ansari(x, y, **method)
+        res = stats.ansari(xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype),
+                           **method)
         xp_assert_close(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
+
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_permutation_method(self, alternative, xp):
+        # test that permutation test can reproduce results of method='exact',
+        # but can also be configured to perform randomized test
+        rng = np.random.default_rng(6123643029)
+        x = xp.asarray(rng.random(7).tolist())
+        y = xp.asarray(rng.random(6).tolist())
+        res = stats.ansari(x, y, alternative=alternative,
+                           method=stats.PermutationMethod(rng=rng))
+        ref = stats.ansari(x, y, alternative=alternative, method='exact')
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
+
+        if not is_lazy_array(x):  # randomized permutation test has side-effects
+            res = stats.ansari(x, y, alternative=alternative,
+                               method=stats.PermutationMethod(rng=rng, n_resamples=99))
+            xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+            assert res.pvalue != ref.pvalue
+            assert res.pvalue == xp.round(res.pvalue*100)/100  # 99+1 in denominator
+
+    def test_method(self, xp):
+        # test that `method` selection works and 'auto' behaves as expected
+        # expected p-values computed with `ansari.test` (R)
+        # e.g. `ansari.test(x, y, exact=False)`
+        rng = np.random.default_rng(6123643029)
+
+        if is_jax(xp):
+            message = "`method` must be 'exact', 'asymptotic', or an instance..."
+            with pytest.raises(ValueError, match=message):
+                stats.ansari(xp.zeros(4), xp.ones(5))
+            return
+
+        # default is exact, but asymptotic can be selected
+        x = xp.asarray(rng.random(54).tolist())
+        y = xp.asarray(rng.random(54).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='exact')
+        res3 = stats.ansari(x, y, method='asymptotic')
+        xp_assert_close(res1.pvalue, res2.pvalue)
+        xp_assert_close(res3.pvalue, xp.asarray(0.01259674075933))
+
+        # default is asymptotic, but exact can be selected
+        x = xp.asarray(rng.random(55).tolist())
+        y = xp.asarray(rng.random(55).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='asymptotic')
+        res3 = stats.ansari(x, y, method='exact')
+        xp_assert_close(res1.pvalue, res2.pvalue)
+        xp_assert_close(res3.pvalue, xp.asarray(0.7613489076855))
+
+        # default is asymptotic because of ties
+        x = xp.asarray(rng.integers(10, size=20).tolist())
+        y = xp.asarray(rng.integers(10, size=20).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='asymptotic')
+        xp_assert_close(res1.pvalue, res2.pvalue)
 
 
 @make_xp_test_case(stats.bartlett)
