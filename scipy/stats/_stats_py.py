@@ -4050,7 +4050,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # calculate p value
     # ref.[4] p.334 eq.28
     prob = special.fdtrc(dfn, dfd, f)
-    prob = xp.asarray(prob, dtype=f.dtype)
+    prob = xp.asarray(prob)
 
     f, prob = (f[()], prob[()]) if f.ndim == 0 else (f, prob)
     return F_onewayResult(f, prob)

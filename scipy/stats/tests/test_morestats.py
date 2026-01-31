@@ -884,6 +884,56 @@ class TestAnsari:
         xp_assert_close(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
 
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_permutation_method(self, alternative, xp):
+        # test that permutation test can reproduce results of method='exact',
+        # but can also be configured to perform randomized test
+        rng = np.random.default_rng(6123643029)
+        x = xp.asarray(rng.random(7).tolist())
+        y = xp.asarray(rng.random(6).tolist())
+        res = stats.ansari(x, y, alternative=alternative,
+                           method=stats.PermutationMethod(rng=rng))
+        ref = stats.ansari(x, y, alternative=alternative, method='exact')
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
+
+        res = stats.ansari(x, y, alternative=alternative,
+                           method=stats.PermutationMethod(rng=rng, n_resamples=99))
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        assert res.pvalue != ref.pvalue
+        assert res.pvalue == xp.round(res.pvalue*100)/100  # 99+1 in denominator
+
+    def test_method(self, xp):
+        # test that `method` selection works and 'auto' behaves as expected
+        # expected p-values computed with `ansari.test` (R)
+        # e.g. `ansari.test(x, y, exact=False)`
+        rng = np.random.default_rng(6123643029)
+
+        # default is exact, but asymptotic can be selected
+        x = xp.asarray(rng.random(54).tolist())
+        y = xp.asarray(rng.random(54).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='exact')
+        res3 = stats.ansari(x, y, method='asymptotic')
+        xp_assert_close(res1.pvalue, res2.pvalue)
+        xp_assert_close(res3.pvalue, xp.asarray(0.01259674075933))
+
+        # default is asymptotic, but exact can be selected
+        x = xp.asarray(rng.random(55).tolist())
+        y = xp.asarray(rng.random(55).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='asymptotic')
+        res3 = stats.ansari(x, y, method='exact')
+        xp_assert_close(res1.pvalue, res2.pvalue)
+        xp_assert_close(res3.pvalue, xp.asarray(0.7613489076855))
+
+        # default is asymptotic because of ties
+        x = xp.asarray(rng.integers(10, size=20).tolist())
+        y = xp.asarray(rng.integers(10, size=20).tolist())
+        res1 = stats.ansari(x, y)
+        res2 = stats.ansari(x, y, method='asymptotic')
+        xp_assert_close(res1.pvalue, res2.pvalue)
+
 
 @make_xp_test_case(stats.bartlett)
 class TestBartlett:
