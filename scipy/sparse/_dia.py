@@ -279,6 +279,8 @@ class _dia_base(_data_matrix):
         data = self.data[self_idx, :L] * other.data[other_idx, :L]
         return self._dia_container((data, offsets), shape=self.shape)
 
+    multiply.__doc__ = _data_matrix.multiply.__doc__
+
     def _matmul_vector(self, other):
         x = other
 

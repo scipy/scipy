@@ -915,6 +915,11 @@ class netcdf_variable:
         """
         Retrieve a scalar value from a `netcdf_variable` of length one.
 
+        Returns
+        -------
+        scalar
+            The scalar value contained in the length-one netcdf variable.
+
         Raises
         ------
         ValueError

@@ -43,7 +43,7 @@ from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
                                    xp_swapaxes, xp_result_type, xp_copy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends

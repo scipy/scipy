@@ -10,7 +10,10 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
+from .lapack import (
+    get_lapack_funcs, _compute_lwork,
+    _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz,
+)
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
@@ -234,6 +237,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
@@ -245,14 +250,6 @@ def solve(a, b, lower=False, overwrite_a=False,
         raise NotImplementedError('scipy.linalg.solve can currently '
                                   'not solve a^T x = b or a^H x = b '
                                   'for complex matrices.')
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
-
-    if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
-        overwrite_a = True
-        b1 = b1.copy()
 
     # align the shape of b with a: 1. make b1 at least 2D
     b_is_1D = b1.ndim == 1
@@ -620,21 +617,6 @@ def _to_banded(n_below, n_above, a):
     for i in range(1, n_below + 1):
         ab[n_above + i, :-i] = np.diag(a, -i)
     return ab
-
-
-def _ensure_dtype_cdsz(*arrays):
-    # Ensure that the dtype of arrays is one of the standard types
-    # compatible with LAPACK functions (single or double precision
-    # real or complex).
-    dtype = np.result_type(*arrays)
-    if not np.issubdtype(dtype, np.inexact):
-        return (array.astype(np.float64) for array in arrays)
-    complex = np.issubdtype(dtype, np.complexfloating)
-    if np.finfo(dtype).bits <= 32:
-        dtype = np.complex64 if complex else np.float32
-    elif np.finfo(dtype).bits >= 64:
-        dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
 
 
 @_apply_over_batch(('a', 2), ('b', '1|2'))
@@ -1428,10 +1410,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
@@ -1458,7 +1437,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
 
 def det(a, overwrite_a=False, check_finite=True):
     """
-    Compute the determinant of a matrix
+    Compute the determinant of a matrix.
 
     The determinant is a scalar that is a function of the associated square
     matrix coefficients. The determinant value is zero for singular matrices.
@@ -1708,6 +1687,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # NB: makes a1.dtype == b1.dtype, if needed
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
+
     m, n = a1.shape[-2:]
 
     # Zero-sized problem, confuses LAPACK; bail out straight away
@@ -1718,14 +1700,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         else:
             residues = np.empty((0,))
         return x, residues, 0, np.empty((0,))
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
-
-    if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
-        # overwrite_b = True
-        b1 = b1.copy()
 
     # align the shape of b with a
     # 1. make b1 at least 2D
@@ -2216,7 +2190,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
-    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT
+    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT.
 
     This function returns the matrix multiplication between a Toeplitz
     matrix and a dense matrix.

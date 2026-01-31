@@ -54,6 +54,7 @@ template<typename T> struct type_traits {};
 template<> struct type_traits<float> {
     using real_type = float;
     using value_type = float;
+    using npy_complex_type = npy_complex64;
     static constexpr int typenum = NPY_FLOAT;
     static constexpr bool is_complex = false;
 
@@ -61,18 +62,21 @@ template<> struct type_traits<float> {
 template<> struct type_traits<double> {
     using real_type = double;
     using value_type = double;
+    using npy_complex_type = npy_complex128;
     static constexpr int typenum = NPY_DOUBLE;
     static constexpr bool is_complex = false;
 };
 template<> struct type_traits<npy_complex64> {
     using real_type = float;
     using value_type = std::complex<float>;
+    using npy_complex_type = npy_complex64;
     static constexpr int typenum = NPY_COMPLEX64;
     static constexpr bool is_complex = true;
 };
 template<> struct type_traits<npy_complex128> {
     using real_type = double;
     using value_type = std::complex<double>;
+    using npy_complex_type = npy_complex128;
     static constexpr int typenum = NPY_COMPLEX128;
     static constexpr bool is_complex = true;
 };
@@ -92,6 +96,11 @@ inline float conj(float value){ return value; }
 inline double conj(double value){ return value; }
 inline npy_complex64 conj(npy_complex64 value){ return npy_cpackf(npy_crealf(value), -npy_cimagf(value)); }
 inline npy_complex128 conj(npy_complex128 value){return npy_cpack(npy_creal(value), -npy_cimag(value)); }
+
+
+// complex from two reals
+inline npy_complex64 cpack(float re, float im) {return npy_cpackf(re, im);}
+inline npy_complex128 cpack(double re, double im) {return npy_cpack(re, im);}
 
 
 /*

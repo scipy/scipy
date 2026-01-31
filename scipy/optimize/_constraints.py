@@ -202,7 +202,7 @@ class LinearConstraint:
 
     def residual(self, x):
         """
-        Calculate the residual between the constraint function and the limits
+        Calculate the residual between the constraint function and the limits.
 
         For a linear constraint of the form::
 
@@ -220,7 +220,7 @@ class LinearConstraint:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns
@@ -289,7 +289,7 @@ class Bounds:
         return start + end
 
     def residual(self, x):
-        """Calculate the residual (slack) between the input and the bounds
+        """Calculate the residual (slack) between the input and the bounds.
 
         For a bound constraint of the form::
 
@@ -306,7 +306,7 @@ class Bounds:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns

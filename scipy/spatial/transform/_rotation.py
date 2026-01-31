@@ -17,8 +17,8 @@ from scipy._lib._array_api import (
     xp_capabilities,
     xp_promote,
 )
-from scipy._lib.array_api_compat import device as xp_device
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import device as xp_device
+import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _transition_to_rng, broadcastable
 
 backend_registry = {array_namespace(np.empty(0)): cython_backend}

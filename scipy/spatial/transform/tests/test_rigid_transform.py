@@ -15,7 +15,7 @@ from scipy._lib._array_api import (
     xp_assert_equal,
     xp_promote
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 lazy_xp_modules = [RigidTransform]
 

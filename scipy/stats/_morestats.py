@@ -13,7 +13,7 @@ from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib.deprecation import _NoValue
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,

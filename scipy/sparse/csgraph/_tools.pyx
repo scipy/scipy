@@ -224,7 +224,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     """
     csgraph_to_dense(csgraph, null_value=0)
 
-    Convert a sparse graph representation to a dense representation
+    Convert a sparse graph representation to a dense representation.
 
     .. versionadded:: 0.11.0
 
@@ -342,7 +342,7 @@ def csgraph_to_masked(csgraph):
     """
     csgraph_to_masked(csgraph)
 
-    Convert a sparse graph representation to a masked array representation
+    Convert a sparse graph representation to a masked array representation.
 
     .. versionadded:: 0.11.0
 
@@ -529,7 +529,7 @@ def construct_dist_matrix(graph,
     """
     construct_dist_matrix(graph, predecessors, directed=True, null_value=np.inf)
 
-    Construct distance matrix from a predecessor matrix
+    Construct distance matrix from a predecessor matrix.
 
     .. versionadded:: 0.11.0
 
