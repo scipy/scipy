@@ -483,7 +483,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     array to complex and then factorize.
 
     To improve the better approximation to the inverse, you may need to
-    increase ``fill_factor`` AND decrease ``drop_tol``.
+    increase `fill_factor` AND decrease `drop_tol`.
 
     The effect of ``drop_tol`` is matrix-dependent. In particular, ``drop_tol``
     does not guarantee that existing off-diagonal entries will be removed;
