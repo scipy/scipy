@@ -11,6 +11,7 @@ from numpy import inf
 from scipy._lib._array_api import xp_capabilities, xp_promote
 from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
+from scipy._lib import array_api_extra as xpx
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
@@ -1547,6 +1548,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     sample
 
     moment
+    lmoment
 
     mean
     median
@@ -1714,6 +1716,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         self._moment_raw_cache = {}
         self._moment_central_cache = {}
         self._moment_standardized_cache = {}
+        self._lmoment_cache = {}
         self._support_cache = None
         self._method_cache = {}
         self._constant_cache = None
@@ -2012,7 +2015,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ## Input validation
 
-    def _validate_order_kind(self, order, kind, kinds):
+    def _validate_order(self, order, fname='moment', min_order=0):
         # Yet another integer validating function. Unlike others in SciPy, it
         # Is quite flexible about what is allowed as an integer, and it
         # raises a distribution-specific error message to facilitate
@@ -2021,8 +2024,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
             return order
 
         order = np.asarray(order, dtype=self._dtype)[()]
-        message = (f"Argument `order` of `{self.__class__.__name__}.moment` "
-                   "must be a finite, positive integer.")
+        message = (f"Argument `order` of `{self.__class__.__name__}.{fname}` "
+                   f"must be a finite integer greater than or equal to {min_order}.")
         try:
             order_int = round(order.item())
             # If this fails for any reason (e.g. it's an array, it's infinite)
@@ -2030,15 +2033,18 @@ class UnivariateDistribution(_ProbabilityDistribution):
         except Exception as e:
             raise ValueError(message) from e
 
-        if order_int <0 or order_int != order:
-            raise ValueError(message)
-
-        message = (f"Argument `kind` of `{self.__class__.__name__}.moment` "
-                   f"must be one of {set(kinds)}.")
-        if kind.lower() not in kinds:
+        if order_int < min_order or order_int != order:
             raise ValueError(message)
 
         return order
+
+    def _validate_kind(self, kind, kinds):
+        message = (f"Argument `kind` of `{self.__class__.__name__}.moment` "
+                   f"must be one of {set(kinds)}.")
+        kind = kind.lower()
+        if kind not in kinds:
+            raise ValueError(message)
+        return kind
 
     def _preserve_type(self, x):
         x = np.asarray(x)
@@ -3122,6 +3128,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return {'cache', 'formula', 'transform',
                 'normalize', 'general', 'quadrature'}
 
+    @cached_property
+    def _lmoment_methods(self):
+        return {'cache', 'formula', 'general', 'order_statistics', 'quadrature_icdf'}
+
     @property
     def _zero(self):
         return self._constants()[0]
@@ -3146,7 +3156,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         kinds = {'raw': self._moment_raw,
                  'central': self._moment_central,
                  'standardized': self._moment_standardized}
-        order = self._validate_order_kind(order, kind, kinds)
+        order = self._validate_order(order)
+        kind = self._validate_kind(kind, kinds)
         moment_kind = kinds[kind]
         return moment_kind(order, method=method)
 
@@ -3380,6 +3391,75 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # return out
         return self._quadrature(logintegrand, args=(order, logcenter),
                                 params=params, log=True)
+
+    ### L-Moments
+
+    @_set_invalid_nan_property
+    def lmoment(self, order=1, *, standardize=True, method=None):
+        order = self._validate_order(order, fname='lmoment', min_order=1)
+        return self._lmoment(order, standardize=standardize, method=method)
+
+    def _lmoment(self, order, *, standardize, method):
+        methods = self._lmoment_methods if method is None else {method}
+
+        lmoment = self._lmoment_dispatch(order, methods=methods, **self._parameters)
+        if lmoment is None:
+            return None
+
+        if standardize and order >= 3 and lmoment is not None:
+            lscale = self._lmoment_dispatch(2, methods=methods, **self._parameters)
+            if lscale is None:
+                return None
+            lmoment = lmoment / lscale
+
+        return lmoment
+
+    def _lmoment_dispatch(self, order, *, methods, **params):
+        lmoment = None
+
+        if 'cache' in methods:
+            lmoment = self._lmoment_cache.get(order, None)
+
+        if lmoment is None and 'formula' in methods:
+            lmoment = self._lmoment_formula(order, **params)
+
+        if lmoment is None and 'general' in methods:
+            lmoment = self._lmoment_general(order, **params)
+
+        if lmoment is None and 'quadrature_icdf' in methods and (
+                self._overrides('_icdf_formula') or self._overrides('_iccdf_formula')):
+            lmoment = self._lmoment_integrate_icdf(order, **params)
+
+        if lmoment is None and 'order_statistics' in methods:
+            lmoment = self._lmoment_from_order_statistics(order, **params)
+
+        if lmoment is None and 'quadrature_icdf' in methods:
+            lmoment = self._lmoment_integrate_icdf(order, **params)
+
+        if lmoment is not None and self.cache_policy != _NO_CACHE:
+            self._lmoment_cache[order] = lmoment
+
+        return lmoment
+
+    def _lmoment_formula(self, order, **params):
+        return None
+
+    def _lmoment_general(self, order, **params):
+        return self.mean() if order == 1 else None
+
+    def _lmoment_from_order_statistics(self, order, **params):
+        k = np.arange(order)
+        k = xpx.atleast_nd(k, ndim=self._ndim + 1).T
+        E = order_statistic(self, r=order-k, n=order).mean()
+        bc = special.binom(order-1, k)
+        return np.sum((-1)**k * bc * E, axis=0) / order
+
+    def _lmoment_integrate_icdf(self, order, **params):
+        def integrand(p, **params):
+            x = self._icdf_dispatch(p, **params)
+            P = special.eval_sh_legendre(order - 1, p)
+            return x * P
+        return self._quadrature(integrand, limits=(0., 1.), params=params)
 
     ### Convenience
 
@@ -3686,6 +3766,11 @@ class DiscreteDistribution(UnivariateDistribution):
             "Two argument cdf functions are currently only supported for "
             "continuous distributions.")
 
+    def _lmoment(self, order, *, standardize, method):
+        raise NotImplementedError(
+            "L-moments are currently available only "
+            "for continuous distributions.")
+
     def _solve_bounded_discrete(self, func, p, params, comp):
         res = self._solve_bounded(func, p, params=params, xatol=0.9)
         x = np.asarray(np.floor(res.xr))
@@ -3944,7 +4029,7 @@ def make_distribution(dist):
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
         ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
         ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
-        ``moment``, and ``sample``.
+        ``moment``, ``lmoment``, and ``sample``.
         If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
         the corresponding method of `ContinuousDistribution`.
@@ -3952,7 +4037,10 @@ def make_distribution(dist):
         all parameters from all parameterizations. The ``moment`` method
         must accept the ``order`` and ``kind`` arguments by position or keyword, but
         may return ``None`` if a formula is not available for the arguments; in this
-        case, the infrastructure will fall back to a default implementation. The
+        case, the infrastructure will fall back to a default implementation.
+        The ``lmoment`` method must accept the ``order`` argument by position or
+        keyword and return the specified L-moment (not the L-moment ratio), but may
+        return ``None`` if a formula is not available for the arguments. The
         ``sample`` method must accept ``shape`` by position or keyword, but contrary
         to the public method of the same name, the argument it receives will be the
         *full* shape of the output array - that is, the shape passed to the public
@@ -4286,7 +4374,8 @@ def _make_distribution_custom(dist):
                'median', 'mode', 'logpdf', 'pdf',
                'logcdf2', 'logcdf', 'cdf2', 'cdf',
                'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
-               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf'}
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
+               'lmoment'}
 
     for method in methods:
         if hasattr(dist, method):
@@ -4795,6 +4884,13 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return self._moment_transform_center(
             order, raw_moments, loc, self._zero)
 
+    def _lmoment_dispatch(self, order, *, loc, scale, sign, methods, **params):
+        res = self._dist._lmoment_dispatch(order, methods=methods, **params)
+        if res is None:  # if a specific method is requested but not available
+            return None
+        res = res * np.abs(scale) * np.sign(scale)**order
+        return res + loc if order == 1 else res
+
     def _sample_dispatch(self, full_shape, *,
                          rng, loc, scale, sign, method, **params):
         rvs = self._dist._sample_dispatch(full_shape, method=method, rng=rng, **params)
@@ -5276,7 +5372,8 @@ class Mixture(_ProbabilityDistribution):
         kinds = {'raw': self._moment_raw,
                  'central': self._moment_central,
                  'standardized': self._moment_standardized}
-        order = ContinuousDistribution._validate_order_kind(self, order, kind, kinds)
+        order = ContinuousDistribution._validate_order(self, order)
+        kind = ContinuousDistribution._validate_kind(self, kind, kinds)
         moment_kind = kinds[kind]
         return moment_kind(order)
 
@@ -5296,6 +5393,10 @@ class Mixture(_ProbabilityDistribution):
             moment = var._moment_transform_center(order, moment_as, a, b)
             out += moment * weight
         return out[()]
+
+    def lmoment(self, order=1, *, standardize=False, method=None):
+        message = "L-moments are not currently available for mixture distributions."
+        raise NotImplementedError(message)
 
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order
