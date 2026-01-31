@@ -5817,7 +5817,7 @@ def exp(X, /):
 
 @xp_capabilities(np_only=True)
 def log(X, /):
-    r"""Natural logarithm of a non-negative random variablea.
+    r"""Natural logarithm of a non-negative random variable.
 
     Parameters
     ----------
