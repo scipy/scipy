@@ -1297,6 +1297,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     -----
     When ``'gelsy'`` is used as a driver, `s` is always ``None``.
 
+    Array arguments of this function, `a` and `b`, may have additional "batch"
+    dimensions prepended to the core shape. In this case, the array is treated as a
+    batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Examples
     --------
     >>> import numpy as np
@@ -1342,6 +1346,28 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     >>> plt.grid(alpha=0.25)
     >>> plt.show()
 
+    As an illustration of the "batching" feature (see :ref:`linalg_batch` for details),
+    suppose that we want to compare least-squares fits of the given data with two
+    models: a quadratic model above, and an additional linear term,
+    ``y = a + b*x**2 + c*x``.
+    To this end, we construct the design matrix for ``y = a + b*x**2 + c*x``, and
+    extend ``M`` to have three columns:
+
+    >>> M1 = np.hstack((M, np.zeros((7, 1))))
+    >>> M2 = x[:, np.newaxis] ** [0, 2, 1]
+    >>> MM = np.stack((M1, M2))
+    >>> x, res, rnk, s = lstsq(MM, y)
+    >>> x
+    array([[0.20925829, 0.12013861, 0.        ],
+           [0.0578403 , 0.11262261, 0.07701453]])
+    >>> rnk
+    array([2, 3])
+
+    Note that the rows of the ``x`` solution are equivalent to using ``M1`` and ``M2``,
+    respectively.
+    In a similar vein, to simulate an effect of random noise on ``y``, you can turn
+    it into an array with multiple columns, where each column corresponds to a specific
+    realization of the noise.
     """
 
     driver = lapack_driver
