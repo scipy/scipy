@@ -2369,7 +2369,7 @@ CumfreqResult = namedtuple('CumfreqResult',
                             'extrapoints'))
 
 
-@xp_capabilities(np_only=True, skip_backends=[('dask.array', "can't do linspace without compute")])
+@xp_capabilities(np_only=True, skip_backends=[('dask.array', 'fails tests')])
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a cumulative frequency histogram, using the histogram function.
 
@@ -2452,7 +2452,7 @@ RelfreqResult = namedtuple('RelfreqResult',
                             'extrapoints'))
 
 
-@xp_capabilities(np_only=True, skip_backends=[('dask.array', "can't do linspace without compute")])
+@xp_capabilities(np_only=True, skip_backends=[('dask.array', 'fails tests')])
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a relative frequency histogram, using the histogram function.
 

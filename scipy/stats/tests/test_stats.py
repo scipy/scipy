@@ -2447,9 +2447,6 @@ class HistFunctionsTest:
         if edge_points and not specify_limits:
             pytest.skip("Limits must be specified to determine edge points.")
 
-        # if edge_points and not specify_limits:
-        #     pytest.skip("Limits must be specified to determine edge points.")
-
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         a = np.astype(rng.random(100), dtype)
 
@@ -2464,7 +2461,7 @@ class HistFunctionsTest:
 
         if edge_points:
             _, edges = np.histogram(a, bins=nbins, range=range_, density=False)
-            a2 = np.repeat(edges, rng.integers(5, size=edges.shape))
+            a2 = np.repeat(edges, rng.integers(5, size=edges.shape).tolist())
             a = np.concat([a, a2], dtype=dtype)
 
         weights = np.astype(rng.random(a.shape), dtype) if specify_weights else None
