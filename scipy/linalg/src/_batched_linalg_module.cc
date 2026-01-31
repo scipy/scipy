@@ -202,17 +202,14 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int info = 0;
     SliceStatusVec vec_status;
     int overwrite_a = 0;
-    int lwork = 0;
     QR_mode mode = QR_mode::FULL;
     int pivoting = 0;
 
-    PyArrayObject *ap_Q = NULL;
-    PyArrayObject *ap_R = NULL;
-    PyArrayObject *ap_tau = NULL;
-    PyArrayObject *ap_P = NULL;
+    PyArrayObject *ap_Q = NULL, *ap_R = NULL, *ap_tau = NULL, *ap_jpvt = NULL;
+    PyObject *ret_lst = NULL, *ret_Q = NULL, *ret_tau = NULL, *ret_jpvt = NULL;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!|pinp", &PyArray_Type, (PyObject **)&ap_A, &overwrite_a, &lwork, &mode, &pivoting)) {
+    if (!PyArg_ParseTuple(args, "O!|pnp", &PyArray_Type, (PyObject **)&ap_A, &overwrite_a, &mode, &pivoting)) {
         return NULL;
     }
 
@@ -235,113 +232,99 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Allocate the output objects
+    // -------------------------------------------------------------------
+    // Conditionally allocate return objects
+    // -------------------------------------------------------------------
     npy_intp M = shape[ndim-2], N = shape[ndim-1];
     npy_intp K = std::min(M, N);
-    npy_intp shape_1[NPY_MAXDIMS];
 
-    for (int i = 0; i < ndim; i++) {
-        shape_1[i] = shape[i];
+    npy_intp shape_Q[NPY_MAXDIMS];
+    npy_intp shape_R[NPY_MAXDIMS];
+
+    for (npy_intp i = 0; i < ndim; i++) {
+        shape_Q[i] = shape[i];
+        shape_R[i] = shape[i];
     }
 
     switch (mode) {
         case QR_mode::FULL:
         {
-            shape_1[ndim-1] = M;
+            shape_Q[ndim-1] = M;
+            shape_R[ndim-1] = N;
             break;
         }
 
         case QR_mode::R:
         {
+            // shape of `Q` irrelevant here
+            shape_R[ndim-1] = N;
             break; // shape of `Q` irrelevant here
         }
 
         case QR_mode::RAW:
         {
-            shape_1[ndim-1] = N;
+            shape_Q[ndim-1] = N;
+            shape_R[ndim-2] = K;
+            shape_R[ndim-1] = N;
             break;
         }
 
         case QR_mode::ECONOMIC:
         {
-            shape_1[ndim-1] = K;
+            shape_Q[ndim-1] = K;
+            shape_R[ndim-2] = K;
+            shape_R[ndim-1] = N;
             break;
         }
     }
 
-    ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-    if (!ap_Q) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    switch (mode) {
-
-        case QR_mode::FULL:
-        {
-            [[fallthrough]];
-        }
-
-        case QR_mode::R:
-        {
-            shape_1[ndim-1] = N;
-            break;
-        }
-
-        case QR_mode::RAW:
-        {
-            [[fallthrough]];
-        }
-
-        case QR_mode::ECONOMIC:
-        {
-            shape_1[ndim-2] = K;
-            shape_1[ndim-1] = N;
-            break;
+    if (mode != QR_mode::R) {
+        ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
+        if (!ap_Q) {
+            PyErr_NoMemory();
+            goto fail_qr;
         }
     }
 
-    ap_R = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
+    ap_R = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_R, typenum);
     if (!ap_R) {
-        Py_DECREF(ap_Q);
         PyErr_NoMemory();
-        return NULL;
+        goto fail_qr;
     }
 
-    // Always allocate `tau` and pivoting elements to be able to return an array at all times
-    shape_1[ndim-2] = K;
-    ap_tau = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum);
-    if (!ap_tau) {
-        Py_DECREF(ap_Q);
-        Py_DECREF(ap_R);
-        PyErr_NoMemory();
-        return NULL;
+    if (mode == QR_mode::RAW) {
+        shape_Q[ndim-2] = K; // Just reuse `shape_Q`; not used any longer.
+        ap_tau = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum); // Just a vector, so `ndim-1`.
+        if (!ap_tau) {
+            PyErr_NoMemory();
+            goto fail_qr;
+        }
     }
 
-    // Set all elements to 0 immediately as the pivots are also used as inputs in `geqp3`, C-ordered (hence the `0` argument).
-    shape_1[ndim-2] = N;
-    ap_P = (PyArrayObject *)PyArray_ZEROS(ndim-1, shape_1, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0);
-    if (!ap_P) {
-        Py_DECREF(ap_Q);
-        Py_DECREF(ap_R);
-        Py_DECREF(ap_tau);
-        PyErr_NoMemory();
-        return NULL;
+    // Set all elements to 0 immediately as the pivots are also used as inputs in `geqp3`.
+    // Allocate a C-ordered array, (hence the `0` magic number).
+    if (pivoting) {
+        shape_Q[ndim-2] = N;
+        ap_jpvt = (PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0);
+        if (!ap_jpvt) {
+            PyErr_NoMemory();
+            goto fail_qr;
+        }
     }
 
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _qr<float>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<float>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _qr<double>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<double>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _qr<npy_complex64>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<npy_complex64>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _qr<npy_complex128>(ap_A, ap_Q, ap_R, ap_tau, ap_P, overwrite_a, lwork, mode, pivoting, vec_status);
+            info = _qr<npy_complex128>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -350,17 +333,23 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     if (info < 0) {
         // Either OOM error or requiested lwork too large.
-        Py_DECREF(ap_Q);
-        Py_DECREF(ap_R);
-        Py_DECREF(ap_tau);
-        Py_DECREF(ap_P);
-
-        PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.solve.");
-        return NULL;
+        PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.qr.");
+        goto fail_qr;
     }
 
-    PyObject *ret_lst = convert_vec_status(vec_status);
-    return Py_BuildValue("NNNNN", PyArray_Return(ap_Q), PyArray_Return(ap_R), PyArray_Return(ap_tau), PyArray_Return(ap_P), ret_lst);
+    ret_lst = convert_vec_status(vec_status);
+
+    ret_Q = (mode != QR_mode::R) ? PyArray_Return(ap_Q) : Py_None;
+    ret_tau = (mode == QR_mode::RAW) ? PyArray_Return(ap_tau) : Py_None;
+    ret_jpvt = (pivoting) ? PyArray_Return(ap_jpvt): Py_None;
+    return Py_BuildValue("NNNNN", ret_Q, PyArray_Return(ap_R), ret_tau, ret_jpvt, ret_lst);
+
+fail_qr:
+    Py_XDECREF(ap_Q);
+    Py_XDECREF(ap_R);
+    Py_XDECREF(ap_tau);
+    Py_XDECREF(ap_jpvt);
+    return NULL;
 }
 
 static PyObject*
