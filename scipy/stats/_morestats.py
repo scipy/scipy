@@ -4506,6 +4506,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         statistic is computed, the corresponding entry of the output will be
         NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
     normalize : boolean, optional
         If ``False`` (the default), the return value is computed from the
         above formula with the input scaled by ``(2*pi)/(high-low)`` and
