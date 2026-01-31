@@ -88,3 +88,4 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     return xn;
 }
 
+
