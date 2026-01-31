@@ -3845,7 +3845,7 @@ add_newdoc("gdtria",
     gdtr : CDF of the gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
-    gammaincinv : Inverse of the incomplete gamma function.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
@@ -3979,7 +3979,7 @@ add_newdoc("gdtrix",
     gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
     gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
-    gammaincinv : Inverse of the incomplete gamma function.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
