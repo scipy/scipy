@@ -3594,9 +3594,6 @@ class TestMoments:
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
     def test_moment_center_scalar_moment(self, size, m, c, xp):
         rng = np.random.default_rng(6581432544381372042)
         x = xp.asarray(rng.random(size=size))
@@ -3607,16 +3604,13 @@ class TestMoments:
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('c', (None, 0, 1))
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
     def test_moment_center_array_moment(self, size, c, xp):
         rng = np.random.default_rng(1706828300224046506)
         x = xp.asarray(rng.random(size=size))
         m = [0, 1, 2, 3]
         res = stats.moment(x, m, center=c)
         ref = xp.concat([stats.moment(x, i, center=c)[xp.newaxis, ...] for i in m])
-        xp_assert_equal(res, ref)
+        xp_assert_close(res, ref)  # JAX JIT doesn't pass with equality
 
     def test_moment(self, xp):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
@@ -3640,26 +3634,39 @@ class TestMoments:
         y = stats.moment(testcase, [1, 2, 3, 4])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
-        # check moment input consists only of integers
+        # check floating point integer order
         y = stats.moment(testcase, 0.0)
         xp_assert_close(y, xp.asarray(1.0))
-        message = 'All elements of `order` must be integral.'
-        with pytest.raises(ValueError, match=message):
-            stats.moment(testcase, 1.2)
+
         y = stats.moment(testcase, [1.0, 2, 3, 4.0])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
-        def test_cases():
+    @skip_xp_backends("jax.numpy", reason="array value-dependent error")
+    def test_order_input_validation(self, xp):
+        testcase = xp.asarray(self.testcase)
+        message = 'All elements of `order` must be integral.'
+        with pytest.raises(ValueError, match=message):
+            stats.moment(testcase, 1.2)
+
+    def test_zero_size(self, xp):
+        message = "One or more sample arguments..."
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([]))
             xp_assert_equal(y, xp.asarray(xp.nan))
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([], dtype=xp.float32))
             xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
-            y = stats.moment(xp.zeros((1, 0)), axis=0)
-            xp_assert_equal(y, xp.empty((0,)))
+
+        message = "All axis-slices of one or more"
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([[]]), axis=1)
             xp_assert_equal(y, xp.asarray([xp.nan]))
-            y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
-            xp_assert_equal(y, xp.empty((2, 0)))
+
+        y = stats.moment(xp.zeros((1, 0)), axis=0)
+        xp_assert_equal(y, xp.empty((0,)))
+
+        y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
+        xp_assert_equal(y, xp.empty((2, 0)))
 
     def test_nan_policy(self):
         x = np.arange(10.)
@@ -3725,9 +3732,6 @@ class TestMoments:
     @pytest.mark.parametrize('order', [0, 1, 2, 3])
     @pytest.mark.parametrize('axis', [-1, 0, 1])
     @pytest.mark.parametrize('center', [None, 0.])
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
     def test_moment_array_api(self, xp, order, axis, center):
         rng = np.random.default_rng(34823589259425)
         x = rng.random(size=(5, 6, 7))

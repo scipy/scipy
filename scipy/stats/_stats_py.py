@@ -1051,7 +1051,7 @@ def _moment_tuple(x, n_out):
 # empty, there is no distinction between the `moment` function being called
 # with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')])
 @_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
@@ -1127,36 +1127,17 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
 
     """
     xp = array_namespace(a)
-    a, axis = _chk_asarray(a, axis, xp=xp)
+    a, center, order = xp_promote(a, center, order, force_floating=True, xp=xp)
 
-    a, center = xp_promote(a, center, force_floating=True, xp=xp)
-
-    order = xp.asarray(order, dtype=a.dtype, device=xp_device(a))
-    if xp_size(order) == 0:
-        # This is tested by `_moment_outputs`, which is run by the `_axis_nan_policy`
-        # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
-        # is a non-NumPy array, so we need to check again. When the decorator is
-        # updated for array API compatibility, we can remove this second check.
-        raise ValueError("`order` must be a scalar or a non-empty 1D array.")
-    if xp.any(order != xp.round(order)):
+    if not is_lazy_array(order) and xp.any(order != xp.round(order)):
         raise ValueError("All elements of `order` must be integral.")
-    order = order[()] if order.ndim == 0 else order
 
-    # for array_like order input, return a value for each.
+    # _axis_nan_policy decorator ensures that axis=-1
     if order.ndim > 0:
-        # Calculated the mean once at most, and only if it will be used
-        calculate_mean = center is None and xp.any(order > 1)
-        mean = xp.mean(a, axis=axis, keepdims=True) if calculate_mean else None
-        mmnt = []
-        for i in range(order.shape[0]):
-            order_i = order[i]
-            if center is None and order_i > 1:
-                mmnt.append(_moment(a, order_i, axis, center=mean)[np.newaxis, ...])
-            else:
-                mmnt.append(_moment(a, order_i, axis, center=center)[np.newaxis, ...])
-        return xp.concat(mmnt, axis=0)
+        order = xp.reshape(order, (-1,) + (1,)*a.ndim)
+        return _moment(a, order, axis=-1, center=center)
     else:
-        res = _moment(a, order, axis, center=center)
+        res = _moment(a, order, axis=-1, center=center)
         return res[()] if res.ndim == 0 else res
 
 
@@ -1199,16 +1180,16 @@ def _moment(a, order, axis, *, center=None, xp=None):
     """
     xp = array_namespace(a) if xp is None else xp
 
-    if not xp_size(a) == 0 and (order == 0 or (order == 1 and center is None)):
-        # By definition, the zeroth moment is 1, and the first *central* moment is 0.
-        shape = list(a.shape)
-        del shape[axis]
-        return (xp.ones(shape, dtype=a.dtype, device=xp_device(a)) if order == 0
-                else xp.zeros(shape, dtype=a.dtype, device=xp_device(a)))
-
+    order_0 = order == 0
+    order_1 = (order == 1) & (center is None)
     center = xp.mean(a, axis=axis, keepdims=True) if center is None else center
-    a_zero_mean = _demean(a, center, axis, xp=xp)
-    return xp.mean(a_zero_mean**order, axis=axis)
+    a_zero_mean = _demean(a, center, axis, precision_warning=False, xp=xp)
+    res = xp.mean(a_zero_mean**order, axis=axis, keepdims=True)
+    if is_lazy_array(res) or xp.any(order_0) or xp.any(order_1):
+        res = xp.where(order_0, xp.ones_like(res), res)
+        res = xp.where(order_1, xp.zeros_like(res), res)
+
+    return xp.squeeze(res, axis=axis)
 
 
 def _var(x, axis=0, ddof=0, mean=None, xp=None):
