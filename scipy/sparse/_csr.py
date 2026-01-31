@@ -367,6 +367,9 @@ class csr_array(_csr_base, sparray):
     has_canonical_format
     T
 
+    format : str
+    Sparse storage format of the array (e.g. 'csr').
+
     Notes
     -----
 

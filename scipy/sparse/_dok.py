@@ -682,6 +682,9 @@ class dok_array(_dok_base, sparray):
     size
     T
 
+    format : str
+    Sparse storage format of the array (e.g. 'dok').
+
     Notes
     -----
 
