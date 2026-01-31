@@ -22,7 +22,6 @@ skip_errors = [
     "PR03",
     "PR04",
     "PR06",
-    "PR07",
     "PR08",
     "PR09",
     "RT02",  # questionable rule; see gh-24348
@@ -70,7 +69,8 @@ legacy_functions = [
     "scipy.sparse.isspmatrix",
     "scipy.sparse.spmatrix",
     "scipy.optimize.BroydenFirst",
-    "scipy.optimize.KrylovJacobian"
+    "scipy.optimize.KrylovJacobian",
+    "scipy.linalg.LinAlgError"  # this is from numpy
 ]
 
 # the method of these classes have no __doc__, skip for now

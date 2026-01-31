@@ -35,7 +35,7 @@ def expand_dims(A, /, *, axis=0):
     Parameters
     ----------
     A : sparse array
-
+        Input array.
     axis : int
         Position in the expanded axes where the new axis (or axes) is placed.
         For a dimension ``N`` array, a valid axis is an integer on the
@@ -87,6 +87,7 @@ def swapaxes(A, axis1, axis2):
     Parameters
     ----------
     A : sparse array
+        Input array.
     axis1 : int
         First axis.
     axis2 : int
@@ -133,6 +134,7 @@ def permute_dims(A, axes=None, copy=False):
     Parameters
     ----------
     A : sparse array
+        Input array.
     axes : tuple or list of ints, optional
         If specified, it must be a tuple or list which contains a permutation
         of ``[0, 1, ..., N-1]`` where ``N`` is ``A.ndim``. The ith
