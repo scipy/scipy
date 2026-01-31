@@ -908,6 +908,10 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
         The statistic of each axis-slice (e.g. row) of the input will appear in a
         corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
     nan_policy : {'propagate', 'omit', 'raise'
         Defines how to handle input NaNs.
 
@@ -919,11 +923,6 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
-
-    keepdims : bool, default: False
-        If this is set to True, the axes which are reduced are left
-        in the result as dimensions with size one. With this option,
-        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -4491,6 +4490,22 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         Upper boundary of the principal value of an angle.  Default is ``2*pi``.
     low : float, optional
         Lower boundary of the principal value of an angle.  Default is ``0``.
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+        which the  statistic is computed, the corresponding entry of the output
+        will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        If insufficient data remains in the axis slice along which the
+        statistic is computed, the corresponding entry of the output will be
+        NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
     normalize : boolean, optional
         If ``False`` (the default), the return value is computed from the
         above formula with the input scaled by ``(2*pi)/(high-low)`` and

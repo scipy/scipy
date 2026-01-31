@@ -317,6 +317,24 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     eigvals_only : bool, optional
         Whether to calculate only eigenvalues and no eigenvectors.
         (Default: both are calculated)
+    overwrite_a : bool, optional
+        Whether to overwrite data in ``a`` (may improve performance). Default is False.
+    overwrite_b : bool, optional
+        Whether to overwrite data in ``b`` (may improve performance). Default is False.
+    type : int, optional
+        For the generalized problems, this keyword specifies the problem type
+        to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
+        inputs)::
+
+            1 =>     a @ v = w @ b @ v
+            2 => a @ b @ v = w @ v
+            3 => b @ a @ v = w @ v
+
+        This keyword is ignored for standard problems.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
     subset_by_index : iterable, optional
         If provided, this two-element iterable defines the start and the end
         indices of the desired eigenvalues (ascending order and 0-indexed).
@@ -335,26 +353,6 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         generalized (where b is not None) problems. See the Notes section.
         The default for standard problems is "evr". For generalized problems,
         "gvd" is used for full set, and "gvx" for subset requested cases.
-    type : int, optional
-        For the generalized problems, this keyword specifies the problem type
-        to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
-        inputs)::
-
-            1 =>     a @ v = w @ b @ v
-            2 => a @ b @ v = w @ v
-            3 => b @ a @ v = w @ v
-
-        This keyword is ignored for standard problems.
-    overwrite_a : bool, optional
-        Whether to overwrite data in ``a`` (may improve performance). Default
-        is False.
-    overwrite_b : bool, optional
-        Whether to overwrite data in ``b`` (may improve performance). Default
-        is False.
-    check_finite : bool, optional
-        Whether to check that the input matrices contain only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
