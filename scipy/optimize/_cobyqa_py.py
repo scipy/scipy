@@ -55,7 +55,7 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
     .. [1] COBYQA
            https://www.cobyqa.com/stable/
     """
-    from .._lib.cobyqa import minimize  # import here to avoid circular imports
+    from .._external.cobyqa import minimize  # import here to avoid circular imports
 
     _check_unknown_options(unknown_options)
     options = {

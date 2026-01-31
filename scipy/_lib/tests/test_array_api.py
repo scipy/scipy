@@ -11,9 +11,9 @@ from scipy._lib._array_api import (
     xp_capabilities_table, _xp_copy_to_numpy
 )
 from scipy._lib._array_api_docs_tables import is_named_function_like_object
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
-from scipy._lib.array_api_extra.testing import lazy_xp_function
+from scipy._external.array_api_extra.testing import lazy_xp_function
 
 # Run all tests in this module in the Array API CI,
 # including those without the `xp` fixture

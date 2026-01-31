@@ -26,7 +26,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
                                    is_numpy, xp_default_dtype, is_array_api_strict,
                                    is_jax)
@@ -2835,6 +2835,7 @@ class TestYeojohnson_llf:
         with eager_warns(SmallSampleWarning, match=message, xp=xp):
             assert xp.isnan(stats.yeojohnson_llf(1, xp.asarray([])))
 
+    @skip_xp_backends('jax.numpy', reason="JIT can't special-case for all >0 / <0")
     def test_gh24172(self, xp):
         # Test all negative and all positive data
         data = xp.asarray([10, 10, 10, 9.9], dtype=xp.float64)
@@ -2849,6 +2850,25 @@ class TestYeojohnson_llf:
                         xp.asarray(12.360966379200528, dtype=xp.float64), rtol=1e-7)
         xp_assert_close(stats.yeojohnson_llf(20, -data),
                         xp.asarray(12.380287243698629, dtype=xp.float64), rtol=1e-7)
+
+    @pytest.mark.parametrize("lmb, ref",
+                             [(-1.,  6.757930444097559),
+                              (0., 11.90755408530727),
+                              (1., 14.179952211901629),
+                              (2., 13.040657538043835)])
+    def test_against_reference(self, lmb, ref, xp):
+        # Reference values generated with mpsci, e.g.
+        # import numpy as np
+        # from mpmath import mp
+        # from mpsci.stats import yeojohnson_llf
+        # mp.dps = 100
+        # rng = np.random.default_rng(78435782834992002)
+        # x = rng.uniform(-1, 1, size=25)
+        # float(yeojohnson_llf(-1, x))  # 6.757930444097559
+        rng = np.random.default_rng(78435782834992002)
+        x = rng.uniform(-1, 1, size=25)
+        res = stats.yeojohnson_llf(lmb, xp.asarray(x.tolist()))
+        xp_assert_close(res, xp.asarray(ref))
 
 
 class TestYeojohnson(TransformTest):

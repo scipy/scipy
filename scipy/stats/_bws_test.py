@@ -3,7 +3,7 @@ from functools import partial
 
 from scipy import stats
 from scipy.stats._axis_nan_policy import _broadcast_arrays
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_ravel,
                                    xp_result_type)
 

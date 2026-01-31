@@ -78,7 +78,8 @@ trlib_int_t trlib_eigen_inverse(
     *lam_pert = -minuslam;
     
     if ( *iter_inv == TRLIB_EIR_FAIL_FACTOR ) { TRLIB_PRINTLN_2("Failure on factorizing in inverse correction!") TRLIB_RETURN(TRLIB_EIR_FAIL_FACTOR) }
-    
+    if ( itmax <= 0 ) { TRLIB_PRINTLN_2("Failure on solving inverse correction! (itmax <= 0)") TRLIB_RETURN(TRLIB_EIR_FAIL_LINSOLVE) }
+
     // try with TRLIB_EIR_N_STARTVEC different start vectors and hope that it converges for one
     seeds[0] = time(NULL);
     for(jj = 1; jj < TRLIB_EIR_N_STARTVEC; ++jj ) { seeds[jj] = rand(); }

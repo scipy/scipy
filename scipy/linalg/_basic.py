@@ -10,7 +10,10 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
+from .lapack import (
+    get_lapack_funcs, _compute_lwork,
+    _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz,
+)
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
@@ -234,6 +237,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
@@ -245,14 +250,6 @@ def solve(a, b, lower=False, overwrite_a=False,
         raise NotImplementedError('scipy.linalg.solve can currently '
                                   'not solve a^T x = b or a^H x = b '
                                   'for complex matrices.')
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
-
-    if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
-        overwrite_a = True
-        b1 = b1.copy()
 
     # align the shape of b with a: 1. make b1 at least 2D
     b_is_1D = b1.ndim == 1
@@ -620,21 +617,6 @@ def _to_banded(n_below, n_above, a):
     for i in range(1, n_below + 1):
         ab[n_above + i, :-i] = np.diag(a, -i)
     return ab
-
-
-def _ensure_dtype_cdsz(*arrays):
-    # Ensure that the dtype of arrays is one of the standard types
-    # compatible with LAPACK functions (single or double precision
-    # real or complex).
-    dtype = np.result_type(*arrays)
-    if not np.issubdtype(dtype, np.inexact):
-        return (array.astype(np.float64) for array in arrays)
-    complex = np.issubdtype(dtype, np.complexfloating)
-    if np.finfo(dtype).bits <= 32:
-        dtype = np.complex64 if complex else np.float32
-    elif np.finfo(dtype).bits >= 64:
-        dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
 
 
 @_apply_over_batch(('a', 2), ('b', '1|2'))
@@ -1428,10 +1410,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
@@ -1582,7 +1561,8 @@ def det(a, overwrite_a=False, check_finite=True):
 
 
 # Linear Least Squares
-@_apply_over_batch(('a', 2), ('b', '1|2'))
+
+
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
@@ -1592,9 +1572,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Left-hand side array
-    b : (M,) or (M, K) array_like
+    b : (M,) or (..., M, K) array_like
         Right hand side array
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
@@ -1619,12 +1599,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Returns
     -------
-    x : (N,) or (N, K) ndarray
+    x : (N,) or (..., N, K) ndarray
         Least-squares solution.
     residues : (K,) ndarray or float
-        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` and
-        ``rank(A) == n`` (returns a scalar if ``b`` is 1-D). Otherwise a
-        (0,)-shaped array is returned.
+        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` (returns a
+        scalar if ``b`` is 1-D). Otherwise a (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
     s : (min(M, N),) ndarray or None
@@ -1645,8 +1624,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Notes
     -----
-    When ``'gelsy'`` is used as a driver, `residues` is set to a (0,)-shaped
-    array and `s` is always ``None``.
+    When ``'gelsy'`` is used as a driver, `s` is always ``None``.
 
     Examples
     --------
@@ -1694,25 +1672,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     >>> plt.show()
 
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
-    b1 = _asarray_validated(b, check_finite=check_finite)
-    if len(a1.shape) != 2:
-        raise ValueError('Input array a should be 2D')
-    m, n = a1.shape
-    if len(b1.shape) == 2:
-        nrhs = b1.shape[1]
-    else:
-        nrhs = 1
-    if m != b1.shape[0]:
-        raise ValueError('Shape mismatch: a and b should have the same number'
-                         f' of rows ({m} != {b1.shape[0]}).')
-    if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
-        x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
-        if n == 0:
-            residues = np.linalg.norm(b1, axis=0)**2
-        else:
-            residues = np.empty((0,))
-        return x, residues, 0, np.empty((0,))
 
     driver = lapack_driver
     if driver is None:
@@ -1720,70 +1679,65 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if driver not in ('gelsd', 'gelsy', 'gelss'):
         raise ValueError(f'LAPACK driver "{driver}" is not found')
 
-    lapack_func, lapack_lwork = get_lapack_funcs((driver,
-                                                 f'{driver}_lwork'),
-                                                 (a1, b1))
-    real_data = True if (lapack_func.dtype.kind == 'f') else False
+    if len(a.shape) < 2:
+        raise ValueError('Input array a should be at least 2D, got {a.shape = }')
 
-    if m < n:
-        # need to extend b matrix as it will be filled with
-        # a larger solution matrix
-        if len(b1.shape) == 2:
-            b2 = np.zeros((n, nrhs), dtype=lapack_func.dtype)
-            b2[:m, :] = b1
+    a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
+    b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)   # NB: makes a1.dtype == b1.dtype, if needed
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
+
+    m, n = a1.shape[-2:]
+
+    # Zero-sized problem, confuses LAPACK; bail out straight away
+    if m == 0 or n == 0:
+        x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
+        if n == 0:
+            residues = np.linalg.norm(b1, axis=0)**2
         else:
-            b2 = np.zeros(n, dtype=lapack_func.dtype)
-            b2[:m] = b1
-        b1 = b2
+            residues = np.empty((0,))
+        return x, residues, 0, np.empty((0,))
 
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
+    # align the shape of b with a
+    # 1. make b1 at least 2D
+    b_is_1D = b1.ndim == 1
+    if b_is_1D:
+        b1 = b1[:, None]
+
+    if m != b1.shape[-2]:
+        raise ValueError('Shape mismatch: a and b should have the same number'
+                         f' of rows ({m} != {b1.shape[-2]}).')
+
+    # 2. broadcast the batch dimensions of b1 and a1
+    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
+    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
+    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
     if cond is None:
-        cond = np.finfo(lapack_func.dtype).eps
+        cond = np.finfo(a1.dtype).eps
+    else:
+        cond = float(cond)
 
-    if driver in ('gelss', 'gelsd'):
-        if driver == 'gelss':
-            lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-            v, x, s, rank, work, info = lapack_func(a1, b1, cond, lwork,
-                                                    overwrite_a=overwrite_a,
-                                                    overwrite_b=overwrite_b)
+    x, rank, S, err_lst = _batched_linalg._lstsq(a1, b1, cond, driver)
 
-        elif driver == 'gelsd':
-            if real_data:
-                lwork, iwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-                x, s, rank, info = lapack_func(a1, b1, lwork,
-                                               iwork, cond, False, False)
-            else:  # complex data
-                lwork, rwork, iwork = _compute_lwork(lapack_lwork, m, n,
-                                                     nrhs, cond)
-                x, s, rank, info = lapack_func(a1, b1, lwork, rwork, iwork,
-                                               cond, False, False)
-        if info > 0:
-            raise LinAlgError("SVD did not converge in Linear Least Squares")
-        if info < 0:
-            raise ValueError(
-                f'illegal value in {-info}-th argument of internal {lapack_driver}'
-            )
-        resids = np.asarray([], dtype=x.dtype)
-        if m > n:
-            x1 = x[:n]
-            if rank == n:
-                resids = np.sum(np.abs(x[n:])**2, axis=0)
-            x = x1
-        return x, resids, rank, s
+    if err_lst:
+        _format_emit_errors_warnings(err_lst)
 
-    elif driver == 'gelsy':
-        lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-        jptv = np.zeros((a1.shape[1], 1), dtype=np.int32)
-        v, x, j, rank, info = lapack_func(a1, b1, jptv, cond,
-                                          lwork, False, False)
-        if info < 0:
-            raise ValueError(f'illegal value in {-info}-th argument of internal gelsy')
-        if m > n:
-            x1 = x[:n]
-            x = x1
-        return x, np.array([], x.dtype), rank, None
+    residuals = np.asarray([], dtype=x.dtype)
+    if m > n:
+        # can get the residuals from the GELSS/GELSD output instead, if _really_ wanted
+        res = b1 - a1 @ x
+        residuals = np.sum(res * res.conj(), axis=len(batch_shape))
+
+    if b_is_1D:
+        x = x[..., 0]
+        if residuals.size > 0:
+            residuals = residuals[..., 0]
+
+    return x, residuals, rank, S
 
 
 lstsq.default_lapack_driver = 'gelsd'

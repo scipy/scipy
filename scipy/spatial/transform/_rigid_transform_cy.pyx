@@ -241,7 +241,7 @@ def pow(double[:, :, :] matrix, float n):
     elif n == -1:
         return inv(matrix)
     elif n == 1:
-        return matrix
+        return np.asarray(matrix)
     return from_exp_coords(as_exp_coords(matrix) * n)
 
 
