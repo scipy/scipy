@@ -1129,7 +1129,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    a = xp_promote(a, force_floating=True, xp=xp)
+    a, center = xp_promote(a, center, force_floating=True, xp=xp)
 
     order = xp.asarray(order, dtype=a.dtype, device=xp_device(a))
     if xp_size(order) == 0:
@@ -1151,12 +1151,13 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         for i in range(order.shape[0]):
             order_i = order[i]
             if center is None and order_i > 1:
-                mmnt.append(_moment(a, order_i, axis, mean=mean)[np.newaxis, ...])
+                mmnt.append(_moment(a, order_i, axis, center=mean)[np.newaxis, ...])
             else:
-                mmnt.append(_moment(a, order_i, axis, mean=center)[np.newaxis, ...])
+                mmnt.append(_moment(a, order_i, axis, center=center)[np.newaxis, ...])
         return xp.concat(mmnt, axis=0)
     else:
-        return _moment(a, order, axis, mean=center)
+        res = _moment(a, order, axis, center=center)
+        return res[()] if res.ndim == 0 else res
 
 
 def _demean(a, mean, axis, *, xp, precision_warning=True):
@@ -1190,65 +1191,30 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     return a_zero_mean
 
 
-def _moment(a, order, axis, *, mean=None, xp=None):
+def _moment(a, order, axis, *, center=None, xp=None):
     """Vectorized calculation of raw moment about specified center
 
-    When `mean` is None, the mean is computed and used as the center;
+    When `center` is None, the mean is computed and used as the center;
     otherwise, the provided value is used as the center.
-
     """
     xp = array_namespace(a) if xp is None else xp
 
-    a = xp_promote(a, force_floating=True, xp=xp)
-    dtype = a.dtype
-
-    # moment of empty array is the same regardless of order
-    if xp_size(a) == 0:
-        return xp.mean(a, axis=axis)
-
-    if order == 0 or (order == 1 and mean is None):
-        # By definition the zeroth moment is always 1, and the first *central*
-        # moment is 0.
+    if not xp_size(a) == 0 and (order == 0 or (order == 1 and center is None)):
+        # By definition, the zeroth moment is 1, and the first *central* moment is 0.
         shape = list(a.shape)
         del shape[axis]
+        return (xp.ones(shape, dtype=a.dtype, device=xp_device(a)) if order == 0
+                else xp.zeros(shape, dtype=a.dtype, device=xp_device(a)))
 
-        temp = (xp.ones(shape, dtype=dtype, device=xp_device(a)) if order == 0
-                else xp.zeros(shape, dtype=dtype, device=xp_device(a)))
-        return temp[()] if temp.ndim == 0 else temp
-
-    # Exponentiation by squares: form exponent sequence
-    n_list = [order]
-    current_n = order
-    while current_n > 2:
-        if current_n % 2:
-            current_n = (current_n - 1) / 2
-        else:
-            current_n /= 2
-        n_list.append(current_n)
-
-    # Starting point for exponentiation by squares
-    mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
-            else xp.asarray(mean, dtype=dtype))
-    mean = mean[()] if mean.ndim == 0 else mean
-    a_zero_mean = _demean(a, mean, axis, xp=xp)
-
-    if n_list[-1] == 1:
-        s = xp.asarray(a_zero_mean, copy=True)
-    else:
-        s = a_zero_mean**2
-
-    # Perform multiplications
-    for n in n_list[-2::-1]:
-        s = s**2
-        if n % 2:
-            s *= a_zero_mean
-    return xp.mean(s, axis=axis)
+    center = xp.mean(a, axis=axis, keepdims=True) if center is None else center
+    a_zero_mean = _demean(a, center, axis, xp=xp)
+    return xp.mean(a_zero_mean**order, axis=axis)
 
 
 def _var(x, axis=0, ddof=0, mean=None, xp=None):
     # Calculate variance of sample, warning if precision is lost
     xp = array_namespace(x) if xp is None else xp
-    var = _moment(x, 2, axis, mean=mean, xp=xp)
+    var = _moment(x, 2, axis, center=mean, xp=xp)
     if ddof != 0:
         n = _length_nonmasked(x, axis, xp=xp)
         n = xp.asarray(n, dtype=x.dtype, device=xp_device(x))
@@ -1342,8 +1308,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
-    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
-    m3 = _moment(a, 3, axis, mean=mean, xp=xp)
+    m2 = _moment(a, 2, axis, center=mean, xp=xp)
+    m3 = _moment(a, 3, axis, center=mean, xp=xp)
     with np.errstate(all='ignore'):
         eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
@@ -1450,8 +1416,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     n = _length_nonmasked(a, axis, xp=xp)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
-    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
-    m4 = _moment(a, 4, axis, mean=mean, xp=xp)
+    m2 = _moment(a, 2, axis, center=mean, xp=xp)
+    m4 = _moment(a, 4, axis, center=mean, xp=xp)
     with np.errstate(all='ignore'):
         zero = m2 <= (xp.finfo(m2.dtype).eps * mean_reduced)**2
         vals = xp.where(zero, xp.nan, m4 / m2**2.0)

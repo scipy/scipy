@@ -3724,7 +3724,7 @@ class TestMoments:
 
     @pytest.mark.parametrize('order', [0, 1, 2, 3])
     @pytest.mark.parametrize('axis', [-1, 0, 1])
-    @pytest.mark.parametrize('center', [None, 0])
+    @pytest.mark.parametrize('center', [None, 0.])
     @pytest.mark.filterwarnings(
         "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
     )
@@ -3732,7 +3732,8 @@ class TestMoments:
         rng = np.random.default_rng(34823589259425)
         x = rng.random(size=(5, 6, 7))
         res = stats.moment(xp.asarray(x), order, axis=axis, center=center)
-        ref = xp.asarray(_moment(x, order, axis, mean=center))
+        center = center if center is None else np.asarray(center)
+        ref = xp.asarray(_moment(x, order, axis, center=center)[()])
         xp_assert_close(res, ref)
 
 
