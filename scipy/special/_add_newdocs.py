@@ -3845,24 +3845,12 @@ add_newdoc("gdtria",
     gdtr : CDF of the gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+    gammaincinv : Inverse of the incomplete gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `a`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtria` is implemented in terms of the incomplete gamma inverse as
+    `gdtria(p, b, x)=gammaincinv(b, p)/x`.
 
     Examples
     --------
@@ -3991,24 +3979,12 @@ add_newdoc("gdtrix",
     gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
     gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
+    gammaincinv : Inverse of the incomplete gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `x` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `x`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtrix` is implemented in terms of the incomplete gamma inverse as
+    `gdtrix(a, b, p)=gammaincinv(b, p)/a`.
 
     Examples
     --------
