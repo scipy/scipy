@@ -297,7 +297,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
             The associated *p*-value for the chosen `alternative`.
         zstatistic : array_like
             When ``method = 'approx'``, this is the normalized z-statistic::
+
                 z = (U - mn - d) / se
+
             where ``U`` is `statistic` as defined above, ``mn`` is the mean of the
             distribution under the null hypothesis, ``d`` is a continuity
             correction, and ``se`` is the standard error.
