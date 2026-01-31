@@ -1089,7 +1089,8 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     axes : tuple of int or None
         The axes over which to apply the filter. If `sigma` or `mode` tuples
         are provided, their length must match the number of axes.
-    Extra keyword arguments will be passed to gaussian_filter().
+    **kwargs
+        Extra keyword arguments will be passed to `gaussian_filter`.
 
     Returns
     -------
@@ -1214,7 +1215,8 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     axes : tuple of int or None
         The axes over which to apply the filter. If `sigma` or `mode` tuples
         are provided, their length must match the number of axes.
-    Extra keyword arguments will be passed to gaussian_filter().
+    **kwargs
+        Extra keyword arguments will be passed to `gaussian_filter`.
 
     Returns
     -------
