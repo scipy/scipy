@@ -319,7 +319,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     }
 
     void *irwork;
-    if (type_traits<T>::is_complex) {
+    if constexpr (type_traits<T>::is_complex) {
         irwork = malloc(intn * sizeof(real_type));
     } else {
         irwork = malloc(intn * sizeof(CBLAS_INT));
@@ -382,12 +382,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         init_status(slice_status, idx, St::BANDED);
         solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work, irwork, kls[idx], kus[idx], slice_status);
 
-        if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
-            vec_status.push_back(slice_status);
-            goto free_exit_banded;
-        } else if (slice_status.is_ill_conditioned) {
-            vec_status.push_back(slice_status);
-        }
+        if (_detect_problems(slice_status, vec_status) != 0) { goto free_exit_banded; }
 
         // Put result in C-order in return buffer
         copy_slice_F_to_C(&ret_data[idx * n * nrhs], b_data, n, nrhs);

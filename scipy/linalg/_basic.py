@@ -9,8 +9,8 @@ from itertools import product
 import numpy as np
 from scipy._lib._util import _apply_over_batch
 from .lapack import (
-    get_lapack_funcs, _compute_lwork,
-    _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz,
+    get_lapack_funcs, _normalize_lapack_dtype,
+    _ensure_aligned_and_native, _ensure_dtype_cdsz,
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
