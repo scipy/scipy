@@ -451,7 +451,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
 
-        Note that ``drop_tol`` primarily affects entries generated as fill-in
+        Note that `drop_tol` primarily affects entries generated as fill-in
         during the ILU factorization; for matrices that produce little or no
         fill-in, changing this parameter may have no visible effect on the
         sparsity pattern of the factors.
