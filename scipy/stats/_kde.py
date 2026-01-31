@@ -677,7 +677,7 @@ class gaussian_kde:
         return result[:, 0]
 
     def marginal(self, dimensions):
-        """Return a marginal KDE distribution
+        """Return a marginal KDE distribution.
 
         Parameters
         ----------

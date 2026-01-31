@@ -1197,7 +1197,7 @@ def _dhtm(mag, xp):
 def minimum_phase(h,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
                   n_fft: int | None = None, *, half: bool = True):
-    """Convert a linear-phase FIR filter to minimum phase
+    """Convert a linear-phase FIR filter to minimum phase.
 
     Parameters
     ----------

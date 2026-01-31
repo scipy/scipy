@@ -11,7 +11,7 @@ __all__ = ["Covariance"]
 
 class Covariance:
     """
-    Representation of a covariance matrix
+    Representation of a covariance matrix.
 
     Calculations involving covariance matrices (e.g. data whitening,
     multivariate normal function evaluation) are often performed more
@@ -205,7 +205,7 @@ class Covariance:
     @staticmethod
     def from_cholesky(cholesky):
         r"""
-        Representation of a covariance provided via the (lower) Cholesky factor
+        Representation of a covariance provided via the (lower) Cholesky factor.
 
         Parameters
         ----------
@@ -269,7 +269,7 @@ class Covariance:
     @staticmethod
     def from_eigendecomposition(eigendecomposition):
         r"""
-        Representation of a covariance provided via eigendecomposition
+        Representation of a covariance provided via eigendecomposition.
 
         Parameters
         ----------

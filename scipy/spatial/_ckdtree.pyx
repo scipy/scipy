@@ -406,7 +406,7 @@ cdef class cKDTree:
     cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
             balanced_tree=True, boxsize=None)
 
-    kd-tree for quick nearest-neighbor lookup
+    kd-tree for quick nearest-neighbor lookup.
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any

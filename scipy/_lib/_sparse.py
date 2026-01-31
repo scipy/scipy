@@ -8,7 +8,7 @@ class SparseABC(ABC):
 
 
 def issparse(x):
-    """Is `x` of a sparse array or sparse matrix type?
+    """Is `x` a sparse array or sparse matrix type?
 
     Parameters
     ----------
@@ -37,5 +37,5 @@ def issparse(x):
     False
     >>> issparse(5)
     False
-    """
+    """  # numpydoc ignore=SS03
     return isinstance(x, SparseABC)

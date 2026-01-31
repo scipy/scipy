@@ -2116,7 +2116,7 @@ for k, v in list(_aliases.items()):
 
 
 class ConstantWarning(DeprecationWarning):
-    """Accessing a constant no longer in current CODATA data set"""
+    """Accessing a constant no longer in current CODATA data set."""
     pass
 
 
@@ -2129,7 +2129,7 @@ def _check_obsolete(key: str) -> None:
 @xp_capabilities(out_of_scope=True)
 def value(key: str) -> float:
     """
-    Value in physical_constants indexed by key
+    Value in physical_constants indexed by key.
 
     Parameters
     ----------
@@ -2155,7 +2155,7 @@ def value(key: str) -> float:
 @xp_capabilities(out_of_scope=True)
 def unit(key: str) -> str:
     """
-    Unit in physical_constants indexed by key
+    Unit in physical_constants indexed by key.
 
     Parameters
     ----------
@@ -2181,7 +2181,7 @@ def unit(key: str) -> str:
 @xp_capabilities(out_of_scope=True)
 def precision(key: str) -> float:
     """
-    Relative precision in physical_constants indexed by key
+    Relative precision in physical_constants indexed by key.
 
     Parameters
     ----------

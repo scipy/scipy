@@ -332,7 +332,7 @@ def ss2tf(A, B, C, D, input=0):
 
 
 def zpk2ss(z, p, k):
-    """Zero-pole-gain representation to state-space representation
+    """Zero-pole-gain representation to state-space representation.
 
     Parameters
     ----------

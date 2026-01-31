@@ -194,7 +194,7 @@ class _spbase(SparseABC):
         return self.tocoo(copy=copy).reshape(shape, order=order, copy=False)
 
     def resize(self, shape):
-        """Resize the array/matrix in-place to dimensions given by ``shape``
+        """Resize the array/matrix in-place to dimensions given by ``shape``.
 
         Any elements that lie within the new shape will remain at the same
         indices, while non-zero elements lying outside the new shape are
@@ -295,9 +295,11 @@ class _spbase(SparseABC):
         return self.maxprint
 
     def count_nonzero(self, axis=None):
-        """Number of non-zero entries, equivalent to
+        """Number of non-zero entries.
 
-        np.count_nonzero(a.toarray(), axis=axis)
+        This is equivalent to::
+
+            np.count_nonzero(a.toarray(), axis=axis)
 
         Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
@@ -615,7 +617,7 @@ class _spbase(SparseABC):
         return self._maximum_minimum(other, np.minimum)
 
     def dot(self, other):
-        """Ordinary dot product
+        """Ordinary dot product.
 
         Returns
         -------

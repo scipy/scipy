@@ -1437,7 +1437,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
 
 def det(a, overwrite_a=False, check_finite=True):
     """
-    Compute the determinant of a matrix
+    Compute the determinant of a matrix.
 
     The determinant is a scalar that is a function of the associated square
     matrix coefficients. The determinant value is zero for singular matrices.
@@ -2190,7 +2190,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
-    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT
+    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT.
 
     This function returns the matrix multiplication between a Toeplitz
     matrix and a dense matrix.

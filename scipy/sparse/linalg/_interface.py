@@ -54,7 +54,7 @@ __all__ = ['LinearOperator', 'aslinearoperator']
 
 
 class LinearOperator:
-    """Common interface for performing matrix vector products
+    """Common interface for performing matrix vector products.
 
     Many iterative methods (e.g. `cg`, `gmres`) do not need to know the
     individual entries of a matrix to solve a linear system ``A@x = b``.

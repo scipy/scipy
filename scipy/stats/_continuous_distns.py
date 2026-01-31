@@ -11622,7 +11622,7 @@ halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 class crystalball_gen(rv_continuous):
     r"""
-    Crystalball distribution
+    Crystalball distribution.
 
     %(before_notes)s
 
@@ -11807,7 +11807,7 @@ def _argus_phi(chi):
 
 class argus_gen(rv_continuous):
     r"""
-    Argus distribution
+    Argus distribution.
 
     %(before_notes)s
 

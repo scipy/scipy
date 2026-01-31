@@ -949,7 +949,7 @@ def dft(n, scale=None):
 
 @xp_capabilities()
 def fiedler(a):
-    """Returns a symmetric Fiedler matrix
+    """Returns a symmetric Fiedler matrix.
 
     Given an sequence of numbers `a`, Fiedler matrices have the structure
     ``F[i, j] = np.abs(a[i] - a[j])``, and hence zero diagonals and nonnegative
@@ -1032,7 +1032,7 @@ def fiedler(a):
 
 
 def fiedler_companion(a):
-    """ Returns a Fiedler companion matrix
+    """Returns a Fiedler companion matrix.
 
     Given a polynomial coefficient array ``a``, this function forms a
     pentadiagonal matrix with a special structure whose eigenvalues coincides

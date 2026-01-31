@@ -3952,7 +3952,7 @@ _distribution_names = {
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 @xp_capabilities(np_only=True)
 def make_distribution(dist):
-    """Generate a `UnivariateDistribution` class from a compatible object
+    """Generate a `UnivariateDistribution` class from a compatible object.
 
     The argument may be an instance of `rv_continuous` or an instance of
     another class that satisfies the interface described below.
@@ -5058,7 +5058,7 @@ class OrderStatisticDistribution(TransformedDistribution):
 
 @xp_capabilities(np_only=True)
 def order_statistic(X, /, *, r, n):
-    r"""Probability distribution of an order statistic
+    r"""Probability distribution of an order statistic.
 
     Returns a random variable that follows the distribution underlying the
     :math:`r^{\text{th}}` order statistic of a sample of :math:`n`
@@ -5727,7 +5727,7 @@ class FoldedDistribution(TransformedDistribution):
 
 @xp_capabilities(np_only=True)
 def abs(X, /):
-    r"""Absolute value of a random variable
+    r"""Absolute value of a random variable.
 
     Parameters
     ----------
@@ -5770,7 +5770,7 @@ def abs(X, /):
 
 @xp_capabilities(np_only=True)
 def exp(X, /):
-    r"""Natural exponential of a random variable
+    r"""Natural exponential of a random variable.
 
     Parameters
     ----------
@@ -5817,7 +5817,7 @@ def exp(X, /):
 
 @xp_capabilities(np_only=True)
 def log(X, /):
-    r"""Natural logarithm of a non-negative random variable
+    r"""Natural logarithm of a non-negative random variable.
 
     Parameters
     ----------

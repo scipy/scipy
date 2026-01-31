@@ -93,7 +93,7 @@ def _unpack(res, _):
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
 def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
-    r"""Compute the xi correlation and perform a test of independence
+    r"""Compute the xi correlation and perform a test of independence.
 
     The xi correlation coefficient is a measure of association between two
     variables; the value tends to be close to zero when the variables are

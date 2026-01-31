@@ -278,7 +278,7 @@ HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
 
 class ArpackError(RuntimeError):
     """
-    ARPACK error
+    ARPACK error.
     """
 
     def __init__(self, info, infodict=None):
@@ -292,7 +292,7 @@ class ArpackError(RuntimeError):
 
 class ArpackNoConvergence(ArpackError):
     """
-    ARPACK iteration did not converge
+    ARPACK iteration did not converge.
 
     Attributes
     ----------

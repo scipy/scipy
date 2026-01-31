@@ -479,7 +479,9 @@ sph_harm_y = MultiUFunc(
     "sph_harm_y",
     r"""sph_harm_y(n, m, theta, phi, *, diff_n=0)
 
-    Spherical harmonics. They are defined as
+    Spherical harmonics.
+
+    They are defined as
 
     .. math::
 

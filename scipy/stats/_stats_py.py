@@ -3657,7 +3657,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 @xp_capabilities()
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
-    """Return mean of array after trimming a specified fraction of extreme values
+    """Return mean of array after trimming a specified fraction of extreme values.
 
     Removes the specified proportion of elements from *each* end of the
     sorted array, then computes the mean of the remaining elements.
@@ -10422,7 +10422,7 @@ def _prk(r, k):
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
 def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
-    r"""Compute L-moments of a sample from a continuous distribution
+    r"""Compute L-moments of a sample from a continuous distribution.
 
     The L-moments of a probability distribution are summary statistics with
     uses similar to those of conventional moments, but they are defined in
