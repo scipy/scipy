@@ -136,6 +136,12 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
+    Notes
+    -----
+    Array arguments of this function, `a` and `b`, may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Examples
     --------
     >>> import numpy as np
