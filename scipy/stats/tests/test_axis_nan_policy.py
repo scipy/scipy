@@ -90,7 +90,9 @@ axis_nan_policy_cases = [
     # args, kwds typically aren't needed; just showing that they work
     (stats.kruskal, tuple(), dict(), 3, 2, False, None),  # 4 samples is slow
     (stats.ranksums, ('less',), dict(), 2, 2, False, None),
-    (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 2, False, None),
+    (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 3, False,
+     lambda res: (res.statistic, res.pvalue, res.zstatistic)),
+    (stats.mannwhitneyu, tuple(), {'method': 'auto'}, 2, 2, False, None),
     (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True,

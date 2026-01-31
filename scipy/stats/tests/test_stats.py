@@ -6553,25 +6553,25 @@ class TestNormalTest(NormalityTests):
 
 class TestRankSums:
 
-    rng = np.random.default_rng(3417115752)
-    x, y = rng.random((2, 10))
-
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
-    def test_ranksums_result_attributes(self, alternative):
+    def test_ranksums_is_mannwhitneyu(self, alternative):
+        rng = np.random.default_rng(3417115752)
+        x, y = rng.random((2, 10))
+
         # ranksums pval = mannwhitneyu pval w/out continuity or tie correction
-        res1 = stats.ranksums(self.x, self.y,
-                              alternative=alternative).pvalue
-        res2 = stats.mannwhitneyu(self.x, self.y, use_continuity=False,
-                                  alternative=alternative).pvalue
-        assert_allclose(res1, res2)
+        res1 = stats.ranksums(x, y, alternative=alternative)
+        res2 = stats.mannwhitneyu(x, y, use_continuity=False,
+                                  alternative=alternative, method='asymptotic')
+        assert_allclose(res1.pvalue, res2.pvalue)
+        assert_allclose(res1.statistic, res2.zstatistic)
 
     def test_ranksums_named_results(self):
-        res = stats.ranksums(self.x, self.y)
+        res = stats.ranksums(np.arange(10), np.arange(10))
         check_named_results(res, ('statistic', 'pvalue'))
 
     def test_input_validation(self):
         with assert_raises(ValueError, match="`alternative` must be 'less'"):
-            stats.ranksums(self.x, self.y, alternative='foobar')
+            stats.ranksums(np.arange(10), np.arange(10), alternative='foobar')
 
 
 @make_xp_test_case(stats.jarque_bera)

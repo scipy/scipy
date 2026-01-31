@@ -8388,10 +8388,17 @@ def tiecorrect(rankvals):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)  # legacy
 @_axis_nan_policy_factory(RanksumsResult, n_samples=2)
 def ranksums(x, y, alternative='two-sided'):
     """Compute the Wilcoxon rank-sum statistic for two samples.
+
+    .. legacy:: function
+
+        This function includes a subset of the features of `mannwhitneyu`.
+        Its statistic and p-value can be reproduced using `mannwhitneyu` with
+        options ``use_continuity==False`` and ``method='asymptotic'``.
+        Prefer `mannwhitneyu` for use in new code.
 
     The Wilcoxon rank-sum test tests the null hypothesis that two sets
     of measurements are drawn from the same distribution.  The alternative
@@ -8428,6 +8435,10 @@ def ranksums(x, y, alternative='two-sided'):
     pvalue : float
         The p-value of the test.
 
+    See Also
+    --------
+    scipy.stats.mannwhitneyu
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
@@ -8439,23 +8450,32 @@ def ranksums(x, y, alternative='two-sided'):
     statistic.
 
     >>> import numpy as np
-    >>> from scipy.stats import ranksums
-    >>> rng = np.random.default_rng()
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(6004253334)
     >>> sample1 = rng.uniform(-1, 1, 200)
     >>> sample2 = rng.uniform(-0.5, 1.5, 300) # a shifted distribution
-    >>> ranksums(sample1, sample2)
-    RanksumsResult(statistic=-7.887059,
-                   pvalue=3.09390448e-15) # may vary
-    >>> ranksums(sample1, sample2, alternative='less')
-    RanksumsResult(statistic=-7.750585297581713,
-                   pvalue=4.573497606342543e-15) # may vary
-    >>> ranksums(sample1, sample2, alternative='greater')
-    RanksumsResult(statistic=-7.750585297581713,
-                   pvalue=0.9999999999999954) # may vary
+    >>> stats.ranksums(sample1, sample2)
+    RanksumsResult(statistic=np.float64(-7.576201867),
+                   pvalue=np.float64(3.5581802537469756e-14))
+    >>> stats.ranksums(sample1, sample2, alternative='less')
+    RanksumsResult(statistic=np.float64(-7.576201867066302),
+                   pvalue=np.float64(1.7790901268734878e-14))
+    >>> stats.ranksums(sample1, sample2, alternative='greater')
+    RanksumsResult(statistic=np.float64(-7.576201867066302),
+                   pvalue=np.float64(0.9999999999999822))
 
     The p-value of less than ``0.05`` indicates that this test rejects the
     hypothesis at the 5% significance level.
 
+    Note that identical hypothesis tests (and more accurate ones) can be performed
+    using `mannwhitneyu`. Prefer `mannwhitneyu` for use in new code.
+
+    >>> res = stats.mannwhitneyu(sample1, sample2, alternative='greater',
+    ...                          method='asymptotic', use_continuity = False)
+    >>> res.zstatistic
+    np.float64(-7.576201867066302)
+    >>> res.pvalue
+    np.float64(0.9999999999999822)
     """
     x, y = map(np.asarray, (x, y))
     n1 = len(x)
