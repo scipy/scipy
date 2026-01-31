@@ -578,8 +578,12 @@ class LinearOperator:
     def transpose(self):
         """Transpose this linear operator.
 
-        Returns a LinearOperator that represents the transpose of this one.
         Can be abbreviated self.T instead of self.transpose().
+
+        Returns
+        -------
+        A_T : LinearOperator
+            Transpose of the linear operator.
         """
         return self._transpose()
 

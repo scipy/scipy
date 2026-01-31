@@ -318,6 +318,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Duplicate entries will be summed together.
 
+        Returns
+        -------
+        csc array/matrix
+            The converted array/matrix in CSC format.
+
         Examples
         --------
         >>> from numpy import array
@@ -350,6 +355,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
         """Convert this array/matrix to Compressed Sparse Row format
 
         Duplicate entries will be summed together.
+
+        Returns
+        -------
+        csr array/matrix
+            The converted array/matrix in CSR format.
 
         Examples
         --------

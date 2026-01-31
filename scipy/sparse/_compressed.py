@@ -1098,6 +1098,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def sorted_indices(self):
         """Return a copy of this array/matrix with sorted indices
+
+        Returns
+        -------
+        sparse array/matrix
+            A copy of this array/matrix with sorted indices.
         """
         A = self.copy()
         A.sort_indices()
