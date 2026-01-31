@@ -976,9 +976,9 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     Likewise, an explicit `assume_a='diagonal'` means that off-diagonal elements
     are not referenced.
 
-    Array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+    The `a` array argument may have additional "batch" dimensions prepended to the core
+    shape. In this case, the array is treated as a batch of lower-dimensional slices;
+    see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -1015,10 +1015,6 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     Notes
     -----
 
-    The input array ``a`` may represent a single matrix or a collection (a.k.a.
-    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
-    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
-
     This routine checks the condition number of the `a` matrix and emits a
     `LinAlgWarning` for ill-conditioned inputs.
 
@@ -1030,9 +1026,34 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     >>> linalg.inv(a)
     array([[-2. ,  1. ],
            [ 1.5, -0.5]])
-    >>> np.dot(a, linalg.inv(a))
+    >>> a @ linalg.inv(a)
     array([[ 1.,  0.],
            [ 0.,  1.]])
+
+    The input array ``a`` may represent a single matrix or a collection (a.k.a.
+    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
+    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
+    See :ref:`linalg_batch` for further details.
+    To illustrate:
+
+    >>> a = np.stack((np.eye(2), 2*np.eye(2)))
+    >>> linalg.inv(a)
+    array([[[1. , 0. ],
+            [0. , 1. ]],
+           [[0.5, 0. ],
+            [0. , 0.5]]])
+
+    Note that the structure detection runs per-slice: in the example above, each of the
+    two slices will be independently discovered as being diagonal. Setting an explicit
+    ``assume_a`` argument will bypass structure detection and use the provided value
+    without checking:
+
+    >>> a = np.stack((np.eye(2), np.arange(1, 5).reshape(2, 2)))
+    >>> linalg.inv(a, assume_a="diagonal")
+    array([[[1.  , 0.  ],
+        [0.  , 1.  ]],
+       [[1.  , 2.  ],      # off-diagonal elements are incorrect
+        [3.  , 0.25]]])
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
 
