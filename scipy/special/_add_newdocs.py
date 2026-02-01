@@ -3850,7 +3850,7 @@ add_newdoc("gdtria",
     Notes
     -----
     `gdtria` is implemented in terms of the incomplete gamma inverse as
-    `gdtria(p, b, x)=gammaincinv(b, p)/x`.
+    ``gdtria(p, b, x) = gammaincinv(b, p)/x``.
 
     Examples
     --------
@@ -3984,7 +3984,7 @@ add_newdoc("gdtrix",
     Notes
     -----
     `gdtrix` is implemented in terms of the incomplete gamma inverse as
-    `gdtrix(a, b, p)=gammaincinv(b, p)/a`.
+    ``gdtrix(a, b, p) = gammaincinv(b, p)/a `.
 
     Examples
     --------
