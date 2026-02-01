@@ -66,13 +66,13 @@ def _compute_outer_prob_inside_method(m, n, g, h):
 
     Parameters
     ----------
-    m : integer
+    m : int
         m > 0
-    n : integer
+    n : int
         n > 0
-    g : integer
+    g : int
         g is greatest common divisor of m and n
-    h : integer
+    h : int
         0 <= h <= lcm(m,n)
 
     Returns

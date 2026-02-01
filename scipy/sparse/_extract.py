@@ -55,9 +55,9 @@ def tril(A, k=0, format=None):
     ----------
     A : dense or sparse array or matrix
         Matrix whose lower trianglar portion is desired.
-    k : integer : optional
+    k : int : optional
         The top-most diagonal of the lower triangle.
-    format : string
+    format : str
         Sparse format of the result, e.g. format="csr", etc.
 
     Returns
@@ -122,9 +122,9 @@ def triu(A, k=0, format=None):
     ----------
     A : dense or sparse array or matrix
         Matrix whose upper trianglar portion is desired.
-    k : integer : optional
+    k : int : optional
         The bottom-most diagonal of the upper triangle.
-    format : string
+    format : str
         Sparse format of the result, e.g. format="csr", etc.
 
     Returns

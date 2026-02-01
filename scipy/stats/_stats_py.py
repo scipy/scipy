@@ -2963,7 +2963,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     ddof : int, optional
         Degree of freedom correction in the calculation of the
         geometric standard deviation. Default is 1.
-    keepdims : boolean, optional
+    keepdims : bool, optional
         If this is set to ``True``, the axes which are reduced are left
         in the result as dimensions with length one. With this option,
         the result will broadcast correctly against the input array.
@@ -7656,9 +7656,9 @@ def _compute_prob_outside_square(n, h):
 
     Parameters
     ----------
-    n : integer
+    n : int
         n > 0
-    h : integer
+    h : int
         0 <= h <= n
 
     Returns
@@ -7693,13 +7693,13 @@ def _count_paths_outside_method(m, n, g, h):
 
     Parameters
     ----------
-    m : integer
+    m : int
         m > 0
-    n : integer
+    n : int
         n > 0
-    g : integer
+    g : int
         g is greatest common divisor of m and n
-    h : integer
+    h : int
         0 <= h <= lcm(m,n)
 
     Returns
@@ -10744,7 +10744,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         otherwise ``1``. If `weights` and `x` do not have the same shape, the
         arrays will be broadcasted before performing the calculation. See
         Notes for details.
-    keepdims : boolean, optional
+    keepdims : bool, optional
         If this is set to ``True``, the axes which are reduced are left
         in the result as dimensions with length one. With this option,
         the result will broadcast correctly against the input array.

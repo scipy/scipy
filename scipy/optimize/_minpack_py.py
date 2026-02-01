@@ -668,7 +668,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         case.
 
         .. versionadded:: 0.17
-    jac : callable, string or None, optional
+    jac : callable, str or None, optional
         Function with signature ``jac(x, ...)`` which computes the Jacobian
         matrix of the model function with respect to parameters as a dense
         array_like structure. It will be scaled according to provided `sigma`.
@@ -677,7 +677,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         a finite difference scheme, see `least_squares`.
 
         .. versionadded:: 0.18
-    full_output : boolean, optional
+    full_output : bool, optional
         If True, this function returns additional information: `infodict`,
         `mesg`, and `ier`.
 

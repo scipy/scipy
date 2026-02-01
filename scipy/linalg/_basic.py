@@ -394,7 +394,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     Parameters
     ----------
-    (l, u) : (integer, integer)
+    (l, u) : (int, int)
         Number of non-zero lower and upper diagonals
     ab : (`l` + `u` + 1, M) array_like
         Banded matrix

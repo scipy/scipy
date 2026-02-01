@@ -1556,7 +1556,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         See notes in M, above.
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
-    mode : string ['normal' | 'buckling' | 'cayley']
+    mode : str ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
         ARPACK internally solves the eigenvalue problem

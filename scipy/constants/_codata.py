@@ -2089,7 +2089,7 @@ for k in _physical_constants_2018:
         _aliases[k] = k.replace('momentum', 'mom.um')
 for k in _physical_constants_2022:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')        
+        _aliases[k] = k.replace('momentum', 'mom.um')
 
 # CODATA 2018 and 2022: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'
@@ -2133,7 +2133,7 @@ def value(key: str) -> float:
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns
@@ -2159,12 +2159,12 @@ def unit(key: str) -> str:
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns
     -------
-    unit : Python string
+    unit : str
         Unit in `physical_constants` corresponding to `key`
 
     Examples
@@ -2185,7 +2185,7 @@ def precision(key: str) -> float:
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns

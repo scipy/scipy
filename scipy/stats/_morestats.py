@@ -4507,7 +4507,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
-    normalize : boolean, optional
+    normalize : bool, optional
         If ``False`` (the default), the return value is computed from the
         above formula with the input scaled by ``(2*pi)/(high-low)`` and
         the output scaled (back) by ``(high-low)/(2*pi)``.  If ``True``,
@@ -4619,7 +4619,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         of the data is a vector observation.
     axis : int, default: 0
         Axis along which the directional mean is computed.
-    normalize : boolean, default: True
+    normalize : bool, default: True
         If True, normalize the input to ensure that each observation is a
         unit vector. It the observations are already unit vectors, consider
         setting this to False to avoid unnecessary computation.

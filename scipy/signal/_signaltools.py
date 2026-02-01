@@ -3590,7 +3590,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     axis : int, optional
         The time/frequency axis of `x` along which the resampling take place.
         The Default is 0.
-    window : array_like, callable, string, float, or tuple, optional
+    window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
         ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
@@ -3882,10 +3882,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         The downsampling factor.
     axis : int, optional
         The axis of `x` that is resampled. Default is 0.
-    window : string, tuple, or array_like, optional
+    window : str, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
-    padtype : string, optional
+    padtype : str, optional
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,

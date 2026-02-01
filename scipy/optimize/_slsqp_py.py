@@ -150,7 +150,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         The number of iterations.
     imode : int, if full_output is true
         The exit mode from the optimizer (see below).
-    smode : string, if full_output is true
+    smode : str, if full_output is true
         Message describing the exit mode from the optimizer.
 
     See Also

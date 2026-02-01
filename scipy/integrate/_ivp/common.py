@@ -157,7 +157,7 @@ class OdeSolution:
     interpolants : list of DenseOutput with n_segments elements
         Local interpolants. An i-th interpolant is assumed to be defined
         between ``ts[i]`` and ``ts[i + 1]``.
-    alt_segment : boolean
+    alt_segment : bool
         Requests the alternative interpolant segment selection scheme. At each
         solver integration point, two interpolant segments are available. The
         default (False) and alternative (True) behaviours select the segment
