@@ -3,10 +3,11 @@ from warnings import warn, catch_warnings, simplefilter
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
-                          csr_array, csc_array, eye_array, diags_array)
+                          csr_array, csc_array, eye_array, diags_array, hstack)
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
-                                   get_index_dtype, safely_cast_index_arrays)
+                                   safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
+from scipy._lib._util import _validate_int
 import copy
 import threading
 
@@ -131,7 +132,7 @@ def _get_umf_family(A):
 
     return family, A_new
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True):
+def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -154,6 +155,15 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
         [6]_ . This is only referenced if b is a vector and
         ``scikits.umfpack`` is installed.
+    rhs_batch_size : int, optional
+        If ``b`` is a 2D sparse array, this parameter controls the number of
+        columns to be solved simultaneously. A larger number will increase
+        memory consumption by converting more columns at a time to dense
+        arrays, but may improve runtime. This option only applies when
+        ``use_umfpack=False``, since the low-level scikit-umfpack routines do
+        not support multiple right-hand sides. In that case, ``rhs_batch_size=1``.
+
+        .. versionadded:: 1.18.0
 
     Returns
     -------
@@ -251,6 +261,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     use_umfpack = use_umfpack and useUmfpack.u
 
+    _validate_int(rhs_batch_size, "rhs_batch_size", minimum=1)
+
     if b_is_vector and use_umfpack:
         if b_is_sparse:
             b_vec = b.toarray()
@@ -308,25 +320,30 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                      SparseEfficiencyWarning, stacklevel=2)
                 b = csc_array(b)
 
-            # Create a sparse output matrix by repeatedly applying
-            # the sparse factorization to solve columns of b.
-            data_segs = []
-            row_segs = []
-            col_segs = []
-            for j in range(b.shape[1]):
-                bj = b[:, j].toarray().ravel()
-                xj = Afactsolve(bj)
-                w = np.flatnonzero(xj)
-                segment_length = w.shape[0]
-                row_segs.append(w)
-                col_segs.append(np.full(segment_length, j, dtype=int))
-                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
-            sparse_data = np.concatenate(data_segs)
-            idx_dtype = get_index_dtype(maxval=max(b.shape))
-            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
-            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
-            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
-                           shape=b.shape, dtype=A.dtype)
+            if use_umfpack and rhs_batch_size > 1:
+                rhs_batch_size = 1
+
+            # Solve in batches to reduce memory consumption
+            K = b.shape[1]
+            x_blocks = []
+
+            # Pre-allocate arrays to avoid repeated allocations
+            b_batch = np.empty((N, min(rhs_batch_size, K)), dtype=b.dtype, order="F")
+
+            for k in range(0, K, rhs_batch_size):
+                batch_end = min(k + rhs_batch_size, K)
+                width = batch_end - k
+                # Convert sparse to dense in the buffer
+                b_view = b_batch[:, :width]
+                b[:, k:batch_end].toarray(out=b_view)
+                # Solve the linear systems
+                x_dense = Afactsolve(b_view)
+                x_blocks.append(csc_array(x_dense, dtype=b.dtype))
+
+            x = hstack(x_blocks)
+
+            # Convert back to consistent sparse class
+            x = A.__class__(x)
 
             if is_pydata_sparse:
                 x = pydata_sparse_cls.from_scipy_sparse(x)
