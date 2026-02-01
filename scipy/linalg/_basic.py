@@ -233,9 +233,15 @@ def solve(a, b, lower=False, overwrite_a=False,
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
 
+    # XXX a1.ndim > 2 ; b1.ndim > 2
+    # XXX can do something if a1 C ordered & transposed==True ?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
+    overwrite_b = overwrite_b and (b1.ndim <= 2) and (b1.flags["F_CONTIGUOUS"])
+
     # heavy lifting
-    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed,
-                                        overwrite_a, overwrite_b)
+    x, err_lst = _batched_linalg._solve(
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
@@ -1049,6 +1055,9 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+
+    # XXX can relax a1.ndim == 2?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {

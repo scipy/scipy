@@ -28,7 +28,14 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 parametrize_overwrite_arg = pytest.mark.parametrize(
-    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}],
+    ids=["True", "False", "None"]
+)
+
+
+parametrize_overwrite_b_arg = pytest.mark.parametrize(
+    "overwrite_b_kw", [{"overwrite_b": True}, {"overwrite_b": False}, {}],
+    ids=["True", "False", "None"]
 )
 
 
@@ -809,7 +816,6 @@ class TestSolve:
         with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
             solve(A, b, assume_a=structure)
 
-
     @pytest.mark.parametrize('b', [0, 1, [0, 1]])
     def test_singular_scalar(self, b):
         # regression test for gh-24355: scalar a=0 is singular
@@ -1131,6 +1137,47 @@ class TestSolve:
         assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize('a_dtype', [int, float])
+    @pytest.mark.parametrize('a_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_dtype', [int, float])
+    @pytest.mark.parametrize('b_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
+    @pytest.mark.parametrize('transposed', [True, False])
+    def test_overwrite_args(
+        self, overwrite_kw, overwrite_b_kw, a_dtype, a_order,
+        b_dtype, b_order, b_ndim, transposed
+    ):
+        n = 3
+        a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
+        a = a.astype(a_dtype, order=a_order)
+
+        b = np.arange(n)
+        if b_ndim > 1:
+            b = np.stack([b*j for j in range(b_ndim)]).T
+        b = b.astype(b_dtype, order=b_order)
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        # solve and check that the solution is correct for all parameters
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw, transposed=transposed)
+        a_or_aT = a_ref.T if transposed else a_ref
+        assert_allclose(a_or_aT @ x, b_ref, atol=1e-14)
+
+        # now check that it worked in-place where expected
+        overwrite_a = overwrite_kw.get('overwrite_a', False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags['F_CONTIGUOUS']
+
+        overwrite_b = overwrite_b_kw.get('overwrite_b', False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags['F_CONTIGUOUS']
+
+        assert np.shares_memory(x, b) == b_inplace
+
+        assert (b == b_ref).all() != b_inplace
+        assert (a == a_ref).all() != a_inplace
+
     def test_posdef_not_posdef(self):
         # the `b` matrix is invertible but not positive definite
         a = np.arange(9).reshape(3, 3)
@@ -1352,17 +1399,35 @@ class TestInv:
         a_inv = inv(a)
         assert a_inv.shape == (3, 1, 0, 0)
 
-    @pytest.mark.xfail(reason="TODO: re-enable overwrite_a")
-    def test_overwrite_a(self):
-        a = np.arange(1, 5).reshape(2, 2)
-        a_inv = inv(a, overwrite_a=True)
-        assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
-        assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
+    @parametrize_overwrite_arg
+    def test_overwrite_a(self, overwrite_kw):
+        n = 3
+        a0 = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace
-        a = a.astype(float).copy(order='F')
-        a_inv = inv(a, overwrite_a=True)
-        assert np.shares_memory(a, a_inv)
+        # int arrays are copied internally
+        a = a0.copy()
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # float C ordered arrays are copied, too
+        a = a0.copy().astype(float)
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: inv works inplace.
+        # IOW, the output is always the inverse, and the original input may be
+        # destroyed, depending on the `overwrite_a` kwarg value
+        a = a0.astype(float).copy(order='F')
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        assert (a == a0).all() != overwrite_a
+        assert np.shares_memory(a, a_inv) == overwrite_a
 
     def test_readonly(self):
         a = np.eye(3)
