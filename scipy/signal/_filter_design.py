@@ -4061,10 +4061,10 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         Two element sequence of fixed passband edges.
     stopb : ndarray
         Two element sequence of fixed stopband edges.
-    gstop : float
-        Amount of attenuation in stopband in dB.
     gpass : float
         Amount of ripple in the passband in dB.
+    gstop : float
+        Amount of attenuation in stopband in dB.
     type : {'butter', 'cheby', 'ellip'}
         Type of filter.
 

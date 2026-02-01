@@ -4420,11 +4420,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Input array.
     y : array_like
         Input array.
-    axis : int or None, default
-        Axis along which to perform the calculation. Default is 0.
-        If None, ravel both arrays before performing the calculation.
-
-        .. versionadded:: 1.14.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -4443,6 +4438,11 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Otherwise, the p-value is computed as documented in the notes.
 
         .. versionadded:: 1.11.0
+    axis : int or None, default
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
+
+        .. versionadded:: 1.14.0
 
     Returns
     -------

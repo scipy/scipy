@@ -631,9 +631,6 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         A triangular matrix
     b : (M,) or (M, N) array_like
         Right-hand side matrix in ``a x = b``
-    lower : bool, optional
-        Use only data contained in the lower triangle of `a`.
-        Default is to use upper triangle.
     trans : {0, 1, 2, 'N', 'T', 'C'}, optional
         Type of system to solve:
 
@@ -644,6 +641,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         1 or 'T'  a^T x = b
         2 or 'C'  a^H x = b
         ========  =========
+    lower : bool, optional
+        Use only data contained in the lower triangle of `a`.
+        Default is to use upper triangle.
     unit_diagonal : bool, optional
         If True, diagonal elements of `a` are assumed to be 1 and
         will not be referenced.

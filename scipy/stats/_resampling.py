@@ -1168,14 +1168,6 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         hypothesis. Equivalently, the acceptable rate of Type I error under
         the null hypothesis. If an array, the power is simulated for each
         significance threshold.
-    kwargs : dict, optional
-        Keyword arguments to be passed to `rvs` and/or `test` callables.
-        Introspection is used to determine which keyword arguments may be
-        passed to each callable.
-        The value corresponding with each keyword must be an array.
-        Arrays must be broadcastable with one another and with each array in
-        `n_observations`. The power is simulated for each set of corresponding
-        sample sizes and arguments. See Examples.
     vectorized : bool, optional
         If `vectorized` is set to ``False``, `test` will not be passed keyword
         argument `axis` and is expected to perform the test only for 1D samples.
@@ -1192,6 +1184,14 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         The number of samples to process in each call to `test`. Memory usage is
         proportional to the product of `batch` and the largest sample size. Default
         is ``None``, in which case `batch` equals `n_resamples`.
+    kwargs : dict, optional
+        Keyword arguments to be passed to `rvs` and/or `test` callables.
+        Introspection is used to determine which keyword arguments may be
+        passed to each callable.
+        The value corresponding with each keyword must be an array.
+        Arrays must be broadcastable with one another and with each array in
+        `n_observations`. The power is simulated for each set of corresponding
+        sample sizes and arguments. See Examples.
 
     Returns
     -------

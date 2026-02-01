@@ -1003,8 +1003,8 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(extra_keywords)s
     %(extra_arguments)s
+    %(extra_keywords)s
     axes : tuple of int or None
         The axes over which to apply the filter. If a `mode` tuple is
         provided, its length must match the number of axes.
@@ -1162,8 +1162,8 @@ def generic_gradient_magnitude(input, derivative, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(extra_keywords)s
     %(extra_arguments)s
+    %(extra_keywords)s
     axes : tuple of int or None
         The axes over which to apply the filter. If a `mode` tuple is
         provided, its length must match the number of axes.

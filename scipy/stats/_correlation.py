@@ -108,6 +108,11 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         dependent variable. The (N-d) arrays must be broadcastable.
     axis : int, default: 0
         Axis along which to perform the test.
+    y_continuous : bool, default: False
+        Whether `y` is assumed to be drawn from a continuous distribution.
+        If `y` is drawn from a continuous distribution, results are valid
+        whether this is assumed or not, but enabling this assumption will
+        result in faster computation and typically produce similar results.
     method : 'asymptotic' or `PermutationMethod` instance, optional
         Selects the method used to calculate the *p*-value.
         Default is 'asymptotic'. The following options are available.
@@ -117,12 +122,6 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         * `PermutationMethod` instance. In this case, the p-value
           is computed using `permutation_test` with the provided
           configuration options and other appropriate settings.
-
-    y_continuous : bool, default: False
-        Whether `y` is assumed to be drawn from a continuous distribution.
-        If `y` is drawn from a continuous distribution, results are valid
-        whether this is assumed or not, but enabling this assumption will
-        result in faster computation and typically produce similar results.
 
     Returns
     -------
