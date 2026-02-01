@@ -19,7 +19,6 @@ cdef extern from "cdflib.h" nogil:
         int i1
         double d3
 
-    TupleDID cdfbin_which2(double, double, double, double, double)
     TupleDID cdfchi_which3(double, double, double)
     TupleDID cdff_which4(double, double, double, double);
     TupleDID cdffnc_which3(double, double, double, double, double);
@@ -69,29 +68,6 @@ cdef inline double get_result(
         return NAN
     sf_error.error(name, sf_error.OTHER, "Unknown error.")
     return NAN
-
-
-cdef inline double bdtrik(double p, double xn, double pr) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double ompr = 1.0 - pr
-        double result, bound
-        int status
-        char *argnames[5]
-        TupleDID ret
-
-    if isnan(p) or not isfinite(xn) or isnan(pr):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "xn"
-    argnames[3] = "pr"
-    argnames[4] = "ompr"
-
-    ret = cdfbin_which2(p, q, xn, pr, ompr)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("btdtrik", argnames, result, status, bound, 1)
 
 
 cdef inline double fdtridfd(double dfn, double p, double f) noexcept nogil:

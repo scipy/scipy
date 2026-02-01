@@ -82,8 +82,15 @@
         }
     },
     "bdtrik": {
-        "_cdflib_wrappers.pxd": {
-            "bdtrik": "ddd->d"
+        "boost_special_functions.h++": {
+            "bdtrik_double": "ddd->d",
+            "bdtrik_float": "fff->f"
+        }
+    },
+    "_binom_ppf": {
+        "boost_special_functions.h++": {
+            "binom_ppf_double": "ddd->d",
+            "binom_ppf_float": "fff->f"
         }
     },
     "bdtrin": {
@@ -913,12 +920,6 @@
         "boost_special_functions.h++": {
             "binom_cdf_float": "fff->f",
             "binom_cdf_double": "ddd->d"
-        }
-    },
-    "_binom_ppf": {
-        "boost_special_functions.h++": {
-            "binom_ppf_float": "fff->f",
-            "binom_ppf_double": "ddd->d"
         }
     },
     "_binom_sf": {

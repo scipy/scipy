@@ -33,7 +33,7 @@ cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y
 cpdef double bdtr(double x0, dlp_number_t x1, double x2) noexcept nogil
 cpdef double bdtrc(double x0, dlp_number_t x1, double x2) noexcept nogil
 cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil
-cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t bdtrik(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t bdtrin(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double bei(double x0) noexcept nogil
 cpdef double beip(double x0) noexcept nogil
