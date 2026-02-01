@@ -3984,7 +3984,7 @@ add_newdoc("gdtrix",
     Notes
     -----
     `gdtrix` is implemented in terms of the incomplete gamma inverse as
-    ``gdtrix(a, b, p) = gammaincinv(b, p)/a `.
+    ``gdtrix(a, b, p) = gammaincinv(b, p)/a``.
 
     Examples
     --------
@@ -3998,7 +3998,7 @@ add_newdoc("gdtrix",
     Verify the inverse.
 
     >>> gdtrix(1.2, 3.4, p)
-    5.5999999999999996
+    5.6
     """)
 
 
