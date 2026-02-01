@@ -859,9 +859,7 @@ static int propack_exec(PyObject* module) {
 // Module slots for multi-phase initialization
 static PyModuleDef_Slot propack_slots[] = {
     {Py_mod_exec, propack_exec},
-#if PY_VERSION_HEX >= 0x030c00f0  // Python 3.12+
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-#endif
 #if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
 #endif

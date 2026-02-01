@@ -151,7 +151,7 @@ class NDInterpolatorBase:
         xi = np.ascontiguousarray(xi, dtype=np.float64)
         return self._scale_x(xi), interpolation_points_shape
 
-    def __call__(self, *args):
+    def __call__(self, *args, simplex_tolerance=1.0):
         """
         interpolator(xi)
 
@@ -163,13 +163,30 @@ class NDInterpolatorBase:
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
+        simplex_tolerance: float, optional
+            Multiplier for the default tolerance QHull uses to assign
+            a simplex to the xi in :meth:`scipy.spatial.Delaunay.find_simplex`.
+            Default is 1.0.  Increase if there are difficulties assigning points
+            to simplexes; this is most reproducible with points exatly on the
+            border of a very oblique triangle.  Only relevant for linear and 2-D
+            cubic interpolation.
+
+            .. versionadded:: 1.18.0
+
+        Raises
+        ------
+        ValueError
+            If simplex_tolerance <= 0
         """
+        if simplex_tolerance <= 0:
+            raise ValueError("simplex_tolerance must be positive")
+
         xi, interpolation_points_shape = self._preprocess_xi(*args)
 
         if self.is_complex:
-            r = self._evaluate_complex(xi)
+            r = self._evaluate_complex(xi, simplex_tolerance=simplex_tolerance)
         else:
-            r = self._evaluate_double(xi)
+            r = self._evaluate_double(xi, simplex_tolerance=simplex_tolerance)
 
         return np.asarray(r).reshape(interpolation_points_shape[:-1] + self.values_shape)
 
@@ -231,10 +248,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     .. versionadded:: 0.9
 
-    Methods
-    -------
-    __call__
-
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
@@ -252,6 +265,20 @@ class LinearNDInterpolator(NDInterpolatorBase):
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
 
+    Methods
+    -------
+    __call__
+
+    See Also
+    --------
+    griddata : Interpolate unstructured D-D data.
+    NearestNDInterpolator : Nearest-neighbor interpolator in N dimensions.
+    CloughTocher2DInterpolator : Piecewise cubic, C1 smooth, curvature-minimizing
+                                 interpolator in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this class).
+
     Notes
     -----
     The interpolant is constructed by triangulating the input data
@@ -259,6 +286,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
     barycentric interpolation.
 
     .. note:: For data on a regular grid use `interpn` instead.
+
+    References
+    ----------
+    .. [1] http://www.qhull.org/
 
     Examples
     --------
@@ -282,24 +313,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
-
-    See also
-    --------
-    griddata :
-        Interpolate unstructured D-D data.
-    NearestNDInterpolator :
-        Nearest-neighbor interpolator in N dimensions.
-    CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
-    interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
-                              in arbitrary dimensions (`interpn` wraps this
-                              class).
-
-    References
-    ----------
-    .. [1] http://www.qhull.org/
-
     """
 
     def __init__(self, points, values, fill_value=np.nan, rescale=False):
@@ -309,15 +322,15 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def _calculate_triangulation(self, points):
         self.tri = qhull.Delaunay(points)
 
-    def _evaluate_double(self, xi):
-        return self._do_evaluate(xi, 1.0)
+    def _evaluate_double(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0, simplex_tolerance=simplex_tolerance)
 
-    def _evaluate_complex(self, xi):
-        return self._do_evaluate(xi, 1.0j)
+    def _evaluate_complex(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0j, simplex_tolerance=simplex_tolerance)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy, const double simplex_tolerance=1.0):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
@@ -337,7 +350,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         start = 0
-        eps = 100 * DBL_EPSILON
+        eps = 100 * DBL_EPSILON * simplex_tolerance
         eps_broad = sqrt(DBL_EPSILON)
 
         # NOTE: a nogil block segfaults here with Python 3.10
@@ -826,13 +839,10 @@ cdef double_or_complex _clough_tocher_2d_single(const qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """Piecewise cubic, C1 smooth, curvature-minimizing interpolator in N=2 dimensions.
+    """
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in N=2 dimensions.
 
     .. versionadded:: 0.9
-
-    Methods
-    -------
-    __call__
 
     Parameters
     ----------
@@ -855,6 +865,19 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
 
+    Methods
+    -------
+    __call__
+
+    See Also
+    --------
+    griddata : Interpolate unstructured D-D data.
+    LinearNDInterpolator : Piecewise linear interpolator in N > 1 dimensions.
+    NearestNDInterpolator : Nearest-neighbor interpolator in N > 1 dimensions.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps thisclass).
+
     Notes
     -----
     The interpolant is constructed by triangulating the input data
@@ -869,6 +892,24 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     algorithm described in [Nielson83]_ and [Renka84]_.
 
     .. note:: For data on a regular grid use `interpn` instead.
+
+    References
+    ----------
+    .. [1] http://www.qhull.org/
+    .. [CT] See, for example,
+       P. Alfeld,
+       ''A trivariate Clough-Tocher scheme for tetrahedral data''.
+       Computer Aided Geometric Design, 1, 169 (1984);
+       G. Farin,
+       ''Triangular Bernstein-Bezier patches''.
+       Computer Aided Geometric Design, 3, 83 (1986).
+    .. [Nielson83] G. Nielson,
+       ''A method for interpolating scattered data based upon a minimum norm
+       network''.
+       Math. Comp., 40, 253 (1983).
+    .. [Renka84] R. J. Renka and A. K. Cline.
+       ''A Triangle-based C1 interpolation method.'',
+       Rocky Mountain J. Math., 14, 223 (1984).
 
     Examples
     --------
@@ -892,41 +933,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
-
-    See also
-    --------
-    griddata :
-        Interpolate unstructured D-D data.
-    LinearNDInterpolator :
-        Piecewise linear interpolator in N > 1 dimensions.
-    NearestNDInterpolator :
-        Nearest-neighbor interpolator in N > 1 dimensions.
-    interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
-                              in arbitrary dimensions (`interpn` wraps this
-                              class).
-
-    References
-    ----------
-    .. [1] http://www.qhull.org/
-
-    .. [CT] See, for example,
-       P. Alfeld,
-       ''A trivariate Clough-Tocher scheme for tetrahedral data''.
-       Computer Aided Geometric Design, 1, 169 (1984);
-       G. Farin,
-       ''Triangular Bernstein-Bezier patches''.
-       Computer Aided Geometric Design, 3, 83 (1986).
-
-    .. [Nielson83] G. Nielson,
-       ''A method for interpolating scattered data based upon a minimum norm
-       network''.
-       Math. Comp., 40, 253 (1983).
-
-    .. [Renka84] R. J. Renka and A. K. Cline.
-       ''A Triangle-based C1 interpolation method.'',
-       Rocky Mountain J. Math., 14, 223 (1984).
-
     """
 
     def __init__(self, points, values, fill_value=np.nan,
@@ -954,15 +960,15 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     def _calculate_triangulation(self, points):
         self.tri = qhull.Delaunay(points)
 
-    def _evaluate_double(self, xi):
-        return self._do_evaluate(xi, 1.0)
+    def _evaluate_double(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0, simplex_tolerance=simplex_tolerance)
 
-    def _evaluate_complex(self, xi):
-        return self._do_evaluate(xi, 1.0j)
+    def _evaluate_complex(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0j, simplex_tolerance=simplex_tolerance)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy, const double simplex_tolerance=1.0):
         cdef const double_or_complex[:,::1] values = self.values
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
@@ -986,7 +992,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         start = 0
-        eps = 100 * DBL_EPSILON
+        eps = 100 * DBL_EPSILON * simplex_tolerance
         eps_broad = sqrt(eps)
 
         with nogil:

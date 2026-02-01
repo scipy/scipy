@@ -1,3 +1,4 @@
+from types import GenericAlias
 import numpy as np
 
 
@@ -225,6 +226,9 @@ class CensoredData:
 
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, uncensored=None, *, left=None, right=None,
                  interval=None):
         if uncensored is None:
@@ -297,6 +301,11 @@ class CensoredData:
     def num_censored(self):
         """
         Number of censored values.
+
+        Returns
+        -------
+        int
+            The number of censored values.
         """
         return len(self._left) + len(self._right) + len(self._interval)
 

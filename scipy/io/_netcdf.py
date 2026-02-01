@@ -856,7 +856,7 @@ class netcdf_variable:
     isrec, shape
         Properties
 
-    See also
+    See Also
     --------
     isrec, shape
 
@@ -914,6 +914,11 @@ class netcdf_variable:
     def getValue(self):
         """
         Retrieve a scalar value from a `netcdf_variable` of length one.
+
+        Returns
+        -------
+        scalar
+            The scalar value contained in the length-one netcdf variable.
 
         Raises
         ------

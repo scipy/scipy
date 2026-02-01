@@ -13,7 +13,7 @@ from .windows import get_window
 from . import _sigtools
 
 from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
@@ -805,13 +805,10 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     type : {'bandpass', 'differentiator', 'hilbert'}, optional
         The type of filter:
 
-          * 'bandpass' : flat response in bands. This is the default.
-
-          * 'differentiator' : frequency proportional response in bands.
-
-          * 'hilbert' : filter with odd symmetry, that is, type III
-                        (for even order) or type IV (for odd order)
-                        linear phase filters.
+        * 'bandpass' : flat response in bands. This is the default.
+        * 'differentiator' : frequency proportional response in bands.
+        * 'hilbert' : filter with odd symmetry, that is, type III
+          (for even order) or type IV (for odd order) linear phase filters.
 
     maxiter : int, optional
         Maximum number of iterations of the algorithm. Default is 25.
@@ -1006,11 +1003,11 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     This implementation follows the algorithm given in [1]_.
     As noted there, least squares design has multiple advantages:
 
-        1. Optimal in a least-squares sense.
-        2. Simple, non-iterative method.
-        3. The general solution can obtained by solving a linear
-           system of equations.
-        4. Allows the use of a frequency dependent weighting function.
+    1. Optimal in a least-squares sense.
+    2. Simple, non-iterative method.
+    3. The general solution can obtained by solving a linear
+       system of equations.
+    4. Allows the use of a frequency dependent weighting function.
 
     This function constructs a Type I linear phase FIR filter, which
     contains an odd number of `coeffs` satisfying for :math:`n < numtaps`:
@@ -1200,7 +1197,7 @@ def _dhtm(mag, xp):
 def minimum_phase(h,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
                   n_fft: int | None = None, *, half: bool = True):
-    """Convert a linear-phase FIR filter to minimum phase
+    """Convert a linear-phase FIR filter to minimum phase.
 
     Parameters
     ----------
@@ -1209,19 +1206,18 @@ def minimum_phase(h,
     method : {'hilbert', 'homomorphic'}
         The provided methods are:
 
-            'homomorphic' (default)
-                This method [4]_ [5]_ works best with filters with an
-                odd number of taps, and the resulting minimum phase filter
-                will have a magnitude response that approximates the square
-                root of the original filter's magnitude response using half
-                the number of taps when ``half=True`` (default), or the
-                original magnitude spectrum using the same number of taps
-                when ``half=False``.
-
-            'hilbert'
-                This method [1]_ is designed to be used with equiripple
-                filters (e.g., from `remez`) with unity or zero gain
-                regions.
+        - 'homomorphic' (default):
+          This method [4]_ [5]_ works best with filters with an
+          odd number of taps, and the resulting minimum phase filter
+          will have a magnitude response that approximates the square
+          root of the original filter's magnitude response using half
+          the number of taps when ``half=True`` (default), or the
+          original magnitude spectrum using the same number of taps
+          when ``half=False``.
+        - 'hilbert'
+          This method [1]_ is designed to be used with equiripple
+          filters (e.g., from `remez`) with unity or zero gain
+          regions.
 
     n_fft : int
         The number of points to use for the FFT. Should be at least a

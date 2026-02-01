@@ -26,4 +26,4 @@ class Sqrtm(Benchmark):
         self.A = A
 
     def time_sqrtm(self, dtype, n):
-        scipy.linalg.sqrtm(self.A, disp=False)
+        scipy.linalg.sqrtm(self.A)

@@ -517,6 +517,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
 
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
+@make_xp_test_case(RBFInterpolator)
 class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
     # RBFInterpolator using 20 nearest neighbors.
     def build(self, *args, **kwargs):

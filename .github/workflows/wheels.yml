@@ -89,7 +89,7 @@ jobs:
         - [macos-14, macosx, arm64, accelerate, "14.0"]
         - [windows-2025, win, AMD64, "", ""]
         - [windows-11-arm, win, ARM64, "", ""]
-        python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314"], ["cp314t", "cp314"]]
+        python: [["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314"], ["cp314t", "cp314"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -107,7 +107,7 @@ jobs:
 
       - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: win_amd64 - install rtools
         if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
@@ -232,7 +232,7 @@ jobs:
           # Note that this step is *after* specific pythons have been used to
           # build and test the wheel
           auto-update-conda: true
-          python-version: "3.11"
+          python-version: "3.12"
           miniforge-version: latest
           conda-remove-defaults: "true"
           architecture: ${{ (matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64') && 'x64' || '' }}

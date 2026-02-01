@@ -183,13 +183,13 @@ Usage information
 
 There are seven available sparse array types:
 
-    1. csc_array: Compressed Sparse Column format
-    2. csr_array: Compressed Sparse Row format
-    3. bsr_array: Block Sparse Row format
-    4. lil_array: List of Lists format
-    5. dok_array: Dictionary of Keys format
-    6. coo_array: COOrdinate format (aka IJV, triplet format)
-    7. dia_array: DIAgonal format
+1. csc_array: Compressed Sparse Column format
+2. csr_array: Compressed Sparse Row format
+3. bsr_array: Block Sparse Row format
+4. lil_array: List of Lists format
+5. dok_array: Dictionary of Keys format
+6. coo_array: COOrdinate format (aka IJV, triplet format)
+7. dia_array: DIAgonal format
 
 To construct an array efficiently, use any of `coo_array`,
 `dok_array` or `lil_array`. `dok_array` and `lil_array`
