@@ -10366,8 +10366,8 @@ def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
     order = xp.arange(1, 5) if order is None else xp.asarray(order)
-    if (not xp.isdtype(order.dtype, "integral") or xp.any(order <= 0)
-            or order.size == 0 or order.ndim > 1):
+    if (not xp.isdtype(order.dtype, "integral") or order.size == 0 or order.ndim > 1
+            or (not is_lazy_array(order) and xp.any(order <= 0))):
         raise ValueError(message)
 
     # input validation of non-array types can still be performed with NumPy
@@ -10402,21 +10402,24 @@ def _br(x, *, r=0, xp):
     x = xp.triu(x)
     j = xp.arange(n, dtype=x.dtype)
     n = xp.asarray(n, dtype=x.dtype)[()]
-    return (xp.vecdot(special.binom(j, r[:, xp.newaxis]), x, axis=-1)
-            / special.binom(n-1, r) / n)
+    binom_j_r = xpx.lazy_apply(special.binom, j, r[:, xp.newaxis])
+    binom_nm1_r = xpx.lazy_apply(special.binom, n-1, r)
+    return xp.vecdot(binom_j_r, x, axis=-1) / binom_nm1_r / n
 
 
 def _prk(r, k):
     # Writen to match [1] Equation 27 closely to facilitate review.
     # This does not protect against overflow, so improvements to
     # robustness would be a welcome follow-up.
-    return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
+    binom_r_k = xpx.lazy_apply(special.binom, r, k)
+    binom_rpk_k = xpx.lazy_apply(special.binom, r+k, k)
+    return (-1)**(r-k)*binom_r_k*binom_rpk_k
 
 
 @xp_capabilities(skip_backends=[('dask.array', "too many issues")],
-                 jax_jit=False,  # uses arange(max(order))
                  cpu_only=True,  # torch doesn't have `binom`
-                 exceptions=('cupy', 'jax.numpy'))
+                 exceptions=('cupy', 'jax.numpy'),
+                 extra_note="Lazy backends do not support `order` greater than 4.")
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
@@ -10495,7 +10498,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     args = _lmoment_iv(sample, order, axis, sorted, standardize, xp=xp)
     sample, order, axis, sorted, standardize = args
 
-    n_moments = int(xp.max(order))
+    n_moments = 4 if is_lazy_array(order) else int(xp.max(order))
     k = xp.arange(n_moments, dtype=sample.dtype)
     prk = _prk(xpx.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k, xp=xp)
