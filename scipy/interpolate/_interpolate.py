@@ -1849,7 +1849,7 @@ class BPoly(_PPolyBase):
         ----------
         c : array_like
             coefficient array, 1-D
-        d : integer
+        d : int
 
         Returns
         -------

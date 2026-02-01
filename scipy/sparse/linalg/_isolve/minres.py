@@ -31,7 +31,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -46,7 +46,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         residual is below ``rtol``.
     shift : float
         Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}

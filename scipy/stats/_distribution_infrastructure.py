@@ -751,7 +751,7 @@ class _RealParameter(_Parameter):
             (converted to an appropriate dtype, if necessary).
         dtype : NumPy dtype
             The appropriate floating point dtype of the parameter.
-        valid : boolean ndarray
+        valid : bool ndarray
             Logical array indicating which elements are valid (True) and
             which are not (False). The arrays of all distribution parameters
             will be broadcasted, and elements for which any parameter value

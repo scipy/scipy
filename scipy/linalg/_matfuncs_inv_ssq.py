@@ -127,7 +127,7 @@ def _unwindk(z):
 
     Returns
     -------
-    unwinding_number : integer
+    unwinding_number : int
         The scalar unwinding number of z.
 
     References
@@ -163,7 +163,7 @@ def _briggs_helper_function(a, k):
     ----------
     a : complex
         A complex number.
-    k : integer
+    k : int
         A nonnegative integer.
 
     Returns

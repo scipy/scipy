@@ -1163,7 +1163,7 @@ class Complex:
 
         Returns
         -------
-        res : boolean
+        res : bool
             True if `v_x` is in `S`
         """
         A_11 = np.delete(S, 0, 0) - S[0]

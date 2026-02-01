@@ -1222,7 +1222,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
         will be initialized with the number of dimensions determine from
         the length of `a`.
-    log : boolean, default: False
+    log : bool, default: False
         When set to True, `func` returns the log of the integrand, and
         the result object contains the log of the integral.
 

@@ -149,7 +149,7 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Add the Voronoi points to the plot.
     show_vertices : bool, optional
         Add the Voronoi vertices to the plot.
-    line_colors : string, optional
+    line_colors : str, optional
         Specifies the line color for polygon boundaries
     line_width : float, optional
         Specifies the line width for polygon boundaries

@@ -225,7 +225,7 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        dtype : string or numpy dtype
+        dtype : str or numpy dtype
             Typecode or data-type to which to cast the data.
         casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
             Controls what kind of data casting may occur.

@@ -163,7 +163,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     Parameters
     ----------
-    t : ndarray or the string 'cutoff'
+    t : ndarray or 'cutoff'
         Input array.
     fc : float, optional
         Center frequency (e.g. Hz).  Default is 1000.

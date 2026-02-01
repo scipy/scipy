@@ -203,7 +203,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         x : array_like
             Point or points at which to evaluate the derivatives
 
-        der : integer, optional
+        der : int, optional
             Which derivative to evaluate (default: first derivative).
             This number includes the function value as 0th derivative.
 
@@ -232,7 +232,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         ----------
         x : array_like
             1D array of points at which to evaluate the derivatives
-        der : integer, optional
+        der : int, optional
             The number of derivatives to evaluate, from 'order 0' (der=1)
             to order der-1.  If omitted, return all possibly-non-zero
             derivatives, ie 0 to order n-1.
@@ -869,7 +869,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         ----------
         x : array_like
             Point or points at which to evaluate the derivatives
-        der : integer, optional
+        der : int, optional
             Which derivative to evaluate (default: first derivative).
             This number includes the function value as 0th derivative.
 

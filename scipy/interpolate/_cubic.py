@@ -645,7 +645,7 @@ class CubicSpline(CubicHermiteSpline):
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
         Default is 0.
-    bc_type : string or 2-tuple, optional
+    bc_type : str or 2-tuple, optional
         Boundary condition type. Two additional equations, given by the
         boundary conditions, are required to determine all coefficients of
         polynomials on each segment [2]_.

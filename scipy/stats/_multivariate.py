@@ -658,7 +658,7 @@ class multivariate_normal_gen(multi_rv_generic):
             Mean of the distribution
         cov : array_like
             Covariance matrix of the distribution
-        maxpts : integer
+        maxpts : int
             The maximum number of points to use for integration
         abseps : float
             Absolute error tolerance
@@ -715,7 +715,7 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts : integer, optional
+        maxpts : int, optional
             The maximum number of points to use for integration
             (default ``1000000*dim``)
         abseps : float, optional
@@ -765,7 +765,7 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts : integer, optional
+        maxpts : int, optional
             The maximum number of points to use for integration
             (default ``1000000*dim``)
         abseps : float, optional
@@ -807,7 +807,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Parameters
         ----------
         %(_mvn_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -978,7 +978,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             seeded with `seed`.
             If `seed` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
-        maxpts : integer, optional
+        maxpts : int, optional
             The maximum number of points to use for integration of the
             cumulative distribution function (default ``1000000*dim``)
         abseps : float, optional
@@ -1395,7 +1395,7 @@ class matrix_normal_gen(multi_rv_generic):
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -2024,7 +2024,7 @@ class matrix_t_gen(multi_rv_generic):
         Parameters
         ----------
         %(_matt_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -3023,7 +3023,7 @@ class wishart_gen(multi_rv_generic):
         """
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3076,7 +3076,7 @@ class wishart_gen(multi_rv_generic):
 
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3122,7 +3122,7 @@ class wishart_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -3634,7 +3634,7 @@ class invwishart_gen(wishart_gen):
         """
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3689,7 +3689,7 @@ class invwishart_gen(wishart_gen):
 
         Parameters
         ----------
-        n : integer
+        n : int
             Number of variates to generate
         shape : iterable
             Shape of the variates to generate
@@ -3733,7 +3733,7 @@ class invwishart_gen(wishart_gen):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -4203,7 +4203,7 @@ class multinomial_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -4372,9 +4372,9 @@ class special_ortho_group_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of rotation space (N).
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
 
         Returns
@@ -4518,9 +4518,9 @@ class ortho_group_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of rotation space (N).
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
 
         Returns
@@ -4936,9 +4936,9 @@ class unitary_group_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of space (N).
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
 
         Returns
@@ -5392,7 +5392,7 @@ class multivariate_t_gen(multi_rv_generic):
         Parameters
         ----------
         %(_mvt_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -6005,7 +6005,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_default_callparams)s
-        size : integer or iterable of integers, optional
+        size : int or iterable of integers, optional
             Number of samples to draw. Default is ``None``, in which case a
             single variate is returned as an array with shape ``m.shape``.
         %(_doc_random_state)s
@@ -6334,7 +6334,7 @@ class random_table_gen(multi_rv_generic):
         Parameters
         ----------
         %(_doc_row_col)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
         method : str, optional
             Which method to use, "boyett" or "patefield". If None (default),
@@ -6630,7 +6630,7 @@ class uniform_direction_gen(multi_rv_generic):
 
         Parameters
         ----------
-        dim : integer
+        dim : int
             Dimension of space (N).
         size : int or tuple of ints, optional
             Given a shape of, for example, (m,n,k), m*n*k samples are

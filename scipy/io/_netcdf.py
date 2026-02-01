@@ -111,7 +111,7 @@ class netcdf_file:
 
     Parameters
     ----------
-    filename : string or file-like
+    filename : str or file-like
         string -> filename
     mode : {'r', 'w', 'a'}, optional
         read-write-append mode, default is 'r'

@@ -3190,7 +3190,7 @@ class rv_discrete(rv_generic):
         ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
         probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
         and ``pk`` must have the same shape, and ``xk`` must be unique.
-    inc : integer, optional
+    inc : int, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
     badvalue : float, optional
