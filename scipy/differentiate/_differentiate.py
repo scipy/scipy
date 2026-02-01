@@ -4,7 +4,7 @@ import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import array_namespace, xp_copy, xp_promote, xp_capabilities
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
 
@@ -107,6 +107,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         `atol` is the smallest normal number of the appropriate dtype, and
         the default `rtol` is the square root of the precision of the
         appropriate dtype.
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform. See Notes.
     order : int, default: 8
         The (positive integer) order of the finite difference formula to be
         used. Odd integers will be rounded up to the next even integer.
@@ -119,9 +121,6 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform. See
-        Notes.
     step_direction : integer array_like
         An array representing the direction of the finite difference steps (for
         use when `x` lies near to the boundary of the domain of the function.)
@@ -977,6 +976,8 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
         `atol` is the smallest normal number of the appropriate dtype, and
         the default `rtol` is the square root of the precision of the
         appropriate dtype.
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform. See Notes.
     order : int, default: 8
         The (positive integer) order of the finite difference formula to be
         used. Odd integers will be rounded up to the next even integer.
@@ -989,9 +990,6 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform. See
-        Notes.
 
     Returns
     -------

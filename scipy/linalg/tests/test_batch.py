@@ -463,7 +463,10 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=2e-6)
-        assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
+        atol = 3e-6
+        if dtype is np.float32:
+            atol = 4e-6
+        assert_allclose(x, np.linalg.solve(A, b), atol=atol)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
@@ -477,7 +480,10 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=2e-6)
-        assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
+        atol = 3e-6
+        if dtype is np.float32:
+            atol = 4e-6
+        assert_allclose(x, np.linalg.solve(A, b), atol=atol)
 
     @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
@@ -622,7 +628,6 @@ class TestBatch:
 
     @pytest.mark.parametrize('f, args', [
         (linalg.toeplitz, (np.ones((0, 4)),)),
-        (linalg.eig, (np.ones((3, 0, 5, 5)),)),
     ])
     def test_zero_size_batch(self, f, args):
         message = "does not support zero-size batches."

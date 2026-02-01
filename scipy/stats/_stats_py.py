@@ -50,7 +50,6 @@ from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 
-from ._stats_mstats_common import siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 from dataclasses import dataclass, field
@@ -85,7 +84,7 @@ from scipy._lib._array_api import (
     xp_default_dtype,
     xp_device,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 
@@ -102,7 +101,7 @@ __all__ = ['gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'f_oneway', 'pearsonr', 'fisher_exact',
            'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
-           'linregress', 'siegelslopes', 'ttest_1samp',
+           'linregress', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
            'kstest', 'ks_1samp', 'ks_2samp',
            'chisquare', 'power_divergence',
@@ -3658,7 +3657,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 @xp_capabilities()
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
-    """Return mean of array after trimming a specified fraction of extreme values
+    """Return mean of array after trimming a specified fraction of extreme values.
 
     Removes the specified proportion of elements from *each* end of the
     sorted array, then computes the mean of the remaining elements.
@@ -4421,11 +4420,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Input array.
     y : array_like
         Input array.
-    axis : int or None, default
-        Axis along which to perform the calculation. Default is 0.
-        If None, ravel both arrays before performing the calculation.
-
-        .. versionadded:: 1.14.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -4444,6 +4438,11 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Otherwise, the p-value is computed as documented in the notes.
 
         .. versionadded:: 1.11.0
+    axis : int or None, default
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
+
+        .. versionadded:: 1.14.0
 
     Returns
     -------
@@ -7811,11 +7810,13 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
+                                ('dask.array', 'no rankdata')],
+                 jax_jit=False, cpu_only=True)  # null distribution is NumPy-only
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
+def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7838,6 +7839,12 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
         * 'auto' : use 'exact' for small size arrays, 'asymp' for large
         * 'exact' : use exact distribution of test statistic
         * 'asymp' : use asymptotic distribution of test statistic
+
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -7971,6 +7978,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     hypothesis in favor of the alternative.
 
     """
+    # because of the _axis_nan_policy decorator, we can assume the arrays
+    # are broadcasted and `axis=-1`
     mode = method
 
     if mode not in ['auto', 'exact', 'asymp']:
@@ -7980,42 +7989,83 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
-    if np.ma.is_masked(data1):
-        data1 = data1.compressed()
-    if np.ma.is_masked(data2):
-        data2 = data2.compressed()
-    data1 = np.sort(data1)
-    data2 = np.sort(data2)
-    n1 = data1.shape[0]
-    n2 = data2.shape[0]
+
+    xp = array_namespace(data1, data2)
+    data1 = xp.sort(data1, axis=-1)
+    data2 = xp.sort(data2, axis=-1)
+    n1 = data1.shape[-1]
+    n2 = data2.shape[-1]
     if min(n1, n2) == 0:
         raise ValueError('Data passed to ks_2samp must not be empty')
+    n = n1 + n2
 
-    data_all = np.concatenate([data1, data2])
-    # using searchsorted solves equal data problem
-    cdf1 = np.searchsorted(data1, data_all, side='right') / n1
-    cdf2 = np.searchsorted(data2, data_all, side='right') / n2
-    cddiffs = cdf1 - cdf2
+    data_all = xp.concat((data1, data2), axis=-1)
+    batch_shape = data_all.shape[:-1]
+
+    # Previously, this part of the code was just:
+    # cdf1 = _xp_searchsorted(data1, data_all, side='right') / n1
+    # cdf2 = _xp_searchsorted(data2, data_all, side='right') / n2
+    # cddiffs = cdf1 - cdf2
+    # but the switch from `xp.searchsorted` to `_xp_searchsorted` would come with a
+    # pretty steep performance hit. When `xp.searchsorted` is vectorized, we can
+    # probably use that. In the meantime, the following algorithm is typically faster.
+
+    # We want the ECDF of each sample evaluated at *all* the points in the pooled
+    # sample. The values each ECDF can assume are given by:
+    cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
+    cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+    # Now we "just" need to know how many times each of these values *will* be assumed
+    # when we evaluate the ECDFs at all points in the pooled sample.
+    # These counts are given by the differences between consecutive ("min" or "max")
+    # ranks corresponding with the observations in the (sorted) samples.
+    ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
+    one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype, device=xp_device(ranks))
+    cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
+    cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
+    # Repeat isn't vectorized - in general, this would produce a ragged array. However,
+    # In our case, the sum of repeats for each slice is the same, so we can do a
+    # vectorized repeat by raveling, repeating, then restoring the shape.
+    cdf1 = xp.repeat(xp_ravel(cdf1_vals), xp_ravel(cdf1_counts), axis=-1)
+    cdf2 = xp.repeat(xp_ravel(cdf2_vals), xp_ravel(cdf2_counts), axis=-1)
+    cddiffs = xp.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
 
     # Identify the location of the statistic
-    argminS = np.argmin(cddiffs)
-    argmaxS = np.argmax(cddiffs)
-    loc_minS = data_all[argminS]
-    loc_maxS = data_all[argmaxS]
+    argminS = xp.argmin(cddiffs, axis=-1, keepdims=True)
+    argmaxS = xp.argmax(cddiffs, axis=-1, keepdims=True)
+    loc_minS = xp.squeeze(xp.take_along_axis(data_all, argminS, axis=-1), axis=-1)
+    loc_maxS = xp.squeeze(xp.take_along_axis(data_all, argmaxS, axis=-1), axis=-1)
 
     # Ensure sign of minS is not negative.
-    minS = np.clip(-cddiffs[argminS], 0, 1)
-    maxS = cddiffs[argmaxS]
+    minS = -xp.squeeze(xp.take_along_axis(cddiffs, argminS, axis=-1), axis=-1)
+    maxS = xp.squeeze(xp.take_along_axis(cddiffs, argmaxS, axis=-1), axis=-1)
+    minS = xp.clip(minS, 0., 1.)
 
-    if alternative == 'less' or (alternative == 'two-sided' and minS > maxS):
-        d = minS
-        d_location = loc_minS
-        d_sign = -1
+    if alternative == 'less':
+        selector = xp.ones(minS.shape, dtype=xp.bool)
+    elif alternative == 'two-sided':
+        selector = minS > maxS
     else:
-        d = maxS
-        d_location = loc_maxS
-        d_sign = 1
-    g = math.gcd(n1, n2)
+        selector = xp.zeros(minS.shape, dtype=xp.bool)
+
+    d = xp.where(selector, minS, maxS)
+    d_location = xp.where(selector, loc_minS, loc_maxS)
+    one = xp.asarray(1, dtype=xp.int8)
+    d_sign = xp.where(selector, -one, one)
+    prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
+    dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
+    prob = xp.asarray(prob, dtype=dtype)
+    d = xp.astype(d, dtype, copy=False)
+    if d.ndim == 0:
+        d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
+    return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
+
+
+@np.vectorize(excluded={1, 2, 3, 4, 5}, otypes=[np.float64])
+def _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative):
+    # math.gcd used to return an `int`, but now that these return arrays, NumPy can
+    # return an int32. Unless we want the pythranized functions to be compiled for
+    # int32, this needs to produce an int64.
+    g = np.gcd(n1, n2).astype(np.int64)
     n1g = n1 // g
     n2g = n2 // g
     prob = -np.inf
@@ -8054,11 +8104,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    # Currently, `d` is a Python float. We want it to be a NumPy type, so
-    # float64 is appropriate. An enhancement would be for `d` to respect the
-    # dtype of the input.
-    return KstestResult(np.float64(d), prob, statistic_location=d_location,
-                        statistic_sign=np.int8(d_sign))
+    return prob
 
 
 def _parse_kstest_args(data1, data2, args, N):
@@ -10080,18 +10126,22 @@ def _order_ranks(ranks, j, *, xp):
     return ordered_ranks
 
 
-def _rankdata(x, method, return_ties=False, xp=None):
-    # Rank data `x` by desired `method`; `return_ties` if desired
+def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
+    # Rank data `x` by desired `method`; `return_ties`/`return_sorted` data  if desired
     xp = array_namespace(x) if xp is None else xp
 
     if is_jax(xp):
         import jax.scipy.stats as jax_stats
         ranks = jax_stats.rankdata(x, method=method, axis=-1)
+        out = [ranks]
+        y = xp.sort(x, axis=-1) if (return_ties or return_sorted) else None
+        if return_sorted:
+            out.append(y)
         if return_ties:
-            max_ranks = jax_stats.rankdata(xp.sort(x, axis=-1), method='max', axis=-1)
+            max_ranks = jax_stats.rankdata(y, method='max', axis=-1)
             t = xp.diff(max_ranks, axis=-1, prepend=0)
-            return ranks, t
-        return ranks
+            out.append(t)
+        return out[0] if len(out) == 1 else tuple(out)
 
     shape = x.shape
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
@@ -10102,7 +10152,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties
+        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties or sorted data
 
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
@@ -10128,6 +10178,13 @@ def _rankdata(x, method, return_ties=False, xp=None):
 
     ranks = xp.reshape(xp.repeat(ranks, counts), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
+    if not (return_sorted or return_ties):
+        return ranks
+
+    out = [ranks]
+
+    if return_sorted:
+        out.append(y)
 
     if return_ties:
         # Tie information is returned in a format that is useful to functions that
@@ -10148,8 +10205,9 @@ def _rankdata(x, method, return_ties=False, xp=None):
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=xp.float64)
         t = xpx.at(t)[i].set(xp.astype(counts, t.dtype, copy=False))
-        return ranks, t
-    return ranks
+        out.append(t)
+
+    return out
 
 
 @xp_capabilities(
@@ -10364,7 +10422,7 @@ def _prk(r, k):
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
 def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
-    r"""Compute L-moments of a sample from a continuous distribution
+    r"""Compute L-moments of a sample from a continuous distribution.
 
     The L-moments of a probability distribution are summary statistics with
     uses similar to those of conventional moments, but they are defined in
@@ -10403,6 +10461,11 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     --------
     moment
 
+    Notes
+    -----
+    SciPy offers only basic capabilities for working with L-moments. For more advanced
+    features, consider the ``lmo`` package [4]_.
+
     References
     ----------
     .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
@@ -10412,6 +10475,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
            Using Linear Combinations of Order Statistics". Journal of the Royal
            Statistical Society. 1990. :doi:`10.1111/j.2517-6161.1990.tb01775.x`
     .. [3] "L-moment". *Wikipedia*. https://en.wikipedia.org/wiki/L-moment.
+    .. [4] @jorenham, *Lmo*, https://github.com/jorenham/Lmo/
 
     Examples
     --------

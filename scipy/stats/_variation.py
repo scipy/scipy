@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
     xp_device,
     _length_nonmasked,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 

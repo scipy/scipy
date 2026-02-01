@@ -11,7 +11,7 @@ from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
 from scipy import special
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot, get_blas_funcs
 from ._continuous_distns import norm, invgamma

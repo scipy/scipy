@@ -106,7 +106,13 @@ class _data_matrix(_spbase):
             n is a non-zero scalar (nonzero avoids dense ones creation)
             If zero power is desired, special case it to use `np.ones`
 
-        dtype : If dtype is not specified, the current dtype will be preserved.
+        dtype : dtype, optional
+            If dtype is not specified, the current dtype will be preserved.
+
+        Returns
+        -------
+        sparse array/matrix
+            Result of raising all elements to the power `n`.
 
         Raises
         ------
@@ -144,8 +150,16 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = (f"Element-wise {name}.\n\n"
-                          f"See `numpy.{name}` for more information.")
+        method.__doc__ = (
+            f"""Element-wise {name}.
+                See `numpy.{name}` for more information.
+
+                Returns
+                -------
+                {name} : sparse array / matrix
+                    Result of applying `numpy.{name}` to the data of this sparse matrix.
+            """
+        )
         method.__name__ = name
 
         return method

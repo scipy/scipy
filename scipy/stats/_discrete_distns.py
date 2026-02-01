@@ -8,7 +8,7 @@ from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 import scipy.special._ufuncs as scu
 from scipy._lib._util import rng_integers
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh

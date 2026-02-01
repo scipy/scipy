@@ -1125,10 +1125,9 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     out_lines = []
     for line in (final_lines + ridge_lines):
-        sortargs = np.array(np.argsort(line[0]))
-        rows, cols = np.zeros_like(sortargs), np.zeros_like(sortargs)
-        rows[sortargs] = line[0]
-        cols[sortargs] = line[1]
+        sortargs = np.argsort(line[0])
+        rows = np.array(line[0])[sortargs]
+        cols = np.array(line[1])[sortargs]
         out_lines.append([rows, cols])
 
     return out_lines
