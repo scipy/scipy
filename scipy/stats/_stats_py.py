@@ -1186,7 +1186,8 @@ def _moment(a, order, axis, *, center=None, xp=None):
     center = xp.mean(a, axis=axis, keepdims=True) if center is None else center
     a_zero_mean = _demean(a, center, axis, xp=xp)
     res = xp.mean(a_zero_mean**order, axis=axis, keepdims=True)
-    if is_lazy_array(res) or xp.any(order_0) or xp.any(order_1):
+    if a.shape[-1] > 0 and (is_lazy_array(res)
+                                or xp.any(order_0) or xp.any(order_1)):
         res = xp.where(order_0, xp.ones_like(res), res)
         res = xp.where(order_1, xp.zeros_like(res), res)
 
