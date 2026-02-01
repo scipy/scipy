@@ -4621,50 +4621,53 @@ class TestFriedmanChiSquare:
             stats.friedmanchisquare(xp.asarray(self.x3[0]), xp.asarray(self.x3[1]))
 
 
+@make_xp_test_case(stats.kstest)
 class TestKSTest:
     """Tests kstest and ks_1samp agree with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x, alternative, expected_statistic, expected_prob,
-                 mode='auto', decimal=14):
-        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-        expected = np.array([expected_statistic, expected_prob])
-        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
-
     def _test_kstest_and_ks1samp(self, x, alternative, mode='auto', decimal=14):
         result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-        result_1samp = stats.ks_1samp(x, stats.norm.cdf,
+        result_1samp = stats.ks_1samp(x, special.ndtr,
                                       alternative=alternative, mode=mode)
-        assert_array_almost_equal(np.array(result), result_1samp, decimal=decimal)
+        xp_assert_close(result.statistic, result_1samp.statistic)
+        xp_assert_close(result.pvalue, result_1samp.pvalue)
 
-    def test_namedtuple_attributes(self):
-        x = np.linspace(-1, 1, 9)
+    def test_namedtuple_attributes(self, xp):
+        x = xp.linspace(-1, 1, 9)
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        res = stats.kstest(x, 'norm')
-        check_named_results(res, attributes)
+        res = stats.kstest(x, special.ndtr)
+        check_named_results(res, attributes, xp=xp)
 
-    def test_agree_with_ks_1samp(self):
-        x = np.linspace(-1, 1, 9)
+    def test_agree_with_ks_1samp(self, xp):
+        x = xp.linspace(-1, 1, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
-        x = np.linspace(-15, 15, 9)
+        x = xp.linspace(-15, 15, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
         x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
+        x = xp.asarray(x)
         self._test_kstest_and_ks1samp(x, 'two-sided')
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
 
-    def test_pm_inf_gh20386(self):
+    def test_pm_inf_gh20386(self, xp):
         # Check that gh-20386 is resolved - `kstest` does not
         # return NaNs when both -inf and inf are in sample.
-        vals = [-np.inf, 0, 1, np.inf]
-        res = stats.kstest(vals, stats.cauchy.cdf)
-        ref = stats.kstest(vals, stats.cauchy.cdf, _no_deco=True)
-        assert np.all(np.isfinite(res))
-        assert_equal(res, ref)
-        assert not np.isnan(res.statistic)
-        assert not np.isnan(res.pvalue)
+        vals = xp.asarray([-xp.inf, 0, 1, xp.inf])
+        def cdf(x):  # Cauchy CDF
+            return xp.atan2(xp.ones_like(x), -x) / xp.pi
+        res = stats.kstest(vals, cdf)
+        ref = stats.kstest(vals, cdf, _no_deco=True)
+        assert xp.isfinite(res.statistic)
+        assert xp.isfinite(res.pvalue)
+        assert xp.isfinite(res.statistic_location)
+        assert xp.isfinite(res.statistic_sign)
+        xp_assert_equal(res.statistic, res.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic_location, ref.statistic_location)
+        xp_assert_equal(res.statistic_sign, ref.statistic_sign)
 
     # missing: no test that uses *args
 
