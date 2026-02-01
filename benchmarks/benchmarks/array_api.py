@@ -1,7 +1,7 @@
 from .common import XPBenchmark, safe_import
 
 with safe_import():
-    from scipy._lib.array_api_compat import array_namespace as compat_namespace
+    from scipy._external.array_api_compat import array_namespace as compat_namespace
     from scipy._lib._array_api import array_namespace
 
 

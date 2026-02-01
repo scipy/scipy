@@ -1264,7 +1264,7 @@ class RatioUniforms:
         self._rng = check_random_state(random_state)
 
     def rvs(self, size=1):
-        """Sampling of random variates
+        """Sampling of random variates.
 
         Parameters
         ----------

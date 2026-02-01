@@ -41,11 +41,11 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     ----------------
     x0 : ndarray
         Starting guess for the solution.
-    shift : float
-        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
     rtol : float
         Tolerance to achieve. The algorithm terminates when the relative
         residual is below ``rtol``.
+    shift : float
+        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.

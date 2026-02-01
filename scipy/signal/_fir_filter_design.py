@@ -13,7 +13,7 @@ from .windows import get_window
 from . import _sigtools
 
 from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
@@ -1197,7 +1197,7 @@ def _dhtm(mag, xp):
 def minimum_phase(h,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
                   n_fft: int | None = None, *, half: bool = True):
-    """Convert a linear-phase FIR filter to minimum phase
+    """Convert a linear-phase FIR filter to minimum phase.
 
     Parameters
     ----------

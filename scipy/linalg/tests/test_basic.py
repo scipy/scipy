@@ -1,3 +1,4 @@
+import math
 import itertools
 import warnings
 
@@ -924,8 +925,8 @@ class TestSolve:
     @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
                                           'lower triangular', 'upper triangular',
                                           'pos', 'positive definite',
-                                          'symmetric', 'hermitian', 'banded',
-                                          'general', 'sym', 'her', 'gen'])
+                                          'symmetric', 'hermitian', 'general',
+                                          'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
     @pytest.mark.parametrize('overwrite', [True, False])
@@ -1027,6 +1028,30 @@ class TestSolve:
         # repeat with uplo='U'
         out = solve(a.T, b, assume_a='pos', lower=False)
         assert_allclose(out, result_np, atol=1e-15)
+
+    def test_pos_fails_sym_complex(self):
+        # regression test for the `solve` analog of gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+        b = np.eye(2)
+
+        ainv = solve(a, b)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = solve(a, b, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does solve.
+        ainv_chol = solve(a, b, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with inv.
+        ainv_inv = inv(a, assume_a="pos")
+        assert_allclose(ainv_chol, ainv_inv, atol=1e-14)
 
     def test_readonly(self):
         a = np.eye(3)
@@ -1159,6 +1184,34 @@ class TestSolve:
         a[1, 0, 0] = a[1, 0, 1] = 0
         with pytest.raises(LinAlgError):
             solve(a, b, assume_a="tridiagonal")
+
+    def test_banded(self):
+        rng = np.random.default_rng(982345982439826)
+
+        n = 20
+        A = rng.random((n, n))
+        b = rng.random(n)
+
+        # test if even for full matrix solver gives correct results
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res, atol=1e-14)
+
+        # restrict to banded
+        A = np.triu(np.tril(A, k=5), k=-7)
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res, atol=1e-14)
+
+        # ill-conditioned inputs warn
+        A[0, 0] = 1e40
+        with pytest.warns(LinAlgWarning):
+            solve(A, b, assume_a="banded")
+
+        # singular inputs raise
+        A[-1, :] = 0
+        with pytest.raises(LinAlgError):
+            solve(A, b, assume_a="banded")
 
 
 class TestSolveTriangular:
@@ -1306,7 +1359,7 @@ class TestInv:
         assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
         assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace 
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace
         a = a.astype(float).copy(order='F')
         a_inv = inv(a, overwrite_a=True)
         assert np.shares_memory(a, a_inv)
@@ -1449,6 +1502,86 @@ class TestInv:
             a = a + 1j*a
             b = a + a.T.conj() + np.eye(3)
             assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
+
+    def test_pos_fails_sym_complex(self):
+        # regression test for gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+
+        ainv = inv(a)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = inv(a, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does inv
+        ainv_chol = inv(a, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with solve.
+        ainv_slv = solve(a, np.eye(2), assume_a="pos")
+        assert_allclose(ainv_chol, ainv_slv, atol=1e-14)
+
+        # Repeat it for bunch of simple cases to cover more branches
+        # Real symmetric, positive definite
+        a = np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real symmetric, NOT positive definite
+        a = -np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real, not symmetric
+        a = -np.eye(4) + np.ones(4)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # | Test                                  | is_symm | is_herm | pos def |
+        # |---------------------------------------|---------|---------|---------|
+        # | Complex, both sym+herm, pos def       |    1    |    1    |   yes   |
+        # | Complex, symmetric only               |    1    |    0    |    -    |
+        # | Complex, both sym+herm, NOT pos def   |    1    |    1    |   no    |
+        # | Complex, neither                      |    0    |    0    |    -    |
+        # | Complex, hermitian only, pos def      |    0    |    1    |   yes   |
+        # | Complex, hermitian only, NOT pos def  |    0    |    1    |   no    |
+
+        # Complex, both symmetric and hermitian, positive definite
+        a = (np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, symmetric only (not hermitian)
+        a = (np.eye(4)*1.0j + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, both symmetric and hermitian, NOT positive definite
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, neither symmetric nor hermitian
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, hermitian only, positive definite
+        a = np.array([[2, 1+1j], [1-1j, 2]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
+
+        # Complex, hermitian only, NOT positive definite
+        a = np.array([[-1, 1+1j], [1-1j, -1]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
 
     @pytest.mark.parametrize('complex_', [False, True])
     @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
@@ -1806,6 +1939,10 @@ class TestLstsq:
                                     atol=25 * _eps_cast(a1.dtype),
                                     err_msg=f"driver: {lapack_driver}")
 
+                    # as documented, residuals is empty for an underdetermined problem
+                    residuals = out[1]
+                    assert residuals.size == 0
+
     @pytest.mark.parametrize("dtype", REAL_DTYPES)
     @pytest.mark.parametrize("n", (20, 200))
     @pytest.mark.parametrize("lapack_driver", lapack_drivers)
@@ -1993,6 +2130,113 @@ class TestLstsq:
         assert x.size == 0
         dt_nonempty = lstsq(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b))[0].dtype
         assert x.dtype == dt_nonempty
+
+
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_m_less_than_n(self, driver):
+        # if m < n, LAPACK needs a copy of b:
+        # B is (LDB, NRHS)-shaped, with LDB = max(1, M, N)
+        # https://www.netlib.org/lapack/explore-html/d6/d4b/dgelsy_8f.html
+        a = np.arange(3*4).reshape(3, 4) + 1
+        aa = np.stack((a, 2*a))
+        bb = np.stack((np.arange(3) + 1, 1 + 4*np.arange(3))).T
+
+        x, residues, rank, s = lstsq(aa, bb, lapack_driver=driver)
+        assert_allclose(x,
+                        np.asarray([[[-0.05  ,  0.7   ],
+                                     [ 0.025 ,  0.4   ],
+                                     [ 0.1   ,  0.1   ],
+                                     [ 0.175 , -0.2   ]],
+
+                                    [[-0.025 ,  0.35  ],
+                                     [ 0.0125,  0.2   ],
+                                     [ 0.05  ,  0.05  ],
+                                     [ 0.0875, -0.1   ]]]), atol=1e-15
+        )
+
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_m_larger_than_n(self, driver):
+        # similar to test_m_less_than_n: test copying with LDB=max(1, M, N)
+        a = np.arange(3*4).reshape(4, 3) + 1
+        aa = np.stack((a, 2*a))
+        bb = np.stack((np.arange(4) + 1, 1 + 4*np.arange(4))).T
+
+        x, residues, rank, s = lstsq(aa, bb, lapack_driver=driver)
+        assert_allclose(x,
+                        np.asarray([[[-0.05555556,  1.27777778],
+                                     [ 0.11111111,  0.44444444],
+                                     [ 0.27777778, -0.38888889]],
+
+                                    [[-0.02777778,  0.63888889],
+                                     [ 0.05555556,  0.22222222],
+                                     [ 0.13888889, -0.19444444]]]), atol=1e-15
+        )
+
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_residuals(self, driver):
+        # assert the (quirky) behavior of the `residuals` return
+        a = np.array([[1, 2], [4, 5], [3, 4]], dtype=float)
+        b = np.array([1, 2, 3], dtype=float)
+
+        m, n = a.shape
+        assert m > n    # backcompat: residuals are non-empty iff m > n and rank == n
+
+        # 1. b.shape == (n,)
+        x, resid, rank, s = lstsq(a, b, lapack_driver=driver)
+
+        assert rank == n
+        assert resid.ndim == 0   # it's numpy scalar, in fact
+
+        delta = b - a @ x
+        manual_residuals = np.sum(delta * delta.conj(), axis=0)
+        assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+
+        # 2. b.shape == (n, nrhs)
+        b2 = np.stack((b, 2*b, 3*b, 4*b), axis=1)   # b1.shape=(3, 4), nrhs=4
+        nrhs = b2.shape[-1]
+        x2, resid2, rank2, s2 = lstsq(a, b2, lapack_driver=driver)
+
+        assert rank2 == n
+        assert resid2.shape == (nrhs,)
+        delta2 = b2 - a @ x2
+        manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
+        assert_allclose(resid2, manual_residuals2, atol=1e-14)
+
+        # 3. b.shape == (n,), and a has batch shape (2,)
+        a3 = np.stack((a, 2*a))
+        b3 = b.copy()
+        batch_shape = a3.shape[:-2]
+
+        x3, resid3, ranks3, s3 = lstsq(a3, b3, lapack_driver=driver)
+        assert_equal(ranks3, np.asarray([n, n]))
+        assert resid3.shape == (n,)
+        assert_allclose(resid3, [resid]*n, atol=1e-14)
+
+        # 4. b.shape == (n, nhrs) and a has batch shape = (2,)
+        a4 = np.stack((a, 2*a))
+        batch_shape = a4.shape[:-2]
+        b4 = b2.copy()
+        x4, resid4, rank4, s4 = lstsq(a4, b4, lapack_driver=driver)
+
+        assert_equal(rank4, np.asarray([n, n]))
+        assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
+
+        delta4 = b4 - a4 @ x4
+        manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
+        assert_allclose(resid4, manual_residual4, atol=1e-14)
+
+    def test_errors(self):
+        a = np.ones((3, 4))
+        b = np.ones(4)
+
+        with pytest.raises(ValueError, match="LAPACK driver"):
+            lstsq(a, b, lapack_driver='krampus')
+
+        with pytest.raises(ValueError, match="Shape mismatch"):
+            lstsq(a, b)
+
+        with pytest.raises(ValueError, match="Input array"):
+            lstsq(np.ones(3), np.ones(3))
 
 
 class TestPinv:

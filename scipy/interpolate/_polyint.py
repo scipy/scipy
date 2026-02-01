@@ -149,7 +149,7 @@ class _Interpolator1D:
 class _Interpolator1DWithDerivatives(_Interpolator1D):
     def derivatives(self, x, der=None):
         """
-        Evaluate several derivatives of the polynomial at the point `x`
+        Evaluate several derivatives of the polynomial at the point `x`.
 
         Produce an array of derivatives evaluated at the point `x`.
 
@@ -746,7 +746,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     def set_yi(self, yi, axis=None):
         """
-        Update the y values to be interpolated
+        Update the y values to be interpolated.
 
         The barycentric interpolation algorithm requires the calculation
         of weights, but these depend only on the `xi`. The `yi` can be changed
@@ -771,7 +771,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     def add_xi(self, xi, yi=None):
         """
-        Add more x values to the set to be interpolated
+        Add more x values to the set to be interpolated.
 
         The barycentric interpolation algorithm allows easy updating by
         adding more points for the polynomial to pass through.
