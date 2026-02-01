@@ -71,23 +71,23 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
-    This implements WH smoothing with a difference penalty of the specified `order` and
-    penalty strength `lamb`, see [1]_, [2]_ and [3]_. WH can be seen as a P-Spline
-    (penalized B-Spline) of degree zero for equidistant knots (at the signal
+    This implements WH smoothing with a difference penalty of the specified ``order``
+    and penalty strength ``lamb``, see [1]_, [2]_ and [3]_. WH can be seen as a
+    P-Spline (penalized B-Spline) of degree zero for equidistant knots (at the signal
     positions).
 
-    In econometrics, the WH graduation of order 2 is referred to as the Hodrick and
-    Prescott filter [4]_.
+    In econometrics, the WH graduation of order 2 is referred to as the
+    Hodrick-Prescott filter [4]_.
     
     Parameters
     ----------
     signal : ndarray
-        A rank-1 array at least of length `order + 1` representing equidistant data
+        A rank-1 array at least of length ``order + 1`` representing equidistant data
         points of a signal, e.g. a time series with constant time lag.
     
     lamb : str or float, optional
-        Smoothing or penalty parameter, default is "reml" which minimized the REML
-        criterion to find the parameter `lamb`. If a number is passed, it must be
+        Smoothing or penalty parameter, default is ``"reml"`` which minimizes the REML
+        criterion to find the parameter ``lamb``. If a number is passed, it must be
         non-negative and it is used directly.
 
     order : int, default: 2
@@ -95,7 +95,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
     weights : ndarray, option
         A rank-1 array of case weights with the same lenght as `signal`.
-        `None` is equivalent to an array of all ones, i.e. `np.ones_like(signal)`.
+        ``None`` is equivalent to an array of all ones, ``np.ones_like(signal)``.
 
     Returns
     -------
