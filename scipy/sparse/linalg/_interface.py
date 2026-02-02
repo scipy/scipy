@@ -605,6 +605,13 @@ class LinearOperator:
                 (or batch of matrices if there are batch dimensions)
                 and `matmat` is called.
 
+        See Also
+        --------
+        __mul__ : Equivalent method used by the ``*`` operator.
+        __matmul__ :
+            Method used by the ``@`` operator which rejects scalar
+            input before calling this method.
+
         Notes
         -----
         To perform matrix-vector multiplication on batches of vectors,
@@ -613,13 +620,6 @@ class LinearOperator:
         For clarity, it is recommended to use the `matvec` or
         `matmat` methods directly instead of this method
         when interacting with dense vectors and matrices.
-
-        See Also
-        --------
-        __mul__ : Equivalent method used by the ``*`` operator.
-        __matmul__ :
-            Method used by the ``@`` operator which rejects scalar
-            input before calling this method.
 
         """
         if isinstance(x, LinearOperator):
