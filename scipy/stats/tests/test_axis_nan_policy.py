@@ -25,6 +25,10 @@ from scipy.conftest import skip_xp_invalid_arg
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 
 
+def _using_accelerate():
+    return "accelerate" in str(np.show_config('dicts')).lower()
+
+
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
     return (res.statistic, res.pvalue, res.df, res._standard_error,
@@ -1453,3 +1457,10 @@ def test_array_like_input(dtype):
     res = stats.mode(ArrLike(x, dtype=dtype))
     assert res.mode == 1
     assert res.count == 2
+
+
+def test_accelerate():
+    x = str(np.show_config('dicts')).lower()
+    y = np.show_config('dicts')
+    accelerate = _using_accelerate()
+    np.testing.assert_equal(accelerate, False)
