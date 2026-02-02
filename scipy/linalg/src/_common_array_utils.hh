@@ -1477,6 +1477,44 @@ to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T 
 }
 
 
+/*
+ * Copy the passed in matrix `data`, which is already in banded storage since
+ * it is passed from `solve_banded()` to a buffer of the apropriate size.
+ *
+ * Input matrix is of size `m` x `n` and the `dst` matrix is of size
+ * `ldab` x `n`.
+ *
+ * `s1` and `s2` are the strides along the first and second dimensions, respectively,
+ * of the array.
+ */
+template<typename T>
+inline void
+copy_banded(T *src, npy_intp m, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *dst, npy_intp s1, npy_intp s2) {
+    npy_intp i, j;
+    s1 = s1 / sizeof(T);
+    s2 = s2 / sizeof(T);
+
+    // main diagonal
+    for (i = 0; i < n; i++) {
+        dst[(i + 1) * ldab - kl - 1] = src[(m - kl - 1) * s1 + i * s2];
+    }
+
+    // lower bands
+    for (i = 0; i < kl; i++) {
+        for (j = 0; j < n - i - 1; j++) {
+            dst[(j + 1) * ldab - kl + i] = src[(m - kl + i) * s1 + j * s2];
+        }
+    }
+
+    // upper bands
+    for (i = 0; i < ku; i++) {
+        for (j = i + 1; j < n; j++) {
+            dst[(j + 1) * ldab - kl - 2 - i] = src[(m - kl - 2 - i) * s1 + j * s2];
+        }
+    }
+}
+
+
 template<typename T>
 inline void
 zero_other_triangle(char uplo, T *data, npy_intp n) {
