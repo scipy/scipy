@@ -60,10 +60,10 @@ _LPProblem.__doc__ = \
         within `bounds`.
 
         ``2`` : Semi-continuous variable; decision variable must be within
-        `bounds` or take value ``0``.
+        `bounds` or ``0``.
 
         ``3`` : Semi-integer variable; decision variable must be an integer
-        within `bounds` or take value ``0``.
+        within `bounds` or ``0``.
 
         By default, all variables are continuous.
 
@@ -514,7 +514,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
         If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
         Set False if ``A_eq`` is known to be of full row rank, or if you are
         looking for a potential speedup (at the expense of reliability).
-    rr_method : string
+    rr_method : str
         Method used to identify and remove redundant rows from the
         equality constraint matrix after presolve.
     tol : float

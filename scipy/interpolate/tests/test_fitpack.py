@@ -14,8 +14,9 @@ from scipy.interpolate import make_splrep
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
-from scipy.interpolate._dfitpack import regrid_smth
-from scipy.interpolate._fitpack2 import dfitpack_int
+from scipy.interpolate._fitpack2 import _regrid_smth as regrid_smth
+
+dfitpack_int = np.int32
 
 
 def data_file(basename):
@@ -473,7 +474,7 @@ def test_bisplev_integer_overflow():
     ky = 1
 
     nx, tx, ny, ty, c, fp, ier = regrid_smth(
-        x, y, z, None, None, None, None, kx=kx, ky=ky, s=0.0)
+        x, y, z, None, None, None, None, kx=kx, ky=ky, s=0.0, maxit=20)
     tck = (tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)], kx, ky)
 
     xp = np.zeros([2621440])

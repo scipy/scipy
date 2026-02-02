@@ -61,13 +61,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
-    complex_func : bool, optional
-        Indicate if the function's (`func`) return type is real
-        (``complex_func=False``: default) or complex (``complex_func=True``).
-        In both cases, the function's argument is real.
-        If full_output is also non-zero, the `infodict`, `message`, and
-        `explain` for the real and complex components are returned in
-        a dictionary with keys "real output" and "imag output".
 
     Returns
     -------
@@ -116,6 +109,13 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     limlst : int, optional
         Upper bound on the number of cycles (>=3) for use with a sinusoidal
         weighting and an infinite end-point.
+    complex_func : bool, optional
+        Indicate if the function's (`func`) return type is real
+        (``complex_func=False``: default) or complex (``complex_func=True``).
+        In both cases, the function's argument is real.
+        If full_output is also non-zero, the `infodict`, `message`, and
+        `explain` for the real and complex components are returned in
+        a dictionary with keys "real output" and "imag output".
 
     See Also
     --------
@@ -1029,13 +1029,13 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
-          - epsabs = 1.49e-08
-          - epsrel = 1.49e-08
-          - limit  = 50
-          - points = None
-          - weight = None
-          - wvar   = None
-          - wopts  = None
+        - ``epsabs = 1.49e-08``
+        - ``epsrel = 1.49e-08``
+        - ``limit  = 50``
+        - ``points = None``
+        - ``weight = None``
+        - ``wvar   = None``
+        - ``wopts  = None``
 
         For more information on these options, see `quad`.
 
@@ -1091,7 +1091,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types. The integration is is performed using a 21-point Gauss-Kronrod 
+        several types. The integration is is performed using a 21-point Gauss-Kronrod
         quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is

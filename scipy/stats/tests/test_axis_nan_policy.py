@@ -186,14 +186,17 @@ axis_nan_policy_cases = [
      lambda res: tuple(res) + (res.intercept_stderr,)),
     (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
     (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(method='joint'), 2, 4, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(method='hierarchical'), 2, 2, True, tuple),
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -491,8 +494,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res_1db, res_1da, rtol=4e-15)
+        # changed from 1e-15 and later from 4e-15 to appease macosx-x86_64+Accelerate
+        assert_allclose(res_1db, res_1da, rtol=1e-14)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -992,7 +995,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
 
     message = "Array shapes are incompatible for broadcasting."
     with pytest.raises(ValueError, match=message):
-        hypotest(*samples, *args, **kwds)
+        hypotest(*samples, *args, axis=axis, **kwds)
 
     if not paired:  # there's another test for paired-sample statistics
         return
@@ -1006,7 +1009,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
     shape[axis] += 1
     other_sample = rng.random(size=shape)
     with pytest.raises(ValueError, match=message):
-        hypotest(other_sample, *most_samples, *args, **kwds)
+        hypotest(other_sample, *most_samples, *args, axis=axis, **kwds)
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays

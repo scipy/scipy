@@ -153,9 +153,6 @@ class TestCephes:
     def test_bdtrc(self):
         assert_equal(cephes.bdtrc(1,3,0.5),0.5)
 
-    def test_bdtrin(self):
-        assert_equal(cephes.bdtrin(1,0,1),5.0)
-
     def test_bdtrik(self):
         cephes.bdtrik(1,3,0.5)
 
@@ -2489,7 +2486,7 @@ class TestFactorialFunctions:
             if exact:
                 # avoid attempting huge calculation
                 pass
-            elif np.lib.NumpyVersion(np.__version__) >= "2.0.0":
+            else:
                 # N does not fit into int64 --> cannot use _check
                 _check_inf(dtype(N-1))
                 _check_inf(np.array(N-1, dtype=dtype))

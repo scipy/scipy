@@ -5,18 +5,18 @@
 #              and Jake Vanderplas, August 2012
 
 import warnings
-from warnings import warn
 from itertools import product
 import numpy as np
-from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
+from .lapack import (
+    get_lapack_funcs, _normalize_lapack_dtype,
+    _ensure_aligned_and_native, _ensure_dtype_cdsz,
+)
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
-                                      ishermitian)
+from ._cythonized_array_utils import find_det_from_lu
 from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -25,44 +25,6 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 
 # Linear equations
-def _solve_check(n, info, lamch=None, rcond=None):
-    """ Check arguments during the different steps of the solution phase """
-    if info < 0:
-        raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument.')
-    elif 0 < info or rcond == 0:
-        raise LinAlgError('Matrix is singular.')
-
-    if lamch is None:
-        return
-    E = lamch('E')
-    if not (rcond >= E):  # `rcond < E` doesn't handle NaN
-        warn(f'Ill-conditioned matrix (rcond={rcond:.6g}): '
-             'result may not be accurate.',
-             LinAlgWarning, stacklevel=3)
-
-
-def _find_matrix_structure(a):
-    n = a.shape[0]
-    n_below, n_above = bandwidth(a)
-
-    if n_below == n_above == 0:
-        kind = 'diagonal'
-    elif n_above == 0:
-        kind = 'lower triangular'
-    elif n_below == 0:
-        kind = 'upper triangular'
-    elif n_above <= 1 and n_below <= 1 and n > 3:
-        kind = 'tridiagonal'
-    elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
-        kind = 'hermitian'
-    elif issymmetric(a):
-        kind = 'symmetric'
-    else:
-        kind = 'general'
-
-    return kind, n_below, n_above
-
-
 def _format_emit_errors_warnings(err_lst):
     """Format/emit errors/warnings from a lowlevel batched routine.
 
@@ -208,19 +170,13 @@ def solve(a, b, lower=False, overwrite_a=False,
            [ 3. , -2.5],
            [ 5. , -4.5]])
     """
-    if assume_a in ['banded']:
-        # TODO: handle these structures in this function
-        return solve0(
-            a, b, lower=lower, overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-            check_finite=check_finite, assume_a=assume_a, transposed=transposed
-        )
-
     # keep the numbers in sync with C
     structure = {
         None: -1,
         'general': 0, 'gen': 0,
         'diagonal': 11,
         'tridiagonal': 31,
+        'banded': 41,
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101, 'positive definite': 101,
@@ -234,6 +190,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
@@ -245,14 +203,6 @@ def solve(a, b, lower=False, overwrite_a=False,
         raise NotImplementedError('scipy.linalg.solve can currently '
                                   'not solve a^T x = b or a^H x = b '
                                   'for complex matrices.')
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
-
-    if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
-        overwrite_a = True
-        b1 = b1.copy()
 
     # align the shape of b with a: 1. make b1 at least 2D
     b_is_1D = b1.ndim == 1
@@ -277,11 +227,15 @@ def solve(a, b, lower=False, overwrite_a=False,
         return x
 
     if a_is_scalar:
+        if a1.item() == 0:
+            raise LinAlgError("A singular matrix detected.")
+
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
 
     # heavy lifting
-    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed)
+    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed,
+                                        overwrite_a, overwrite_b)
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
@@ -289,322 +243,6 @@ def solve(a, b, lower=False, overwrite_a=False,
     if b_is_1D:
         x = x[..., 0]
     return x
-
-
-@_apply_over_batch(('a', 2), ('b', '1|2'))
-def solve0(a, b, lower=False, overwrite_a=False,
-          overwrite_b=False, check_finite=True, assume_a=None,
-          transposed=False):
-    """
-    Solve the equation ``a @ x = b`` for  ``x``,
-    where `a` is a square matrix.
-
-    If the data matrix is known to be a particular type then supplying the
-    corresponding string to ``assume_a`` key chooses the dedicated solver.
-    The available options are
-
-    =============================  ================================
-     diagonal                       'diagonal'
-     tridiagonal                    'tridiagonal'
-     banded                         'banded'
-     upper triangular               'upper triangular'
-     lower triangular               'lower triangular'
-     symmetric                      'symmetric' (or 'sym')
-     hermitian                      'hermitian' (or 'her')
-     symmetric positive definite    'positive definite' (or 'pos')
-     general                        'general' (or 'gen')
-    =============================  ================================
-
-    Parameters
-    ----------
-    a : (N, N) array_like
-        Square input data
-    b : (N, NRHS) array_like
-        Input data for the right hand side.
-    lower : bool, default: False
-        Ignored unless ``assume_a`` is one of ``'sym'``, ``'her'``, or ``'pos'``.
-        If True, the calculation uses only the data in the lower triangle of `a`;
-        entries above the diagonal are ignored. If False (default), the
-        calculation uses only the data in the upper triangle of `a`; entries
-        below the diagonal are ignored.
-    overwrite_a : bool, default: False
-        Allow overwriting data in `a` (may enhance performance).
-    overwrite_b : bool, default: False
-        Allow overwriting data in `b` (may enhance performance).
-    check_finite : bool, default: True
-        Whether to check that the input matrices contain only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    assume_a : str, optional
-        Valid entries are described above.
-        If omitted or ``None``, checks are performed to identify structure so the
-        appropriate solver can be called.
-    transposed : bool, default: False
-        If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
-        for complex `a`.
-
-    Returns
-    -------
-    x : (N, NRHS) ndarray
-        The solution array.
-
-    Raises
-    ------
-    ValueError
-        If size mismatches detected or input a is not square.
-    LinAlgError
-        If the computation fails because of matrix singularity.
-    LinAlgWarning
-        If an ill-conditioned input a is detected.
-    NotImplementedError
-        If transposed is True and input a is a complex matrix.
-
-    Notes
-    -----
-    If the input b matrix is a 1-D array with N elements, when supplied
-    together with an NxN input a, it is assumed as a valid column vector
-    despite the apparent size mismatch. This is compatible with the
-    numpy.dot() behavior and the returned result is still 1-D array.
-
-    The general, symmetric, Hermitian and positive definite solutions are
-    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
-    LAPACK respectively.
-
-    The datatype of the arrays define which solver is called regardless
-    of the values. In other words, even when the complex array entries have
-    precisely zero imaginary parts, the complex solver will be called based
-    on the data type of the array.
-
-    Examples
-    --------
-    Given `a` and `b`, solve for `x`:
-
-    >>> import numpy as np
-    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
-    >>> b = np.array([2, 4, -1])
-    >>> from scipy import linalg
-    >>> x = linalg.solve(a, b)
-    >>> x
-    array([ 2., -2.,  9.])
-    >>> np.dot(a, x) == b
-    array([ True,  True,  True], dtype=bool)
-
-    """
-    # Flags for 1-D or N-D right-hand side
-    b_is_1D = False
-
-    # check finite after determining structure
-    a1 = atleast_2d(_asarray_validated(a, check_finite=False))
-    b1 = atleast_1d(_asarray_validated(b, check_finite=False))
-    a1, b1 = _ensure_dtype_cdsz(a1, b1)
-    n = a1.shape[0]
-
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
-
-    if a1.shape[0] != a1.shape[1]:
-        raise ValueError('Input a needs to be a square matrix.')
-
-    if n != b1.shape[0]:
-        # Last chance to catch 1x1 scalar a and 1-D b arrays
-        if not (n == 1 and b1.size != 0):
-            raise ValueError('Input b has to have same number of rows as '
-                             'input a')
-
-    # accommodate empty arrays
-    if b1.size == 0:
-        dt = solve(np.eye(2, dtype=a1.dtype), np.ones(2, dtype=b1.dtype)).dtype
-        return np.empty_like(b1, dtype=dt)
-
-    # regularize 1-D b arrays to 2D
-    if b1.ndim == 1:
-        if n == 1:
-            b1 = b1[None, :]
-        else:
-            b1 = b1[:, None]
-        b_is_1D = True
-
-    if assume_a not in {None, 'diagonal', 'tridiagonal', 'banded', 'lower triangular',
-                        'upper triangular', 'symmetric', 'hermitian',
-                        'positive definite', 'general', 'sym', 'her', 'pos', 'gen'}:
-        raise ValueError(f'{assume_a} is not a recognized matrix structure')
-
-    # for a real matrix, describe it as "symmetric", not "hermitian"
-    # (lapack doesn't know what to do with real hermitian matrices)
-    if assume_a in {'hermitian', 'her'} and not np.iscomplexobj(a1):
-        assume_a = 'symmetric'
-
-    n_below, n_above = None, None
-    if assume_a is None:
-        assume_a, n_below, n_above = _find_matrix_structure(a1)
-
-    # Get the correct lamch function.
-    # The LAMCH functions only exists for S and D
-    # So for complex values we have to convert to real/double.
-    if a1.dtype.char in 'fF':  # single precision
-        lamch = get_lapack_funcs('lamch', dtype='f')
-    else:
-        lamch = get_lapack_funcs('lamch', dtype='d')
-
-
-    # Since the I-norm and 1-norm are the same for symmetric matrices
-    # we can collect them all in this one call
-    # Note however, that when issuing 'gen' and form!='none', then
-    # the I-norm should be used
-    if transposed:
-        trans = 1
-        norm = 'I'
-        if np.iscomplexobj(a1):
-            raise NotImplementedError('scipy.linalg.solve can currently '
-                                      'not solve a^T x = b or a^H x = b '
-                                      'for complex matrices.')
-    else:
-        trans = 0
-        norm = '1'
-
-    # Currently we do not have the other forms of the norm calculators
-    #   lansy, lanpo, lanhe.
-    # However, in any case they only reduce computations slightly...
-    if assume_a == 'diagonal':
-        anorm = _matrix_norm_diagonal(a1, check_finite)
-    elif assume_a == 'tridiagonal':
-        anorm = _matrix_norm_tridiagonal(norm, a1, check_finite)
-    elif assume_a == 'banded':
-        n_below, n_above = bandwidth(a1) if n_below is None else (n_below, n_above)
-        a2, n_below, n_above = ((a1.T, n_above, n_below) if transposed
-                                else (a1, n_below, n_above))
-        ab = _to_banded(n_below, n_above, a2)
-        anorm = _matrix_norm_banded(n_below, n_above, norm, ab, check_finite)
-    elif assume_a in {'lower triangular', 'upper triangular'}:
-        anorm = _matrix_norm_triangular(assume_a, norm, a1, check_finite)
-    else:
-        anorm = _matrix_norm_general(norm, a1, check_finite)
-
-    info, rcond = 0, np.inf
-
-    # Generalized case 'gesv'
-    if assume_a in {'general', 'gen'}:
-        gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
-                                               (a1, b1))
-        lu, ipvt, info = getrf(a1, overwrite_a=overwrite_a)
-        _solve_check(n, info)
-        x, info = getrs(lu, ipvt, b1,
-                        trans=trans, overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = gecon(lu, anorm, norm=norm)
-    # Hermitian case 'hesv'
-    elif assume_a in {'hermitian', 'her'}:
-        hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv',
-                                                 'hesv_lwork'), (a1, b1))
-        lwork = _compute_lwork(hesv_lw, n, lower)
-        lu, ipvt, x, info = hesv(a1, b1, lwork=lwork,
-                                 lower=lower,
-                                 overwrite_a=overwrite_a,
-                                 overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = hecon(lu, ipvt, anorm, lower=lower)
-    # Symmetric case 'sysv'
-    elif assume_a in {'symmetric', 'sym'}:
-        sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
-                                                 'sysv_lwork'), (a1, b1))
-        lwork = _compute_lwork(sysv_lw, n, lower)
-        lu, ipvt, x, info = sysv(a1, b1, lwork=lwork,
-                                 lower=lower,
-                                 overwrite_a=overwrite_a,
-                                 overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = sycon(lu, ipvt, anorm, lower=lower)
-    # Diagonal case
-    elif assume_a == 'diagonal':
-        diag_a = np.diag(a1)
-        x = (b1.T / diag_a).T
-        abs_diag_a = np.abs(diag_a)
-        diag_min = abs_diag_a.min()
-        rcond = diag_min if diag_min == 0 else diag_min / abs_diag_a.max()
-    # Tri-diagonal case
-    elif assume_a == 'tridiagonal':
-        a1 = a1.T if transposed else a1
-        dl, d, du = np.diag(a1, -1), np.diag(a1, 0), np.diag(a1, 1)
-        _gttrf, _gttrs, _gtcon = get_lapack_funcs(('gttrf', 'gttrs', 'gtcon'), (a1, b1))
-        dl, d, du, du2, ipiv, info = _gttrf(dl, d, du)
-        _solve_check(n, info)
-        x, info = _gttrs(dl, d, du, du2, ipiv, b1, overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = _gtcon(dl, d, du, du2, ipiv, anorm)
-    # Banded case
-    elif assume_a == 'banded':
-        gbsv, gbcon = get_lapack_funcs(('gbsv', 'gbcon'), (a1, b1))
-        # Next two lines copied from `solve_banded`
-        a2 = np.zeros((2*n_below + n_above + 1, ab.shape[1]), dtype=gbsv.dtype)
-        a2[n_below:, :] = ab
-        lu, piv, x, info = gbsv(n_below, n_above, a2, b1,
-                                overwrite_ab=True, overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = gbcon(n_below, n_above, lu, piv, anorm)
-    # Triangular case
-    elif assume_a in {'lower triangular', 'upper triangular'}:
-        lower = assume_a == 'lower triangular'
-        x, info = _solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
-                                    trans=transposed)
-        _solve_check(n, info)
-        _trcon = get_lapack_funcs(('trcon'), (a1, b1))
-        rcond, info = _trcon(a1, uplo='L' if lower else 'U')
-    # Positive definite case 'posv'
-    else:
-        pocon, posv = get_lapack_funcs(('pocon', 'posv'),
-                                       (a1, b1))
-        lu, x, info = posv(a1, b1, lower=lower,
-                           overwrite_a=overwrite_a,
-                           overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = pocon(lu, anorm)
-
-    _solve_check(n, info, lamch, rcond)
-
-    if b_is_1D:
-        x = x.ravel()
-
-    return x
-
-
-def _matrix_norm_diagonal(a, check_finite):
-    # Equivalent of dlange for diagonal matrix, assuming
-    # norm is either 'I' or '1' (really just not the Frobenius norm)
-    d = np.diag(a)
-    d = np.asarray_chkfinite(d) if check_finite else d
-    return np.abs(d).max()
-
-
-def _matrix_norm_tridiagonal(norm, a, check_finite):
-    # Equivalent of dlange for tridiagonal matrix, assuming
-    # norm is either 'I' or '1'
-    if norm == 'I':
-        a = a.T
-    # Context to avoid warning before error in cases like -inf + inf
-    with np.errstate(invalid='ignore'):
-        d = np.abs(np.diag(a))
-        d[1:] += np.abs(np.diag(a, 1))
-        d[:-1] += np.abs(np.diag(a, -1))
-    d = np.asarray_chkfinite(d) if check_finite else d
-    return d.max()
-
-
-def _matrix_norm_triangular(structure, norm, a, check_finite):
-    a = np.asarray_chkfinite(a) if check_finite else a
-    lantr = get_lapack_funcs('lantr', (a,))
-    return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
-
-
-def _matrix_norm_banded(kl, ku, norm, ab, check_finite):
-    ab = np.asarray_chkfinite(ab) if check_finite else ab
-    langb = get_lapack_funcs('langb', (ab,))
-    return langb(norm, kl, ku, ab)
-
-
-def _matrix_norm_general(norm, a, check_finite):
-    a = np.asarray_chkfinite(a) if check_finite else a
-    lange = get_lapack_funcs('lange', (a,))
-    return lange(norm, a)
 
 
 def _to_banded(n_below, n_above, a):
@@ -619,21 +257,6 @@ def _to_banded(n_below, n_above, a):
     return ab
 
 
-def _ensure_dtype_cdsz(*arrays):
-    # Ensure that the dtype of arrays is one of the standard types
-    # compatible with LAPACK functions (single or double precision
-    # real or complex).
-    dtype = np.result_type(*arrays)
-    if not np.issubdtype(dtype, np.inexact):
-        return (array.astype(np.float64) for array in arrays)
-    complex = np.issubdtype(dtype, np.complexfloating)
-    if np.finfo(dtype).bits <= 32:
-        dtype = np.complex64 if complex else np.float32
-    elif np.finfo(dtype).bits >= 64:
-        dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
-
-
 @_apply_over_batch(('a', 2), ('b', '1|2'))
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
@@ -646,9 +269,6 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         A triangular matrix
     b : (M,) or (M, N) array_like
         Right-hand side matrix in ``a x = b``
-    lower : bool, optional
-        Use only data contained in the lower triangle of `a`.
-        Default is to use upper triangle.
     trans : {0, 1, 2, 'N', 'T', 'C'}, optional
         Type of system to solve:
 
@@ -659,6 +279,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         1 or 'T'  a^T x = b
         2 or 'C'  a^H x = b
         ========  =========
+    lower : bool, optional
+        Use only data contained in the lower triangle of `a`.
+        Default is to use upper triangle.
     unit_diagonal : bool, optional
         If True, diagonal elements of `a` are assumed to be 1 and
         will not be referenced.
@@ -771,7 +394,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     Parameters
     ----------
-    (l, u) : (integer, integer)
+    (l, u) : (int, int)
         Number of non-zero lower and upper diagonals
     ab : (`l` + `u` + 1, M) array_like
         Banded matrix
@@ -890,7 +513,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     matrices.
 
     The matrix ``a`` is stored in `ab` either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
@@ -1197,15 +820,8 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     Notes
     -----
-    For a 1-D vector `c` with length `m`, and an array `b`
-    with shape ``(m, ...)``,
-
-        solve_circulant(c, b)
-
-    returns the same result as
-
-        solve(circulant(c), b)
-
+    For a 1-D vector `c` with length `m`, and an array `b` with shape ``(m, ...)``,
+    ``solve_circulant(c, b)`` returns the same result as ``solve(circulant(c), b)``
     where `solve` and `circulant` are from `scipy.linalg`.
 
     .. versionadded:: 0.16.0
@@ -1337,7 +953,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
+def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     r"""
     Compute the inverse of a matrix.
 
@@ -1396,6 +1012,16 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
     ValueError
         If `a` is not square, or not 2D.
 
+    Notes
+    -----
+
+    The input array ``a`` may represent a single matrix or a collection (a.k.a.
+    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
+    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
+
+    This routine checks the condition number of the `a` matrix and emits a
+    `LinAlgWarning` for ill-conditioned inputs.
+
     Examples
     --------
     >>> import numpy as np
@@ -1407,17 +1033,6 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
     >>> np.dot(a, linalg.inv(a))
     array([[ 1.,  0.],
            [ 0.,  1.]])
-
-    Notes
-    -----
-
-    The input array ``a`` may represent a single matrix or a collection (a.k.a.
-    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
-    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
-
-    This routine checks the condition number of the `a` matrix and emits a
-    `LinAlgWarning` for ill-conditioned inputs.
-
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
 
@@ -1433,10 +1048,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
@@ -1463,7 +1075,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
 
 def det(a, overwrite_a=False, check_finite=True):
     """
-    Compute the determinant of a matrix
+    Compute the determinant of a matrix.
 
     The determinant is a scalar that is a function of the associated square
     matrix coefficients. The determinant value is zero for singular matrices.
@@ -1587,7 +1199,8 @@ def det(a, overwrite_a=False, check_finite=True):
 
 
 # Linear Least Squares
-@_apply_over_batch(('a', 2), ('b', '1|2'))
+
+
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
@@ -1597,9 +1210,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Left-hand side array
-    b : (M,) or (M, K) array_like
+    b : (M,) or (..., M, K) array_like
         Right hand side array
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
@@ -1624,12 +1237,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Returns
     -------
-    x : (N,) or (N, K) ndarray
+    x : (N,) or (..., N, K) ndarray
         Least-squares solution.
     residues : (K,) ndarray or float
-        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` and
-        ``rank(A) == n`` (returns a scalar if ``b`` is 1-D). Otherwise a
-        (0,)-shaped array is returned.
+        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` (returns a
+        scalar if ``b`` is 1-D). Otherwise a (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
     s : (min(M, N),) ndarray or None
@@ -1650,8 +1262,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Notes
     -----
-    When ``'gelsy'`` is used as a driver, `residues` is set to a (0,)-shaped
-    array and `s` is always ``None``.
+    When ``'gelsy'`` is used as a driver, `s` is always ``None``.
 
     Examples
     --------
@@ -1699,25 +1310,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     >>> plt.show()
 
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
-    b1 = _asarray_validated(b, check_finite=check_finite)
-    if len(a1.shape) != 2:
-        raise ValueError('Input array a should be 2D')
-    m, n = a1.shape
-    if len(b1.shape) == 2:
-        nrhs = b1.shape[1]
-    else:
-        nrhs = 1
-    if m != b1.shape[0]:
-        raise ValueError('Shape mismatch: a and b should have the same number'
-                         f' of rows ({m} != {b1.shape[0]}).')
-    if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
-        x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
-        if n == 0:
-            residues = np.linalg.norm(b1, axis=0)**2
-        else:
-            residues = np.empty((0,))
-        return x, residues, 0, np.empty((0,))
 
     driver = lapack_driver
     if driver is None:
@@ -1725,70 +1317,65 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if driver not in ('gelsd', 'gelsy', 'gelss'):
         raise ValueError(f'LAPACK driver "{driver}" is not found')
 
-    lapack_func, lapack_lwork = get_lapack_funcs((driver,
-                                                 f'{driver}_lwork'),
-                                                 (a1, b1))
-    real_data = True if (lapack_func.dtype.kind == 'f') else False
+    if len(a.shape) < 2:
+        raise ValueError('Input array a should be at least 2D, got {a.shape = }')
 
-    if m < n:
-        # need to extend b matrix as it will be filled with
-        # a larger solution matrix
-        if len(b1.shape) == 2:
-            b2 = np.zeros((n, nrhs), dtype=lapack_func.dtype)
-            b2[:m, :] = b1
+    a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
+    b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)   # NB: makes a1.dtype == b1.dtype, if needed
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
+
+    m, n = a1.shape[-2:]
+
+    # Zero-sized problem, confuses LAPACK; bail out straight away
+    if m == 0 or n == 0:
+        x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
+        if n == 0:
+            residues = np.linalg.norm(b1, axis=0)**2
         else:
-            b2 = np.zeros(n, dtype=lapack_func.dtype)
-            b2[:m] = b1
-        b1 = b2
+            residues = np.empty((0,))
+        return x, residues, 0, np.empty((0,))
 
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
+    # align the shape of b with a
+    # 1. make b1 at least 2D
+    b_is_1D = b1.ndim == 1
+    if b_is_1D:
+        b1 = b1[:, None]
+
+    if m != b1.shape[-2]:
+        raise ValueError('Shape mismatch: a and b should have the same number'
+                         f' of rows ({m} != {b1.shape[-2]}).')
+
+    # 2. broadcast the batch dimensions of b1 and a1
+    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
+    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
+    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
     if cond is None:
-        cond = np.finfo(lapack_func.dtype).eps
+        cond = np.finfo(a1.dtype).eps
+    else:
+        cond = float(cond)
 
-    if driver in ('gelss', 'gelsd'):
-        if driver == 'gelss':
-            lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-            v, x, s, rank, work, info = lapack_func(a1, b1, cond, lwork,
-                                                    overwrite_a=overwrite_a,
-                                                    overwrite_b=overwrite_b)
+    x, rank, S, err_lst = _batched_linalg._lstsq(a1, b1, cond, driver)
 
-        elif driver == 'gelsd':
-            if real_data:
-                lwork, iwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-                x, s, rank, info = lapack_func(a1, b1, lwork,
-                                               iwork, cond, False, False)
-            else:  # complex data
-                lwork, rwork, iwork = _compute_lwork(lapack_lwork, m, n,
-                                                     nrhs, cond)
-                x, s, rank, info = lapack_func(a1, b1, lwork, rwork, iwork,
-                                               cond, False, False)
-        if info > 0:
-            raise LinAlgError("SVD did not converge in Linear Least Squares")
-        if info < 0:
-            raise ValueError(
-                f'illegal value in {-info}-th argument of internal {lapack_driver}'
-            )
-        resids = np.asarray([], dtype=x.dtype)
-        if m > n:
-            x1 = x[:n]
-            if rank == n:
-                resids = np.sum(np.abs(x[n:])**2, axis=0)
-            x = x1
-        return x, resids, rank, s
+    if err_lst:
+        _format_emit_errors_warnings(err_lst)
 
-    elif driver == 'gelsy':
-        lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-        jptv = np.zeros((a1.shape[1], 1), dtype=np.int32)
-        v, x, j, rank, info = lapack_func(a1, b1, jptv, cond,
-                                          lwork, False, False)
-        if info < 0:
-            raise ValueError(f'illegal value in {-info}-th argument of internal gelsy')
-        if m > n:
-            x1 = x[:n]
-            x = x1
-        return x, np.array([], x.dtype), rank, None
+    residuals = np.asarray([], dtype=x.dtype)
+    if m > n:
+        # can get the residuals from the GELSS/GELSD output instead, if _really_ wanted
+        res = b1 - a1 @ x
+        residuals = np.sum(res * res.conj(), axis=len(batch_shape))
+
+    if b_is_1D:
+        x = x[..., 0]
+        if residuals.size > 0:
+            residuals = residuals[..., 0]
+
+    return x, residuals, rank, S
 
 
 lstsq.default_lapack_driver = 'gelsd'
@@ -1857,7 +1444,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     ----------
     .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
            equations. Mathematical Proceedings of the Cambridge Philosophical
-           Society, 52(1), 17-19. doi:10.1017/S0305004100030929
+           Society, 52(1), 17-19. :doi:`10.1017/S0305004100030929`.
 
     Examples
     --------
@@ -2241,7 +1828,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
-    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT
+    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT.
 
     This function returns the matrix multiplication between a Toeplitz
     matrix and a dense matrix.

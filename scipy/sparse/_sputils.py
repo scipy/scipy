@@ -173,7 +173,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     idx_dtype : dtype
         Desired dtype. Should be an integer dtype (default: ``np.int32``).
         Most of scipy.sparse uses either int64 or int32.
-    msg : string, optional
+    msg : str, optional
         A string to be added to the end of the ValueError message
         if the array shape is too big to fit in `idx_dtype`.
         The error message is ``f"<index> values too large for {msg}"``

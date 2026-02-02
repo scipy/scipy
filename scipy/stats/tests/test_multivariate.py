@@ -467,7 +467,8 @@ class SingularMVNProblem:
     ----------
     .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
            singular multivariate normal distribution." Journal of Statistical
-           Computation and Simulation, 51(2-4), 121-135. doi:10.1080/00949659508811627
+           Computation and Simulation, 51(2-4), 121-135.
+           :doi:`10.1080/00949659508811627`.
     """
     ndim : int
     low : np.ndarray
@@ -3042,8 +3043,8 @@ class TestOrthoGroup:
         # Test that the distribution of pairwise distances is close to correct.
         rng = np.random.RandomState(514)
 
-        def random_ortho(dim, random_state=None):
-            u, _s, v = np.linalg.svd(rng.normal(size=(dim, dim)))
+        def random_ortho(dim, random_state):
+            u, _s, v = np.linalg.svd(random_state.normal(size=(dim, dim)))
             return np.dot(u, v)
 
         for dim in range(2, 6):
@@ -3054,7 +3055,7 @@ class TestOrthoGroup:
                     for _ in range(N)
                 ])
                 # Add a bit of noise to account for numeric accuracy.
-                stats += np.random.uniform(-eps, eps, size=stats.shape)
+                stats += rng.uniform(-eps, eps, size=stats.shape)
                 return stats
 
             expected = generate_test_statistics(random_ortho)
@@ -5012,8 +5013,6 @@ class TestNormalInverseGamma:
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float16, np.float32, np.float64])
     def test_dtype(self, dtype):
-        if np.__version__ < "2":
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         rng = np.random.default_rng(8925849245)
         x, s2, mu, lmbda, a, b = rng.uniform(3, 10, size=6).astype(dtype)
         dtype_out = np.result_type(1.0, dtype)

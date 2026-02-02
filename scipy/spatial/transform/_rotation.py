@@ -17,8 +17,8 @@ from scipy._lib._array_api import (
     xp_capabilities,
     xp_promote,
 )
-from scipy._lib.array_api_compat import device as xp_device
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import device as xp_device
+import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _transition_to_rng, broadcastable
 
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
@@ -37,7 +37,6 @@ def select_backend(xp: ModuleType, cython_compatible: bool):
     return backend_registry.get(xp, xp_backend)
 
 
-@xp_capabilities()
 def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
     """Promote arrays to float64 for numpy, else according to the Array API spec.
 
@@ -692,7 +691,7 @@ class Rotation:
 
         Parameters
         ----------
-        seq : string
+        seq : str
             Specifies sequence of axes for rotations. Up to 3 characters
             belonging to the set {'X', 'Y', 'Z'} for intrinsic rotations, or
             {'x', 'y', 'z'} for extrinsic rotations. Extrinsic and intrinsic
@@ -802,7 +801,7 @@ class Rotation:
             the sequence of axes for rotations, where each axes[..., i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
-        order : string
+        order : str
             If it is equal to 'e' or 'extrinsic', the sequence will be
             extrinsic. If it is equal to 'i' or 'intrinsic', sequence
             will be treated as intrinsic.
@@ -1128,7 +1127,7 @@ class Rotation:
 
         Parameters
         ----------
-        degrees : boolean, optional
+        degrees : bool, optional
             Returned magnitudes are in degrees if this flag is True, else they are
             in radians. Default is False.
 
@@ -1212,16 +1211,16 @@ class Rotation:
 
         Parameters
         ----------
-        seq : string, length 3
+        seq : str, length 3
             3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
             rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
             Adjacent axes cannot be the same.
             Extrinsic and intrinsic rotations cannot be mixed in one function
             call.
-        degrees : boolean, optional
+        degrees : bool, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
-        suppress_warnings : boolean, optional
+        suppress_warnings : bool, optional
             Disable warnings about gimbal lock. Default is False.
 
         Returns
@@ -1244,7 +1243,7 @@ class Rotation:
         .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
                conversion: A direct, general and computationally efficient
                method. PLoS ONE 17(11): e0276302.
-               https://doi.org/10.1371/journal.pone.0276302
+               :doi:`10.1371/journal.pone.0276302`.
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         Examples
@@ -1338,14 +1337,14 @@ class Rotation:
             sequence of axes for rotations, where each axes[..., i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
-        order : string
+        order : str
             If it belongs to the set {'e', 'extrinsic'}, the sequence will be
             extrinsic. If it belongs to the set {'i', 'intrinsic'}, sequence
             will be treated as intrinsic.
-        degrees : boolean, optional
+        degrees : bool, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
-        suppress_warnings : boolean, optional
+        suppress_warnings : bool, optional
             Disable warnings about gimbal lock. Default is False.
 
         Returns
@@ -1578,7 +1577,7 @@ class Rotation:
             rotations and shape of vectors given must follow standard numpy
             broadcasting rules: either one of them equals unity or they both
             equal each other.
-        inverse : boolean, optional
+        inverse : bool, optional
             If True then the inverse of the rotation(s) is applied to the input
             vectors. Default is False.
 
@@ -2088,7 +2087,7 @@ class Rotation:
         -------
         reduced : `Rotation` instance
             Object containing reduced rotations.
-        left_best, right_best: integer ndarray
+        left_best, right_best: int ndarray
             Indices of elements from `left` and `right` used for reduction.
         """
         left = left.as_quat() if left is not None else None
@@ -2111,7 +2110,7 @@ class Rotation:
 
         Parameters
         ----------
-        group : string
+        group : str
             The name of the group. Must be one of 'I', 'O', 'T', 'Dn', 'Cn',
             where `n` is a positive integer. The groups are:
 
@@ -2121,7 +2120,7 @@ class Rotation:
                 * D: Dicyclic group
                 * C: Cyclic group
 
-        axis : integer
+        axis : int
             The cyclic rotation axis. Must be one of ['X', 'Y', 'Z'] (or
             lowercase). Default is 'Z'. Ignored for groups 'I', 'O', and 'T'.
 

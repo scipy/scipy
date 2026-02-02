@@ -375,7 +375,7 @@ class MatFile5Reader(MatFileReader):
 
 
 def varmats_from_mat(file_obj):
-    """ Pull variables out of mat 5 file as a sequence of mat file objects
+    """Pull variables out of mat 5 file as a sequence of mat file objects.
 
     This can be useful with a difficult mat file, containing unreadable
     variables. This routine pulls the variables out in raw form and puts them,
