@@ -19,7 +19,6 @@ from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
                           cosm, sinm, tanm, coshm, sinhm, tanhm)
 
 from scipy.linalg import _matfuncs_inv_ssq
-from scipy.linalg._matfuncs import pick_pade_structure
 from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
 from scipy.linalg import LinAlgWarning
@@ -820,11 +819,6 @@ class TestExpM:
         i = rng.integers(0, 399, 500)
         j = rng.integers(0, 399, 500)
         A[i, j] = rng.random(500)
-        # Problem appears when m = 9
-        Am = np.empty((5, 400, 400), dtype=float)
-        Am[0] = A.copy()
-        m, s = pick_pade_structure(Am)
-        assert m == 9
         # Check that result is accurate
         first_res = expm(A)
         np.testing.assert_array_almost_equal(logm(first_res), A)
@@ -1109,13 +1103,3 @@ class TestKhatriRao:
         b = np.empty((5, 0))
         res = khatri_rao(a, b)
         assert_allclose(res, np.empty((15, 0)))
-
-@pytest.mark.parametrize('func',
-                         [logm, sqrtm, signm])
-def test_disp_dep(func):
-    with pytest.deprecated_call():
-        func(np.eye(2), disp=False)
-
-def test_blocksize_dep():
-    with pytest.deprecated_call():
-        sqrtm(np.eye(2), blocksize=10)

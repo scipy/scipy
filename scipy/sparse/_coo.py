@@ -314,9 +314,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
     toarray.__doc__ = _spbase.toarray.__doc__
 
     def tocsc(self, copy=False):
-        """Convert this array/matrix to Compressed Sparse Column format
+        """Convert this array/matrix to Compressed Sparse Column format.
 
         Duplicate entries will be summed together.
+
+        Returns
+        -------
+        csc array/matrix
+            The converted array/matrix in CSC format.
 
         Examples
         --------
@@ -347,9 +352,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return x
 
     def tocsr(self, copy=False):
-        """Convert this array/matrix to Compressed Sparse Row format
+        """Convert this array/matrix to Compressed Sparse Row format.
 
         Duplicate entries will be summed together.
+
+        Returns
+        -------
+        csr array/matrix
+            The converted array/matrix in CSR format.
 
         Examples
         --------
@@ -757,7 +767,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return pruned_data, pruned_coords
 
     def sum_duplicates(self) -> None:
-        """Eliminate duplicate entries by adding them together
+        """Eliminate duplicate entries by adding them together.
 
         This is an *in place* operation
         """
@@ -787,9 +797,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return coords, data
 
     def eliminate_zeros(self):
-        """Remove zero entries from the array/matrix
+        """Remove zero entries from the array/matrix.
 
-        This is an *in place* operation
+        This is an *in place* operation.
         """
         mask = self.data != 0
         self.data = self.data[mask]
@@ -1877,5 +1887,5 @@ class coo_matrix(spmatrix, _coo_base):
     def __getitem__(self, key):
         raise TypeError("'coo_matrix' object is not subscriptable")
 
-    def __setitem__(self, key):
+    def __setitem__(self, key, x):
         raise TypeError("'coo_matrix' object does not support item assignment")

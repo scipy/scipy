@@ -23,7 +23,7 @@ from scipy._lib._array_api import (
     make_xp_pytest_marks,
     xp_device_type,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 import pickle
 import copy
@@ -417,6 +417,24 @@ def test_from_matrix_normalize(xp):
                            [  1,  0, 0],
                            [  0,  0, 1]])
     xp_assert_close(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
+
+    # Test a mix of normalized and non-normalized matrices
+    mat = xp.stack([mat, xp.eye(3)])
+    expected = xp.stack([expected, xp.eye(3)])
+    xp_assert_close(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
+
+
+@make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
+def test_from_matrix_assume_valid(xp):
+    rng = np.random.default_rng(0)
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
+    # Test that normal matrices remain unchanged
+    rot = rotation_to_xp(Rotation.from_quat(rng.normal(size=(10, 4))), xp)
+    rot_no_norm = Rotation.from_matrix(rot.as_matrix(), assume_valid=True)
+    assert xp.all(rot.approx_equal(rot_no_norm, atol=atol))
+    # We make no guarantees about matrices that are not orthogonal or do not
+    # have unit norm
 
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
@@ -1322,6 +1340,54 @@ def test_mean(xp, ndim: int):
         xp_assert_close(r_mean.magnitude(), desired, atol=atol)
 
 
+@make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.magnitude)
+@pytest.mark.parametrize("ndim", range(1, 5))
+def test_mean_axis(xp, ndim: int):
+    axes = xp.tile(xp.concat((-xp.eye(3), xp.eye(3))), (3,) * (ndim - 1) + (1, 1))
+    theta = xp.pi / 4
+    r = Rotation.from_rotvec(theta * axes)
+
+    # Test mean over last axis
+    desired = xp.full(axes.shape[:-2], 0.0)
+    if ndim == 1:
+        desired = desired[()]
+    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
+    xp_assert_close(r.mean(axis=-1).magnitude(), desired, atol=atol)
+
+    # Test tuple axes
+    desired = xp.full(axes.shape[1:-2], 0.0)
+    if ndim < 3:
+        desired = desired[()]
+    xp_assert_close(r.mean(axis=(0, -1)).magnitude(), desired, atol=atol)
+
+    # Empty axis tuple should return Rotation unchanged
+    r_mean = r.mean(axis=())
+    xp_assert_close(r_mean.as_quat(canonical=True), r.as_quat(canonical=True),
+                    atol=atol)
+
+
+@make_xp_test_case(Rotation.mean, Rotation.magnitude)
+def test_mean_compare_axis(xp):
+    # Create a random set of rotations and compare the mean over an axis with the
+    # mean without axis of the sliced quaternion
+    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1e-6
+    rng = np.random.default_rng(0)
+    q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
+    r = Rotation.from_quat(q)
+
+    mean_0 = r.mean(axis=0)
+    for i in range(q.shape[1]):
+        for j in range(q.shape[2]):
+            mean_slice = Rotation.from_quat(q[:, i, j, ...]).mean()
+            xp_assert_close((mean_0[i][j] * mean_slice.inv()).magnitude(),
+                            xp.asarray(0.0)[()], atol=atol)
+    mean_1_2 = r.mean(axis=(1, 2))
+    for i in range(q.shape[0]):
+        mean_slice = Rotation.from_quat(q[i, ...]).mean()
+        xp_assert_close((mean_1_2[i] * mean_slice.inv()).magnitude(),
+                        xp.asarray(0.0)[()], atol=atol)
+
+
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
                    Rotation.magnitude)
 @pytest.mark.parametrize("ndim", range(1, 4))
@@ -1348,7 +1414,7 @@ def test_weighted_mean(xp, ndim: int):
 
 
 @make_xp_test_case(Rotation.mean)
-def test_mean_invalid_weights(xp):
+def test_mean_input_validation(xp):
     r = Rotation.from_quat(xp.eye(4))
     if is_lazy_array(r.as_quat()):
         m = r.mean(weights=-xp.ones(4))
@@ -1358,12 +1424,22 @@ def test_mean_invalid_weights(xp):
             r.mean(weights=-xp.ones(4))
 
     # Test weight shape mismatch
-    r = Rotation.from_quat(xp.ones((4,)))
+    r = Rotation.from_quat(xp.ones((3, 4)))
     with pytest.raises(ValueError, match="Expected `weights` to"):
         r.mean(weights=xp.ones((2,)))
     r = Rotation.from_quat(xp.ones((2, 3, 4)))
     with pytest.raises(ValueError, match="Expected `weights` to"):
-        r.mean(weights=xp.ones((2, 1)))
+        r.mean(weights=xp.ones((2, 2)))
+
+    # Test wrong axis
+    with pytest.raises(ValueError, match=r"axis .* is out of bounds"):
+        r.mean(axis=3)
+    with pytest.raises(ValueError, match=r"axis .* is out of bounds"):
+        r.mean(axis=(-1, 2))
+    with pytest.raises(ValueError, match="`axis` must be None, int, or tuple of ints."):
+        r.mean(axis="0")
+    with pytest.raises(ValueError, match=r"axis .* is out of bounds"):
+        r.mean(axis=-12)
 
 
 @make_xp_test_case(Rotation.reduce)
@@ -2084,6 +2160,7 @@ def test_align_vectors_mixed_dtypes(xp):
     xp_assert_close(est.as_quat(), c.as_quat())
 
 
+@make_xp_test_case(Rotation.__repr__)
 def test_repr_single_rotation(xp):
     q = xp.asarray([0, 0, 0, 1])
     actual = repr(Rotation.from_quat(q))
@@ -2391,6 +2468,8 @@ def test_pow(xp, ndim: int):
         # Test accuracy
         q = p ** n
         q_identity = xp.asarray([0., 0, 0, 1])
+        # Regression test for gh-24436 
+        assert isinstance(q._quat, type(q_identity))
         r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
         for _ in range(abs(n)):
             if n > 0:
@@ -3072,3 +3151,9 @@ def test_rotation_shape(xp, ndim: int):
     quat = xp.ones(shape + (4,))
     r = Rotation.from_quat(quat)
     assert r.shape == shape, f"Got {r.shape}, expected {shape}"
+
+
+def test_non_writeable():
+    q = np.array([0, 0, 0, 1.0])
+    q.flags.writeable = False
+    Rotation.from_quat(q)  # Regression test against gh-24354, should not raise

@@ -165,7 +165,7 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
             p += d
             d *= -4*x**2 * (a - kk) * (-a + alpha + kk + n) / (
                 (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
-            if fabs(d) == 1e-20*fabs(p):
+            if fabs(d) < 1e-20*fabs(p):
                 # converged
                 break
         return p
@@ -341,7 +341,7 @@ cdef inline double eval_legendre_l(Py_ssize_t n, double x) noexcept nogil:
             p += d
             d *= -2 * x**2 * (a - kk) * (2*n + 1 - 2*a + 2*kk) / (
                 (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
-            if fabs(d) == 1e-20*fabs(p):
+            if fabs(d) < 1e-20*fabs(p):
                 # converged
                 break
         return p

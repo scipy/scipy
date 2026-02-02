@@ -67,7 +67,13 @@ def _diff_dual_poly(j, k, y, d, t):
                         if (j + p) not in comb[i//d]])
     return res
 
-
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class BSpline:
     r"""Univariate spline in the B-spline basis.
 
@@ -357,6 +363,11 @@ class BSpline:
         xp = array_namespace(t)
         t = np.asarray(t)
         k = t.shape[0] - 2
+        
+        if k < 0:
+            raise ValueError("BSpline.basis_element requires at least 2 knots")
+
+        
         t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
@@ -623,16 +634,16 @@ class BSpline:
         b : `BSpline` object
             A new instance representing the antiderivative.
 
+        See Also
+        --------
+        splder, splantider
+
         Notes
         -----
         If antiderivative is computed and ``self.extrapolate='periodic'``,
         it will be set to False for the returned instance. This is done because
         the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
-
-        See Also
-        --------
-        splder, splantider
 
         """
         c = self._asarray(self.c, copy=True)
@@ -796,7 +807,7 @@ class BSpline:
         pp : CubicSpline
             A piecewise polynomial in the power basis, as created
             by ``CubicSpline``
-        bc_type : string, optional
+        bc_type : str, optional
             Boundary condition type as in ``CubicSpline``: one of the
             ``not-a-knot``, ``natural``, ``clamped``, or ``periodic``.
             Necessary for construction an instance of ``BSpline`` class.
@@ -909,6 +920,10 @@ class BSpline:
         spl : `BSpline` object
             A new `BSpline` object with the new knot inserted.
 
+        See Also
+        --------
+        scipy.interpolate.insert
+
         Notes
         -----
         Based on algorithms from [1]_ and [2]_.
@@ -929,10 +944,6 @@ class BSpline:
             :doi:`10.1016/0010-4485(80)90154-2`.
         .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
             Numerical Analysis", Oxford University Press, 1993.
-
-        See Also
-        --------
-        scipy.interpolate.insert
 
         Examples
         --------
@@ -1280,20 +1291,20 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
     ----------
     t : ndarray, shape (nt + k + 1,)
         knots
-    k : integer
+    k : int
         B-spline order
     xval : float
         The value at which to evaluate the derivatives at.
     ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
         B-spline colocation matrix.
         This argument is modified *in-place*.
-    kl : integer
+    kl : int
         Number of lower diagonals of ab.
-    ku : integer
+    ku : int
         Number of upper diagonals of ab.
     deriv_ords : 1D ndarray
         Orders of derivatives known at xval
-    offset : integer, optional
+    offset : int, optional
         Skip this many rows of the matrix ab.
 
     """
@@ -1420,7 +1431,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         Ordinates.
     k : int, optional
         B-spline degree. Default is cubic, ``k = 3``.
-    t : array_like, shape (nt + k + 1,), optional.
+    t : array_like, shape (nt + k + 1,), optional
         Knots.
         The number of knots needs to agree with the number of data points and
         the number of derivatives at the edges. Specifically, ``nt - n`` must
@@ -1707,7 +1718,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         Abscissas.
     y : array_like, shape (m, ...)
         Ordinates.
-    t : array_like, shape (n + k + 1,).
+    t : array_like, shape (n + k + 1,)
         Knots.
         Knots and data points must satisfy Schoenberg-Whitney conditions.
     k : int, optional

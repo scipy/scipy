@@ -16,21 +16,36 @@
 static const double zeta_ratio_threshold = 0.9;
 
 //
+// *** NOTE ***
+// In the following templated functions, T will be either long long int
+// or double.  When T is double, the *values* of the variables with that
+// type are still expected to be positive integers less than 2**53.
+// This is necessary so that, for example, incrementing such a variable with
+// the ++ operator will, in fact, change the value by 1.
+// The bounds and integrality of the inputs are not checked in the functions;
+// it is expected that the Python code that ends up calling the ufuncs will
+// ensure that these conditions are met.
+//
+
+//
 // Compute sum_{i=m}^{n} i**-a.
 //
 // This function assumes 1 <= m <= n and `a` is finite.
 //
+// See the NOTE above regarding T.
+//
+template <typename T>
 static inline double
-sum_powers(int64_t m, int64_t n, double a)
+sum_powers(T m, T n, double a)
 {
     double sum = 0.0;
     if (a >= 0) {
-        for (int64_t i = n; i >= m; --i) {
+        for (T i = n; i >= m; --i) {
             sum += std::pow(i, -a);
         }
     }
     else {
-        for (int64_t i = m; i <= n; ++i) {
+        for (T i = m; i <= n; ++i) {
             sum += std::pow(i, -a);
         }
     }
@@ -49,14 +64,22 @@ sum_powers(int64_t m, int64_t n, double a)
 //   the Hurwitz zeta function.  Otherwise it is computed as a simple
 //   sum of the powers.
 //
+// See the NOTE above regarding T.
+//
 // [1] https://en.wikipedia.org/wiki/Harmonic_number#Generalized_harmonic_numbers
 //
+template <typename T>
 static inline double
-gen_harmonic(int64_t n, double a)
+gen_harmonic(T n, double a)
 {
+    if constexpr(std::is_same_v<T, double>) {
+        if (std::isnan(n)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+    }
     if (n < 1) {
         sf_error("_gen_harmonic", SF_ERROR_DOMAIN,
-                 "n >= 1 is required, but got n = %" PRId64, n);
+                 "n >= 1 is required, but got n = %" PRId64, static_cast<int64_t>(n));
         return std::numeric_limits<double>::quiet_NaN();
     }
     if (n == 1) {
@@ -80,7 +103,7 @@ gen_harmonic(int64_t n, double a)
         return static_cast<double>(n);
     }
     if (a <= 1) {
-        return sum_powers(1, n, a);
+        return sum_powers(static_cast<T>(1), n, a);
     }
     else {
         // If here, we know a is finite and a > 1, and n > 1.
@@ -97,7 +120,7 @@ gen_harmonic(int64_t n, double a)
             return z1 - znp1;
         }
         else {
-            return sum_powers(1, n, a);
+            return sum_powers(static_cast<T>(1), n, a);
         }
     }
 }
@@ -112,15 +135,17 @@ gen_harmonic(int64_t n, double a)
 //
 // Requires 1 <= j <= k <= n and finite a.
 //
+// See the NOTE above regarding T.
 //
 
+template <typename T>
 static inline double
-normalized_sum_powers(int64_t j, int64_t k, int64_t n, double a)
+normalized_sum_powers(T j, T k, T n, double a)
 {
     double numer = 0.0;
     double denom = 0.0;
     if (a >= 0) {
-        for (int64_t i = n; i >= 1; --i) {
+        for (T i = n; i >= 1; --i) {
             double term = std::pow(i, -a);
             denom += term;
             if (i >= j && i <= k) {
@@ -129,7 +154,7 @@ normalized_sum_powers(int64_t j, int64_t k, int64_t n, double a)
         }
     }
     else {
-        for (int64_t i = 1; i <= n; ++i) {
+        for (T i = 1; i <= n; ++i) {
             double term = std::pow(i, -a);
             denom += term;
             if (i >= j && i <= k) {
@@ -149,13 +174,24 @@ normalized_sum_powers(int64_t j, int64_t k, int64_t n, double a)
 //
 // Requires 1 <= j <= k <= n; returns NAN if that is not true.
 //
+// See the NOTE above regarding T.
+//
+template <typename T>
 static inline double
-normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
+normalized_gen_harmonic(T j, T k, T n, double a)
 {
+    if constexpr(std::is_same_v<T, double>) {
+        if (std::isnan(j) || std::isnan(k) || std::isnan(n)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+    }
     if (j < 1 || k < j || n < k) {
         sf_error("_normalized_gen_harmonic", SF_ERROR_DOMAIN,
                  "1 <= j <= k <= n is required, but got j = %" PRId64 ", "
-                 "k = %" PRId64 ", and n = %" PRId64, j, k, n);
+                 "k = %" PRId64 ", and n = %" PRId64,
+                 static_cast<int64_t>(j),
+                 static_cast<int64_t>(k),
+                 static_cast<int64_t>(n));
         return std::numeric_limits<double>::quiet_NaN();
     }
     //
@@ -217,7 +253,7 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
                 return (zj - zkp1) / (z1 - znp1);
             }
             else {
-                return (zj - zkp1) / sum_powers(1, n, a);
+                return (zj - zkp1) / sum_powers(static_cast<T>(1), n, a);
             }
         }
         else {

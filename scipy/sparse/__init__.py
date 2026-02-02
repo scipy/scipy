@@ -95,6 +95,9 @@ Combining arrays
    triu - Upper triangular portion of a sparse array
    hstack - Stack sparse arrays horizontally (column wise)
    vstack - Stack sparse arrays vertically (row wise)
+   swapaxes - swap two axes of a sparse array
+   expand_dims - add a new (trivial) axis to a sparse array
+   permute_dims - reorder the axes of a sparse array
 
 Sparse tools
 ------------
@@ -180,13 +183,13 @@ Usage information
 
 There are seven available sparse array types:
 
-    1. csc_array: Compressed Sparse Column format
-    2. csr_array: Compressed Sparse Row format
-    3. bsr_array: Block Sparse Row format
-    4. lil_array: List of Lists format
-    5. dok_array: Dictionary of Keys format
-    6. coo_array: COOrdinate format (aka IJV, triplet format)
-    7. dia_array: DIAgonal format
+1. csc_array: Compressed Sparse Column format
+2. csr_array: Compressed Sparse Row format
+3. bsr_array: Block Sparse Row format
+4. lil_array: List of Lists format
+5. dok_array: Dictionary of Keys format
+6. coo_array: COOrdinate format (aka IJV, triplet format)
+7. dia_array: DIAgonal format
 
 To construct an array efficiently, use any of `coo_array`,
 `dok_array` or `lil_array`. `dok_array` and `lil_array`

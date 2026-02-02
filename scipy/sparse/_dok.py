@@ -48,7 +48,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
             if arg1.ndim == 1:
                 if dtype is not None:
-                    arg1 = arg1.astype(dtype)
+                    arg1 = arg1.astype(dtype, copy=False)
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
                 self.dtype = getdtype(arg1.dtype)
             else:
@@ -58,7 +58,7 @@ class _dok_base(_spbase, IndexMixin, dict):
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
     def update(self, val):
-        """Update values from a dict, sparse dok or iterable of 2-tuples like .items()
+        """Update values from a dict, sparse dok or iterable of 2-tuples like .items().
 
         Keys of the input must be sequences of nonnegative integers less than the shape
         for each axis.
@@ -111,15 +111,50 @@ class _dok_base(_spbase, IndexMixin, dict):
         return key in self._dict
 
     def setdefault(self, key, default=None, /):
+        """Insert key with a value of default if key is not in the dictionary.
+
+        Parameters
+        ----------
+        key : int or tuple of int
+            The key to look for in the dok_array.
+        default : optional
+            The value to insert if `key` is not found. Default is None.
+
+        Returns
+        -------
+        scalar
+            The value for `key` if `key` is in the dictionary, else `default`.
+        """
         return self._dict.setdefault(key, default)
 
     def __delitem__(self, key, /):
         del self._dict[key]
 
     def clear(self):
-        return self._dict.clear()
+        """Remove all items from the dok_array."""
+        self._dict.clear()
 
     def pop(self, /, *args):
+        """Remove specified key and return the corresponding value.
+
+        Parameters
+        ----------
+        key : tuple
+            The key to remove from the dok_array.
+        default : optional
+            The value to return if `key` is not found. If not provided and
+            `key` is not found, a KeyError is raised.
+
+        Returns
+        -------
+        scalar
+            The value associated with the removed key.
+
+        Raises
+        ------
+        KeyError
+            If the key is not found and default is not provided.
+        """
         return self._dict.pop(*args)
 
     def __reversed__(self):
@@ -138,19 +173,72 @@ class _dok_base(_spbase, IndexMixin, dict):
         raise TypeError(f"unsupported operand type for |: {type_names}")
 
     def popitem(self):
+        """
+        Remove and return a (key, value) pair as a 2-tuple, returned in LIFO (last-in,
+        first-out) order.
+
+        Returns
+        -------
+        key : tuple
+            The key of the removed item.
+        value : scalar
+            The value of the removed item.
+
+        Raises
+        ------
+        KeyError
+            If the dict is empty.
+        """
         return self._dict.popitem()
 
     def items(self):
+        """
+        Return a set-like object providing a view on the array's items.
+
+        Returns
+        -------
+        dict_items
+            A view object displaying a list of a array's key-value tuple pairs.
+        """
         return self._dict.items()
 
     def keys(self):
+        """
+        Return a set-like object providing a view on the dict's keys.
+
+        Returns
+        -------
+        dict_keys
+            A view object displaying a list of all the keys in the dictionary.
+        """
         return self._dict.keys()
 
     def values(self):
+        """
+        Return an object providing a view on the dict's values.
+
+        Returns
+        -------
+        dict_values
+            A view object displaying a list of all the values in the dictionary.
+        """
         return self._dict.values()
 
     def get(self, key, default=0.0):
-        """This provides dict.get method functionality with type checking"""
+        """This provides dict.get method functionality with type checking.
+
+        Parameters
+        ----------
+        key : int or tuple of int
+            The key to look for in the dok_array.
+        default : optional
+            The value to return if `key` is not found. Default is 0.0.
+
+        Returns
+        -------
+        value
+            The value associated with `key` if it exists, otherwise `default`.
+        """
         if key in self._dict:
             return self._dict[key]
         if isintlike(key) and self.ndim == 1:
@@ -428,6 +516,8 @@ class _dok_base(_spbase, IndexMixin, dict):
             return super().diagonal(k)
         raise ValueError("diagonal requires two dimensions")
 
+    diagonal.__doc__ = _spbase.diagonal.__doc__
+
     def transpose(self, axes=None, copy=False):
         if self.ndim == 1:
             return self.copy()
@@ -530,6 +620,8 @@ class _dok_base(_spbase, IndexMixin, dict):
         elif copy:
             return self.copy()
         return self
+
+    astype.__doc__ = _spbase.astype.__doc__
 
 
 def isspmatrix_dok(x):

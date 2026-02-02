@@ -875,12 +875,12 @@ try:
 except ImportError:
     _clapack = None
 
-try:
+from scipy.__config__ import CONFIG
+HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
+del CONFIG
+_flapack_64 = None
+if HAS_ILP64:
     from scipy.linalg import _flapack_64
-    HAS_ILP64 = True
-except ImportError:
-    HAS_ILP64 = False
-    _flapack_64 = None
 
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
@@ -1103,4 +1103,28 @@ def _normalize_lapack_dtype(a, overwrite_a):
 
         a = a.astype(dtype_char[0])  # makes a copy, free to scratch
         overwrite_a = True
+    return a, overwrite_a
+
+
+def _ensure_dtype_cdsz(*arrays):
+    # Ensure that the dtype of arrays is one of the standard types
+    # compatible with LAPACK functions (single or double precision
+    # real or complex).
+    dtype = np.result_type(*arrays)
+    if not np.issubdtype(dtype, np.inexact):
+        return (array.astype(np.float64) for array in arrays)
+    complex = np.issubdtype(dtype, np.complexfloating)
+    if np.finfo(dtype).bits <= 32:
+        dtype = np.complex64 if complex else np.float32
+    elif np.finfo(dtype).bits >= 64:
+        dtype = np.complex128 if complex else np.float64
+    return (array.astype(dtype, copy=False) for array in arrays)
+
+
+def _ensure_aligned_and_native(a, overwrite_a):
+    """Make sure an input array is aligned and not byteswapped, copy otherwise.
+    """
+    if not (a.flags['ALIGNED'] and a.dtype.byteorder == '='):
+        overwrite_a = True
+        a = a.copy()
     return a, overwrite_a

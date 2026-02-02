@@ -22,10 +22,6 @@ from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
 import scipy.sparse as sps
-try:
-    from scipy.__config__ import CONFIG
-except ImportError:
-    CONFIG = None
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -34,14 +30,14 @@ except ImportError:
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
+from scipy.__config__ import CONFIG
+blas_provider = blas_version = None
+blas_provider = CONFIG['Build Dependencies']['blas']['name']
+blas_version = CONFIG['Build Dependencies']['blas']['version']
+
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
-
-blas_provider = blas_version = None
-if CONFIG is not None:
-    blas_provider = CONFIG['Build Dependencies']['blas']['name']
-    blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 def generate_random_dtype_array(shape, dtype, rng):
@@ -73,6 +69,12 @@ def test_lapack_documented():
                 name not in names):
             missing.append(name)
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
+
+
+def test_ilp64_blas_lapack_both_or_none():
+    from scipy.linalg.blas import HAS_ILP64 as blas_has_ilp64
+    from scipy.linalg.lapack import HAS_ILP64 as lapack_has_ilp64
+    assert blas_has_ilp64 == lapack_has_ilp64
 
 
 class TestFlapackSimple:

@@ -13,8 +13,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-from scipy import stats
-from scipy.stats import norm  # type: ignore[attr-defined]
+from scipy import stats, special
 from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
@@ -101,6 +100,7 @@ axis_nan_policy_cases = [
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.trim_mean, (0.05,), dict(), 1, 1, False, lambda x: (x,)),
     (stats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.iqr, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -124,11 +124,15 @@ axis_nan_policy_cases = [
     (stats.brunnermunzel, tuple(), dict(distribution='normal'), 2, 2, False, None),
     (stats.mood, tuple(), {}, 2, 2, False, None),
     (stats.shapiro, tuple(), {}, 1, 2, False, None),
-    (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,
+    (stats.ks_1samp, (special.ndtr,), dict(), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.ks_1samp, (special.ndtr,), dict(alternative='greater'), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.ks_1samp, (special.ndtr,), dict(alternative='less'), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.ks_2samp, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
-    (stats.kstest, (norm().cdf,), dict(), 1, 4, False,
+    (stats.kstest, (special.ndtr,), dict(), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.kstest, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
@@ -141,9 +145,9 @@ axis_nan_policy_cases = [
     (stats.skewtest, tuple(), dict(), 1, 2, False, None),
     (stats.kurtosistest, tuple(), dict(), 1, 2, False, None),
     (stats.normaltest, tuple(), dict(), 1, 2, False, None),
-    (stats.cramervonmises, ("norm",), dict(), 1, 2, False,
+    (stats.cramervonmises, (special.ndtr,), dict(), 1, 2, False,
      lambda res: (res.statistic, res.pvalue)),
-    (stats.cramervonmises_2samp, tuple(), dict(), 2, 2, False,
+    (stats.cramervonmises_2samp, tuple(), dict(method='asymptotic'), 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.epps_singleton_2samp, tuple(), dict(), 2, 2, False, None),
     (stats.bartlett, tuple(), {}, 2, 2, False, None),
@@ -168,6 +172,8 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.spearmanrho, tuple(), dict(), 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
     (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.kendalltau, tuple(), dict(), 2, 3, True,
@@ -180,14 +186,17 @@ axis_nan_policy_cases = [
      lambda res: tuple(res) + (res.intercept_stderr,)),
     (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
     (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(method='joint'), 2, 4, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(method='hierarchical'), 2, 2, True, tuple),
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -352,7 +361,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
-    if hypotest in {stats.cramervonmises_2samp, stats.kruskal} and not SCIPY_XSLOW:
+    if hypotest in {stats.kruskal} and not SCIPY_XSLOW:
         pytest.skip("Too slow.")
     _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator)
@@ -485,8 +494,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res_1db, res_1da, rtol=4e-15)
+        # changed from 1e-15 and later from 4e-15 to appease macosx-x86_64+Accelerate
+        assert_allclose(res_1db, res_1da, rtol=1e-14)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -516,7 +525,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
     assert_allclose(res_nd, res_1d, rtol=1e-11)
 
-# nan should not raise a exception in np.mean()
+# nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
 # see https://github.com/scipy/scipy/issues/22360
 # and https://github.com/numpy/numpy/issues/23158
@@ -673,7 +682,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   sample_shape, axis_cases, nan_policy):
     small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
-                           stats.differential_entropy}
+                           stats.differential_entropy, stats.epps_singleton_2samp}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
     if hypotest in {weightedtau_weighted}:
@@ -986,7 +995,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
 
     message = "Array shapes are incompatible for broadcasting."
     with pytest.raises(ValueError, match=message):
-        hypotest(*samples, *args, **kwds)
+        hypotest(*samples, *args, axis=axis, **kwds)
 
     if not paired:  # there's another test for paired-sample statistics
         return
@@ -1000,7 +1009,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
     shape[axis] += 1
     other_sample = rng.random(size=shape)
     with pytest.raises(ValueError, match=message):
-        hypotest(other_sample, *most_samples, *args, **kwds)
+        hypotest(other_sample, *most_samples, *args, axis=axis, **kwds)
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays

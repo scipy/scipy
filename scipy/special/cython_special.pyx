@@ -67,6 +67,7 @@ Available functions
 
 - :py:func:`~scipy.special.bdtrin`::
 
+        float bdtrin(float, float, float)
         double bdtrin(double, double, double)
 
 - :py:func:`~scipy.special.bei`::
@@ -1116,6 +1117,8 @@ cdef extern from r"xsf_wrappers.h":
     double special_ber(double) nogil
     double special_berp(double) nogil
     double xsf_gdtrib(double, double, double) nogil
+    double special_gdtria(double, double, double) nogil
+    double special_gdtrix(double, double, double) nogil
     npy_double special_kei(npy_double) nogil
     npy_double special_keip(npy_double) nogil
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
@@ -1387,10 +1390,6 @@ from ._cdflib_wrappers cimport bdtrik as _func_bdtrik
 ctypedef double _proto_bdtrik_t(double, double, double) noexcept nogil
 cdef _proto_bdtrik_t *_proto_bdtrik_t_var = &_func_bdtrik
 
-from ._cdflib_wrappers cimport bdtrin as _func_bdtrin
-ctypedef double _proto_bdtrin_t(double, double, double) noexcept nogil
-cdef _proto_bdtrin_t *_proto_bdtrin_t_var = &_func_bdtrin
-
 from ._boxcox cimport boxcox as _func_boxcox
 ctypedef double _proto_boxcox_t(double, double) noexcept nogil
 cdef _proto_boxcox_t *_proto_boxcox_t_var = &_func_boxcox
@@ -1635,14 +1634,6 @@ cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
-
-from ._cdflib_wrappers cimport gdtria as _func_gdtria
-ctypedef double _proto_gdtria_t(double, double, double) noexcept nogil
-cdef _proto_gdtria_t *_proto_gdtria_t_var = &_func_gdtria
-
-from ._cdflib_wrappers cimport gdtrix as _func_gdtrix
-ctypedef double _proto_gdtrix_t(double, double, double) noexcept nogil
-cdef _proto_gdtrix_t *_proto_gdtrix_t_var = &_func_gdtrix
 
 from ._convex_analysis cimport huber as _func_huber
 ctypedef double _proto_huber_t(double, double) noexcept nogil
@@ -1891,10 +1882,6 @@ cpdef double bdtri(double x0, dlp_number_t x1, double x2) noexcept nogil:
 cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
     return _func_bdtrik(x0, x1, x2)
-
-cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.bdtrin"""
-    return _func_bdtrin(x0, x1, x2)
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""
@@ -2564,17 +2551,17 @@ cpdef double gdtrc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrc"""
     return xsf_gdtrc(x0, x1, x2)
 
-cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.gdtria"""
-    return _func_gdtria(x0, x1, x2)
-
 cpdef double gdtrib(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrib"""
     return xsf_gdtrib(x0, x1, x2)
 
+cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.gdtria"""
+    return special_gdtria(x0, x1, x2)
+
 cpdef double gdtrix(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrix"""
-    return _func_gdtrix(x0, x1, x2)
+    return special_gdtrix(x0, x1, x2)
 
 cpdef double complex hankel1(double x0, double complex x1) noexcept nogil:
     """See the documentation for scipy.special.hankel1"""
@@ -3128,6 +3115,15 @@ cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_double)(x0, x1, x2)
+    else:
+        return NAN
+
+cpdef df_number_t bdtrin(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.fdtri"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_bdtrin_double)(x0, x1, x2)
     else:
         return NAN
 

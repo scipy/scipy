@@ -8,6 +8,7 @@ from scipy.special._ufuncs import _gen_harmonic, _normalized_gen_harmonic
 # In the following tests, reference values were computed with mpmath.
 #
 
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'n, a, ref',
     [(8, 9.0, 1.0020083884212339),
@@ -33,11 +34,12 @@ from scipy.special._ufuncs import _gen_harmonic, _normalized_gen_harmonic
      (4, -1.0, 10.0),
      (75, -1.5, 19811.38815892374)]
 )
-def test_gen_harmonic(n, a, ref):
-    h = _gen_harmonic(n, a)
+def test_gen_harmonic(typ, n, a, ref):
+    h = _gen_harmonic(typ(n), a)
     assert_allclose(h, ref, rtol=5e-15)
 
 
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'n, a, ref',
     [(10, np.inf, 1.0),
@@ -46,11 +48,17 @@ def test_gen_harmonic(n, a, ref):
      (3, np.nan, np.nan),
      (-3, 1.0, np.nan)]
 )
-def test_gen_harmonic_exact_cases(n, a, ref):
-    h = _gen_harmonic(n, a)
+def test_gen_harmonic_exact_cases(typ, n, a, ref):
+    h = _gen_harmonic(typ(n), a)
     assert_equal(h, ref)
 
 
+def test_gen_harmonic_n_nan():
+    h = _gen_harmonic(np.nan, 0.75)
+    assert_equal(h, np.nan)
+
+
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'j, k, n, a, ref',
     [(400, 5000, 5000, 10.0, 4.2821759663214485e-25),
@@ -63,11 +71,12 @@ def test_gen_harmonic_exact_cases(n, a, ref):
      (10, 12, 16, -0.5, 0.22359306724308234),
      (1, 8000, 10000, -1.5, 0.5724512895513029)]
 )
-def test_normalized_gen_harmonic(j, k, n, a, ref):
-    h = _normalized_gen_harmonic(j, k, n, a)
+def test_normalized_gen_harmonic(typ, j, k, n, a, ref):
+    h = _normalized_gen_harmonic(typ(j), typ(k), typ(n), a)
     assert_allclose(h, ref, 5e-15)
 
 
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'j, k, n, a, ref',
     [(1, 1, 1, 0.5, 1.0),
@@ -80,6 +89,11 @@ def test_normalized_gen_harmonic(j, k, n, a, ref):
      (2, 3, 4, -np.inf, np.nan),
      (3, 6, 8, 0.0, 0.5)]
 )
-def test_normalized_gen_harmonic_exact_cases(j, k, n, a, ref):
-    h = _normalized_gen_harmonic(j, k, n, a)
+def test_normalized_gen_harmonic_exact_cases(typ, j, k, n, a, ref):
+    h = _normalized_gen_harmonic(typ(j), typ(k), typ(n), a)
     assert_equal(h, ref)
+
+
+def test_normalized_gen_harmonic_input_nan():
+    h = _normalized_gen_harmonic(1.0, np.nan, 10.0, 1.05)
+    assert_equal(h, np.nan)

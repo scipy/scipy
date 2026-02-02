@@ -90,7 +90,7 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int,
             The window must be a real- or complex-valued 1d array.
         hop : int
             The increment in samples by which the window is shifted in each step.
-        desired_dual: np.ndarray | None
+        desired_dual : np.ndarray | None
             The desired dual window must be a 1d array of the same length as `win`.
             If set to ``None`` (default), then `desired_dual` is assumed to be the
             rectangular window, i.e., ``np.ones_like(win)``.
@@ -275,7 +275,7 @@ class ShortTimeFFT:
     fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
         Mode of FFT to be used (default 'onesided').
         See property `fft_mode` for details.
-    mfft: int | None
+    mfft : int | None
         Length of the FFT used, if a zero padded FFT is desired.
         If ``None`` (default), the length of the window `win` is used.
     dual_win : np.ndarray | None
@@ -651,7 +651,7 @@ class ShortTimeFFT:
         fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
             Mode of FFT to be used (default 'onesided').
             See property `fft_mode` for details.
-        mfft: int | None
+        mfft : int | None
             Length of the FFT used, if a zero padded FFT is desired.
             If ``None`` (default), the length of the window `win` is used.
         scale_to : 'magnitude' | 'psd' | 'unitary' | None
@@ -1203,7 +1203,7 @@ class ShortTimeFFT:
             last value of `x` is used. 'even' pads by reflecting the
             signal on the first or last sample and 'odd' additionally
             multiplies it with -1.
-        axis: int
+        axis : int
             The axis of `x` over which to compute the STFT.
             If not given, the last axis is used.
 
@@ -1313,6 +1313,12 @@ class ShortTimeFFT:
             one-dimensional `x`, a complex 2d array is returned, with axis 0
             representing frequency and axis 1 the time slices.
 
+        See Also
+        --------
+        :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
+        stft_detrend: STFT with a trend subtracted from each segment.
+        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
+
         Notes
         -----
         The cross-spectrogram may be interpreted as the time-frequency analogon of the
@@ -1382,12 +1388,6 @@ class ShortTimeFFT:
         The logarithmic scaling reveals the odd harmonics of the square wave,
         which are reflected at the Nyquist frequency of 10 Hz. This aliasing
         is also the main source of the noise artifacts in the plot.
-
-        See Also
-        --------
-        :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
-        stft_detrend: STFT with a trend subtracted from each segment.
-        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         Sx = self.stft_detrend(x, detr, p0, p1, k_offset=k_offset,
                                padding=padding, axis=axis)
@@ -1454,23 +1454,35 @@ class ShortTimeFFT:
             -> np.ndarray:
         """Inverse short-time Fourier transform.
 
-        It returns an array of dimension ``S.ndim - 1``  which is real
-        if `onesided_fft` is set, else complex. If the STFT is not
-        `invertible`, or the parameters are out of bounds  a ``ValueError`` is
-        raised.
-
         Parameters
         ----------
-        S
+        S : ndarray
             A complex valued array where `f_axis` denotes the frequency
-            values and the `t-axis` dimension the temporal values of the
+            values and the `t_axis` dimension the temporal values of the
             STFT values.
-        k0, k1
+        k0, k1 : int, optional
             The start and the end index of the reconstructed signal. The
             default (``k0 = 0``, ``k1 = None``) assumes that the maximum length
             signal should be reconstructed.
-        f_axis, t_axis
+        f_axis, t_axis : int, optional
             The axes in `S` denoting the frequency and the time dimension.
+
+        Returns
+        -------
+        ndarray
+            Array of dimension ``S.ndim - 1``  which is real if `onesided_fft` is set,
+            else complex.
+
+        Raises
+        ------
+        ValueError
+            If the STFT is not invertible, or the parameters are out of bounds.
+
+        See Also
+        --------
+        invertible: Check if STFT is invertible.
+        :meth:`~ShortTimeFFT.stft`: Perform Short-time Fourier transform.
+        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
 
         Notes
         -----
@@ -1485,12 +1497,6 @@ class ShortTimeFFT:
 
         The :ref:`tutorial_stft` section of the :ref:`user_guide` discussed the
         slicing behavior by means of an example.
-
-        See Also
-        --------
-        invertible: Check if STFT is invertible.
-        :meth:`~ShortTimeFFT.stft`: Perform Short-time Fourier transform.
-        :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         if f_axis == t_axis:
             raise ValueError(f"{f_axis=} may not be equal to {t_axis=}!")
@@ -1727,6 +1733,11 @@ class ShortTimeFFT:
         n : int
             Number of samples of input signal (must be ≥ half of the window length).
 
+        Returns
+        -------
+        int
+            First sample index after signal end not touched by a time slice.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1750,6 +1761,16 @@ class ShortTimeFFT:
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
 
+        Parameters
+        ----------
+        n : int
+            Number of samples of input.
+
+        Returns
+        -------
+        int
+            Index of first non-overlapping upper time slice for `n` sample input.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1768,6 +1789,16 @@ class ShortTimeFFT:
         being negative.
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
+
+        Parameters
+        ----------
+        n : int
+            Number of samples of input signal
+
+        Returns
+        -------
+        p_num : int
+            Number of time slices for input signal with `n` samples.
 
         See Also
         --------
@@ -1839,11 +1870,6 @@ class ShortTimeFFT:
         p_ub : int
             Lowest index of time slice of which the end sticks out past the signal end.
 
-        Notes
-        -----
-        Note that the return values are cached together with the parameter `n` to avoid
-        unnecessary recalculations.
-
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1854,6 +1880,11 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         p_range: Determine and validate slice index range.
         ShortTimeFFT: Class this method belongs to.
+
+        Notes
+        -----
+        Note that the return values are cached together with the parameter `n` to avoid
+        unnecessary recalculations.
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
@@ -1914,11 +1945,6 @@ class ShortTimeFFT:
         p1_ : int
             End of interval (last value is p1-1).
 
-        Notes
-        -----
-        A ``ValueError`` is raised if ``p_min <= p0 < p1 <= p_max(n)`` does not
-        hold.
-
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1929,6 +1955,11 @@ class ShortTimeFFT:
         p_num: Number of time slices, i.e., `p_max` - `p_min`.
         upper_border_begin: Where post-padding effects start.
         ShortTimeFFT: Class this property belongs to.
+
+        Notes
+        -----
+        A ``ValueError`` is raised if ``p_min <= p0 < p1 <= p_max(n)`` does not
+        hold.
         """
         p_max = self.p_max(n)  # shorthand
         p0_ = self.p_min if p0 is None else p0
@@ -1949,21 +1980,21 @@ class ShortTimeFFT:
 
         Parameters
         ----------
-        n
+        n : int
             Number of sample of the input signal.
-        p0
+        p0 : int, optional
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
             slice.
-        p1
+        p1 : int, optional
             The end of the array. If ``None`` then `p_max(n)` is used.
-        k_offset
+        k_offset : int
             Index of first sample (t = 0) in `x`.
 
-        Notes
-        -----
-        Note that the returned array is cached together with the method's call
-        parameters to avoid unnecessary recalculations.
+        Returns
+        -------
+        t : ndarray
+            1D array of times of the STFT slices from `p0` to `p1` - 1.
 
         See Also
         --------
@@ -1973,6 +2004,11 @@ class ShortTimeFFT:
         T: Sampling interval of input signal and of the window (``1/fs``).
         fs: Sampling frequency (being ``1/T``)
         ShortTimeFFT: Class this method belongs to.
+
+        Notes
+        -----
+        Note that the returned array is cached together with the method's call
+        parameters to avoid unnecessary recalculations.
         """
         if not (n > 0 and isinstance(n, int | np.integer)):
             raise ValueError(f"Parameter {n=} is not a positive integer!")
@@ -1988,15 +2024,28 @@ class ShortTimeFFT:
         return return_value
 
     def nearest_k_p(self, k: int, left: bool = True) -> int:
-        """Return nearest sample index k_p for which t[k_p] == t[p] holds.
+        """Return nearest sample index k_p for which ``t[k_p] == t[p]`` holds.
 
-        The nearest next smaller time sample p (where t[p] is the center
-        position of the window of the p-th slice) is p_k = k // `hop`.
+        The nearest next smaller time sample p (where ``t[p]`` is the center
+        position of the window of the p-th slice) is ``p_k = k // hop``.
         If `hop` is a divisor of `k` then `k` is returned.
-        If `left` is set then p_k * `hop` is returned else (p_k+1) * `hop`.
+        If `left` is set then ``p_k * hop`` is returned else ``(p_k+1) * hop``.
 
         This method can be used to slice an input signal into chunks for
         calculating the STFT and iSTFT incrementally.
+
+        Parameters
+        ----------
+        k : int
+            Sample index for which the nearest slice center index is sought.
+        left : bool, optional
+            If ``True`` then the nearest smaller index is returned, else the
+            nearest larger index is returned. Defaults to ``True``.
+
+        Returns
+        -------
+        int
+            Nearest sample index k_p for which ``t[k_p] == t[p]`` holds.
 
         See Also
         --------
@@ -2154,23 +2203,26 @@ class ShortTimeFFT:
                center_bins: bool = False) -> tuple[float, float, float, float]:
         """Return minimum and maximum values time-frequency values.
 
-        A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
-        of the time-frequency domain of the `~ShortTimeFFT.stft`.
-        That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
-        with the same name.
-
         Parameters
         ----------
         n : int
             Number of samples in input signal.
         axes_seq : {'tf', 'ft'}
             Return time extent first and then frequency extent or vice versa.
-        center_bins: bool
+        center_bins : bool
             If set (default ``False``), the values of the time slots and
             frequency bins are moved from the side the middle. This is useful,
             when plotting the `~ShortTimeFFT.stft` values as step functions,
             i.e., with no interpolation.
+
+        Returns
+        -------
+        tuple
+            A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
+            ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
+            of the time-frequency domain of the `~ShortTimeFFT.stft`.
+            That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
+            with the same name.
 
         See Also
         --------

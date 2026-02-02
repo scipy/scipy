@@ -406,27 +406,29 @@ add_newdoc("bdtrik",
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
-    cumulative incomplete beta distribution.
+    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
+    distribution to the cumulative incomplete beta distribution.
 
     Computation of `k` involves a search for a value that produces the desired
     value of `y`. The search relies on the monotonicity of `y` with `k`.
 
-    Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
+    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
 
     References
     ----------
     .. [1] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] Barry Brown, James Lovato, and Kathy Russell,
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.5#E5
+    .. [3] Barry Brown, James Lovato, and Kathy Russell,
            CDFLIB: Library of Fortran Routines for Cumulative Distribution
            Functions, Inverses, and Other Parameters.
 
     """)
 
 add_newdoc("bdtrin",
-    """
+    r"""
     bdtrin(k, y, p, out=None)
 
     Inverse function to `bdtr` with respect to `n`.
@@ -458,22 +460,35 @@ add_newdoc("bdtrin",
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
-    cumulative incomplete beta distribution.
-
-    Computation of `n` involves a search for a value that produces the desired
-    value of `y`. The search relies on the monotonicity of `y` with `n`.
-
-    Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
+    This function uses the `find_minimum_number_of_trials` method of the
+    `binomial_distribution` class of the Boost.Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    How often do we have to flip a fair coin to have at least a 90% chance
+    of getting 10 heads? `bdtrin` answers this question:
+
+    >>> import scipy.special as sc
+    >>> k = 10  # number of times we want heads
+    >>> p = 0.5  # probability of flipping heads
+    >>> y = 0.9  # cumulative probability
+    >>> result = sc.bdtrin(k, y, p)
+    >>> result
+    15.90442928275109
+
+    To verify, compute the cumulative probability of getting 10 or fewer
+    successes in 16 trials with probability 0.5 using the binomial
+    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
+    number of trials, we round up to the next integer:
+
+    >>> from scipy.stats import Binomial
+    >>> Binomial(n=16, p=p).cdf(k)
+    0.8949432373046875
+
     """)
 
 add_newdoc("btdtria",
@@ -1296,7 +1311,7 @@ add_newdoc("chndtr",
     r"""
     chndtr(x, df, nc, out=None)
 
-    Non-central chi square cumulative distribution function
+    Non-central chi square cumulative distribution function.
 
     The cumulative distribution function is given by:
 
@@ -1371,7 +1386,7 @@ add_newdoc("chndtrix",
     """
     chndtrix(p, df, nc, out=None)
 
-    Inverse to `chndtr` vs `x`
+    Inverse to `chndtr` vs `x`.
 
     Calculated using a search to find a value for `x` that produces the
     desired value of `p`.
@@ -1431,7 +1446,7 @@ add_newdoc("chndtridf",
     """
     chndtridf(x, p, nc, out=None)
 
-    Inverse to `chndtr` vs `df`
+    Inverse to `chndtr` vs `df`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -1490,7 +1505,7 @@ add_newdoc("chndtrinc",
     """
     chndtrinc(x, df, p, out=None)
 
-    Inverse to `chndtr` vs `nc`
+    Inverse to `chndtr` vs `nc`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -1600,8 +1615,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E6
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1716,8 +1730,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E5
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1808,8 +1821,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E1
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1907,8 +1919,7 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E1
@@ -2032,27 +2043,24 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.20.iii
     .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
            Integrands with the Square Root of Two Quadratic Factors," J.
            Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
-           https://doi.org/10.1016/S0377-0427(00)00282-X
+           :doi:`10.1016/S0377-0427(00)00282-X`.
     .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
            Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
            Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
            Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
-           Switzerland: Springer Nature Switzerland)
-           https://arxiv.org/abs/1806.06725
-           https://doi.org/10.1007/978-3-030-04480-0
+           Switzerland: Springer Nature Switzerland).
+           :doi:`10.1007/978-3-030-04480-0`. https://arxiv.org/abs/1806.06725
     .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
            Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
-           pp. 288-303, 1994.
+           pp. 288-303, 1994. :doi:`10.1137/S0036141092228477`.
            https://arxiv.org/abs/math/9310223
-           https://doi.org/10.1137/S0036141092228477
 
     Examples
     --------
@@ -2136,7 +2144,7 @@ add_newdoc("entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -2290,7 +2298,7 @@ add_newdoc("eval_jacobi",
 
     where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.42 in [AS]_ for details.
+    :math:`n`. See 22.5.42 in [AS]_ or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -2323,6 +2331,8 @@ add_newdoc("eval_jacobi",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E7
 
     """)
 
@@ -2339,8 +2349,8 @@ add_newdoc("eval_sh_jacobi",
         G_n^{(p, q)}(x)
           = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
-    polynomial. See 22.5.2 in [AS]_ for details.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+    See 22.5.2 in [AS]_ (or equivalently [DLMF]_)  for details.
 
     Parameters
     ----------
@@ -2371,6 +2381,8 @@ add_newdoc("eval_sh_jacobi",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E2
 
     """)
 
@@ -2389,7 +2401,7 @@ add_newdoc("eval_gegenbauer",
           {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.46 in [AS]_ for details.
+    :math:`n`. See 22.5.46 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2421,6 +2433,8 @@ add_newdoc("eval_gegenbauer",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E9
 
     """)
 
@@ -2438,7 +2452,7 @@ add_newdoc("eval_chebyt",
         T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.47 in [AS]_ for details.
+    :math:`n`. See 22.5.47 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2475,6 +2489,8 @@ add_newdoc("eval_chebyt",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E11_2
 
     """)
 
@@ -2492,7 +2508,7 @@ add_newdoc("eval_chebyu",
         U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.48 in [AS]_ for details.
+    :math:`n`. See 22.5.48 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2523,6 +2539,8 @@ add_newdoc("eval_chebyu",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E11_4
 
     """)
 
@@ -2539,8 +2557,8 @@ add_newdoc("eval_chebys",
 
         S_n(x) = U_n(x/2)
 
-    where :math:`U_n` is a Chebyshev polynomial of the second
-    kind. See 22.5.13 in [AS]_ for details.
+    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+    See 22.5.13 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2569,6 +2587,8 @@ add_newdoc("eval_chebys",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E3
 
     Examples
     --------
@@ -2600,7 +2620,7 @@ add_newdoc("eval_chebyc",
         C_n(x) = 2 T_n(x/2)
 
     where :math:`T_n` is a Chebyshev polynomial of the first kind. See
-    22.5.11 in [AS]_ for details.
+    22.5.11 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2630,6 +2650,8 @@ add_newdoc("eval_chebyc",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E3
 
     Examples
     --------
@@ -2661,7 +2683,7 @@ add_newdoc("eval_sh_chebyt",
         T_n^*(x) = T_n(2x - 1)
 
     where :math:`T_n` is a Chebyshev polynomial of the first kind. See
-    22.5.14 in [AS]_ for details.
+    22.5.14 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2691,6 +2713,8 @@ add_newdoc("eval_sh_chebyt",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E7
 
     """)
 
@@ -2708,7 +2732,7 @@ add_newdoc("eval_sh_chebyu",
         U_n^*(x) = U_n(2x - 1)
 
     where :math:`U_n` is a Chebyshev polynomial of the first kind. See
-    22.5.15 in [AS]_ for details.
+    22.5.15 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2737,6 +2761,8 @@ add_newdoc("eval_sh_chebyu",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E8
 
     """)
 
@@ -2754,7 +2780,7 @@ add_newdoc("eval_legendre",
         P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.49 in [AS]_ for details.
+    :math:`n`. See 22.5.49 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2785,6 +2811,8 @@ add_newdoc("eval_legendre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/15.9.E7
 
     Examples
     --------
@@ -2838,7 +2866,7 @@ add_newdoc("eval_sh_legendre",
         P_n^*(x) = P_n(2x - 1)
 
     where :math:`P_n` is a Legendre polynomial. See 2.2.11 in [AS]_
-    for details.
+    or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -2868,6 +2896,8 @@ add_newdoc("eval_sh_legendre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E10
 
     """)
 
@@ -2886,7 +2916,7 @@ add_newdoc("eval_genlaguerre",
           {}_1F_1(-n, \alpha + 1, x).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.54 in [AS]_ for details. The Laguerre
+    :math:`n`. See 22.5.54 in [AS]_ or [DLMF]_ for details. The Laguerre
     polynomials are the special case where :math:`\alpha = 0`.
 
     Parameters
@@ -2921,6 +2951,8 @@ add_newdoc("eval_genlaguerre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E12
 
     """)
 
@@ -2937,8 +2969,9 @@ add_newdoc("eval_laguerre",
 
         L_n(x) = {}_1F_1(-n, 1, x).
 
-    See 22.5.16 and 22.5.54 in [AS]_ for details. When :math:`n` is an
-    integer the result is a polynomial of degree :math:`n`.
+    See 22.5.16 and 22.5.54 in [AS]_ (or equivalently [DLMF1]_ and [DLMF2]_)
+    for details. When :math:`n` is an integer the result is a polynomial
+    of degree :math:`n`.
 
     Parameters
     ----------
@@ -2969,6 +3002,10 @@ add_newdoc("eval_laguerre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF1] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1#I1.ix7.p1
+    .. [DLMF2] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E12
 
      """)
 
@@ -2985,7 +3022,7 @@ add_newdoc("eval_hermite",
         H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
 
     :math:`H_n` is a polynomial of degree :math:`n`. See 22.11.7 in
-    [AS]_ for details.
+    [AS]_ or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -3014,6 +3051,8 @@ add_newdoc("eval_hermite",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
 
     """)
 
@@ -3031,7 +3070,7 @@ add_newdoc("eval_hermitenorm",
         He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
 
     :math:`He_n` is a polynomial of degree :math:`n`. See 22.11.8 in
-    [AS]_ for details.
+    [AS]_ or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -3060,6 +3099,8 @@ add_newdoc("eval_hermitenorm",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
 
     """)
 
@@ -3070,7 +3111,7 @@ add_newdoc("expn",
     Generalized exponential integral En.
 
     For integer :math:`n \geq 0` and real :math:`x \geq 0` the
-    generalized exponential integral is defined as [dlmf]_
+    generalized exponential integral is defined as [DLMF]_
 
     .. math::
 
@@ -3097,7 +3138,7 @@ add_newdoc("expn",
 
     References
     ----------
-    .. [dlmf] Digital Library of Mathematical Functions, 8.19.2
+    .. [DLMF] Digital Library of Mathematical Functions, 8.19.2
               https://dlmf.nist.gov/8.19#E2
 
     Examples
@@ -3449,7 +3490,7 @@ add_newdoc("fdtridfd",
     """
     fdtridfd(dfn, p, x, out=None)
 
-    Inverse to `fdtr` vs dfd
+    Inverse to `fdtr` vs dfd.
 
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
 
@@ -3542,7 +3583,7 @@ add_newdoc("gdtr",
 
     .. math::
 
-        F = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        F(x) = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3562,7 +3603,7 @@ add_newdoc("gdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The CDF of the gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
@@ -3660,7 +3701,7 @@ add_newdoc("gdtrc",
 
     .. math::
 
-        F = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        S(x) = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3680,7 +3721,7 @@ add_newdoc("gdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The survival function of the gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
@@ -3804,24 +3845,12 @@ add_newdoc("gdtria",
     gdtr : CDF of the gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `a`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtria` is implemented in terms of the incomplete gamma inverse as
+    ``gdtria(p, b, x) = gammaincinv(b, p)/x``.
 
     Examples
     --------
@@ -3897,7 +3926,7 @@ add_newdoc("gdtrib",
            "A new hybrid quadratic/bisection algorithm for finding the zero of a
            nonlinear function without using derivatives".
            Advances in Engineering Software, 28(3), 145-149.
-           https://doi.org/10.1016/s0965-9978(96)00051-8
+           :doi:`10.1016/s0965-9978(96)00051-8`.
 
     Examples
     --------
@@ -3950,24 +3979,12 @@ add_newdoc("gdtrix",
     gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
     gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `x` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `x`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtrix` is implemented in terms of the incomplete gamma inverse as
+    ``gdtrix(a, b, p) = gammaincinv(b, p)/a``.
 
     Examples
     --------
@@ -3981,7 +3998,7 @@ add_newdoc("gdtrix",
     Verify the inverse.
 
     >>> gdtrix(1.2, 3.4, p)
-    5.5999999999999996
+    5.6
     """)
 
 
@@ -4173,7 +4190,7 @@ add_newdoc("hyp1f1",
 
        {}_1F_1(a; b; x) = \sum_{k = 0}^\infty \frac{(a)_k}{(b)_k k!} x^k.
 
-    See [dlmf]_ for more details. Here :math:`(\cdot)_k` is the
+    See [DLMF]_ for more details. Here :math:`(\cdot)_k` is the
     Pochhammer symbol; see `poch`.
 
     Parameters
@@ -4204,11 +4221,10 @@ add_newdoc("hyp1f1",
 
     References
     ----------
-    .. [dlmf] NIST Digital Library of Mathematical Functions
+    .. [DLMF] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/13.2#E2
     .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-    .. [3] Zhang, Jin, "Computation of Special Functions", John Wiley
-           and Sons, Inc, 1996.
+    .. [3] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
 
     Examples
     --------
@@ -4246,7 +4262,7 @@ add_newdoc("hyperu",
     r"""
     hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U
+    Confluent hypergeometric function U.
 
     It is defined as the solution to the equation
 
@@ -4260,7 +4276,7 @@ add_newdoc("hyperu",
 
        U(a, b, x) \sim x^{-a}
 
-    as :math:`x \to \infty`. See [dlmf]_ for more details.
+    as :math:`x \to \infty`. See [DLMF]_ for more details.
 
     Parameters
     ----------
@@ -4278,7 +4294,7 @@ add_newdoc("hyperu",
 
     References
     ----------
-    .. [dlmf] NIST Digital Library of Mathematics Functions
+    .. [DLMF] NIST Digital Library of Mathematics Functions
               https://dlmf.nist.gov/13.2#E6
 
     Examples
@@ -4360,7 +4376,7 @@ add_newdoc("kl_div",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -4368,7 +4384,7 @@ add_newdoc("kn",
     r"""
     kn(n, x, out=None)
 
-    Modified Bessel function of the second kind of integer order `n`
+    Modified Bessel function of the second kind of integer order `n`.
 
     Returns the modified Bessel function of the second kind for integer order
     `n` at real `z`.
@@ -4408,7 +4424,7 @@ add_newdoc("kn",
            http://netlib.org/amos/
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
-           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
+           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265.
 
     Examples
     --------
@@ -4435,7 +4451,7 @@ add_newdoc("kolmogi",
     """
     kolmogi(p, out=None)
 
-    Inverse Survival Function of Kolmogorov distribution
+    Inverse Survival Function of Kolmogorov distribution.
 
     It is the inverse function to `kolmogorov`.
     Returns y such that ``kolmogorov(y) == p``.
@@ -4711,13 +4727,13 @@ add_newdoc("lpmv",
 
     .. math::
 
-        P_v^m = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} P_v(x)
+        P_v^m(x) = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} (P_v(x))
 
     where
 
     .. math::
 
-        P_v = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
+        P_v(x) = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
                 \left(\frac{1 - x}{2}\right)^k
 
     is the Legendre function of the first kind. Here :math:`(\cdot)_k`
@@ -4733,7 +4749,7 @@ add_newdoc("lpmv",
     x : array_like
         Argument (float). Must have ``|x| <= 1``.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
@@ -4746,9 +4762,41 @@ add_newdoc("lpmv",
 
     References
     ----------
-    .. [1] Zhang, Jin, "Computation of Special Functions", John Wiley
-           and Sons, Inc, 1996.
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
 
+    Examples
+    --------
+    Compute a single associated Legendre function value:
+
+    >>> from scipy.special import lpmv
+    >>> lpmv(1, 2.5, 0.3)
+    -0.1292299
+
+    Plot the associated Legendre functions for orders ``m = 1`` and
+    ``m = 2`` and degrees ``v = 0, ..., 5``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> nus = np.arange(0, 6)
+    >>> xs = np.linspace(-1+1e-5, 1-1e-5, 101)
+
+    Order 1.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, lpmv(1, nus, xs[:, np.newaxis]), "-")
+    >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$P_\nu^1(x)$")
+    >>> plt.show()
+
+    Order 2.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, lpmv(2, nus, xs[:, np.newaxis]), "-")
+    >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$P_\nu^2(x)$")
+    >>> plt.show()
     """)
 
 add_newdoc("nbdtr",
@@ -4762,7 +4810,7 @@ add_newdoc("nbdtr",
 
     .. math::
 
-        F = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        F(k) = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that `k` or fewer failures precede the nth
@@ -4781,7 +4829,7 @@ add_newdoc("nbdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k` or fewer failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -4888,7 +4936,7 @@ add_newdoc("nbdtrc",
 
     .. math::
 
-        F = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        S(k) = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that more than `k` failures precede the nth
@@ -4907,7 +4955,7 @@ add_newdoc("nbdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -5146,7 +5194,7 @@ add_newdoc("nbdtrik",
     -----
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
 
-    Formula 26.5.26 of [2]_,
+    Formula 26.5.26 of [2]_ or [3]_,
 
     .. math::
         \sum_{j=k + 1}^\infty {{n + j - 1}
@@ -5166,6 +5214,8 @@ add_newdoc("nbdtrik",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.E24
 
     Examples
     --------
@@ -5251,7 +5301,7 @@ add_newdoc("nbdtrin",
     -----
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
 
-    Formula 26.5.26 of [2]_,
+    Formula 26.5.26 of [2]_ or [3]_,
 
     .. math::
         \sum_{j=k + 1}^\infty {{n + j - 1}
@@ -5271,6 +5321,8 @@ add_newdoc("nbdtrin",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.E24
 
     Examples
     --------
@@ -5956,7 +6008,7 @@ add_newdoc("ndtri",
     """
     ndtri(y, out=None)
 
-    Inverse of `ndtr` vs x
+    Inverse of `ndtr` vs x.
 
     Returns the argument x for which the area under the standard normal
     probability density function (integrated from minus infinity to `x`)
@@ -6067,7 +6119,7 @@ add_newdoc("pdtrc",
     """
     pdtrc(k, m, out=None)
 
-    Poisson survival function
+    Poisson survival function.
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
@@ -6117,7 +6169,7 @@ add_newdoc("pdtri",
     """
     pdtri(k, y, out=None)
 
-    Inverse to `pdtr` vs m
+    Inverse to `pdtr` vs m.
 
     Returns the Poisson variable `m` such that the sum from 0 to `k` of
     the Poisson density is equal to the given probability `y`:
@@ -6182,6 +6234,12 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
     Notes
     -----
     This function relies on the ``gamma_q_inva`` function from the Boost
@@ -6190,12 +6248,6 @@ add_newdoc("pdtrik",
     References
     ----------
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrc : Poisson survival function
-    pdtri : inverse of `pdtr` with respect to `m`
 
     Examples
     --------
@@ -6233,7 +6285,7 @@ add_newdoc("poch",
 
         (z)_m = z (z + 1) ... (z + m - 1)
 
-    See [dlmf]_ for more details.
+    See [DLMF]_ for more details.
 
     Parameters
     ----------
@@ -6249,7 +6301,7 @@ add_newdoc("poch",
 
     References
     ----------
-    .. [dlmf] Nist, Digital Library of Mathematical Functions
+    .. [DLMF] Nist, Digital Library of Mathematical Functions
         https://dlmf.nist.gov/5.2#iii
 
     Examples
@@ -6532,7 +6584,7 @@ add_newdoc("rel_entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
@@ -6590,7 +6642,7 @@ add_newdoc("shichi",
       \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm [1]_.
+    principal branch of the logarithm [1]_ (see also [2]_).
 
     Parameters
     ----------
@@ -6620,8 +6672,8 @@ add_newdoc("shichi",
     + 0j)`` differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [2]_ *shichi* routine. For complex arguments the algorithm is based
-    on Mpmath's [3]_ *shi* and *chi* routines.
+    [3]_ *shichi* routine. For complex arguments the algorithm is based
+    on Mpmath's [4]_ *shi* and *chi* routines.
 
     References
     ----------
@@ -6629,9 +6681,11 @@ add_newdoc("shichi",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
            (See Section 5.2.)
-    .. [2] Cephes Mathematical Functions Library,
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/6.2.E15 and https://dlmf.nist.gov/6.2.E16
+    .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [3] Fredrik Johansson and others.
+    .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
            arithmetic" (Version 0.19) http://mpmath.org/
 
@@ -6700,7 +6754,7 @@ add_newdoc("sici",
       \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm [1]_.
+    principal branch of the logarithm [1]_ (see also [2]_).
 
     Parameters
     ----------
@@ -6730,8 +6784,8 @@ add_newdoc("sici",
     differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [2]_ *sici* routine. For complex arguments the algorithm is based
-    on Mpmath's [3]_ *si* and *ci* routines.
+    [3]_ *sici* routine. For complex arguments the algorithm is based
+    on Mpmath's [4]_ *si* and *ci* routines.
 
     References
     ----------
@@ -6739,9 +6793,12 @@ add_newdoc("sici",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
            (See Section 5.2.)
-    .. [2] Cephes Mathematical Functions Library,
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/6.2.E9, https://dlmf.nist.gov/6.2.E12,
+           and https://dlmf.nist.gov/6.2.E13
+    .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [3] Fredrik Johansson and others.
+    .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
            arithmetic" (Version 0.19) http://mpmath.org/
 
@@ -6804,7 +6861,7 @@ add_newdoc("smirnov",
     r"""
     smirnov(n, d, out=None)
 
-    Kolmogorov-Smirnov complementary cumulative distribution function
+    Kolmogorov-Smirnov complementary cumulative distribution function.
 
     Returns the exact Kolmogorov-Smirnov complementary cumulative
     distribution function,(aka the Survival Function) of Dn+ (or Dn-)
@@ -6917,7 +6974,7 @@ add_newdoc("smirnovi",
     """
     smirnovi(n, p, out=None)
 
-    Inverse to `smirnov`
+    Inverse to `smirnov`.
 
     Returns `d` such that ``smirnov(n, d) == p``, the critical value
     corresponding to `p`.
@@ -7087,7 +7144,7 @@ add_newdoc(
     r"""
     stdtr(df, t, out=None)
 
-    Student t distribution cumulative distribution function
+    Student t distribution cumulative distribution function.
 
     Returns the integral:
 
@@ -7187,7 +7244,7 @@ add_newdoc("stdtridf",
     """
     stdtridf(p, t, out=None)
 
-    Inverse of `stdtr` vs df
+    Inverse of `stdtr` vs df.
 
     Returns the argument df such that stdtr(df, t) is equal to `p`.
 
@@ -7635,9 +7692,9 @@ add_newdoc("owens_t",
 
     Parameters
     ----------
-    h: array_like
+    h : array_like
         Input value.
-    a: array_like
+    a : array_like
         Input value.
     out : ndarray, optional
         Optional output array for the function results

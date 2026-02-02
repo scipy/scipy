@@ -9,7 +9,7 @@ from numpy.testing import (assert_allclose, assert_equal, assert_array_equal,
 
 from scipy.spatial import distance
 from scipy.stats import shapiro
-from scipy.stats._sobol import _test_find_index
+from scipy.stats._sobol import _test_find_index, _test_low_0_bit
 from scipy.stats import qmc
 from scipy.stats._qmc import (
     van_der_corput, n_primes, primes_from_2_to,
@@ -883,6 +883,25 @@ class TestSobol(QMCEngineTests):
         assert_array_equal(self.unscramble_nd, sample)
 
 
+class TestLow0Bit:
+    def test_examples(self):
+        test_vector = [
+            # from low_0_bit's docstring
+            (0b0000, 1),
+            (0b0001, 2),
+            (0b0010, 1),
+            (0b0101, 2),
+            (0b0111, 4),
+            # gh-23409
+            (2 ** 32 - 1, 33),
+            (2 ** 32, 1),
+            (2 ** 33 - 1, 34),
+            (2 ** 64 - 1, 65),
+        ]
+        for in_, out in test_vector:
+            assert_equal(_test_low_0_bit(in_), out)
+
+
 class TestPoisson(QMCEngineTests):
     qmce = qmc.PoissonDisk
     can_scramble = False
@@ -937,13 +956,36 @@ class TestPoisson(QMCEngineTests):
             assert len(sample) <= ns
             assert l2_norm(sample) >= radius
 
-    def test_fill_space(self):
+    @pytest.mark.parametrize("l_bounds, u_bounds",  # add bounds to test gh-22819
+        [(None, None), ([-5, -5], [5, 5]),  ([1.1, 1.1], [5.1, 5.1])])
+    def test_fill_space(self, l_bounds, u_bounds):
         radius = 0.2
-        engine = self.qmce(d=2, radius=radius)
+        engine = self.qmce(d=2, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
 
         sample = engine.fill_space()
+        # rtol to accommodate Accelerate; see gh-24486
+        rtol = 1e-7
+        assert l2_norm(sample) >= radius * (1 - rtol)
+
+    def test_bounds_shift_scale(self):
+        # test a reasonable property: as long as shape of region is a hypercube,
+        # bounds just shift and scale the sample.
+        radius = 0.2  # arbitrary parameters
+        shift = np.asarray([-2.1, 3.4])
+        scale = 2.6
+
+        rng = np.random.default_rng(8504196751)
+        engine = self.qmce(d=2, radius=radius*scale, rng=rng,
+                           l_bounds=shift, u_bounds=shift + scale)
+        res = engine.fill_space()
+
+        rng = np.random.default_rng(8504196751)
+        engine = self.qmce(d=2, radius=radius, rng=rng)
+        ref = engine.fill_space()
+
         # circle packing problem is np complex
-        assert l2_norm(sample) >= radius
+        assert l2_norm(res) >= radius
+        assert_allclose(res, ref*scale + shift)
 
     @pytest.mark.parametrize("l_bounds", [[-1, -2, -1], [1, 2, 1]])
     def test_sample_inside_lower_bounds(self, l_bounds):
