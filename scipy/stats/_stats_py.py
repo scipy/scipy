@@ -9706,7 +9706,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None, *, 
     u_weights, v_weights : 1d array_like, optional
         Weights or counts corresponding with the sample or probability masses
         corresponding with the support values. Must be broadcastable with corresponding
-        sample/support. All elements must be positive and finite. If unspecified, each
+        sample/support. All elements must be non-negative and finite. If unspecified, each
         value is assigned the same weight.
 
     axis : int or None, default: 0
@@ -9791,7 +9791,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None, *, axis=
     u_weights, v_weights : 1d array_like, optional
         Weights or counts corresponding with the sample or probability masses
         corresponding with the support values. Must be broadcastable with corresponding
-        sample/support. All elements must be positive and finite. If unspecified, each
+        sample/support. All elements must be non-negative and finite. If unspecified, each
         value is assigned the same weight.
     axis : int or None, default: 0
         If an int, the axis of the input along which to compute the statistic.
@@ -9970,19 +9970,15 @@ def _cdf_distance_iv(x, y, wx, wy, axis):
 
     if wx is None and wy is None:
         x, y = _broadcast_arrays((x, y), axis=axis, xp=xp)
-        x, y, = xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1)
     elif wx is None:
         x, y, wy = _broadcast_arrays((x, y, wy), axis=axis, xp=xp)
-        x, y, wy = (xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1),
-                    xp.moveaxis(wy, axis, -1))
     elif wy is None:
         x, y, wx = _broadcast_arrays((x, y, wx), axis=axis, xp=xp)
-        x, y, wx = (xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1),
-                    xp.moveaxis(wx, axis, -1))
     else:
         x, y, wx, wy = _broadcast_arrays((x, y, wx, wy), axis=axis, xp=xp)
-        x, y, wx, wy = (xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1),
-                        xp.moveaxis(wx, axis, -1), xp.moveaxis(wy, axis, -1))
+    x, y, = xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1)
+    wx = wx if wx is None else xp.moveaxis(wx, axis, -1)
+    wy = wy if wy is None else xp.moveaxis(wy, axis, -1)
 
     # technically, if only one of wx were infinite along `axis`, we could
     # treat it as if that weight were unity and all the rest were zero.
