@@ -8018,6 +8018,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     # These counts are given by the differences between consecutive ("min" or "max")
     # ranks corresponding with the observations in the (sorted) samples.
     ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
+    ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
     one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype, device=xp_device(ranks))
     cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
     cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
