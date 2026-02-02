@@ -15,7 +15,7 @@ from scipy._lib import doccer
 from scipy._lib._docscrape import FunctionDoc
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy.special import comb, entr
 
@@ -3190,7 +3190,7 @@ class rv_discrete(rv_generic):
         ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
         probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
         and ``pk`` must have the same shape, and ``xk`` must be unique.
-    inc : integer, optional
+    inc : int, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
     badvalue : float, optional

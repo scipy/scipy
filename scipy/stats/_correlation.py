@@ -5,10 +5,11 @@ from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
-from scipy.stats._stats_mstats_common import TheilslopesResult, _n_samples_optional_x
+from scipy.stats._stats_mstats_common import (TheilslopesResult, _n_samples_optional_x,
+                                              SiegelslopesResult)
 
 
-__all__ = ['chatterjeexi', 'spearmanrho', 'theilslopes']
+__all__ = ['chatterjeexi', 'spearmanrho', 'theilslopes', 'siegelslopes']
 
 
 def _xi_statistic(x, y, y_continuous, xp):
@@ -90,7 +91,7 @@ def _unpack(res, _):
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
 def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
-    r"""Compute the xi correlation and perform a test of independence
+    r"""Compute the xi correlation and perform a test of independence.
 
     The xi correlation coefficient is a measure of association between two
     variables; the value tends to be close to zero when the variables are
@@ -105,6 +106,11 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         dependent variable. The (N-d) arrays must be broadcastable.
     axis : int, default: 0
         Axis along which to perform the test.
+    y_continuous : bool, default: False
+        Whether `y` is assumed to be drawn from a continuous distribution.
+        If `y` is drawn from a continuous distribution, results are valid
+        whether this is assumed or not, but enabling this assumption will
+        result in faster computation and typically produce similar results.
     method : 'asymptotic' or `PermutationMethod` instance, optional
         Selects the method used to calculate the *p*-value.
         Default is 'asymptotic'. The following options are available.
@@ -114,12 +120,6 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         * `PermutationMethod` instance. In this case, the p-value
           is computed using `permutation_test` with the provided
           configuration options and other appropriate settings.
-
-    y_continuous : bool, default: False
-        Whether `y` is assumed to be drawn from a continuous distribution.
-        If `y` is drawn from a continuous distribution, results are valid
-        whether this is assumed or not, but enabling this assumption will
-        result in faster computation and typically produce similar results.
 
     Returns
     -------
@@ -500,8 +500,122 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     >>> plt.show()
 
     """
-    if method not in ['joint', 'separate']:
-        raise ValueError("method must be either 'joint' or 'separate'."
+    return _robust_slopes(y, x=x, alpha=alpha, method=method, pfun='theilslopes')
+
+
+@xp_capabilities(np_only=True)
+@_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
+                          n_samples=_n_samples_optional_x,
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
+def siegelslopes(y, x=None, method='separate', *, axis=None):
+    r"""
+    Computes the Siegel estimator for a set of points (x, y).
+
+    `siegelslopes` implements a method for robust linear regression
+    using repeated medians (see [1]_) to fit a line to the points (x, y).
+    The method is robust to outliers with an asymptotic breakdown point
+    of 50%.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    method : {'hierarchical', 'separate'}
+        If 'hierarchical', estimate the intercept using the estimated
+        slope ``slope`` (default option).
+        If 'separate', estimate the intercept independent of the estimated
+        slope. See Notes for details.
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+
+    Returns
+    -------
+    result : ``SiegelslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        slope : float
+            Estimate of the slope of the regression line.
+        intercept : float
+            Estimate of the intercept of the regression line.
+
+    See Also
+    --------
+    theilslopes : a similar technique without repeated medians
+
+    Notes
+    -----
+    With ``n = len(y)``, compute ``m_j`` as the median of
+    the slopes from the point ``(x[j], y[j])`` to all other `n-1` points.
+    ``slope`` is then the median of all slopes ``m_j``.
+    Two ways are given to estimate the intercept in [1]_ which can be chosen
+    via the parameter ``method``.
+    The hierarchical approach uses the estimated slope ``slope``
+    and computes ``intercept`` as the median of ``y - slope*x``.
+    The other approach estimates the intercept separately as follows: for
+    each point ``(x[j], y[j])``, compute the intercepts of all the `n-1`
+    lines through the remaining points and take the median ``i_j``.
+    ``intercept`` is the median of the ``i_j``.
+
+    The implementation computes `n` times the median of a vector of size `n`
+    which can be slow for large vectors. There are more efficient algorithms
+    (see [2]_) which are not implemented here.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 2, with fields ``slope`` and
+    ``intercept``, so one can continue to write::
+
+        slope, intercept = siegelslopes(y, x)
+
+    References
+    ----------
+    .. [1] A. Siegel, "Robust Regression Using Repeated Medians",
+           Biometrika, Vol. 69, pp. 242-244, 1982.
+
+    .. [2] A. Stein and M. Werman, "Finding the repeated median regression
+           line", Proceedings of the Third Annual ACM-SIAM Symposium on
+           Discrete Algorithms, pp. 409-413, 1992.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-5, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
+
+    Compute the slope and intercept.  For comparison, also compute the
+    least-squares fit with `linregress`:
+
+    >>> res = stats.siegelslopes(y, x)
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results. The Siegel regression line is shown in red. The green
+    line shows the least-squares fit for comparison.
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
+
+    """
+    return _robust_slopes(y, x=x, method=method, pfun='siegelslopes')
+
+
+def _robust_slopes(y, *, x, alpha=None, method, pfun):
+    other_method = 'joint' if pfun == 'theilslopes' else 'hierarchical'
+    if method not in {other_method, 'separate'}:
+        raise ValueError(f"method must be either '{other_method}' or 'separate'. "
                          f"'{method}' is invalid.")
 
     y, x = xp_promote(y, x, force_floating=True, xp=np)
@@ -514,19 +628,31 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     # Compute sorted slopes only when deltax > 0
     deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
     deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
-    i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
-    # with NumPy:
-    deltax, deltay = deltax[..., i], deltay[..., i]
-    # with array API, mask must be sole index, so we'll need to broadcast it.
-    # indexing will ravel the array, so we'll need to reshape it after
+
+    if pfun == 'theilslopes':
+        i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
+        # with NumPy:
+        deltax, deltay = deltax[..., i], deltay[..., i]
+        # with array API, mask must be sole index, so we'll need to broadcast it.
+        # indexing will ravel the array, so we'll need to reshape it after
+
     deltax[deltax == 0] = np.nan
     slopes = deltay / deltax
-    slopes = np.sort(slopes, axis=-1)
     medslope = np.nanmedian(slopes, axis=-1)
-    if method == 'joint':
-        medinter = np.median(y - medslope * x, axis=-1)
-    else:
+
+    # siegelslope is median of medians rather than grand median
+    finalslope = np.nanmedian(medslope, axis=-1) if pfun == 'siegelslopes' else medslope
+
+    if method in {'joint', 'hierarchical'}:
+        medinter = np.median(y - finalslope[..., np.newaxis] * x, axis=-1)
+    elif pfun == 'theilslopes':
         medinter = np.median(y, axis=-1) - medslope * np.median(x, axis=-1)
+    else:
+        medinter = np.median(y - medslope * x, axis=-1)
+
+    if pfun == 'siegelslopes':
+        return SiegelslopesResult(slope=finalslope[()], intercept=medinter[()])
+
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
@@ -550,9 +676,10 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     Ru = np.minimum(np.round((nt - z*sigma)/2.).astype(np.int64), nt-1)
     Rl = np.maximum(np.round((nt + z*sigma)/2.).astype(np.int64) - 1, 0)
     R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
+    slopes = np.sort(slopes, axis=-1)
     delta = np.take_along_axis(slopes, R, axis=-1)
     i_nan = np.broadcast_to(sigsq < 0, delta.shape)
     delta[i_nan] = np.nan
 
-    return TheilslopesResult(slope=medslope[()], intercept=medinter[()],
+    return TheilslopesResult(slope=finalslope[()], intercept=medinter[()],
                              low_slope=delta[..., 0][()], high_slope=delta[..., 1][()])

@@ -313,7 +313,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         rr : bool
             Set to ``False`` to disable automatic redundancy removal.
             Default: ``True``.
-        rr_method : string
+        rr_method : str
             Method used to identify and remove redundant rows from the
             equality constraint matrix after presolve. For problems with
             dense input, the available methods for redundancy removal are:

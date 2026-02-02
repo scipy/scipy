@@ -14,9 +14,9 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from scipy._lib._testutils import _TestPythranFunc
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,
-                                   eager_warns, xp_ravel)
+                                   eager_warns, xp_ravel, is_jax)
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
@@ -25,6 +25,21 @@ lazy_xp_modules = [stats]
 
 @make_xp_test_case(epps_singleton_2samp)
 class TestEppsSingleton:
+    def test_epps_singleton_iv(self, xp):
+        # partial input validation test relevant to the addition of JIT support
+        # TODO: complete input validation tests
+        x = xp.asarray([-0.35, 2.55, 1.73, 0.73, 0.35])
+        y = xp.asarray([-1.15, -0.15, 2.48, 3.25, 3.71])
+        t = xp.asarray([0.4, -0.4])
+        if is_jax(xp):
+            w, p = epps_singleton_2samp(x, y, t=t)
+            xp_assert_equal(w, xp.asarray(xp.nan))
+            xp_assert_equal(p, xp.asarray(xp.nan))
+        else:
+            message = "t must contain positive elements only."
+            with pytest.raises(ValueError, match=message):
+                epps_singleton_2samp(x, y, t=t)
+
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_statistic_1(self, dtype, xp):
         # first example in Goerg & Kaiser, also in original paper of

@@ -14,9 +14,9 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
-from scipy._lib import array_api_compat
-import scipy._lib.array_api_compat.numpy as np_compat
-from scipy._lib.array_api_compat import is_array_api_obj, is_jax_array
+from scipy._external import array_api_compat
+import scipy._external.array_api_compat.numpy as np_compat
+from scipy._external.array_api_compat import is_array_api_obj, is_jax_array
 from scipy._lib._sparse import SparseABC
 
 

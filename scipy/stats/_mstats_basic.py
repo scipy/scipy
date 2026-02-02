@@ -46,12 +46,8 @@ from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
 import scipy.stats._stats_py as _stats_py
-
-from ._stats_mstats_common import (
-        _find_repeats,
-        TheilslopesResult,
-        siegelslopes as stats_siegelslopes
-        )
+from scipy.stats._stats_pythran import siegelslopes as siegelslopes_pythran
+from ._stats_mstats_common import _find_repeats, TheilslopesResult, SiegelslopesResult
 
 
 def _chk_asarray(a, axis):
@@ -1412,6 +1408,26 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     return _theilslopes(y, x, alpha=alpha, method=method)
 
 
+def _siegelslopes(y, x=None, method="hierarchical"):
+    if method not in ['hierarchical', 'separate']:
+        raise ValueError("method can only be 'hierarchical' or 'separate'")
+    y = np.asarray(y).ravel()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.asarray(x, dtype=float).ravel()
+        if len(x) != len(y):
+            raise ValueError("Array shapes are incompatible for broadcasting.")
+    if len(x) < 2:
+        raise ValueError("`x` and `y` must have length at least 2.")
+
+    dtype = np.result_type(x, y, np.float32)  # use at least float32
+    y, x = y.astype(dtype), x.astype(dtype)
+    medslope, medinter = siegelslopes_pythran(y, x, method)
+    medslope, medinter = np.asarray(medslope)[()], np.asarray(medinter)[()]
+    return SiegelslopesResult(slope=medslope, intercept=medinter)
+
+
 def siegelslopes(y, x=None, method="hierarchical"):
     r"""
     Computes the Siegel estimator for a set of points (x, y).
@@ -1466,7 +1482,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `scipy.stats.siegelslopes`
-    return stats_siegelslopes(y, x, method=method)
+    return _siegelslopes(y, x, method=method)
 
 
 SenSeasonalSlopesResult = _make_tuple_bunch('SenSeasonalSlopesResult',

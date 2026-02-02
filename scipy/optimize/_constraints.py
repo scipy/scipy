@@ -73,7 +73,10 @@ class NonlinearConstraint:
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
         iterations. A single value sets this property for all components.
-        Default is False. Has no effect for equality constraints.
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
     finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation. Default is
         None, which will select a reasonable value automatically depending
@@ -155,7 +158,10 @@ class LinearConstraint:
     keep_feasible : dense array_like of bool, optional
         Whether to keep the constraint components feasible throughout
         iterations. A single value sets this property for all components.
-        Default is False. Has no effect for equality constraints.
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
     """
     def _input_validation(self):
         if self.A.ndim != 2:
@@ -196,7 +202,7 @@ class LinearConstraint:
 
     def residual(self, x):
         """
-        Calculate the residual between the constraint function and the limits
+        Calculate the residual between the constraint function and the limits.
 
         For a linear constraint of the form::
 
@@ -214,7 +220,7 @@ class LinearConstraint:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns
@@ -283,7 +289,7 @@ class Bounds:
         return start + end
 
     def residual(self, x):
-        """Calculate the residual (slack) between the input and the bounds
+        """Calculate the residual (slack) between the input and the bounds.
 
         For a bound constraint of the form::
 
@@ -300,7 +306,7 @@ class Bounds:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns
