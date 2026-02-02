@@ -204,6 +204,15 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
+    def get_zstatistic_from_pvalue(self, p, U, n1, n2, alternative):
+        if alternative == 'less':
+            z = special.ndtri(p)
+        elif alternative == 'greater':
+            z = -special.ndtri(p)
+        else:
+            z = special.ndtri(p/2) if U < n1*n2/2 else -special.ndtri(p/2)
+        return z
+
     def test_empty(self, xp):
         x = xp.asarray([1, 2])  # generic, valid inputs
         y = xp.asarray([3, 4])
@@ -331,6 +340,11 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, **kwds)
         xp_assert_close(res.statistic, xp.asarray(expected[0], dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(expected[1], dtype=dtype))
+        if kwds['method'] == 'asymptotic':
+            z = self.get_zstatistic_from_pvalue(res.pvalue, res.statistic,
+                                                x.shape[0], y.shape[0],
+                                                alternative=kwds['alternative'])
+            xp_assert_close(res.zstatistic, xp.asarray(z, dtype=dtype))
 
     cases_continuity = [[{"alternative": 'two-sided', "use_continuity": True},
                          (23., 0.6865041817876)],
@@ -360,6 +374,10 @@ class TestMannWhitneyU:
         res = mannwhitneyu(y, x, method='asymptotic', **kwds)
         xp_assert_close(res.statistic, xp.asarray(expected[0]))
         xp_assert_close(res.pvalue, xp.asarray(expected[1]))
+        z = self.get_zstatistic_from_pvalue(res.pvalue, res.statistic,
+                                            x.shape[0], y.shape[0],
+                                            alternative=kwds['alternative'])
+        xp_assert_close(res.zstatistic, xp.asarray(z))
 
     def test_tie_correct(self, xp):
         # Test tie correction against R's wilcox.test
@@ -493,13 +511,21 @@ class TestMannWhitneyU:
     def test_equal_scalar_data(self):  # not important to preserve w/ array API
         # when two scalars are equal, there is an -0.5/0 in the asymptotic
         # approximation. R gives pvalue=1.0 for alternatives 'less' and
-        # 'greater' but NA for 'two-sided'. I don't see why, so I don't
-        # see a need for a special case to match that behavior.
+        # 'greater' but NA for 'two-sided'.
         assert_equal(mannwhitneyu(1, 1, method="exact"), (0.5, 1))
-        assert_equal(mannwhitneyu(1, 1, method="asymptotic"), (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='less'),
+                     (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='greater'),
+                     (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic"),
+                     (0.5, np.nan))
 
-        # without continuity correction, this becomes 0/0, which really
+        # without continuity correction, this definitely becomes 0/0, which really
         # is undefined
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='less',
+                                  use_continuity=False), (0.5, np.nan))
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic", alternative='greater',
+                                  use_continuity=False), (0.5, np.nan))
         assert_equal(mannwhitneyu(1, 1, method="asymptotic",
                                   use_continuity=False), (0.5, np.nan))
 

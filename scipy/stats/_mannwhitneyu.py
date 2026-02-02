@@ -1,10 +1,12 @@
 import threading
 import numpy as np
-from collections import namedtuple
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
+from scipy._lib._bunch import _make_tuple_bunch
 from scipy import special
 from scipy import stats
-from scipy.stats._stats_py import _rankdata
+from scipy.stats._stats_py import _rankdata, _get_pvalue, _SimpleNormal
+from scipy.stats._morestats import wilcoxon_result_unpacker, wilcoxon_outputs
+from scipy.stats._wilcoxon import _correction_sign
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 class _MWU:
@@ -139,7 +141,7 @@ class _MWU:
 _mwu_state = threading.local()
 
 
-def _get_mwu_z(U, n1, n2, t, continuity=True, *, xp):
+def _get_mwu_z(U, n1, n2, t, continuity=True, *, alternative, xp):
     '''Standardized MWU statistic'''
     # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
@@ -153,11 +155,11 @@ def _get_mwu_z(U, n1, n2, t, continuity=True, *, xp):
     numerator = U - mu
 
     # Continuity correction.
-    # Because SF is always used to calculate the p-value, we can always
-    # _subtract_ 0.5 for the continuity correction. This always increases the
-    # p-value to account for the rest of the probability mass _at_ q = U.
+    # Sign is chosen to always increase the p-value to account for the rest of the
+    # probability mass _at_ q = U.
     if continuity:
-        numerator -= 0.5
+        sign = _correction_sign(numerator, alternative, xp=xp)
+        numerator -= 0.5 * sign
 
     # no problem evaluating the norm SF at an infinity
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -194,7 +196,9 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
         if method not in methods:
             raise ValueError(f'`method` must be one of {methods}.')
 
-    return x, y, use_continuity, alternative, axis_int, method, xp
+    output_z = True if method == 'asymptotic' else False
+
+    return x, y, use_continuity, alternative, axis_int, method, output_z, xp
 
 
 def _mwu_choose_method(n1, n2, ties):
@@ -211,7 +215,14 @@ def _mwu_choose_method(n1, n2, ties):
     return "exact"
 
 
-MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
+MannwhitneyuResult = _make_tuple_bunch('MannwhitneyuResult', ['statistic', 'pvalue'])
+
+
+def mwu_result_object(statistic, pvalue, zstatistic=None):
+    res = MannwhitneyuResult(statistic, pvalue)
+    if zstatistic is not None:
+        res.zstatistic = zstatistic
+    return res
 
 
 @xp_capabilities(cpu_only=True,  # exact calculation only implemented in NumPy
@@ -219,7 +230,9 @@ MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
                                 ('dask.array', 'needs rankdata')],
                  # the exact null distribution is NumPy-only
                  jax_jit=False)
-@_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
+@_axis_nan_policy_factory(mwu_result_object, n_samples=2,
+                          result_to_tuple=wilcoxon_result_unpacker,
+                          n_outputs=wilcoxon_outputs)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):
     r'''Perform the Mann-Whitney U rank test on two independent samples.
@@ -282,12 +295,27 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
             Notes for the test statistic corresponding with sample `y`.
         pvalue : float
             The associated *p*-value for the chosen `alternative`.
+        zstatistic : array_like
+            When ``method = 'approx'``, this is the normalized z-statistic::
+
+                z = (U - mn - d) / se
+
+            where ``U`` is `statistic` as defined above, ``mn`` is the mean of the
+            distribution under the null hypothesis, ``d`` is a continuity
+            correction, and ``se`` is the standard error.
+            When ``method != 'asymptotic'``, this attribute is not available.
 
     Notes
     -----
     If ``U1`` is the statistic corresponding with sample `x`, then the
     statistic corresponding with sample `y` is
     ``U2 = x.shape[axis] * y.shape[axis] - U1``.
+
+    The p-value and standardized z-statistic produced by the Mann-Whitney U test is
+    identical to that produced by a Wilcoxon *rank sum* test, but different raw
+    statistics are associated with the tests. Specifically, the rank sum statistic
+    corresponding with the first sample is
+    ``R1 = U1 + x.shape[axis] * (x.shape[axis] + 1) / 2``.
 
     `mannwhitneyu` is for independent samples. For related / paired samples,
     consider `scipy.stats.wilcoxon`.
@@ -307,7 +335,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     See Also
     --------
-    scipy.stats.wilcoxon, scipy.stats.ranksums, scipy.stats.ttest_ind
+    scipy.stats.wilcoxon, scipy.stats.ttest_ind
 
     References
     ----------
@@ -325,6 +353,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
            or t-test? On assumptions for hypothesis tests and multiple \
            interpretations of decision rules." Statistics surveys, Vol. 4, pp.
            1-39, 2010. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2857732/
+    .. [6] MathWorks. "ranksum - Wilcoxon rank sum test - MATLAB".
+           https://www.mathworks.com/help/stats/ranksum.html.
 
     Examples
     --------
@@ -436,7 +466,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     '''
 
-    x, y, use_continuity, alternative, axis_int, method, xp = (
+    x, y, use_continuity, alternative, axis_int, method, output_z, xp = (
         _mwu_input_validation(x, y, use_continuity, alternative, axis, method))
 
     # axis=-1 and arrays broadcasted due to _axis_nan_policy decorator
@@ -453,11 +483,11 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
 
     if alternative == "greater":
-        U, f = U1, 1  # U is the statistic to use for p-value, f is a factor
+        U, f = U1, 1  # U is the statistic to use for exact p-value, f is a factor
     elif alternative == "less":
-        U, f = U2, 1  # Due to symmetry, use SF of U2 rather than CDF of U1
+        U, f = U2, 1  # Due to symmetry, it uses SF of U2 rather than CDF of U1
     else:
-        U, f = xp.maximum(U1, U2), 2  # multiply SF by two for two-sided test
+        U, f = xp.maximum(U1, U2), 2  # and will multiply SF by two for two-sided test
 
     if method == "auto":
         method = _mwu_choose_method(n1, n2, xp.any(t > 1))
@@ -466,10 +496,11 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         if not hasattr(_mwu_state, 's'):
             _mwu_state.s = _MWU(0, 0)
         _mwu_state.s.set_shapes(n1, n2)
-        p = xp.asarray(_mwu_state.s.sf(np.asarray(U, np.int64)), dtype=x.dtype)
+        p = xp.asarray(_mwu_state.s.sf(np.asarray(U, np.int64)), dtype=x.dtype) * f
     elif method == "asymptotic":
-        z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity, xp=xp)
-        p = special.ndtr(-z)
+        z = _get_mwu_z(U1, n1, n2, t, continuity=use_continuity,
+                       alternative=alternative, xp=xp)
+        p = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
     else:  # `PermutationMethod` instance (already validated)
         def statistic(x, y, axis):
             return mannwhitneyu(x, y, use_continuity=use_continuity,
@@ -479,12 +510,12 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         res = stats.permutation_test((x, y), statistic, axis=axis,
                                      **method._asdict(), alternative=alternative)
         p = res.pvalue
-        f = 1
-
-    p *= f
 
     # Ensure that test statistic is not greater than 1
     # This could happen for exact test when U = m*n/2
     p = xp.clip(p, 0., 1.)
 
-    return MannwhitneyuResult(U1, p)
+    res = MannwhitneyuResult(U1, p)
+    if output_z:
+        res.zstatistic = z[()] if z.ndim == 0 else z
+    return res
