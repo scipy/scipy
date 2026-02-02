@@ -343,6 +343,8 @@ def test_directional_stats(xp):
 @pytest.mark.parametrize('fun, kwargs', [
     (stats.bartlett, {}),
     (stats.alexandergovern, {}),
+    (stats.levene, {'center': 'median'}),
+    (stats.levene, {'center': 'mean'}),
     (stats.f_oneway, {'equal_var': True}),
     (stats.f_oneway, {'equal_var': False}),
 ])
@@ -411,3 +413,11 @@ def test_entropy(qk, axis, xp):
     res = stats.entropy(*marrays, axis=axis)
     ref = stats.entropy(*narrays, nan_policy='omit', axis=axis)
     xp_assert_close(res.data, xp.asarray(ref))
+
+
+@make_xp_test_case(stats.levene)
+def test_levene_center_trimmed(xp):
+    mxp, marrays, narrays = get_arrays(3, xp=xp)
+    message = "`center='trimmed'` is incompatible with MArray."
+    with pytest.raises(ValueError, match=message):
+        stats.levene(*marrays, center='trimmed', axis=-1)
