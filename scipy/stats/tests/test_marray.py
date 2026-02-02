@@ -50,11 +50,12 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="marray#99")
-@pytest.mark.parametrize('fun, kwargs', [make_xp_pytest_param(stats.gmean, {}),
-                                         make_xp_pytest_param(stats.hmean, {}),
-                                         make_xp_pytest_param(stats.pmean, {'p': 2}),
-                                         make_xp_pytest_param(stats.expectile, {'alpha': 0.4})
-                                         ])
+@pytest.mark.parametrize('fun, kwargs', [
+    make_xp_pytest_param(stats.gmean, {}),
+    make_xp_pytest_param(stats.hmean, {}),
+    make_xp_pytest_param(stats.pmean, {'p': 2}),
+    make_xp_pytest_param(stats.expectile, {'alpha': 0.4})
+])
 @pytest.mark.parametrize('axis', [0, 1])
 def test_xmean(fun, kwargs, axis, xp):
     mxp, marrays, narrays = get_arrays(2, xp=xp)
