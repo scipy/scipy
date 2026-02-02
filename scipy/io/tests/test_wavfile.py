@@ -5,12 +5,13 @@ import threading
 import warnings
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           break_cycles, IS_PYPY)
+from numpy.testing import assert_equal, assert_, assert_array_equal
+
 import pytest
 from pytest import raises, warns
 
 from scipy.io import wavfile
+from scipy._lib._gcutils import IS_PYPY, break_cycles
 
 
 def datafile(fn):
