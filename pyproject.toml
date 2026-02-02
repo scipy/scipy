@@ -86,6 +86,7 @@ test = [
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
+    "scipy-doctest>=2.0.0"
 ]
 doc = [
     "sphinx>=5.0.0,<8.2.0",

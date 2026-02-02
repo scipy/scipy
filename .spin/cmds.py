@@ -444,9 +444,9 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
     if (
         not importlib.util.find_spec("scipy_doctest")
-        or importlib.metadata.version("scipy_doctest") < "1.8.0"
+        or importlib.metadata.version("scipy_doctest") < "2.0.0"
     ):
-        raise ModuleNotFoundError("Please install scipy-doctest>=1.8.0")
+        raise ModuleNotFoundError("Please install scipy-doctest>=2.0.0")
 
     tests = kwargs["tests"]
     if kwargs["submodule"]:
