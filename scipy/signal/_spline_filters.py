@@ -709,7 +709,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
         fashion across the last axis.
     c0, z1 : scalar
         Parameters in the transfer function.
-    precision : float
+    precision : float, optional
         Specifies the precision for calculating initial conditions
         of the recursive filter based on mirror-symmetric input.
 
