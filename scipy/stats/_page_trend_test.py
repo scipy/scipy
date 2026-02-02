@@ -63,7 +63,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
         :math:`i` and treatment :math:`j`. By default, the columns are
         assumed to be arranged in order of increasing predicted mean.
 
-    ranked : boolean, optional
+    ranked : bool, optional
         By default, `data` is assumed to be observations rather than ranks;
         it will be ranked with `scipy.stats.rankdata` along ``axis=1``. If
         `data` is provided in the form of ranks, pass argument ``True``.

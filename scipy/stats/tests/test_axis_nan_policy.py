@@ -186,8 +186,10 @@ axis_nan_policy_cases = [
      lambda res: tuple(res) + (res.intercept_stderr,)),
     (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
     (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(method='joint'), 2, 4, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(method='hierarchical'), 2, 2, True, tuple),
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
@@ -492,8 +494,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res_1db, res_1da, rtol=4e-15)
+        # changed from 1e-15 and later from 4e-15 to appease macosx-x86_64+Accelerate
+        assert_allclose(res_1db, res_1da, rtol=1e-14)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)

@@ -182,7 +182,7 @@ def read_dtype(mat_stream, a_dtype):
 
 def matfile_version(file_name, *, appendmat=True):
     """
-    Return major, minor tuple depending on apparent mat file type
+    Return major, minor tuple depending on apparent mat file type.
 
     Where:
 

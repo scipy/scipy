@@ -278,7 +278,7 @@ HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
 
 class ArpackError(RuntimeError):
     """
-    ARPACK error
+    ARPACK error.
     """
 
     def __init__(self, info, infodict=None):
@@ -292,7 +292,7 @@ class ArpackError(RuntimeError):
 
 class ArpackNoConvergence(ArpackError):
     """
-    ARPACK iteration did not converge
+    ARPACK iteration did not converge.
 
     Attributes
     ----------
@@ -1230,13 +1230,6 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
           ``w'[i] = 1/2i * [1/(w[i]-sigma) - 1/(w[i]-conj(sigma))]``.
         - If A is complex, ``w'[i] = 1/(w[i]-sigma)``.
 
-    v0 : ndarray, optional
-        Starting vector for iteration.
-        Default: random
-    ncv : int, optional
-        The number of Lanczos vectors generated
-        `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, max(2*k + 1, 20))``
     which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
         Which `k` eigenvectors and eigenvalues to find:
 
@@ -1251,6 +1244,13 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
+    v0 : ndarray, optional
+        Starting vector for iteration.
+        Default: random
+    ncv : int, optional
+        The number of Lanczos vectors generated
+        `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, max(2*k + 1, 20))``
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
         Default: ``n*10``
@@ -1504,13 +1504,6 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         - if ``mode == 'buckling'``: ``w'[i] = w[i] / (w[i] - sigma)``.
 
         (see further discussion in 'mode' below)
-    v0 : ndarray, optional
-        Starting vector for iteration.
-        Default: random
-    ncv : int, optional
-        The number of Lanczos vectors generated ncv must be greater than k and
-        smaller than n; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, max(2*k + 1, 20))``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
         If A is a complex Hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
@@ -1526,16 +1519,18 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
+    v0 : ndarray, optional
+        Starting vector for iteration. Default: random
+    ncv : int, optional
+        The number of Lanczos vectors generated ncv must be greater than k and
+        smaller than n; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, max(2*k + 1, 20))``
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed.
         Default: ``n*10``
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
-    Minv : N x N matrix, array, sparse matrix, or LinearOperator
-        See notes in M, above.
-    OPinv : N x N matrix, array, sparse matrix, or LinearOperator
-        See notes in sigma, above.
     return_eigenvectors : bool
         Return eigenvectors (True) in addition to eigenvalues.
         This value determines the order in which eigenvalues are sorted.
@@ -1559,7 +1554,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
           - If `return_eigenvectors` is False, eigenvalues are sorted by
             decreasing absolute value.
 
-    mode : string ['normal' | 'buckling' | 'cayley']
+    Minv : N x N matrix, array, sparse matrix, or LinearOperator
+        See notes in M, above.
+    OPinv : N x N matrix, array, sparse matrix, or LinearOperator
+        See notes in sigma, above.
+    mode : str ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
         ARPACK internally solves the eigenvalue problem

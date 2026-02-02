@@ -834,7 +834,7 @@ class LinearOperator:
         Returns
         -------
         `LinearOperator`
-            Transposition of this linear operator.
+            Transpose of the linear operator.   
         
         See Also
         --------

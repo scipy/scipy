@@ -16,7 +16,7 @@ import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
 from ._array_api import array_namespace, xp_size, xp_result_type
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 _ESIGNERR = -1
 _ECONVERR = -2
