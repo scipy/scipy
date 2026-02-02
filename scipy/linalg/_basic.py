@@ -394,7 +394,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     Parameters
     ----------
-    (l, u) : (int, int)
+    (l, u) : (integer, integer)
         Number of non-zero lower and upper diagonals
     ab : (`l` + `u` + 1, M) array_like
         Banded matrix
@@ -446,59 +446,79 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     """
     (nlower, nupper) = l_and_u
-    return _solve_banded(nlower, nupper, ab, b, overwrite_ab=overwrite_ab,
-                         overwrite_b=overwrite_b, check_finite=check_finite)
+    ab1 = np.atleast_2d(_asarray_validated(ab, check_finite=check_finite))
+    b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    ab1, b1 = _ensure_dtype_cdsz(ab1, b1)
 
+    # Validate shapes
+    if ab1.ndim < 2:
+        raise ValueError(f"Expected at least ndim=2, got {ab1.ndim}")
 
-@_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'))
-def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
-    a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
-    b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
+    if not (ab1.flags["ALIGNED"] and ab1.dtype.byteorder == "="):
+        overwrite_ab = True
+        ab1 = ab1.copy()
 
-    # Validate shapes.
-    if a1.shape[-1] != b1.shape[0]:
-        raise ValueError("shapes of ab and b are not compatible.")
+    if not (b1.flags["ALIGNED"] and b1.dtype.byteorder == "="):
+        overwrite_b = True
+        b1 = b1.copy()
 
-    if nlower + nupper + 1 != a1.shape[0]:
-        raise ValueError(
-            f"invalid values for the number of lower and upper diagonals: l+u+1 "
-            f"({nlower + nupper + 1}) does not equal ab.shape[0] ({ab.shape[0]})"
-        )
+    # align the shape of b with ab:
+    b_is_1D = b1.ndim == 1
+    if b_is_1D:
+        b1 = b1[:, None]
 
-    # accommodate empty arrays
-    if b1.size == 0:
-        dt = solve(np.eye(1, dtype=a1.dtype), np.ones(1, dtype=b1.dtype)).dtype
-        return np.empty_like(b1, dtype=dt)
+    ab_is_scalar = ab1.size == 1
 
-    overwrite_b = overwrite_b or _datacopied(b1, b)
-    if a1.shape[-1] == 1:
+    if b1.shape[-2] != ab1.shape[-1] and not ab_is_scalar:
+        raise ValueError(f"Incompatible shapes: {ab1.shape} and {b1.shape}")
+
+    batch_shape = np.broadcast_shapes(ab1.shape[:-2], b1.shape[:-2])
+    ab1 = np.broadcast_to(ab1, batch_shape + ab1.shape[-2:])
+    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+
+    # Convert to `int16` to have a known type at receiver side.
+    nlower = np.broadcast_to(nlower, batch_shape).astype(np.int16)
+    nupper = np.broadcast_to(nupper, batch_shape).astype(np.int16)
+
+    # accomodate empty arrays
+    if ab1.size == 0 or b1.size == 0:
+        x = np.empty_like(b1)
+        if b_is_1D:
+            x = x[..., 0]
+        return x
+
+    if ab_is_scalar:
+        if ab1.item() == 0:
+            raise LinAlgError("A singular matrix was detected")
+
+        out = b1 / ab1
+        return out[..., 0] if b_is_1D else out
+
+    # Edge case
+    if ab1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
         # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
         # will pass u = l = 0 and `a1` will be 1x1. However, the rest of the
         # function works with unnecessary rows in `a1` as long as
         # `a1[u + i - j, j] == a[i,j]`. In the 1x1 case, we want i = j = 0,
         # so the diagonal is in row `u` of `a1`. See gh-8906.
-        b2 /= a1[nupper, 0]
+        b2 /= ab1[nupper, 0]
         return b2
-    if nlower == nupper == 1:
-        overwrite_ab = overwrite_ab or _datacopied(a1, ab)
-        gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
-        du = a1[0, 1:]
-        d = a1[1, :]
-        dl = a1[2, :-1]
-        du2, d, du, x, info = gtsv(dl, d, du, b1, overwrite_ab, overwrite_ab,
-                                   overwrite_ab, overwrite_b)
-    else:
-        gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
-        a2 = np.zeros((2*nlower + nupper + 1, a1.shape[1]), dtype=gbsv.dtype)
-        a2[nlower:, :] = a1
-        lu, piv, x, info = gbsv(nlower, nupper, a2, b1, overwrite_ab=True,
-                                overwrite_b=overwrite_b)
-    if info == 0:
-        return x
-    if info > 0:
-        raise LinAlgError("singular matrix")
-    raise ValueError(f'illegal value in {-info}-th argument of internal gbsv/gtsv')
+
+    overwrite_ab = (overwrite_ab or _datacopied(ab1, ab))
+    overwrite_b = (overwrite_b or _datacopied(b1, b))
+
+    # hand of to lower level routine
+    x, err_lst = _batched_linalg._solve_banded(ab1, b1, nlower, nupper,
+                                                overwrite_ab, overwrite_b)
+
+    if err_lst:
+        _format_emit_errors_warnings(err_lst)
+
+    if b_is_1D:
+        x = x[..., 0]
+
+    return x
 
 
 @_apply_over_batch(('a', 2), ('b', '1|2'))
