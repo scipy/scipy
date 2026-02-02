@@ -8122,22 +8122,22 @@ class TestCdfDistanceValidation:
     def test_distinct_value_and_weight_lengths(self):
         # When the number of weights does not match the number of values,
         # a ValueError should be raised.
-        assert_raises(ValueError, _cdf_distance_ref,
-                      1, [1], [2], [4], [3, 1])
+        assert_raises(ValueError, _cdf_distance_ref, 1,
+                      [1], [2], [4], [3, 1])
         assert_raises(ValueError, _cdf_distance_ref, 1, [1], [2], [1, 0])
 
     def test_zero_weight(self):
         # When a distribution is given zero weight, a ValueError should be
         # raised.
-        assert_raises(ValueError, _cdf_distance_ref,
-                      1, [0, 1], [2], [0, 0])
-        assert_raises(ValueError, _cdf_distance_ref,
-                      1, [0, 1], [2], [3, 1], [0])
+        assert_raises(ValueError, _cdf_distance_ref, 1,
+                      [0, 1], [2], [0, 0])
+        assert_raises(ValueError, _cdf_distance_ref, 1,
+                      [0, 1], [2], [3, 1], [0])
 
     def test_negative_weights(self):
         # A ValueError should be raised if there are any negative weights.
-        assert_raises(ValueError, _cdf_distance_ref,
-                      1, [0, 1], [2, 2], [1, 1], [3, -1])
+        assert_raises(ValueError, _cdf_distance_ref, 1,
+                      [0, 1], [2, 2], [1, 1], [3, -1])
 
     def test_empty_distribution(self):
         # A ValueError should be raised when trying to measure the distance
@@ -8147,8 +8147,8 @@ class TestCdfDistanceValidation:
 
     def test_inf_weight(self):
         # An inf weight is not valid.
-        assert_raises(ValueError, _cdf_distance_ref,
-                      1, [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
+        assert_raises(ValueError, _cdf_distance_ref, 1,
+                      [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
 
 
 class TestWassersteinDistanceND:
@@ -9556,6 +9556,7 @@ class TestCDFDistances:
     @pytest.mark.parametrize("wx", [False, True])
     @pytest.mark.parametrize("wy", [False, True])
     def test_2d(self, distance, c, p, ties, wx, wy, xp):
+        # test function with 2d input against reference implementation
         x, y, wx, wy = self.get_arrays(wx, wy, ties=ties)
         res = distance(x, y, wx, wy, axis=-1)
         wx = [None]*len(x) if wx is None else wx
@@ -9569,7 +9570,8 @@ class TestCDFDistances:
     @pytest.mark.parametrize("axis", [-1, 0, 1])
     @pytest.mark.parametrize("wx", [False, True])
     @pytest.mark.parametrize("wy", [False, True])
-    def test_axis(self, distance, axis, wx, wy, xp):
+    def test_axis_integer(self, distance, axis, wx, wy, xp):
+        # test that integer `axis` arguments work as expected
         x, y, wx, wy = self.get_arrays(wx, wy, batch_shape=(2, 3))
         ref = distance(x, y, wx, wy, axis=-1)
 
@@ -9586,6 +9588,7 @@ class TestCDFDistances:
     @pytest.mark.parametrize("wx", [False, True])
     @pytest.mark.parametrize("wy", [False, True])
     def test_dtype(self, distance, dtype, wx, wy, xp):
+        # test that dtype of output respects dtype of input
         x, y, wx, wy = self.get_arrays(wx, wy)
         ref = distance(x, y, wx, wy, axis=-1)
 
@@ -9601,6 +9604,8 @@ class TestCDFDistances:
     @pytest.mark.parametrize("distance", [stats.wasserstein_distance,
                                           stats.energy_distance])
     def test_nan_inf_negative_weight(self, distance, xp):
+        # test that negative, infinite, and NaN weights and
+        # NaN values produce NaN outputs.
         x0, y0, wx0, wy0 = self.get_arrays(wx=True, wy=True)
 
         x = xp_copy(x0)
@@ -9631,7 +9636,8 @@ class TestCDFDistances:
 
     @pytest.mark.parametrize("distance", [stats.wasserstein_distance,
                                           stats.energy_distance])
-    def test_empty(self, distance, xp):
+    def test_zero_size(self, distance, xp):
+        # test that zero-size input produces expected output
         x = xp.ones((3, 0, 1))
         y = xp.ones((3, 1, 4))
 
@@ -9647,6 +9653,7 @@ class TestCDFDistances:
     @pytest.mark.parametrize("distance", [stats.wasserstein_distance,
                                           stats.energy_distance])
     def test_axis_None(self, distance, xp):
+        # check that `axis=None` works as expected
         rng = np.random.default_rng(3498239817235824)
         s = 2*3*4*5
         x, y, wx, wy = rng.random(s), rng.random(s), rng.random(s), rng.random(s)
@@ -9669,6 +9676,7 @@ class TestCDFDistances:
     @pytest.mark.parametrize("distance", [stats.wasserstein_distance,
                                           stats.energy_distance])
     def test_zero_weight(self, distance, xp):
+        # test that zero weight is the same as eliminating the value
         rng = np.random.default_rng(3498239817235824)
         x = rng.random(50)
         y = rng.random(50)
