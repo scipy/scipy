@@ -1,8 +1,9 @@
 import numpy as np
 import math
-from scipy import stats
+from scipy import stats, special
+from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
-                                   xp_result_type)
+                                   xp_result_type, is_numpy)
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
@@ -388,7 +389,9 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
     return SignificanceResult(res.statistic, res.pvalue)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
+                                ("jax.numpy", "non-concrete boolean indexing"),
+                                ('cupy', 'no rankdata (xp.repeats limitation)')])
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -509,12 +512,13 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     return _robust_slopes(y, x=x, alpha=alpha, method=method, pfun='theilslopes')
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
+                                ("jax.numpy", "test failures; worth investigating")])
 @_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
                           too_small=1)
-def siegelslopes(y, x=None, method='separate', *, axis=None):
+def siegelslopes(y, x=None, method='hierarchical', *, axis=None):
     r"""
     Computes the Siegel estimator for a set of points (x, y).
 
@@ -624,68 +628,95 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
         raise ValueError(f"method must be either '{other_method}' or 'separate'. "
                          f"'{method}' is invalid.")
 
-    y, x = xp_promote(y, x, force_floating=True, xp=np)
-    x = np.arange(y.shape[-1], dtype=y.dtype) if x is None else x
-    y, x = np.broadcast_arrays(y, x)
+    xp = array_namespace(y, x)
+    y, x = xp_promote(y, x, force_floating=True, xp=xp)
+    x = xp.arange(y.shape[-1], dtype=y.dtype) if x is None else x
+    y, x = xp.broadcast_arrays(y, x)
 
     if x.shape[-1] < 2 or y.shape[-1] < 2:  # only needed by test_axis_nan_policy
         raise ValueError("`x` and `y` must have length at least 2.")
 
     # Compute sorted slopes only when deltax > 0
-    deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
-    deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
+    deltax = x[..., :, xp.newaxis] - x[..., xp.newaxis, :]
+    deltay = y[..., :, xp.newaxis] - y[..., xp.newaxis, :]
 
     if pfun == 'theilslopes':
-        i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
-        # with NumPy:
-        deltax, deltay = deltax[..., i], deltay[..., i]
-        # with array API, mask must be sole index, so we'll need to broadcast it.
-        # indexing will ravel the array, so we'll need to reshape it after
+        i = xp.astype(xp.triu(xp.ones(deltax.shape[-2:]), k=1), xp.bool)
+        if is_numpy(xp):
+            deltax, deltay = deltax[..., i], deltay[..., i]
+        else:
+            # With array API, mask must be sole index, so we need to broadcast it.
+            # Indexing ravels the array, so we need to reshape the results.
+            i = xp.broadcast_to(i, deltax.shape)
+            deltax, deltay = deltax[i], deltay[i]
+            deltax = xp.reshape(deltax, (*i.shape[:-2], -1))
+            deltay = xp.reshape(deltay, (*i.shape[:-2], -1))
 
-    deltax[deltax == 0] = np.nan
+    deltax = xpx.at(deltax)[deltax == 0].set(xp.nan)
     slopes = deltay / deltax
-    medslope = np.nanmedian(slopes, axis=-1)
 
-    # siegelslope is median of medians rather than grand median
-    finalslope = np.nanmedian(medslope, axis=-1) if pfun == 'siegelslopes' else medslope
+    def nanmedian(x, axis): return stats.quantile(x, 0.5, axis=axis, nan_policy='omit')
+    def median(x, axis): return stats.quantile(x, 0.5, axis=axis)
+
+    # `theilslopes` is median of all slopes. Indexing with `i` above has already raveled
+    # all the slopes, so we only need to take the median along the last axis.
+    # `siegelslope` is a median of medians: we take the median of slopes from point i
+    # to all other points, then the median of those medians.
+    # The slope is NaN wherever the two points are the same, and those don't contribute,
+    # hence the first median omits NaNs. NaNs in the input are propagated by the
+    # `_axis_nan_policy` decorator.
+    medslope = (median(nanmedian(slopes, axis=-1), axis=-1) if pfun == 'siegelslopes'
+                else nanmedian(slopes, axis=-1))
 
     if method in {'joint', 'hierarchical'}:
-        medinter = np.median(y - finalslope[..., np.newaxis] * x, axis=-1)
+        medinter = median(y - medslope[..., np.newaxis] * x, axis=-1)
     elif pfun == 'theilslopes':
-        medinter = np.median(y, axis=-1) - medslope * np.median(x, axis=-1)
+        medinter = median(y, axis=-1) - medslope * median(x, axis=-1)
     else:
-        medinter = np.median(y - medslope * x, axis=-1)
+        # Calculate pairwise intercepts given each point (row i) and the slope to each
+        # other point (column j). Then calculate the median of (row) medians.
+        intercepts = y[..., :, xp.newaxis] - slopes*x[..., :, xp.newaxis]
+        medinter = median(nanmedian(intercepts, axis=-1), axis=-1)
 
     if pfun == 'siegelslopes':
-        return SiegelslopesResult(slope=finalslope[()], intercept=medinter[()])
+        return SiegelslopesResult(slope=medslope[()], intercept=medinter[()])
 
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
 
-    z = stats.norm.ppf(alpha / 2.)
+    z = float(special.ndtri(alpha / 2.))
     # This implements (2.6) from Sen (1968)
     # we don't actually need ranks, so an enhancement could be to have
     # `rankdata` return only the second output. In the meantime, use the
     # least expensive `method`.
     _, nxreps = _rankdata(x, method='min', return_ties=True)
     _, nyreps = _rankdata(y, method='min', return_ties=True)
-    nt = np.count_nonzero(np.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
+    nt = xp.count_nonzero(xp.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
+    nt = xp.asarray(nt, dtype=y.dtype)
     ny = y.shape[-1]                                                    # n in Sen 1968
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (
         ny * (ny-1) * (2*ny+5)
-        - np.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
-        - np.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
+        - xp.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
+        - xp.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
     # Find the confidence interval indices in `slopes`
-    sigma = np.sqrt(np.maximum(sigsq, 0.))
-    Ru = np.minimum(np.round((nt - z*sigma)/2.).astype(np.int64), nt-1)
-    Rl = np.maximum(np.round((nt + z*sigma)/2.).astype(np.int64) - 1, 0)
-    R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
-    slopes = np.sort(slopes, axis=-1)
-    delta = np.take_along_axis(slopes, R, axis=-1)
-    i_nan = np.broadcast_to(sigsq < 0, delta.shape)
-    delta[i_nan] = np.nan
+    sigma = xp.sqrt(xp.maximum(sigsq, xp.zeros_like(sigsq)))
+    Ru = xp.minimum(xp.astype(xp.round((nt - z*sigma)/2.), xp.int64),
+                    xp.astype(nt, xp.int64)-1)
+    Rl = xp.maximum(xp.astype(xp.round((nt + z*sigma)/2.), xp.int64) - 1,
+                    xp.asarray(0, dtype=xp.int64))
+    R = xp.concat((xpx.atleast_nd(Rl, ndim=1), xpx.atleast_nd(Ru, ndim=1)), axis=-1)
+    slopes = xp.sort(slopes, axis=-1)
+    delta = xp.take_along_axis(slopes, R, axis=-1)
+    i_nan = xp.broadcast_to(sigsq < 0, delta.shape)
+    delta = xpx.at(delta)[i_nan].set(xp.nan)
 
-    return TheilslopesResult(slope=finalslope[()], intercept=medinter[()],
-                             low_slope=delta[..., 0][()], high_slope=delta[..., 1][()])
+    slope = medslope[()] if medslope.ndim == 0 else medslope
+    intercept = medinter[()] if medinter.ndim == 0 else medinter
+    low_slope = delta[..., 0]
+    high_slope = delta[..., 1]
+    low_slope = low_slope[()] if low_slope.ndim == 0 else low_slope
+    high_slope = high_slope[()] if high_slope.ndim == 0 else high_slope
+    return TheilslopesResult(slope=slope, intercept=intercept,
+                             low_slope=low_slope, high_slope=high_slope)
