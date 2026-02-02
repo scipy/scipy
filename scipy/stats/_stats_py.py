@@ -10656,7 +10656,8 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     TINY = 1.0e-20
 
     # _axis_nan_policy decorator ensures that `axis=-1`
-    n = x.shape[-1]
+    x, y = _share_masks(x, y, xp=xp)
+    n = _length_nonmasked(x, axis=-1, keepdims=False, xp=xp)
     xmean = xp.mean(x, axis=-1, keepdims=True)
     ymean = xp.mean(y, axis=-1, keepdims=True)
 
@@ -10685,7 +10686,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if n == 2:
+    if not is_marray(xp) and n == 2:
         # handle case when only two points are passed in
         one = xp.asarray(1.0, dtype=r.dtype)
         prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
