@@ -70,7 +70,7 @@ conf_memstream = configuration_data()
 
 if meson.get_compiler('c').has_function('open_memstream',
                                         prefix: '#define _POSIX_C_SOURCE 200809L\n#include <stdio.h>')
-  conf_memstream.set('has_openmemstream', '1')
+  conf_memstream.set('has_openmemstream', '0')
 else
   conf_memstream.set('has_openmemstream', '0')
 endif
