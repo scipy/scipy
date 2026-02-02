@@ -1168,6 +1168,7 @@ def aslinearoperator(A):
     ----------
     A : object
         Object to convert to a `LinearOperator`. May be any one of the following types:
+
         - `numpy.ndarray`
         - `numpy.matrix`
         - `scipy.sparse` array
