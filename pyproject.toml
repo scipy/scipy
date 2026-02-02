@@ -20,7 +20,7 @@ requires = [
     "meson-python>=0.15.0",
     "Cython>=3.0.8",        # when updating version, also update check in meson.build
     "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
-    "pythran>=0.14.0",
+    "pythran>=0.18.1",      # when updating version, also update check in meson.build
 
     # numpy requirement for wheel builds for distribution on PyPI - building
     # against 2.x yields wheels that are also compatible with numpy 1.x at
