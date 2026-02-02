@@ -106,6 +106,8 @@ def test_xp_mean(axis, keepdims, xp):
      make_xp_pytest_param(stats.tmax, {'upperlimit': 0.5}),
      make_xp_pytest_param(stats.tstd, {'limits': (0.1, 0.9)}),
      make_xp_pytest_param(stats.tsem, {'limits': (0.1, 0.9)}),
+     make_xp_pytest_param(stats.iqr, {}),
+     make_xp_pytest_param(stats.median_abs_deviation, {}),
      ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_several(fun, kwargs, axis, xp):
@@ -374,6 +376,7 @@ def test_pearsonr(f, xp):
         ref_ci_low, ref_ci_high = ref.confidence_interval()
         xp_assert_close(res_ci_low.data, xp.asarray(ref_ci_low))
         xp_assert_close(res_ci_high.data, xp.asarray(ref_ci_high))
+
 
 @make_xp_test_case(stats.entropy)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
