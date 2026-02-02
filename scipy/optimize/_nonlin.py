@@ -863,9 +863,7 @@ class BroydenFirst(GenericBroyden):
 
     Parameters
     ----------
-    %(params_basic)s
     %(broyden_params)s
-    %(params_extra)s
 
     See Also
     --------
@@ -966,6 +964,7 @@ class BroydenFirst(GenericBroyden):
 
         self.Gm.append(c, d)
 
+_set_doc(BroydenFirst)
 
 class BroydenSecond(BroydenFirst):
     """
@@ -1372,7 +1371,6 @@ class KrylovJacobian(Jacobian):
 
     Parameters
     ----------
-    %(params_basic)s
     rdiff : float, optional
         Relative step size to use in numerical differentiation.
     method : str or callable, optional
@@ -1403,12 +1401,11 @@ class KrylovJacobian(Jacobian):
     outer_k : int, optional
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
-    inner_kwargs : kwargs
+    kw : kwargs
         Keyword parameters for the "inner" Krylov solver
         (defined with `method`). Parameter names must start with
         the `inner_` prefix which will be stripped before passing on
         the inner method. See, e.g., `scipy.sparse.linalg.gmres` for details.
-    %(params_extra)s
 
     See Also
     --------
@@ -1589,6 +1586,7 @@ class KrylovJacobian(Jacobian):
             if hasattr(self.preconditioner, 'setup'):
                 self.preconditioner.setup(x, f, func)
 
+_set_doc(KrylovJacobian)
 
 #------------------------------------------------------------------------------
 # Wrapper functions
