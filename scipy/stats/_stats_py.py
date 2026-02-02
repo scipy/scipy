@@ -9706,8 +9706,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None, *, 
     u_weights, v_weights : 1d array_like, optional
         Weights or counts corresponding with the sample or probability masses
         corresponding with the support values. Must be broadcastable with corresponding
-        sample/support. All elements must be non-negative and finite. If unspecified, each
-        value is assigned the same weight.
+        sample/support. All elements must be non-negative and finite. If unspecified,
+        each value is assigned the same weight.
 
     axis : int or None, default: 0
         If an int, the axis of the input along which to compute the statistic.
@@ -9791,8 +9791,8 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None, *, axis=
     u_weights, v_weights : 1d array_like, optional
         Weights or counts corresponding with the sample or probability masses
         corresponding with the support values. Must be broadcastable with corresponding
-        sample/support. All elements must be non-negative and finite. If unspecified, each
-        value is assigned the same weight.
+        sample/support. All elements must be non-negative and finite. If unspecified,
+        each value is assigned the same weight.
     axis : int or None, default: 0
         If an int, the axis of the input along which to compute the statistic.
         The statistic of each axis-slice (e.g. row) of the input will appear in a
