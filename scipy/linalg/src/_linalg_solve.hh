@@ -486,7 +486,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
     CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
     CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
-    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork; 
+    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork;
 
     T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
