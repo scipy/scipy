@@ -8149,7 +8149,8 @@ def _kstest_n_samples(kwargs):
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto', *,
+           axis=0):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -8337,9 +8338,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        method=method, _no_deco=True)
+                        method=method, axis=axis, _no_deco=True)
     return ks_2samp(xvals, yvals, alternative=alternative, method=method,
-                    _no_deco=True)
+                    axis=axis, _no_deco=True)
 
 
 @xp_capabilities(np_only=True)

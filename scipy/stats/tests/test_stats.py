@@ -4631,6 +4631,8 @@ class TestKSTest:
                                       alternative=alternative, mode=mode)
         xp_assert_close(result.statistic, result_1samp.statistic)
         xp_assert_close(result.pvalue, result_1samp.pvalue)
+        xp_assert_equal(result.statistic_location, result.statistic_location)
+        xp_assert_equal(result.statistic_sign, result.statistic_sign)
 
     def test_namedtuple_attributes(self, xp):
         x = xp.linspace(-1, 1, 9)
@@ -4652,6 +4654,21 @@ class TestKSTest:
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
 
+    # parametrize over function-specific options to make sure they're passed through;
+    # `test_axis_nan_policy` takes care of the rest.
+    @pytest.mark.parametrize("method", ["auto", "exact", "asymp"])
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_agree_with_ks_2samp(self, method, alternative, xp):
+        rng = np.random.default_rng(236114087)
+        x, y = rng.random((2, 9, 10))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.kstest(x, y, alternative=alternative, method=method)
+        ref = stats.ks_2samp(x, y, alternative=alternative, method=method)
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic_location, ref.statistic_location)
+        xp_assert_equal(res.statistic_sign, ref.statistic_sign)
+
     def test_pm_inf_gh20386(self, xp):
         # Check that gh-20386 is resolved - `kstest` does not
         # return NaNs when both -inf and inf are in sample.
@@ -4664,7 +4681,7 @@ class TestKSTest:
         assert xp.isfinite(res.pvalue)
         assert xp.isfinite(res.statistic_location)
         assert xp.isfinite(res.statistic_sign)
-        xp_assert_equal(res.statistic, res.statistic)
+        xp_assert_equal(res.statistic, ref.statistic)
         xp_assert_equal(res.pvalue, ref.pvalue)
         xp_assert_equal(res.statistic_location, ref.statistic_location)
         xp_assert_equal(res.statistic_sign, ref.statistic_sign)
