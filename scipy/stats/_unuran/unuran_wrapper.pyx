@@ -397,7 +397,6 @@ cdef class Method:
     cdef object numpy_rng
     cdef _URNG _urng_builder
     cdef object callbacks
-    cdef object _callback_wrapper
     cdef MessageStream _messages
     # save all the arguments to enable pickling
     cdef object _kwargs
@@ -428,7 +427,7 @@ cdef class Method:
         if self.urng == NULL:
             raise UNURANError(self._messages.get())
         self._check_errorcode(unur_set_urng(self.par, self.urng))
-        has_callback_wrapper = (self._callback_wrapper is not None)
+        has_callback_wrapper = (self.callbacks is not None)
         try:
             if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
@@ -446,6 +445,9 @@ cdef class Method:
         finally:
             if has_callback_wrapper:
                 release_unuran_callback(&callback)
+
+    cdef _callback_wrapper(self, x, name):
+        raise NotImplementedError("Must override _callback_wrapper if self.callbacks defined.")
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -467,7 +469,7 @@ cdef class Method:
             PyObject *value
             PyObject *traceback
 
-        has_callback_wrapper = (self._callback_wrapper is not None)
+        has_callback_wrapper = (self.callbacks is not None)
         error = 0
 
         _lock.acquire()
@@ -514,7 +516,7 @@ cdef class Method:
             PyObject *value
             PyObject *traceback
 
-        has_callback_wrapper = (self._callback_wrapper is not None)
+        has_callback_wrapper = (self.callbacks is not None)
         error = 0
 
         _lock.acquire()
@@ -839,9 +841,6 @@ cdef class TransformedDensityRejection(Method):
         }
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -884,6 +883,9 @@ cdef class TransformedDensityRejection(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     cdef object _validate_args(self, dist, domain, c, construction_points):
         domain = _validate_domain(domain, dist)
@@ -1126,9 +1128,6 @@ cdef class SimpleRatioUniforms(Method):
         }
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1160,6 +1159,9 @@ cdef class SimpleRatioUniforms(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     cdef object _validate_args(self, dist, domain, pdf_area):
         # validate args
@@ -1408,9 +1410,6 @@ cdef class NumericalInversePolynomial(Method):
             msg = ("Either of the methods `pdf` or `logpdf` must be specified "
                    "for the distribution object `dist`.")
             raise ValueError(msg)
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1445,6 +1444,9 @@ cdef class NumericalInversePolynomial(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     cdef object _validate_args(self, dist, domain, order, u_resolution):
         domain = _validate_domain(domain, dist)
@@ -1965,9 +1967,6 @@ cdef class NumericalInverseHermite(Method):
         }
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1993,6 +1992,9 @@ cdef class NumericalInverseHermite(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     def _validate_args(self, dist, domain, order, u_resolution, construction_points):
         domain = _validate_domain(domain, dist)
