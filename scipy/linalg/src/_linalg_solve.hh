@@ -335,8 +335,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // maximal `kl` and `ku` to find the minimal size the array will need to
     // have. To avoid having to call `bandwidth` twice per slice, the results
     // are stored in these arrays.
-    npy_intp kl_max = 0;
-    npy_intp ku_max = 0;
+    npy_intp ldab_max = 0;
     ks = (npy_intp *)malloc(2 * outer_size * sizeof(npy_intp));
 
     if (ks == NULL) {
@@ -348,9 +347,9 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
     npy_intp *kls = &ks[0]; // Lower bandwidths
     npy_intp *kus = &ks[outer_size]; // Upper bandwidths
-    detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &kl_max, &ku_max);
+    detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
 
-    buffer = (T *)malloc((n * nrhs + 3 * n + (2 * kl_max + ku_max + 1) * n) * sizeof(T));
+    buffer = (T *)malloc((n * nrhs + 3 * n + (ldab_max) * n) * sizeof(T));
 
     if (buffer == NULL) {
         free(ipiv);
