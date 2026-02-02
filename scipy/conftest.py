@@ -296,6 +296,14 @@ if SCIPY_ARRAY_API:
                 if param.id in SCIPY_ARRAY_API_
             ]
 
+from test.support.os_helper import fd_count
+
+@pytest.fixture(autouse=True)
+def fd_leak():
+    before = fd_count()
+    yield
+    assert fd_count() == before
+
 
 @pytest.fixture(params=xp_available_backends)
 def xp(request):
