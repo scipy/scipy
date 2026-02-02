@@ -342,6 +342,7 @@ def test_directional_stats(xp):
 @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('fun, kwargs', [
     (stats.bartlett, {}),
+    (stats.alexandergovern, {}),
     (stats.f_oneway, {'equal_var': True}),
     (stats.f_oneway, {'equal_var': False}),
 ])
@@ -384,7 +385,7 @@ def test_pearsonr(f, xp):
 @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.linregress),
                                ])
-def test_correlation(f, xp):
+def test_linregress(f, xp):
     mxp, marrays, narrays = get_arrays(2, shape=(25,), xp=xp)
     res = f(*marrays)
 
