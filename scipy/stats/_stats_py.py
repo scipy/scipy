@@ -10143,6 +10143,17 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
             out.append(t)
         return out[0] if len(out) == 1 else tuple(out)
 
+    if is_marray(xp):
+        data, mask = x.data, x.mask
+        uxp = array_namespace(data)
+        data = uxp.where(mask, uxp.nan, data)
+        ranks, sorted, ties = _rankdata(data, method, True, True, xp=uxp)
+        ranks = xp.asarray(ranks, mask=mask)
+        mask_sorted = uxp.isnan(sorted)
+        sorted = xp.asarray(sorted, mask=mask_sorted)
+        ties = xp.asarray(ties, mask=mask_sorted)
+        return ranks, sorted, ties
+
     shape = x.shape
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
