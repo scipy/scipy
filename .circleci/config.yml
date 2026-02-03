@@ -144,7 +144,7 @@ jobs:
           #   export OPENBLAS_NUM_THREADS=1
           #   time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
           #   asv --config asv.conf.json publish
-          command: /home/circleci/.pixi/bin/pixi run bench --quick --python=same -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
+          command: /home/circleci/.pixi/bin/pixi run bench --quick -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
 
       - store_artifacts:
           path: benchmarks/html
