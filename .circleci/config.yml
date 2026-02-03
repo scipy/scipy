@@ -135,15 +135,16 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           # TODO: simplify via spin and Pixi tasks
-          shell: /home/circleci/.pixi/bin/pixi run -e bench spin run /bin/bash -eo pipefail
-          command: |
-            cd benchmarks
-            asv machine --machine CircleCI
-            export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
-            export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-            export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
-            asv --config asv.conf.json publish
+          # shell: /home/circleci/.pixi/bin/pixi run -e bench spin run /bin/bash -eo pipefail
+          # command: |
+          #   cd benchmarks
+          #   asv machine --machine CircleCI
+          #   export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
+          #   export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+          #   export OPENBLAS_NUM_THREADS=1
+          #   time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+          #   asv --config asv.conf.json publish
+          command: /home/circleci/.pixi/bin/pixi run bench --quick --python=same -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
 
       - store_artifacts:
           path: benchmarks/html
