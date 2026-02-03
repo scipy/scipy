@@ -1000,6 +1000,7 @@ class TestBinomTest:
     # Expected results here are from R binom.test, e.g.
     # options(digits=16)
     # binom.test(484, 967, p=0.48)
+    @skip_xp_backends("jax.numpy", reason="'two-sided' is incompatible with JAX")
     @pytest.mark.parametrize("k, n, p, ref, rtol",
                              # aarch64 observed rtol: 1.5e-11
                              [(10079999, 21000000, 0.48, 1.0, 1e-10),
@@ -1014,6 +1015,7 @@ class TestBinomTest:
         res = stats.binomtest(k, n, xp.asarray(p, dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
+    @skip_xp_backends("jax.numpy", reason="'two-sided' is incompatible with JAX")
     @pytest.mark.parametrize("k, n, p, ref, rtol",
                              # no aarch64 failure with 1e-15, preemptive bump
                              [(9, 21, 0.48, 0.6689672431939, 1e-10),
@@ -1028,6 +1030,7 @@ class TestBinomTest:
         res = stats.binomtest(k, n, xp.asarray(p, dtype=dtype))
         xp_assert_close(res.pvalue, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
+    @skip_xp_backends("jax.numpy", reason="'two-sided' is incompatible with JAX")
     @pytest.mark.parametrize("k, n, p, ref, rtol",
                              # no aarch64 failure with 1e-15, preemptive bump
                              [(484, 967, 0.5, 1.0, 1e-10),
@@ -1148,6 +1151,7 @@ class TestBinomTest:
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
 
     # Expected results are from the prop.test function in R 3.6.2.
+    @skip_xp_backends("jax.numpy", reason="'two-sided' is incompatible with JAX")
     @pytest.mark.parametrize(
         'k, alternative, corr, conf, ci_low, ci_high',
         [[3, 'two-sided', True, 0.95, 0.08094782, 0.64632928],
@@ -1190,6 +1194,7 @@ class TestBinomTest:
         xp_assert_close(ci.low, xp.asarray(ci_low, dtype=dtype), rtol=1e-6)
         xp_assert_close(ci.high, xp.asarray(ci_high, dtype=dtype), rtol=1e-6)
 
+    @skip_xp_backends("jax.numpy", reason="'two-sided' is incompatible with JAX")
     def test_estimate_equals_hypothesized_prop(self, xp):
         # Test the special case where the estimated proportion equals
         # the hypothesized proportion.  When alternative is 'two-sided',
@@ -1199,13 +1204,13 @@ class TestBinomTest:
         xp_assert_equal(res.pvalue, xp.asarray(1.0))
 
     def test_invalid_confidence_level(self, xp):
-        res = stats.binomtest(3, n=10, p=xp.asarray(0.1))
+        res = stats.binomtest(3, n=10, p=xp.asarray(0.1), alternative='less')
         message = r"confidence_level \(-1\) must be in the interval"
         with pytest.raises(ValueError, match=message):
             res.proportion_ci(confidence_level=-1)
 
     def test_invalid_ci_method(self, xp):
-        res = stats.binomtest(3, n=10, p=xp.asarray(0.1))
+        res = stats.binomtest(3, n=10, p=xp.asarray(0.1), alternative='greater')
         with pytest.raises(ValueError, match=r"method \('plate of shrimp'\) must be"):
             res.proportion_ci(method="plate of shrimp")
 
@@ -1214,7 +1219,7 @@ class TestBinomTest:
             stats.binomtest(3, n=10, p=xp.asarray(0.1), alternative='ekki')
 
     def test_alias(self, xp):
-        res = stats.binomtest(3, n=10, p=xp.asarray(0.1))
+        res = stats.binomtest(3, n=10, p=xp.asarray(0.1), alternative='greater')
         xp_assert_equal(res.proportion_estimate, res.statistic)
 
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
@@ -1228,7 +1233,7 @@ class TestBinomTest:
          (0, 0, 0.5), (5, 10.5, 0.5), (5, np.nan, 0.5),
          (5, 10, -0.1), (5, 10, 1.1), (5, 10, np.nan)])
     def test_invalid(self, k, n, p, xp):
-        res = stats.binomtest(k, n, xp.asarray(p))
+        res = stats.binomtest(k, n, xp.asarray(p), alternative='less')
         xp_assert_equal(res.statistic, xp.asarray(np.nan))
         xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
@@ -1258,10 +1263,16 @@ class TestBinomTest:
     def test_dtype(self, dtype, alternative, method, xp):
         # Tests that output dtype is as expected
         dtype = dtype if dtype is None else getattr(xp, dtype)
-        res = stats.binomtest(xp.asarray(3, dtype=dtype),
-                              xp.asarray(11, dtype=dtype),
-                              xp.asarray(0.4, dtype=dtype),
-                              alternative=alternative)
+        k = xp.asarray(3, dtype=dtype)
+        n = xp.asarray(11, dtype=dtype)
+        p = xp.asarray(0.4, dtype=dtype)
+        if is_jax(xp) and alternative=='two-sided':
+            message = "`alternative='two-sided' is incompatible with JAX arrays."
+            with pytest.raises(ValueError, match=message):
+                stats.binomtest(k, n, p)
+            return
+
+        res = stats.binomtest(k, n, p, alternative=alternative)
         ref = stats.binomtest(3, 11, 0.4, alternative=alternative)
 
         xp_assert_close(res.statistic, xp.asarray(float(ref.statistic), dtype=dtype))
@@ -1287,6 +1298,10 @@ class TestBinomTest:
         k = rng.integers(-1, 11, size=shape)
         n = rng.integers(-1, 11, size=shape)
         p = rng.uniform(-0.1, 1.1, size=shape)
+
+        if is_jax(xp) and alternative=='two-sided':
+            pytest.skip("`alternative='two-sided' is incompatible with JAX arrays.")
+
         res = stats.binomtest(xp.asarray(k), xp.asarray(n), xp.asarray(p),
                               alternative=alternative)
 
