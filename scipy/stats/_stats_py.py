@@ -8655,6 +8655,7 @@ def friedmanchisquare(*samples, axis=0):
     xp = array_namespace(*samples)
     samples = xp_promote(*samples, force_floating=True, xp=xp)
     dtype = samples[0].dtype
+    samples = _share_masks(*samples, xp=xp)  # paired-sample test
 
     n = samples[0].shape[-1]
     if n == 0:  # only for `test_axis_nan_policy`; user doesn't see this
@@ -8669,10 +8670,11 @@ def friedmanchisquare(*samples, axis=0):
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
-    c = 1 - ties / (k*(k*k - 1)*n)
+    count = xp.asarray(_count_nonmasked(samples[0], axis=-1), dtype=ties.dtype)
+    c = 1 - ties / (k*(k*k - 1)*count)
 
     ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
-    statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
+    statistic = (12.0 / (k*count*(k+1)) * ssbn - 3*count*(k+1)) / c
 
     chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)

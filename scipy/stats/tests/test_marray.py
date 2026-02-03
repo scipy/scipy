@@ -367,6 +367,20 @@ def test_k_sample_tests(fun, kwargs, axis, xp):
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
 
 
+@make_xp_test_case(stats.friedmanchisquare)
+@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
+@pytest.mark.parametrize('fun, kwargs', [
+    (stats.friedmanchisquare, {}),
+])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_k_sample_paired_tests(fun, kwargs, axis, xp):
+    mxp, marrays, narrays = get_arrays(3, shape=(8, 9), xp=xp)
+    res = fun(*marrays, axis=axis, **kwargs)
+    ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="array-api-compat#242")
