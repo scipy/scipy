@@ -8555,18 +8555,20 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    n = [sample.shape[-1] for sample in samples]
-    totaln = sum(n)
-    if any(n) < 1:  # Only needed for `test_axis_nan_policy`
+    lengths = [sample.shape[-1] for sample in samples]
+    if any(lengths) < 1:  # Only needed for `test_axis_nan_policy`
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
+              for sample in samples]
+    totaln = sum(counts)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
-    # Compute sum^2/n for each group and sum
-    j = list(itertools.accumulate(n, initial=0))
-    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+    # Compute sum^2/count for each group and sum
+    j = list(itertools.accumulate(lengths, initial=0))
+    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / counts[i]
                for i in range(num_groups))
 
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)

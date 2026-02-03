@@ -342,6 +342,7 @@ def test_directional_stats(xp):
     (stats.bartlett, {}),
     (stats.f_oneway, {'equal_var': True}),
     (stats.f_oneway, {'equal_var': False}),
+    (stats.kruskal, {}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_k_sample_tests(fun, kwargs, axis, xp):
