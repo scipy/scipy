@@ -89,10 +89,10 @@ class IndexMixin:
             elif isinstance(col, slice):
                 res = self._get_arrayXslice(row, col)
             # arrayXarray preprocess
-            elif (row.ndim == 2 and row.shape[1] == 1
-                and (col.ndim == 1 or col.shape[0] == 1)):
+            elif (row.ndim == 2 and (key0 := np.atleast_2d(key[0])).shape[1] == 1
+                  and (col.ndim == 1 or (key1 := np.array(key[1])).shape[0] == 1)):
                 # outer indexing
-                res = self._get_columnXarray(row[:, 0], col.ravel())
+                res = self._get_columnXarray(key0[:, 0], key1.reshape(-1))
             else:
                 # inner indexing
                 row, col = _broadcast_arrays(row, col)
