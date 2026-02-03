@@ -26,7 +26,8 @@ SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 
 
 def _using_accelerate():
-    return "accelerate" in str(np.show_config('dicts')).lower()
+    config = np.show_config('dicts')
+    return config['Build Dependencies']['blas']['name'] == 'Accelerate'
 
 
 def unpack_ttest_result(res):
@@ -1460,7 +1461,4 @@ def test_array_like_input(dtype):
 
 
 def test_accelerate():
-    x = str(np.show_config('dicts')).lower()
-    y = np.show_config('dicts')
-    accelerate = _using_accelerate()
-    np.testing.assert_equal(accelerate, False)
+    assert not _using_accelerate()
