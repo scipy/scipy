@@ -368,67 +368,67 @@ class Getset(Benchmark):
         self.m[self.i, self.j]
 
 
-class NullSlice(Benchmark):
-    param_names = ['sparse_type', 'density', 'format']
-    params = [
-        ['spmatrix', 'sparray'],
-        [0.05, 0.01],
-        ['csr', 'csc', 'lil'],
-    ]
+# class NullSlice(Benchmark):
+#     param_names = ['sparse_type', 'density', 'format']
+#     params = [
+#         ['spmatrix', 'sparray'],
+#         [0.05, 0.01],
+#         ['csr', 'csc', 'lil'],
+#     ]
 
-    def _setup(self, sparse_type, density, format):
-        n = 10000
-        k = 1000
+#     def _setup(self, sparse_type, density, format):
+#         n = 10000
+#         k = 1000
 
-        # faster version of sparse.rand(n, k, format=format, density=density),
-        # with non-exact nnz
-        nz = int(n*k * density)
-        row = np.random.randint(0, n, size=nz)
-        col = np.random.randint(0, k, size=nz)
-        data = np.ones(nz, dtype=np.float64)
-        coo = sparse.coo_array if sparse_type == "sparray" else sparse.coo_matrix
-        X = coo((data, (row, col)), shape=(n, k))
-        X.sum_duplicates()
-        X = X.asformat(format)
-        with open(f'{sparse_type}-{density}-{format}.pck', 'wb') as f:
-            pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
+#         # faster version of sparse.rand(n, k, format=format, density=density),
+#         # with non-exact nnz
+#         nz = int(n*k * density)
+#         row = np.random.randint(0, n, size=nz)
+#         col = np.random.randint(0, k, size=nz)
+#         data = np.ones(nz, dtype=np.float64)
+#         coo = sparse.coo_array if sparse_type == "sparray" else sparse.coo_matrix
+#         X = coo((data, (row, col)), shape=(n, k))
+#         X.sum_duplicates()
+#         X = X.asformat(format)
+#         with open(f'{sparse_type}-{density}-{format}.pck', 'wb') as f:
+#             pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def setup_cache(self):
-        for sparse_type in self.params[0]:
-            for density in self.params[1]:
-                for fmt in self.params[2]:
-                    self._setup(sparse_type, density, fmt)
+#     def setup_cache(self):
+#         for sparse_type in self.params[0]:
+#             for density in self.params[1]:
+#                 for fmt in self.params[2]:
+#                     self._setup(sparse_type, density, fmt)
 
-    setup_cache.timeout = 120
+#     setup_cache.timeout = 120
 
-    def setup(self, sparse_type, density, format):
-        # Unpickling is faster than computing the random matrix...
-        with open(f'{sparse_type}-{density}-{format}.pck', 'rb') as f:
-            self.X = pickle.load(f)
+#     def setup(self, sparse_type, density, format):
+#         # Unpickling is faster than computing the random matrix...
+#         with open(f'{sparse_type}-{density}-{format}.pck', 'rb') as f:
+#             self.X = pickle.load(f)
 
-    def time_getrow(self, sparse_type, density, format):
-        if sparse_type == "sparray":
-            self.X[100]
-        else:
-            self.X.getrow(100)
+#     def time_getrow(self, sparse_type, density, format):
+#         if sparse_type == "sparray":
+#             self.X[100]
+#         else:
+#             self.X.getrow(100)
 
-    def time_getcol(self, sparse_type, density, format):
-        if sparse_type == "sparray":
-            self.X[:, 100]
-        else:
-            self.X.getcol(100)
+#     def time_getcol(self, sparse_type, density, format):
+#         if sparse_type == "sparray":
+#             self.X[:, 100]
+#         else:
+#             self.X.getcol(100)
 
-    def time_3_rows(self, sparse_type, density, format):
-        self.X[[0, 100, 105], :]
+#     def time_3_rows(self, sparse_type, density, format):
+#         self.X[[0, 100, 105], :]
 
-    def time_1000_rows(self, sparse_type, density, format):
-        self.X[np.arange(1000), :]
+#     def time_1000_rows(self, sparse_type, density, format):
+#         self.X[np.arange(1000), :]
 
-    def time_3_cols(self, sparse_type, density, format):
-        self.X[:, [0, 100, 105]]
+#     def time_3_cols(self, sparse_type, density, format):
+#         self.X[:, [0, 100, 105]]
 
-    def time_100_cols(self, sparse_type, density, format):
-        self.X[:, np.arange(100)]
+#     def time_100_cols(self, sparse_type, density, format):
+#         self.X[:, np.arange(100)]
 
 
 class Diagonal(Benchmark):
