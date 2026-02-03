@@ -1,7 +1,8 @@
 import numpy as np
 import math
 from scipy import stats
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
+from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
+                                   _share_masks)
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
@@ -376,6 +377,8 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
            [0.14526128, 0.        ]])
 
     """
+    xp = array_namespace(x, y)
+    x, y = _share_masks(x, y, xp=xp)
     rx = stats.rankdata(x, axis=axis)
     ry = stats.rankdata(y, axis=axis)
     res = stats.pearsonr(rx, ry, method=method, alternative=alternative, axis=axis)

@@ -372,8 +372,10 @@ def test_k_sample_tests(fun, kwargs, axis, xp):
 @skip_backend('torch', reason="array-api-compat#242")
 @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.pearsonr),
-                               make_xp_pytest_param(stats.pointbiserialr)])
-def test_pearsonr(f, xp):
+                               make_xp_pytest_param(stats.pointbiserialr),
+                               make_xp_pytest_param(stats.spearmanrho),
+                               ])
+def test_correlation(f, xp):
     mxp, marrays, narrays = get_arrays(2, shape=(25,), xp=xp)
     res = f(*marrays)
 
