@@ -1586,7 +1586,6 @@ class KrylovJacobian(Jacobian):
             if hasattr(self.preconditioner, 'setup'):
                 self.preconditioner.setup(x, f, func)
 
-_set_doc(KrylovJacobian)
 
 #------------------------------------------------------------------------------
 # Wrapper functions
