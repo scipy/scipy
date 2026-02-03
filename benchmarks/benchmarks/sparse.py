@@ -377,7 +377,7 @@ class NullSlice(Benchmark):
     ]
 
     def _setup(self, sparse_type, density, format):
-        n = 100000
+        n = 10000
         k = 1000
 
         # faster version of sparse.rand(n, k, format=format, density=density),
@@ -421,34 +421,14 @@ class NullSlice(Benchmark):
     def time_3_rows(self, sparse_type, density, format):
         self.X[[0, 100, 105], :]
 
-    def time_10000_rows(self, sparse_type, density, format):
-        self.X[np.arange(10000), :]
+    def time_1000_rows(self, sparse_type, density, format):
+        self.X[np.arange(1000), :]
 
     def time_3_cols(self, sparse_type, density, format):
         self.X[:, [0, 100, 105]]
 
     def time_100_cols(self, sparse_type, density, format):
         self.X[:, np.arange(100)]
-
-    # Retain old benchmark results (remove this if changing the benchmark)
-    time_10000_rows.version = (
-        "dc19210b894d5fd41d4563f85b7459ef5836cddaf77154b539df3ea91c5d5c1c"
-    )
-    time_100_cols.version = (
-        "8d43ed52084cdab150018eedb289a749a39f35d4dfa31f53280f1ef286a23046"
-    )
-    time_3_cols.version = (
-        "93e5123910772d62b3f72abff56c2732f83d217221bce409b70e77b89c311d26"
-    )
-    time_3_rows.version = (
-        "a9eac80863a0b2f4b510269955041930e5fdd15607238257eb78244f891ebfe6"
-    )
-    time_getcol.version = (
-        "291388763b355f0f3935db9272a29965d14fa3f305d3306059381e15300e638b"
-    )
-    time_getrow.version = (
-        "edb9e4291560d6ba8dd58ef371b3a343a333bc10744496adb3ff964762d33c68"
-    )
 
 
 class Diagonal(Benchmark):
