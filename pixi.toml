@@ -253,7 +253,7 @@ scipy-stubs = "*"
 ### Documentation ###
 
 [feature.docs.dependencies]
-sphinx = "<8.2.0"
+sphinx = "8.2.*"
 intersphinx-registry = "*"
 pydata-sphinx-theme = "*"
 sphinx-copybutton = "*"

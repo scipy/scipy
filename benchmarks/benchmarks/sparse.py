@@ -4,7 +4,7 @@ Simple benchmarks for the sparse module
 import warnings
 import time
 import timeit
-import pickle
+# import pickle
 
 import numpy as np
 

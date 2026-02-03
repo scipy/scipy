@@ -136,33 +136,33 @@ allcontdists = [contdist1(), contdist2(), contdist3(), contdist3(10000.),
                 contdist4(), contdist5()]
 
 
-class TransformedDensityRejection(Benchmark):
+# class TransformedDensityRejection(Benchmark):
 
-    param_names = ['dist', 'c']
+#     param_names = ['dist', 'c']
 
-    params = [allcontdists, [0., -0.5]]
+#     params = [allcontdists, [0., -0.5]]
 
-    def setup(self, dist, c):
-        self.urng = np.random.default_rng(0xfaad7df1c89e050200dbe258636b3265)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            try:
-                self.rng = sampling.TransformedDensityRejection(
-                    dist, c=c, random_state=self.urng
-                )
-            except sampling.UNURANError:
-                # contdist3 is not T-concave for c=0. So, skip such test-cases
-                raise NotImplementedError(f"{dist} not T-concave for c={c}")
+#     def setup(self, dist, c):
+#         self.urng = np.random.default_rng(0xfaad7df1c89e050200dbe258636b3265)
+#         with warnings.catch_warnings():
+#             warnings.simplefilter("ignore", RuntimeWarning)
+#             try:
+#                 self.rng = sampling.TransformedDensityRejection(
+#                     dist, c=c, random_state=self.urng
+#                 )
+#             except sampling.UNURANError:
+#                 # contdist3 is not T-concave for c=0. So, skip such test-cases
+#                 raise NotImplementedError(f"{dist} not T-concave for c={c}")
 
-    def time_tdr_setup(self, dist, c):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            sampling.TransformedDensityRejection(
-                dist, c=c, random_state=self.urng
-            )
+#     def time_tdr_setup(self, dist, c):
+#         with warnings.catch_warnings():
+#             warnings.simplefilter("ignore", RuntimeWarning)
+#             sampling.TransformedDensityRejection(
+#                 dist, c=c, random_state=self.urng
+#             )
 
-    def time_tdr_rvs(self, dist, c):
-        self.rng.rvs(100000)
+#     def time_tdr_rvs(self, dist, c):
+#         self.rng.rvs(100000)
 
 
 class SimpleRatioUniforms(Benchmark):
