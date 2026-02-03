@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _length_nonmasked
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
 from scipy._lib._array_api import SCIPY_ARRAY_API
 from scipy.stats._stats_py import _xp_mean, _xp_var
@@ -313,7 +313,7 @@ def test_length_nonmasked_marray_iterable_axis_raises():
     # This test can be removed after support is added.
     with pytest.raises(NotImplementedError,
         match="`axis` must be an integer or None for use with `MArray`"):
-        _length_nonmasked(marr, axis=(0, 1), xp=xp)
+        _count_nonmasked(marr, axis=(0, 1), xp=xp)
 
 
 @make_xp_test_case(stats.directional_stats)
