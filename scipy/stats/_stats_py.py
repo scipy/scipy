@@ -10142,12 +10142,18 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         data, mask = x.data, x.mask
         uxp = array_namespace(data)
         data = uxp.where(mask, uxp.nan, data)
+        # TODO: have `_rankdata` always return three items, but allow them
+        #       to be `None` if they are not needed by the calling function.
+        #       Arguments controlling the number of outputs is a pain.
         ranks, sorted, ties = _rankdata(data, method, True, True, xp=uxp)
-        ranks = xp.asarray(ranks, mask=mask)
-        mask_sorted = uxp.isnan(sorted)
-        sorted = xp.asarray(sorted, mask=mask_sorted)
-        ties = xp.asarray(ties, mask=mask_sorted)
-        return ranks, sorted, ties
+        out = [xp.asarray(ranks, mask=mask)]
+        if return_sorted or return_ties:
+            mask_sorted = uxp.isnan(sorted)
+        if return_sorted:
+            out.append(xp.asarray(sorted, mask=mask_sorted))
+        if return_ties:
+            out.append(xp.asarray(ties, mask=mask_sorted))
+        return out[0] if len(out) == 1 else tuple(out)
 
     shape = x.shape
 

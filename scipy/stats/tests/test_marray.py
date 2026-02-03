@@ -385,3 +385,14 @@ def test_entropy(qk, axis, xp):
     res = stats.entropy(*marrays, axis=axis)
     ref = stats.entropy(*narrays, nan_policy='omit', axis=axis)
     xp_assert_close(res.data, xp.asarray(ref))
+
+
+@make_xp_test_case(stats.rankdata)
+@pytest.mark.parametrize('axis', [0, 1, None])
+@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
+def test_rankdata(axis, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp)
+    res = stats.rankdata(*marrays, axis=axis)
+    ref = stats.rankdata(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.data[~res.mask], xp.asarray(ref[~np.isnan(ref)]))
+    xp_assert_close(res.mask, xp.asarray(np.isnan(ref)))
