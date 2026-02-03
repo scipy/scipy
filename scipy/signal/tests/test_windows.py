@@ -1034,6 +1034,78 @@ def test_windowfunc_basics(window, window_name, params, xp):
         xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
 
+class TestWindowSpectralProperties:
+    """Tests for spectral properties of window functions.
+    
+    These tests validate frequency-domain characteristics like peak sidelobe
+    levels and mainlobe widths against reference values from Harris (1978).
+    
+    References
+    ----------
+    .. [1] F. J. Harris, "On the use of windows for harmonic analysis with the
+           discrete Fourier transform," Proc. IEEE, vol. 66, no. 1, pp. 51-83,
+           Jan. 1978.
+    """
+    
+    @pytest.mark.parametrize('window_name,expected_psll', [
+        ('boxcar', -13.26),
+        ('hann', -31.47),
+        ('hamming', -42.67),
+        ('blackman', -58.11),
+    ])
+    def test_peak_sidelobe_level(self, window_name, expected_psll):
+        """Verify peak sidelobe levels match published reference values."""
+        M_win = 1024
+        N_fft = 65536
+        
+        # Use sym=False (periodic) for spectral analysis
+        window_func = getattr(windows, window_name)
+        w = window_func(M_win, sym=False)
+        
+        # Compute spectrum in dB
+        spec = np.abs(fft(w, N_fft))
+        spec_db = 20 * np.log10(spec / spec.max())
+        
+        # Find first zero crossing to separate mainlobe from sidelobes
+        first_zero = int(np.argmax(np.diff(spec_db) > 0))
+        assert first_zero > 0, "Could not find mainlobe-sidelobe transition"
+        
+        # Measure peak sidelobe level
+        psll = float(np.max(spec_db[first_zero:-first_zero]))
+        
+        # Allow 0.5 dB tolerance for numerical precision
+        assert psll == pytest.approx(expected_psll, abs=0.5)
+    
+    @pytest.mark.parametrize('window_name,expected_width', [
+        ('boxcar', 2.0),
+        ('hann', 4.0),
+        ('hamming', 4.0),
+        ('blackman', 6.0),
+    ])
+    def test_mainlobe_width(self, window_name, expected_width):
+        """Verify mainlobe width (bins to first null) for classic windows."""
+        M_win = 1024
+        N_fft = 65536
+        
+        # Use sym=False (periodic) for spectral analysis  
+        window_func = getattr(windows, window_name)
+        w = window_func(M_win, sym=False)
+        
+        # Find first null (magnitude drops below threshold)
+        spec = np.abs(fft(w, N_fft))
+        normalized = spec / spec.max()
+        half_spectrum = normalized[:N_fft // 2]
+        first_null = int(np.argmax(half_spectrum <= 1e-6))
+        
+        assert first_null > 0, "Could not find first null"
+        
+        # Convert to normalized bins (relative to window length)
+        width_bins = 2 * first_null / N_fft * M_win
+        
+        # Allow 2% tolerance for numerical precision
+        assert width_bins == pytest.approx(expected_width, rel=0.02)
+
+
 @make_xp_test_case(get_window)
 def test_needs_params(xp):
     for winstr in ['kaiser', 'ksr', 'kaiser_bessel_derived', 'kbd',
