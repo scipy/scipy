@@ -1872,14 +1872,16 @@ class TestQR:
         q, r = qr(a, lwork=None)
 
         # Test against minimum valid lwork
-        q2, r2 = qr(a, lwork=3)
-        assert_array_almost_equal(q2, q)
-        assert_array_almost_equal(r2, r)
+        with pytest.warns(DeprecationWarning):
+            q2, r2 = qr(a, lwork=3)
+            assert_array_almost_equal(q2, q)
+            assert_array_almost_equal(r2, r)
 
         # Test against larger lwork
-        q3, r3 = qr(a, lwork=10)
-        assert_array_almost_equal(q3, q)
-        assert_array_almost_equal(r3, r)
+        with pytest.warns(DeprecationWarning):
+            q3, r3 = qr(a, lwork=10)
+            assert_array_almost_equal(q3, q)
+            assert_array_almost_equal(r3, r)
 
         # Test against explicit lwork=-1
         q4, r4 = qr(a, lwork=-1)

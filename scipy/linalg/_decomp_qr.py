@@ -172,7 +172,8 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
             )
         else:
             warnings.warn(
-                "The `lwork` keyword is no longer in use and will be deprecated.",
+                "The `lwork` keyword is deprecated in scipy 1.18.0 and will "
+                "be removed in 1.20.0",
                 DeprecationWarning,
                 stacklevel=2
             )
