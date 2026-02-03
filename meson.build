@@ -183,11 +183,7 @@ tempita = find_program('scipy/_build_utils/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran
-  pythran = find_program('pythran', native: true, version: '>=0.14.0')
-  # xsimd is unvendored from pythran by conda-forge, and due to a compiler
-  # activation bug the default <prefix>/include/ may not be visible (see
-  # gh-15698). Hence look for xsimd explicitly.
-  xsimd_dep = dependency('xsimd', required: false)
+  pythran = find_program('pythran', native: true, version: '>=0.18.1')
 endif
 
 # Subprojects
@@ -197,7 +193,7 @@ endif
 if not fs.exists('subprojects/array_api_extra/README.md')
   error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('subprojects/cobyqa/cobyqa/README.rst')
+if not fs.exists('subprojects/cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('subprojects/pocketfft/README.md')

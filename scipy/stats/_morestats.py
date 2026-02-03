@@ -3095,7 +3095,6 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
     rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    rank, t = xp.astype(rank, dtype), xp.astype(t, dtype)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
@@ -3551,7 +3550,6 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
     Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
     ranks = stats.rankdata(Xij_Xibar, method='average', axis=-1)
-    ranks = xp.astype(ranks, dtype)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
@@ -3615,7 +3613,6 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
     _, a = _stats_py._rankdata(x, method='average', return_ties=True)
-    a = xp.astype(a, phi.dtype)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
     a = xp.concat((a, zeros), axis=-1)
@@ -3737,7 +3734,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     """
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
-    dtype = x.dtype
 
     # _axis_nan_policy decorator ensures axis=-1
     xy = xp.concat((x, y), axis=-1)
@@ -3753,7 +3749,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
     r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)

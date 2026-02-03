@@ -1001,7 +1001,7 @@ def hstack(blocks, format=None, dtype=None):
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse matrices with compatible shapes
     format : str
         sparse format of the result (e.g., "csr")
@@ -1048,7 +1048,7 @@ def vstack(blocks, format=None, dtype=None):
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse arrays with compatible shapes
     format : str, optional
         sparse format of the result (e.g., "csr")

@@ -81,7 +81,6 @@ from scipy._lib._array_api import (
     _length_nonmasked,
     _share_masks,
     xp_swapaxes,
-    xp_default_dtype,
     xp_device,
 )
 import scipy._external.array_api_extra as xpx
@@ -8019,6 +8018,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     # These counts are given by the differences between consecutive ("min" or "max")
     # ranks corresponding with the observations in the (sorted) samples.
     ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
+    ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
     one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype, device=xp_device(ranks))
     cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
     cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
@@ -8562,9 +8562,6 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     alldata = xp.concat(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
-    # should adjust output dtype of _rankdata
-    ranked = xp.astype(ranked, alldata.dtype, copy=False)
-    t = xp.astype(t, alldata.dtype, copy=False)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
@@ -8667,7 +8664,6 @@ def friedmanchisquare(*samples, axis=0):
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
     data, t = _rankdata(data, method='average', return_ties=True)
-    data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
@@ -10044,7 +10040,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     -------
     ranks : ndarray
          An array of size equal to the size of `a`, containing rank
-         scores.
+         scores. The dtype is the result dtype of `a` and a Python float.
 
     References
     ----------
@@ -10055,18 +10051,18 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     >>> import numpy as np
     >>> from scipy.stats import rankdata
     >>> rankdata([0, 2, 3, 2])
-    array([ 1. ,  2.5,  4. ,  2.5])
+    array([1. , 2.5, 4. , 2.5])
     >>> rankdata([0, 2, 3, 2], method='min')
-    array([ 1,  2,  4,  2])
+    array([1., 2., 4., 2.])
     >>> rankdata([0, 2, 3, 2], method='max')
-    array([ 1,  3,  4,  3])
+    array([1., 3., 4., 3.])
     >>> rankdata([0, 2, 3, 2], method='dense')
-    array([ 1,  2,  3,  2])
+    array([1., 2., 3., 2.])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
-    array([ 1,  2,  4,  3])
-    >>> rankdata([[0, 2], [3, 2]]).reshape(2,2)
+    array([1., 2., 4., 3.])
+    >>> rankdata([[0, 2], [3, 2]]).reshape(2, 2)
     array([[1. , 2.5],
-          [4. , 2.5]])
+           [4. , 2.5]])
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
@@ -10088,24 +10084,20 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         axis = -1
 
     if xp_size(x) == 0:
-        dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
-        return xp.empty(x.shape, dtype=dtype)
+        dtype = xp_result_type(x, force_floating=True, xp=xp)
+        return xp.empty_like(x, dtype=dtype)
 
     contains_nan = _contains_nan(x, nan_policy)
 
     x = xp_swapaxes(x, axis, -1, xp=xp)
     ranks = _rankdata(x, method, xp=xp)
 
-    # JIT won't allow use of `contains_nan` for control flow here, so we have to choose
-    # whether to always or never run this block with JIT.
-    # For now, *never* run it; otherwise, it would change dtype of `ranks`.
-    # When gh-19889 is resolved, dtype will already be `float`, so *always* run it.
-    # TODO then: broadcast `i_nan` to the shape of ranks before using `at.set`
-    if not is_lazy_array(x) and contains_nan:
-        default_float = xp_default_dtype(xp)
+    # JIT won't allow use of `contains_nan` for control flow here, so we always have to
+    # run this with JIT.
+    if is_lazy_array(x) or contains_nan:
         i_nan = (xp.isnan(x) if nan_policy == 'omit'
-                 else xp.any(xp.isnan(x), axis=-1))
-        ranks = xp.asarray(ranks, dtype=default_float)  # copy=False when implemented
+                 else xp.any(xp.isnan(x), axis=-1, keepdims=True))
+        i_nan = xp.broadcast_to(i_nan, ranks.shape)
         ranks = xpx.at(ranks)[i_nan].set(xp.nan)
 
     ranks = xp_swapaxes(ranks, axis, -1, xp=xp)
@@ -10129,10 +10121,12 @@ def _order_ranks(ranks, j, *, xp):
 def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     # Rank data `x` by desired `method`; `return_ties`/`return_sorted` data  if desired
     xp = array_namespace(x) if xp is None else xp
+    dtype = xp_result_type(x, force_floating=True, xp=xp)
 
     if is_jax(xp):
         import jax.scipy.stats as jax_stats
         ranks = jax_stats.rankdata(x, method=method, axis=-1)
+        ranks = xp.astype(ranks, dtype, copy=False)
         out = [ranks]
         y = xp.sort(x, axis=-1) if (return_ties or return_sorted) else None
         if return_sorted:
@@ -10140,6 +10134,7 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         if return_ties:
             max_ranks = jax_stats.rankdata(y, method='max', axis=-1)
             t = xp.diff(max_ranks, axis=-1, prepend=0)
+            t = xp.astype(t, dtype, copy=False)
             out.append(t)
         return out[0] if len(out) == 1 else tuple(out)
 
@@ -10155,7 +10150,6 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         return ranks, sorted, ties
 
     shape = x.shape
-    dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
     # Get sort order
     j = xp.argsort(x, axis=-1, stable=True)
@@ -10180,10 +10174,10 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     if method == 'min':
         ranks = ordinal_ranks[i]
     elif method == 'max':
-        ranks = ordinal_ranks[i] + counts - 1
+        ranks = ordinal_ranks[i] + xp.astype(counts, dtype) - 1
     elif method == 'average':
         # array API doesn't promote integers to floats
-        ranks = ordinal_ranks[i] + (xp.asarray(counts, dtype=dtype) - 1)/2
+        ranks = ordinal_ranks[i] + (xp.astype(counts, dtype) - 1)/2
     elif method == 'dense':
         ranks = xp.cumulative_sum(xp.astype(i, dtype, copy=False), axis=-1)[i]
 
@@ -10214,8 +10208,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         #   sorted order, so this does not unnecessarily reorder them.
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
-        t = xp.zeros(shape, dtype=xp.float64)
-        t = xpx.at(t)[i].set(xp.astype(counts, t.dtype, copy=False))
+        t = xp.zeros(shape, dtype=dtype)
+        t = xpx.at(t)[i].set(xp.astype(counts, dtype, copy=False))
         out.append(t)
 
     return out
