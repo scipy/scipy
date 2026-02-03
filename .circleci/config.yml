@@ -132,6 +132,10 @@ jobs:
           env: "bench"
 
       - run:
+          working_directory: benchmarks
+          command: pixi run -e bench asv machine --machine CircleCI
+
+      - run:
           name: run asv
           no_output_timeout: 30m
           # TODO: simplify via spin and Pixi tasks
@@ -144,7 +148,7 @@ jobs:
           #   export OPENBLAS_NUM_THREADS=1
           #   time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
           #   asv --config asv.conf.json publish
-          command: /home/circleci/.pixi/bin/pixi run bench --quick -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
+          command: pixi run bench --quick -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
 
       - store_artifacts:
           path: benchmarks/html
