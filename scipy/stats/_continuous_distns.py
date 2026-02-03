@@ -5467,6 +5467,17 @@ class geninvgauss_gen(rv_continuous):
 geninvgauss = geninvgauss_gen(a=0.0, name="geninvgauss")
 
 
+@np.vectorize
+def _norminvgauss_quadrature(x, y, a, b):
+    mean = b / np.sqrt(a**2 - b**2)
+    if y < mean or x > mean:
+        res = integrate.quad(norminvgauss._pdf, x, y, args=(a, b))[0]
+    else:
+        res = (integrate.quad(norminvgauss._pdf, x, mean, args=(a, b))[0]
+               + integrate.quad(norminvgauss._pdf, mean, y, args=(a, b))[0])
+    return np.clip(res, 0, 1)
+
+
 class norminvgauss_gen(rv_continuous):
     r"""A Normal Inverse Gaussian continuous random variable.
 
@@ -5542,18 +5553,11 @@ class norminvgauss_gen(rv_continuous):
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
+    def _cdf(self, x, a, b):
+        return _norminvgauss_quadrature(-np.inf, x, a, b)
+
     def _sf(self, x, a, b):
-        if np.isscalar(x):
-            # If x is a scalar, then so are a and b.
-            return integrate.quad(self._pdf, x, np.inf, args=(a, b))[0]
-        else:
-            a = np.atleast_1d(a)
-            b = np.atleast_1d(b)
-            result = []
-            for (x0, a0, b0) in zip(x, a, b):
-                result.append(integrate.quad(self._pdf, x0, np.inf,
-                                             args=(a0, b0))[0])
-            return np.array(result)
+        return _norminvgauss_quadrature(x, np.inf, a, b)
 
     def _isf(self, q, a, b):
         def _isf_scalar(q, a, b):
