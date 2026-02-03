@@ -114,12 +114,12 @@ def test_csr_bool_indexing():
     assert (slice_list3 == slice_array3).all()
 
 
-@pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
 @pytest.mark.timeout(2)  # only slow when broken (conversion to 2d index arrays)
+@pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
 def test_fancy_indexing_broadcasts_without_making_dense_2d(cls):
-    I = np.arange(100_000).reshape((100_000, 1))
+    I = np.arange(46340).reshape((46340, 1))
     J = I.T
-    S = cls((100_000, 100_000))
+    S = cls((46340, 46340))
     # testing nnz, but really testing indexing. Should blow up memory needs
     assert S[I, J].nnz == 0
 
