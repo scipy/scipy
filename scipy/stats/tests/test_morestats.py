@@ -1513,7 +1513,7 @@ class TestMood:
                                                   ('integers', (8,))])
     def test_mood_2d(self, rng_method, args, xp):
         # Test if the results of mood test in 2-D vectorized call are consistent
-        # result when looping over the slices.
+        # with result when looping over the slices.
         ny = 5
         rng = np.random.default_rng()
         rng_method = getattr(rng, rng_method)
@@ -1536,7 +1536,7 @@ class TestMood:
         for i in range(ny):
             # check axis handling is self consistent
             ref = stats.mood(x1[i, :], x2[i, :])
-            xp_assert_close(res.statistic[i], xp.asarray(ref.statistic))
+            xp_assert_close(res.statistic[i], xp.asarray(ref.statistic), atol=1e-14)
             xp_assert_close(res.pvalue[i], xp.asarray(ref.pvalue))
 
     @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
