@@ -8771,14 +8771,15 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    xp = array_namespace(x, y)
-    nx = x.shape[-1]
-    ny = y.shape[-1]
-
     # _axis_nan_policy decorator ensures we can work along the last axis
+    xp = array_namespace(x, y)
+    length_x = x.shape[-1]
+    nx = _count_nonmasked(x, axis=-1)
+    ny = _count_nonmasked(x, axis=-1)
+
     rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
-    rankcx = rankc[..., 0:nx]
-    rankcy = rankc[..., nx:nx+ny]
+    rankcx = rankc[..., :length_x]
+    rankcy = rankc[..., length_x:]
     rankcx_mean = xp.mean(rankcx, axis=-1, keepdims=True)
     rankcy_mean = xp.mean(rankcy, axis=-1, keepdims=True)
     rankx = rankdata(x, axis=-1)
