@@ -98,23 +98,25 @@ We now plot these functions to get a sense of their behavior.
    ...     plt.imshow(values, vmin=-2, vmax=2, cmap="RdBu_r")
    ...     plt.title(name)
    ...     error = values[mask] - border_values
-   ...     print(f"{name:14s}: Mean error: {np.mean(error):.2g} Error std: {np.std(error):.2g}")
+   ...     error_mean = np.mean(error)
+   ...     error_std = np.std(error)
+   ...     return [error_mean, error_std]
    ...
    >>> sum_of_sines = np.sin(6 * np.pi * grid_x / L) + np.sin(6 * np.pi * grid_y / L)
    >>> plt.subplot(131)
    >>> plot_and_check_filled_image(sum_of_sines, "Sum of sines")
-   Sum of sines  : Mean error: 0 Error std: 0
+   [0.0, 0.0]
    >>> sine_of_sum = np.sin(6 * np.pi * (grid_x + grid_y) / L)
    >>> plt.subplot(132)
    >>> plot_and_check_filled_image(sine_of_sum, "Sine of sum")
-   Sine of sum   : Mean error: 4e-16 Error std: 1.3e-15
+   [3.9975178684405324e-16, 1.2843214533474938e-15]
    >>> laplace_solution = (
    ...     np.sin(6 * np.pi * grid_x / L) * np.cosh(6 * np.pi * (grid_y - L / 2) / L)
    ...     + np.sin(6 * np.pi * grid_y / L) * np.cosh(6 * np.pi * (grid_x - L / 2) / L)
    ... ) / np.cosh(3 * np.pi)
    >>> plt.subplot(133)
    >>> plot_and_check_filled_image(laplace_solution, "Laplace solution")
-   Laplace solution: Mean error: 3.4e-16 Error std: 3.6e-16
+   [3.3966987236446485e-16, 3.606942688826195e-16]
 
 The sum of the boundary conditions produces values up to :math:`\pm
 2`, while the others are bounded by :math:`\pm 1`, which is the same
@@ -146,6 +148,7 @@ every point.
    >>> from scipy.interpolate import (
    ...     NearestNDInterpolator, LinearNDInterpolator, CloughTocher2DInterpolator
    ... )
+   >>> full_results = []
    >>> for i in range(3):
    ...     sparse_mask = np.zeros_like(grid_x, dtype=bool)
    ...     sparse_mask[::i+1, ::i+1] = True
@@ -153,52 +156,44 @@ every point.
    ...     sparse_x = grid_x[sparse_mask]
    ...     sparse_y = grid_y[sparse_mask]
    ...     sparse_values = sum_of_sines[sparse_mask]
+   ...     sparse_results = []
    ...     for j, interpolator_class in enumerate(
    ...         [NearestNDInterpolator, LinearNDInterpolator, CloughTocher2DInterpolator]
    ...     ):
    ...         interpolator = interpolator_class((sparse_x, sparse_y), sparse_values)
    ...         values = interpolator(grid_x, grid_y)
-   ...         # plt.subplot(3, 3, 3 * i + j + 1)
+   ...         plt.subplot(3, 3, 3 * i + j + 1)
    ...         interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
-   ...         plot_and_check_filled_image(values, f"{interpolator_name:s}\n1 pt. in {i+1:d}")
-   ...         print("Number of NaNs:", np.count_nonzero(np.isnan(values)), end="\n\n")
+   ...         results = plot_and_check_filled_image(values, f"{interpolator_name:s}\n1 pt. in {i+1:d}")
+   ...         results.append(np.count_nonzero(np.isnan(values)))
+   ...         sparse_results.append(results)
+   ...     full_results.append(sparse_results)
    ...
-   Nearest
-   1 pt. in 1: Mean error: 0 Error std: 0
-   Number of NaNs: 0
+   >>> np.array(full_results).transpose(2, 0, 1)
+   array([[[ 0.00000000e+00,             nan,             nan],
+           [ 1.85457226e-05, -1.51181151e-17, -2.78868936e-10],
+           [-5.66098094e-18, -3.36536354e-17, -2.97769462e-09]],
    <BLANKLINE>
-   Linear
-   1 pt. in 1: Mean error: nan Error std: nan
-   Number of NaNs: 104
+          [[ 0.00000000e+00,             nan,             nan],
+           [ 1.56979832e-02,  2.46719817e-04,  2.17605769e-06],
+           [ 1.81372478e-02,  5.69712530e-04,  6.26343610e-06]],
    <BLANKLINE>
-   CloughTocher
-   1 pt. in 1: Mean error: nan Error std: nan
-   Number of NaNs: 104
-   <BLANKLINE>
-   Nearest
-   1 pt. in 2: Mean error: 1.9e-05 Error std: 0.016
-   Number of NaNs: 0
-   <BLANKLINE>
-   Linear
-   1 pt. in 2: Mean error: -1.5e-17 Error std: 0.00025
-   Number of NaNs: 2
-   <BLANKLINE>
-   CloughTocher
-   1 pt. in 2: Mean error: -2.8e-10 Error std: 2.2e-06
-   Number of NaNs: 2
-   <BLANKLINE>
-   Nearest
-   1 pt. in 3: Mean error: -5.7e-18 Error std: 0.018
-   Number of NaNs: 0
-   <BLANKLINE>
-   Linear
-   1 pt. in 3: Mean error: -3.4e-17 Error std: 0.00057
-   Number of NaNs: 0
-   <BLANKLINE>
-   CloughTocher
-   1 pt. in 3: Mean error: -3e-09 Error std: 6.3e-06
-   Number of NaNs: 0
-   <BLANKLINE>
+          [[ 0.00000000e+00,  1.04000000e+02,  1.04000000e+02],
+           [ 0.00000000e+00,  2.00000000e+00,  2.00000000e+00],
+           [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00]]])
+
+   The first and second blocks show the mean and standard deviation of
+   the differences from the provided points on the edge, respectively,
+   and the third shows the number of NaNs produced by the interpolation.
+
+   The first column shows results using nearest-neighbor
+   interpolation, the second results using linear interpolation, and
+   the third using third-order Clough-Tocher interpolation.
+
+   The first row in each block shows the results using every point
+   from the input, the second row the results from using every second
+   point of the input, and the third row the result of using every
+   third point in the input.
 
 In other words, the linear and cubic interpolators have problems
 filling rectangles with more than two hundred points on a side.
@@ -219,6 +214,7 @@ also reduce the problem:
 .. plot::
    :context: close-figs
 
+   >>> full_results = []
    >>> for i, interpolator_class in enumerate(
    ...     [LinearNDInterpolator, CloughTocher2DInterpolator]
    ... ):
@@ -227,9 +223,14 @@ also reduce the problem:
    ...     values = interpolator(grid_x, grid_y, simplex_tolerance=multiplier)
    ...     plt.subplot(1, 2, i+1)
    ...     interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
-   ...     plot_and_check_filled_image(values, f"{interpolator_name:s}\nmul = {multiplier}")
-   ...     print("Number of NaNs:", np.count_nonzero(np.isnan(values)), end="\n\n")
+   ...     results = plot_and_check_filled_image(values, f"{interpolator_name:s}\nmul = {multiplier}")
+   ...     results.append(np.count_nonzero(np.isnan(values)))
+   ...     full_results.append(results)
    ...
+   >>> np.array(full_results).T
+   array([[ 0.00000000e+00,             0.0,             0.0],
+          [ 1.85457226e-05,             0.0, -2.78868936e-10],
+          [-5.66098094e-18,             0.0, -2.97769462e-09]])
 
 ----------------------
 Radial basis functions
@@ -252,6 +253,7 @@ interpolator to get back to the desired density.
    :context: close-figs
 
    >>> from scipy.interpolate import RBFInterpolator, RegularGridInterpolator
+   >>> results = []
    >>> for i, kernel in enumerate(["linear", "thin_plate_spline", "cubic", "quintic"]):
    ...     rbf_interpolator = RBFInterpolator(
    ...         np.column_stack([edge_x, edge_y]), border_values, kernel=kernel
@@ -267,12 +269,17 @@ interpolator to get back to the desired density.
    ...         sparse_values
    ...     )
    ...     values = refiner(np.stack([grid_x, grid_y], -1))
-   ...     plot_and_check_filled_image(values, kernel)
+   ...     results.append(plot_and_check_filled_image(values, kernel))
    ...
-   linear        : Mean error: -1.1e-15 Error std: 0.0041
-   thin_plate_spline: Mean error: 2.5e-12 Error std: 0.0041
-   cubic         : Mean error: -1.4e-13 Error std: 0.0041
-   quintic       : Mean error: 2.1e-06 Error std: 0.0041
+   >>> np.array(results)
+   array([[-1.56770893e-14,  4.07119969e-03],
+          [-2.57408215e-13,  4.07119969e-03],
+          [-2.86032633e-13,  4.07119969e-03],
+          [-3.92475615e-08,  4.07132258e-03]])
+
+   The columns show the mean and standard deviation of the differences
+   from the provided frame, respectively.  The rows iterate over the
+   RBF kernels: linear, thin-plate spline, cubic, and quintic.
 
 -----------------------
 Multi-linear regression
@@ -327,7 +334,9 @@ able to produce the six extrema of the boundary conditions.
    region, the function values may be similar: we use the
    pseudo-inverse to avoid problems from the duplication.
 
+   >>> full_results = []
    >>> for i, num_coeffs in enumerate([8, 12, 16]):
+   ...     results = []
    ...     for j, (polyval2d, polygrid2d) in enumerate(
    ...         [(legval2d, leggrid2d), (chebval2d, chebgrid2d)]
    ...     ):
@@ -343,13 +352,26 @@ able to produce the six extrema of the boundary conditions.
    ...         values = polygrid2d(
    ...             scaled_grid_x[:, 0], scaled_grid_y[0, :], coeffs.reshape(num_coeffs, num_coeffs)
    ...         )
-   ...         plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}")
-   legendre degree 7: Mean error: 1.2e-16 Error std: 0.41
-   chebyshev degree 7: Mean error: -2.7e-17 Error std: 0.41
-   legendre degree 11: Mean error: -9.4e-18 Error std: 0.024
-   chebyshev degree 11: Mean error: -6.7e-17 Error std: 0.024
-   legendre degree 15: Mean error: -1e-16 Error std: 0.0003
-   chebyshev degree 15: Mean error: -5.9e-17 Error std: 0.0003
+   ...         plt.subplot(2, 3, i * 2 + j + 1)
+   ...         results.append(
+   ...             plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}"))
+   ...     full_results.append(results)
+   >>> np.array(full_results).transpose(2, 0, 1)
+   array([[[ 1.21384384e-16, -2.66453526e-17],
+           [-9.43689571e-18, -6.65208629e-17],
+           [-1.01239908e-16, -5.92986308e-17]],
+   <BLANKLINE>
+          [[ 4.07910892e-01,  4.07910892e-01],
+           [ 2.40733605e-02,  2.40733605e-02],
+           [ 2.99289173e-04,  2.99289173e-04]]])
+
+   The first block shows the mean error of the estimates of the
+   provided points, the second the standard deviation of those
+   estimates.  The first column shows estimates using Legendre
+   polynomials, the second estimates using Chebyshev polynomials.  The
+   rows within each block iterate over the degree of the polynomial,
+   showing results for seventh-, eleventh-, and fifteenth-degree
+   polynomials.
 
 The higher-order polynomials produce interesting shapes in the
 interior of the domain, which are pretty, but slightly concerning.  We
@@ -365,7 +387,9 @@ produce results similar to that function.
 .. plot::
    :context: close-figs
 
+   >>> full_results = []
    >>> for i, num_coeffs in enumerate([8, 12, 16]):
+   ...     results = []
    ...     for j, (polyval2d, polygrid2d) in enumerate(
    ...         [(legval2d, leggrid2d), (chebval2d, chebgrid2d)]
    ...     ):
@@ -385,13 +409,25 @@ produce results similar to that function.
    ...             scaled_grid_x[:, 0], scaled_grid_y[0, :],
    ...             coeffs.reshape(num_coeffs, num_coeffs) * coeff_multiplier[:, :]
    ...         )
-   ...         plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}")
-   legendre degree 7: Mean error: -3.2e-16 Error std: 0.41
-   chebyshev degree 7: Mean error: 6.8e-17 Error std: 0.41
-   legendre degree 11: Mean error: 3.4e-16 Error std: 0.024
-   chebyshev degree 11: Mean error: -2.6e-16 Error std: 0.024
-   legendre degree 15: Mean error: 1.4e-16 Error std: 0.0003
-   chebyshev degree 15: Mean error: 7.4e-17 Error std: 0.0003
+   ...         results.append(
+   ...             plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}")
+   ...         )
+   ...     full_results.append(results)
+   ...
+   >>> np.array(full_results).transpose(2, 0, 1)
+   array([[[-3.22704826e-16,  6.80936788e-17],
+           [ 3.42041210e-16, -2.64048043e-16],
+           [ 1.40563198e-16,  7.43054345e-17]],
+   <BLANKLINE>
+          [[ 4.07910892e-01,  4.07910892e-01],
+           [ 2.40733605e-02,  2.40733605e-02],
+           [ 2.99289173e-04,  2.99289173e-04]]])
+
+   The first block is the mean error for the provided values, the
+   second is the standard deviation in the error for the provided
+   values.  The columns show the kind of polynomial used, Legendre or
+   Chebyshev.  The rows within each block give the degree of the
+   polynomial, seventh, eleventh, or fifteenth.
 
 
 A different way to restrict the polynomials to avoid interior extrema
@@ -430,7 +466,7 @@ equation, as do, for example,
    ...     coeffs, laplace_polynomials(scaled_grid_x, scaled_grid_y), 1
    ... )
    >>> plot_and_check_filled_image(values, "Laplace polynomial")
-   Laplace polynomial: Mean error: -3.6e-17 Error std: 0.66
+   [-3.552713678800501e-17, 0.6628206575610528]
 
 --------------
 Other packages
