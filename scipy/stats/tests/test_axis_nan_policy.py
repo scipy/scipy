@@ -27,7 +27,7 @@ SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 
 def _using_accelerate():
     config = np.show_config('dicts')
-    return config['Build Dependencies']['blas']['name'] == 'Accelerate'
+    return config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
 
 
 def unpack_ttest_result(res):
