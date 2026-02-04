@@ -1889,8 +1889,11 @@ class TestQR:
         assert_array_almost_equal(r4, r)
 
         # Test against invalid lwork
-        assert_raises(Exception, qr, (a,), {'lwork': 0})
-        assert_raises(Exception, qr, (a,), {'lwork': 2})
+        with assert_raises(ValueError):
+            qr(a, lwork=0)
+
+        with assert_raises(ValueError):
+            qr(a, lwork=2)
 
     @pytest.mark.parametrize("m", [0, 1, 2])
     @pytest.mark.parametrize("n", [0, 1, 2])
