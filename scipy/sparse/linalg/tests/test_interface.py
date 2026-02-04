@@ -242,6 +242,34 @@ class TestLinearOperator:
         assert_raises(ValueError, operator.matmul, A, 2)
         assert_raises(ValueError, operator.matmul, 2, A)
 
+    def test_dimension_mismatch(self):
+        msg = "(D|d)imension mismatch"
+        A = interface.aslinearoperator(np.ones((3, 4)))
+        # matvec
+        A.matvec(np.ones(4))
+        with pytest.raises(ValueError, match=msg):
+            A.matvec(np.ones(3))
+        # rmatvec
+        A.rmatvec(np.ones(3))
+        with pytest.raises(ValueError, match=msg):
+            A.rmatvec(np.ones(4))
+        # matmat
+        A.matmat(np.ones((4, 3)))
+        with pytest.raises(ValueError, match=msg):
+            A.matmat(np.ones((3, 3)))
+        # rmatmat
+        A.rmatmat(np.ones((3, 3)))
+        with pytest.raises(ValueError, match=msg):
+            A.rmatmat(np.ones((4, 4)))
+        # dot
+        A.dot(np.ones((4, 3)))
+        with pytest.raises(ValueError, match=msg):
+            A.dot(np.ones((3, 3)))
+        # rdot
+        A.rdot(np.ones((3, 3)))
+        with pytest.raises(ValueError, match=msg):
+            A.rdot(np.ones((4, 4)))
+        
 
 class TestDotTests:
     """
