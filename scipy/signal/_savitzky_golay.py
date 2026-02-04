@@ -265,6 +265,9 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         before filtering.
     window_length : int
         The length of the filter window (i.e., the number of coefficients).
+        Must be odd. If an even length is given, the filter evaluates the
+        polynomial at a position offset by 0.5 from the sample points, so
+        polynomial data (e.g. quadratic) will not be preserved exactly.
         If `mode` is 'interp', `window_length` must be less than or equal
         to the size of `x`.
     polyorder : int
@@ -305,6 +308,11 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     Notes
     -----
+    **Window length:** Use an odd value for `window_length` so that the
+    filter is centered on each sample. With an even window length, the
+    fit is evaluated at a position 0.5 grid points away from the sample,
+    so filtered polynomial data will not match the original.
+
     Details on the `mode` options:
 
     - 'mirror':
