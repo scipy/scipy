@@ -2,7 +2,8 @@ import threading
 import numpy as np
 from collections import namedtuple
 from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_size,
-                                   xp_promote, is_lazy_array, is_jax)
+                                   xp_promote, is_lazy_array, is_jax, is_marray,
+                                   _count_nonmasked)
 import scipy._external.array_api_extra as xpx
 from scipy import special
 from scipy import stats
@@ -196,6 +197,10 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
         if method not in methods:
             raise ValueError(f'`method` must be one of {methods}.')
 
+    if is_marray(xp) and method != "asymptotic":
+        message = "Only `method='asymptotic'` is compatible with MArrays."
+        raise ValueError(message)
+
     return x, y, use_continuity, alternative, axis_int, method, xp
 
 
@@ -219,7 +224,8 @@ MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 @xp_capabilities(cpu_only=True,  # exact calculation only implemented in NumPy
                  skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
-                 extra_note="``method='auto'`` is incompatible with JAX arrays.")
+                 extra_note=("``method='auto'`` is incompatible with JAX arrays. "
+                             "Only `method='asymptotic'` is compatible with MArrays."))
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):
@@ -443,13 +449,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     # axis=-1 and arrays broadcasted due to _axis_nan_policy decorator
     xy = xp.concat((x, y), axis=-1)
 
-    n1, n2 = x.shape[-1], y.shape[-1]
+    n1 = _count_nonmasked(x, axis=-1, xp=xp)
+    n2 = _count_nonmasked(y, axis=-1, xp=xp)
 
     # Follows [2]
     ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
     ranks = xp.astype(ranks, x.dtype, copy=False)
     t = xp.astype(t, x.dtype, copy=False)
-    R1 = xp.sum(ranks[..., :n1], axis=-1)                  # method 2, step 2
+    R1 = xp.sum(ranks[..., :x.shape[-1]], axis=-1)         # method 2, step 2
     U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
 
@@ -467,6 +474,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         method = _mwu_choose_method(n1, n2, xp.any(t > 1))
 
     if method == "exact":
+        if is_marray(xp):
+            message = "`method='exact'` is incompatible with MArrays."
+            raise ValueError(message)
         if not hasattr(_mwu_state, 's'):
             _mwu_state.s = _MWU(0, 0)
         _mwu_state.s.set_shapes(n1, n2)
