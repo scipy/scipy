@@ -674,10 +674,10 @@ class LinearOperator:
             if x.ndim > 2:
                 msg = (
                     "Batched (>2-D) input is unsupported by `rdot`.\n"
-                    "It is recommended to transpose data separately and then"
+                    "It is recommended to transpose data separately and then "
                     "use forward operations like `matvec` and `matmat` directly."
                 )
-                raise ValueError(msg)
+                raise NotImplementedError(msg)
             if not issparse(x) and not is_pydata_spmatrix(x):
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)

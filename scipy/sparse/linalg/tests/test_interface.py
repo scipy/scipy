@@ -956,12 +956,13 @@ def test_MatrixLinearOperator_refcycle():
         del op
 
 
+@pytest.mark.parametrize("left", [False, True])
 @pytest.mark.parametrize("operator_definition", ["subclass_matvec", "subclass_matmat",
                                                  "__init__matvec", "__init__matmat",
                                                  "aslinearoperator"])
 @pytest.mark.parametrize("batch_A", [(), (5,)])
 @pytest.mark.parametrize("batch_x", [(), (6, 1)])
-def test_batch(operator_definition, batch_A, batch_x):
+def test_batch(left, operator_definition, batch_A, batch_x):
     import pytest
     import numpy as np
     from scipy.sparse.linalg import aslinearoperator
@@ -969,9 +970,9 @@ def test_batch(operator_definition, batch_A, batch_x):
 
     m, n, k = 4, 3, 2
     A_ = rng.random((*batch_A, m, n))
-    x_row = rng.random((*batch_x, n))
-    x_col = rng.random((*batch_x, n, 1))
-    x_mat = rng.random((*batch_x, n, k))
+    x_row = rng.random((*batch_x, n if left else m))
+    x_col = rng.random((*batch_x, n if left else m, 1))
+    x_mat = rng.random((*batch_x, n if left else m, k))
 
     def matvec(A, x):
         if not batch_x:
@@ -1012,66 +1013,80 @@ def test_batch(operator_definition, batch_A, batch_x):
 
     # Test matvec
     # a. with row vector (or batch of row vectors)
-    np.testing.assert_allclose(A.matvec(x_row), matvec(A_, x_row))
+    np.testing.assert_allclose(A.matvec(x_row) if left else A.rmatvec(x_row),
+                               matvec(A_, x_row) if left else matvec(A_.mT, x_row))
     # b. with column vector (or batch of column vectors)
     if batch_x:
         message = "Dimension mismatch:..."
         with pytest.raises(ValueError, match=message):
-            A.matvec(x_col)
+            A.matvec(x_col) if left else A.rmatvec(x_col)
     else:
-        message = "Calling `matvec` on 'column vectors'..."
+        message = ("Calling `matvec` on 'column vectors'..." if left
+                   else "Calling `rmatvec` on 'column vectors'...")
         with pytest.warns(FutureWarning, match=message):
-            np.testing.assert_allclose(A.matvec(x_col), A_ @ x_col)
+            np.testing.assert_allclose(A.matvec(x_col) if left else A.rmatvec(x_col),
+                                       A_ @ x_col if left else A_.mT @ x_col)
     # c. with matrix (or batch of matrices)
     with pytest.raises(ValueError, match="Dimension mismatch:..."):
-        A.matvec(x_mat)
+        A.matvec(x_mat) if left else A.rmatvec(x_mat)
 
     # Test matmat
     # a. with row vector (or batch of row vectors)
     message = "Dimension mismatch:..." if batch_x else "Expected at least 2-d..."
     with pytest.raises(ValueError, match=message):
-        A.matmat(x_row)
+        A.matmat(x_row) if left else A.rmatmat(x_row)
     # b. with column vector (or batch of column vectors)
-    np.testing.assert_allclose(A.matmat(x_col), A_ @ x_col)
+    np.testing.assert_allclose(A.matmat(x_col) if left else A.rmatmat(x_col),
+                               A_ @ x_col if left else A_.mT @ x_col)
     # c. with matrix (or batch of matrices)
-    np.testing.assert_allclose(A.matmat(x_mat), A_ @ x_mat)
+    np.testing.assert_allclose(A.matmat(x_mat) if left else A.rmatmat(x_mat),
+                               A_ @ x_mat if left else A_.mT @ x_mat)
 
     # test __matmul__ (via `@`), `__call__`, and `dot`
-    # a. with row vector (or batch of row vectors)
-    if batch_x:
-        with pytest.raises(ValueError, match="Dimension mismatch:..."):
-            A @ x_row
-    else:
-        np.testing.assert_allclose(A @ x_row, A_ @ x_row)
-        np.testing.assert_allclose(A(x_row), A_ @ x_row)
-        np.testing.assert_allclose(A.dot(x_row), A_ @ x_row)
-    # b. with column vector (or batch of column vectors)
-    np.testing.assert_allclose(A @ x_col, A_ @ x_col)
-    np.testing.assert_allclose(A(x_col), A_ @ x_col)
-    np.testing.assert_allclose(A.dot(x_col), A_ @ x_col)
-    # c. with matrix (or batch of matrices)
-    np.testing.assert_allclose(A @ x_mat, A_ @ x_mat)
-    np.testing.assert_allclose(A(x_mat), A_ @ x_mat)
-    np.testing.assert_allclose(A.dot(x_mat), A_ @ x_mat)
-
-    # # Code below is identical to code above except methods have been replaced with
-    # # their `r` counterparts and reference matrix `A_` is replaced with `A_.mT`.
-    # x_row = rng.random((*batch_x, m))
-    # x_col = rng.random((*batch_x, m, 1))
-    # x_mat = rng.random((*batch_x, m, k))
-    #
-    # # Test rmatvec
-    # # a. with row vector (or batch of row vectors)
-    # np.testing.assert_allclose(A.rmatvec(x_row), matvec(A_.mT, x_row))
-    # # b. with column vector (or batch of column vectors)
-    # if batch_x:
-    #     message = "Dimension mismatch:..."
-    #     with pytest.raises(ValueError, match=message):
-    #         A.rmatvec(x_col)
+    if left:
+        # a. with row vector (or batch of row vectors)
+        if batch_x:
+            with pytest.raises(ValueError, match="Dimension mismatch:..."):
+                A @ x_row
+        else:
+            np.testing.assert_allclose(A @ x_row, A_ @ x_row)
+            np.testing.assert_allclose(A(x_row), A_ @ x_row)
+            np.testing.assert_allclose(A.dot(x_row), A_ @ x_row)
+        # b. with column vector (or batch of column vectors)
+        np.testing.assert_allclose(A @ x_col, A_ @ x_col)
+        np.testing.assert_allclose(A(x_col), A_ @ x_col)
+        np.testing.assert_allclose(A.dot(x_col), A_ @ x_col)
+        # c. with matrix (or batch of matrices)
+        np.testing.assert_allclose(A @ x_mat, A_ @ x_mat)
+        np.testing.assert_allclose(A(x_mat), A_ @ x_mat)
+        np.testing.assert_allclose(A.dot(x_mat), A_ @ x_mat)
+    elif batch_x:
+        message = r"Batched \(>2-D\) input is unsupported..."
+        # a. with row vector (or batch of row vectors)
+        with pytest.raises(NotImplementedError, match=message):
+            x_row @ A
+        with pytest.raises(NotImplementedError, match=message):
+            A.rdot(x_row)
+        # b. with column vector (or batch of column vectors)
+        with pytest.raises(NotImplementedError, match=message):
+            x_col @ A
+        with pytest.raises(NotImplementedError, match=message):
+            A.rdot(x_col)
+        # c. with matrix (or batch of matrices)
+        with pytest.raises(NotImplementedError, match=message):
+            x_mat @ A
+        with pytest.raises(NotImplementedError, match=message):
+            A.rdot(x_mat)
     # else:
-    #     message = "Calling `rmatvec` on 'column vectors'..."
-    #     with pytest.warns(FutureWarning, match=message):
-    #         np.testing.assert_allclose(A.rmatvec(x_col), A_.mT @ x_col)
-    # # c. with matrix (or batch of matrices)
-    # with pytest.raises(ValueError, match="Dimension mismatch:..."):
-    #     A.matvec(x_mat)
+    #     # a. with row vector (or batch of row vectors)
+    #     np.testing.assert_allclose(x_row @ A, A_.mT @ x_row)
+    #     np.testing.assert_allclose(A.T(x_row), A_.mT @ x_row)
+    #     np.testing.assert_allclose(A.rdot(x_row), A_.mT @ x_row)
+    #     # b. with column vector (or batch of column vectors)
+    #     np.testing.assert_allclose(x_col @ A, A_.mT @ x_col)
+    #     np.testing.assert_allclose(A.T(x_col), A_.mT @ x_col)
+    #     np.testing.assert_allclose(A.rdot(x_col), A_.mT @ x_col)
+    #     # c. with matrix (or batch of matrices)
+    #     np.testing.assert_allclose(x_mat @ A, A_.mT @ x_mat)
+    #     np.testing.assert_allclose(A.T(x_mat), A_.mT @ x_mat)
+    #     np.testing.assert_allclose(A.rdot(x_mat), A_.mT @ x_mat)
