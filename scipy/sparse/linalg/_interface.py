@@ -93,17 +93,17 @@ class LinearOperator:
         Matrix dimensions ``(..., M, N)``,
         where ``...`` represents any additional batch dimensions.
     matvec : callable f(v)
-        Returns ``A @ v``, where ``v`` is a dense vector
+        Applies ``A`` to ``v``, where ``v`` is a dense vector
         with shape ``(..., N)``.
     rmatvec : callable f(v)
-        Returns ``A^H @ v``, where ``A^H`` is the conjugate transpose of ``A``,
+        Applies ``A^H`` to ``v``, where ``A^H`` is the conjugate transpose of ``A``,
         and ``v`` is a dense vector of shape ``(..., M)``.
     matmat : callable f(V)
         Returns ``A @ V``, where ``V`` is a dense matrix
         with dimensions ``(..., N, K)``.
     rmatmat : callable f(V)
-        Returns ``A^H @ V``, where ``V`` is a dense matrix
-        with dimensions ``(..., M, K)``.
+        Returns ``A^H @ V``, where ``A^H`` is the conjugate transpose of ``A``,
+        and where ``V`` is a dense matrix with dimensions ``(..., M, K)``.
     dtype : dtype
         Data type of the matrix or matrices.
 
@@ -247,15 +247,13 @@ class LinearOperator:
         then this method will be called on a shape ``(..., N, K)`` array,
         and should return a shape ``(..., M, K)`` array.
 
-        Falls back to `matvec`, so defining that will
+        Falls back to `_matvec`, so defining that will
         define matrix multiplication too (though in a very suboptimal way).
         """
-        # Maintain backwards-compatibility for 1-D input
-        if X.ndim == 1:
-            X = X[np.newaxis]
-
         # NOTE: we can't use `_matvec` directly (for the unbatched case)
         # as we can't assume that user-defined `matvec` functions support batching.
+        # TODO: determine whether user-defined `_matvec` supports batching,
+        # and use it directly.
         return np.stack(
             [self._matvec(X[..., :, i]) for i in range(X.shape[-1])],
             axis=-1
@@ -269,35 +267,33 @@ class LinearOperator:
         ``(..., N)`` array,
         and should return a shape ``(..., M)`` array.
 
-        Falls back to `matmat`, so defining that
+        Falls back to `_matmat`, so defining that
         will define matrix-vector multiplication as well.
         """
-        return np.squeeze(self._matmat(x[..., np.newaxis]), axis=-1)
+        return self._matmat(x[..., np.newaxis])[..., 0]
 
     def matvec(self, x):
         """Matrix-vector multiplication.
 
-        Performs the operation ``A @ x`` where ``A`` is an ``M`` x ``N``
+        Applies ``A`` to `x`, where ``A`` is an ``M`` x ``N``
         linear operator (or batch of linear operators)
-        and `x` is a row or column vector (or batch of such vectors).
+        and `x` is a row vector (or batch of such vectors).
 
         Parameters
         ----------
         x : {matrix, ndarray}
             An array with shape ``(..., N)`` representing a row vector
-            (or batch of row vectors),
-            or an array with shape ``(N, 1)`` representing a column vector.
+            (or batch of row vectors).
 
             .. versionadded:: 1.18.0
-                A ``FutureWarning`` is now emitted for column vector input of shape
-                ``(N, 1)``. `matmat` can be called instead for identical behaviour
-                on such input.
+                A ``FutureWarning`` is emitted for column vector input of shape
+                ``(N, 1)``, for which an array with shape ``(M, 1)`` is returned.
+                `matmat` can be called instead for identical behaviour on such input.
 
         Returns
         -------
         y : {matrix, ndarray}
-            An array with shape ``(..., M)`` or ``(M, 1)`` depending
-            on the type and shape of `x`.
+            An array with shape ``(..., M)``.
 
         Notes
         -----
@@ -320,9 +316,10 @@ class LinearOperator:
         row_vector: bool = False
         if column_vector := x.shape == (N, 1):
             msg = (
-                "In the future, calling `matvec` on 'column vectors' of shape "
-                "`(N, 1)` will be deprecated. Please call `matmat` instead "
-                "for identical behaviour."
+                "Calling `matvec` on 'column vectors' of shape "
+                "`(N, 1)` was deprecated in SciPy 1.18.0 and will no longer "
+                "be possible in SciPy 1.20.0."
+                "Please call `matmat` instead for identical behaviour."
             )
             warnings.warn(
                 msg, FutureWarning,
@@ -352,9 +349,9 @@ class LinearOperator:
     def rmatvec(self, x):
         """Adjoint matrix-vector multiplication.
 
-        Performs the operation ``A^H @ x`` where ``A`` is an
+        Applies ``A^H`` to `x`, where ``A`` is an
         ``M`` x ``N`` linear operator (or batch of linear operators)
-        and `x` is a row or column vector (or batch of such vectors).
+        and `x` is a row vector (or batch of such vectors).
 
         Parameters
         ----------
@@ -364,16 +361,14 @@ class LinearOperator:
             or an array with shape ``(M, 1)`` representing a column vector.
 
             .. versionadded:: 1.18.0
-                A ``FutureWarning`` is now emitted for column vector input of
-                shape ``(M, 1)``.
-                `rmatmat` can be called instead for identical behaviour
-                on such input.
+                A ``FutureWarning`` is now emitted for column vector input of shape
+                ``(M, 1)``, for which an array with shape ``(N, 1)`` is returned.
+                `rmatmat` can be called instead for identical behaviour on such input.
 
         Returns
         -------
         y : {matrix, ndarray}
-            An array with shape ``(..., N)`` or ``(N, 1)`` depending
-            on the shape of `x`.
+            An array with shape ``(..., N)``.
 
         Notes
         -----
@@ -396,9 +391,10 @@ class LinearOperator:
         row_vector: bool = False
         if column_vector := x.shape == (M, 1):
             msg = (
-                "In the future, calling `rmatvec` on 'column vectors' of shape "
-                "`(M, 1)` will be deprecated. Please call `rmatmat` instead "
-                "for identical behaviour."
+                "Calling `rmatvec` on 'column vectors' of shape "
+                "`(M, 1)` was deprecated in SciPy 1.18.0 and will no "
+                "longer be possible in SciPy 1.20.0. "
+                "Please call `rmatmat` instead for identical behaviour."
             )
             warnings.warn(
                 msg, FutureWarning,
@@ -432,7 +428,7 @@ class LinearOperator:
             if (hasattr(self, "_rmatmat")
                     and type(self)._rmatmat != LinearOperator._rmatmat):
                 # Try to use _rmatmat as a fallback
-                return np.squeeze(self._rmatmat(x[..., np.newaxis]), axis=-1)
+                return self._rmatmat(x[..., np.newaxis])[..., 0]
             raise NotImplementedError
         else:
             return self.H.matvec(x)
@@ -454,8 +450,7 @@ class LinearOperator:
         Returns
         -------
         Y : {matrix, ndarray}
-            An array with shape ``(..., M, K)`` depending on
-            the type of `X`.
+            An array with shape ``(..., M, K)``.
 
         Notes
         -----
@@ -639,7 +634,7 @@ class LinearOperator:
 
             if not (vector or matrix):
                 msg = (
-                    f"Dimension mismatch: `x` must have shape `({N},)` "
+                    f"Dimension mismatch: array input `x` must have shape `({N},)` "
                     f"or a shape ending in `({N}, K)` for some integer `K`. "
                     f"Given shape: {x.shape}"
                 )
