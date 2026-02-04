@@ -426,7 +426,7 @@ class LinearOperator:
 
         Performs the operation ``A @ X`` where ``A`` is an ``M`` x ``N``
         linear operator (or batch of linear operators)
-        and ``X`` is a dense ``N`` x ``K`` matrix
+        and `X` is a dense ``N`` x ``K`` matrix
         (or batch of dense matrices).
 
         Parameters
@@ -465,7 +465,7 @@ class LinearOperator:
         Returns
         -------
         Y : {matrix, ndarray}
-            An array with shape ``(..., N, K)`` depending on the type of `X`.
+            An array with shape ``(..., N, K)``.
 
         Notes
         -----
@@ -478,10 +478,6 @@ class LinearOperator:
     def _rmatmat(self, X):
         """Default implementation of `_rmatmat`; defers to `rmatvec` or `adjoint`."""
         if type(self)._adjoint == LinearOperator._adjoint:
-            # Maintain backwards-compatibility for 1-D input
-            if X.ndim == 1:
-                X = X[np.newaxis]
-
             # NOTE: we can't use `_rmatvec` directly as we can't assume that
             # user-defined `rmatvec` functions support batching.
             return np.stack(
