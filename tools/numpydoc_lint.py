@@ -19,7 +19,6 @@ skip_errors = [
     "ES01",
     "PR01",
     "PR02",
-    "PR04",
     "PR08",
     "PR09",
     "RT02",  # questionable rule; see gh-24348
@@ -84,7 +83,7 @@ false_positives = ["scipy.stats.Uniform",
 
 skip_modules = [
     "scipy.odr",
-    "cipy.fftpack",
+    "scipy.fftpack",
     "scipy.stats.mstats",
     "scipy.linalg.cython_lapack",
     "scipy.linalg.cython_blas",
