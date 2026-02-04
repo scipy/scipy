@@ -623,7 +623,7 @@ class LinearOperator:
         .. note ::
 
             For complex data, this does not perform conjugation,
-            returning ``xA`` rather than ``x A^H``.
+            returning ``x A^T`` rather than ``x A^H``.
             To calculate adjoint multiplication instead, use one of
             `rmatvec` or `rmatmat`, or take the adjoint first,
             like ``self.H.rdot(x)`` or ``x * self.H``.
@@ -671,37 +671,30 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            if x.ndim > 2:
-                msg = (
-                    "Batched (>2-D) input is unsupported by `rdot`.\n"
-                    "It is recommended to transpose data separately and then"
-                    "use forward operations like `matvec` and `matmat` directly."
-                )
-                raise ValueError(msg)
             if not issparse(x) and not is_pydata_spmatrix(x):
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)
 
             M = self.shape[-2]
 
-            # treat 1-D input as a vector and 2-D input as a matrix, if the shape fits
+            # treat 1-D input as a vector and >1-D input as a matrix, if the shape fits
             vector = x.shape == (M,)
-            matrix = x.ndim == 2 and x.shape[-1] == M
+            matrix = x.ndim >= 2 and x.shape[-1] == M
 
             if not (vector or matrix):
                 msg = (
                     f"Dimension mismatch: `x` must have shape `({M},)` "
-                    f"or `(K, {M})` for some integer `K`. "
-                    f"Given shape: {x.shape}"
+                    f"or a shape ending in `(K, {M})` for some integer `K`. "
+                    f"Given shape: {x.shape}."
                 )
                 raise ValueError(msg)
-            
+
             # We use transpose instead of rmatvec/rmatmat to avoid
             # unnecessary complex conjugation if possible.
             if vector:
                 return self.T.matvec(x.T).T
             elif matrix:
-                return self.T.matmat(x.T).T
+            return np.moveaxis(self.T.matmat(np.moveaxis(x, -2, -1)), -2, -1)
 
     def __pow__(self, p):
         if np.isscalar(p):
