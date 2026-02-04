@@ -457,11 +457,13 @@ def _solve_2d_fitpack(Ax, Ay, Q, p,
     #   offset_aug_x: band offsets compatible with Ax_aug.
     #   nc_augx     : number of top data rows within Ax_aug (== ncx).
     Ax_aug, offset_aug_x, nc_augx = _stack_augmented_fitpack(
-        Ax, Dx, Ax.nc, kx, p)
+        Ax, Dx, Ax.shape[0], kx, p)
+    nc_x = Ax.nc
 
     # Same for y: build Ay_aug with (Dy / p) stacked if p != -1.
     Ay_aug, offset_aug_y, nc_augy = _stack_augmented_fitpack(
-        Ay, Dy, Ay.nc, ky, p)
+        Ay, Dy, Ay.shape[0], ky, p)
+    nc_y = Ay.nc
 
     # If we stacked penalty rows on the x side, the RHS must be padded with zeros
     # to match the augmented row count for the QR reduction call.
@@ -480,13 +482,14 @@ def _solve_2d_fitpack(Ax, Ay, Q, p,
 
     # https://github.com/scipy/scipy/blob/v1.16.2/scipy/interpolate/fitpack/fpgrre.f#L246-L253
     # Back-substitute along x to solve the reduced system:
-    #   cT has shape (ny_data_like, ncoef_x) in this calling pattern, i.e. per y-column.
+    #   cT has shape (ncoef_x, num_y_data) in this calling pattern, i.e. per y-column.
     # The API uses:
     #   Ax_aug, nc_augx: reduced upper structure
     #   x_x, tx, kx, w_x: x-sample grid, knot vector, degree, and (unit) weights
     #   Q: RHS (current)
+    # fpback returns shape (nc_x, num_y_data)
     T, _, _ = _dierckx.fpback(
-        Ax_aug, nc_augx, x_x,
+        Ax_aug, nc_x, x_x,
         Q, tx, kx, w_x,
         Q, False
     )
@@ -507,11 +510,11 @@ def _solve_2d_fitpack(Ax, Ay, Q, p,
     # https://github.com/scipy/scipy/blob/v1.16.2/scipy/interpolate/fitpack/fpgrre.f#L254-L269
     # Final back-substitution along y:
     # Returns:
-    #   C  : coefficient matrix (orientation matches Ay/BSpline expectations here)
+    #   C  : coefficient matrix with shape (nc_y, nc_x)
     #   fp : FITPACK's internal residual metric from the y-solve
     #        (we recompute below anyway)
     C, _, fp = _dierckx.fpback(
-        Ay_aug, nc_augy,
+        Ay_aug, nc_y,
         x_y, Q, ty, ky, w_y,    # y-grid, y-knots, degree, weights
         Q,                      # RHS -> solution becomes coefficients along y
         False
