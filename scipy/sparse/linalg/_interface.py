@@ -694,7 +694,7 @@ class LinearOperator:
             if vector:
                 return self.T.matvec(x.T).T
             elif matrix:
-            return np.moveaxis(self.T.matmat(np.moveaxis(x, -2, -1)), -2, -1)
+                return np.moveaxis(self.T.matmat(np.moveaxis(x, -2, -1)), -2, -1)
 
     def __pow__(self, p):
         if np.isscalar(p):
