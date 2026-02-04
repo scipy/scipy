@@ -1060,33 +1060,18 @@ def test_batch(left, operator_definition, batch_A, batch_x):
         np.testing.assert_allclose(A @ x_mat, A_ @ x_mat)
         np.testing.assert_allclose(A(x_mat), A_ @ x_mat)
         np.testing.assert_allclose(A.dot(x_mat), A_ @ x_mat)
-    elif batch_x:
-        message = r"Batched \(>2-D\) input is unsupported..."
+    else:
         # a. with row vector (or batch of row vectors)
-        with pytest.raises(NotImplementedError, match=message):
-            x_row @ A
-        with pytest.raises(NotImplementedError, match=message):
-            A.rdot(x_row)
+        if batch_x and batch_A:
+            # Maybe should be "Dimension mismatch..."?
+            with pytest.raises(ValueError, match="operands could not be broadcast..."):
+                x_row @ A
+        else:
+            np.testing.assert_allclose(x_row @ A, x_row @ A_)
+            np.testing.assert_allclose(A.rdot(x_row), x_row @ A_)
         # b. with column vector (or batch of column vectors)
-        with pytest.raises(NotImplementedError, match=message):
+        with pytest.raises(ValueError, match="Dimension mismatch:..."):
             x_col @ A
-        with pytest.raises(NotImplementedError, match=message):
-            A.rdot(x_col)
         # c. with matrix (or batch of matrices)
-        with pytest.raises(NotImplementedError, match=message):
-            x_mat @ A
-        with pytest.raises(NotImplementedError, match=message):
-            A.rdot(x_mat)
-    # else:
-    #     # a. with row vector (or batch of row vectors)
-    #     np.testing.assert_allclose(x_row @ A, A_.mT @ x_row)
-    #     np.testing.assert_allclose(A.T(x_row), A_.mT @ x_row)
-    #     np.testing.assert_allclose(A.rdot(x_row), A_.mT @ x_row)
-    #     # b. with column vector (or batch of column vectors)
-    #     np.testing.assert_allclose(x_col @ A, A_.mT @ x_col)
-    #     np.testing.assert_allclose(A.T(x_col), A_.mT @ x_col)
-    #     np.testing.assert_allclose(A.rdot(x_col), A_.mT @ x_col)
-    #     # c. with matrix (or batch of matrices)
-    #     np.testing.assert_allclose(x_mat @ A, A_.mT @ x_mat)
-    #     np.testing.assert_allclose(A.T(x_mat), A_.mT @ x_mat)
-    #     np.testing.assert_allclose(A.rdot(x_mat), A_.mT @ x_mat)
+        np.testing.assert_allclose(x_mat.mT @ A, x_mat.mT @ A_)
+        np.testing.assert_allclose(A.rdot(x_mat.mT), x_mat.mT @ A_)
