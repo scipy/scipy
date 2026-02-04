@@ -77,6 +77,7 @@ For information on support for parallel execution and thread safety, see
    arpack
    csgraph
    parallel_execution
+   security
    thread_safety
 
 
