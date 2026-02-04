@@ -272,6 +272,56 @@ class LinearOperator:
         """
         return self._matmat(x[..., np.newaxis])[..., 0]
 
+    def _shared_matvec(self, x, adjoint: bool = False):
+        x = np.asanyarray(x)
+
+        *self_broadcast_dims, M, N = self.shape
+        inner_dim, outer_dim = (M, N) if adjoint else (N, M)
+
+        # TODO: deprecate `np.matrix` support
+        if isinstance(x, np.matrix):
+            y = self._rmatvec(x) if adjoint else self._matvec(x)
+            if x.shape == (inner_dim, 1):
+                y = y.reshape(outer_dim, 1)
+            return asmatrix(y)
+
+        x_broadcast_dims: tuple[int, ...] = ()
+        row_vector: bool = False
+        if column_vector := x.shape == (inner_dim, 1):
+            func_name = "`rmatvec`" if adjoint else "`matvec`"
+            matmat_func_name = "`rmatmat`" if adjoint else "`matmat`"
+            msg = (
+                f"Calling {func_name} on 'column vectors' of shape "
+                f"`({inner_dim}, 1)` was deprecated in SciPy 1.18.0 and will no "
+                f"longer be possible in SciPy 1.20.0. "
+                f"Please call {matmat_func_name} instead for identical behaviour."
+            )
+            warnings.warn(
+                msg, FutureWarning,
+                skip_file_prefixes=(os.path.dirname(__file__),)
+            )
+            x = np.reshape(x, (inner_dim,))
+        elif x.ndim >= 1 and (row_vector := x.shape[-1] == inner_dim):
+            x_broadcast_dims = x.shape[:-1]
+
+        if not (row_vector or column_vector):
+            msg = (
+                f"Dimension mismatch: `x` must have a shape ending in "
+                f"`({inner_dim},)`, or shape `({inner_dim}, 1)`. "
+                "Given shape: {x.shape}"
+            )
+            raise ValueError(msg)
+
+        y = self._rmatvec(x) if adjoint else self._matvec(x)
+
+        broadcasted_dims = np.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
+        if row_vector:
+            y = y.reshape(*broadcasted_dims, outer_dim)
+        elif column_vector:
+            y = y.reshape(*broadcasted_dims, outer_dim, 1)
+
+        return y
+
     def matvec(self, x):
         """Matrix-vector multiplication.
 
@@ -300,51 +350,7 @@ class LinearOperator:
         This method wraps the user-specified ``matvec`` routine or overridden
         ``_matvec`` method to ensure that `y` has the correct shape and type.
         """
-
-        x = np.asanyarray(x)
-
-        *self_broadcast_dims, M, N = self.shape
-
-        # TODO: deprecate `np.matrix` support
-        if isinstance(x, np.matrix):
-            y = self._matvec(x)
-            if x.shape == (N, 1):
-                y = y.reshape(M, 1)
-            return asmatrix(y)
-
-        x_broadcast_dims: tuple[int, ...] = ()
-        row_vector: bool = False
-        if column_vector := x.shape == (N, 1):
-            msg = (
-                "Calling `matvec` on 'column vectors' of shape "
-                "`(N, 1)` was deprecated in SciPy 1.18.0 and will no longer "
-                "be possible in SciPy 1.20.0."
-                "Please call `matmat` instead for identical behaviour."
-            )
-            warnings.warn(
-                msg, FutureWarning,
-                skip_file_prefixes=(os.path.dirname(__file__),)
-            )
-            x = np.reshape(x, (N,))
-        elif x.ndim >= 1 and (row_vector := x.shape[-1] == N):
-            x_broadcast_dims = x.shape[:-1]
-
-        if not (row_vector or column_vector):
-            msg = (
-                f"Dimension mismatch: `x` must have a shape ending in "
-                f"`({N},)`, or shape `({N}, 1)`. Given shape: {x.shape}"
-            )
-            raise ValueError(msg)
-
-        y = self._matvec(x)
-
-        broadcasted_dims = np.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
-        if row_vector:
-            y = y.reshape(*broadcasted_dims, M)
-        elif column_vector:
-            y = y.reshape(*broadcasted_dims, M, 1)
-
-        return y
+        return self._shared_matvec(x)
 
     def rmatvec(self, x):
         """Adjoint matrix-vector multiplication.
@@ -375,50 +381,7 @@ class LinearOperator:
         This method wraps the user-specified ``rmatvec`` routine or overridden
         ``_rmatvec`` method to ensure that `y` has the correct shape and type.
         """
-
-        x = np.asanyarray(x)
-
-        *self_broadcast_dims, M, N = self.shape
-
-        # TODO: deprecate `np.matrix` support
-        if isinstance(x, np.matrix):
-            y = self._rmatvec(x)
-            if x.shape == (M, 1):
-                y = y.reshape(N, 1)
-            return asmatrix(y)
-
-        x_broadcast_dims: tuple[int, ...] = ()
-        row_vector: bool = False
-        if column_vector := x.shape == (M, 1):
-            msg = (
-                "Calling `rmatvec` on 'column vectors' of shape "
-                "`(M, 1)` was deprecated in SciPy 1.18.0 and will no "
-                "longer be possible in SciPy 1.20.0. "
-                "Please call `rmatmat` instead for identical behaviour."
-            )
-            warnings.warn(
-                msg, FutureWarning,
-                skip_file_prefixes=(os.path.dirname(__file__),)
-            )
-            x = np.reshape(x, (M,))
-        elif x.ndim >= 1 and (row_vector := x.shape[-1] == M):
-            x_broadcast_dims = x.shape[:-1]
-        if not (row_vector or column_vector):
-            msg = (
-                f"Dimension mismatch: `x` must have a shape ending in "
-                f"`({M},)`, or shape `({M}, 1)`. Given shape: {x.shape}"
-            )
-            raise ValueError(msg)
-
-        y = self._rmatvec(x)
-
-        broadcasted_dims = np.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
-        if row_vector:
-            y = y.reshape(*broadcasted_dims, N)
-        elif column_vector:
-            y = y.reshape(*broadcasted_dims, N, 1)
-
-        return y
+        return self._shared_matvec(x, adjoint=True)
 
     def _rmatvec(self, x):
         """Default implementation of `_rmatvec`.
@@ -432,6 +395,31 @@ class LinearOperator:
             raise NotImplementedError
         else:
             return self.H.matvec(x)
+
+    def _shared_matmat(self, X, adjoint: bool = False):
+        if not (issparse(X) or is_pydata_spmatrix(X)):
+            X = np.asanyarray(X)
+
+        if X.ndim < 2:
+            raise ValueError(f'expected at least 2-d ndarray or matrix, not {X.ndim}-d')
+
+        if X.shape[-2] != (self.shape[-2] if adjoint else self.shape[-1]):
+            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
+
+        try:
+            Y = self._rmatmat(X) if adjoint else self._matmat(X)
+        except Exception as e:
+            if issparse(X) or is_pydata_spmatrix(X):
+                raise TypeError(
+                    "Unable to multiply a LinearOperator with a sparse matrix."
+                    " Wrap the matrix with `aslinearoperator` first."
+                ) from e
+            raise
+
+        if isinstance(Y, np.matrix):
+            Y = asmatrix(Y)
+
+        return Y
 
     def matmat(self, X):
         """Matrix-matrix multiplication.
@@ -457,29 +445,7 @@ class LinearOperator:
         This method wraps any user-specified ``matmat`` routine or overridden
         ``_matmat`` method to ensure that `Y` has the correct type.
         """
-        if not (issparse(X) or is_pydata_spmatrix(X)):
-            X = np.asanyarray(X)
-
-        if X.ndim < 2:
-            raise ValueError(f'expected at least 2-d ndarray or matrix, not {X.ndim}-d')
-
-        if X.shape[-2] != self.shape[-1]:
-            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
-
-        try:
-            Y = self._matmat(X)
-        except Exception as e:
-            if issparse(X) or is_pydata_spmatrix(X):
-                raise TypeError(
-                    "Unable to multiply a LinearOperator with a sparse matrix."
-                    " Wrap the matrix with `aslinearoperator` first."
-                ) from e
-            raise
-
-        if isinstance(Y, np.matrix):
-            Y = asmatrix(Y)
-
-        return Y
+        return self._shared_matmat(X)
 
     def rmatmat(self, X):
         """Adjoint matrix-matrix multiplication.
@@ -507,28 +473,7 @@ class LinearOperator:
         ``_rmatmat`` method to ensure that `Y` has the correct type.
 
         """
-        if not (issparse(X) or is_pydata_spmatrix(X)):
-            X = np.asanyarray(X)
-
-        if X.ndim < 2:
-            raise ValueError(f'expected at least 2-d ndarray or matrix, not {X.ndim}-d')
-
-        if X.shape[-2] != self.shape[-2]:
-            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
-
-        try:
-            Y = self._rmatmat(X)
-        except Exception as e:
-            if issparse(X) or is_pydata_spmatrix(X):
-                raise TypeError(
-                    "Unable to multiply a LinearOperator with a sparse matrix."
-                    " Wrap the matrix in aslinearoperator() first."
-                ) from e
-            raise
-
-        if isinstance(Y, np.matrix):
-            Y = asmatrix(Y)
-        return Y
+        return self._shared_matmat(X, adjoint=True)
 
     def _rmatmat(self, X):
         """Default implementation of `_rmatmat`; defers to `rmatvec` or `adjoint`."""
