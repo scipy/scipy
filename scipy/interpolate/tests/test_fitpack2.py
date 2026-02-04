@@ -1449,6 +1449,39 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl_custom).any())
         xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
 
+    def test_spline_synthetic_data(self):
+        """
+        Test regrid_python with synthetic smooth data (mixed frequencies + noise).
+        """
+        # Create strictly-increasing axes and smooth test surface
+        nx, ny = 64, 64
+        kx, ky = 3, 3
+        s = 0.3
+
+        rng = np.random.default_rng(0)
+        x = np.linspace(0.0, 4.0, nx, dtype=float)
+        y = np.linspace(0.0, 4.0, ny, dtype=float)
+
+        # Smooth, nontrivial surface with mixed frequencies + mild noise
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        z = (
+            np.sin(X) * np.cos(Y)
+            + 0.2 * np.sin(2 * X + 0.5) * np.cos(1.5 * Y - 0.3)
+            + 0.05 * rng.normal(size=(nx, ny))
+        ).astype(float)
+
+        # Test RectBivariateSpline
+        spl = RectBivariateSpline(x, y, z, kx=kx, ky=ky, s=s)
+        z_spl = spl(x, y)
+        assert not np.isnan(z_spl).any()
+        xp_assert_close(z_spl, z, atol=0.1, rtol=0.1)
+
+        # Test regrid_python
+        spl_custom = regrid_python(x, y, z, kx=kx, ky=ky, s=s)
+        z_spl_custom = ndbspline_call_like_bivariate(spl_custom, x, y)
+        assert not np.isnan(z_spl_custom).any()
+        xp_assert_close(z_spl_custom, z, atol=0.1, rtol=0.1)
+
 
 class TestRectSphereBivariateSpline:
     def test_defaults(self):
