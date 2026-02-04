@@ -622,24 +622,17 @@ class LinearOperator:
 
         .. note ::
 
-            For complex data, this does not perform conjugation,
-            returning ``x A^T`` rather than ``x A^H``.
-            To calculate adjoint multiplication instead, use one of
+            This method returns ``x A``.
+            To perform adjoint multiplication instead, use one of
             `rmatvec` or `rmatmat`, or take the adjoint first,
             like ``self.H.rdot(x)`` or ``x * self.H``.
-
-        .. note ::
-            
-            Batched (>2-D) input to this function is unsupported.
-            It is recommended to transpose data separately
-            and then use forward operations like `matvec` and `matmat` directly.
 
         Parameters
         ----------
         x : array_like or `LinearOperator` or scalar
-            Array-like input will be interpreted as a dense row vector
-            or matrix depending on its shape.
-            See the Returns section for details.
+            Array-like input will be interpreted as a 1-D row vector or
+            2-D matrix (or batch of matrices)
+            depending on its shape. See the Returns section for details.
 
         Returns
         -------
@@ -649,13 +642,15 @@ class LinearOperator:
             - For scalar input, a lazily scaled operator is returned.
 
             - Otherwise, the input is expected to take the form of a dense
-              vector or matrix, interpreted as follows
+              1-D vector or 2-D matrix (or batch of matrices),
+              interpreted as follows
               (where ``self`` is an ``M`` by ``N`` linear operator):
 
               - If `x` has shape ``(M,)``
                 it is interpreted as a row vector.
-              - Otherwise, if `x` has shape ``(K, M)`` for some
-                integer ``K``, it is interpreted as a matrix.
+              - If `x` has shape ``(..., K, M)`` for some
+                integer ``K``, it is interpreted as a matrix
+                (or batch of matrices if there are batch dimensions).
 
         See Also
         --------
@@ -694,7 +689,16 @@ class LinearOperator:
             if vector:
                 return self.T.matvec(x.T).T
             elif matrix:
-                return np.moveaxis(self.T.matmat(np.moveaxis(x, -2, -1)), -2, -1)
+                # scipy/scipy#24157
+                def mT(x):
+                    match x.ndim:
+                        case 0 | 1:
+                            return x
+                        case 2:
+                            return x.T
+                        case _:
+                            return np.moveaxis(x, -2, -1)
+                return mT(self.T.matmat(mT(x)))
 
     def __pow__(self, p):
         if np.isscalar(p):
