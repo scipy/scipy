@@ -156,7 +156,7 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
         a1 = np.asarray(a)
 
     if a1.ndim < 2:
-        raise ValueError("expected at least a 2-D array")
+        raise ValueError("Expected at least a 2-D array")
 
     # Bookkeeping to throw errors for backwards compat, else raise DeprecationWarning
     M, N = a1.shape[-2], a1.shape[-1]
@@ -177,6 +177,9 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
                 DeprecationWarning,
                 stacklevel=2
             )
+
+    # First normalize dtypes to ensure consistent return types
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     # accommodate empty arrays
     if a1.size == 0:
@@ -202,18 +205,16 @@ def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
             qr = np.empty_like(a1, shape=batch_shape + (M, N))
             tau = np.zeros_like(a1, shape=batch_shape + (K,))
             return ((qr, tau),) + Rj
+
         return (Q,) + Rj
 
-    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+    if not (a1.flags['ALIGNED'] and a1.dtype.byteorder == '='):
         overwrite_a = True
         a1 = a1.copy()
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     # heavy lifting
-    lwork = -1 if lwork is None else lwork # same meaning, convert for C side
     Q, R, tau, jpvt, err_lst = _batched_linalg._qr(a1, overwrite_a, modeFlag, pivoting)
 
     if err_lst:

@@ -228,7 +228,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int ndim = PyArray_NDIM(ap_A);
     npy_intp* shape = PyArray_SHAPE(ap_A);
     if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "Matrix `A` should at least be 2D.");
+        PyErr_SetString(PyExc_ValueError, "Matrix `a` should at least be 2D.");
         return NULL;
     }
 
