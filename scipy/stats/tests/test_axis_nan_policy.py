@@ -30,6 +30,9 @@ def _using_accelerate():
     return config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
 
 
+RTOL = 1e-6 if _using_accelerate() else 1e-15
+
+
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
     return (res.statistic, res.pvalue, res.df, res._standard_error,
@@ -499,8 +502,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        # changed from 1e-15 and later from 4e-15 to appease macosx-x86_64+Accelerate
-        assert_allclose(res_1db, res_1da, rtol=1e-14)
+        assert_allclose(res_1db, res_1da, rtol=RTOL)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -527,8 +529,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
-    assert_allclose(res_nd, res_1d, rtol=1e-11)
+    assert_allclose(res_nd, res_1d, rtol=RTOL)
 
 # nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
@@ -1458,7 +1459,3 @@ def test_array_like_input(dtype):
     res = stats.mode(ArrLike(x, dtype=dtype))
     assert res.mode == 1
     assert res.count == 2
-
-
-def test_accelerate():
-    assert not _using_accelerate()
