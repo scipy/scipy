@@ -2,7 +2,6 @@
  * Templated loops for `linalg.qr`
  */
 
- #include "src/_common_array_utils.hh"
 template<typename T>
 int
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
@@ -51,7 +50,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
     CBLAS_INT K = std::min(intn, intm), max_dim = std::max(intn, intm);
-    CBLAS_INT middle_dim = (mode == QR_mode::ECONOMIC || mode == QR_mode::RAW) ? K : intm;
+    CBLAS_INT middle_dim = (mode == QR_mode::ECONOMIC || mode == QR_mode::RAW) ? K : intm; // Final dimension: Q is [`M` x `middle_dim`], R is [`middle_dim` x `N`]
 
 
     // Probe both the factorization as well as `or_un_gqr` to find the optimal lwork
@@ -84,15 +83,17 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         return -99;
     }
 
-    // M * max_dim for the buffer containing the data for A/Q.
+    // If mode == FULL, the resulting Q will be `M` x `M`, however, `max_dim` is used to
+    // allocate enough space for the entire `a` for `M` < `N`.
     // If mode == RAW, the `tau` have to be returned, else a temporary buffer is sufficient.
+    CBLAS_INT buf_size = (mode == QR_mode::FULL) ? M * max_dim : M * N;
     CBLAS_INT tau_size = (mode == QR_mode::RAW) ? 0 : K;
-    T *buffer = (T *)malloc((M * max_dim + lwork + tau_size) * sizeof(T));
+    T *buffer = (T *)malloc((buf_size + lwork + tau_size) * sizeof(T));
     if ( buffer == NULL ) { info = -101; return int(info); }
 
     T *data_A = &buffer[0];
-    T *work = &buffer[M * max_dim];
-    T *tau_buffer = &buffer[M * max_dim + lwork];
+    T *work = &buffer[buf_size];
+    T *tau_buffer = &buffer[buf_size + lwork];
 
     // `c/zgeqp3` needs rwork
     void *rwork = NULL;
