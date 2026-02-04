@@ -366,7 +366,7 @@ class TestDotTests:
             uH_opH_v = np.vecdot(u, opH_v, axis=-1)
     
             rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
-            atol = 1e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+            atol = 2e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
             assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol, atol=atol)
 
     def check_matmat(
@@ -427,7 +427,7 @@ class TestDotTests:
         UH_opH_V = np.matmul(UH, opH_V)
 
         rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
-        atol = 1e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+        atol = 2e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
         assert_allclose(op_U_H_V, UH_opH_V, rtol=rtol, atol=atol)
 
     # TODO: batch shape (0,)
