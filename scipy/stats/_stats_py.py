@@ -8777,7 +8777,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     xp = array_namespace(x, y)
     length_x = x.shape[-1]
     nx = _count_nonmasked(x, axis=-1)
-    ny = _count_nonmasked(x, axis=-1)
+    ny = _count_nonmasked(y, axis=-1)
 
     rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
     rankcx = rankc[..., :length_x]
