@@ -394,7 +394,7 @@ class LinearOperator:
                 return self._rmatmat(x[..., np.newaxis])[..., 0]
             raise NotImplementedError
         else:
-            return self.H.matvec(x)
+            return self.H._matvec(x)
 
     def _shared_matmat(self, X, adjoint: bool = False):
         if not (issparse(X) or is_pydata_spmatrix(X)):
@@ -485,7 +485,7 @@ class LinearOperator:
                 axis=-1
             )
         else:
-            return self.H.matmat(X)
+            return self.H._matmat(X)
 
     def __call__(self, x):
         """Apply this linear operator.
