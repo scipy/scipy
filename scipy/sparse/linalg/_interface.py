@@ -401,10 +401,10 @@ class LinearOperator:
             X = np.asanyarray(X)
 
         if X.ndim < 2:
-            raise ValueError(f'expected at least 2-d ndarray or matrix, not {X.ndim}-d')
+            raise ValueError(f'Expected at least 2-d ndarray or matrix, not {X.ndim}-d')
 
         if X.shape[-2] != (self.shape[-2] if adjoint else self.shape[-1]):
-            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
+            raise ValueError(f'Dimension mismatch: {self.shape}, {X.shape}')
 
         try:
             Y = self._rmatmat(X) if adjoint else self._matmat(X)
