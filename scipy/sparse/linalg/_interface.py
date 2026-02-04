@@ -687,7 +687,7 @@ class LinearOperator:
             # We use transpose instead of rmatvec/rmatmat to avoid
             # unnecessary complex conjugation if possible.
             if vector:
-                return self.T.matvec(x.T).T
+                return self.T.matvec(x.T)
             elif matrix:
                 # scipy/scipy#24157
                 def mT(x):
