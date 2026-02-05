@@ -356,7 +356,7 @@ class TestUtilities:
         npoints = {2: 70, 3: 11, 4: 5, 5: 3}
 
         for ndim in range(2, 6):
-            # Generate an uniform grid in n-d unit cube
+            # Generate a uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
             grid = np.c_[
                 list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))
