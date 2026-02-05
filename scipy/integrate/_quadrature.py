@@ -9,8 +9,13 @@ from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
                                    xp_capabilities, xp_promote, xp_swapaxes, is_numpy,
+<<<<<<< array-api-simpson
                                    xp_size, is_lazy_array)
 import scipy._lib.array_api_extra as xpx
+=======
+                                   is_lazy_array)
+import scipy._external.array_api_extra as xpx
+>>>>>>> main
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -1196,7 +1201,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
         will be initialized with the number of dimensions determine from
         the length of `a`.
-    log : boolean, default: False
+    log : bool, default: False
         When set to True, `func` returns the log of the integrand, and
         the result object contains the log of the integral.
 

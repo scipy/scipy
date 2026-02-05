@@ -27,7 +27,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     y : (npoints, ...) N-D ndarray of float or complex
         Data values. The length of `y` along the first axis must be equal to
         the length of `x`.
-    rescale : boolean, optional
+    rescale : bool, optional
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.

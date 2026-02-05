@@ -2074,7 +2074,7 @@ class PoissonDisk(QMCEngine):
     >>> plt.show()
 
     Such visualization can be seen as circle packing: how many circle can
-    we put in the space. It is a np-hard problem. The method `fill_space`
+    we put in the space. It is an np-hard problem. The method `fill_space`
     can be used to add samples until no more samples can be added. This is
     a hard problem and parameters may need to be adjusted manually. Beware of
     the dimension: as the dimensionality increases, the number of samples

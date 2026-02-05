@@ -270,7 +270,7 @@ class _UnilinearModel(Model):
 
     Examples
     --------
-    We can calculate orthogonal distance regression with an unilinear model:
+    We can calculate orthogonal distance regression with a unilinear model:
 
     >>> from scipy import odr
     >>> import numpy as np

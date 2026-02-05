@@ -268,6 +268,11 @@ class CZT:
     def points(self):
         """
         Return the points at which the chirp z-transform is computed.
+
+        Returns
+        -------
+        ndarray
+            The points in the Z plane at which `CZT` samples the z-transform.
         """
         return czt_points(self.m, self.w, self.a)
 

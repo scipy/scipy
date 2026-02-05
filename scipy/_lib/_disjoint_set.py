@@ -137,7 +137,7 @@ class DisjointSet:
         return x
 
     def add(self, x):
-        """Add element `x` to disjoint set
+        """Add element `x` to disjoint set.
         """
         if x in self._indices:
             return

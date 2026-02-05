@@ -1,6 +1,6 @@
 import numpy as np
-import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
+import scipy._external.array_api_extra as xpx
+from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote, is_jax
 from scipy.optimize.elementwise import find_root
 from scipy.special import ndtri
 from scipy.special import _ufuncs as scu
@@ -174,8 +174,9 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction, *, x
     return lo, hi
 
 
-@xp_capabilities(skip_backends=[('dask.array', "")], jax_jit=False, cpu_only=True,
-                 reason="binomial distribution ufuncs only available for NumPy")
+@xp_capabilities(skip_backends=[('dask.array', "")], cpu_only=True,
+                 reason="binomial distribution ufuncs only available for NumPy",
+                 extra_note="`alternative='two-sided' is incompatible with JAX arrays.")
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -284,6 +285,10 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     elif alternative == 'greater':
         pval = B.sf(k - 1)
     else:
+        if is_jax(xp):
+            message = "`alternative='two-sided' is incompatible with JAX arrays."
+            raise ValueError(message)
+
         # alternative is 'two-sided'
         d = B.pmf(k)
         rerr = 1 + 1e-7
@@ -381,14 +386,13 @@ class _SimpleBinomial:
     # distribution in due time.
     def __init__(self, n, p, *, xp=None):
         xp = array_namespace(n, p) if xp is None else xp
-        self.n = np.asarray(n)
-        self.p = np.asarray(p)
+        self.n = n
+        self.p = p
         self.xp = xp
 
     def f(self, x, fun):
         xp = self.xp
-        k = np.floor(np.asarray(x))
-        return xp.asarray(fun(k, self.n, self.p))
+        return xpx.lazy_apply(fun, xp.floor(x), self.n, self.p, as_numpy=True, xp=xp)
 
     def cdf(self, x):
         return self.xp.where(x >= 0, self.f(x, scu._binom_cdf), 0.0)

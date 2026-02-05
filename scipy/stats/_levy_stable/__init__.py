@@ -10,7 +10,7 @@ from scipy import integrate
 from scipy.integrate._quadrature import _builtincoeffs
 from scipy import interpolate
 from scipy.interpolate import RectBivariateSpline
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import scipy.special as sc
 from .._distn_infrastructure import rv_continuous, _ShapeInfo, rv_continuous_frozen
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf

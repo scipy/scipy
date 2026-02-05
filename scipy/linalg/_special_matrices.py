@@ -5,7 +5,7 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy._lib._util import _apply_over_batch
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['toeplitz', 'circulant', 'hankel',
@@ -229,7 +229,7 @@ def hankel(c, r=None):
 
 def hadamard(n, dtype=int):
     """
-    Construct an Hadamard matrix.
+    Construct a Hadamard matrix.
 
     Constructs an n-by-n Hadamard matrix, using Sylvester's
     construction. `n` must be a power of 2.
@@ -272,7 +272,7 @@ def hadamard(n, dtype=int):
     else:
         lg2 = int(math.log(n, 2))
     if 2 ** lg2 != n:
-        raise ValueError("n must be an positive integer, and n must be "
+        raise ValueError("n must be a positive integer, and n must be "
                          "a power of 2")
 
     H = np.array([[1]], dtype=dtype)
@@ -522,7 +522,7 @@ def companion(a):
 
 def helmert(n, full=False):
     """
-    Create an Helmert matrix of order `n`.
+    Create a Helmert matrix of order `n`.
 
     This has applications in statistics, compositional or simplicial analysis,
     and in Aitchison geometry.
@@ -949,7 +949,7 @@ def dft(n, scale=None):
 
 @xp_capabilities()
 def fiedler(a):
-    """Returns a symmetric Fiedler matrix
+    """Returns a symmetric Fiedler matrix.
 
     Given an sequence of numbers `a`, Fiedler matrices have the structure
     ``F[i, j] = np.abs(a[i] - a[j])``, and hence zero diagonals and nonnegative
@@ -1032,7 +1032,7 @@ def fiedler(a):
 
 
 def fiedler_companion(a):
-    """ Returns a Fiedler companion matrix
+    """Returns a Fiedler companion matrix.
 
     Given a polynomial coefficient array ``a``, this function forms a
     pentadiagonal matrix with a special structure whose eigenvalues coincides

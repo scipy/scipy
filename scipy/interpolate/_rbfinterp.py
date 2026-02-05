@@ -11,7 +11,7 @@ from . import _rbfinterp_xp
 from scipy._lib._array_api import (
     _asarray, array_namespace, xp_size, is_numpy, xp_capabilities
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ["RBFInterpolator"]

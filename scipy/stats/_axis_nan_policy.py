@@ -13,7 +13,7 @@ from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_size, xp_copy,
                                    xp_promote, is_dask, is_jax)
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 import inspect
 
