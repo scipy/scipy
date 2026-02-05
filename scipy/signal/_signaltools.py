@@ -820,7 +820,7 @@ def _calc_oa_lens(s1, s2):
 # may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
-    """A simplified version of np.split, with `indices` being an list.
+    """A simplified version of np.split, with `indices` being a list.
     """
     # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
     Ntotal = x.shape[axis]

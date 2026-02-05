@@ -513,7 +513,7 @@ class TestDifferentialEvolutionSolver:
 
     def test_random_generator(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
-        # obtain a np.random.Generator object
+        # obtain an np.random.Generator object
         rng = np.random.default_rng()
 
         inits = ['random', 'latinhypercube', 'sobol', 'halton']

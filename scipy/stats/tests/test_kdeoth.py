@@ -623,7 +623,7 @@ def test_seed():
 
         # check that np.random.Generator can be used (numpy >= 1.17)
         if hasattr(np.random, 'default_rng'):
-            # obtain a np.random.Generator object
+            # obtain an np.random.Generator object
             rng = np.random.default_rng(1234)
             gkde_trail.resample(n_sample, seed=rng)
 

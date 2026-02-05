@@ -219,7 +219,7 @@ class interp1d(_Interpolator1D):
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised unless ``fill_value="extrapolate"``.
     fill_value : array-like or (array-like, array_like) or "extrapolate", optional
-        - if a ndarray (or float), this value will be used to fill in for
+        - if an ndarray (or float), this value will be used to fill in for
           requested points outside of the data range. If not provided, then
           the default is NaN. The array-like must broadcast properly to the
           dimensions of the non-interpolation axes.

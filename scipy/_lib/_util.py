@@ -405,7 +405,7 @@ def _asarray_validated(a, check_finite=True,
     mask_ok : bool, optional
         True if masked arrays are allowed.
     as_inexact : bool, optional
-        True to convert the input array to a np.inexact dtype.
+        True to convert the input array to an np.inexact dtype.
 
     Returns
     -------
