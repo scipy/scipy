@@ -585,7 +585,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape, dtype=self.dtype)
 
-        row_nnz = (self.indptr[indices + 1] - self.indptr[indices]).astype(idx_dtype)
+        self_indptr = self.indptr.astype(idx_dtype, copy=False)
+        self_indices = self.indices.astype(idx_dtype, copy=False)
+
+        row_nnz = self_indptr[indices + 1] - self_indptr[indices]
         res_indptr = np.zeros(M + 1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
 
@@ -595,8 +598,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_row_index(
             M,
             indices,
-            self.indptr.astype(idx_dtype, copy=False),
-            self.indices.astype(idx_dtype, copy=False),
+            self_indptr,
+            self_indices,
             self.data,
             res_indices,
             res_data
@@ -1020,7 +1023,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     ##############################################################
 
     def eliminate_zeros(self):
-        """Remove zero entries from the array/matrix
+        """Remove zero entries from the array/matrix.
 
         This is an *in place* operation.
         """
@@ -1058,7 +1061,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.has_sorted_indices = True
 
     def sum_duplicates(self):
-        """Eliminate duplicate entries by adding them together
+        """Eliminate duplicate entries by adding them together.
 
         This is an *in place* operation.
         """
@@ -1094,7 +1097,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
 
     def sorted_indices(self):
-        """Return a copy of this array/matrix with sorted indices
+        """Return a copy of this array/matrix with sorted indices.
+
+        Returns
+        -------
+        sparse array/matrix
+            A copy of this array/matrix with sorted indices.
         """
         A = self.copy()
         A.sort_indices()
@@ -1105,7 +1113,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # return self.toother().toother()
 
     def sort_indices(self):
-        """Sort the indices of this array/matrix *in place*
+        """Sort the indices of this array/matrix *in place*.
         """
         if not self.has_sorted_indices:
             M = len(self.indptr) - 1

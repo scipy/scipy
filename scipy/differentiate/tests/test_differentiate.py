@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 import scipy._lib._elementwise_iterative_method as eim
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 

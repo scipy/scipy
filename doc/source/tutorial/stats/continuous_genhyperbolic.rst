@@ -129,7 +129,7 @@ References
    Financial Derivatives and Risk Measures. In: Geman H., Madan D.,
    Pliska S.R., Vorst T. (eds) Mathematical Finance - Bachelier
    Congress 2000. Springer Finance. Springer, Berlin, Heidelberg.
-   https://doi.org/10.1007/978-3-662-12429-1_12
+   :doi:`10.1007/978-3-662-12429-1_12`.
 
 -  Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
    Thanh Tam, (2009), Moments of the generalized hyperbolic

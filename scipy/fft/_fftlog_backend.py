@@ -3,7 +3,7 @@ from warnings import warn
 from ._basic import rfft, irfft
 from ..special import loggamma, poch
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_capabilities
 
 __all__ = ['fht', 'ifht', 'fhtoffset']
 
@@ -118,6 +118,7 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0, inverse=False):
     return u
 
 
+@xp_capabilities(out_of_scope=True)
 def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     """Return optimal offset for a fast Hankel transform.
 

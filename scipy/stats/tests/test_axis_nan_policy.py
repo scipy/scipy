@@ -25,6 +25,14 @@ from scipy.conftest import skip_xp_invalid_arg
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 
 
+def _using_accelerate():
+    config = np.show_config('dicts')
+    return config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
+
+
+RTOL = 1e-6 if _using_accelerate() else 1e-15
+
+
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
     return (res.statistic, res.pvalue, res.df, res._standard_error,
@@ -172,6 +180,8 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.spearmanrho, tuple(), dict(), 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
     (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.kendalltau, tuple(), dict(), 2, 3, True,
@@ -184,14 +194,17 @@ axis_nan_policy_cases = [
      lambda res: tuple(res) + (res.intercept_stderr,)),
     (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
     (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(method='joint'), 2, 4, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(method='hierarchical'), 2, 2, True, tuple),
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -489,8 +502,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res_1db, res_1da, rtol=4e-15)
+        assert_allclose(res_1db, res_1da, rtol=RTOL)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -517,8 +529,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
-    assert_allclose(res_nd, res_1d, rtol=1e-11)
+    assert_allclose(res_nd, res_1d, rtol=RTOL)
 
 # nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
@@ -990,7 +1001,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
 
     message = "Array shapes are incompatible for broadcasting."
     with pytest.raises(ValueError, match=message):
-        hypotest(*samples, *args, **kwds)
+        hypotest(*samples, *args, axis=axis, **kwds)
 
     if not paired:  # there's another test for paired-sample statistics
         return
@@ -1004,7 +1015,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
     shape[axis] += 1
     other_sample = rng.random(size=shape)
     with pytest.raises(ValueError, match=message):
-        hypotest(other_sample, *most_samples, *args, **kwds)
+        hypotest(other_sample, *most_samples, *args, axis=axis, **kwds)
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays

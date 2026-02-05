@@ -18,7 +18,7 @@ def save_npz(file, matrix, compressed=True):
         where the data will be saved. If file is a string, the ``.npz``
         extension will be appended to the file name if it is not already
         there.
-    matrix: spmatrix or sparray
+    matrix : spmatrix or sparray
         The sparse matrix or array to save.
         Supported formats: ``csc``, ``csr``, ``bsr``, ``dia`` or ``coo``.
     compressed : bool, optional

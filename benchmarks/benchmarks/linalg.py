@@ -78,6 +78,12 @@ class Bench(Benchmark):
         else:
             sl.eigvals(self.a)
 
+    def time_geneig(self, size, contig, module):
+        if module == 'numpy':
+            pass
+        else:
+            sl.eig(self.a, self.a, check_finite=True)
+
     def time_svd(self, size, contig, module):
         if module == 'numpy':
             nl.svd(self.a)
@@ -100,6 +106,104 @@ class Bench(Benchmark):
     time_svd.version = (
         "0ccbda456d096e459d4a6eefc6c674a815179e215f83931a81cfa8c18e39d6e3"
     )
+
+
+class BatchedSolveBench(Benchmark):
+    params = [
+        [(100, 10, 10), (100, 20, 20), (100, 100)],
+        ["gen", "pos", "sym", "diagonal", "tridiagonal", "banded"],
+        ["scipy/detect", "scipy/assume", "numpy"]
+    ]
+    param_names = ["shape", "structure" ,"module"]
+
+    def setup(self, shape, structure, module):
+        a = random(shape)
+        # larger diagonal ensures non-singularity:
+        for i in range(shape[-1]):
+            a[..., i, i] = 10*(.1+a[..., i, i])
+
+        if structure == "pos":
+            self.a = a @ a.mT
+        elif structure == "sym":
+            self.a = a + a.mT
+        elif structure == "diagonal":
+            self.a = np.zeros_like(a)
+            for i in range(shape[-1]):
+                self.a[..., i, i] = a[..., i, i]
+        elif structure == "tridiagonal":
+            self.a = np.zeros_like(a)
+            for i in range(shape[-1]):
+                self.a[..., i, i] = a[..., i, i]
+            for i in range(shape[-1]-1):
+                self.a[..., i+1, i] = a[..., i+1, i]
+            for i in range(shape[-1]-1):
+                self.a[..., i, i+1] = a[..., i, i+1]
+        elif structure == "banded":
+            self.a = np.zeros_like(a)
+            self.a += np.triu(np.tril(a, k=5), k=-5)
+        else:
+            self.a = a
+
+        self.b = random([a.shape[-1]])
+
+        self.kwd = {}
+        if module.split("/")[-1] == "assume":
+            self.kwd = {"assume_a": structure}
+
+    def time_solve(self, shape, structure, module):
+        if module == 'numpy':
+            nl.solve(self.a, self.b)
+        else:
+            sl.solve(self.a, self.b, check_finite=False, **self.kwd)
+
+
+class BatchedSVDBench(Benchmark):
+    params = [
+        [(10, 10, 10, 2), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_svd(self, shape, module):
+        if module == 'numpy':
+            nl.svd(self.a)
+        else:
+            sl.svd(self.a)
+
+
+class BatchedLstsqBench(Benchmark):
+    params = [
+        [(10, 10, 50, 2), (100, 20, 5), (100, 10, 10), (100, 5, 20), (100, 2, 50)],
+    ]
+    param_names = ['shape']
+
+    def setup(self, shape):
+         self.a = random(shape)
+         self.b = random((shape[-2],))
+
+    def time_lstsq(self, shape):
+        sl.lstsq(self.a, self.b, check_finite=False)
+
+
+class BatchedEigBench(Benchmark):
+    params = [
+        [(10, 10, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_eig(self, shape, module):
+        if module == 'numpy':
+            nl.eig(self.a)
+        else:
+            sl.eig(self.a)
+
 
 
 class Norm(Benchmark):

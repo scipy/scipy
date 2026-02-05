@@ -153,9 +153,6 @@ class TestCephes:
     def test_bdtrc(self):
         assert_equal(cephes.bdtrc(1,3,0.5),0.5)
 
-    def test_bdtrin(self):
-        assert_equal(cephes.bdtrin(1,0,1),5.0)
-
     def test_bdtrik(self):
         cephes.bdtrik(1,3,0.5)
 
@@ -1589,6 +1586,21 @@ class TestCombinatorics:
         with pytest.raises(ValueError, match=msg):
             special.comb(3, 4.4, exact=True)
 
+    @pytest.mark.parametrize('N', [0, 5, 10])
+    @pytest.mark.parametrize('exact', [True, False])
+    def test_comb_repetition_k_zero(self, N, exact):
+        # Regression test for gh-23867
+        # C(n, 0) should always be 1 for n >= 0, regardless of repetition
+        actual = special.comb(N, 0, exact=exact, repetition=True)
+        assert actual == 1
+        assert type(actual) is int if exact else np.float64
+
+    def test_comb_repetition_k_zero_array(self):
+        # Test array-like input with exact=False for gh-23867
+        N = np.array([0, 5, 10])
+        result = special.comb(N, 0, exact=False, repetition=True)
+        expected = np.array([1.0, 1.0, 1.0])
+        assert_equal(result, expected)
 
     def test_perm(self):
         assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
@@ -2474,7 +2486,7 @@ class TestFactorialFunctions:
             if exact:
                 # avoid attempting huge calculation
                 pass
-            elif np.lib.NumpyVersion(np.__version__) >= "2.0.0":
+            else:
                 # N does not fit into int64 --> cannot use _check
                 _check_inf(dtype(N-1))
                 _check_inf(np.array(N-1, dtype=dtype))

@@ -26,6 +26,7 @@ Note: This documentation is work in progress.
    stats/kernel_density_estimation
    stats/multiscale_graphcorr
    stats/quasi_monte_carlo
+   stats/outliers
 
 .. toctree::
     :caption: Sample statistics and hypothesis tests

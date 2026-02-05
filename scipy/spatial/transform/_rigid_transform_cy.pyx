@@ -2,6 +2,7 @@
 
 import numpy as np
 from ._rotation_cy import from_matrix as from_rot_matrix
+from ._rotation_cy import _from_matrix_orthogonal as from_rot_matrix_orthogonal
 from ._rotation_cy import inv as rot_inv
 from ._rotation_cy import from_quat, from_rotvec
 from ._rotation_cy import as_matrix, as_quat, as_rotvec, compose_quat
@@ -15,7 +16,7 @@ np.import_array()
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def from_matrix(double[:, :, :] matrix, bint normalize=True, bint copy=True):
+def from_matrix(const double[:, :, :] matrix, bint normalize=True, bint copy=True):
     mat = np.asarray(matrix, dtype=float)
 
     if mat.shape[-1] != 4 or mat.shape[-2] != 4:
@@ -151,7 +152,7 @@ def from_dual_quat(dual_quat, *, bint scalar_first=False):
 @cython.wraparound(False)
 def as_exp_coords(double[:, :, :] matrix):
     exp_coords = np.empty((matrix.shape[0], 6), dtype=float)
-    rot_vec = as_rotvec(from_rot_matrix(matrix[:, :3, :3]))
+    rot_vec = as_rotvec(from_rot_matrix_orthogonal(matrix[:, :3, :3]))
     exp_coords[:, :3] = rot_vec
     exp_coords[:, 3:] = np.einsum('ijk,ik->ij',
                                   _compute_se3_log_translation_transform(rot_vec),
@@ -163,7 +164,7 @@ def as_exp_coords(double[:, :, :] matrix):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def as_dual_quat(double[:, :, :] matrix, *, bint scalar_first=False):
-    real_parts = as_quat(from_rot_matrix(matrix[:, :3, :3]))
+    real_parts = as_quat(from_rot_matrix_orthogonal(matrix[:, :3, :3]))
 
     pure_translation_quats = np.empty((len(matrix), 4), dtype=float)
     pure_translation_quats[:, :3] = matrix[:, :3, 3]
@@ -240,7 +241,7 @@ def pow(double[:, :, :] matrix, float n):
     elif n == -1:
         return inv(matrix)
     elif n == 1:
-        return matrix
+        return np.asarray(matrix)
     return from_exp_coords(as_exp_coords(matrix) * n)
 
 
@@ -271,7 +272,7 @@ def mean(double[:, :, :] matrix, weights=None, axis=None):
     # error during validation.
     axis = 0
 
-    quat = as_quat(from_rot_matrix(matrix[:, :3, :3]))
+    quat = as_quat(from_rot_matrix_orthogonal(matrix[:, :3, :3]))
     t = np.asarray(matrix[:, :3, 3])
 
     if weights is None:

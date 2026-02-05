@@ -95,16 +95,16 @@ DEFINE_WRAP_CDIST(sokalsneath, char)
 DEFINE_WRAP_CDIST(yule, char)
 
 static PyObject *cdist_hamming_double_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_, *w_;
   int mA, mB, n;
   double *dm;
   const double *XA, *XB, *w;
   static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_hamming_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_,
             &PyArray_Type, &w_)) {
     return 0;
@@ -125,7 +125,7 @@ static PyObject *cdist_hamming_double_wrap(
 }
 
 static PyObject *cdist_hamming_char_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_, *w_;
   int mA, mB, n;
@@ -133,9 +133,9 @@ static PyObject *cdist_hamming_char_wrap(
   const char *XA, *XB;
   const double *w;
   static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_hamming_char_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_,
             &PyArray_Type, &w_)) {
     return 0;
@@ -155,17 +155,17 @@ static PyObject *cdist_hamming_char_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args, 
+static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n, status;
   double *dm;
   const double *XA, *XB;
   static char *kwlist[] = {"XA", "XB", "dm", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:cdist_cosine_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-            &PyArray_Type, &dm_)) 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
+            &PyArray_Type, &dm_))
   {
     return 0;
   }
@@ -187,7 +187,7 @@ static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args, 
+static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n, status;
@@ -195,10 +195,10 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   const double *XA, *XB;
   const double *covinv;
   static char *kwlist[] = {"XA", "XB", "dm", "VI", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_mahalanobis_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-            &PyArray_Type, &dm_, &PyArray_Type, &covinv_)) 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
+            &PyArray_Type, &dm_, &PyArray_Type, &covinv_))
   {
     return 0;
   }
@@ -221,8 +221,8 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args, 
-                                             PyObject *kwargs) 
+static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args,
+                                             PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
@@ -230,9 +230,9 @@ static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   const double *XA, *XB;
   double p;
   static char *kwlist[] = {"XA", "XB", "dm", "p", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!d:cdist_minkowski_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_,
             &p)) {
     return 0;
@@ -251,17 +251,17 @@ static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_seuclidean_double_wrap(PyObject *self, PyObject *args, 
-                                              PyObject *kwargs) 
+static PyObject *cdist_seuclidean_double_wrap(PyObject *self, PyObject *args,
+                                              PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_, *var_;
   int mA, mB, n;
   double *dm;
   const double *XA, *XB, *var;
   static char *kwlist[] = {"XA", "XB", "dm", "V", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_seuclidean_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_, &PyArray_Type, &var_)) {
     return 0;
   }
@@ -386,14 +386,14 @@ DEFINE_WRAP_PDIST(sokalsneath, char)
 DEFINE_WRAP_PDIST(yule, char)
 
 static PyObject *pdist_hamming_double_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
   double *dm;
   const double *X, *w;
   static char *kwlist[] = {"X", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_hamming_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -415,7 +415,7 @@ static PyObject *pdist_hamming_double_wrap(
 }
 
 static PyObject *pdist_hamming_char_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
@@ -423,7 +423,7 @@ static PyObject *pdist_hamming_char_wrap(
   const double *w;
   double *dm;
   static char *kwlist[] = {"X", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_hamming_char_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -444,15 +444,15 @@ static PyObject *pdist_hamming_char_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args, 
-                                          PyObject *kwargs) 
+static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
+                                          PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_;
   int m, n, status;
   double *dm;
   const double *X;
   static char *kwlist[] = {"X", "dm", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!:pdist_cosine_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_)) {
@@ -465,7 +465,7 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
     dm = (double*)PyArray_DATA(dm_);
     m = PyArray_DIMS(X_)[0];
     n = PyArray_DIMS(X_)[1];
-    
+
     status = pdist_cosine(X, dm, m, n);
     NPY_END_THREADS;
     if(status < 0)
@@ -474,7 +474,7 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args, 
+static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n, status;
@@ -482,10 +482,10 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   const double *X;
   const double *covinv;
   static char *kwlist[] = {"X", "dm", "VI", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_mahalanobis_double_wrap", kwlist,
             &PyArray_Type, &X_,
-            &PyArray_Type, &dm_, 
+            &PyArray_Type, &dm_,
             &PyArray_Type, &covinv_)) {
     return 0;
   }
@@ -506,15 +506,15 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_minkowski_double_wrap(PyObject *self, PyObject *args, 
-                                             PyObject *kwargs) 
+static PyObject *pdist_minkowski_double_wrap(PyObject *self, PyObject *args,
+                                             PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm, *X;
   double p;
   static char *kwlist[] = {"X", "dm", "p", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!d:pdist_minkowski_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -534,15 +534,15 @@ static PyObject *pdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_seuclidean_double_wrap(PyObject *self, PyObject *args, 
-                                              PyObject *kwargs) 
+static PyObject *pdist_seuclidean_double_wrap(PyObject *self, PyObject *args,
+                                              PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_, *var_;
   int m, n;
   double *dm;
   const double *X, *var;
   static char *kwlist[] = {"X", "dm", "V", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_seuclidean_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -622,7 +622,7 @@ static PyObject *pdist_weighted_minkowski_double_wrap(
 }
 
 
-static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) 
+static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
 {
   PyArrayObject *M_, *v_;
   int n;
@@ -646,7 +646,7 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
   return Py_BuildValue("");
 }
 
-static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) 
+static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
 {
   PyArrayObject *M_, *v_;
   int n;
@@ -672,173 +672,87 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
 
 
 static PyMethodDef _distanceWrapMethods[] = {
-  {"cdist_braycurtis_double_wrap",
-   cdist_bray_curtis_double_wrap,
-   METH_VARARGS},
-  {"cdist_canberra_double_wrap",
-   cdist_canberra_double_wrap,
-   METH_VARARGS},
-  {"cdist_chebyshev_double_wrap",
-   cdist_chebyshev_double_wrap,
-   METH_VARARGS},
-  {"cdist_cityblock_double_wrap",
-   cdist_city_block_double_wrap,
-   METH_VARARGS},
-  {"cdist_cosine_double_wrap",
-   (PyCFunction) cdist_cosine_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_dice_bool_wrap",
-   cdist_dice_char_wrap,
-   METH_VARARGS},
-  {"cdist_euclidean_double_wrap",
-   cdist_euclidean_double_wrap,
-   METH_VARARGS},
-  {"cdist_sqeuclidean_double_wrap",
-   cdist_sqeuclidean_double_wrap,
-   METH_VARARGS},
-  {"cdist_hamming_double_wrap",
-   (PyCFunction) cdist_hamming_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_hamming_bool_wrap",
-   (PyCFunction) cdist_hamming_char_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_jaccard_double_wrap",
-   cdist_jaccard_double_wrap,
-   METH_VARARGS},
-  {"cdist_jaccard_bool_wrap",
-   cdist_jaccard_char_wrap,
-   METH_VARARGS},
-  {"cdist_jensenshannon_double_wrap",
-   cdist_jensenshannon_double_wrap,
-   METH_VARARGS},
-  {"cdist_mahalanobis_double_wrap",
-   (PyCFunction) cdist_mahalanobis_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_minkowski_double_wrap",
-   (PyCFunction) cdist_minkowski_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_weighted_chebyshev_double_wrap",
-   (PyCFunction) cdist_weighted_chebyshev_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_weighted_minkowski_double_wrap",
-   (PyCFunction) cdist_weighted_minkowski_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_rogerstanimoto_bool_wrap",
-   cdist_rogerstanimoto_char_wrap,
-   METH_VARARGS},
-  {"cdist_russellrao_bool_wrap",
-   cdist_russellrao_char_wrap,
-   METH_VARARGS},
-  {"cdist_seuclidean_double_wrap",
-   (PyCFunction) cdist_seuclidean_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"cdist_sokalsneath_bool_wrap",
-   cdist_sokalsneath_char_wrap,
-   METH_VARARGS},
-  {"cdist_yule_bool_wrap",
-   cdist_yule_char_wrap,
-   METH_VARARGS},
-  {"pdist_braycurtis_double_wrap",
-   pdist_bray_curtis_double_wrap,
-   METH_VARARGS},
-  {"pdist_canberra_double_wrap",
-   pdist_canberra_double_wrap,
-   METH_VARARGS},
-  {"pdist_chebyshev_double_wrap",
-   pdist_chebyshev_double_wrap,
-   METH_VARARGS},
-  {"pdist_cityblock_double_wrap",
-   pdist_city_block_double_wrap,
-   METH_VARARGS},
-  {"pdist_cosine_double_wrap",
-   (PyCFunction) pdist_cosine_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_dice_bool_wrap",
-   pdist_dice_char_wrap,
-   METH_VARARGS},
-  {"pdist_euclidean_double_wrap",
-   pdist_euclidean_double_wrap,
-   METH_VARARGS},
-  {"pdist_sqeuclidean_double_wrap",
-   pdist_sqeuclidean_double_wrap,
-   METH_VARARGS},
-  {"pdist_hamming_double_wrap",
-   (PyCFunction) pdist_hamming_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_hamming_bool_wrap",
-   (PyCFunction) pdist_hamming_char_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_jaccard_double_wrap",
-   pdist_jaccard_double_wrap,
-   METH_VARARGS},
-  {"pdist_jaccard_bool_wrap",
-   pdist_jaccard_char_wrap,
-   METH_VARARGS},
-  {"pdist_jensenshannon_double_wrap",
-   pdist_jensenshannon_double_wrap,
-   METH_VARARGS},
-  {"pdist_mahalanobis_double_wrap",
-   (PyCFunction) pdist_mahalanobis_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_minkowski_double_wrap",
-   (PyCFunction) pdist_minkowski_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_weighted_chebyshev_double_wrap",
-   (PyCFunction) pdist_weighted_chebyshev_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_weighted_minkowski_double_wrap",
-   (PyCFunction) pdist_weighted_minkowski_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_rogerstanimoto_bool_wrap",
-   pdist_rogerstanimoto_char_wrap,
-   METH_VARARGS},
-  {"pdist_russellrao_bool_wrap",
-   pdist_russellrao_char_wrap,
-   METH_VARARGS},
-  {"pdist_seuclidean_double_wrap",
-   (PyCFunction) pdist_seuclidean_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_sokalsneath_bool_wrap",
-   pdist_sokalsneath_char_wrap,
-   METH_VARARGS},
-  {"pdist_yule_bool_wrap",
-   pdist_yule_char_wrap,
-   METH_VARARGS},
-  {"to_squareform_from_vector_wrap",
-   to_squareform_from_vector_wrap,
-   METH_VARARGS},
-  {"to_vector_from_squareform_wrap",
-   to_vector_from_squareform_wrap,
-   METH_VARARGS},
-  {NULL, NULL}     /* Sentinel - marks the end of this structure */
+    {"cdist_braycurtis_double_wrap",         (PyCFunction)cdist_bray_curtis_double_wrap,        METH_VARARGS,                 NULL},
+    {"cdist_canberra_double_wrap",           (PyCFunction)cdist_canberra_double_wrap,           METH_VARARGS,                 NULL},
+    {"cdist_chebyshev_double_wrap",          (PyCFunction)cdist_chebyshev_double_wrap,          METH_VARARGS,                 NULL},
+    {"cdist_cityblock_double_wrap",          (PyCFunction)cdist_city_block_double_wrap,         METH_VARARGS,                 NULL},
+    {"cdist_cosine_double_wrap",             (PyCFunction)cdist_cosine_double_wrap,             METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_dice_bool_wrap",                 (PyCFunction)cdist_dice_char_wrap,                 METH_VARARGS,                 NULL},
+    {"cdist_euclidean_double_wrap",          (PyCFunction)cdist_euclidean_double_wrap,          METH_VARARGS,                 NULL},
+    {"cdist_sqeuclidean_double_wrap",        (PyCFunction)cdist_sqeuclidean_double_wrap,        METH_VARARGS,                 NULL},
+    {"cdist_hamming_double_wrap",            (PyCFunction)cdist_hamming_double_wrap,            METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_hamming_bool_wrap",              (PyCFunction)cdist_hamming_char_wrap,              METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_jaccard_double_wrap",            (PyCFunction)cdist_jaccard_double_wrap,            METH_VARARGS,                 NULL},
+    {"cdist_jaccard_bool_wrap",              (PyCFunction)cdist_jaccard_char_wrap,              METH_VARARGS,                 NULL},
+    {"cdist_jensenshannon_double_wrap",      (PyCFunction)cdist_jensenshannon_double_wrap,      METH_VARARGS,                 NULL},
+    {"cdist_mahalanobis_double_wrap",        (PyCFunction)cdist_mahalanobis_double_wrap,        METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_minkowski_double_wrap",          (PyCFunction)cdist_minkowski_double_wrap,          METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_weighted_chebyshev_double_wrap", (PyCFunction)cdist_weighted_chebyshev_double_wrap, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_weighted_minkowski_double_wrap", (PyCFunction)cdist_weighted_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_rogerstanimoto_bool_wrap",       (PyCFunction)cdist_rogerstanimoto_char_wrap,       METH_VARARGS,                 NULL},
+    {"cdist_russellrao_bool_wrap",           (PyCFunction)cdist_russellrao_char_wrap,           METH_VARARGS,                 NULL},
+    {"cdist_seuclidean_double_wrap",         (PyCFunction)cdist_seuclidean_double_wrap,         METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cdist_sokalsneath_bool_wrap",          (PyCFunction)cdist_sokalsneath_char_wrap,          METH_VARARGS,                 NULL},
+    {"cdist_yule_bool_wrap",                 (PyCFunction)cdist_yule_char_wrap,                 METH_VARARGS,                 NULL},
+    {"pdist_braycurtis_double_wrap",         (PyCFunction)pdist_bray_curtis_double_wrap,        METH_VARARGS,                 NULL},
+    {"pdist_canberra_double_wrap",           (PyCFunction)pdist_canberra_double_wrap,           METH_VARARGS,                 NULL},
+    {"pdist_chebyshev_double_wrap",          (PyCFunction)pdist_chebyshev_double_wrap,          METH_VARARGS,                 NULL},
+    {"pdist_cityblock_double_wrap",          (PyCFunction)pdist_city_block_double_wrap,         METH_VARARGS,                 NULL},
+    {"pdist_cosine_double_wrap",             (PyCFunction)pdist_cosine_double_wrap,             METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_dice_bool_wrap",                 (PyCFunction)pdist_dice_char_wrap,                 METH_VARARGS,                 NULL},
+    {"pdist_euclidean_double_wrap",          (PyCFunction)pdist_euclidean_double_wrap,          METH_VARARGS,                 NULL},
+    {"pdist_sqeuclidean_double_wrap",        (PyCFunction)pdist_sqeuclidean_double_wrap,        METH_VARARGS,                 NULL},
+    {"pdist_hamming_double_wrap",            (PyCFunction)pdist_hamming_double_wrap,            METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_hamming_bool_wrap",              (PyCFunction)pdist_hamming_char_wrap,              METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_jaccard_double_wrap",            (PyCFunction)pdist_jaccard_double_wrap,            METH_VARARGS,                 NULL},
+    {"pdist_jaccard_bool_wrap",              (PyCFunction)pdist_jaccard_char_wrap,              METH_VARARGS,                 NULL},
+    {"pdist_jensenshannon_double_wrap",      (PyCFunction)pdist_jensenshannon_double_wrap,      METH_VARARGS,                 NULL},
+    {"pdist_mahalanobis_double_wrap",        (PyCFunction)pdist_mahalanobis_double_wrap,        METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_minkowski_double_wrap",          (PyCFunction)pdist_minkowski_double_wrap,          METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_weighted_chebyshev_double_wrap", (PyCFunction)pdist_weighted_chebyshev_double_wrap, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_weighted_minkowski_double_wrap", (PyCFunction)pdist_weighted_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_rogerstanimoto_bool_wrap",       (PyCFunction)pdist_rogerstanimoto_char_wrap,       METH_VARARGS,                 NULL},
+    {"pdist_russellrao_bool_wrap",           (PyCFunction)pdist_russellrao_char_wrap,           METH_VARARGS,                 NULL},
+    {"pdist_seuclidean_double_wrap",         (PyCFunction)pdist_seuclidean_double_wrap,         METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pdist_sokalsneath_bool_wrap",          (PyCFunction)pdist_sokalsneath_char_wrap,          METH_VARARGS,                 NULL},
+    {"pdist_yule_bool_wrap",                 (PyCFunction)pdist_yule_char_wrap,                 METH_VARARGS,                 NULL},
+    {"to_squareform_from_vector_wrap",       (PyCFunction)to_squareform_from_vector_wrap,       METH_VARARGS,                 NULL},
+    {"to_vector_from_squareform_wrap",       (PyCFunction)to_vector_from_squareform_wrap,       METH_VARARGS,                 NULL},
+    {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_distance_wrap",
-    NULL,
-    -1,
-    _distanceWrapMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+static int
+_distance_wrap_module_exec(PyObject *module)
+{
+    (void)module;  /* unused */
+
+    if (_import_array() < 0) { return -1; }
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot _distance_wrap_slots[] = {
+    {Py_mod_exec, _distance_wrap_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
 };
+
+
+static struct PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_distance_wrap",
+    .m_size = 0,
+    .m_methods = _distanceWrapMethods,
+    .m_slots = _distance_wrap_slots,
+};
+
 
 PyMODINIT_FUNC
 PyInit__distance_wrap(void)
 {
-    PyObject *module;
-
-    import_array();
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return module;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }

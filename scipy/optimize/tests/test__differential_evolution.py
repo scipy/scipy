@@ -262,7 +262,7 @@ class TestDifferentialEvolutionSolver:
         # test that the getter property method for the best solution works.
         solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
         result = solver.solve()
-        assert_equal(result.x, solver.x)
+        assert_allclose(result.x, solver.x, atol=1e-15, rtol=0)
 
     def test_intermediate_result(self):
         # Check that intermediate result object passed into the callback

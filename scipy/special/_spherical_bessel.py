@@ -1,5 +1,5 @@
 from functools import wraps
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import numpy as np
 from ._ufuncs import (_spherical_jn, _spherical_yn, _spherical_in,
                       _spherical_kn, _spherical_jn_d, _spherical_yn_d,
@@ -58,6 +58,7 @@ def spherical_jn(n, z, derivative=False):
     Returns
     -------
     jn : ndarray
+        Value or derivative of spherical Bessel function of the first kind.
 
     Notes
     -----
@@ -148,6 +149,7 @@ def spherical_yn(n, z, derivative=False):
     Returns
     -------
     yn : ndarray
+        Value or derivative of spherical Bessel function of the second kind.
 
     Notes
     -----
@@ -237,6 +239,7 @@ def spherical_in(n, z, derivative=False):
     Returns
     -------
     in : ndarray
+        Value or derivative of modified spherical Bessel function of the first kind.
 
     Notes
     -----
@@ -332,6 +335,7 @@ def spherical_kn(n, z, derivative=False):
     Returns
     -------
     kn : ndarray
+        Value or derivative of modified spherical Bessel function of the second kind.
 
     Notes
     -----

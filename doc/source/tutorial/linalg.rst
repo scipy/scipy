@@ -933,7 +933,7 @@ Fiedler               `scipy.linalg.fiedler`             Create a symmetric Fied
 --------------------  ---------------------------------  ---------------------------------------------------------
 Fiedler Companion     `scipy.linalg.fiedler_companion`   Create a Fiedler companion matrix.
 --------------------  ---------------------------------  ---------------------------------------------------------
-Hadamard              `scipy.linalg.hadamard`            Create an Hadamard matrix.
+Hadamard              `scipy.linalg.hadamard`            Create a Hadamard matrix.
 --------------------  ---------------------------------  ---------------------------------------------------------
 Hankel                `scipy.linalg.hankel`              Create a Hankel matrix.
 --------------------  ---------------------------------  ---------------------------------------------------------

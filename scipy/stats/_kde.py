@@ -17,9 +17,11 @@
 #
 #-------------------------------------------------------------------------------
 
+from types import GenericAlias
+
 # SciPy imports.
 from scipy import linalg, special
-from scipy._lib._util import check_random_state, np_vecdot
+from scipy._lib._util import check_random_state
 
 from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, exp, pi,
                    sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
@@ -92,6 +94,7 @@ class gaussian_kde:
     resample
     set_bandwidth
     covariance_factor
+    marginal
 
     Notes
     -----
@@ -205,6 +208,10 @@ class gaussian_kde:
     >>> np.allclose(res, ref)
     True
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, dataset, bw_method=None, weights=None):
         self.dataset = atleast_2d(asarray(dataset))
         if not self.dataset.size > 1:
@@ -219,7 +226,7 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be one-dimensional.")
             if len(self._weights) != self.n:
                 raise ValueError("`weights` input should be of length n")
-            self._neff = 1/np_vecdot(self._weights, self._weights)
+            self._neff = 1/np.vecdot(self._weights, self._weights)
 
         # This can be converted to a warning once gh-10205 is resolved
         if self.d > self.n:
@@ -333,8 +340,8 @@ class gaussian_kde:
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
         norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
-        energies = np_vecdot(diff, tdiff, axis=0) / 2.0
-        result = np_vecdot(exp(-energies), self.weights, axis=0) / norm_const
+        energies = np.vecdot(diff, tdiff, axis=0) / 2.0
+        result = np.vecdot(exp(-energies), self.weights, axis=0) / norm_const
 
         return result
 
@@ -369,7 +376,7 @@ class gaussian_kde:
         normalized_high = ravel((high - self.dataset) / stdev)
 
         delta = special.ndtr(normalized_high) - special.ndtr(normalized_low)
-        value = np_vecdot(self.weights, delta)
+        value = np.vecdot(self.weights, delta)
         return value
 
     def integrate_box(self, low_bounds, high_bounds, maxpts=None, *, rng=None):
@@ -400,7 +407,7 @@ class gaussian_kde:
             high, lower_limit=low, cov=self.covariance, maxpts=maxpts,
             rng=rng
         )
-        return np_vecdot(values, self.weights, axis=-1)
+        return np.vecdot(values, self.weights, axis=-1)
 
     def integrate_kde(self, other):
         """
@@ -442,8 +449,8 @@ class gaussian_kde:
             diff = large.dataset - mean
             tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
-            energies = np_vecdot(diff, tdiff, axis=0) / 2.0
-            result += np_vecdot(exp(-energies), large.weights, axis=0)*small.weights[i]
+            energies = np.vecdot(diff, tdiff, axis=0) / 2.0
+            result += np.vecdot(exp(-energies), large.weights, axis=0)*small.weights[i]
 
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
         norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
@@ -512,7 +519,13 @@ class gaussian_kde:
     covariance_factor.__doc__ = """Computes the bandwidth factor `factor`.
         The default is `scotts_factor`.  A subclass can overwrite this
         method to provide a different method, or set it through a call to
-        `set_bandwidth`."""
+        `set_bandwidth`.
+
+        Returns
+        -------
+        factor : float
+            The bandwidth factor.
+        """
 
     def set_bandwidth(self, bw_method=None):
         """Compute the bandwidth factor with given method.
@@ -611,6 +624,16 @@ class gaussian_kde:
         """
         Evaluate the estimated pdf on a provided set of points.
 
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the pdf.
+
+        Returns
+        -------
+        pdf : ndarray
+            The pdf evaluated at `x`.
+
         Notes
         -----
         This is an alias for `gaussian_kde.evaluate`.  See the ``evaluate``
@@ -622,6 +645,16 @@ class gaussian_kde:
     def logpdf(self, x):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
+
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the log-pdf.
+
+        Returns
+        -------
+        logpdf : ndarray
+            The log-pdf evaluated at `x`.
         """
         points = atleast_2d(x)
 
@@ -644,7 +677,7 @@ class gaussian_kde:
         return result[:, 0]
 
     def marginal(self, dimensions):
-        """Return a marginal KDE distribution
+        """Return a marginal KDE distribution.
 
         Parameters
         ----------
@@ -705,7 +738,7 @@ class gaussian_kde:
         try:
             return self._neff
         except AttributeError:
-            self._neff = 1/np_vecdot(self.weights, self.weights)
+            self._neff = 1/np.vecdot(self.weights, self.weights)
             return self._neff
 
 
