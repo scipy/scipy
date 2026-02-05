@@ -1048,24 +1048,24 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     See :ref:`linalg_batch` for further details.
     To illustrate:
 
-    >>> a = np.stack((np.eye(2), 2*np.eye(2)))
+    >>> a = np.stack((np.eye(2), [[1, 2], [3, 4]]))
     >>> linalg.inv(a)
-    array([[[1. , 0. ],
-            [0. , 1. ]],
-           [[0.5, 0. ],
-            [0. , 0.5]]])
+    array([[[ 1. ,  0. ],
+            [ 0. ,  1. ]],
+           [[-2. ,  1. ],
+            [ 1.5, -0.5]]])
 
     Note that the structure detection runs per-slice: in the example above, each of the
     two slices will be independently discovered as being diagonal. Setting an explicit
     ``assume_a`` argument will bypass structure detection and use the provided value
     without checking:
 
-    >>> a = np.stack((np.eye(2), np.arange(1, 5).reshape(2, 2)))
+    >>> a = np.stack((np.eye(2), [[1, 2], [3, 4]]))
     >>> linalg.inv(a, assume_a="diagonal")
     array([[[1.  , 0.  ],
-        [0.  , 1.  ]],
-       [[1.  , 2.  ],      # off-diagonal elements are incorrect
-        [3.  , 0.25]]])
+            [0.  , 1.  ]],
+           [[1.  , 2.  ],   # off-diagonal elements are incorrect
+            [3.  , 0.25]]])
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
 
@@ -1348,7 +1348,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     As an illustration of the "batching" feature (see :ref:`linalg_batch` for details),
     suppose that we want to compare least-squares fits of the given data with two
-    models: a quadratic model above, and an additional linear term,
+    models: a quadratic model above, and one with an additional linear term,
     ``y = a + b*x**2 + c*x``.
     To this end, we construct the design matrix for ``y = a + b*x**2 + c*x``, and
     extend ``M`` to have three columns:

@@ -94,7 +94,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Notes
     -----
-    Array argument of this function, `a`, may have additional
+    The array argument of this function, `a`, may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
     as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
