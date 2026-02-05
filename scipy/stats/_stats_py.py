@@ -5476,7 +5476,7 @@ def pointbiserialr(x, y, *, axis=0):
         Input array.
     y : array_like
         Input array.
-    axis : int or None, default
+    axis : int or None, default: 0
         Axis along which to perform the calculation. Default is 0.
         If None, ravel both arrays before performing the calculation.
 
