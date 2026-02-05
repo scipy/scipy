@@ -1967,7 +1967,7 @@ class _ConstraintWrapper:
                 # However, if (M, N) is a matrix then:
                 # (M, N) * (N,)   --> (M, 1), we need this to be (M,)
                 if x.ndim == 1 and res.ndim == 2:
-                    # deal with case that constraint.A is an np.matrix
+                    # deal with case that constraint.A is a np.matrix
                     # see gh20041
                     res = np.asarray(res)[:, 0]
 

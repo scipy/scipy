@@ -104,7 +104,7 @@ inline npy_complex128 cpack(double re, double im) {return npy_cpack(re, im);}
 
 
 /*
- * Debug helper: print out an npy_{cfloat,cdouble} value
+ * Debug helper: print out a npy_{cfloat,cdouble} value
  */
 std::ostream& operator<<(std::ostream& os, npy_complex64 x) {
     os << "(" << npy_crealf(x) << ", " << npy_cimagf(x) << ")";

@@ -1,7 +1,7 @@
 """
 python makenpz.py DIRECTORY
 
-Build an npz containing all data files in the directory.
+Build a npz containing all data files in the directory.
 
 """
 
