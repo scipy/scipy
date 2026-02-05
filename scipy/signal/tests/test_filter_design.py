@@ -5,7 +5,7 @@ import os
 
 from itertools import product
 
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
@@ -15,7 +15,7 @@ from scipy._lib._array_api import (
     make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
     _xp_copy_to_numpy, xp_assert_close_nulp
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
@@ -48,7 +48,7 @@ except ImportError:
 def mpmath_check(min_ver):
     return pytest.mark.skipif(
         mpmath is None
-        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        or version.parse(mpmath.__version__) < version.Version(min_ver),
         reason=f"mpmath version >= {min_ver} required",
     )
 
@@ -215,7 +215,6 @@ class TestTf2zpk:
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
 
-
 @make_xp_test_case(zpk2tf)
 class TestZpk2Tf:
 
@@ -287,6 +286,44 @@ class TestZpk2Tf:
         a_ref = xp.asarray([1, -3, 2])
         xp_assert_close(b, b_ref, check_dtype=False)
         xp_assert_close(a, a_ref, check_dtype=False)
+
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
+    def test_zpk2tf_int_truncation(self, xp):
+        # regression test for gh-24382
+        z =  xp.asarray([[ 1, 2.], [ 0., -1.]], dtype=xp.float64)
+        p = xp.asarray([3., 4.], dtype=xp.float64)
+        k = 2.5
+
+        b, a = zpk2tf(z, p, k)
+
+        # reference values from scipy 1.15.3
+        b_ref = xp.asarray([[ 2.5, -7.5,  5. ], [ 2.5,  2.5,  0. ]], dtype=xp.float64)
+        a_ref = xp.asarray([ 1., -7., 12.], dtype=xp.float64)
+
+        xp_assert_close(b, b_ref, atol=1e-14)
+        xp_assert_close(a, a_ref, atol=1e-14)
+
+    @skip_xp_backends("jax.numpy",
+                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
+    def test_zpk2tf_complex_k_multi_dim_z(self, xp):
+        # Regression test for gh-24395
+        k = 1j
+        z = xp.asarray([[1., 2.], [0., -1.]])
+        p = xp.asarray([3., 4.])
+
+        b, a = zpk2tf(z, p, k)
+
+        b1, a1 = zpk2tf(z[0, :], p, k)
+        b2, a2 = zpk2tf(z[1, :], p, k)
+
+        xp_assert_close(a, a1)
+        xp_assert_close(a, a2)
+        xp_assert_close(b[0, :], b1)
+        xp_assert_close(b[1, :], b2)
+        assert xp.isdtype(b.dtype, 'complex floating')
 
 
 @make_xp_test_case(sos2zpk)
@@ -1128,6 +1165,7 @@ class TestFreqz_sos:
         with assert_raises(ValueError):
             freqz_sos(sos[:0, ...])
 
+    @make_xp_test_case(sosfreqz)
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
         N = 500

@@ -211,7 +211,7 @@ def _workers(workers):
 @xp_capabilities(out_of_scope=True)
 @contextlib.contextmanager
 def set_workers(workers):
-    """Context manager for the default number of workers used in `scipy.fft`
+    """Context manager for the default number of workers used in `scipy.fft`.
 
     Parameters
     ----------
@@ -227,7 +227,7 @@ def set_workers(workers):
     >>> with fft.set_workers(4):
     ...     y = signal.fftconvolve(x, x)
 
-    """
+    """  # numpydoc ignore=YD01
     old_workers = get_workers()
     _config.default_workers = _workers(operator.index(workers))
     try:
@@ -238,7 +238,12 @@ def set_workers(workers):
 
 @xp_capabilities(out_of_scope=True)
 def get_workers():
-    """Returns the default number of workers within the current context
+    """Returns the default number of workers within the current context.
+
+    Returns
+    -------
+    n_workers : int
+        The default number of workers
 
     Examples
     --------

@@ -21,7 +21,7 @@ from collections.abc import Iterable
 import numpy as np
 import numpy.typing as npt
 
-from scipy._lib.array_api_compat import (
+from scipy._external.array_api_compat import (
     is_array_api_obj,
     is_lazy_array,
     is_numpy_array,
@@ -39,13 +39,13 @@ from scipy._lib.array_api_compat import (
     is_dask_namespace as is_dask,
     is_array_api_strict_namespace as is_array_api_strict,
 )
-from scipy._lib.array_api_compat.common._helpers import _compat_module_name
-from scipy._lib.array_api_extra.testing import lazy_xp_function
+from scipy._external.array_api_compat.common._helpers import _compat_module_name
+from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy._lib._array_api_override import (
     array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
 )
 from scipy._lib._docscrape import FunctionDoc
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 
 __all__ = [
@@ -770,7 +770,9 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
-    """ + (extra_note or "") + "    See :ref:`dev-arrayapi` for more information."
+    {extra_note or ""}
+    See :ref:`dev-arrayapi` for more information.
+    """
 
     return textwrap.dedent(note)
 
@@ -985,6 +987,9 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
     import pytest
 
     marks = []
+    # Inject a marker which will help us identify tests using the xp
+    # fixture which do not use xp_capabilities.
+    marks.append(pytest.mark.uses_xp_capabilities(True, funcs=funcs))
     for func in funcs:
         capabilities = capabilities_table[func]
         exceptions = capabilities['exceptions']

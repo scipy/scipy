@@ -1,12 +1,13 @@
 import threading
 import numpy as np
 from collections import namedtuple
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
-from scipy._lib import array_api_extra as xpx
+from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_size,
+                                   xp_promote, is_lazy_array, is_jax)
+import scipy._external.array_api_extra as xpx
 from scipy import special
 from scipy import stats
 from scipy.stats._stats_py import _rankdata
-from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_concatenate
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
@@ -170,8 +171,7 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     ''' Input validation and standardization for mannwhitneyu '''
     xp = array_namespace(x, y)
 
-    x, y = xpx.atleast_nd(x, ndim=1), xpx.atleast_nd(y, ndim=1)
-    if xp.any(xp.isnan(x)) or xp.any(xp.isnan(y)):
+    if not is_lazy_array(x) and (xp.any(xp.isnan(x)) or xp.any(xp.isnan(y))):
         raise ValueError('`x` and `y` must not contain NaNs.')
     if xp_size(x) == 0 or xp_size(y) == 0:
         raise ValueError('`x` and `y` must be of nonzero size.')
@@ -219,7 +219,7 @@ MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 @xp_capabilities(cpu_only=True,  # exact calculation only implemented in NumPy
                  skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
-                 jax_jit=False)
+                 extra_note="``method='auto'`` is incompatible with JAX arrays.")
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):
@@ -440,9 +440,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     x, y, use_continuity, alternative, axis_int, method, xp = (
         _mwu_input_validation(x, y, use_continuity, alternative, axis, method))
 
-    xy = _broadcast_concatenate((x, y), axis)
+    # axis=-1 and arrays broadcasted due to _axis_nan_policy decorator
+    xy = xp.concat((x, y), axis=-1)
 
-    n1, n2 = x.shape[-1], y.shape[-1]  # _axis_nan_policy decorator ensures axis=-1
+    n1, n2 = x.shape[-1], y.shape[-1]
 
     # Follows [2]
     ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
@@ -460,13 +461,18 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         U, f = xp.maximum(U1, U2), 2  # multiply SF by two for two-sided test
 
     if method == "auto":
+        if is_jax(xp):
+            message = "`method='auto'` is incompatible with JAX arrays."
+            raise ValueError(message)
         method = _mwu_choose_method(n1, n2, xp.any(t > 1))
 
     if method == "exact":
         if not hasattr(_mwu_state, 's'):
             _mwu_state.s = _MWU(0, 0)
         _mwu_state.s.set_shapes(n1, n2)
-        p = xp.asarray(_mwu_state.s.sf(np.asarray(U, np.int64)), dtype=x.dtype)
+        p = xpx.lazy_apply(_mwu_state.s.sf, xp.astype(U, xp.int64),
+                           as_numpy=True, dtype=xp.float64)
+        p = xp.astype(p, x.dtype, copy=False)
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity, xp=xp)
         p = special.ndtr(-z)

@@ -3,7 +3,7 @@ from functools import partial
 
 from scipy import stats
 from scipy.stats._axis_nan_policy import _broadcast_arrays
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_ravel,
                                    xp_result_type)
 
@@ -83,8 +83,7 @@ def _bws_statistic(x, y, alternative, axis, xp):
 
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
-                                ('dask.array', 'no rankdata')],
-                 jax_jit=False)
+                                ('dask.array', 'no rankdata')])
 def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 
@@ -127,16 +126,16 @@ def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     Returns
     -------
     res : PermutationTestResult
-    An object with attributes:
+        An object with attributes:
 
-    statistic : float
-        The observed test statistic of the data.
-    pvalue : float
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
+        statistic : float
+            The observed test statistic of the data.
+        pvalue : float
+            The p-value for the given alternative.
+        null_distribution : ndarray
+            The values of the test statistic generated under the null hypothesis.
 
-    See also
+    See Also
     --------
     scipy.stats.wilcoxon, scipy.stats.mannwhitneyu, scipy.stats.ttest_ind
 

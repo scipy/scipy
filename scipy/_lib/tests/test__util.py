@@ -16,8 +16,8 @@ from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _workers_wrapper)
-import scipy._lib.array_api_extra as xpx
-from scipy._lib.array_api_extra.testing import lazy_xp_function
+import scipy._external.array_api_extra as xpx
+from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
@@ -342,6 +342,7 @@ class TestContainsNaN:
     @pytest.mark.skip_xp_backends(eager_only=True,
                                   reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
+    @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))
@@ -362,6 +363,7 @@ class TestContainsNaN:
     @pytest.mark.skip_xp_backends("cupy", reason="lazy backends only")
     @pytest.mark.skip_xp_backends("array_api_strict", reason="lazy backends only")
     @pytest.mark.skip_xp_backends("torch", reason="lazy backends only")
+    @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
     def test_array_api_lazy(self, xp):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))

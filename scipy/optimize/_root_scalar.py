@@ -92,13 +92,9 @@ def root_scalar(f, args=(), method=None, bracket=None,
         - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
         - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
 
-    bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  ``f(x, *args)`` must have different
+    bracket : A sequence of 2 floats, optional
+        An interval bracketing a root. ``f(x, *args)`` must have different
         signs at the two endpoints.
-    x0 : float, optional
-        Initial guess.
-    x1 : float, optional
-        A second guess.
     fprime : bool or callable, optional
         If `fprime` is a boolean and is True, `f` is assumed to return the
         value of the objective function and of the derivative.
@@ -106,10 +102,13 @@ def root_scalar(f, args=(), method=None, bracket=None,
         this case, it must accept the same arguments as `f`.
     fprime2 : bool or callable, optional
         If `fprime2` is a boolean and is True, `f` is assumed to return the
-        value of the objective function and of the
-        first and second derivatives.
+        value of the objective function and of the first and second derivatives.
         `fprime2` can also be a callable returning the second derivative of `f`.
         In this case, it must accept the same arguments as `f`.
+    x0 : float, optional
+        Initial guess.
+    x1 : float, optional
+        A second guess.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -129,7 +128,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
         ``flag`` which describes the cause of the termination. See
         `RootResults` for a description of other attributes.
 
-    See also
+    See Also
     --------
     show_options : Additional options accepted by the solvers
     root : Find a root of a vector function.

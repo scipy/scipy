@@ -1,5 +1,3 @@
-fs = import('fs')
-
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
 if is_mingw and ff.get_id() != 'gcc'
@@ -123,7 +121,6 @@ print(incdir)
   endif
   pythran_dep = declare_dependency(
     include_directories: incdir_pythran,
-    dependencies: xsimd_dep,
   )
 else
   pythran_dep = []
@@ -391,7 +388,7 @@ if use_ilp64
        '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
      ]
      c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
-elif uses_accelerate
+  elif uses_accelerate
     blas_ilp64 = dependency('accelerate')
     lapack_ilp64 = blas_ilp64
     _args_blas_ilp64 += ['-DACCELERATE_NEW_LAPACK']
@@ -445,8 +442,8 @@ elif uses_accelerate
 else
   # we're not using ILP64; user code will link to the always-available LP64 blas/lapack
   # (all users must use preprocessor macros BLAS_NAME to handle the two options)
-  blas_dep = blas
-  lapack_dep = lapack
+  blas_dep = blas_lp64_dep
+  lapack_dep = lapack_lp64_dep
   c_flags_ilp64 = []
 endif
 
@@ -669,11 +666,12 @@ else
   use_math_defines = []
 endif
 
-# Determine whether it is necessary to link libatomic. This could be the case
-# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# Determine whether it is necessary to link libatomic (required for HiGHS, see
+# gh-17777) This could be the case on, e.g., 32-bit platforms when atomic
+# operations are used on 64-bit types.
+# We do want this exact logic to minimize the number of cases where we use
+# `-latomic`, we can't switch to the builtin `dependency('atomic')` support.
 # The check is copied from Mesa <https://www.mesa3d.org/>.
-# Note that this dependency is not desired, it came in with a HiGHS update.
-# We should try to get rid of it. For discussion, see gh-17777.
 null_dep = dependency('', required : false)
 atomic_dep = null_dep
 code_non_lockfree = '''
@@ -754,7 +752,7 @@ foreach name, machine : machines
   conf_data.set(name + '_CPU_SYSTEM', machine.system())
 endforeach
 
-conf_data.set('CROSS_COMPILED', meson.is_cross_build())
+conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
 conf_data.set('PYTHON_PATH', py3.full_path())
@@ -763,7 +761,7 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 # Dependencies information
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
-  conf_data.set(name + '_FOUND', dep.found())
+  conf_data.set(name + '_FOUND', dep.found().to_string())
   if dep.found()
     conf_data.set(name + '_VERSION', dep.version())
     conf_data.set(name + '_TYPE_NAME', dep.type_name())
@@ -771,7 +769,7 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
     conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
-    conf_data.set(name + '_HAS_ILP64', use_ilp64)
+    conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach
 
@@ -828,6 +826,7 @@ if use_ilp64
   )
 endif
 
+subdir('_external')
 subdir('_lib')
 subdir('special')
 subdir('linalg')

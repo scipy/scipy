@@ -49,7 +49,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Boolean array of the same shape as `data` that is True at an extrema,
         False otherwise.
 
-    See also
+    See Also
     --------
     argrelmax, argrelmin
 
@@ -538,7 +538,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     * Draw a horizontal line at the evaluation height to both sides, starting at
       the peak's current vertical position until the lines either intersect a
       slope, the signal border or cross the vertical position of the peak's
-      base (see `peak_prominences` for an definition). For the first case,
+      base (see `peak_prominences` for a definition). For the first case,
       intersection with the signal, the true intersection point is estimated
       with linear interpolation.
     * Calculate the width as the horizontal distance between the chosen
@@ -1125,10 +1125,9 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     out_lines = []
     for line in (final_lines + ridge_lines):
-        sortargs = np.array(np.argsort(line[0]))
-        rows, cols = np.zeros_like(sortargs), np.zeros_like(sortargs)
-        rows[sortargs] = line[0]
-        cols[sortargs] = line[1]
+        sortargs = np.argsort(line[0])
+        rows = np.array(line[0])[sortargs]
+        cols = np.array(line[1])[sortargs]
         out_lines.append([rows, cols])
 
     return out_lines

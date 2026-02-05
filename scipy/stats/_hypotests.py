@@ -10,8 +10,9 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
-                                   xp_promote, xp_result_type, xp_copy, is_numpy)
-import scipy._lib.array_api_extra as xpx
+                                   xp_promote, xp_result_type, xp_copy, is_numpy,
+                                   is_lazy_array)
+import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -29,8 +30,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy"),
-                                ("jax.numpy", "lazy -> no _axis_nan_policy")])
+@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy")])
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
@@ -119,7 +119,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # check if t is valid
     if t.ndim > 1:
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
-    if xp.any(t <= 0):
+    if is_lazy_array(t):
+        t = xpx.at(t)[t <= 0].set(xp.nan)
+    elif xp.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
 
     # Previously, non-finite input caused an error in linalg functions.
@@ -149,7 +151,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     est_cov = (n/nx)*cov_x + (n/ny)*cov_y
     est_cov_inv = xp.linalg.pinv(est_cov)
     r = xp.asarray(xp.linalg.matrix_rank(est_cov_inv), dtype=est_cov_inv.dtype)
-    if xp.any(r < 2*xp_size(t)):
+    if not is_lazy_array(r) and xp.any(r < 2*xp_size(t)):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
                       'test might not be consistent.', # see p. 183 in [1]_
@@ -189,7 +191,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     ----------
     k1 : int
         Number of events observed from distribution 1.
-    n1: float
+    n1 : float
         Size of sample from distribution 1.
     k2 : int
         Number of events observed from distribution 2.
@@ -202,12 +204,12 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided': the difference between distribution means is not
-            equal to `diff`
-          * 'less': the difference between distribution means is less than
-            `diff`
-          * 'greater': the difference between distribution means is greater
-            than `diff`
+        * 'two-sided': the difference between distribution means is not
+          equal to `diff`
+        * 'less': the difference between distribution means is less than
+          `diff`
+        * 'greater': the difference between distribution means is greater
+          than `diff`
 
     Returns
     -------
@@ -530,7 +532,8 @@ def _cvm_result_to_tuple(res, _):
 
 
 @xp_capabilities(cpu_only=True,  # needs special function `kv`
-                 skip_backends=[('dask.array', 'typical dask issues')], jax_jit=False)
+                 skip_backends=[('dask.array', 'typical dask issues')],
+                 jax_jit=False)  # array boolean indices must be concrete
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
@@ -654,11 +657,12 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
-    rvs, n = xp_promote(rvs, n, force_floating=True, xp=xp)
+    rvs = xp_promote(rvs, force_floating=True, xp=xp)
+    n = float(n)
     vals = xp.sort(rvs, axis=-1)
     cdfvals = cdf(vals, *args)
 
-    u = (2*xp.arange(1, n+1, dtype=n.dtype) - 1)/(2*n)
+    u = (2*xp.arange(1, n+1, dtype=rvs.dtype) - 1)/(2*n)
     w = 1/(12*n) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
@@ -814,6 +818,7 @@ def somersd(x, y=None, alternative='two-sided'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
+
         * 'two-sided': the rank correlation is nonzero
         * 'less': the rank correlation is negative (less than zero)
         * 'greater':  the rank correlation is positive (greater than zero)
@@ -823,15 +828,15 @@ def somersd(x, y=None, alternative='two-sided'):
     res : SomersDResult
         A `SomersDResult` object with the following fields:
 
-            statistic : float
-               The Somers' :math:`D` statistic.
-            pvalue : float
-               The p-value for a hypothesis test whose null
-               hypothesis is an absence of association, :math:`D=0`.
-               See notes for more information.
-            table : 2D array
-               The contingency table formed from rankings `x` and `y` (or the
-               provided contingency table, if `x` is a 2D array)
+        statistic : float
+           The Somers' :math:`D` statistic.
+        pvalue : float
+           The p-value for a hypothesis test whose null
+           hypothesis is an absence of association, :math:`D=0`.
+           See notes for more information.
+        table : 2D array
+           The contingency table formed from rankings `x` and `y` (or the
+           provided contingency table, if `x` is a 2D array)
 
     See Also
     --------
@@ -1030,7 +1035,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         contingency table.
     fisher_exact : Fisher exact test on a 2x2 contingency table.
     boschloo_exact : Boschloo's exact test on a 2x2 contingency table,
-        which is an uniformly more powerful alternative to Fisher's exact test.
+        which is a uniformly more powerful alternative to Fisher's exact test.
 
     Notes
     -----
@@ -1099,9 +1104,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             (1 - \pi)^{t - x_{11} - x_{12}}
 
     where the sum is over all  2x2 contingency tables :math:`X` such that:
+
     * :math:`T(X) \leq T(X_0)` when `alternative` = "less",
     * :math:`T(X) \geq T(X_0)` when `alternative` = "greater", or
     * :math:`T(X) \geq |T(X_0)|` when `alternative` = "two-sided".
+
     Above, :math:`c_1, c_2` are the sum of the columns 1 and 2,
     and :math:`t` the total (sum of the 4 sample's element).
 
@@ -1632,7 +1639,7 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
 
 @xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
-                 cpu_only=True, jax_jit=False)
+                 cpu_only=True, jax_jit=False)  # due to p-value calculation
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
@@ -1777,7 +1784,6 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # in case of ties, use midrank (see [1])
     r = scipy.stats.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
-    r = xp.astype(r, dtype, copy=False)
     rx = r[..., :nx]
     ry = r[..., nx:]
 
@@ -1970,7 +1976,7 @@ def tukey_hsd(*args, equal_var=True):
     sample1, sample2, ... : array_like
         The sample measurements for each group. There must be at least
         two arguments.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If True (default) and equal sample size, perform Tukey-HSD test [6].
         If True and unequal sample size, perform Tukey-Kramer test [4]_.
         If False, perform Games-Howell test [7]_, which does not assume equal variances.

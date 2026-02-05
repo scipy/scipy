@@ -428,7 +428,7 @@ add_newdoc("bdtrik",
     """)
 
 add_newdoc("bdtrin",
-    """
+    r"""
     bdtrin(k, y, p, out=None)
 
     Inverse function to `bdtr` with respect to `n`.
@@ -460,24 +460,35 @@ add_newdoc("bdtrin",
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
-    distribution to the cumulative incomplete beta distribution.
-
-    Computation of `n` involves a search for a value that produces the desired
-    value of `y`. The search relies on the monotonicity of `y` with `n`.
-
-    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
+    This function uses the `find_minimum_number_of_trials` method of the
+    `binomial_distribution` class of the Boost.Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.5#E5
-    .. [3] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    How often do we have to flip a fair coin to have at least a 90% chance
+    of getting 10 heads? `bdtrin` answers this question:
+
+    >>> import scipy.special as sc
+    >>> k = 10  # number of times we want heads
+    >>> p = 0.5  # probability of flipping heads
+    >>> y = 0.9  # cumulative probability
+    >>> result = sc.bdtrin(k, y, p)
+    >>> result
+    15.90442928275109
+
+    To verify, compute the cumulative probability of getting 10 or fewer
+    successes in 16 trials with probability 0.5 using the binomial
+    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
+    number of trials, we round up to the next integer:
+
+    >>> from scipy.stats import Binomial
+    >>> Binomial(n=16, p=p).cdf(k)
+    0.8949432373046875
+
     """)
 
 add_newdoc("btdtria",
@@ -1300,7 +1311,7 @@ add_newdoc("chndtr",
     r"""
     chndtr(x, df, nc, out=None)
 
-    Non-central chi square cumulative distribution function
+    Non-central chi square cumulative distribution function.
 
     The cumulative distribution function is given by:
 
@@ -1375,7 +1386,7 @@ add_newdoc("chndtrix",
     """
     chndtrix(p, df, nc, out=None)
 
-    Inverse to `chndtr` vs `x`
+    Inverse to `chndtr` vs `x`.
 
     Calculated using a search to find a value for `x` that produces the
     desired value of `p`.
@@ -1435,7 +1446,7 @@ add_newdoc("chndtridf",
     """
     chndtridf(x, p, nc, out=None)
 
-    Inverse to `chndtr` vs `df`
+    Inverse to `chndtr` vs `df`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -1494,7 +1505,7 @@ add_newdoc("chndtrinc",
     """
     chndtrinc(x, df, p, out=None)
 
-    Inverse to `chndtr` vs `nc`
+    Inverse to `chndtr` vs `nc`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -3479,7 +3490,7 @@ add_newdoc("fdtridfd",
     """
     fdtridfd(dfn, p, x, out=None)
 
-    Inverse to `fdtr` vs dfd
+    Inverse to `fdtr` vs dfd.
 
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
 
@@ -3572,7 +3583,7 @@ add_newdoc("gdtr",
 
     .. math::
 
-        F = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        F(x) = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3592,7 +3603,7 @@ add_newdoc("gdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The CDF of the gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
@@ -3690,7 +3701,7 @@ add_newdoc("gdtrc",
 
     .. math::
 
-        F = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
+        S(x) = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
     where :math:`\Gamma` is the gamma function.
 
@@ -3710,7 +3721,7 @@ add_newdoc("gdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The survival function of the gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
@@ -3834,24 +3845,12 @@ add_newdoc("gdtria",
     gdtr : CDF of the gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `a`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtria` is implemented in terms of the incomplete gamma inverse as
+    ``gdtria(p, b, x) = gammaincinv(b, p)/x``.
 
     Examples
     --------
@@ -3980,24 +3979,12 @@ add_newdoc("gdtrix",
     gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
     gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `x` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `x`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtrix` is implemented in terms of the incomplete gamma inverse as
+    ``gdtrix(a, b, p) = gammaincinv(b, p)/a``.
 
     Examples
     --------
@@ -4011,7 +3998,7 @@ add_newdoc("gdtrix",
     Verify the inverse.
 
     >>> gdtrix(1.2, 3.4, p)
-    5.5999999999999996
+    5.6
     """)
 
 
@@ -4275,7 +4262,7 @@ add_newdoc("hyperu",
     r"""
     hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U
+    Confluent hypergeometric function U.
 
     It is defined as the solution to the equation
 
@@ -4397,7 +4384,7 @@ add_newdoc("kn",
     r"""
     kn(n, x, out=None)
 
-    Modified Bessel function of the second kind of integer order `n`
+    Modified Bessel function of the second kind of integer order `n`.
 
     Returns the modified Bessel function of the second kind for integer order
     `n` at real `z`.
@@ -4464,7 +4451,7 @@ add_newdoc("kolmogi",
     """
     kolmogi(p, out=None)
 
-    Inverse Survival Function of Kolmogorov distribution
+    Inverse Survival Function of Kolmogorov distribution.
 
     It is the inverse function to `kolmogorov`.
     Returns y such that ``kolmogorov(y) == p``.
@@ -4823,7 +4810,7 @@ add_newdoc("nbdtr",
 
     .. math::
 
-        F = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        F(k) = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that `k` or fewer failures precede the nth
@@ -4842,7 +4829,7 @@ add_newdoc("nbdtr",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k` or fewer failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -4949,7 +4936,7 @@ add_newdoc("nbdtrc",
 
     .. math::
 
-        F = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        S(k) = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
 
     In a sequence of Bernoulli trials with individual success probabilities
     `p`, this is the probability that more than `k` failures precede the nth
@@ -4968,7 +4955,7 @@ add_newdoc("nbdtrc",
 
     Returns
     -------
-    F : scalar or ndarray
+    scalar or ndarray
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -6021,7 +6008,7 @@ add_newdoc("ndtri",
     """
     ndtri(y, out=None)
 
-    Inverse of `ndtr` vs x
+    Inverse of `ndtr` vs x.
 
     Returns the argument x for which the area under the standard normal
     probability density function (integrated from minus infinity to `x`)
@@ -6132,7 +6119,7 @@ add_newdoc("pdtrc",
     """
     pdtrc(k, m, out=None)
 
-    Poisson survival function
+    Poisson survival function.
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
@@ -6182,7 +6169,7 @@ add_newdoc("pdtri",
     """
     pdtri(k, y, out=None)
 
-    Inverse to `pdtr` vs m
+    Inverse to `pdtr` vs m.
 
     Returns the Poisson variable `m` such that the sum from 0 to `k` of
     the Poisson density is equal to the given probability `y`:
@@ -6247,6 +6234,12 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
     Notes
     -----
     This function relies on the ``gamma_q_inva`` function from the Boost
@@ -6255,12 +6248,6 @@ add_newdoc("pdtrik",
     References
     ----------
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrc : Poisson survival function
-    pdtri : inverse of `pdtr` with respect to `m`
 
     Examples
     --------
@@ -6874,7 +6861,7 @@ add_newdoc("smirnov",
     r"""
     smirnov(n, d, out=None)
 
-    Kolmogorov-Smirnov complementary cumulative distribution function
+    Kolmogorov-Smirnov complementary cumulative distribution function.
 
     Returns the exact Kolmogorov-Smirnov complementary cumulative
     distribution function,(aka the Survival Function) of Dn+ (or Dn-)
@@ -6987,7 +6974,7 @@ add_newdoc("smirnovi",
     """
     smirnovi(n, p, out=None)
 
-    Inverse to `smirnov`
+    Inverse to `smirnov`.
 
     Returns `d` such that ``smirnov(n, d) == p``, the critical value
     corresponding to `p`.
@@ -7157,7 +7144,7 @@ add_newdoc(
     r"""
     stdtr(df, t, out=None)
 
-    Student t distribution cumulative distribution function
+    Student t distribution cumulative distribution function.
 
     Returns the integral:
 
@@ -7257,7 +7244,7 @@ add_newdoc("stdtridf",
     """
     stdtridf(p, t, out=None)
 
-    Inverse of `stdtr` vs df
+    Inverse of `stdtr` vs df.
 
     Returns the argument df such that stdtr(df, t) is equal to `p`.
 
@@ -7705,9 +7692,9 @@ add_newdoc("owens_t",
 
     Parameters
     ----------
-    h: array_like
+    h : array_like
         Input value.
-    a: array_like
+    a : array_like
         Input value.
     out : ndarray, optional
         Optional output array for the function results

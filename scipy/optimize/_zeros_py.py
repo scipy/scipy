@@ -500,18 +500,21 @@ def bisect(f, a, b, args=(),
     Find root of a function within an interval using bisection.
 
     Basic bisection routine to find a root of the function `f` between the
-    arguments `a` and `b`. `f(a)` and `f(b)` cannot have the same signs.
+    arguments `a` and `b`. ``f(a)`` and ``f(b)`` cannot have the same signs.
     Slow but sure.
 
     Parameters
     ----------
     f : function
         Python function returning a number.  `f` must be continuous, and
-        f(a) and f(b) must have opposite signs.
+        ``f(a)`` and ``f(b)`` must have opposite signs.
     a : scalar
-        One end of the bracketing interval [a,b].
+        One end of the bracketing interval ``[a,b]``.
     b : scalar
-        The other end of the bracketing interval [a,b].
+        The other end of the bracketing interval ``[a,b]``.
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -524,9 +527,6 @@ def bisect(f, a, b, args=(),
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where x is the root, and r is
@@ -543,6 +543,13 @@ def bisect(f, a, b, args=(),
     r : `RootResults` (present if ``full_output = True``)
         Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
+
+    See Also
+    --------
+    brentq, brenth, bisect, newton
+    fixed_point : scalar fixed-point finder
+    fsolve : n-dimensional root-finding
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
@@ -575,14 +582,6 @@ def bisect(f, a, b, args=(),
     >>> root = optimize.bisect(f, -2, 0)
     >>> root
     -1.0
-
-    See Also
-    --------
-    brentq, brenth, bisect, newton
-    fixed_point : scalar fixed-point finder
-    fsolve : n-dimensional root-finding
-    elementwise.find_root : efficient elementwise 1-D root-finder
-
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -611,6 +610,9 @@ def ridder(f, a, b, args=(),
         One end of the bracketing interval [a,b].
     b : scalar
         The other end of the bracketing interval [a,b].
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -623,9 +625,6 @@ def ridder(f, a, b, args=(),
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
@@ -741,6 +740,9 @@ def brentq(f, a, b, args=(),
         One end of the bracketing interval :math:`[a, b]`.
     b : scalar
         The other end of the bracketing interval :math:`[a, b]`.
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -757,9 +759,6 @@ def brentq(f, a, b, args=(),
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
@@ -874,6 +873,9 @@ def brenth(f, a, b, args=(),
         One end of the bracketing interval [a,b].
     b : scalar
         The other end of the bracketing interval [a,b].
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -890,9 +892,6 @@ def brenth(f, a, b, args=(),
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is

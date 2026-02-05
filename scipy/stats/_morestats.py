@@ -13,7 +13,7 @@ from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib.deprecation import _NoValue
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,
@@ -29,6 +29,7 @@ from scipy._lib._array_api import (
     xp_device,
     xp_ravel,
     _length_nonmasked,
+    is_lazy_array,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -907,6 +908,10 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
         The statistic of each axis-slice (e.g. row) of the input will appear in a
         corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
     nan_policy : {'propagate', 'omit', 'raise'
         Defines how to handle input NaNs.
 
@@ -918,10 +923,6 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
-    keepdims : bool, default: False
-        If this is set to True, the axes which are reduced are left
-        in the result as dimensions with size one. With this option,
-        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -1070,7 +1071,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
 
 
 @xp_capabilities(np_only=True)
-def boxcox(x, lmbda=None, alpha=None, optimizer=None):
+def boxcox(x, lmbda=None, alpha=None, optimizer=None, *, nan_policy='propagate'):
     r"""Return a dataset transformed by a Box-Cox power transformation.
 
     Parameters
@@ -1115,6 +1116,13 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         `scipy.optimize.minimize_scalar` for more information.
 
         If `lmbda` is not None, `optimizer` is ignored.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle NaNs in `x`.
+
+        - ``propagate``: if a NaN is present, all outputs will contain NaNs.
+        - ``omit``: NaNs will be omitted when calculating the optimal `maxlog` and
+          confidence interval; NaNs in `x` will remain NaNs in the transformed data.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -1192,6 +1200,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     x = np.asarray(x)
 
     if lmbda is not None:  # single transformation
+        _contains_nan(x, nan_policy, xp_omit_okay=True)  # handle nan_policy='raise'
         return special.boxcox(x, lmbda)
 
     if x.ndim != 1:
@@ -1207,14 +1216,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         raise ValueError("Data must be positive.")
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    lmax = boxcox_normmax(x, method='mle', optimizer=optimizer)
-    y = boxcox(x, lmax)
+    lmax = boxcox_normmax(x, method='mle', optimizer=optimizer, nan_policy=nan_policy)
+    y = special.boxcox(x, lmax)
 
     if alpha is None:
         return y, lmax
     else:
         # Find confidence interval
-        interval = _boxcox_conf_interval(x, lmax, alpha)
+        interval = ((lmax, lmax) if np.isnan(lmax) else
+                    _boxcox_conf_interval(x[~np.isnan(x)], lmax, alpha))
         return y, lmax, interval
 
 
@@ -1234,7 +1244,8 @@ _BigFloat_singleton = _BigFloat()
 
 @xp_capabilities(np_only=True)
 def boxcox_normmax(
-    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton,
+    nan_policy='propagate'
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1287,6 +1298,12 @@ def boxcox_normmax(
         the maximum value of the input dtype. If set to infinity,
         `boxcox_normmax` returns the unconstrained optimal lambda.
         Ignored when ``method='pearsonr'``.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the input, the output will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -1344,6 +1361,13 @@ def boxcox_normmax(
     6.000000000
     """
     x = np.asarray(x)
+
+    contains_nan = _contains_nan(x, nan_policy, xp_omit_okay=True)
+    if contains_nan:
+        if nan_policy == 'propagate':
+            NaN = _get_nan(x, xp=np)[()]
+            return np.asarray([NaN, NaN]) if method == 'all' else NaN
+        x = x[~np.isnan(x)]  # `nan_policy='omit
 
     if not np.all(np.isfinite(x) & (x >= 0)):
         message = ("The `x` argument of `boxcox_normmax` must contain "
@@ -1572,7 +1596,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
 
 
 @xp_capabilities(np_only=True)
-def yeojohnson(x, lmbda=None):
+def yeojohnson(x, lmbda=None, *, nan_policy='propagate'):
     r"""Return a dataset transformed by a Yeo-Johnson power transformation.
 
     Parameters
@@ -1583,6 +1607,13 @@ def yeojohnson(x, lmbda=None):
         If ``lmbda`` is ``None``, find the lambda that maximizes the
         log-likelihood function and return it as the second output argument.
         Otherwise the transformation is done for the given value.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle NaNs in `x`.
+
+        - ``propagate``: if a NaN is present, all outputs will contain NaNs.
+        - ``omit``: NaNs will be omitted when calculating the optimal `maxlog`;
+           NaNs in `x` will remain NaNs in the transformed data.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -1666,10 +1697,11 @@ def yeojohnson(x, lmbda=None):
         x = x.astype(np.float64, copy=False)
 
     if lmbda is not None:
+        _contains_nan(x, nan_policy, xp_omit_okay=True)  # handle nan_policy='raise'
         return _yeojohnson_transform(x, lmbda)
 
     # if lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    lmax = yeojohnson_normmax(x)
+    lmax = yeojohnson_normmax(x, nan_policy=nan_policy)
     y = _yeojohnson_transform(x, lmax)
 
     return y, lmax
@@ -1684,6 +1716,13 @@ def _yeojohnson_transform(x, lmbda, xp=None):
     eps = xp.finfo(dtype).eps
     out = xp.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
+
+    if is_jax(xp):
+        return xp.select(
+            [(abs(lmbda) < eps) & pos, (abs(lmbda - 2) < eps) & ~pos, pos],
+            [xp.log1p(x), -xp.log1p(-x), xp.expm1(lmbda * xp.log1p(x)) / lmbda],
+            -xp.expm1((2 - lmbda) * xp.log1p(-x)) / (2 - lmbda),
+        )
 
     # when x >= 0
     if abs(lmbda) < eps:
@@ -1729,6 +1768,7 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
     keepdims : bool, default: False
         If this is set to True, the axes which are reduced are left
         in the result as dimensions with size one. With this option,
@@ -1822,22 +1862,48 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
                           result_to_tuple=lambda x, _: (x,))
 def _yeojohnson_llf(data, *, lmb, axis=0):
     xp = array_namespace(data)
-    y = _yeojohnson_transform(data, lmb, xp=xp)
-    sigma = xp.var(y, axis=axis)
-
-    # Suppress RuntimeWarning raised by np.log when the variance is too low
-    finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
-    log_sigma = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
 
     n = data.shape[axis]
-    loglike = (-n / 2 * log_sigma
+    if n == 0:
+        return _get_nan(data, xp=xp)
+    eps = xp.finfo(dtype).eps
+    # Special case all-positive/negative data to avoid overflow and precision loss
+    pos = data >= 0  # binary mask
+
+    # There exists numerical instability when abs(lmb) or abs(lmb - 2) is very small
+    if not is_lazy_array(pos) and xp.all(pos):
+        if abs(lmb) < eps:
+            logvar = xp.log(xp.var(xp.log1p(data), axis=axis))
+        else:
+            logvar = _log_var(lmb * xp.log1p(data), xp, axis) - 2 * math.log(abs(lmb))
+
+    elif not is_lazy_array(pos) and xp.all(~pos):
+        if abs(lmb - 2) < eps:
+            logvar = xp.log(xp.var(xp.log1p(-data), axis=axis))
+        else:
+            logvar = _log_var((2 - lmb) * xp.log1p(-data), xp, axis) - 2 * math.log(
+                abs(2 - lmb)
+            )
+
+    # overflow/precision loss not reported for mixed data; calculate `logvar` directly
+    else:  # mixed positive and negative data
+        y = _yeojohnson_transform(data, lmb, xp=xp)
+        sigma = xp.var(y, axis=axis)
+
+        # Suppress RuntimeWarning raised by np.log when the variance is too low
+        finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
+        logvar = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
+
+    loglike = (-n / 2 * logvar
                + (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
 
     return loglike
 
 
 @xp_capabilities(np_only=True)
-def yeojohnson_normmax(x, brack=None):
+def yeojohnson_normmax(x, brack=None, *, nan_policy='propagate'):
     """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using
@@ -1852,6 +1918,12 @@ def yeojohnson_normmax(x, brack=None):
         `optimize.brent`. Note that this is in most cases not critical; the
         final result is allowed to be outside this bracket. If None,
         `optimize.fminbound` is used with bounds that avoid overflow.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the input, the output will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -1894,13 +1966,21 @@ def yeojohnson_normmax(x, brack=None):
         return -llf
 
     with np.errstate(invalid='ignore'):
+        x = np.asarray(x)
+
+        contains_nan = _contains_nan(x, nan_policy, xp_omit_okay=True)
+        if contains_nan:
+            if nan_policy == 'propagate':
+                return _get_nan(x, xp=np)[()]
+            x = x[~np.isnan(x)]  # `nan_policy='omit
+
         if not np.all(np.isfinite(x)):
             raise ValueError('Yeo-Johnson input must be finite.')
         if np.all(x == 0):
             return 1.0
         if brack is not None:
             return optimize.brent(_neg_llf, brack=brack, args=(x,))
-        x = np.asarray(x)
+
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         # Allow values up to 20 times the maximum observed value to be safely
         # transformed without over- or underflow.
@@ -2266,7 +2346,7 @@ def anderson(x, dist='norm', *, method=None):
             An object containing the results of fitting the distribution to
             the data.
 
-        .. deprecated :: 1.17.0
+        .. deprecated:: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
             ``critical_values``, ``significance_level``, and ``fit_result`` are
             deprecated. Beginning in SciPy 1.19.0, these features will no longer be
@@ -2613,7 +2693,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
         discrete populations. If False, the right side empirical
         distribution is used.
 
-        .. deprecated::1.17.0
+        .. deprecated:: 1.17.0
             Use parameter `variant` instead.
     variant : {'midrank', 'right', 'continuous'}
         Variant of Anderson-Darling test to be computed. ``'midrank'`` is applicable
@@ -2640,7 +2720,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
 
-            .. deprecated::1.17.0
+            .. deprecated:: 1.17.0
                  Present only when `variant` is unspecified.
 
         pvalue : float
@@ -3015,7 +3095,6 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
     rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    rank, t = xp.astype(rank, dtype), xp.astype(t, dtype)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
@@ -3188,7 +3267,8 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+                 jax_jit=False)  # needs fdtrc
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3334,7 +3414,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')], jax_jit=False)
+                                ('cupy', 'no rankdata')])
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3469,8 +3549,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     Xibar = [func(sample) for sample in samples]
     Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
     Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
-    ranks = _stats_py._rankdata(Xij_Xibar, method='average', xp=xp)
-    ranks = xp.astype(ranks, dtype)
+    ranks = stats.rankdata(Xij_Xibar, method='average', axis=-1)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
@@ -3534,7 +3613,6 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
     _, a = _stats_py._rankdata(x, method='average', return_ties=True)
-    a = xp.astype(a, phi.dtype)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
     a = xp.concat((a, zeros), axis=-1)
@@ -3656,7 +3734,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     """
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
-    dtype = x.dtype
 
     # _axis_nan_policy decorator ensures axis=-1
     xy = xp.concat((x, y), axis=-1)
@@ -3672,9 +3749,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
     r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
 
-    if xp.any(t > 1):
+    if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
         z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
@@ -3712,7 +3788,9 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                jax_jit=False, cpu_only=True)  # null distribution is CPU only
+                 # the exact null distribution is NumPy-only
+                 jax_jit=False,
+                 cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -3789,23 +3867,24 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     Returns
     -------
-    An object with the following attributes.
+    result : WilcoxonResult
+        An object with the following attributes.
 
-    statistic : array_like
-        If `alternative` is "two-sided", the sum of the ranks of the
-        differences above or below zero, whichever is smaller.
-        Otherwise the sum of the ranks of the differences above zero.
-    pvalue : array_like
-        The p-value for the test depending on `alternative` and `method`.
-    zstatistic : array_like
-        When ``method = 'asymptotic'``, this is the normalized z-statistic::
+        statistic : array_like
+            If `alternative` is "two-sided", the sum of the ranks of the
+            differences above or below zero, whichever is smaller.
+            Otherwise the sum of the ranks of the differences above zero.
+        pvalue : array_like
+            The p-value for the test depending on `alternative` and `method`.
+        zstatistic : array_like
+            When ``method = 'asymptotic'``, this is the normalized z-statistic::
 
-            z = (T - mn - d) / se
+                z = (T - mn - d) / se
 
-        where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
-        distribution under the null hypothesis, ``d`` is a continuity
-        correction, and ``se`` is the standard error.
-        When ``method != 'asymptotic'``, this attribute is not available.
+            where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
+            distribution under the null hypothesis, ``d`` is a continuity
+            correction, and ``se`` is the standard error.
+            When ``method != 'asymptotic'``, this attribute is not available.
 
     See Also
     --------
@@ -3821,11 +3900,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     - When ``len(d)`` is sufficiently large, the null distribution of the
       normalized test statistic (`zstatistic` above) is approximately normal,
       and ``method = 'asymptotic'`` can be used to compute the p-value.
-
     - When ``len(d)`` is small, the normal approximation may not be accurate,
       and ``method='exact'`` is preferred (at the cost of additional
       execution time).
-
     - The default, ``method='auto'``, selects between the two:
       ``method='exact'`` is used when ``len(d) <= 50``, and
       ``method='asymptotic'`` is used otherwise.
@@ -4408,7 +4485,24 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         Upper boundary of the principal value of an angle.  Default is ``2*pi``.
     low : float, optional
         Lower boundary of the principal value of an angle.  Default is ``0``.
-    normalize : boolean, optional
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+        which the  statistic is computed, the corresponding entry of the output
+        will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        If insufficient data remains in the axis slice along which the
+        statistic is computed, the corresponding entry of the output will be
+        NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
+    normalize : bool, optional
         If ``False`` (the default), the return value is computed from the
         above formula with the input scaled by ``(2*pi)/(high-low)`` and
         the output scaled (back) by ``(high-low)/(2*pi)``.  If ``True``,
@@ -4520,7 +4614,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         of the data is a vector observation.
     axis : int, default: 0
         Axis along which the directional mean is computed.
-    normalize: boolean, default: True
+    normalize : bool, default: True
         If True, normalize the input to ensure that each observation is a
         unit vector. It the observations are already unit vectors, consider
         setting this to False to avoid unnecessary computation.
@@ -4634,7 +4728,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     return DirectionalStats(mean_direction, mean_resultant_length)
 
 
-@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")], jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")])
 def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate.
 
@@ -4788,10 +4882,14 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     # Input Validation and Special Cases
     ps = xp.asarray(ps)
 
-    ps_in_range = (xp.isdtype(ps.dtype, ("integral", "real floating"))
-                   and xp.all(ps == xp.clip(ps, 0., 1.)))
-    if not ps_in_range:
-        raise ValueError("`ps` must include only numbers between 0 and 1.")
+    if not xp.isdtype(ps.dtype, ("integral", "real floating")):
+        raise ValueError("`ps` must contain only real numbers.")
+
+    if is_lazy_array(ps):
+        ps = xp.where((ps < 0.) | (ps > 1.), xp.nan, ps)
+    else:
+        if not xp.all(ps == xp.clip(ps, 0., 1.)):
+            raise ValueError("All values in `ps` must lie between 0. and 1.")
 
     methods = {'bh', 'by'}
     if method.lower() not in methods:

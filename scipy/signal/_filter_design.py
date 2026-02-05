@@ -17,11 +17,12 @@ from scipy._lib._util import float_factorial
 from scipy.signal._arraytools import _validate_fs
 from scipy.signal import _polyutils as _pu
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
+    xp_result_type,
 )
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -37,7 +38,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
 
 
 class BadCoefficients(UserWarning):
-    """Warning about badly conditioned filter coefficients"""
+    """Warning about badly conditioned filter coefficients."""
     pass
 
 
@@ -976,7 +977,7 @@ def sosfreqz(*args, **kwargs):
         New code should use the function :func:`scipy.signal.freqz_sos`.
         This function became obsolete from version 1.15.0.
 
-    """
+    """  # numpydoc ignore=RT01
     return freqz_sos(*args, **kwargs)
 
 
@@ -1243,7 +1244,7 @@ def tf2zpk(b, a):
 
 def zpk2tf(z, p, k):
     r"""
-    Return polynomial transfer function representation from zeros and poles
+    Return polynomial transfer function representation from zeros and poles.
 
     Parameters
     ----------
@@ -1290,12 +1291,15 @@ def zpk2tf(z, p, k):
 
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
-        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
+        result_dtype = xp_result_type(temp, k, force_floating=True, xp=xp)
+        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=result_dtype)
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            k_i = xp.asarray(k[i], dtype=xp.int64)
-            b[i, ...] = xp.multiply(k_i, _pu.poly(z[i, ...], xp=xp))
+            k_i = xp.asarray(k[i], dtype=result_dtype)
+            poly_i = xp.asarray(_pu.poly(z[i, ...], xp=xp), dtype=result_dtype)
+            b_i = k_i * poly_i
+            b = xpx.at(b)[i, ...].set(b_i)
     else:
         # Use xp.multiply to work around torch type promotion
         # non-compliance for operations between 0d and higher
@@ -1310,7 +1314,7 @@ def zpk2tf(z, p, k):
 
 def tf2sos(b, a, pairing=None, *, analog=False):
     r"""
-    Return second-order sections from transfer function representation
+    Return second-order sections from transfer function representation.
 
     Parameters
     ----------
@@ -1367,7 +1371,7 @@ def tf2sos(b, a, pairing=None, *, analog=False):
 
 def sos2tf(sos):
     r"""
-    Return a single transfer function from a series of second-order sections
+    Return a single transfer function from a series of second-order sections.
 
     Parameters
     ----------
@@ -1418,7 +1422,7 @@ def sos2tf(sos):
 
 def sos2zpk(sos):
     """
-    Return zeros, poles, and gain of a series of second-order sections
+    Return zeros, poles, and gain of a series of second-order sections.
 
     Parameters
     ----------
@@ -1481,7 +1485,7 @@ def _single_zpksos(z, p, k):
 
 
 def zpk2sos(z, p, k, pairing=None, *, analog=False):
-    """Return second-order sections from zeros, poles, and gain of a system
+    """Return second-order sections from zeros, poles, and gain of a system.
 
     Parameters
     ----------
@@ -1548,39 +1552,30 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     1. Take the (next remaining) pole (complex or real) closest to the
        unit circle (or imaginary axis, for ``analog=True``) to
        begin a new filter section.
-
     2. If the pole is real and there are no other remaining real poles [#]_,
        add the closest real zero to the section and leave it as a first
        order section. Note that after this step we are guaranteed to be
        left with an even number of real poles, complex poles, real zeros,
        and complex zeros for subsequent pairing iterations.
-
     3. Else:
 
-        1. If the pole is complex and the zero is the only remaining real
-           zero*, then pair the pole with the *next* closest zero
-           (guaranteed to be complex). This is necessary to ensure that
-           there will be a real zero remaining to eventually create a
-           first-order section (thus keeping the odd order).
+       1. If the pole is complex and the zero is the only remaining real
+          zero*, then pair the pole with the *next* closest zero
+          (guaranteed to be complex). This is necessary to ensure that
+          there will be a real zero remaining to eventually create a
+          first-order section (thus keeping the odd order).
+       2. Else pair the pole with the closest remaining zero (complex or real).
+       3. Proceed to complete the second-order section by adding another
+          pole and zero to the current pole and zero in the section:
 
-        2. Else pair the pole with the closest remaining zero (complex or
-           real).
-
-        3. Proceed to complete the second-order section by adding another
-           pole and zero to the current pole and zero in the section:
-
-            1. If the current pole and zero are both complex, add their
-               conjugates.
-
-            2. Else if the pole is complex and the zero is real, add the
-               conjugate pole and the next closest real zero.
-
-            3. Else if the pole is real and the zero is complex, add the
-               conjugate zero and the real pole closest to those zeros.
-
-            4. Else (we must have a real pole and real zero) add the next
-               real pole closest to the unit circle, and then add the real
-               zero closest to that pole.
+          1. If the current pole and zero are both complex, add their conjugates.
+          2. Else if the pole is complex and the zero is real, add the
+             conjugate pole and the next closest real zero.
+          3. Else if the pole is real and the zero is complex, add the
+             conjugate zero and the real pole closest to those zeros.
+          4. Else (we must have a real pole and real zero) add the next
+             real pole closest to the unit circle, and then add the real
+             zero closest to that pole.
 
     .. [#] This conditional can only be met for specific odd-order inputs
            with the ``pairing = 'keep_odd'`` or ``'minimal'`` methods.
@@ -1857,18 +1852,18 @@ def normalize(b, a):
 
     Parameters
     ----------
-    b: array_like
+    b : array_like
         Numerator of the transfer function. Can be a 2-D array to normalize
         multiple transfer functions.
-    a: array_like
+    a : array_like
         Denominator of the transfer function. At most 1-D.
 
     Returns
     -------
-    num: array
+    num : array
         The numerator of the normalized transfer function. At least a 1-D
         array. A 2-D array if the input `num` is a 2-D array.
-    den: 1-D array
+    den : 1-D array
         The denominator of the normalized transfer function.
 
     Notes
@@ -2506,10 +2501,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
         where 1 is the Nyquist frequency. For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
         Note, that for bandpass and bandstop filters passband must lie strictly
@@ -2526,17 +2521,17 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     ftype : str, optional
         The type of IIR filter to design:
 
-            - Butterworth   : 'butter'
-            - Chebyshev I   : 'cheby1'
-            - Chebyshev II  : 'cheby2'
-            - Cauer/elliptic: 'ellip'
+        - Butterworth   : 'butter'
+        - Chebyshev I   : 'cheby1'
+        - Chebyshev II  : 'cheby2'
+        - Cauer/elliptic: 'ellip'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
 
-            - second-order sections (recommended): 'sos'
-            - numerator/denominator (default)    : 'ba'
-            - pole-zero                          : 'zpk'
+        - second-order sections (recommended): 'sos'
+        - numerator/denominator (default)    : 'ba'
+        - pole-zero                          : 'zpk'
 
         In general the second-order sections ('sos') form  is
         recommended because inferring the coefficients for the
@@ -2703,18 +2698,18 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     ftype : str, optional
         The type of IIR filter to design:
 
-            - Butterworth   : 'butter'
-            - Chebyshev I   : 'cheby1'
-            - Chebyshev II  : 'cheby2'
-            - Cauer/elliptic: 'ellip'
-            - Bessel/Thomson: 'bessel'
+        - Butterworth   : 'butter'
+        - Chebyshev I   : 'cheby1'
+        - Chebyshev II  : 'cheby2'
+        - Cauer/elliptic: 'ellip'
+        - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
         Filter form of the output:
 
-            - second-order sections (recommended): 'sos'
-            - numerator/denominator (default)    : 'ba'
-            - pole-zero                          : 'zpk'
+        - second-order sections (recommended): 'sos'
+        - numerator/denominator (default)    : 'ba'
+        - pole-zero                          : 'zpk'
 
         In general the second-order sections ('sos') form  is
         recommended because inferring the coefficients for the
@@ -2855,7 +2850,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
-                             "design an Chebyshev II filter.")
+                             "design a Chebyshev II filter.")
         z, p, k = typefunc(N, rs, xp=xp)
     elif typefunc == ellipap:
         if rs is None or rp is None:
@@ -4066,10 +4061,10 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         Two element sequence of fixed passband edges.
     stopb : ndarray
         Two element sequence of fixed stopband edges.
-    gstop : float
-        Amount of attenuation in stopband in dB.
     gpass : float
         Amount of ripple in the passband in dB.
+    gstop : float
+        Amount of attenuation in stopband in dB.
     type : {'butter', 'cheby', 'ellip'}
         Type of filter.
 
@@ -4217,10 +4212,10 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.) For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4350,10 +4345,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4446,10 +4441,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4574,10 +4569,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
         where 1 is the Nyquist frequency. (`wp` and `ws` are thus in
         half-cycles / sample.) For example:
 
-            - Lowpass:   wp = 0.2,          ws = 0.3
-            - Highpass:  wp = 0.3,          ws = 0.2
-            - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
-            - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
+        - Lowpass:   wp = 0.2,          ws = 0.3
+        - Highpass:  wp = 0.3,          ws = 0.2
+        - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
+        - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
     gpass : float
@@ -4704,7 +4699,7 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     ----------
     N : int
         The order of the filter
-    rp: float
+    rp : float
         The ripple intensity
     %(xp_device_snippet)s
 
@@ -6087,7 +6082,7 @@ xp : array_namespace, optional
     Optional array namespace.
     Should be compatible with the array API standard, or supported by array-api-compat.
     Default: ``numpy``
-device: any
+device : any
     optional device specification for output. Should match one of the
     supported device specification in ``xp``.
 """

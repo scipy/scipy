@@ -9,8 +9,9 @@ from scipy._lib._array_api import (
     xp_device,
     _length_nonmasked,
     is_torch,
+    is_lazy_array,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
@@ -103,7 +104,10 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
     n = n if n_zero_weight is None else n - n_zero_weight
 
-    if contains_nans:
+    # Ideally this code will always be run for lazy arrays, but JAX JIT is having
+    # some trouble. For now, it's useful to have the rest of `quantile` working with
+    # JIX, so we can come back to this later.
+    if not is_lazy_array(y) and contains_nans:
         nans = xp.isnan(y)
 
         # Note that if length along `axis` were 0 to begin with,
@@ -127,16 +131,13 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     n = xp.asarray(n, dtype=dtype, device=xp_device(y))
 
     p_mask = (p > 1) | (p < 0) | xp.isnan(p)
-    if xp.any(p_mask):
-        p = xp.asarray(p, copy=True)
-        p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
+    p = xp.where(p_mask, 0.5, p)
 
     return (y, p, method, axis, nan_policy, keepdims,
             n, axis_none, ndim, p_mask, weights, xp)
 
 
-@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
 def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None,
              weights=None):
     """
@@ -212,6 +213,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         - If `keepdims` is set to True, the axis will not be reduced away.
         - If `keepdims` is set to False, the axis will be reduced away
           if possible, and an error will be raised otherwise.
+
     weights : array_like of finite, non-negative real numbers
         Frequency weights; e.g., for counting number weights,
         ``quantile(x, p, weights=weights)`` is equivalent to

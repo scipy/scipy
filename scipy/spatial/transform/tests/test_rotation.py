@@ -23,7 +23,7 @@ from scipy._lib._array_api import (
     make_xp_pytest_marks,
     xp_device_type,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 import pickle
 import copy
@@ -2160,6 +2160,7 @@ def test_align_vectors_mixed_dtypes(xp):
     xp_assert_close(est.as_quat(), c.as_quat())
 
 
+@make_xp_test_case(Rotation.__repr__)
 def test_repr_single_rotation(xp):
     q = xp.asarray([0, 0, 0, 1])
     actual = repr(Rotation.from_quat(q))
@@ -2467,6 +2468,8 @@ def test_pow(xp, ndim: int):
         # Test accuracy
         q = p ** n
         q_identity = xp.asarray([0., 0, 0, 1])
+        # Regression test for gh-24436 
+        assert isinstance(q._quat, type(q_identity))
         r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
         for _ in range(abs(n)):
             if n > 0:
@@ -3148,3 +3151,9 @@ def test_rotation_shape(xp, ndim: int):
     quat = xp.ones(shape + (4,))
     r = Rotation.from_quat(quat)
     assert r.shape == shape, f"Got {r.shape}, expected {shape}"
+
+
+def test_non_writeable():
+    q = np.array([0, 0, 0, 1.0])
+    q.flags.writeable = False
+    Rotation.from_quat(q)  # Regression test against gh-24354, should not raise

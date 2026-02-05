@@ -6,7 +6,7 @@ import numpy as np
 
 from scipy.linalg import solve, solve_banded
 from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 
 from . import PPoly
 from ._polyint import _isscalar
@@ -169,13 +169,17 @@ class CubicHermiteSpline(PPoly):
         self.axis = axis
 
 
-@xp_capabilities(
-    cpu_only=True, jax_jit=False,
-    skip_backends=[
-        ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
-    ]
-)
+# The commented out xp_capabilities below are probably right but since
+# this is untested, mark as np_only. TODO: convert the tests.
+#
+# @xp_capabilities(
+#     cpu_only=True, jax_jit=False,
+#     skip_backends=[
+#         ("dask.array",
+#          "https://github.com/data-apis/array-api-extra/issues/488")
+#     ]
+# )
+@xp_capabilities(np_only=True, reason="not tested")
 class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP shape-preserving interpolator (C1 smooth).
 
@@ -597,6 +601,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         self.axis = axis
 
     def extend(self, c, x, right=True):
+        """Extending a 1-D Akima interpolator is not yet implemented."""
         raise NotImplementedError("Extending a 1-D Akima interpolator is not "
                                   "yet implemented")
 
@@ -640,7 +645,7 @@ class CubicSpline(CubicHermiteSpline):
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
         Default is 0.
-    bc_type : string or 2-tuple, optional
+    bc_type : str or 2-tuple, optional
         Boundary condition type. Two additional equations, given by the
         boundary conditions, are required to determine all coefficients of
         polynomials on each segment [2]_.

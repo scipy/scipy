@@ -406,7 +406,7 @@ cdef class cKDTree:
     cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
             balanced_tree=True, boxsize=None)
 
-    kd-tree for quick nearest-neighbor lookup
+    kd-tree for quick nearest-neighbor lookup.
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
@@ -449,33 +449,6 @@ cdef class cKDTree:
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
 
-    Notes
-    -----
-    The algorithm used is described in [1]_.
-    The general idea is that the kd-tree is a binary tree, each of whose
-    nodes represents an axis-aligned hyperrectangle. Each node specifies
-    an axis and splits the set of points based on whether their coordinate
-    along that axis is greater than or less than a particular value.
-
-    During construction, the axis and splitting point are chosen by the
-    "sliding midpoint" rule, which ensures that the cells do not all
-    become long and thin.
-
-    The tree can be queried for the r closest neighbors of any given point
-    (optionally returning only those within some maximum distance of the
-    point). It can also be queried, with a substantial gain in efficiency,
-    for the r approximate closest neighbors.
-
-    For large dimensions (20 is already large) do not expect this to run
-    significantly faster than brute force. High-dimensional nearest-neighbor
-    queries are a substantial open problem in computer science.
-
-    References
-    ----------
-    .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
-           nearest neighbor searching with clustered point sets,"
-           Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
-
     Attributes
     ----------
     data : ndarray, shape (n,m)
@@ -502,7 +475,33 @@ cdef class cKDTree:
     size : int
         The number of nodes in the tree.
 
-    """
+    Notes
+    -----
+    The algorithm used is described in [1]_.
+    The general idea is that the kd-tree is a binary tree, each of whose
+    nodes represents an axis-aligned hyperrectangle. Each node specifies
+    an axis and splits the set of points based on whether their coordinate
+    along that axis is greater than or less than a particular value.
+
+    During construction, the axis and splitting point are chosen by the
+    "sliding midpoint" rule, which ensures that the cells do not all
+    become long and thin.
+
+    The tree can be queried for the r closest neighbors of any given point
+    (optionally returning only those within some maximum distance of the
+    point). It can also be queried, with a substantial gain in efficiency,
+    for the r approximate closest neighbors.
+
+    For large dimensions (20 is already large) do not expect this to run
+    significantly faster than brute force. High-dimensional nearest-neighbor
+    queries are a substantial open problem in computer science.
+
+    References
+    ----------
+    .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
+           nearest neighbor searching with clustered point sets,"
+           Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
+    """  # numpydoc ignore=SS02 - not ignoring, so special-case in numpydoc_lint.py
     cdef:
         ckdtree * cself
         object                   _python_tree
@@ -1114,7 +1113,7 @@ cdef class cKDTree:
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : string, optional
+        output_type : str, optional
             Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
         Returns
@@ -1487,7 +1486,7 @@ cdef class cKDTree:
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
 
-        output_type : string, optional
+        output_type : str, optional
             Which container to use for output data. Options: 'dok_matrix',
             'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
 
