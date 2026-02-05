@@ -3270,7 +3270,7 @@ LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy'],
                  jax_jit=False,  # needs fdtrc
-                 extra_note="Option `center='trimmed' is incompatible with MArray."
+                 extra_note="Option ``center='trimmed'`` is incompatible with MArray."
                  )
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
