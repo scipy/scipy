@@ -213,7 +213,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
         being covered. Use of an array to specify a population could be used,
-        for example, to create a tight bunch of initial guesses in an location
+        for example, to create a tight bunch of initial guesses in a location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional
@@ -723,7 +723,7 @@ class DifferentialEvolutionSolver:
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
         being covered. Use of an array to specify a population could be used,
-        for example, to create a tight bunch of initial guesses in an location
+        for example, to create a tight bunch of initial guesses in a location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional

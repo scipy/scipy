@@ -2850,7 +2850,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
-                             "design an Chebyshev II filter.")
+                             "design a Chebyshev II filter.")
         z, p, k = typefunc(N, rs, xp=xp)
     elif typefunc == ellipap:
         if rs is None or rp is None:

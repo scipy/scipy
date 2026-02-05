@@ -434,7 +434,7 @@ Fortran library authored by P. Dierckx.
     alternatives, `make_smoothing_spline`, `make_splrep` or `make_splprep`, instead.
 
 For historical reasons, `scipy.interpolate` provides two equivalent interfaces
-for FITPACK, a interface and an object-oriented interface. While equivalent, these interfaces
+for FITPACK, an interface and an object-oriented interface. While equivalent, these interfaces
 have different defaults. Below we discuss them in turn, starting from the
 functional interface.
 

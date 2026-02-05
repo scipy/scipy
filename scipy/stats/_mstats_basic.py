@@ -3763,7 +3763,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     statistic : float
         The Brunner-Munzer W statistic.
     pvalue : float
-        p-value assuming an t distribution. One-sided or
+        p-value assuming a t distribution. One-sided or
         two-sided, depending on the choice of `alternative` and `distribution`.
 
     See Also

@@ -1199,7 +1199,7 @@ to documentation of :func:`least_squares`.
 Univariate function minimizers (:func:`minimize_scalar`)
 --------------------------------------------------------
 
-Often only the minimum of an univariate function (i.e., a function that
+Often only the minimum of a univariate function (i.e., a function that
 takes a scalar as input) is needed. In these circumstances, other
 optimization techniques have been developed that can work faster. These are
 accessible from the :func:`minimize_scalar` function, which proposes several
@@ -1209,7 +1209,7 @@ algorithms.
 Unconstrained minimization (``method='brent'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are, actually, two methods that can be used to minimize an univariate
+There are, actually, two methods that can be used to minimize a univariate
 function: `brent` and `golden`, but `golden` is included only for academic
 purposes and should rarely be used. These can be respectively selected
 through the `method` parameter in :func:`minimize_scalar`. The `brent`
