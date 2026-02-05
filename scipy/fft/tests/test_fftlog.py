@@ -63,7 +63,7 @@ def test_fht_agrees_with_fftlog(xp):
     # test 3: positive bias
     bias = 0.8
     offset = fhtoffset(dln, mu, bias=bias)
-    # offset is an np.float64, which array-api-strict disallows
+    # offset is a np.float64, which array-api-strict disallows
     # even if it's technically a subclass of float
     offset = float(offset)
 
@@ -111,7 +111,7 @@ def test_fht_identity(n, bias, offset, optimal, xp):
 
     if optimal:
         offset = fhtoffset(dln, mu, initial=offset, bias=bias)
-        # offset is an np.float64, which array-api-strict disallows
+        # offset is a np.float64, which array-api-strict disallows
         # even if it's technically a subclass of float
         offset = float(offset)
 
@@ -176,7 +176,7 @@ def test_fht_exact(n, xp):
     dln = math.log(r[1]/r[0])
 
     offset = fhtoffset(dln, mu, initial=0.0, bias=gamma)
-    # offset is an np.float64, which array-api-strict disallows
+    # offset is a np.float64, which array-api-strict disallows
     # even if it's technically a subclass of float
     offset = float(offset)
 

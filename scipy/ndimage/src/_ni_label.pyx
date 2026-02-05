@@ -61,7 +61,7 @@ cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
 
 
 ######################################################################
-# Load a line from a fused data array to an np.uintp_t array
+# Load a line from a fused data array to a np.uintp_t array
 ######################################################################
 cdef void fused_read_line(data_t *p, np.intp_t stride,
                           np.uintp_t *line, np.intp_t L) noexcept nogil:
@@ -71,7 +71,7 @@ cdef void fused_read_line(data_t *p, np.intp_t stride,
 
 
 ######################################################################
-# Store a line from an np.uintp_t array to a fused data array if possible,
+# Store a line from a np.uintp_t array to a fused data array if possible,
 # returning True if overflowed
 ######################################################################
 cdef bint fused_write_line(data_t *p, np.intp_t stride,
