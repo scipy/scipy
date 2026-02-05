@@ -342,7 +342,7 @@ def test_directional_stats(xp):
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_two_sample_tests(fun, kwargs, axis, xp):
-    if fun == stats.cramervonmises_2samp and axis == None:
+    if fun == stats.cramervonmises_2samp and axis is None:
         pytest.skip("Sample too large for exact method.")
     mxp, marrays, narrays = get_arrays(2, xp=xp, seed=84912165484322)
     res = fun(*marrays, axis=axis, **kwargs)

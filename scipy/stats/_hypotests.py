@@ -1806,7 +1806,8 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     if method == 'exact':
         if is_marray(xp):
             u, count_x, count_y = u.data, count_x.data, count_y.data
-        p = xp.asarray(_pval_cvm_2samp_exact(np.asarray(u), count_x, count_y), dtype=dtype)
+        p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
+        p = xp.asarray(p, dtype=dtype)
     else:
         p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 
