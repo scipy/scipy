@@ -964,7 +964,7 @@ class TestPoisson(QMCEngineTests):
 
         sample = engine.fill_space()
         # rtol to accommodate Accelerate; see gh-24486
-        rtol = 1e-7
+        rtol = 1e-6
         assert l2_norm(sample) >= radius * (1 - rtol)
 
     def test_bounds_shift_scale(self):
