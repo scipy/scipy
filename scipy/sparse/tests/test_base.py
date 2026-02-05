@@ -1075,6 +1075,50 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             check(dtype)
 
+    def test_sum_dtype_fractional(self):
+        # Test sum with dtype on data of various input dtypes 
+        # to ensure elements are cast before summing
+        # Only test conversions that don't raise numpy warnings/errors
+        base_dat = array([[0.6, 0.7],
+                          [0.8, 0.9]])
+
+        for input_dtype in self.checked_dtypes:
+            dat = base_dat.astype(input_dtype)
+            datsp = self.spcreator(dat)
+            # Ensure duplicates are summed for non-canonical test cases
+            if hasattr(datsp, 'sum_duplicates'):
+                datsp.sum_duplicates()
+
+
+            for output_dtype in self.checked_dtypes:
+                # Skip problematic dtype combinations (complex to real, etc.)
+                # by catching exceptions when numpy itself fails
+                try:
+                    with np.errstate(all='raise'):
+                        _ = dat.sum(dtype=output_dtype)
+                except Exception:
+                    # Skip this combination if NumPy can't handle it
+                    continue
+                
+                # Check axis=None
+                with np.errstate(over='ignore'):
+                    dat_sum = dat.sum(dtype=output_dtype)
+                    datsp_sum = datsp.sum(dtype=output_dtype)
+                    assert_array_almost_equal(dat_sum, np.asarray(datsp_sum))
+                    assert_equal(np.asarray(dat_sum).dtype, np.asarray(datsp_sum).dtype)
+
+                    # Check axis=0
+                    dat_sum = dat.sum(axis=0, dtype=output_dtype)
+                    datsp_sum = datsp.sum(axis=0, dtype=output_dtype)
+                    assert_array_almost_equal(dat_sum, np.asarray(datsp_sum).ravel())
+                    assert_equal(np.asarray(dat_sum).dtype, np.asarray(datsp_sum).dtype)
+
+                    # Check axis=1
+                    dat_sum = dat.sum(axis=1, dtype=output_dtype)
+                    datsp_sum = datsp.sum(axis=1, dtype=output_dtype)
+                    assert_array_almost_equal(dat_sum, np.asarray(datsp_sum).ravel())
+                    assert_equal(np.asarray(dat_sum).dtype, np.asarray(datsp_sum).dtype)
+
     def test_sum_out(self):
         keep = not self.is_array_test
         dat = array([[0, 1, 2],

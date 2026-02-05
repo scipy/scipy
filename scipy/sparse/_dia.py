@@ -142,13 +142,13 @@ class _dia_base(_data_matrix):
     def sum(self, axis=None, dtype=None, out=None):
         axis = validateaxis(axis)
 
-        res_dtype = get_sum_dtype(self.dtype)
+        res_dtype = dtype if dtype is not None else get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
         ret = None
 
         if axis == (0,):
             mask = self._data_mask()
-            x = (self.data * mask).sum(axis=0)
+            x = (self.data * mask).sum(dtype=res_dtype, axis=0)
             if x.shape[0] == num_cols:
                 res = x
             else:
@@ -160,7 +160,8 @@ class _dia_base(_data_matrix):
             row_sums = np.zeros((num_rows, 1), dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
             dia_matvec(num_rows, num_cols, len(self.offsets),
-                       self.data.shape[1], self.offsets, self.data, one, row_sums)
+                       self.data.shape[1], self.offsets, 
+                       self.data.astype(res_dtype), one, row_sums)
 
             row_sums = self._ascontainer(row_sums)
 
