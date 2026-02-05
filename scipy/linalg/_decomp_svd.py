@@ -1,19 +1,39 @@
 """SVD decomposition functions."""
 import numpy as np
-from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 from scipy._lib._util import _apply_over_batch
+from . import _batched_linalg
 
 # Local imports.
 from ._misc import LinAlgError, _datacopied
-from .lapack import get_lapack_funcs, _compute_lwork
+from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native, HAS_ILP64
+from scipy.linalg.lapack import get_lapack_funcs   # noqa: F401  (backwards compat)
 from ._decomp import _asarray_validated
 
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
-@_apply_over_batch(('a', 2))
+def _format_emit_errors_warnings(err_lst, lapack_driver):
+    """Format/emit errors/warnings from a lowlevel batched routine.
+    """
+    # NB the low-level routine currently stops processing a batch at the first error
+    for entry in err_lst:
+        info = entry["lapack_info"]
+        num = entry["num"]
+        if info != 0:
+            if info > 0:
+                raise LinAlgError(f"SVD did not converge for slice = {num}.")
+            if info < 0:
+                if lapack_driver == "gesdd" and info == -4:
+                    msg = f"slice {num} has a NaN entry"
+                    raise ValueError(msg)
+                raise ValueError(
+                    f'illegal value in {-info}th argument of internal {lapack_driver}'
+                    f'  for slice {num}.'
+                )
+
+
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         check_finite=True, lapack_driver='gesdd'):
     """
@@ -26,7 +46,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Matrix to decompose.
     full_matrices : bool, optional
         If True (default), `U` and `Vh` are of shape ``(M, M)``, ``(N, N)``.
@@ -88,7 +108,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> sigma = np.zeros((m, n))
     >>> for i in range(min(m, n)):
     ...     sigma[i, i] = s[i]
-    >>> a1 = np.dot(U, np.dot(sigma, Vh))
+    >>> a1 = U @ sigma @ Vh
     >>> np.allclose(a, a1)
     True
 
@@ -99,7 +119,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> U.shape, s.shape, Vh.shape
     ((9, 6), (6,), (6, 6))
     >>> S = np.diag(s)
-    >>> np.allclose(a, np.dot(U, np.dot(S, Vh)))
+    >>> np.allclose(a, U @ S @ Vh)
     True
 
     >>> s2 = linalg.svd(a, compute_uv=False)
@@ -107,79 +127,72 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     True
 
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
-    if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
-    m, n = a1.shape
-
-    # accommodate empty matrix
-    if a1.size == 0:
-        u0, s0, v0 = svd(np.eye(2, dtype=a1.dtype))
-
-        s = np.empty_like(a1, shape=(0,), dtype=s0.dtype)
-        if full_matrices:
-            u = np.empty_like(a1, shape=(m, m), dtype=u0.dtype)
-            u[...] = np.identity(m)
-            v = np.empty_like(a1, shape=(n, n), dtype=v0.dtype)
-            v[...] = np.identity(n)
-        else:
-            u = np.empty_like(a1, shape=(m, 0), dtype=u0.dtype)
-            v = np.empty_like(a1, shape=(0, n), dtype=v0.dtype)
-        if compute_uv:
-            return u, s, v
-        else:
-            return s
-
-    overwrite_a = overwrite_a or (_datacopied(a1, a))
-
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
     if lapack_driver not in ('gesdd', 'gesvd'):
         message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
         raise ValueError(message)
 
+    # basic sanity checks of the input matrix
+    a1 = _asarray_validated(a, check_finite=check_finite)
+
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
+    if a1.ndim < 2:
+        raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
+
+    m, n = a1.shape[-2], a1.shape[-1]
+
+    # Also check if dtype is LAPACK compatible
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+
+    # accommodate empty matrix
+    if a1.size == 0:
+        u0, s0, v0 = svd(np.eye(2, dtype=a1.dtype))
+
+        batch_shape = a1.shape[:-2]
+        s = np.empty_like(a1, shape=batch_shape + (0,), dtype=s0.dtype)
+        if full_matrices:
+            u = np.empty_like(a1, shape=batch_shape + (m, m), dtype=u0.dtype)
+            u[...] = np.identity(m)
+            v = np.empty_like(a1, shape=batch_shape + (n, n), dtype=v0.dtype)
+            v[...] = np.identity(n)
+        else:
+            u = np.empty_like(a1, shape=batch_shape + (m, 0), dtype=u0.dtype)
+            v = np.empty_like(a1, shape=batch_shape + (0, n), dtype=v0.dtype)
+        if compute_uv:
+            return u, s, v
+        else:
+            return s
+
     if compute_uv:
-        # XXX: revisit int32 when ILP64 lapack becomes a thing
         max_mn, min_mn = (m, n) if m > n else (n, m)
         if full_matrices:
-            if max_mn*max_mn > np.iinfo(np.int32).max:
+            if not HAS_ILP64 and max_mn*max_mn > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
                                   "would incur integer overflow in LAPACK. "
-                                  "Try using numpy.linalg.svd instead.")
+                                  "Instead, either use using numpy.linalg.svd or build"
+                                  "SciPy with ILP64 support.")
         else:
             sz = max(m * min_mn, n * min_mn)
-            if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
+            if not HAS_ILP64 and max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix of {sz} elements would "
                                   "incur an in integer overflow in LAPACK. "
-                                  "Try using numpy.linalg.svd instead.")
+                                  "Instead, either use using numpy.linalg.svd or build"
+                                  "SciPy with ILP64 support.")
 
-    funcs = (lapack_driver, lapack_driver + '_lwork')
-    # XXX: As of 1.14.1 it isn't possible to build SciPy with ILP64,
-    # so the following line always yields a LP64 (32-bit pointer size) variant
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64="preferred")
+    res = _batched_linalg._svd(a1, lapack_driver, compute_uv, full_matrices)
 
-    # compute optimal lwork
-    lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
-                           compute_uv=compute_uv, full_matrices=full_matrices)
+    err_lst = res[-1]
+    if err_lst:
+        _format_emit_errors_warnings(err_lst, lapack_driver)
 
-    # perform decomposition
-    u, s, v, info = gesXd(a1, compute_uv=compute_uv, lwork=lwork,
-                          full_matrices=full_matrices, overwrite_a=overwrite_a)
-
-    if info > 0:
-        raise LinAlgError("SVD did not converge")
-    if info < 0:
-        if lapack_driver == "gesdd" and info == -4:
-            msg = "A has a NaN entry"
-            raise ValueError(msg)
-        raise ValueError(f'illegal value in {-info}th argument of internal gesdd')
     if compute_uv:
-        return u, s, v
+        return res[:-1]    # u, s, v
     else:
-        return s
+        return res[0]   # s
 
 
-@_apply_over_batch(('a', 2))
 def svdvals(a, overwrite_a=False, check_finite=True):
     """
     Compute singular values of a matrix.
@@ -224,17 +237,17 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([ 4.28091555,  1.63516424])
 
     We can verify the maximum singular value of `m` by computing the maximum
-    length of `m.dot(u)` over all the unit vectors `u` in the (x,y) plane.
+    length of `m @ u` over all the unit vectors `u` in the (x,y) plane.
     We approximate "all" the unit vectors with a large sample. Because
-    of linearity, we only need the unit vectors with angles in [0, pi].
+    of linearity, we only need the unit vectors with angles in ``[0, pi]``.
 
     >>> t = np.linspace(0, np.pi, 2000)
     >>> u = np.array([np.cos(t), np.sin(t)])
-    >>> np.linalg.norm(m.dot(u), axis=0).max()
+    >>> np.linalg.norm(m @ u, axis=0).max()
     4.2809152422538475
 
     `p` is a projection matrix with rank 1. With exact arithmetic,
-    its singular values would be [1, 0, 0, 0].
+    its singular values would be ``[1, 0, 0, 0]``.
 
     >>> v = np.array([0.1, 0.3, 0.9, 0.3])
     >>> p = np.outer(v, v)
@@ -243,7 +256,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
              8.15115104e-34])
 
     The singular values of an orthogonal matrix are all 1. Here, we
-    create a random orthogonal matrix by using the `rvs()` method of
+    create a random orthogonal matrix by using the ``rvs()`` method of
     `scipy.stats.ortho_group`.
 
     >>> from scipy.stats import ortho_group
@@ -296,13 +309,13 @@ def diagsvd(s, M, N):
            [0, 0, 0]])
 
     """
-    part = diag(s)
+    part = np.diag(s)
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return np.hstack((part, zeros((M, N - M), dtype=typ)))
+        return np.hstack((part, np.zeros((M, N - M), dtype=typ)))
     elif MorN == N:
-        return r_[part, zeros((M - N, N), dtype=typ)]
+        return np.r_[part, np.zeros((M - N, N), dtype=typ)]
     else:
         raise ValueError("Length of s must be M or N.")
 
@@ -312,7 +325,7 @@ def diagsvd(s, M, N):
 @_apply_over_batch(('A', 2))
 def orth(A, rcond=None):
     """
-    Construct an orthonormal basis for the range of A using SVD
+    Construct an orthonormal basis for the range of A using SVD.
 
     Parameters
     ----------
@@ -362,7 +375,7 @@ def orth(A, rcond=None):
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """
-    Construct an orthonormal basis for the null space of A using SVD
+    Construct an orthonormal basis for the null space of A using SVD.
 
     Parameters
     ----------
@@ -476,8 +489,8 @@ def subspace_angles(A, B):
 
     Examples
     --------
-    An Hadamard matrix, which has orthogonal columns, so we expect that
-    the suspace angle to be :math:`\frac{\pi}{2}`:
+    A Hadamard matrix, which has orthogonal columns, so we expect that
+    the subspace angle to be :math:`\frac{\pi}{2}`:
 
     >>> import numpy as np
     >>> from scipy.linalg import hadamard, subspace_angles
@@ -521,25 +534,25 @@ def subspace_angles(A, B):
     del B
 
     # 2. Compute SVD for cosine
-    QA_H_QB = dot(QA.T.conj(), QB)
+    QA_H_QB = np.dot(QA.T.conj(), QB)
     sigma = svdvals(QA_H_QB)
 
     # 3. Compute matrix B
     if QA.shape[1] >= QB.shape[1]:
-        B = QB - dot(QA, QA_H_QB)
+        B = QB - np.dot(QA, QA_H_QB)
     else:
-        B = QA - dot(QB, QA_H_QB.T.conj())
+        B = QA - np.dot(QB, QA_H_QB.T.conj())
     del QA, QB, QA_H_QB
 
     # 4. Compute SVD for sine
     mask = sigma ** 2 >= 0.5
     if mask.any():
-        mu_arcsin = arcsin(clip(svdvals(B, overwrite_a=True), -1., 1.))
+        mu_arcsin = np.arcsin(np.clip(svdvals(B, overwrite_a=True), -1., 1.))
     else:
         mu_arcsin = 0.
 
     # 5. Compute the principal angles
     # with reverse ordering of sigma because smallest sigma belongs to largest
     # angle theta
-    theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1., 1.)))
+    theta = np.where(mask, mu_arcsin, np.arccos(np.clip(sigma[::-1], -1., 1.)))
     return theta

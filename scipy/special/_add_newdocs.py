@@ -1311,7 +1311,7 @@ add_newdoc("chndtr",
     r"""
     chndtr(x, df, nc, out=None)
 
-    Non-central chi square cumulative distribution function
+    Non-central chi square cumulative distribution function.
 
     The cumulative distribution function is given by:
 
@@ -1386,7 +1386,7 @@ add_newdoc("chndtrix",
     """
     chndtrix(p, df, nc, out=None)
 
-    Inverse to `chndtr` vs `x`
+    Inverse to `chndtr` vs `x`.
 
     Calculated using a search to find a value for `x` that produces the
     desired value of `p`.
@@ -1446,7 +1446,7 @@ add_newdoc("chndtridf",
     """
     chndtridf(x, p, nc, out=None)
 
-    Inverse to `chndtr` vs `df`
+    Inverse to `chndtr` vs `df`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -1505,7 +1505,7 @@ add_newdoc("chndtrinc",
     """
     chndtrinc(x, df, p, out=None)
 
-    Inverse to `chndtr` vs `nc`
+    Inverse to `chndtr` vs `nc`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -3490,7 +3490,7 @@ add_newdoc("fdtridfd",
     """
     fdtridfd(dfn, p, x, out=None)
 
-    Inverse to `fdtr` vs dfd
+    Inverse to `fdtr` vs dfd.
 
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
 
@@ -3845,24 +3845,12 @@ add_newdoc("gdtria",
     gdtr : CDF of the gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `a`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtria` is implemented in terms of the incomplete gamma inverse as
+    ``gdtria(p, b, x) = gammaincinv(b, p)/x``.
 
     Examples
     --------
@@ -3991,24 +3979,12 @@ add_newdoc("gdtrix",
     gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
     gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `x` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `x`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtrix` is implemented in terms of the incomplete gamma inverse as
+    ``gdtrix(a, b, p) = gammaincinv(b, p)/a``.
 
     Examples
     --------
@@ -4022,7 +3998,7 @@ add_newdoc("gdtrix",
     Verify the inverse.
 
     >>> gdtrix(1.2, 3.4, p)
-    5.5999999999999996
+    5.6
     """)
 
 
@@ -4286,7 +4262,7 @@ add_newdoc("hyperu",
     r"""
     hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U
+    Confluent hypergeometric function U.
 
     It is defined as the solution to the equation
 
@@ -4408,7 +4384,7 @@ add_newdoc("kn",
     r"""
     kn(n, x, out=None)
 
-    Modified Bessel function of the second kind of integer order `n`
+    Modified Bessel function of the second kind of integer order `n`.
 
     Returns the modified Bessel function of the second kind for integer order
     `n` at real `z`.
@@ -4475,7 +4451,7 @@ add_newdoc("kolmogi",
     """
     kolmogi(p, out=None)
 
-    Inverse Survival Function of Kolmogorov distribution
+    Inverse Survival Function of Kolmogorov distribution.
 
     It is the inverse function to `kolmogorov`.
     Returns y such that ``kolmogorov(y) == p``.
@@ -6032,7 +6008,7 @@ add_newdoc("ndtri",
     """
     ndtri(y, out=None)
 
-    Inverse of `ndtr` vs x
+    Inverse of `ndtr` vs x.
 
     Returns the argument x for which the area under the standard normal
     probability density function (integrated from minus infinity to `x`)
@@ -6143,7 +6119,7 @@ add_newdoc("pdtrc",
     """
     pdtrc(k, m, out=None)
 
-    Poisson survival function
+    Poisson survival function.
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
@@ -6193,7 +6169,7 @@ add_newdoc("pdtri",
     """
     pdtri(k, y, out=None)
 
-    Inverse to `pdtr` vs m
+    Inverse to `pdtr` vs m.
 
     Returns the Poisson variable `m` such that the sum from 0 to `k` of
     the Poisson density is equal to the given probability `y`:
@@ -6885,7 +6861,7 @@ add_newdoc("smirnov",
     r"""
     smirnov(n, d, out=None)
 
-    Kolmogorov-Smirnov complementary cumulative distribution function
+    Kolmogorov-Smirnov complementary cumulative distribution function.
 
     Returns the exact Kolmogorov-Smirnov complementary cumulative
     distribution function,(aka the Survival Function) of Dn+ (or Dn-)
@@ -6998,7 +6974,7 @@ add_newdoc("smirnovi",
     """
     smirnovi(n, p, out=None)
 
-    Inverse to `smirnov`
+    Inverse to `smirnov`.
 
     Returns `d` such that ``smirnov(n, d) == p``, the critical value
     corresponding to `p`.
@@ -7168,7 +7144,7 @@ add_newdoc(
     r"""
     stdtr(df, t, out=None)
 
-    Student t distribution cumulative distribution function
+    Student t distribution cumulative distribution function.
 
     Returns the integral:
 
@@ -7268,7 +7244,7 @@ add_newdoc("stdtridf",
     """
     stdtridf(p, t, out=None)
 
-    Inverse of `stdtr` vs df
+    Inverse of `stdtr` vs df.
 
     Returns the argument df such that stdtr(df, t) is equal to `p`.
 

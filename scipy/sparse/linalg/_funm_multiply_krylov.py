@@ -161,7 +161,7 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
         produce ``Ax`` using, e.g., ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
         A vector to multiply the ``f(tA)`` with.
-    assume_a : string, optional
+    assume_a : str, optional
         Indicate the structure of ``A``. The algorithm will use this information
         to select the appropriated code path. The available options are
         'hermitian'/'her' and 'general'/'gen'. If ommited, then it is assumed
@@ -172,7 +172,7 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
         Parameters for the convergence test. For convergence,
         ``norm(||y_k - y_k-1||) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-6``.
-    restart_every_m : integer
+    restart_every_m : int
         If the iteration number reaches this value a restart is triggered.
         Larger values increase iteration cost but may be necessary for convergence.
         If omitted, ``min(20, n)`` is used.

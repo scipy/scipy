@@ -22,7 +22,7 @@ from scipy._lib._array_api import (
     is_cupy, is_dask, is_jax, is_torch,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
-from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
+from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
 from scipy._external.packaging_version import version
 
 try:
