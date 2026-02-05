@@ -35,7 +35,7 @@ def binned_statistic(x, values, statistic='mean',
         the same shape as `x`, or a set of sequences - each the same shape as
         `x`.  If `values` is a set of sequences, the statistic will be computed
         on each independently.
-    statistic : string or callable, optional
+    statistic : str or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
 
@@ -217,7 +217,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         the same shape as `x`, or a list of sequences - each with the same
         shape as `x`.  If `values` is such a list, the statistic will be
         computed on each independently.
-    statistic : string or callable, optional
+    statistic : str or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
 
@@ -399,7 +399,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         the same shape as `sample`, or a list of sequences - each with the
         same shape as `sample`.  If `values` is such a list, the statistic
         will be computed on each independently.
-    statistic : string or callable, optional
+    statistic : str or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
 

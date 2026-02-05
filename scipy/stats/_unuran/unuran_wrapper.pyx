@@ -418,7 +418,7 @@ cdef class Method:
         Parameters
         ----------
         random_state : object
-            Seed for the uniform random number generator. Can be a integer,
+            Seed for the uniform random number generator. Can be an integer,
             Generator, or RandomState.
         """
         cdef ccallback_t callback

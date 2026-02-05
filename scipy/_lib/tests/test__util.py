@@ -16,8 +16,8 @@ from scipy._lib._util import (check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _workers_wrapper)
-import scipy._lib.array_api_extra as xpx
-from scipy._lib.array_api_extra.testing import lazy_xp_function
+import scipy._external.array_api_extra as xpx
+from scipy._external.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 

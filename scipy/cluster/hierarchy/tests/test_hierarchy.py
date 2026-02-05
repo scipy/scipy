@@ -52,7 +52,7 @@ from scipy.spatial.distance import pdist
 from scipy._lib._array_api import (eager_warns, make_xp_test_case,
                                    xp_assert_close, xp_assert_equal,
                                    make_xp_pytest_param, _xp_copy_to_numpy)
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from threading import Lock
 

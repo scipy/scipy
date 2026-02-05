@@ -963,8 +963,9 @@ class TestPoisson(QMCEngineTests):
         engine = self.qmce(d=2, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
 
         sample = engine.fill_space()
-        # circle packing problem is np complex
-        assert l2_norm(sample) >= radius
+        # rtol to accommodate Accelerate; see gh-24486
+        rtol = 1e-6
+        assert l2_norm(sample) >= radius * (1 - rtol)
 
     def test_bounds_shift_scale(self):
         # test a reasonable property: as long as shape of region is a hypercube,

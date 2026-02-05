@@ -2409,7 +2409,7 @@ def _triage_segments(window, nperseg, input_length):
 
     Parameters
     ----------
-    window : string, tuple, or ndarray
+    window : str, tuple, or ndarray
         If window is specified by a string or tuple and nperseg is not
         specified, nperseg is set to the default of 256 and returns a window of
         that length.

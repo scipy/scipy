@@ -4,7 +4,7 @@ import numpy as np
 from pytest import raises as assert_raises, warns as assert_warns
 import pytest
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
@@ -511,7 +511,7 @@ class TestRemez:
         N = 11  # number of taps in the filter
         a = 0.1  # width of the transition band
 
-        # design an unity gain hilbert bandpass filter from w to 0.5-w
+        # design a unity gain hilbert bandpass filter from w to 0.5-w
         h = remez(11, [a, 0.5-a], [1], type='hilbert')
 
         # make sure the filter has correct # of taps

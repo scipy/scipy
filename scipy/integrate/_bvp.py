@@ -855,7 +855,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             * 1: The maximum number of mesh nodes is exceeded.
             * 2: A singular Jacobian encountered when solving the collocation system.
 
-        message : string
+        message : str
             Verbal description of the termination reason.
         success : bool
             True if the algorithm converged to the desired accuracy (``status=0``).

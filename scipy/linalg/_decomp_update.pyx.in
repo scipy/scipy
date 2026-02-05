@@ -1401,7 +1401,7 @@ cdef void* extract(cnp.ndarray arr, int* arrs) noexcept:
 def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
               check_finite=True):
     """
-    QR downdate on row or column deletions
+    QR downdate on row or column deletions.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A`` where ``p`` rows or columns have been removed
@@ -1618,7 +1618,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 @cython.embedsignature(True)
 def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_finite=True):
     """
-    QR update on row or column insertions
+    QR update on row or column insertions.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A`` where rows or columns have been inserted starting
@@ -2033,7 +2033,7 @@ RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     """
-    Rank-k QR update
+    Rank-k QR update.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A + u v**T`` for real ``A`` or ``A + u v**H``

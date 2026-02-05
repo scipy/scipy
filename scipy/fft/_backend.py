@@ -51,7 +51,7 @@ def _backend_from_arg(backend):
 
 @xp_capabilities(out_of_scope=True)
 def set_global_backend(backend, coerce=False, only=False, try_last=False):
-    """Sets the global fft backend
+    """Sets the global fft backend.
 
     This utility method replaces the default backend for permanent use. It
     will be tried in the list of backends automatically, unless the
