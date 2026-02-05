@@ -76,7 +76,7 @@ Overview and big picture
       continue to return spmatrix or sparray objects, you can often do that
       using a sparse input that also serves as a signal for what type of output
       should be returned. Design your function to return the type that was input.
-      That approach can be extended to dense inputs. If the input is a np.matrix
+      That approach can be extended to dense inputs. If the input is an np.matrix
       or a masked array with np.matrix as its ``._baseclass`` attribute, then
       return spmatrix. Otherwise return an sparray. Without those inputs, two
       other approaches are to create a keyword argument to signal which to return,

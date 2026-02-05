@@ -99,7 +99,7 @@ are described below.
        When you have selected the machine to which you wish 
        to install SuperLU, copy the appropriate sample include file (if one 
        is present) into make.inc. For example, if you wish to run 
-       SuperLU on a Linux, you can do
+       SuperLU on an Linux, you can do
 
        	       cp MAKE_INC/make.linux make.inc
    

@@ -1001,7 +1001,7 @@ class TestDifferentialEvolutionSolver:
         assert pc.parameter_count == 2
 
     def test_matrix_linear_constraint(self):
-        # gh20041 supplying a np.matrix to construct a LinearConstraint caused
+        # gh20041 supplying an np.matrix to construct a LinearConstraint caused
         # _ConstraintWrapper to start returning constraint violations of the
         # wrong shape.
         with warnings.catch_warnings():
