@@ -632,6 +632,8 @@ class _CustomLinearOperator(LinearOperator):
     def _rmatmat(self, X):
         if self.__rmatmat_impl is not None:
             return self.__rmatmat_impl(X)
+        elif self.__rmatvec_impl is None:
+            raise NotImplementedError("rmatmat is not defined")
         else:
             return super()._rmatmat(X)
 
