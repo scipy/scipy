@@ -429,6 +429,12 @@ class LinearOperator:
     def _rmatmat(self, X):
         """Default implementation of _rmatmat defers to rmatvec or adjoint."""
         if type(self)._adjoint == LinearOperator._adjoint:
+            # _adjoint not overridden, check if rmatvec is available
+            if type(self)._rmatvec == LinearOperator._rmatvec:
+                raise NotImplementedError(
+                    "rmatmat is not defined for this LinearOperator. "
+                    "Please define either _rmatmat, _rmatvec, or _adjoint."
+                )
             return np.hstack([self.rmatvec(col.reshape(-1, 1)) for col in X.T])
         else:
             return self.H.matmat(X)
