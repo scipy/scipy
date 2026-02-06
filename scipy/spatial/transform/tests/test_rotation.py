@@ -1648,6 +1648,22 @@ def test_apply_array_like():
     xp_assert_close(v, v_expected, atol=1e-12)
 
 
+def test_apply_matrix_equivalence():
+    """Test documented equivalence for single rotation: apply(vectors) == vectors @ as_matrix().T."""
+    r = Rotation.from_rotvec([0, 0, 1])
+    # Single vector (3,)
+    v = np.array([1.0, 0.0, 0.0])
+    xp_assert_close(r.apply(v), v @ r.as_matrix().T)
+    # Multiple vectors (P, 3)
+    arr = np.array([[1, 0, 0], [1, 2, 3]], dtype=float)
+    xp_assert_close(r.apply(arr), arr @ r.as_matrix().T)
+    # (3, 3) case: wrong formula as_matrix() @ vectors would not error but give wrong result
+    arr33 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=float)
+    xp_assert_close(r.apply(arr33), arr33 @ r.as_matrix().T)
+    wrong_result = r.as_matrix() @ arr33
+    assert not np.allclose(r.apply(arr33), wrong_result)
+
+
 @make_xp_test_case(Rotation.apply)
 def test_apply_input_validation(xp):
     r = Rotation.from_quat(xp.ones(4))

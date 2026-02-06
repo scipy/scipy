@@ -1567,8 +1567,8 @@ class Rotation:
               frame as it rotates. In this case the vector components are
               expressed in the original frame before and after the rotation.
 
-        In terms of rotation matrices, this application is the same as
-         ``vectors @ self.as_matrix().T``.
+        For a single rotation, in terms of rotation matrices, this application
+        is the same as ``vectors @ self.as_matrix().T``.
 
         Parameters
         ----------
