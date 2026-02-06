@@ -9,13 +9,9 @@ from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
                                    xp_capabilities, xp_promote, xp_swapaxes, is_numpy,
-<<<<<<< array-api-simpson
-                                   xp_size, is_lazy_array)
-import scipy._lib.array_api_extra as xpx
-=======
+                                   xp_size,
                                    is_lazy_array)
 import scipy._external.array_api_extra as xpx
->>>>>>> main
 
 
 __all__ = ['fixed_quad', 'romb',
