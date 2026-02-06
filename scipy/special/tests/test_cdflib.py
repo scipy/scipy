@@ -7,7 +7,6 @@ The following functions still need tests:
 - ncfdtridfd
 - ncfdtrinc
 - nbdtrik
-- nbdtrin
 - nctdtridf
 - nctdtrinc
 
@@ -709,6 +708,53 @@ class TestNoncentralTFunctions:
     def test_nctdtrit(self, df, nc, x, expected_cdf):
         assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
 
+
+class TestNegativeBinomialFunctions:
+
+    @pytest.mark.parametrize("args",
+        [(np.nan, 1, 1), (1, np.nan, 1), (1, 1, np.nan),
+         (np.nan, np.nan, 1), (np.nan, 1, np.nan), (1, np.nan, np.nan),
+         (np.nan, np.nan, np.nan)]
+    )
+    def test_nan_propagation(self, args):
+        assert np.isnan(sp.nbdtrin(*args))
+
+    @pytest.mark.parametrize("args",
+        [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
+         (-1, 1, -1), (1, -1, -1), (-1, -1, -1),
+         (1, 1.1, 0.9), (1, 0.9, 1.1)]
+    )  
+    def test_domain_error(self, args):
+        with sp.errstate(domain="raise"):
+            with pytest.raises(sp.SpecialFunctionError, match="domain"):
+                sp.nbdtrin(*args)
+
+    @pytest.mark.parametrize(
+            "k, y, p, n, rtol",
+            [(5, 0.3214569091796875, 0.25, 3, 5e-16),
+             (10, 3.820379007878081e-70, 0.15, 100, 1e-15),
+             (100, 0.975574722927043, 0.15, 10, 1e-14),
+             (2, 3.503253250000002e-73, 0.001, 25, 5e-16),
+             (2, 0.9999993271029954, 0.999, 15, 1e-10),
+             (500, 0.9999999998603178, 0.1, 15, 1e-8),
+             (0, 1.0000000000000006e-10, 0.1, 10, 5e-16)])
+    def test_inverse_n(self, k, y, p, n, rtol):
+        # The following code was used to generate the values. 
+        # import mpmath
+        # import scipy
+        # mpmath.mp.dps = 1000
+
+        # def neg_binomial_cdf(k, n, p):
+        #     return mpmath.betainc(n, k+1, x1=0, x2=p, regularized=True)
+        # n = 3
+        # p = 0.25
+        # k = 5
+        # cdf = neg_binomial_cdf(k, n, p)
+        # print("y = ", float(cdf))
+        # nval = (scipy.special.nbdtrin(k, float(cdf), p))
+        # print("Relative Error:", (n - nval) / n)
+
+        assert_allclose(sp.nbdtrin(k, y, p), n, rtol)
 
 class TestNoncentralChiSquaredFunctions:
 
