@@ -200,33 +200,36 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     Options
     -------
-    col_deriv : bool
+    col_deriv : bool, optional
         Specify whether the Jacobian function computes derivatives down
         the columns (faster, because there is no transpose operation).
-    xtol : float
+        Default is False (0).
+    xtol : float, optional
         The calculation will terminate if the relative error between two
-        consecutive iterates is at most `xtol`.
-    maxfev : int
+        consecutive iterates is at most `xtol`. Default is 1.49012e-08.
+    maxfev : int, optional
         The maximum number of calls to the function. If zero, then
         ``100*(N+1)`` is the maximum where N is the number of elements
-        in `x0`.
-    band : tuple
+        in `x0`. Default is 0 (200*(N+1) for ``jac=None``, 100*(N+1)
+        otherwise).
+    band : tuple, optional
         If set to a two-sequence containing the number of sub- and
         super-diagonals within the band of the Jacobi matrix, the
         Jacobi matrix is considered banded (only for ``jac=None``).
-    eps : float
+        Default is None.
+    eps : float, optional
         A suitable step length for the forward-difference
         approximation of the Jacobian (for ``jac=None``). If
         `eps` is less than the machine precision, it is assumed
         that the relative errors in the functions are of the order of
-        the machine precision.
-    factor : float
+        the machine precision. Default is None (machine precision).
+    factor : float, optional
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in the interval
-        ``(0.1, 100)``.
-    diag : sequence
+        ``(0.1, 100)``. Default is 100.
+    diag : sequence, optional
         N positive entries that serve as a scale factors for the
-        variables.
+        variables. Default is None.
 
     """
     _check_unknown_options(unknown_options)
