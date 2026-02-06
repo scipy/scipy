@@ -4223,7 +4223,7 @@ def _check_shape(argshape, size):
         output array of _rvs().
 
     bc : tuple of booleans
-        bc is an tuple the same length as size. bc[j] is True if the data
+        bc is a tuple the same length as size. bc[j] is True if the data
         associated with that index is generated in one call of _rvs_scalar().
 
     """
