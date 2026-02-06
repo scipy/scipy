@@ -71,6 +71,9 @@ class _FuncInfo:
     # but in the future I think it's likely we may want to add a warning to
     # xp_capabilities when not using native PyTorch on CPU.
     torch_native: bool = True
+    # Set to True if the function to be delegated to is in the xp namespace instead of
+    # the xp.scipy.special namespace. One example is jax.numpy.sinc.
+    in_xp: bool = False
 
     @property
     def name(self):
@@ -119,7 +122,9 @@ class _FuncInfo:
 
         # If a native implementation is available, use that
         spx = scipy_namespace_for(xp)
-        f = _get_native_func(xp, spx, self.name, alt_names_map=self.alt_names_map)
+        f = _get_native_func(
+            xp, spx, self.name, alt_names_map=self.alt_names_map, in_xp=self.in_xp
+        )
         if f is not None:
             return f
 
@@ -189,11 +194,11 @@ class _FuncInfo:
         return f
 
 
-def _get_native_func(xp, spx, f_name, *, alt_names_map=None):
+def _get_native_func(xp, spx, f_name, *, alt_names_map=None, in_xp=False):
     if alt_names_map is None:
         alt_names_map = {}
     f_name = alt_names_map.get(get_native_namespace_name(xp), f_name)
-    f = getattr(spx.special, f_name, None) if spx else None
+    f = getattr(xp if in_xp else spx.special, f_name, None) if spx else None
     if f is None and hasattr(xp, 'special'):
         # Currently dead branch, in anticipation of 'special' Array API extension
         # https://github.com/data-apis/array-api/issues/725
@@ -805,9 +810,10 @@ _special_funcs = (
         _basic.sinc, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         is_ufunc=False,
+        in_xp=True,
     ),
     _FuncInfo(
         _ufuncs.sindg, 1,
