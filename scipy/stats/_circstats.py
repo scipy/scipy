@@ -1,5 +1,5 @@
 import math
-from scipy._lib import array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace, xp_promote, xp_capabilities, xp_size, xp_vector_norm, is_marray,
 )
