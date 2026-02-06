@@ -20,7 +20,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
 
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
                                  dsbevd, dsbevx, zhbevd, zhbevx,
-                                 sorgqr, dorgqr, cungqr, zungqr)
+                                 get_lapack_funcs)
 
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -1949,7 +1949,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):
@@ -2007,32 +2007,25 @@ class TestQR:
 
         (q_raw, tau), r, *other = qr(a, mode="raw", pivoting=pivoting)
 
-        assert_equal(q_raw.shape, shape)
-        assert_equal(q_raw.dtype, dtype)
-        assert_equal(tau.shape, (K,))
-        assert_equal(tau.dtype, dtype)
-        assert_equal(r.shape, (K, shape[1]))
-        assert_equal(r.dtype, dtype)
+        assert q_raw.shape == shape
+        assert q_raw.dtype == dtype
+        assert tau.shape == (K,)
+        assert tau.dtype == dtype
+        assert r.shape  == (K, shape[1])
+        assert r.dtype == dtype
 
         assert len(other) == (1 if pivoting else 0)
         if pivoting:
             jpvt = other[0]
-            assert_equal(jpvt.shape[0], shape[1])
-            assert_equal(jpvt.dtype, np.int32)
+            assert jpvt.shape[0] == shape[1]
+            assert jpvt.dtype == np.int64 if HAS_ILP64 else np.int32
 
         assert_array_almost_equal(np.triu(q_raw)[:K, :], r)
 
         if shape[0] > 0: # `or_un_gqr` expects `ldab` (= `M` here) > 0
             q_raw = q_raw[:, :K] # `or_un_gqr` expects tall/square matrices
-            match dtype:
-                case np.float32:
-                    q, _, _ = sorgqr(q_raw, tau)
-                case np.float64:
-                    q, _, _ = dorgqr(q_raw, tau)
-                case np.complex64:
-                    q, _, _ = cungqr(q_raw, tau)
-                case np.complex128:
-                    q, _, _ = zungqr(q_raw, tau)
+            or_un_gqr = get_lapack_funcs(("orgqr",), (q_raw,), ilp64="preferred")[0]
+            q, _, _ = or_un_gqr(q_raw, tau)
 
             if pivoting:
                 assert_array_almost_equal(q @ r, a[:, jpvt])
@@ -2040,10 +2033,7 @@ class TestQR:
                 assert_array_almost_equal(q @ r, a)
 
             if q.size != 0: # sanity check to prevent `q.T @ q` from being all zero
-                if np.issubdtype(dtype, np.complexfloating):
-                    assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]))
-                else:
-                    assert_array_almost_equal(q.T @ q, np.eye(q.shape[1]))
+                assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]))
 
 
 class TestRQ:

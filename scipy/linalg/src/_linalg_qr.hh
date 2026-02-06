@@ -2,6 +2,7 @@
  * Templated loops for `linalg.qr`
  */
 
+#include "src/_common_array_utils.hh"
 template<typename T>
 int
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
@@ -116,7 +117,8 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
         // Compute slice pointers if necessary. `tau` and `jpvt` are vectors, so actually 1 dimension
         // less, however, the looping to compute the slices should traverse the same number of dimensions.
-        // Hence, the use of `ndim` instead of `ndim-1`.
+        // Hence, the use of `ndim` instead of `ndim-1`. Similarly, the shapes of `Q` and `R` might differ,
+        // but only the batching ones are relevant, which are identical.
         slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
         slice_ptr_R = compute_slice_ptr(idx, R_data, ndim, shape, strides_R);
 

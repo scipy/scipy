@@ -278,7 +278,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
 
-    if (mode != QR_mode::R) {
+    if (mode != QR_mode::R) { // Allocate Q if needed, if `mode == raw`, F-ordered array is required.
         ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
         if (!ap_Q) {
             PyErr_NoMemory();
