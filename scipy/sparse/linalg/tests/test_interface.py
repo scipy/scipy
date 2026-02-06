@@ -696,6 +696,9 @@ def test_inheritance():
     id3 = Identity(3)
     assert_equal(id3.matvec([1, 2, 3]), [1, 2, 3])
     assert_raises(NotImplementedError, id3.rmatvec, [4, 5, 6])
+    # rmatmat should also raise NotImplementedError when rmatvec is not defined
+    # See gh-18140
+    assert_raises(NotImplementedError, id3.rmatmat, np.array([[4, 5, 6]]).T)
 
     class MatmatOnly(interface.LinearOperator):
         def __init__(self, A):
@@ -707,6 +710,14 @@ def test_inheritance():
 
     mm = MatmatOnly(np.random.randn(5, 3))
     assert_equal(mm.matvec(np.random.randn(3)).shape, (5,))
+
+    # Test that _CustomLinearOperator raises NotImplementedError for rmatmat
+    # when rmatvec is not provided (gh-18140)
+    custom_op = interface.LinearOperator(
+        matvec=lambda x: x,
+        shape=(1, 1)
+    )
+    assert_raises(NotImplementedError, custom_op.rmatmat, [[1]])
 
 def test_dtypes_of_operator_sum():
     # gh-6078
