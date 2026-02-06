@@ -17,7 +17,8 @@
 typedef boost::math::policies::policy<
     boost::math::policies::promote_float<false >,
     boost::math::policies::promote_double<false >,
-    boost::math::policies::max_root_iterations<400 > > SpecialPolicy;
+    boost::math::policies::max_root_iterations<400 >,
+    boost::math::policies::discrete_quantile<boost::math::policies::real > > SpecialPolicy;
 
 // Round up to achieve correct ppf(cdf) round-trips for discrete distributions
 typedef boost::math::policies::policy<
@@ -1684,29 +1685,67 @@ binom_cdf_double(double x, double n, double p)
     return binom_cdf_wrap(x, n, p);
 }
 
-template<typename Real>
+
+// Binomial distribution quantile is wrapped once
+// for special.bdtrik
+// and once for stats due to different rounding policies
+template<typename Real, typename Policy>
 Real
-binom_ppf_wrap(const Real x, const Real n, const Real p)
+bdtrik_wrap(const Real x, const Real n, const Real p, const Policy& policy_)
 {
-    try {
-        return boost::math::quantile(
-            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
-    } catch (...) {
-        /* Boost was unable to produce a result. */
+    if (std::isnan(x) || std::isnan(n) || std::isnan(p)) {
         return NAN;
     }
+    if (n < 0 || p < 0 || p > 1 || x < 0 || x > 1) {
+        sf_error("bdtrik", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+         y = boost::math::quantile(
+            boost::math::binomial_distribution<Real, Policy>(n, p), x);
+    } catch (const std::domain_error& e) {
+        sf_error("bdtrik", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("bdtrik", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("bdtrik", SF_ERROR_UNDERFLOW, NULL);
+        y = 0; 
+    } catch (...) {
+        sf_error("bdtrik", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y < 0 || y > n) {
+        sf_error("bdtrik", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
+bdtrik_float(float x, float n, float p)
+{
+    return bdtrik_wrap(x, n, p, SpecialPolicy());
+}
+
+double
+bdtrik_double(double x, double n, double p)
+{
+    return bdtrik_wrap(x, n, p, SpecialPolicy());
+}
+
+float 
 binom_ppf_float(float x, float n, float p)
 {
-    return binom_ppf_wrap(x, n, p);
+    return bdtrik_wrap(x, n, p, StatsPolicy());
 }
 
 double
 binom_ppf_double(double x, double n, double p)
 {
-    return binom_ppf_wrap(x, n, p);
+    return bdtrik_wrap(x, n, p, StatsPolicy());
 }
 
 template<typename Real>

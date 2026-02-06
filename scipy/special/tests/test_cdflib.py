@@ -201,14 +201,6 @@ def _tukey_lmbda_quantile(p, lmbda):
 @check_version(mpmath, '0.19')
 class TestCDFlib:
 
-    @pytest.mark.xfail(run=False)
-    def test_bdtrik(self):
-        _assert_inverts(
-            sp.bdtrik,
-            _binomial_cdf,
-            0, [ProbArg(), IntArg(1, 1000), ProbArg()],
-            rtol=1e-4)
-
     def test_bdtrin(self):
         _assert_inverts(
             sp.bdtrin,
@@ -902,3 +894,14 @@ def test_gdtrix_edge_cases(a, b, p, ref):
 ])
 def test_gdtria_edge_cases(p, b, x, ref):
     assert_equal(sp.gdtria(p, b, x), ref)
+
+@pytest.mark.parametrize("y, n, p, k", [
+    (6.110236824190975e-78, 100, 0.9, 10),
+    (4.0188255421199357e-224, 1000, 0.9, 500),
+    (0.9999998319058928, 1000, 0.5, 580),
+    (0.9999734386011124, 100, 0.9, 99)
+])
+def test_bdtrik(y, n, p, k):
+    # Reference values for y were computed with mpmath using
+    # the _binomial_cdf function from above.
+    assert_allclose(sp.bdtrik(y, n, p), k, rtol=1e-11)
