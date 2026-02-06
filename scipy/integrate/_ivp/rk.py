@@ -298,6 +298,12 @@ class RK45(RungeKutta):
     using the fifth-order accurate formula (local extrapolation is done).
     A quartic interpolation polynomial is used for the dense output [2]_.
 
+    This is the RK5(4)7M method from Dormand & Prince, using 7 stages
+    (including the first derivative evaluation which is reused from the
+    previous step). The coefficients correspond to the 5th order solution
+    (B) and the error estimator (E) which is the difference between the
+    5th and 4th order solutions.
+
     Can be applied in the complex domain.
 
     Parameters
