@@ -545,6 +545,16 @@ class dia_array(_dia_base, sparray):
     addition, subtraction, multiplication, division, and matrix power.
     Sparse arrays with DIAgonal storage do not support slicing.
 
+    **Structure of the data array:**
+
+    The format of ``data`` in the constructor is consistent with the
+    `BLAS/LAPACK general band format <https://netlib.org/lapack/lug/node124.html>`_
+    when ``offsets`` is a decreasing range.
+
+    * Sub-diagonals (negative offsets) are left-aligned with the main diagonal.
+    * Super-diagonals (positive offsets) are right-aligned with the main diagonal.
+    * Columns of ``data`` become columns of the generated sparse array.
+
     Examples
     --------
 
@@ -620,6 +630,16 @@ class dia_matrix(spmatrix, _dia_base):
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
     Sparse matrices with DIAgonal storage do not support slicing.
+
+    **Structure of the data array:**
+
+    The format of ``data`` in the constructor is consistent with the
+    `BLAS/LAPACK general band format <https://netlib.org/lapack/lug/node124.html>`_
+    when ``offsets`` is a decreasing range.
+
+    * Sub-diagonals (negative offsets) are left-aligned with the main diagonal.
+    * Super-diagonals (positive offsets) are right-aligned with the main diagonal.
+    * Columns of ``data`` become columns of the generated sparse matrix.
 
     Examples
     --------
