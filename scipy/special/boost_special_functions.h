@@ -1971,23 +1971,23 @@ Real nbinom_invn_wrap(Real k, Real y, Real p)
     }
     // The edge cases of p=0,1 is handled in boost 
     if ((k < 0) || (y <= 0) || (y >= 1) || (p < 0) || (p > 1)) {
-        sf_error("nbdtrik", SF_ERROR_DOMAIN, NULL);
+        sf_error("nbdtrin", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
     try {
         num_trials = boost::math::negative_binomial_distribution<Real, SpecialPolicy>::find_minimum_number_of_trials(k, p, y);
         n = num_trials - k;
     } catch (const std::domain_error& e) {
-        sf_error("nbdtrik", SF_ERROR_DOMAIN, NULL);
+        sf_error("nbdtrin", SF_ERROR_DOMAIN, NULL);
         n = NAN;
     } catch (const std::overflow_error& e) {
-        sf_error("nbdtrik", SF_ERROR_OVERFLOW, NULL);
+        sf_error("nbdtrin", SF_ERROR_OVERFLOW, NULL);
         n = INFINITY;
     } catch (const std::underflow_error& e) {
-        sf_error("nbdtrik", SF_ERROR_UNDERFLOW, NULL);
+        sf_error("nbdtrin", SF_ERROR_UNDERFLOW, NULL);
         n = 0;
     } catch (...) {
-        sf_error("nbdtrik", SF_ERROR_OTHER, NULL);
+        sf_error("nbdtrin", SF_ERROR_OTHER, NULL);
         n = NAN;
     }
     if (n < 0) {
