@@ -12,11 +12,12 @@ class Laplacian(Benchmark):
     params = [
         [30, 300, 900],
         ['dense', 'coo', 'csc', 'csr', 'dia'],
-        [True, False]
+        [True, False],
+        ['standard', 'opposing', 'unsigned'],
     ]
-    param_names = ['n', 'format', 'normed']
+    param_names = ['n', 'format', 'normed', 'signed_graph_variant']
 
-    def setup(self, n, format, normed):
+    def setup(self, n, format, normed, signed_graph_variant):
         data = scipy.sparse.rand(9, n, density=0.5, random_state=42).toarray()
         data = np.vstack((data, data))
         diags = list(range(-9, 0)) + list(range(1, 10))
@@ -26,5 +27,5 @@ class Laplacian(Benchmark):
         else:
             self.A = A.asformat(format)
 
-    def time_laplacian(self, n, format, normed):
-        laplacian(self.A, normed=normed)
+    def time_laplacian(self, n, format, normed, signed_graph_variant):
+        laplacian(self.A, normed=normed, signed_graph_variant=signed_graph_variant)
