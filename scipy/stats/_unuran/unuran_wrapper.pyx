@@ -189,6 +189,10 @@ _setup_unuran()
 
 
 class wrap_dist_continuous:
+    """Wrap frozen continuous distributions for being called by UNURAN.
+
+    This class is responsible for applying loc/scale, forcing the
+    argument to be an array, and clamping cdf values between 0 and 1."""
     def __init__(self, dist):
         self.dist = dist
         (self.args, self.loc,
@@ -216,6 +220,10 @@ class wrap_dist_continuous:
 
 
 class wrap_dist_discrete:
+    """Wrap frozen discrete distributions for being called by UNURAN.
+
+    This class is responsible for applying loc, forcing the
+    argument to be an array, and clamping cdf values between 0 and 1."""
     def __init__(self, dist):
         self.dist = dist
         (self.args, self.loc,
