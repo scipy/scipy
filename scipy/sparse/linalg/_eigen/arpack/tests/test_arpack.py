@@ -702,10 +702,8 @@ def test_real_eigs_real_k_subset():
 
             prev_w = w
 
-@pytest.mark.parametrize("which", ['LR', 'SR', 'LI', 'SI']) #Using pytest.mark.parametrize to test all the cases where the fix should raise an error
-#Test that generalized problems with LR/SR/LI/SI and no sigma must raise an error, as ARPACK mode=2 does not preserve real/imaginary part ordering
-def test_generalized_eigs_which_real_imag_raises(which):
-    """Generalized problems with LR/SR/LI/SI and no sigma must raise."""
+def test_generalized_eigs_non_hermitian_M_raises():
+    """Generalized problems with non-Hermitian M must raise."""
     A = np.array([[1., 2., 3.],
                   [4., 5., 6.],
                   [7., 8., 9.]])

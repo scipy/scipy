@@ -278,7 +278,7 @@ HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
 # Function to check if M is Hermitian
 def _is_hermitian(M, tol=1e-10):
     """Check if matrix M is Hermitian (symmetric for real matrices).
-    
+
     Uses sampling to efficiently check M ≈ M^H for large matrices.
     """
     M_op = aslinearoperator(M)
@@ -287,7 +287,7 @@ def _is_hermitian(M, tol=1e-10):
     # Use a deterministic seed for reproducibility
     rng = np.random.RandomState(0)
     
-    # Sample a few random vectors to check M*v ≈ conj((M^H*v)^*)
+    # Sample a few random vectors to check M*v ≈ M^H*v
     for _ in range(3):
         if np.issubdtype(M_op.dtype, np.complexfloating):
             v = rng.randn(n) + 1j * rng.randn(n)
@@ -295,10 +295,14 @@ def _is_hermitian(M, tol=1e-10):
             v = rng.randn(n)
         
         Mv = M_op.matvec(v)
-        MHv = M_op.rmatvec(v)
-        
-        # For Hermitian M: M*v should equal conj((M^H*v)^*)
-        if not np.allclose(Mv, np.conj(np.conj(MHv)), rtol=tol, atol=tol):
+        try:
+            MHv = M_op.rmatvec(v)
+        except NotImplementedError:
+            # Cannot verify Hermiticity without adjoint
+            return True
+
+        # For Hermitian M: M*v should equal M^H*v
+        if not np.allclose(Mv, MHv, rtol=tol, atol=tol):
             return False
     return True
 
