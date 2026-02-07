@@ -1375,6 +1375,14 @@ class KrylovJacobian(Jacobian):
     %(params_basic)s
     rdiff : float, optional
         Relative step size to use in numerical differentiation.
+    Fgradp : callable, optional
+        Jacobian multiplication with an arbitrary vector v.
+        `Fgradp` must compute the Jacobian times an arbitrary vector:
+
+            ``Fgradp(x, v) ->  ndarray shape (n,)``
+
+        where ``x`` is a (n,) ndarray, ``v`` is an arbitrary vector with
+        dimension (n,).
     method : str or callable, optional
         Krylov method to use to approximate the Jacobian.  Can be a string,
         or a function implementing the same interface as the iterative
@@ -1422,7 +1430,8 @@ class KrylovJacobian(Jacobian):
     This function implements a Newton-Krylov solver. The basic idea is
     to compute the inverse of the Jacobian with an iterative Krylov
     method. These methods require only evaluating the Jacobian-vector
-    products, which are conveniently approximated by a finite difference:
+    products, which are either provided by the user through the Fgradp
+    argument or conveniently approximated by a finite difference:
 
     .. math:: J v \\approx (f(x + \\omega*v/|v|) - f(x)) / \\omega
 
@@ -1466,9 +1475,10 @@ class KrylovJacobian(Jacobian):
 
     """
 
-    def __init__(self, rdiff=None, method='lgmres', inner_maxiter=20,
-                 inner_M=None, outer_k=10, **kw):
+    def __init__(self, Fgradp=None, rdiff=None, method='lgmres',
+                 inner_maxiter=20, inner_M=None, outer_k=10, **kw):
         self.preconditioner = inner_M
+        self.Fgradp = Fgradp
         self.rdiff = rdiff
         # Note that this retrieves one of the named functions, or otherwise
         # uses `method` as is (i.e., for a user-provided callable).
@@ -1547,11 +1557,24 @@ class KrylovJacobian(Jacobian):
         self.omega = self.rdiff * max(1, mx) / max(1, mf)
 
     def matvec(self, v):
-        nv = norm(v)
-        if nv == 0:
-            return 0*v
-        sc = self.omega / nv
-        r = (self.func(self.x0 + sc*v) - self.f0) / sc
+        if self.UseFiniteDifferences:
+            nv = norm(v)
+            if nv == 0:
+                return 0*v
+            sc = self.omega / nv
+            r = (self.func(self.x0 + sc*v) - self.f0) / sc
+        else:
+            r = self.Fgradp(self.x0, v)
+            
+            if not(isinstance(r, np.ndarray)):
+                raise ValueError('Fgradp did not return a numpy array')
+            
+            if not((self.x0.shape == r.shape)):
+                message = (f'Fgradp returned array with wrong shape. '
+                           f'Returned shape: {r.shape}. '
+                           f'Expected shape: {self.x0.shape}')
+                raise ValueError(message)
+            
         if not np.all(np.isfinite(r)) and np.all(np.isfinite(v)):
             raise ValueError('Function returned non-finite results')
         return r
@@ -1566,7 +1589,9 @@ class KrylovJacobian(Jacobian):
     def update(self, x, f):
         self.x0 = x
         self.f0 = f
-        self._update_diff_step()
+
+        if self.UseFiniteDifferences:
+            self._update_diff_step()
 
         # Update also the preconditioner, if possible
         if self.preconditioner is not None:
@@ -1579,16 +1604,20 @@ class KrylovJacobian(Jacobian):
         self.f0 = f
         self.op = scipy.sparse.linalg.aslinearoperator(self)
 
-        if self.rdiff is None:
-            self.rdiff = np.finfo(x.dtype).eps ** (1./2)
+        self.UseFiniteDifferences = (self.Fgradp is None)
 
-        self._update_diff_step()
+        if self.UseFiniteDifferences:
+            if self.rdiff is None:
+                self.rdiff = np.finfo(x.dtype).eps ** (1./2)
+            self._update_diff_step()
+        else:
+            if not callable(self.Fgradp):
+                raise ValueError('Fgradp must be callable')
 
         # Setup also the preconditioner, if possible
         if self.preconditioner is not None:
             if hasattr(self.preconditioner, 'setup'):
                 self.preconditioner.setup(x, f, func)
-
 
 #------------------------------------------------------------------------------
 # Wrapper functions
