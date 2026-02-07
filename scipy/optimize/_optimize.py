@@ -1153,6 +1153,32 @@ class _LineSearchError(RuntimeError):
     pass
 
 
+def _linesearch_defaults_for_dtype(dtype):
+    """
+    Default kwargs for line search methods for a given dtype.
+
+    Parameters
+    ----------
+    dtype: np.dtype
+
+    Returns
+    -------
+    kwargs : dict
+    """
+    bits = np.finfo(dtype).bits
+    kwargs = {"amin": 1e-100, "amax": 1e100, "xtol": 1e-14}
+    match bits:
+        case 32:
+            kwargs['amin'] = 1e-30
+            kwargs['amax'] = 1e30
+            kwargs['xtol'] = 1e-6
+        case 16:
+            kwargs['amin'] = 1e-4
+            kwargs['amax'] = 1e4
+
+    return kwargs
+
+
 def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
                          **kwargs):
     """
@@ -1196,6 +1222,22 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
         raise _LineSearchError()
 
     return ret
+
+
+def _result_dtype(x0_dtype, f_dtype):
+    """
+    Determines float precision of a minimization
+    """
+    x0bytes = x0_dtype.itemsize
+    fbytes = f_dtype.itemsize
+    b = min(x0bytes, fbytes)
+    match b:
+        case 2:
+            return np.float16
+        case 4:
+            return np.float32
+        case _:
+            return np.float64
 
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
@@ -1343,7 +1385,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 
 
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
-                   gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
+                   gtol=1e-5, norm=np.inf, eps=None, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
                    xrtol=0, c1=1e-4, c2=0.9,
                    hess_inv0=None, workers=None, **unknown_options):
@@ -1423,9 +1465,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
+    # the float precision that the minimisation proceeds with
+    if not hasattr(old_fval, 'dtype'):
+        old_fval = np.float64(old_fval)
+    res_dtype = _result_dtype(x0.dtype, old_fval.dtype)
+    ls_defaults = _linesearch_defaults_for_dtype(res_dtype)
+
     k = 0
     N = len(x0)
-    I = np.eye(N, dtype=int)
+    I = np.eye(N, dtype=res_dtype)
     Hk = I if hess_inv0 is None else hess_inv0
 
     # Sets the initial step guess to dx ~ 1
@@ -1439,10 +1487,19 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     while (gnorm > gtol) and (k < maxiter):
         pk = -np.dot(Hk, gfk)
         try:
-            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                     _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval, amin=1e-100,
-                                          amax=1e100, c1=c1, c2=c2)
+            ls_res = _line_search_wolfe12(
+                f,
+                myfprime,
+                xk,
+                pk,
+                gfk,
+                old_fval,
+                old_old_fval,
+                c1=c1,
+                c2=c2,
+                **ls_defaults
+            )
+            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = ls_res
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -1717,7 +1774,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 
 
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
-                 gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
+                 gtol=1e-5, norm=np.inf, eps=None, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
                  c1=1e-4, c2=0.4, workers=None,
                  **unknown_options):
@@ -1782,6 +1839,12 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
+    # adjust float precision of problem based on x0, fun(x0)
+    if not hasattr(old_fval, 'dtype'):
+        old_fval = np.float64(old_fval)
+    res_dtype = _result_dtype(x0.dtype, old_fval.dtype)
+    ls_args = _linesearch_defaults_for_dtype(res_dtype)
+
     k = 0
     xk = x0
     # Sets the initial step guess to dx ~ 1
@@ -1802,10 +1865,14 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
         def polak_ribiere_powell_step(alpha, gfkp1=None):
             xkp1 = xk + alpha * pk
+
             if gfkp1 is None:
                 gfkp1 = myfprime(xkp1)
             yk = gfkp1 - gfk
-            beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            if deltak != 0:
+                beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            else:
+                beta_k = 1.
             pkp1 = -gfkp1 + beta_k * pk
             gnorm = vecnorm(gfkp1, ord=norm)
             return (alpha, xkp1, pkp1, gfkp1, gnorm)
@@ -1828,10 +1895,20 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
             return np.dot(pk, gfk) <= -sigma_3 * np.dot(gfk, gfk)
 
         try:
-            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                     _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c1=c1, c2=c2, amin=1e-100,
-                                          amax=1e100, extra_condition=descent_condition)
+            _res = _line_search_wolfe12(
+                f,
+                myfprime,
+                xk,
+                pk,
+                gfk,
+                old_fval,
+                old_old_fval,
+                c1=c1,
+                c2=c2,
+                extra_condition=descent_condition,
+                **ls_args
+            )
+            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = _res
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
