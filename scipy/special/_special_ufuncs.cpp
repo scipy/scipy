@@ -4,6 +4,7 @@
 #include <complex>
 
 #include "sf_error.h"
+
 #include <xsf/airy.h>
 #include <xsf/alg.h>
 #include <xsf/amos.h>

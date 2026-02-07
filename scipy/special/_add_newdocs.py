@@ -2122,7 +2122,7 @@ add_newdoc("entr",
 
     See Also
     --------
-    kl_div, rel_entr, scipy.stats.entropy
+    js_div, kl_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -4329,6 +4329,54 @@ add_newdoc("_igam_fac",
     Internal function, do not use.
     """)
 
+add_newdoc("js_div",
+    r"""
+    js_div(x, y, out=None)
+
+    Elementwise function for computing Jensen-Shannon divergence.
+
+    Given non-negative real numbers `x` and `y`, their Jensen-Shannon
+    divergence is defined as
+
+    .. math::
+
+       \mathrm{js\_div}(x, y):=\frac{f(x)+f(y)}{2}-f\left(\frac{x+y}{2}\right)
+
+    where :math:`f(x)=x \ln x` if :math:`x > 0` and :math:`0` if :math:`x=0`.
+
+    Parameters
+    ----------
+    x, y : array_like of float
+        Real numbers.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Jensen-Shannon divergence of `x` and `y` if `x` and `y`
+        are both finite and non-negative.
+
+        If `x` and/or `y` is `nan`, return `nan`.
+
+        If `x` and/or `y` is negative and neither is `nan`, return `+inf`.
+        This "extended-value extension" makes the function convenient for
+        use in convex optimization [1]_.
+
+    See Also
+    --------
+    entr, rel_entr, kl_div
+
+    Notes
+    -----
+    .. versionadded:: 1.18.0
+
+    References
+    ----------
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`10.1017/CBO9780511804441`.
+
+    """)
+
 add_newdoc("kl_div",
     r"""
     kl_div(x, y, out=None)
@@ -4358,7 +4406,7 @@ add_newdoc("kl_div",
 
     See Also
     --------
-    entr, rel_entr, scipy.stats.entropy
+    entr, js_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -6557,7 +6605,7 @@ add_newdoc("rel_entr",
 
     See Also
     --------
-    entr, kl_div, scipy.stats.entropy
+    entr, js_div, kl_div, scipy.stats.entropy
 
     Notes
     -----
