@@ -7,8 +7,7 @@ from types import ModuleType
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
-    is_jax, is_cupy, xp_promote, xp_capabilities, SCIPY_ARRAY_API,
-    get_native_namespace_name
+    is_jax, xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name
 )
 import scipy._external.array_api_extra as xpx
 from . import _basic
@@ -169,32 +168,24 @@ class _FuncInfo:
         # As a final resort, use the NumPy/SciPy implementation
         _f = self.func
 
-        if self.is_ufunc:
+        if is_jax(xp) and self.is_ufunc:
             # if this is a ufunc, we can use the resolve_dtypes method to figure
             # out what the output dtype should be and use lazy_apply to make this
-            # work with the JAX JIT.
-            if is_jax(xp) or is_cupy(xp):
-                def _get_np_dtype(dtype):
-                    return dtype
-            else:
-                def _get_np_dtype(dtype):
-                    return np.dtype(str(dtype).split(".")[-1])
-
+            # work with the JAX JIT. TODO: explore making this work for other
+            # lazy backends.
             def f(*args, _f=_f, xp=xp, **kwargs):
                 out_dtype = kwargs.get("out")
-                out_dtype = (
-                    out_dtype if out_dtype is None else _get_np_dtype(out_dtype)
-                )
-                npy_dtypes = (
-                    tuple(_get_np_dtype(arg.dtype) for arg in args)
+                # JAX uses NumPy dtypes, so it's easy to get the dtypes for
+                # use in resolve_dtypes.
+                dtypes = (
+                    tuple(arg.dtype for arg in args)
                     + (out_dtype, )
                 )
-                out_dtype = getattr(xp, str(_f.resolve_dtypes(npy_dtypes)[-1]))
+                out_dtype = getattr(xp, str(_f.resolve_dtypes(dtypes)[-1]))
                 return xpx.lazy_apply(
                     _f, *args, xp=xp, as_numpy=True, dtype=out_dtype, **kwargs
                 )
         else:
-            # If not a ufunc, convert to numpy and hope for the best.
             def f(*args, _f=_f, xp=xp, **kwargs):
                 args = [np.asarray(arg) for arg in args]
                 out = _f(*args, **kwargs)
