@@ -1,37 +1,16 @@
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
-from ._rbfinterp_common import _monomial_powers_impl
 
-from ._rbfinterp_pythran import (
-    _build_system as _pythran_build_system,
-    _build_evaluation_coefficients as _pythran_build_evaluation_coefficients,
-    _polynomial_matrix as _pythran_polynomial_matrix
-)
-
-
-# trampolines for pythran-compiled functions to drop the `xp` argument
-def _build_evaluation_coefficients(
-    x, y, kernel, epsilon, powers, shift, scale, xp
-):
-    return _pythran_build_evaluation_coefficients(
-        x, y, kernel, epsilon, powers, shift, scale
+try:
+    from ._rbfinterp_pythran import (
+        _build_system, _build_evaluation_coefficients, polynomial_matrix
     )
-
-def polynomial_matrix(x, powers, xp):
-    return _pythran_polynomial_matrix(x, powers)
-
-
-def _monomial_powers(ndim, degree, xp):
-    out = _monomial_powers_impl(ndim, degree)
-    out = np.asarray(out, dtype=np.int64)
-    if len(out) == 0:
-        out = out.reshape(0, ndim)
-    return out
-
-
-def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
-    return _pythran_build_system(y, d, smoothing, kernel, epsilon, powers)
+except ImportError:
+    # pythran-accelerated routines are not available, fall back to pure python variants
+    from ._rbfinterp_pythran_src import (
+        _build_system, _build_evaluation_coefficients, polynomial_matrix
+    )
 
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
@@ -84,9 +63,3 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
         raise LinAlgError(msg)
 
     return shift, scale, coeffs
-
-def compute_interpolation(x, y, kernel, epsilon, powers, shift, scale, coeffs, xp):
-    vec = _build_evaluation_coefficients(
-        x, y, kernel, epsilon, powers, shift, scale, xp
-    )
-    return vec @ coeffs
