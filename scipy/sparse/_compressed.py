@@ -3,6 +3,7 @@ __all__ = []
 
 from warnings import warn
 import itertools
+import math
 
 import numpy as np
 from scipy._lib._util import _prune_array, copy_if_needed
@@ -1195,14 +1196,30 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """apply the binary operation fn to two sparse matrices."""
         other = self.__class__(other)
 
+        new_shape = broadcast_shapes(self.shape, other.shape)
+        new_ndim = len(new_shape)
+        new_shape_as_2d = new_shape if new_ndim > 1 else (1, new_shape[0])
+
+        # find the nnz multiples due to broadcasting
+        bc_s_mult = math.prod(1 if  n == s else n
+                              for n, s in zip(new_shape_as_2d, self._shape_as_2d))
+        bc_o_mult = math.prod(1 if  n == o else n
+                              for n, o in zip(new_shape_as_2d, other._shape_as_2d))
+
+        maxnnz = self.nnz * bc_s_mult + other.nnz * bc_o_mult
+
+        # find/swap shapes
+        M, N = self._swap(new_shape_as_2d)
+        sM, sN = self._swap(self._shape_as_2d)
+        oM, oN = self._swap(other._shape_as_2d)
+
         # e.g. csr_plus_csr, csr_minus_csr, etc.
         fn = getattr(_sparsetools, "csr" + op + "csr")
 
-        maxnnz = self.nnz + other.nnz
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=maxnnz)
-        indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
+        indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(maxnnz, dtype=idx_dtype)
 
         bool_ops = ['_ne_', '_lt_', '_gt_', '_le_', '_ge_']
@@ -1211,8 +1228,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             data = np.empty(maxnnz, dtype=upcast(self.dtype, other.dtype))
 
-        M, N = self._swap(self._shape_as_2d)
-        fn(M, N,
+        fn(M, N, sM, sN, oM, oN,
            np.asarray(self.indptr, dtype=idx_dtype),
            np.asarray(self.indices, dtype=idx_dtype),
            self.data,
@@ -1221,7 +1237,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            other.data,
            indptr, indices, data)
 
-        A = self.__class__((data, indices, indptr), shape=self.shape)
+        A = self.__class__((data, indices, indptr), shape=new_shape)
         A.prune()
 
         return A
