@@ -1,6 +1,8 @@
-import pytest
-import sys
+import math
 import subprocess
+import sys
+
+import pytest
 
 from .test_public_api import PUBLIC_MODULES
 
@@ -11,7 +13,15 @@ from .test_public_api import PUBLIC_MODULES
 @pytest.mark.fail_slow(40)
 @pytest.mark.slow
 def test_public_modules_importable():
-    pids = [subprocess.Popen([sys.executable, '-c', f'import {module}'])
-            for module in PUBLIC_MODULES]
-    for i, pid in enumerate(pids):
-        assert pid.wait() == 0, f'Failed to import {PUBLIC_MODULES[i]}'
+    # Split into batches to limit peak resource usage (memory, file handles)
+    # on resource-constrained systems (e.g., RISC-V - see gh-24163).
+    # A regular for-loop over all modules is too slow (~4x slower).
+    n_batches = 6
+    batch_size = math.ceil(len(PUBLIC_MODULES) / n_batches)
+
+    for i in range(n_batches):
+        batch = PUBLIC_MODULES[i * batch_size:(i + 1) * batch_size]
+        pids = [subprocess.Popen([sys.executable, '-c', f'import {module}'])
+                for module in batch]
+        for j, pid in enumerate(pids):
+            assert pid.wait() == 0, f'Failed to import {batch[j]}'
