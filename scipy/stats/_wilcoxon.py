@@ -6,7 +6,7 @@ from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace, xp_promote, xp_size
+from scipy._lib._array_api import array_namespace, xp_promote, xp_size, is_jax
 import scipy._external.array_api_extra as xpx
 
 
@@ -109,6 +109,11 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         if method not in methods:
             raise ValueError(message)
     output_z = True if method == 'asymptotic' else False
+
+    if is_jax(xp) and str(method) in {"auto", "exact"}:
+        message = ("When using `wilcoxon` with `jax.numpy` arrays, `method` must be "
+                   "either 'asymptotic' or an instance of `stats.PermutationMethod`.")
+        raise ValueError(message)
 
     # For small samples, we decide later whether to perform an exact test or a
     # permutation test. The reason is that the presence of ties is not
@@ -256,7 +261,8 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
         p = xp.asarray(p, dtype=d.dtype)
     else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
-            (d,), lambda d: _wilcoxon_statistic(d, method, zero_method, xp=xp)[0],
+            # permutation_test always uses `axis=-1` as `_wilcoxon_statistic` assumes
+            (d,), lambda d, axis: _wilcoxon_statistic(d, method, zero_method, xp=xp)[0],
             permutation_type='samples', **method._asdict(),
             alternative=alternative, axis=-1).pvalue
 
