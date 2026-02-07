@@ -151,6 +151,15 @@ py3.extension_module('_slsqplib',
   subdir: 'scipy/optimize'
 )
 
+py3.extension_module('_cython_linewalker',
+  opt_gen.process('_cython_linewalker.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 subdir('_lsq')
 subdir('_trlib')
 subdir('_trustregion_constr')
@@ -179,6 +188,7 @@ py3.install_sources([
   '_isotonic.py',
   '_lbfgsb_py.py',
   '_linesearch.py',
+  '_linewalker.py',
   '_linprog.py',
   '_linprog_doc.py',
   '_linprog_highs.py',
