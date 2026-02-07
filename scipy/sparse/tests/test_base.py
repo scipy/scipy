@@ -681,11 +681,11 @@ class _TestCommon:
         assert_equal(self.spcreator((3, 3)).toarray(), zeros((3, 3)))
         assert_equal(self.spcreator((3, 3)).nnz, 0)
         assert_equal(self.spcreator((3, 3)).count_nonzero(), 0)
-        if self.datsp.format in ["coo", "csr", "csc", "lil"]:
+        if self.datsp.format != "dia":
             assert_equal(self.spcreator((3, 3)).count_nonzero(axis=0), array([0, 0, 0]))
 
     def test_count_nonzero(self):
-        axis_support = self.datsp.format in ["coo", "csr", "csc", "lil"]
+        axis_support = self.datsp.format != "dia"
         axes = [None, 0, 1, -1, -2] if axis_support else [None]
 
         for A in (self.datsp, self.datsp.T):
