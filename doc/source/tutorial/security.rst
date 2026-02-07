@@ -42,6 +42,9 @@ an upstream dependency. If the detected vulnerability requires remediation in
 an upstream dependency we ask that you report the disclosure to the upstream
 dependency.
 
+To report a security vulnerability on this repo please use
+`Tidelift <https://tidelift.com/docs/security>`_
+
 SciPy is not designed to be exposed directly to untrusted users. A user
 who can freely execute SciPy (or Python) functions must be considered
 to have the same privileges as the process/Python interpreter.
@@ -54,9 +57,6 @@ are not security issues.
 Before reporting a security issue, please consider and describe the attack
 vector in detail - and in particular whether that attack vector assumes being
 able to freely execute SciPy functions.
-
-To report a security vulnerability on this repo please use
-`TideLift <https://tidelift.com/docs/security>`_
 
 Vendored Dependencies
 ---------------------
