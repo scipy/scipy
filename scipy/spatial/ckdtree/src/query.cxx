@@ -14,6 +14,19 @@
 #include <stdexcept>
 #include <ios>
 
+
+// Microsoft CRT std::free cannot handle aligned allocations so we need this cludge
+#if defined(_WIN64) || defined(_WIN32)
+    #include <malloc.h>
+    #define ckdtree_aligned_alloc(align,size) _aligned_malloc((size_t)size,(size_t)align)
+    #define ckdtree_aligned_free(ptr) _aligned_free(ptr)
+#else
+    #define ckdtree_aligned_alloc(align,size) std::aligned_alloc((size_t)align,(size_t)size)
+    #define ckdtree_aligned_free(ptr) std::free(ptr)
+#endif
+
+
+
 /*
  * Priority queue
  * ==============
@@ -149,44 +162,155 @@ struct nodeinfo {
 
 struct nodeinfo_pool {
 
-    std::vector<char*> pool;
+    // Tuning parameter:
+    // Alignment of an allocted nodeinfo struct
+    // We will use at least 16 bytes
+    constexpr static ckdtree_intp_t ALIGN = alignof(nodeinfo) < 16 ? 16 : alignof(nodeinfo);
 
-    ckdtree_intp_t alloc_size;
-    ckdtree_intp_t arena_size;
-    ckdtree_intp_t m;
+    // Tuning parameter:
+    // Alignment should hit a cache line.
+    // For most hardware 64 bytes is OK, but Apple silicon needs 128.
+    // As per discussion in gh-22928 we will use 64 bytes for now.
+    constexpr static ckdtree_intp_t ARENA_ALIGN = 64;
+
+    // Tuning parameter:
+    // Minumum arena size should be at least one page.
+    // For most hardware a page is 4KB, but Apple silicon uses 16KB.
+    // Allocating at least one page prevents new/malloc from searching the 
+    // heap for the smallest piece of free memory, which is slow.
+    // As per discussion in gh-22928 we will use 4KB for now.
+    constexpr static ckdtree_intp_t ARENA = 4096;
+
+    std::vector<char*> pool;
+    const ckdtree_intp_t m;
+    const ckdtree_intp_t nodeinfo_size;
+    const ckdtree_intp_t alloc_size;
+    const ckdtree_intp_t arena_size;
     char *arena;
     char *arena_ptr;
+    bool need_new_arena;
 
-    nodeinfo_pool(ckdtree_intp_t m) {
-        alloc_size = sizeof(nodeinfo) + (3 * m -1)*sizeof(double);
-        alloc_size = 64*(alloc_size/64)+64;
-        arena_size = 4096*((64*alloc_size)/4096)+4096;
-        arena = new char[arena_size];
+    inline ckdtree_intp_t 
+    roundup(ckdtree_intp_t n, ckdtree_intp_t N) {return (n + N - 1) / N * N;}
+
+    nodeinfo_pool(ckdtree_intp_t _m)
+            :
+            m(_m),
+
+            // size of a nodeinfo plus the trailing double[3*m] struct hack buffer
+            nodeinfo_size(sizeof(nodeinfo) + (3 * m - 1)*sizeof(double)),
+
+            // alloc_size must be large enough to nodeinfo struct with its trailing 
+            // struct hack buffer in multiples of ALIGN
+            alloc_size(roundup(nodeinfo_size, ALIGN)),
+
+            // arena_size must be large enough to fit a alloc_size and be in 
+            // multiples of ARENA
+            arena_size(roundup(alloc_size, ARENA))
+
+    {
+        // allocate one arena, make sure its alinment is ALIGN so we get
+        // all nodeinfo structs aligned when advancing the pointer by alloc_size
+        arena = (char*)ckdtree_aligned_alloc(ARENA_ALIGN, arena_size);
+        if (arena == NULL) {
+            std::bad_alloc e;
+            throw e;
+        }
         arena_ptr = arena;
         pool.push_back(arena);
-        this->m = m;
+        need_new_arena = false;
     }
 
     ~nodeinfo_pool() {
         for (ckdtree_intp_t i = pool.size()-1; i >= 0; --i)
-            delete [] pool[i];
+            ckdtree_aligned_free(pool[i]);
     }
 
     inline nodeinfo *allocate() {
-        nodeinfo *ni1;
-        ckdtree_intp_t m1 = (ckdtree_intp_t)arena_ptr;
-        ckdtree_intp_t m0 = (ckdtree_intp_t)arena;
-        if ((arena_size-(ckdtree_intp_t)(m1-m0))<alloc_size) {
-            arena = new char[arena_size];
+
+        if (need_new_arena) {
+            arena = (char*)ckdtree_aligned_alloc(ARENA_ALIGN, arena_size);
+            if (arena == NULL) {
+                std::bad_alloc e;
+                throw e;
+            }
             arena_ptr = arena;
             pool.push_back(arena);
-        }
+            need_new_arena = false;
+        }    
+        
+        nodeinfo *ni1;
         ni1 = (nodeinfo*)arena_ptr;
         ni1->m = m;
-        arena_ptr += alloc_size;
+        
+        const std::ptrdiff_t spaceleft = ARENA - (arena_ptr - arena);
+
+        // This avoids allocating a new arena when we can fit exactly one more
+        // nodeinfo. It also avoid undefined behaviour by calculating
+        // an address that may not exist.
+        if (spaceleft < alloc_size + nodeinfo_size) 
+            need_new_arena = true;
+        else 
+            arena_ptr += alloc_size;
+
         return ni1;
     }
 };
+
+// public function for regression testing nodeinfo_pool.allocate()
+// returns -1 on error and 0 on success
+int
+test_nodeinfo_allocator(int m, int num_arenas)
+{
+    nodeinfo_pool pool(m);
+    if ((m < 1) || (num_arenas < 1)) {
+        std::invalid_argument e("m and num_arenas must be at least 1");
+        throw e;
+    }
+
+    // check memory alignment and spacing
+
+    nodeinfo *prev_nodeinfo = pool.allocate();
+    char *prev_arena = pool.pool.back();
+
+    // check that the first arena is aligned
+    if ((ckdtree_intp_t)((void*)prev_arena) % nodeinfo_pool::ARENA_ALIGN) goto error;
+    // check that the first nodeinfo is aligned
+    if ((ckdtree_intp_t)((void*)prev_nodeinfo) % nodeinfo_pool::ALIGN) goto error;
+
+    while (pool.pool.size() < (size_t)num_arenas) {
+
+        nodeinfo *current_nodeinfo = pool.allocate();
+        char *current_arena = pool.pool.back();
+
+        // check that the arena is aligned
+        if ((ckdtree_intp_t)((void*)current_arena) % nodeinfo_pool::ARENA_ALIGN) goto error;
+        
+        // check that the nodeinfo is aligned
+        if ((ckdtree_intp_t)((void*)current_nodeinfo) % nodeinfo_pool::ALIGN) goto error;
+
+        // if arena is the same, current_nodeinfo should be
+        // pool.alloc_size ahead of prev_nodeinfo
+        if (prev_arena == current_arena) {
+             ckdtree_intp_t c0 = (ckdtree_intp_t)((void*)prev_nodeinfo);
+             ckdtree_intp_t c1 = (ckdtree_intp_t)((void*)current_nodeinfo); 
+             if (c1 - c0 != pool.alloc_size) goto error;
+        }
+
+        // next
+        prev_nodeinfo = current_nodeinfo;
+        prev_arena = current_arena;
+    }
+
+    // check allocation sizes
+    if (pool.alloc_size != pool.roundup(pool.nodeinfo_size, nodeinfo_pool::ALIGN)) goto error;
+    if (pool.arena_size != pool.roundup(pool.alloc_size, nodeinfo_pool::ARENA)) goto error;
+
+    return 0;
+error:
+    return -1;
+}
+
 
 /* k-nearest neighbor search for a single point x */
 template <typename MinMaxDist>
