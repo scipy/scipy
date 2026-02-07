@@ -2777,16 +2777,10 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     which produces a complex-valued signal with the same envelope :math:`|a(t)|`.
 
     The implementation is based on computing the FFT of the input signal and then
-    performing the necessary operations in Fourier space. Hence, the typical FFT
-    caveats need to be taken into account:
-
-    * The signal is assumed to be periodic. Discontinuities between signal start and
-      end can lead to unwanted results due to Gibbs phenomenon.
-    * The FFT is slow if the signal length is prime or very long. Also, the memory
-      demands are typically higher than a comparable FIR/IIR filter based
-      implementation.
-    * The frequency spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter
-      corresponds to the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
+    performing the necessary operations in Fourier space. Hence, the typical :ref:`FFT
+    caveats <tutorial_FFT_Caveats>` need to be taken into account. The frequency
+    spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter corresponds to
+    the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
 
     If the envelope of a complex-valued signal `z` with no bandpass filtering is
     desired, i.e., ``bp_in=(None, None)``, then the envelope corresponds to the
