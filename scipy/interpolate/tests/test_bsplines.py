@@ -2300,12 +2300,23 @@ class TestSmoothingSpline:
 
         spline_GCV = make_smoothing_spline(x, y, lam=0.)
         spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
+        assert spline_GCV.lam == 0.
 
         grid = xp.linspace(x[0], x[-1], 2 * n)
         xp_assert_close(spline_GCV(grid),
                         spline_interp(grid),
                         atol=1e-15)
 
+    def test_gcv_lambda_attribute(self):
+        rng = np.random.default_rng(42)
+        x = np.linspace(-2, 2, 25)
+        y = np.sin(x) + 0.1 * rng.standard_normal(x.size)
+
+        spl = make_smoothing_spline(x, y)
+        assert hasattr(spl, 'lam')
+        assert isinstance(spl.lam, (float, np.floating))
+        np.testing.assert_allclose(spl.lam, 0.030957, atol=1e-5)
+    
     @pytest.mark.fail_slow(2)
     def test_weighted_smoothing_spline(self, xp):
         # create data sample
