@@ -177,8 +177,8 @@ class _FuncInfo:
                 # JAX uses NumPy dtypes, so it's easy to get the dtypes for
                 # use in resolve_dtypes. Needs the is_jax_array arg to properly
                 # handle Python scalars. The (None, ) appended on the end is for the
-                # dtype of out, which resolve_dtypes needs. Since JAX arrays are immutable,
-                # there can be no out, so this will always be None.
+                # dtype of out, which resolve_dtypes needs. Since JAX arrays are
+                # immutable, there can be no out, so this will always be None.
                 dtypes = (
                     tuple(arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
                     + (None, )
