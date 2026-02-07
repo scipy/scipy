@@ -41,9 +41,10 @@ from ._isolve.iterative import _get_atol_rtol
 
 __all__ = ['funm_multiply_krylov']
 
+
 def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
     """
-    The Arnoldi iteration for constructing the basis V and the projection H = V * A V
+    The Arnoldi iteration for constructing the basis V and the projection H = V* A V
     for the Krylov subspace Km(A, b) of order m.
 
     Parameters
@@ -72,7 +73,7 @@ def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
     """
 
     dotprod = np.vdot if np.iscomplexobj(b) else np.dot
-    norm_tol = np.finfo(b.dtype.char).eps ** 2
+    norm_tol = np.finfo(b.dtype.char).eps * 1E2
     V[:, 0] = b / bnorm
 
     for k in range(0, m):
@@ -86,15 +87,16 @@ def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
 
         H[k + 1, k] = norm(V[:, k + 1])
         if H[k + 1, k] < norm_tol:
-            return True, k
+            return True, k + 1
 
         V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
 
     return False, m
 
+
 def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
     """
-    The Lanczos iteration for constructing the basis V and the projection H = V * A V
+    The Lanczos iteration for constructing the basis V and the projection H = V* A V
     for the Krylov subspace Km(A, b) of order m. A must be Hermitian.
 
     Parameters
@@ -122,7 +124,7 @@ def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
 
     """
     dotprod = np.vdot if np.iscomplexobj(b) else np.dot
-    norm_tol = np.finfo(b.dtype.char).eps ** 2
+    norm_tol = np.finfo(b.dtype.char).eps * 1E2
     V[:, 0] = b / bnorm
 
     for k in range(0, m):
@@ -137,7 +139,7 @@ def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
         H[k + 1, k] = norm(V[:, k + 1])
 
         if H[k + 1, k] < norm_tol:
-            return True, k
+            return True, k + 1
 
         V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
         if k < m - 1:
@@ -146,8 +148,8 @@ def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
     return False, m
 
 
-def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
-                         rtol = 1e-6, restart_every_m = None, max_restarts = 20):
+def funm_multiply_krylov(f, A, b, *, assume_a="general", t=1.0, atol=0.0,
+                         rtol=1e-6, restart_every_m=None, max_restarts=20):
     """
     A restarted Krylov method for evaluating ``y = f(tA) b`` from [1]_ [2]_.
 
@@ -277,8 +279,8 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
                          "argument 'restart_every_m' must be positive.")
 
     if max_restarts <= 0:
-            raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
-                             "argument 'max_restarts' must be positive.")
+        raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
+                         "argument 'max_restarts' must be positive.")
 
     m = restart_every_m
     max_restarts = min(max_restarts, int(n / m) + 1)
@@ -295,17 +297,17 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     # Using the column major order here since we work with
     # each individual column separately.
     internal_type = np.common_type(A, b)
-    V = np.zeros((n, m + 1), dtype = internal_type, order = 'F')
-    H = np.zeros((mmax + 1, mmax), dtype = internal_type, order = 'F')
+    V = np.zeros((n, m + 1), dtype=internal_type, order='F')
+    H = np.zeros((mmax + 1, mmax), dtype=internal_type, order='F')
 
     restart = 1
 
     if is_hermitian:
         breakdown, j = _funm_multiply_krylov_lanczos(A, b, bnorm, V,
-                                                        H[:m + 1, :m], m)
+                                                     H[:m + 1, :m], m)
     else:
         breakdown, j = _funm_multiply_krylov_arnoldi(A, b, bnorm, V,
-                                                        H[:m + 1, :m], m)
+                                                     H[:m + 1, :m], m)
 
     fH = f(t * H[:j, :j])
     y = bnorm * V[:, :j].dot(fH[:, 0])
