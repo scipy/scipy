@@ -83,6 +83,15 @@ class LSODA(OdeSolver):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by methods 'Radau' and 'BDF', but
         will result in slower execution for this solver.
+    tcrit : float and array_like, optional
+        Critical points to take care during integration.  Forces
+        solver to integrate to this time point exactly before proceeding.
+        If an array of values is passed in, the solver will treat each
+        value as critical. The array of values must be sorted either
+        ascending or descending in the same manner as the direction
+        between ``t0`` and ``t_bound``.
+
+        .. versionadded:: 1.18.0
 
     Attributes
     ----------
@@ -104,6 +113,10 @@ class LSODA(OdeSolver):
         Number of evaluations of the right-hand side.
     njev : int
         Number of evaluations of the Jacobian.
+    tcrit : ndarray
+        Critical time points to take care of integration.
+    tcrit : ndarray
+        Array of critical points including ``t_bound``.
 
     References
     ----------
@@ -117,9 +130,9 @@ class LSODA(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_bound, first_step=None, min_step=0.0,
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
-                 uband=None, vectorized=False, **extraneous):
+                 uband=None, vectorized=False, tcrit=None, **extraneous):
         warn_extraneous(extraneous)
-        super().__init__(fun, t0, y0, t_bound, vectorized)
+        super().__init__(fun, t0, y0, t_bound, vectorized, tcrit=tcrit)
 
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
@@ -144,8 +157,8 @@ class LSODA(OdeSolver):
                               lband=lband, uband=uband)
         solver.set_initial_value(y0, t0)
 
-        # Inject t_bound into rwork array as needed for itask=5.
-        solver._integrator.rwork[0] = self.t_bound
+        # Inject first critical point into rwork array as needed for itask=5.
+        solver._integrator.rwork[0] = self.tcrit[0]
         solver._integrator.call_args[4] = solver._integrator.rwork
 
         self._lsoda_solver = solver
@@ -158,10 +171,16 @@ class LSODA(OdeSolver):
         # step and do not go past t_bound.
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
+
+        tcrit = self._find_next_tcrit()
+
         solver._y, solver.t = integrator.run(
             solver.f, solver.jac or (lambda: None), solver._y, solver.t,
-            self.t_bound, solver.f_params, solver.jac_params)
+            tcrit, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
+
+        # check for new critical point
+        solver._integrator.rwork[0] = self._find_next_tcrit()
 
         if solver.successful():
             self.t = solver.t
