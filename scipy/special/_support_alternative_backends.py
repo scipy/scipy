@@ -174,12 +174,14 @@ class _FuncInfo:
             # work with the JAX JIT. TODO: explore making this work for other
             # lazy backends.
             def f(*args, _f=_f, xp=xp, **kwargs):
-                out_dtype = kwargs.get("out")
                 # JAX uses NumPy dtypes, so it's easy to get the dtypes for
-                # use in resolve_dtypes.
+                # use in resolve_dtypes. Needs the is_jax_array arg to properly
+                # handle Python scalars. The (None, ) appended on the end is for the
+                # dtype of out, which resolve_dtypes needs. Since JAX arrays are immutable,
+                # there can be no out, so this will always be None.
                 dtypes = (
-                    tuple(arg.dtype for arg in args)
-                    + (out_dtype, )
+                    tuple(arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
+                    + (None, )
                 )
                 out_dtype = getattr(xp, str(_f.resolve_dtypes(dtypes)[-1]))
                 return xpx.lazy_apply(
