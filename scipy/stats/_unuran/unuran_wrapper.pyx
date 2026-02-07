@@ -188,6 +188,54 @@ cdef object _setup_unuran():
 _setup_unuran()
 
 
+class wrap_dist_continuous:
+    def __init__(self, dist):
+        self.dist = dist
+        (self.args, self.loc,
+         self.scale) = dist.dist._parse_args(*dist.args,
+                                             **dist.kwds)
+        self.support = dist.support
+    def pdf(self, x):
+        # some distributions require array inputs.
+        x = np.asarray((x-self.loc)/self.scale)
+        return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
+    def logpdf(self, x):
+        # some distributions require array inputs.
+        x = np.asarray((x-self.loc)/self.scale)
+        if self.pdf(x) > 0:
+            return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
+        return -np.inf
+    def cdf(self, x):
+        x = np.asarray((x-self.loc)/self.scale)
+        res = self.dist.dist._cdf(x, *self.args)
+        if res < 0:
+            return 0
+        elif res > 1:
+            return 1
+        return res
+
+
+class wrap_dist_discrete:
+    def __init__(self, dist):
+        self.dist = dist
+        (self.args, self.loc,
+         _) = dist.dist._parse_args(*dist.args,
+                                    **dist.kwds)
+        self.support = dist.support
+    def pmf(self, x):
+        # some distributions require array inputs.
+        x = np.asarray(x-self.loc)
+        return max(0, self.dist.dist._pmf(x, *self.args))
+    def cdf(self, x):
+        x = np.asarray(x-self.loc)
+        res = self.dist.dist._cdf(x, *self.args)
+        if res < 0:
+            return 0
+        elif res > 1:
+            return 1
+        return res
+
+
 cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                        list optional_meths = None):
     """
@@ -220,52 +268,14 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
     cdef dict callbacks = {}
     if isinstance(dist, rv_frozen):
         if isinstance(dist.dist, stats.rv_continuous):
-            class wrap_dist:
-                def __init__(self, dist):
-                    self.dist = dist
-                    (self.args, self.loc,
-                     self.scale) = dist.dist._parse_args(*dist.args,
-                                                         **dist.kwds)
-                    self.support = dist.support
-                def pdf(self, x):
-                    # some distributions require array inputs.
-                    x = np.asarray((x-self.loc)/self.scale)
-                    return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
-                def logpdf(self, x):
-                    # some distributions require array inputs.
-                    x = np.asarray((x-self.loc)/self.scale)
-                    if self.pdf(x) > 0:
-                        return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
-                    return -np.inf
-                def cdf(self, x):
-                    x = np.asarray((x-self.loc)/self.scale)
-                    res = self.dist.dist._cdf(x, *self.args)
-                    if res < 0:
-                        return 0
-                    elif res > 1:
-                        return 1
-                    return res
+            dist = wrap_dist_continuous(dist)
         elif isinstance(dist.dist, stats.rv_discrete):
-            class wrap_dist:
-                def __init__(self, dist):
-                    self.dist = dist
-                    (self.args, self.loc,
-                     _) = dist.dist._parse_args(*dist.args,
-                                                **dist.kwds)
-                    self.support = dist.support
-                def pmf(self, x):
-                    # some distributions require array inputs.
-                    x = np.asarray(x-self.loc)
-                    return max(0, self.dist.dist._pmf(x, *self.args))
-                def cdf(self, x):
-                    x = np.asarray(x-self.loc)
-                    res = self.dist.dist._cdf(x, *self.args)
-                    if res < 0:
-                        return 0
-                    elif res > 1:
-                        return 1
-                    return res
-        dist = wrap_dist(dist)
+            dist = wrap_dist_discrete(dist)
+        else:
+            raise ValueError(
+                "Cannot wrap frozen dist unless it is either continuous or "
+                "discrete."
+            )
     if meths is not None:
         for meth in meths:
             if hasattr(dist, meth):
