@@ -2,6 +2,7 @@
 # Distributed under the same license as SciPy.
 
 import inspect
+import os
 import sys
 import warnings
 
@@ -1533,10 +1534,8 @@ class KrylovJacobian(Jacobian):
                     " It will be ignored."
                     "Please check inner method documentation for valid options."
                     + suggestion_msg,
-                    stacklevel=3,
                     category=UserWarning,
-                    # using `skip_file_prefixes` would be a good idea
-                    # and should be added once we drop support for Python 3.11
+                    skip_file_prefixes=(os.path.dirname(__file__),)
                 )
                 # ignore this parameter and continue
                 continue

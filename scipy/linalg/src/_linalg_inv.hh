@@ -24,19 +24,19 @@ void invert_slice_general(
     real_type rcond;
     real_type anorm = norm1_(data, work, (npy_intp)N);
 
-    getrf(&N, &N, data, &N, ipiv, &info);
+    call_getrf(&N, &N, data, &N, ipiv, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
         // getrf success, check the condition number
-        gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);
+        call_gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
         status.rcond = (double)rcond;
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
             // finally, invert
-            getri(&N, data, &N, ipiv, work, &lwork, &info);
+            call_getri(&N, data, &N, ipiv, work, &lwork, &info);
             status.is_singular = (info > 0);
         }
     }
@@ -62,19 +62,19 @@ void invert_slice_cholesky(
 
     real_type rcond;
 
-    potrf(&uplo, &N, data, &N, &info);
+    call_potrf(&uplo, &N, data, &N, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // potrf success
-        pocon(&uplo, &N, data, &N, &anorm, &rcond, work, irwork, &info);
+        call_pocon(&uplo, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
         if (info >= 0) {
             status.rcond = (double)rcond;
             status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
             // finally, invert
-            potri(&uplo, &N, data, &N, &info);
+            call_potri(&uplo, &N, data, &N, &info);
             status.is_singular = (info > 0);
         }
     }
@@ -98,18 +98,18 @@ void invert_slice_sym_herm(
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
     if(is_symm_not_herm) {
-        sytrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+        call_sytrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
     } else {
-        hetrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+        call_hetrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
     }
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // {sy,he}trf success
         if (is_symm_not_herm) {
-            sycon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+            call_sycon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
         } else {
-            hecon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+            call_hecon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
         }
 
         if (info >= 0) {
@@ -118,9 +118,9 @@ void invert_slice_sym_herm(
 
             // finally, invert
             if (is_symm_not_herm) {
-                sytri(&uplo, &N, data, &N, ipiv, work, &info);
+                call_sytri(&uplo, &N, data, &N, ipiv, work, &info);
             } else {
-                hetri(&uplo, &N, data, &N, ipiv, work, &info);
+                call_hetri(&uplo, &N, data, &N, ipiv, work, &info);
             }
             status.is_singular = (info > 0);
         }
@@ -144,13 +144,13 @@ void invert_slice_triangular(
     char norm = '1';
     real_type rcond;
 
-    trtri(&uplo, &diag, &N, data, &N, &info);
+    call_trtri(&uplo, &diag, &N, data, &N, &info);
     status.is_singular  = (info > 0);
 
     status.lapack_info = (Py_ssize_t)info;
     if(info >= 0) {
 
-        trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
+        call_trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
             status.rcond = (double)rcond;
@@ -201,7 +201,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     npy_intp lower_band = 0, upper_band = 0;
-    bool is_symm_or_herm = false, is_symm_not_herm = false;
+    bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
@@ -229,7 +229,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     T tmp1 = numeric_limits<T>::zero;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
-    getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
+    call_getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
 
     CBLAS_INT lwork_1 = _calc_lwork(tmp, 1.01);
@@ -239,7 +239,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     }
 
     // also query sytrf
-    sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp1, &lwork,  &info);
+    call_sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp1, &lwork,  &info);
     if (info != 0) { info = -100; return (int)info; }
 
     CBLAS_INT lwork_2 = _calc_lwork(tmp);
@@ -275,7 +275,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
-    if (type_traits<T>::is_complex) {
+    if constexpr(type_traits<T>::is_complex) {
         irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
@@ -292,10 +292,10 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         posdef_fallback = false;
     }
     else if (structure == St::SYM) {
-        is_symm_not_herm = true;
+        is_symm = true;
     }
     else if (structure == St::HER) {
-        is_symm_not_herm = false;
+        is_herm = true;
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -306,14 +306,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     // Main loop to traverse the slices
     for (npy_intp idx = 0; idx < outer_size; idx++) {
+        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
 
-        npy_intp offset = 0;
-        npy_intp temp_idx = idx;
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset += (temp_idx % shape[i]) * strides[i];
-            temp_idx /= shape[i];
-        }
-        T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
         copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
         swap_cf(scratch, data, n, n, n);
 
@@ -334,13 +328,32 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 uplo = 'L';
             } else {
                 // Check if symmetric/hermitian
-                std::tie(is_symm_or_herm, is_symm_not_herm) = is_sym_herm(data, n);
-                if (is_symm_or_herm) {
-                    slice_structure = St::POS_DEF;
+                std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
+
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real: is_symm and is_herm are always equal
+                    if (is_symm) {
+                        // try Cholesky first, fall back to sytrf if it fails
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        slice_structure = St::GENERAL;
+                    }
                 }
                 else {
-                    // give up auto-detection
-                    slice_structure = St::GENERAL;
+                    // Complex
+                    if (!is_symm && !is_herm) {
+                        slice_structure = St::GENERAL;
+                    }
+                    else if (is_herm) {
+                        // Hermitian (may also be symmetric if entries are real)
+                        // try Cholesky first, fall back to hetrf if it fails
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        // is_symm && !is_herm: complex symmetric, not hermitian
+                        slice_structure = St::SYM;
+                    }
                 }
             }
         }
@@ -351,13 +364,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             case St::DIAGONAL:
             {
                 invert_slice_diagonal(intn, data, slice_status);
-
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
+                    // fail fast and loud
                     goto free_exit;
-                }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
                 }
                 break;
             }
@@ -367,12 +376,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 char diag = 'N';
                 invert_slice_triangular(uplo, diag, intn, data, work, irwork, slice_status);
 
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
                     goto free_exit;
-                }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
                 }
                 zero_other_triangle(uplo, data, intn);
                 break;
@@ -408,21 +413,31 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             case St::SYM:     // NB: if POS_DEF failed, fall-through to here
             case St::HER:
             {
-                invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, is_symm_not_herm, slice_status);
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real: always use sytrf/sytri
+                    invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, true, slice_status);
+                }
+                else {
+                    // Complex: use sytrf if symmetric-only, hetrf if hermitian
+                    invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, !is_herm, slice_status);
+                }
 
-                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
                     goto free_exit;
                 }
-                else if (slice_status.is_ill_conditioned) {
-                    vec_status.push_back(slice_status);
-                }
 
-                if (is_symm_not_herm) {
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real symmetric
                     fill_other_triangle_noconj(uplo, data, intn);
                 }
                 else {
-                    fill_other_triangle(uplo, data, intn);
+                    // Complex: depends on whether symmetric or hermitian
+                    if (!is_herm) {
+                        fill_other_triangle_noconj(uplo, data, intn);
+                    }
+                    else {
+                        fill_other_triangle(uplo, data, intn);
+                    }
                 }
                 break;
             }
@@ -431,16 +446,10 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 // general matrix inverse
                 invert_slice_general(intn, data, ipiv, irwork, work, lwork, slice_status);
 
-                if ((slice_status.lapack_info != 0) || slice_status.is_singular || slice_status.is_ill_conditioned) {
-                    // some problem detected, store data to report
-                    vec_status.push_back(slice_status);
+                if (_detect_problems(slice_status, vec_status) != 0) {
+                    goto free_exit;
                 }
             }
-        }
-
-        if (slice_status.is_singular == 1) {
-            // nan_matrix(data, n);
-            goto free_exit;     // fail fast and loud
         }
 
         // Swap back to original order

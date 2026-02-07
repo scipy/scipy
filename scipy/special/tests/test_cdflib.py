@@ -7,7 +7,6 @@ The following functions still need tests:
 - ncfdtridfd
 - ncfdtrinc
 - nbdtrik
-- nbdtrin
 - nctdtridf
 - nctdtrinc
 
@@ -200,14 +199,6 @@ def _tukey_lmbda_quantile(p, lmbda):
 @pytest.mark.slow
 @check_version(mpmath, '0.19')
 class TestCDFlib:
-
-    @pytest.mark.xfail(run=False)
-    def test_bdtrik(self):
-        _assert_inverts(
-            sp.bdtrik,
-            _binomial_cdf,
-            0, [ProbArg(), IntArg(1, 1000), ProbArg()],
-            rtol=1e-4)
 
     def test_bdtrin(self):
         _assert_inverts(
@@ -718,6 +709,53 @@ class TestNoncentralTFunctions:
         assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
 
 
+class TestNegativeBinomialFunctions:
+
+    @pytest.mark.parametrize("args",
+        [(np.nan, 1, 1), (1, np.nan, 1), (1, 1, np.nan),
+         (np.nan, np.nan, 1), (np.nan, 1, np.nan), (1, np.nan, np.nan),
+         (np.nan, np.nan, np.nan)]
+    )
+    def test_nan_propagation(self, args):
+        assert np.isnan(sp.nbdtrin(*args))
+
+    @pytest.mark.parametrize("args",
+        [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
+         (-1, 1, -1), (1, -1, -1), (-1, -1, -1),
+         (1, 1.1, 0.9), (1, 0.9, 1.1)]
+    )  
+    def test_domain_error(self, args):
+        with sp.errstate(domain="raise"):
+            with pytest.raises(sp.SpecialFunctionError, match="domain"):
+                sp.nbdtrin(*args)
+
+    @pytest.mark.parametrize(
+            "k, y, p, n, rtol",
+            [(5, 0.3214569091796875, 0.25, 3, 5e-16),
+             (10, 3.820379007878081e-70, 0.15, 100, 1e-15),
+             (100, 0.975574722927043, 0.15, 10, 1e-14),
+             (2, 3.503253250000002e-73, 0.001, 25, 5e-16),
+             (2, 0.9999993271029954, 0.999, 15, 1e-10),
+             (500, 0.9999999998603178, 0.1, 15, 1e-8),
+             (0, 1.0000000000000006e-10, 0.1, 10, 5e-16)])
+    def test_inverse_n(self, k, y, p, n, rtol):
+        # The following code was used to generate the values. 
+        # import mpmath
+        # import scipy
+        # mpmath.mp.dps = 1000
+
+        # def neg_binomial_cdf(k, n, p):
+        #     return mpmath.betainc(n, k+1, x1=0, x2=p, regularized=True)
+        # n = 3
+        # p = 0.25
+        # k = 5
+        # cdf = neg_binomial_cdf(k, n, p)
+        # print("y = ", float(cdf))
+        # nval = (scipy.special.nbdtrin(k, float(cdf), p))
+        # print("Relative Error:", (n - nval) / n)
+
+        assert_allclose(sp.nbdtrin(k, y, p), n, rtol)
+
 class TestNoncentralChiSquaredFunctions:
 
     def test_chndtr_and_inverses_against_wolfram_alpha(self):
@@ -902,3 +940,14 @@ def test_gdtrix_edge_cases(a, b, p, ref):
 ])
 def test_gdtria_edge_cases(p, b, x, ref):
     assert_equal(sp.gdtria(p, b, x), ref)
+
+@pytest.mark.parametrize("y, n, p, k", [
+    (6.110236824190975e-78, 100, 0.9, 10),
+    (4.0188255421199357e-224, 1000, 0.9, 500),
+    (0.9999998319058928, 1000, 0.5, 580),
+    (0.9999734386011124, 100, 0.9, 99)
+])
+def test_bdtrik(y, n, p, k):
+    # Reference values for y were computed with mpmath using
+    # the _binomial_cdf function from above.
+    assert_allclose(sp.bdtrik(y, n, p), k, rtol=1e-11)

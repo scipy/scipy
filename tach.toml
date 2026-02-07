@@ -1,10 +1,6 @@
 respect_gitignore = "if_git_repo"
 
 exclude = [
-  "scipy/_lib/array_api_compat",
-  "scipy/_lib/array_api_extra",
-  "scipy/_lib/cobyqa",
-  "scipy/_lib/pyprima",
   "subprojects",
   "tools",
   "**/tests",
@@ -16,11 +12,11 @@ depends_on = ["scipy._lib"]
 
 [[modules]]
 path = "scipy._external"
-depends_on = []
+depends_on = ["scipy._lib"]
 
 [[modules]]
 path = "scipy._lib"
-depends_on = ["scipy"]
+depends_on = ["scipy", "scipy._external"]
 
 [[modules]]
 path = "scipy.cluster"
@@ -28,11 +24,11 @@ depends_on = ["scipy._lib", "scipy.cluster.hierarchy", "scipy.cluster.vq"]
 
 [[modules]]
 path = "scipy.cluster.hierarchy"
-depends_on = ["scipy._lib", "scipy.cluster", "scipy.spatial.distance"]
+depends_on = ["scipy._lib", "scipy.spatial.distance", "scipy._external"]
 
 [[modules]]
 path = "scipy.cluster.vq"
-depends_on = ["scipy._lib", "scipy.cluster", "scipy.spatial.distance"]
+depends_on = ["scipy._lib", "scipy.spatial.distance", "scipy._external"]
 
 [[modules]]
 path = "scipy.constants"
@@ -44,7 +40,7 @@ depends_on = ["scipy._lib"]
 
 [[modules]]
 path = "scipy.differentiate"
-depends_on = ["scipy._lib"]
+depends_on = ["scipy._lib", "scipy._external"]
 
 [[modules]]
 path = "scipy.fft"
@@ -56,11 +52,11 @@ depends_on = ["scipy._lib", "scipy.fft"]
 
 [[modules]]
 path = "scipy.integrate"
-depends_on = ["scipy._lib", "scipy.interpolate", "scipy.linalg", "scipy.optimize", "scipy.sparse", "scipy.sparse.linalg", "scipy.special", "scipy.stats"]
+depends_on = ["scipy._lib", "scipy.interpolate", "scipy.linalg", "scipy.optimize", "scipy.sparse", "scipy.sparse.linalg", "scipy.special", "scipy.stats", "scipy._external"]
 
 [[modules]]
 path = "scipy.interpolate"
-depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.lapack", "scipy.optimize", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.spatial.distance", "scipy.special"]
+depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.lapack", "scipy.optimize", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.spatial.distance", "scipy.special", "scipy._external"]
 
 [[modules]]
 path = "scipy.io"
@@ -80,7 +76,7 @@ depends_on = []
 
 [[modules]]
 path = "scipy.linalg"
-depends_on = ["scipy._lib", "scipy.fft", "scipy.linalg.blas", "scipy.linalg.lapack", "scipy.sparse", "scipy.sparse.linalg", "scipy.special"]
+depends_on = ["scipy._lib", "scipy.fft", "scipy.linalg.blas", "scipy.linalg.lapack", "scipy.sparse", "scipy.sparse.linalg", "scipy.special", "scipy._external"]
 
 [[modules]]
 path = "scipy.linalg.blas"
@@ -100,7 +96,7 @@ depends_on = []
 
 [[modules]]
 path = "scipy.ndimage"
-depends_on = ["scipy._lib", "scipy.special"]
+depends_on = ["scipy._lib", "scipy.special", "scipy._external"]
 
 [[modules]]
 path = "scipy.odr"
@@ -108,7 +104,7 @@ depends_on = ["scipy._lib", "scipy.linalg"]
 
 [[modules]]
 path = "scipy.optimize"
-depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.blas", "scipy.linalg.interpolative", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.special", "scipy.stats.qmc"]
+depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.blas", "scipy.linalg.interpolative", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.special", "scipy.stats.qmc", "scipy._external"]
 
 [[modules]]
 path = "scipy.optimize.elementwise"
@@ -116,11 +112,11 @@ depends_on = ["scipy.optimize"]
 
 [[modules]]
 path = "scipy.signal"
-depends_on = ["scipy._lib", "scipy.fft", "scipy.interpolate", "scipy.linalg", "scipy.ndimage", "scipy.optimize", "scipy.signal.windows", "scipy.spatial", "scipy.special", "scipy.stats"]
+depends_on = ["scipy._lib", "scipy.fft", "scipy.interpolate", "scipy.linalg", "scipy.ndimage", "scipy.optimize", "scipy.signal.windows", "scipy.spatial", "scipy.special", "scipy.stats", "scipy._external"]
 
 [[modules]]
 path = "scipy.signal.windows"
-depends_on = ["scipy._lib", "scipy.fft", "scipy.linalg", "scipy.special"]
+depends_on = ["scipy._lib", "scipy.fft", "scipy.linalg", "scipy.special", "scipy._external"]
 
 [[modules]]
 path = "scipy.sparse"
@@ -140,15 +136,15 @@ depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.spatial.distance", "
 
 [[modules]]
 path = "scipy.spatial.distance"
-depends_on = ["scipy._lib", "scipy.linalg", "scipy.spatial", "scipy.special"]
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.spatial", "scipy.special", "scipy._external"]
 
 [[modules]]
 path = "scipy.spatial.transform"
-depends_on = ["scipy._lib", "scipy.constants", "scipy.interpolate", "scipy.linalg"]
+depends_on = ["scipy._lib", "scipy.constants", "scipy.interpolate", "scipy.linalg", "scipy._external"]
 
 [[modules]]
 path = "scipy.special"
-depends_on = ["scipy._lib", "scipy.linalg", "scipy.optimize.elementwise"]
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.optimize.elementwise", "scipy._external"]
 
 [[modules]]
 path = "scipy.stats"
@@ -170,7 +166,7 @@ depends_on = [
     "scipy.stats.contingency",
     "scipy.stats.distributions",
     "scipy.stats.mstats",
-    "scipy.stats.qmc",
+    "scipy.stats.qmc", "scipy._external",
 ]
 
 [[modules]]

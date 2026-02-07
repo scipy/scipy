@@ -285,9 +285,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             options = dict(ColPerm=permc_spec)
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
-            if info != 0:
+            if info == 0:
+                pass  # Success
+            elif 0 < info <= N:
                 warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
                 x.fill(np.nan)
+            elif info > N:
+                raise MemoryError("Out of memory during gssv")
+            else:
+                # gssv is not supposed to return any info < 0
+                # However, it calls gstrf, which can set info < 0
+                raise Exception(f"gssv exited with unknown exit code {info}")
             if b_is_vector:
                 x = x.ravel()
         else:
@@ -458,9 +466,6 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         ``secondary``, ``dynamic``, ``interp``. (Default: ``basic,area``)
 
         See SuperLU documentation for details.
-
-    Remaining other options
-        Same as for `splu`
 
     Returns
     -------
@@ -745,7 +750,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
 
 def is_sptriangular(A):
-    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``.
 
     Checks for triangular structure in ``A``. The result is summarized in
     two boolean values ``lower`` and ``upper`` to designate whether ``A`` is

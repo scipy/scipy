@@ -149,7 +149,7 @@ class _Interpolator1D:
 class _Interpolator1DWithDerivatives(_Interpolator1D):
     def derivatives(self, x, der=None):
         """
-        Evaluate several derivatives of the polynomial at the point `x`
+        Evaluate several derivatives of the polynomial at the point `x`.
 
         Produce an array of derivatives evaluated at the point `x`.
 
@@ -203,7 +203,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         x : array_like
             Point or points at which to evaluate the derivatives
 
-        der : integer, optional
+        der : int, optional
             Which derivative to evaluate (default: first derivative).
             This number includes the function value as 0th derivative.
 
@@ -232,7 +232,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         ----------
         x : array_like
             1D array of points at which to evaluate the derivatives
-        der : integer, optional
+        der : int, optional
             The number of derivatives to evaluate, from 'order 0' (der=1)
             to order der-1.  If omitted, return all possibly-non-zero
             derivatives, ie 0 to order n-1.
@@ -746,7 +746,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     def set_yi(self, yi, axis=None):
         """
-        Update the y values to be interpolated
+        Update the y values to be interpolated.
 
         The barycentric interpolation algorithm requires the calculation
         of weights, but these depend only on the `xi`. The `yi` can be changed
@@ -771,7 +771,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     def add_xi(self, xi, yi=None):
         """
-        Add more x values to the set to be interpolated
+        Add more x values to the set to be interpolated.
 
         The barycentric interpolation algorithm allows easy updating by
         adding more points for the polynomial to pass through.
@@ -869,7 +869,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         ----------
         x : array_like
             Point or points at which to evaluate the derivatives
-        der : integer, optional
+        der : int, optional
             Which derivative to evaluate (default: first derivative).
             This number includes the function value as 0th derivative.
 

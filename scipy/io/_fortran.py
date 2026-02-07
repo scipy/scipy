@@ -189,6 +189,11 @@ class FortranFile:
             To signal that the end of the file was encountered
             part-way through a record
 
+        See Also
+        --------
+        read_reals
+        read_ints
+
         Notes
         -----
         If the record contains a multidimensional array, you can specify
@@ -234,11 +239,6 @@ class FortranFile:
         NumPy also supports a short syntax for this kind of type::
 
             record = f.read_record('<f4', '(3,3)<i4')
-
-        See Also
-        --------
-        read_reals
-        read_ints
 
         """
         dtype = kwargs.pop('dtype', None)
@@ -340,10 +340,11 @@ class FortranFile:
 
     def close(self):
         """
-        Closes the file. It is unsupported to call any other methods off this
-        object after closing it. Note that this class supports the 'with'
-        statement in modern versions of Python, to call this automatically
+        Closes the file.
 
+        It is unsupported to call any other methods off this
+        object after closing it. Note that this class supports the 'with'
+        statement in modern versions of Python, to call this automatically.
         """
         self._fp.close()
 

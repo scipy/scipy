@@ -50,7 +50,6 @@ from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 
-from ._stats_mstats_common import siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 from dataclasses import dataclass, field
@@ -71,6 +70,7 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
+    is_jax,
     is_marray,
     xp_size,
     xp_vector_norm,
@@ -81,10 +81,9 @@ from scipy._lib._array_api import (
     _length_nonmasked,
     _share_masks,
     xp_swapaxes,
-    xp_default_dtype,
     xp_device,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 
@@ -101,7 +100,7 @@ __all__ = ['gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'f_oneway', 'pearsonr', 'fisher_exact',
            'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
-           'linregress', 'siegelslopes', 'ttest_1samp',
+           'linregress', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
            'kstest', 'ks_1samp', 'ks_2samp',
            'chisquare', 'power_divergence',
@@ -233,7 +232,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return xp.exp(_xp_mean(log_a, axis=axis, weights=weights))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=1)
+@xp_capabilities()
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -321,11 +320,9 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if xp.any(negative_mask):
-        # `where` avoids having to be careful about dtypes and will work with
-        # JAX. This is the exceptional case, so it's OK to be a little slower.
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
-        a = xp.where(negative_mask, xp.nan, a)
+    a = xp.where(negative_mask, xp.nan, a)
+
+    if not is_lazy_array(negative_mask) and xp.any(negative_mask):
         message = ("The harmonic mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
@@ -334,7 +331,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         return 1.0 / _xp_mean(1.0 / a, axis=axis, weights=weights)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=1)
+@xp_capabilities()
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -453,11 +450,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         weights = xp.asarray(weights, dtype=dtype)
 
     negative_mask = a < 0
-    if xp.any(negative_mask):
-        # `where` avoids having to be careful about dtypes and will work with
-        # JAX. This is the exceptional case, so it's OK to be a little slower.
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
-        a = xp.where(negative_mask, np.nan, a)
+    a = xp.where(negative_mask, np.nan, a)
+
+    if not is_lazy_array(negative_mask) and xp.any(negative_mask):
         message = ("The power mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
@@ -489,7 +484,7 @@ def _mode_result(mode, count):
 
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
-                 jax_jit=False)
+                 jax_jit=False)  # would delegate, but jax-ml/jax#34486
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -1260,7 +1255,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     return var
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=2)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1361,7 +1356,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals[()] if vals.ndim == 0 else vals
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=2)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1475,7 +1470,7 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
@@ -1895,7 +1890,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(statistic, pvalue)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
     r"""Perform the Jarque-Bera goodness of fit test on sample data.
@@ -2601,7 +2596,7 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, too_small=1
 )
@@ -2967,7 +2962,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     ddof : int, optional
         Degree of freedom correction in the calculation of the
         geometric standard deviation. Default is 1.
-    keepdims : boolean, optional
+    keepdims : bool, optional
         If this is set to ``True``, the axes which are reduced are left
         in the result as dimensions with length one. With this option,
         the result will broadcast correctly against the input array.
@@ -3070,8 +3065,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 _scale_conversions = {'normal': float(special.erfinv(0.5) * 2.0 * math.sqrt(2.0))}
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)')],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3241,8 +3235,7 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
 )
@@ -3663,7 +3656,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 @xp_capabilities()
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
-    """Return mean of array after trimming a specified fraction of extreme values
+    """Return mean of array after trimming a specified fraction of extreme values.
 
     Removes the specified proportion of elements from *each* end of the
     sorted array, then computes the mean of the remaining elements.
@@ -3773,6 +3766,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
+# JAX JIT / Torch GPU need fdtrc
 @xp_capabilities(jax_jit=False, cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
@@ -4067,7 +4061,7 @@ class AlexanderGovernResult:
     pvalue: float
 
 
-@xp_capabilities(jax_jit=False)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
     result_to_tuple=lambda x, _: (x.statistic, x.pvalue),
@@ -4425,11 +4419,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Input array.
     y : array_like
         Input array.
-    axis : int or None, default
-        Axis along which to perform the calculation. Default is 0.
-        If None, ravel both arrays before performing the calculation.
-
-        .. versionadded:: 1.14.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -4448,6 +4437,11 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Otherwise, the p-value is computed as documented in the notes.
 
         .. versionadded:: 1.11.0
+    axis : int or None, default
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
+
+        .. versionadded:: 1.14.0
 
     Returns
     -------
@@ -5466,11 +5460,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @_axis_nan_policy_factory(_pack_CorrelationResult, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
-def pointbiserialr(x, y):
+def pointbiserialr(x, y, *, axis=0):
     r"""Calculate a point biserial correlation coefficient and its p-value.
 
     The point biserial correlation is used to measure the relationship
@@ -5488,6 +5482,9 @@ def pointbiserialr(x, y):
         Input array.
     y : array_like
         Input array.
+    axis : int or None, default: 0
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
 
     Returns
     -------
@@ -5558,7 +5555,7 @@ def pointbiserialr(x, y):
            [ 0.8660254,  1.       ]])
 
     """
-    rpb, prob = pearsonr(x, y)
+    rpb, prob = pearsonr(x, y, axis=axis)
     # create result object with alias for backward compatibility
     res = SignificanceResult(rpb, prob)
     res.correlation = rpb
@@ -6050,12 +6047,13 @@ class TtestResult(TtestResultBase):
 
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
-    # this could be any number of dimensions (including 0d), but there is
-    # at most one unique non-NaN value
     xp = array_namespace(statistic, pvalue)
-    alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
-    alternative = alternative[xp.isfinite(alternative)]
-    alternative = alternative[0] if xp_size(alternative) != 0 else xp.nan
+    # Due to behavior of `_axis_nan_policy` decorator, `alternative` can be any number
+    # of dimensions, but there is at most one unique non-NaN value.
+    # `_xp_mean` with `nan_policy='omit'` is a JIT-compatible way to extract it.
+    alternative = xp.asarray(alternative)
+    alternative = (_xp_mean(alternative, axis=None, nan_policy='omit', warn=False)
+                   if xp_size(alternative) != 0 else xp.nan)
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
 
@@ -6065,8 +6063,7 @@ def unpack_TtestResult(res, _):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6356,7 +6353,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], jax_jit=False)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True, alternative="two-sided"):
     r"""
@@ -6485,10 +6482,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     """
     xp = array_namespace(mean1, std1, mean2, std2)
 
-    mean1 = xp.asarray(mean1)
-    std1 = xp.asarray(std1)
-    mean2 = xp.asarray(mean2)
-    std2 = xp.asarray(std2)
+    mean1, std1, nobs1, mean2, std2, nobs2 = xp_promote(
+        mean1, std1, nobs1, mean2, std2, nobs2, force_floating=True, xp=xp)
 
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
@@ -6499,7 +6494,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], jax_jit=False)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
@@ -6886,8 +6881,7 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
@@ -7014,7 +7008,7 @@ def _pd_nsamples(kwargs):
     return 2 if kwargs.get('f_exp', None) is not None else 1
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -7205,18 +7199,22 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
             dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
             rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
             with np.errstate(invalid='ignore'):
-                f_obs_sum = xp.sum(f_obs_float, axis=axis)
-                f_exp_sum = xp.sum(f_exp, axis=axis)
+                f_obs_sum = xp.sum(f_obs_float, axis=axis, keepdims=True)
+                f_exp_sum = xp.sum(f_exp, axis=axis, keepdims=True)
                 relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
                                  xp.minimum(f_obs_sum, f_exp_sum))
-                diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
-            if diff_gt_tol:
+                diff_gt_tol = xp.any(relative_diff > rtol, axis=axis, keepdims=True)
+
+            if not is_lazy_array(diff_gt_tol) and xp.any(diff_gt_tol):
                 msg = (f"For each axis slice, the sum of the observed "
                        f"frequencies must agree with the sum of the "
                        f"expected frequencies to a relative tolerance "
                        f"of {rtol}, but the percent differences are:\n"
                        f"{relative_diff}")
                 raise ValueError(msg)
+            elif is_lazy_array(diff_gt_tol):
+                diff_gt_tol = xp.broadcast_to(diff_gt_tol, f_obs.shape)
+                f_obs = xpx.at(f_obs)[diff_gt_tol].set(xp.nan)
 
     else:
         # Avoid warnings with the edge case of a data set with length 0
@@ -7257,7 +7255,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
@@ -7287,9 +7285,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
         as a single data set.  Default is 0.
     sum_check : bool, optional
         Whether to perform a check that ``sum(f_obs) - sum(f_exp) == 0``. If True,
-        (default) raise an error when the relative difference exceeds the square root
-        of the precision of the data type. See Notes for rationale and possible
-        exceptions.
+        (default) raise an error (or, for lazy backends, return NaN) when the relative
+        difference exceeds the square root of the precision of the data type.
+        See Notes for rationale and possible exceptions.
 
     Returns
     -------
@@ -7454,6 +7452,7 @@ def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
+# JAX JIT / Torch GPU / CuPy need null distribution
 @xp_capabilities(cpu_only=True, jax_jit=False,
                  skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
@@ -7659,9 +7658,9 @@ def _compute_prob_outside_square(n, h):
 
     Parameters
     ----------
-    n : integer
+    n : int
         n > 0
-    h : integer
+    h : int
         0 <= h <= n
 
     Returns
@@ -7696,13 +7695,13 @@ def _count_paths_outside_method(m, n, g, h):
 
     Parameters
     ----------
-    m : integer
+    m : int
         m > 0
-    n : integer
+    n : int
         n > 0
-    g : integer
+    g : int
         g is greatest common divisor of m and n
-    h : integer
+    h : int
         0 <= h <= lcm(m,n)
 
     Returns
@@ -7813,11 +7812,13 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
+                                ('dask.array', 'no rankdata')],
+                 jax_jit=False, cpu_only=True)  # null distribution is NumPy-only
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
+def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7840,6 +7841,12 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
         * 'auto' : use 'exact' for small size arrays, 'asymp' for large
         * 'exact' : use exact distribution of test statistic
         * 'asymp' : use asymptotic distribution of test statistic
+
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -7973,6 +7980,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     hypothesis in favor of the alternative.
 
     """
+    # because of the _axis_nan_policy decorator, we can assume the arrays
+    # are broadcasted and `axis=-1`
     mode = method
 
     if mode not in ['auto', 'exact', 'asymp']:
@@ -7982,42 +7991,84 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
-    if np.ma.is_masked(data1):
-        data1 = data1.compressed()
-    if np.ma.is_masked(data2):
-        data2 = data2.compressed()
-    data1 = np.sort(data1)
-    data2 = np.sort(data2)
-    n1 = data1.shape[0]
-    n2 = data2.shape[0]
+
+    xp = array_namespace(data1, data2)
+    data1 = xp.sort(data1, axis=-1)
+    data2 = xp.sort(data2, axis=-1)
+    n1 = data1.shape[-1]
+    n2 = data2.shape[-1]
     if min(n1, n2) == 0:
         raise ValueError('Data passed to ks_2samp must not be empty')
+    n = n1 + n2
 
-    data_all = np.concatenate([data1, data2])
-    # using searchsorted solves equal data problem
-    cdf1 = np.searchsorted(data1, data_all, side='right') / n1
-    cdf2 = np.searchsorted(data2, data_all, side='right') / n2
-    cddiffs = cdf1 - cdf2
+    data_all = xp.concat((data1, data2), axis=-1)
+    batch_shape = data_all.shape[:-1]
+
+    # Previously, this part of the code was just:
+    # cdf1 = _xp_searchsorted(data1, data_all, side='right') / n1
+    # cdf2 = _xp_searchsorted(data2, data_all, side='right') / n2
+    # cddiffs = cdf1 - cdf2
+    # but the switch from `xp.searchsorted` to `_xp_searchsorted` would come with a
+    # pretty steep performance hit. When `xp.searchsorted` is vectorized, we can
+    # probably use that. In the meantime, the following algorithm is typically faster.
+
+    # We want the ECDF of each sample evaluated at *all* the points in the pooled
+    # sample. The values each ECDF can assume are given by:
+    cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
+    cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+    # Now we "just" need to know how many times each of these values *will* be assumed
+    # when we evaluate the ECDFs at all points in the pooled sample.
+    # These counts are given by the differences between consecutive ("min" or "max")
+    # ranks corresponding with the observations in the (sorted) samples.
+    ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
+    ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
+    one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype, device=xp_device(ranks))
+    cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
+    cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
+    # Repeat isn't vectorized - in general, this would produce a ragged array. However,
+    # In our case, the sum of repeats for each slice is the same, so we can do a
+    # vectorized repeat by raveling, repeating, then restoring the shape.
+    cdf1 = xp.repeat(xp_ravel(cdf1_vals), xp_ravel(cdf1_counts), axis=-1)
+    cdf2 = xp.repeat(xp_ravel(cdf2_vals), xp_ravel(cdf2_counts), axis=-1)
+    cddiffs = xp.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
 
     # Identify the location of the statistic
-    argminS = np.argmin(cddiffs)
-    argmaxS = np.argmax(cddiffs)
-    loc_minS = data_all[argminS]
-    loc_maxS = data_all[argmaxS]
+    argminS = xp.argmin(cddiffs, axis=-1, keepdims=True)
+    argmaxS = xp.argmax(cddiffs, axis=-1, keepdims=True)
+    loc_minS = xp.squeeze(xp.take_along_axis(data_all, argminS, axis=-1), axis=-1)
+    loc_maxS = xp.squeeze(xp.take_along_axis(data_all, argmaxS, axis=-1), axis=-1)
 
     # Ensure sign of minS is not negative.
-    minS = np.clip(-cddiffs[argminS], 0, 1)
-    maxS = cddiffs[argmaxS]
+    minS = -xp.squeeze(xp.take_along_axis(cddiffs, argminS, axis=-1), axis=-1)
+    maxS = xp.squeeze(xp.take_along_axis(cddiffs, argmaxS, axis=-1), axis=-1)
+    minS = xp.clip(minS, 0., 1.)
 
-    if alternative == 'less' or (alternative == 'two-sided' and minS > maxS):
-        d = minS
-        d_location = loc_minS
-        d_sign = -1
+    if alternative == 'less':
+        selector = xp.ones(minS.shape, dtype=xp.bool)
+    elif alternative == 'two-sided':
+        selector = minS > maxS
     else:
-        d = maxS
-        d_location = loc_maxS
-        d_sign = 1
-    g = math.gcd(n1, n2)
+        selector = xp.zeros(minS.shape, dtype=xp.bool)
+
+    d = xp.where(selector, minS, maxS)
+    d_location = xp.where(selector, loc_minS, loc_maxS)
+    one = xp.asarray(1, dtype=xp.int8)
+    d_sign = xp.where(selector, -one, one)
+    prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
+    dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
+    prob = xp.asarray(prob, dtype=dtype)
+    d = xp.astype(d, dtype, copy=False)
+    if d.ndim == 0:
+        d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
+    return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
+
+
+@np.vectorize(excluded={1, 2, 3, 4, 5}, otypes=[np.float64])
+def _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative):
+    # math.gcd used to return an `int`, but now that these return arrays, NumPy can
+    # return an int32. Unless we want the pythranized functions to be compiled for
+    # int32, this needs to produce an int64.
+    g = np.gcd(n1, n2).astype(np.int64)
     n1g = n1 // g
     n2g = n2 // g
     prob = -np.inf
@@ -8056,11 +8107,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    # Currently, `d` is a Python float. We want it to be a NumPy type, so
-    # float64 is appropriate. An enhancement would be for `d` to respect the
-    # dtype of the input.
-    return KstestResult(np.float64(d), prob, statistic_location=d_location,
-                        statistic_sign=np.int8(d_sign))
+    return prob
 
 
 def _parse_kstest_args(data1, data2, args, N):
@@ -8082,7 +8129,8 @@ def _parse_kstest_args(data1, data2, args, N):
         rvsfunc = data1
 
     if isinstance(data2, str):
-        cdf = getattr(distributions, data2).cdf
+        special_distributions = {'norm': special.ndtr}
+        cdf = special_distributions.get(data2, getattr(distributions, data2).cdf)
         data2 = None
     elif callable(data2):
         cdf = data2
@@ -8098,11 +8146,14 @@ def _kstest_n_samples(kwargs):
     return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
+                                ('dask.array', 'no rankdata')],
+                 jax_jit=False, cpu_only=True)  # see ks_1samp/ks_2samp
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto', *,
+           axis=0):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -8290,9 +8341,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        method=method, _no_deco=True)
+                        method=method, axis=axis, _no_deco=True)
     return ks_2samp(xvals, yvals, alternative=alternative, method=method,
-                    _no_deco=True)
+                    axis=axis, _no_deco=True)
 
 
 @xp_capabilities(np_only=True)
@@ -8430,8 +8481,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8519,9 +8569,6 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     alldata = xp.concat(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
-    # should adjust output dtype of _rankdata
-    ranked = xp.astype(ranked, alldata.dtype, copy=False)
-    t = xp.astype(t, alldata.dtype, copy=False)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
@@ -8542,8 +8589,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")])
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8625,7 +8671,6 @@ def friedmanchisquare(*samples, axis=0):
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
     data, t = _rankdata(data, method='average', return_ties=True)
-    data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
@@ -8645,8 +8690,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
                  skip_backends=[('dask.array', 'needs rankdata'),
-                                ('cupy', 'needs rankdata')],
-                 jax_jit=False)
+                                ('cupy', 'needs rankdata')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate', *, axis=0):
@@ -8765,7 +8809,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
-        if xp.any(df_numer == 0) and xp.any(df_denom == 0):
+        if not is_lazy_array(df_numer) and not is_lazy_array(df_denom) and (
+                xp.any(df_numer == 0) and xp.any(df_denom == 0)):
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
@@ -8784,8 +8829,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.',
-    jax_jit=False, allow_dask_compute=True)
+    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.')
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
@@ -9946,8 +9990,7 @@ def _validate_distribution(values, weights):
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")],
-                 jax_jit=False)
+                                ("dask.array", "no `take_along_axis`")])
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
@@ -10004,7 +10047,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     -------
     ranks : ndarray
          An array of size equal to the size of `a`, containing rank
-         scores.
+         scores. The dtype is the result dtype of `a` and a Python float.
 
     References
     ----------
@@ -10015,18 +10058,18 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     >>> import numpy as np
     >>> from scipy.stats import rankdata
     >>> rankdata([0, 2, 3, 2])
-    array([ 1. ,  2.5,  4. ,  2.5])
+    array([1. , 2.5, 4. , 2.5])
     >>> rankdata([0, 2, 3, 2], method='min')
-    array([ 1,  2,  4,  2])
+    array([1., 2., 4., 2.])
     >>> rankdata([0, 2, 3, 2], method='max')
-    array([ 1,  3,  4,  3])
+    array([1., 3., 4., 3.])
     >>> rankdata([0, 2, 3, 2], method='dense')
-    array([ 1,  2,  3,  2])
+    array([1., 2., 3., 2.])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
-    array([ 1,  2,  4,  3])
-    >>> rankdata([[0, 2], [3, 2]]).reshape(2,2)
+    array([1., 2., 4., 3.])
+    >>> rankdata([[0, 2], [3, 2]]).reshape(2, 2)
     array([[1. , 2.5],
-          [4. , 2.5]])
+           [4. , 2.5]])
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
@@ -10048,19 +10091,20 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         axis = -1
 
     if xp_size(x) == 0:
-        dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
-        return xp.empty(x.shape, dtype=dtype)
+        dtype = xp_result_type(x, force_floating=True, xp=xp)
+        return xp.empty_like(x, dtype=dtype)
 
     contains_nan = _contains_nan(x, nan_policy)
 
     x = xp_swapaxes(x, axis, -1, xp=xp)
     ranks = _rankdata(x, method, xp=xp)
 
-    if contains_nan:
-        default_float = xp_default_dtype(xp)
+    # JIT won't allow use of `contains_nan` for control flow here, so we always have to
+    # run this with JIT.
+    if is_lazy_array(x) or contains_nan:
         i_nan = (xp.isnan(x) if nan_policy == 'omit'
-                 else xp.any(xp.isnan(x), axis=-1))
-        ranks = xp.asarray(ranks, dtype=default_float)  # copy=False when implemented
+                 else xp.any(xp.isnan(x), axis=-1, keepdims=True))
+        i_nan = xp.broadcast_to(i_nan, ranks.shape)
         ranks = xpx.at(ranks)[i_nan].set(xp.nan)
 
     ranks = xp_swapaxes(ranks, axis, -1, xp=xp)
@@ -10081,11 +10125,27 @@ def _order_ranks(ranks, j, *, xp):
     return ordered_ranks
 
 
-def _rankdata(x, method, return_ties=False, xp=None):
-    # Rank data `x` by desired `method`; `return_ties` if desired
+def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
+    # Rank data `x` by desired `method`; `return_ties`/`return_sorted` data  if desired
     xp = array_namespace(x) if xp is None else xp
+    dtype = xp_result_type(x, force_floating=True, xp=xp)
+
+    if is_jax(xp):
+        import jax.scipy.stats as jax_stats
+        ranks = jax_stats.rankdata(x, method=method, axis=-1)
+        ranks = xp.astype(ranks, dtype, copy=False)
+        out = [ranks]
+        y = xp.sort(x, axis=-1) if (return_ties or return_sorted) else None
+        if return_sorted:
+            out.append(y)
+        if return_ties:
+            max_ranks = jax_stats.rankdata(y, method='max', axis=-1)
+            t = xp.diff(max_ranks, axis=-1, prepend=0)
+            t = xp.astype(t, dtype, copy=False)
+            out.append(t)
+        return out[0] if len(out) == 1 else tuple(out)
+
     shape = x.shape
-    dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
     # Get sort order
     j = xp.argsort(x, axis=-1, stable=True)
@@ -10093,7 +10153,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties
+        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties or sorted data
 
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
@@ -10110,15 +10170,22 @@ def _rankdata(x, method, return_ties=False, xp=None):
     if method == 'min':
         ranks = ordinal_ranks[i]
     elif method == 'max':
-        ranks = ordinal_ranks[i] + counts - 1
+        ranks = ordinal_ranks[i] + xp.astype(counts, dtype) - 1
     elif method == 'average':
         # array API doesn't promote integers to floats
-        ranks = ordinal_ranks[i] + (xp.asarray(counts, dtype=dtype) - 1)/2
+        ranks = ordinal_ranks[i] + (xp.astype(counts, dtype) - 1)/2
     elif method == 'dense':
         ranks = xp.cumulative_sum(xp.astype(i, dtype, copy=False), axis=-1)[i]
 
     ranks = xp.reshape(xp.repeat(ranks, counts), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
+    if not (return_sorted or return_ties):
+        return ranks
+
+    out = [ranks]
+
+    if return_sorted:
+        out.append(y)
 
     if return_ties:
         # Tie information is returned in a format that is useful to functions that
@@ -10137,10 +10204,11 @@ def _rankdata(x, method, return_ties=False, xp=None):
         #   sorted order, so this does not unnecessarily reorder them.
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
-        t = xp.zeros(shape, dtype=xp.float64)
-        t = xpx.at(t)[i].set(xp.astype(counts, t.dtype, copy=False))
-        return ranks, t
-    return ranks
+        t = xp.zeros(shape, dtype=dtype)
+        t = xpx.at(t)[i].set(xp.astype(counts, dtype, copy=False))
+        out.append(t)
+
+    return out
 
 
 @xp_capabilities(
@@ -10299,8 +10367,8 @@ def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
     order = xp.arange(1, 5) if order is None else xp.asarray(order)
-    if (not xp.isdtype(order.dtype, "integral") or xp.any(order <= 0)
-            or order.size == 0 or order.ndim > 1):
+    if (not xp.isdtype(order.dtype, "integral") or order.size == 0 or order.ndim > 1
+            or (not is_lazy_array(order) and xp.any(order <= 0))):
         raise ValueError(message)
 
     # input validation of non-array types can still be performed with NumPy
@@ -10335,26 +10403,30 @@ def _br(x, *, r=0, xp):
     x = xp.triu(x)
     j = xp.arange(n, dtype=x.dtype)
     n = xp.asarray(n, dtype=x.dtype)[()]
-    return (xp.vecdot(special.binom(j, r[:, xp.newaxis]), x, axis=-1)
-            / special.binom(n-1, r) / n)
+    binom_j_r = xpx.lazy_apply(special.binom, j, r[:, xp.newaxis])
+    binom_nm1_r = xpx.lazy_apply(special.binom, n-1, r)
+    return xp.vecdot(binom_j_r, x, axis=-1) / binom_nm1_r / n
 
 
 def _prk(r, k):
     # Writen to match [1] Equation 27 closely to facilitate review.
     # This does not protect against overflow, so improvements to
     # robustness would be a welcome follow-up.
-    return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
+    binom_r_k = xpx.lazy_apply(special.binom, r, k)
+    binom_rpk_k = xpx.lazy_apply(special.binom, r+k, k)
+    return (-1)**(r-k)*binom_r_k*binom_rpk_k
 
 
 @xp_capabilities(skip_backends=[('dask.array', "too many issues")],
-                 jax_jit=False, cpu_only=True,  # torch doesn't have `binom`
-                 exceptions=('cupy', 'jax.numpy'))
+                 cpu_only=True,  # torch doesn't have `binom`
+                 exceptions=('cupy', 'jax.numpy'),
+                 extra_note="Lazy backends do not support `order` greater than 4.")
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
 def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
-    r"""Compute L-moments of a sample from a continuous distribution
+    r"""Compute L-moments of a sample from a continuous distribution.
 
     The L-moments of a probability distribution are summary statistics with
     uses similar to those of conventional moments, but they are defined in
@@ -10393,6 +10465,11 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     --------
     moment
 
+    Notes
+    -----
+    SciPy offers only basic capabilities for working with L-moments. For more advanced
+    features, consider the ``lmo`` package [4]_.
+
     References
     ----------
     .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
@@ -10402,6 +10479,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
            Using Linear Combinations of Order Statistics". Journal of the Royal
            Statistical Society. 1990. :doi:`10.1111/j.2517-6161.1990.tb01775.x`
     .. [3] "L-moment". *Wikipedia*. https://en.wikipedia.org/wiki/L-moment.
+    .. [4] @jorenham, *Lmo*, https://github.com/jorenham/Lmo/
 
     Examples
     --------
@@ -10421,7 +10499,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     args = _lmoment_iv(sample, order, axis, sorted, standardize, xp=xp)
     sample, order, axis, sorted, standardize = args
 
-    n_moments = int(xp.max(order))
+    n_moments = 4 if is_lazy_array(order) else int(xp.max(order))
     k = xp.arange(n_moments, dtype=sample.dtype)
     prk = _prk(xpx.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k, xp=xp)
@@ -10650,7 +10728,7 @@ def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
 
 
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
-             dtype=None, xp=None):
+             dtype=None, warn=True, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
 
     Parameters
@@ -10667,7 +10745,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         otherwise ``1``. If `weights` and `x` do not have the same shape, the
         arrays will be broadcasted before performing the calculation. See
         Notes for details.
-    keepdims : boolean, optional
+    keepdims : bool, optional
         If this is set to ``True``, the axes which are reduced are left
         in the result as dimensions with length one. With this option,
         the result will broadcast correctly against the input array.
@@ -10743,7 +10821,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             res = xp.mean(x, axis=axis, keepdims=keepdims)
-        if xp_size(res) != 0:
+        if warn and xp_size(res) != 0:
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         return res
 
@@ -10761,7 +10839,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         nan_mask = xp.isnan(x)
         if weights is not None:
             nan_mask |= xp.isnan(weights)
-        if not lazy and xp.any(xp.all(nan_mask, axis=axis)):
+        if warn and not lazy and xp.any(xp.all(nan_mask, axis=axis)):
             message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
                        else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)

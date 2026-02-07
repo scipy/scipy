@@ -2089,7 +2089,7 @@ for k in _physical_constants_2018:
         _aliases[k] = k.replace('momentum', 'mom.um')
 for k in _physical_constants_2022:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')        
+        _aliases[k] = k.replace('momentum', 'mom.um')
 
 # CODATA 2018 and 2022: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'
@@ -2116,7 +2116,7 @@ for k, v in list(_aliases.items()):
 
 
 class ConstantWarning(DeprecationWarning):
-    """Accessing a constant no longer in current CODATA data set"""
+    """Accessing a constant no longer in current CODATA data set."""
     pass
 
 
@@ -2129,11 +2129,11 @@ def _check_obsolete(key: str) -> None:
 @xp_capabilities(out_of_scope=True)
 def value(key: str) -> float:
     """
-    Value in physical_constants indexed by key
+    Value in physical_constants indexed by key.
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns
@@ -2155,16 +2155,16 @@ def value(key: str) -> float:
 @xp_capabilities(out_of_scope=True)
 def unit(key: str) -> str:
     """
-    Unit in physical_constants indexed by key
+    Unit in physical_constants indexed by key.
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns
     -------
-    unit : Python string
+    unit : str
         Unit in `physical_constants` corresponding to `key`
 
     Examples
@@ -2181,11 +2181,11 @@ def unit(key: str) -> str:
 @xp_capabilities(out_of_scope=True)
 def precision(key: str) -> float:
     """
-    Relative precision in physical_constants indexed by key
+    Relative precision in physical_constants indexed by key.
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns

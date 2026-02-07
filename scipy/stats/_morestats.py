@@ -13,7 +13,7 @@ from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib.deprecation import _NoValue
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,
@@ -29,6 +29,7 @@ from scipy._lib._array_api import (
     xp_device,
     xp_ravel,
     _length_nonmasked,
+    is_lazy_array,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -907,6 +908,10 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
         The statistic of each axis-slice (e.g. row) of the input will appear in a
         corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
     nan_policy : {'propagate', 'omit', 'raise'
         Defines how to handle input NaNs.
 
@@ -918,11 +923,6 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
-
-    keepdims : bool, default: False
-        If this is set to True, the axes which are reduced are left
-        in the result as dimensions with size one. With this option,
-        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -1717,6 +1717,13 @@ def _yeojohnson_transform(x, lmbda, xp=None):
     out = xp.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
 
+    if is_jax(xp):
+        return xp.select(
+            [(abs(lmbda) < eps) & pos, (abs(lmbda - 2) < eps) & ~pos, pos],
+            [xp.log1p(x), -xp.log1p(-x), xp.expm1(lmbda * xp.log1p(x)) / lmbda],
+            -xp.expm1((2 - lmbda) * xp.log1p(-x)) / (2 - lmbda),
+        )
+
     # when x >= 0
     if abs(lmbda) < eps:
         out = xpx.at(out)[pos].set(xp.log1p(x[pos]))
@@ -1866,13 +1873,13 @@ def _yeojohnson_llf(data, *, lmb, axis=0):
     pos = data >= 0  # binary mask
 
     # There exists numerical instability when abs(lmb) or abs(lmb - 2) is very small
-    if xp.all(pos):
+    if not is_lazy_array(pos) and xp.all(pos):
         if abs(lmb) < eps:
             logvar = xp.log(xp.var(xp.log1p(data), axis=axis))
         else:
             logvar = _log_var(lmb * xp.log1p(data), xp, axis) - 2 * math.log(abs(lmb))
 
-    elif xp.all(~pos):
+    elif not is_lazy_array(pos) and xp.all(~pos):
         if abs(lmb - 2) < eps:
             logvar = xp.log(xp.var(xp.log1p(-data), axis=axis))
         else:
@@ -3088,7 +3095,6 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
     rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    rank, t = xp.astype(rank, dtype), xp.astype(t, dtype)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
@@ -3261,7 +3267,8 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+                 jax_jit=False)  # needs fdtrc
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3407,7 +3414,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')], jax_jit=False)
+                                ('cupy', 'no rankdata')])
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3542,8 +3549,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     Xibar = [func(sample) for sample in samples]
     Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
     Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
-    ranks = _stats_py._rankdata(Xij_Xibar, method='average', xp=xp)
-    ranks = xp.astype(ranks, dtype)
+    ranks = stats.rankdata(Xij_Xibar, method='average', axis=-1)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
@@ -3607,7 +3613,6 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
     _, a = _stats_py._rankdata(x, method='average', return_ties=True)
-    a = xp.astype(a, phi.dtype)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
     a = xp.concat((a, zeros), axis=-1)
@@ -3729,7 +3734,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     """
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
-    dtype = x.dtype
 
     # _axis_nan_policy decorator ensures axis=-1
     xy = xp.concat((x, y), axis=-1)
@@ -3745,9 +3749,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
     r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
 
-    if xp.any(t > 1):
+    if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
         z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
@@ -3785,7 +3788,9 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                jax_jit=False, cpu_only=True)  # null distribution is CPU only
+                 # the exact null distribution is NumPy-only
+                 jax_jit=False,
+                 cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -4480,7 +4485,24 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         Upper boundary of the principal value of an angle.  Default is ``2*pi``.
     low : float, optional
         Lower boundary of the principal value of an angle.  Default is ``0``.
-    normalize : boolean, optional
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+        which the  statistic is computed, the corresponding entry of the output
+        will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        If insufficient data remains in the axis slice along which the
+        statistic is computed, the corresponding entry of the output will be
+        NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
+    normalize : bool, optional
         If ``False`` (the default), the return value is computed from the
         above formula with the input scaled by ``(2*pi)/(high-low)`` and
         the output scaled (back) by ``(high-low)/(2*pi)``.  If ``True``,
@@ -4592,7 +4614,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         of the data is a vector observation.
     axis : int, default: 0
         Axis along which the directional mean is computed.
-    normalize : boolean, default: True
+    normalize : bool, default: True
         If True, normalize the input to ensure that each observation is a
         unit vector. It the observations are already unit vectors, consider
         setting this to False to avoid unnecessary computation.
@@ -4706,7 +4728,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     return DirectionalStats(mean_direction, mean_resultant_length)
 
 
-@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")], jax_jit=False)
+@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")])
 def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate.
 
@@ -4860,10 +4882,14 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     # Input Validation and Special Cases
     ps = xp.asarray(ps)
 
-    ps_in_range = (xp.isdtype(ps.dtype, ("integral", "real floating"))
-                   and xp.all(ps == xp.clip(ps, 0., 1.)))
-    if not ps_in_range:
-        raise ValueError("`ps` must include only numbers between 0 and 1.")
+    if not xp.isdtype(ps.dtype, ("integral", "real floating")):
+        raise ValueError("`ps` must contain only real numbers.")
+
+    if is_lazy_array(ps):
+        ps = xp.where((ps < 0.) | (ps > 1.), xp.nan, ps)
+    else:
+        if not xp.all(ps == xp.clip(ps, 0., 1.)):
+            raise ValueError("All values in `ps` must lie between 0. and 1.")
 
     methods = {'bh', 'by'}
     if method.lower() not in methods:

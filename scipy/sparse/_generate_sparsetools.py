@@ -214,7 +214,7 @@ def get_thunk_type_set():
     -------
     i_types : list [(j, I_typenum, None, I_type, None), ...]
          Pairing of index type numbers and the corresponding C++ types,
-         and an unique index `j`. This is for routines that are parameterized
+         and a unique index `j`. This is for routines that are parameterized
          only by I but not by T.
     it_types : list [(j, I_typenum, T_typenum, I_type, T_type), ...]
          Same as `i_types`, but for routines parameterized both by T and I.
