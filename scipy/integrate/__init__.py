@@ -70,6 +70,7 @@ The solvers are implemented as individual classes, which can be used directly
    OdeSolver     -- Base class for ODE solvers.
    DenseOutput   -- Local interpolant for computing a dense output.
    OdeSolution   -- Class which represents a continuous ODE solution.
+   SABM          -- Semi-explicit/implicit Adams-Bashfort-Moulton for DAE.
 
 
 Old API
@@ -106,7 +107,7 @@ from ._quadpack_py import *
 from ._ode import *
 from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
-                   OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
+                   OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA, SABM)
 from ._quad_vec import quad_vec
 from ._tanhsinh import nsum, tanhsinh
 from ._cubature import cubature
