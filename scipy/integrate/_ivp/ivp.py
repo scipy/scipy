@@ -5,6 +5,7 @@ from .radau import Radau
 from .rk import RK23, RK45, DOP853
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
+from scipy._lib._util import _RichResult
 from .common import EPS, OdeSolution
 from .base import OdeSolver
 from scipy._lib._array_api import xp_capabilities
@@ -19,12 +20,53 @@ METHODS = {'RK23': RK23,
 
 
 MESSAGES = {0: "The solver successfully reached the end of the integration interval.",
-            1: "A termination event occurred."}
+            1: "A termination event occurred.",
+            2: "Solver stopped via callback."}
 
 
 class OdeResult(OptimizeResult):
     pass
 
+class IntermediateOdeResult(_RichResult):
+    """
+    Represents an in-progress ode result.
+
+    Attributes
+    ----------
+    t : list, length (n_points)
+        Time points of solution up to and including current time step.
+        Unlike the result from `solve_ivp`, this is a list.
+    y : ndarray, shape (n, n_points)
+        Values of the solution at time points `t`. Unlike the
+        result from `solve_ivp`, this is a list.  It is also
+        transposed with respect to the result from `solve_ivp`.
+    sol : `OdeSolution` or None
+        Found solution as `OdeSolution` instance; None if `dense_output` was
+        set to False.
+    t_events : list of ndarray or None
+        Contains for each event type a list of arrays at which an event of
+        that type event was detected. None if `events` was None.
+    y_events : list of ndarray or None
+        For each value of `t_events`, the corresponding value of the solution.
+        None if `events` was None.
+    nfev : int
+        Number of evaluations of the right-hand side.
+    njev : int
+        Number of evaluations of the Jacobian.
+    nlu : int
+        Number of LU decompositions.
+    solver : OdeSolver
+        Solver object. Can be used to interact with the solver directly.
+        It is not recommended to change the RHS ``fun`` or state, i.e. ``y``,
+        inside the solver during integration.
+    current_t : float
+        Time after last integration step.
+    current_y : ndarray, shape (n,)
+        Value of solution after last integration step.
+    active_events : ndarray or None
+        Indices of events that occured during last integration step.
+
+    """
 
 def prepare_events(events):
     """Standardize event functions and extract attributes."""
@@ -159,7 +201,7 @@ def find_active_events(g, g_new, direction):
 
 @xp_capabilities(np_only=True)
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, **options):
+              events=None, vectorized=False, args=None, *, callback=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -296,6 +338,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
+    callback : callable, optional
+        Callable that is executed after every step. The function signature is
+        ``fun(sol)``, where ``sol`` is an `IntermediateOdeResult` object. If the
+        callback raises `StopIteration`, then the integration is stopped.
     **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -505,6 +551,28 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     [array([[-5.68434189e-14, -1.00000000e+01]]),
      array([[1.00000000e+02, 1.77635684e-15]])]
 
+    A callback after each integration step can be used for multiple purposes.
+    One purpose is to print the progress of the integration.
+
+    >>> def print_progress(int_result):
+    ...     if int_result.solver.nstep == 1:
+    ...         print(f"{'# steps':^15}|{'time':^15}|{'step size':^15}")
+    ...         print("_"*48)
+    ...     print(f"{int_result.solver.nstep:^15.0f}|"
+    ...           f"{int_result.current_t:^15.1e}|"
+    ...           f"{int_result.solver.step_size:^15.1e}")
+    >>> _ = solve_ivp(upward_cannon, [0, 100], [0, 10], events=(hit_ground,),
+    ...               callback=print_progress)
+        # steps    |     time      |   step size
+    ________________________________________________
+           1       |    1.0e-04    |    1.0e-04
+           2       |    1.1e-03    |    1.0e-03
+           3       |    1.1e-02    |    1.0e-02
+           4       |    1.1e-01    |    1.0e-01
+           5       |    1.1e+00    |    1.0e+00
+           6       |    1.1e+01    |    1.0e+01
+           7       |    1.0e+02    |    8.9e+01
+
     As an example of a system with additional parameters, we'll implement
     the Lotka-Volterra equations [12]_.
 
@@ -571,7 +639,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         53.17531184+103.80400411j]
      [ -2.26105874 +22.19277664j -15.1255713  +70.19616341j
        -38.34616845+153.29039931j]]
-
 
     """
     if method not in METHODS and not (
@@ -674,6 +741,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         else:
             sol = None
 
+        active_events = None
         if events is not None:
             g_new = [event(t, y) for event in events]
             active_events = find_active_events(g, g_new, event_dir)
@@ -728,6 +796,17 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         if t_eval is not None and dense_output:
             ti.append(t)
+
+        if callback is not None:
+            int_result = IntermediateOdeResult(
+                t=ts, y=ys, sol=sol, t_events=t_events, y_events=y_events,
+                nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu, solver=solver,
+                current_t=solver.t, current_y=solver.y, active_events=active_events
+            )
+            try:
+                callback(int_result)
+            except StopIteration:
+                status = 2
 
     message = MESSAGES.get(status, message)
 
