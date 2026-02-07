@@ -283,7 +283,16 @@ copybutton_prompt_is_regexp = True
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = get_intersphinx_mapping(
-    packages={"python", "numpy", "neps", "matplotlib", "asv", "statsmodels", "mpmath"}
+    packages={
+        "python",
+        "numpy",
+        "neps",
+        "matplotlib",
+        "asv",
+        "statsmodels",
+        "mpmath",
+        "py-free-threading",
+    }
 )
 
 # -----------------------------------------------------------------------------

@@ -97,6 +97,19 @@ Solving boundary value problems for ODE systems
    :toctree: generated/
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
+
+Concurrency Notes
+=================
+
+For guidance on thread-safety of integration solvers, see :ref:`scipy_thread_safety`.
+
+**Thread-safe solvers:**
+  - :func:`scipy.integrate.ode` with ``method='lsoda'`` (GIL release + :std:ref:`term-thread-local`)
+  - :func:`scipy.integrate.solve_ivp` with ``method='LSODA'`` (GIL release + :std:ref:`term-thread-local`)
+
+**NOT thread-safe:**
+  - :func:`scipy.integrate.ode` with ``method='vode'`` - should be :std:ref:`term-externally-synchronized`; use separate
+    instance per thread or external lock
 """  # noqa: E501
 
 

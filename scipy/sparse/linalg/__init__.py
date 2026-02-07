@@ -34,6 +34,8 @@ Matrix norms
    norm -- Norm of a sparse matrix
    onenormest -- Estimate the 1-norm of a sparse matrix
 
+.. _solving_linear_problems:
+
 Solving linear problems
 -----------------------
 
@@ -48,7 +50,10 @@ Direct methods for linear equation systems:
    spbandwidth -- Find the bandwidth of a sparse matrix.
    factorized -- Pre-factorize matrix to a function solving a linear system
    MatrixRankWarning -- Warning on exactly singular matrices
-   use_solver -- Select direct solver to use
+   use_solver -- Select direct solver to use.
+
+`spsolve`, `factorized`: each thread can independently configure solver
+preferences using `use_solver` without locks or contention.
 
 Iterative methods for linear equation systems:
 

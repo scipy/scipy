@@ -105,6 +105,13 @@ class LSODA(OdeSolver):
     njev : int
         Number of evaluations of the Jacobian.
 
+    Notes
+    -----
+    **Thread-safety:** Each LSODA integrator instance maintains its own state.
+    Multiple threads can concurrently perform independent integrations, each
+    using its own integrator instance. See :ref:`scipy_thread_safety` for more
+    details.
+
     References
     ----------
     .. [1] A. C. Hindmarsh, "ODEPACK, A Systematized Collection of ODE
