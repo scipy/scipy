@@ -20,33 +20,33 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
 
     Options
     -------
-    ftol : float, optional
+    ftol : float, optional, default: 1e-8
         Relative norm tolerance.
-    fatol : float, optional
+    fatol : float, optional, default: 1e-300
         Absolute norm tolerance.
         Algorithm terminates when ``||func(x)|| < fatol + ftol ||func(x_0)||``.
-    fnorm : callable, optional
+    fnorm : callable, optional, default: None
         Norm to use in the convergence check. If None, 2-norm is used.
-    maxfev : int, optional
+    maxfev : int, optional, default: 1000
         Maximum number of function evaluations.
-    disp : bool, optional
+    disp : bool, optional, default: False
         Whether to print convergence process to stdout.
-    eta_strategy : callable, optional
+    eta_strategy : callable, optional, default: None
         Choice of the ``eta_k`` parameter, which gives slack for growth
         of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
         `k` the iteration number, `x` the current iterate and `F` the current
         residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
         Default: ``||F||**2 / (1 + k)**2``.
-    sigma_eps : float, optional
+    sigma_eps : float, optional, default: 1e-10
         The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
         Default: 1e-10
-    sigma_0 : float, optional
+    sigma_0 : float, optional, default: 1.0
         Initial spectral coefficient.
         Default: 1.0
-    M : int, optional
+    M : int, optional, default: 10
         Number of iterates to include in the nonmonotonic line search.
         Default: 10
-    line_search : {'cruz', 'cheng'}
+    line_search : {'cruz', 'cheng'}, default: 'cruz'
         Type of line search to employ. 'cruz' is the original one defined in
         [Martinez & Raydan. Math. Comp. 75, 1429 (2006)], 'cheng' is
         a modified search defined in [Cheng & Li. IMA J. Numer. Anal. 29, 814 (2009)].
