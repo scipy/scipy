@@ -1113,15 +1113,15 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
                             0]
                 ridge_lines.append(new_line)
 
-        # Remove the ridge lines with gap_number too high
-        # XXX Modifying a list while iterating over it.
-        # Should be safe, since we iterate backwards, but
-        # still tacky.
-        for ind in range(len(ridge_lines) - 1, -1, -1):
-            line = ridge_lines[ind]
+        # Partition ridge lines: move lines with high gap_number to final_lines,
+        # keep others in ridge_lines for further processing
+        keep_lines = []
+        for line in ridge_lines:
             if line[2] > gap_thresh:
                 final_lines.append(line)
-                del ridge_lines[ind]
+            else:
+                keep_lines.append(line)
+        ridge_lines = keep_lines
 
     out_lines = []
     for line in (final_lines + ridge_lines):
