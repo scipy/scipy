@@ -1859,12 +1859,6 @@ def test_bad_p(p):
         minkowski([1, 2], [3, 4], p, [1, 1])
 
 
-def test_sokalsneath_all_false():
-    # Regression test for ticket #876
-    with pytest.raises(ValueError):
-        sokalsneath([False, False, False], [False, False, False])
-
-
 def test_canberra():
     # Regression test for ticket #1430.
     assert_equal(wcanberra([1, 2, 3], [2, 4, 6]), 1)
@@ -2140,6 +2134,51 @@ def test_gh_23109():
                    np.atleast_2d(b),
                    metric='yule', w=w)
     assert_allclose(actual, expected)
+
+
+class TestDegenerateInput:
+    """Degenerate input to boolean metrics should give zero similarity.
+    See gh-21135.
+    """
+
+    # kulczynski1 and sokalmichener are not covered because they are to be
+    # deprecated and removed.
+    @pytest.fixture(scope='class', params=[
+        'dice', 'hamming', 'jaccard', 'rogerstanimoto', 'russellrao',
+        'sokalsneath', 'yule',
+    ])
+    def metric(self, request):
+        return request.param
+
+    def test_empty_input_unweighted_py(self, metric: str):
+        func = getattr(scipy.spatial.distance, metric)
+        u, v = [], []
+        assert_equal(func(u, v), 0.0)
+
+    def test_empty_input_unweighted_xdist(self, metric: str):
+        u, v = [], []
+        assert_equal(pdist([u, v], metric), [0.0])
+        assert_equal(cdist([u], [v], metric), [[0.0]])
+
+    def test_empty_input_weighted_py(self, metric: str):
+        func = getattr(scipy.spatial.distance, metric)
+        u, v, w = [], [], []
+        assert_equal(func(u, v, w), 0.0)
+
+    def test_empty_input_weighted_xdist(self, metric: str):
+        u, v, w = [], [], []
+        assert_equal(pdist([u, v], metric, w=w), [0.0])
+        assert_equal(cdist([u], [v], metric, w=w), [[0.0]])
+
+    def test_zero_weighted_input_py(self, metric: str):
+        func = getattr(scipy.spatial.distance, metric)
+        u, v, w = [1, 0, 1], [0, 1, 0], [0, 0, 0]
+        assert_equal(func(u, v, w), 0.0)
+
+    def test_zero_weighted_input_xdist(self, metric: str):
+        u, v, w = [1, 0, 1], [0, 1, 0], [0, 0, 0]
+        assert_equal(pdist([u, v], metric, w=w), [0.0])
+        assert_equal(cdist([u], [v], metric, w=w), [[0.0]])
 
 
 class TestJaccard:
