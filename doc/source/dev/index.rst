@@ -45,6 +45,7 @@ the organization section.
    contributor/benchmarking
    contributor/cython
    contributor/public_cython_api
+   contributor/using_blas_lapack
    contributor/adding_new
    contributor/continuous_integration
    contributor/using_act
