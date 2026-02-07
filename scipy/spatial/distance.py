@@ -779,23 +779,23 @@ def jaccard(u, v, w=None):
     r"""
     Compute the Jaccard dissimilarity between two boolean vectors.
 
-    Given boolean vectors :math:`u \equiv (u_1, \cdots, u_n)`
-    and :math:`v \equiv (v_1, \cdots, v_n)` that are not both zero,
-    their *Jaccard dissimilarity* is defined as ([1]_, p. 26)
+    The *Jaccard dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as ([1]_, p. 26)
 
     .. math::
 
        d_\textrm{jaccard}(u, v) := \frac{c_{10} + c_{01}}
                                         {c_{11} + c_{10} + c_{01}}
 
-    where
+    if the denominator is not zero, where
 
     .. math::
 
-       c_{ij} := \sum_{1 \le k \le n, u_k=i, v_k=j} 1
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
 
-    for :math:`i, j \in \{ 0, 1\}`.  If :math:`u` and :math:`v` are both zero,
-    their Jaccard dissimilarity is defined to be zero. [2]_
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Jaccard dissimilarity is defined to be zero. [2]_
 
     If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
     is supplied, the *weighted Jaccard dissimilarity* is defined similarly
@@ -803,7 +803,7 @@ def jaccard(u, v, w=None):
 
     .. math::
 
-       \tilde{c}_{ij} := \sum_{1 \le k \le n, u_k=i, v_k=j} w_k
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
@@ -819,7 +819,7 @@ def jaccard(u, v, w=None):
     -------
     jaccard : float
         The Jaccard dissimilarity between vectors `u` and `v`, optionally
-        weighted by `w` if supplied.
+        weighted by `w`.
 
     Notes
     -----
@@ -850,9 +850,12 @@ def jaccard(u, v, w=None):
     ----------
     .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
            An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+           :doi:`10.1002/9780470316801`
     .. [2] Kosub, S.  (2019).  "A note on the triangle inequality for the
            Jaccard distance."  *Pattern Recognition Letters*, 120:36-38.
-    .. [3] https://en.wikipedia.org/wiki/Jaccard_index
+           :doi:`10.1016/j.patrec.2018.12.007`
+    .. [3] `Jaccard index <https://en.wikipedia.org/wiki/Jaccard_index>`_.
+           Wikipedia.
 
     Examples
     --------
@@ -1291,33 +1294,66 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
 
 
 def yule(u, v, w=None):
-    """
-    Compute the Yule dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Yule dissimilarity between two boolean vectors.
 
-    The Yule dissimilarity is defined as
+    The *Yule dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as
 
     .. math::
 
-         \\frac{R}{c_{TT} * c_{FF} + \\frac{R}{2}}
+       d_\textrm{yule}(u, v) := 1 - \frac{c_{11}c_{00} - c_{10}c_{01}}
+                                         {c_{11}c_{00} + c_{10}c_{01}}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n` and :math:`R = 2.0 * c_{TF} * c_{FT}`.
+    if the denominator is not zero, where
+
+    .. math::
+
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
+
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Yule dissimilarity is defined to be zero. [2]_
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Yule dissimilarity* is defined similarly
+    but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    yule : double
-        The Yule dissimilarity between vectors `u` and `v`.
+    yule : float
+        The Yule dissimilarity between vectors `u` and `v`, optionally
+        weighted by `w`.
+
+    Notes
+    -----
+    *Yule's coefficient of association* [1]_, or *Yule's Q* [3]_, is equal to
+    one minus the Yule dissimilarity.
+
+    References
+    ----------
+    .. [1] Yule, G. U. (1900). "On the Association of Attributes in Statistics:
+           With Illustrations from the Material of the Childhood Society."
+           *Philosophical Transactions of the Royal Society of London:
+           Series A*, 194:257-319. :doi:`10.1098/rsta.1900.0019`
+    .. [2] Batagelj, V. and Bren, M. (1995). "Comparing resemblance measures."
+           *Journal of Classification*, 12:73-90. :doi:`10.1007/BF01202268`
+    .. [3] `Yule's Q <https://en.wikipedia.org/wiki/Goodman_and_Kruskal%27s_gamma#Yule's_Q>`_.
+           Wikipedia.
 
     Examples
     --------
@@ -1341,40 +1377,71 @@ def yule(u, v, w=None):
 
 
 def dice(u, v, w=None):
-    """
-    Compute the Dice dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Dice dissimilarity between two boolean vectors.
 
-    The Dice dissimilarity between `u` and `v`, is
+    The *Dice dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as ([1]_, p. 26)
 
     .. math::
 
-         \\frac{c_{TF} + c_{FT}}
-              {2c_{TT} + c_{FT} + c_{TF}}
+       d_\textrm{dice}(u, v) := \frac{c_{10} + c_{01}}
+                                     {2 c_{11} + c_{10} + c_{01}}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
+    if the denominator is not zero, where
+
+    .. math::
+
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
+
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Dice dissimilarity is defined to be zero. [2]_
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Dice dissimilarity* is defined similarly
+    but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input 1-D array.
-    v : (N,) array_like, bool
-        Input 1-D array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    dice : double
-        The Dice dissimilarity between 1-D arrays `u` and `v`.
+    dice : float
+        The Dice dissimilarity between vectors `u` and `v`, optionally
+        weighted by `w`.
 
     Notes
     -----
-    This function computes the Dice dissimilarity index. To compute the
-    Dice similarity index, convert one to the other with similarity =
-    1 - dissimilarity.
+    The *Dice coincidence index* [3]_, or *Dice-Sørensen coefficient* [4]_,
+    is equal to one minus the Dice dissimilarity.
+
+    The Dice dissimilarity is related to the Jaccard dissimilarity by
+    :math:`d_\textrm{dice} \equiv d_\textrm{jaccard}/(2-d_\textrm{jaccard})`.
+
+    References
+    ----------
+    .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
+           An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+           :doi:`10.1002/9780470316801`
+    .. [2] Batagelj, V. and Bren, M. (1995). "Comparing resemblance measures."
+           *Journal of Classification*, 12:73-90. :doi:`10.1007/BF01202268`
+    .. [3] Dice, L. R.  (1945).  "Measures of the Amount of Ecologic
+           Association Between Species."  *Ecology*, 26(3):297-302.
+           :doi:`10.2307/1932409`
+    .. [4] `Dice-Sørensen coefficient <https://en.wikipedia.org/wiki/Dice-Sørensen_coefficient>`_.
+           Wikipedia.
 
     Examples
     --------
@@ -1383,8 +1450,11 @@ def dice(u, v, w=None):
     1.0
     >>> distance.dice([1, 0, 0], [1, 1, 0])
     0.3333333333333333
-    >>> distance.dice([1, 0, 0], [2, 0, 0])
-    -0.3333333333333333
+    >>> distance.dice([0, 1, 0], [1, 1, 0])
+    0.3333333333333333
+
+    The above example shows that the Dice dissimilarity does not satisfy
+    the triangle inequality.
 
     """
     u = _validate_vector(u)
@@ -1406,35 +1476,64 @@ def dice(u, v, w=None):
 
 
 def rogerstanimoto(u, v, w=None):
-    """
-    Compute the Rogers-Tanimoto dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Rogers-Tanimoto dissimilarity between two boolean vectors.
 
-    The Rogers-Tanimoto dissimilarity between two boolean 1-D arrays
-    `u` and `v`, is defined as
+    The *Rogers-Tanimoto dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as ([1]_, p. 24)
 
     .. math::
-       \\frac{R}
-            {c_{TT} + c_{FF} + R}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
+       d_\textrm{rogerstanimoto}(u, v) := \frac{2(c_{10} + c_{01})}
+                                               {c_{11}+2(c_{10}+c_{01})+c_{00}}
+
+    if the denominator is not zero, where
+
+    .. math::
+
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
+
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Rogers-Tanimoto dissimilarity is defined to be zero.
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Rogers-Tanimoto dissimilarity* is defined
+    similarly but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    rogerstanimoto : double
-        The Rogers-Tanimoto dissimilarity between vectors
-        `u` and `v`.
+    rogerstanimoto : float
+        The Rogers-Tanimoto dissimilarity between vectors `u` and `v`,
+        optionally weighted by `w`.
+
+    Notes
+    -----
+    The Rogers-Tanimoto dissimilarity satisfies the triangle inequality and is
+    qualified as a metric ([2]_, Theorem 9).
+
+    References
+    ----------
+    .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
+           An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+           :doi:`10.1002/9780470316801`
+    .. [2] Gower, J. C. and Legendre, P. (1986). "Metric and Euclidean
+           properties of dissimilarity coefficients."
+           *Journal of Classification*, 3:5-48. :doi:`10.1007/BF01896809`
 
     Examples
     --------
@@ -1443,8 +1542,8 @@ def rogerstanimoto(u, v, w=None):
     0.8
     >>> distance.rogerstanimoto([1, 0, 0], [1, 1, 0])
     0.5
-    >>> distance.rogerstanimoto([1, 0, 0], [2, 0, 0])
-    -1.0
+    >>> distance.rogerstanimoto([1, 0, 0], [1, 0, 0])
+    0.0
 
     """
     u = _validate_vector(u)
@@ -1456,35 +1555,56 @@ def rogerstanimoto(u, v, w=None):
 
 
 def russellrao(u, v, w=None):
-    """
-    Compute the Russell-Rao dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Russell-Rao dissimilarity between two boolean vectors.
 
-    The Russell-Rao dissimilarity between two boolean 1-D arrays, `u` and
-    `v`, is defined as
+    The *Russell-Rao dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as ([1]_, p. 65)
 
     .. math::
 
-      \\frac{n - c_{TT}}
-           {n}
+       d_\textrm{russellrao}(u, v) := 1 - \frac{c_{11}}
+                                               {c_{11}+c_{10}+c_{01}+c_{00}}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
+    if the denominator is not zero, where
+
+    .. math::
+
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
+
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Russell-Rao dissimilarity is defined to be zero.
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Russell-Rao dissimilarity* is defined
+    similarly but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    russellrao : double
-        The Russell-Rao dissimilarity between vectors `u` and `v`.
+    russellrao : float
+        The Russell-Rao dissimilarity between vectors `u` and `v`,
+        optionally weighted by `w`.
+
+    References
+    ----------
+    .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
+           An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+           :doi:`10.1002/9780470316801`
 
     Examples
     --------
@@ -1493,8 +1613,13 @@ def russellrao(u, v, w=None):
     1.0
     >>> distance.russellrao([1, 0, 0], [1, 1, 0])
     0.6666666666666666
-    >>> distance.russellrao([1, 0, 0], [2, 0, 0])
-    0.3333333333333333
+    >>> distance.russellrao([1, 1, 1], [1, 1, 1])
+    0.0
+    >>> distance.russellrao([1, 0, 0], [1, 0, 0])
+    0.6666666666666666
+
+    The last example demonstrates that the Russell-Rao dissimilarity between
+    a vector and itself is non-zero if the vector contains any zero.
 
     """
     u = _validate_vector(u)
@@ -1513,34 +1638,69 @@ def russellrao(u, v, w=None):
 
 
 def sokalsneath(u, v, w=None):
-    """
-    Compute the Sokal-Sneath dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Sokal-Sneath dissimilarity between two boolean vectors.
 
-    The Sokal-Sneath dissimilarity between `u` and `v`,
+    The *Sokal-Sneath dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as ([1]_, p. 26)
 
     .. math::
 
-       \\frac{R}
-            {c_{TT} + R}
+       d_\textrm{sokalsneath}(u, v) := \frac{2(c_{10} + c_{01})}
+                                            {c_{11} + 2(c_{10} + c_{01})}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
+    if the denominator is not zero, where
+
+    .. math::
+
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
+
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Sokal-Sneath dissimilarity is defined to be zero. [2]_
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Sokal-Sneath dissimilarity* is defined similarly
+    but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    sokalsneath : double
-        The Sokal-Sneath dissimilarity between vectors `u` and `v`.
+    sokalsneath : float
+        The Sokal-Sneath dissimilarity between vectors `u` and `v`, optionally
+        weighted by `w`.
+
+    Notes
+    -----
+    The Sokal-Sneath dissimilarity satisfies the triangle inequality and is
+    qualified as a metric ([3]_, Theorem 10).
+
+    The Sokal-Sneath dissimilarity is related to the Jaccard dissimilarity by
+    :math:`d_\textrm{sokalsneath} \equiv 2d_\textrm{jaccard}/(1+d_\textrm{jaccard})`.
+
+    References
+    ----------
+    .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
+           An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+           :doi:`10.1002/9780470316801`
+    .. [2] Batagelj, V. and Bren, M. (1995). "Comparing resemblance measures."
+           *Journal of Classification*, 12:73-90. :doi:`10.1007/BF01202268`
+    .. [3] Gower, J. C. and Legendre, P. (1986). "Metric and Euclidean
+           properties of dissimilarity coefficients."
+           *Journal of Classification*, 3:5-48. :doi:`10.1007/BF01896809`
 
     Examples
     --------
@@ -1548,11 +1708,9 @@ def sokalsneath(u, v, w=None):
     >>> distance.sokalsneath([1, 0, 0], [0, 1, 0])
     1.0
     >>> distance.sokalsneath([1, 0, 0], [1, 1, 0])
-    0.66666666666666663
-    >>> distance.sokalsneath([1, 0, 0], [2, 1, 0])
+    0.6666666666666666
+    >>> distance.sokalsneath([1, 0, 0], [1, 0, 0])
     0.0
-    >>> distance.sokalsneath([1, 0, 0], [3, 1, 0])
-    -2.0
 
     """
     u = _validate_vector(u)
