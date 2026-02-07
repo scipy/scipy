@@ -2962,10 +2962,9 @@ class _ABW:
 _abw_state = threading.local()
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False,    # p-value is Cython
-                 skip_backends=[('dask.array', 'no rankdata')])
+@xp_capabilities(cpu_only=True, skip_backends=[('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
-def ansari(x, y, alternative='two-sided', *, axis=0):
+def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
@@ -2992,6 +2991,21 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
+    method : {'auto', 'asymptotic', 'exact'} or `PermutationMethod` instance, optional
+        Selects the method used to calculate the *p*-value.
+        Default is 'auto'. The following options are available.
+
+        * ``'asymptotic'``: compares the standardized test statistic
+          against the normal distribution, correcting for ties.
+        * ``'exact'``: computes the exact *p*-value by comparing the observed
+          statistic against the exact distribution of the statistic under the
+          null hypothesis. No correction is made for ties.
+        * ``'auto'``: chooses ``'exact'`` when the size of both
+          samples is less than or equal to 55 and there are no ties;
+          chooses ``'asymptotic'`` otherwise.
+        * `PermutationMethod` instance. In this case, the p-value
+          is computed using `permutation_test` with the provided
+          configuration options and other appropriate settings.
 
     Returns
     -------
@@ -3080,6 +3094,15 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
+    methods = {'auto', 'asymptotic', 'exact'}
+    if str(method) not in methods and not isinstance(method, stats.PermutationMethod):
+        message = (f"`method` must be one of {methods} or "
+                   "an instance of `PermutationMethod`.")
+        raise ValueError(message)
+    if is_lazy_array(x) and method == 'auto':
+        message = ("`method` must be 'exact', 'asymptotic', or an instance of "
+                   "`PermutationMethod` when used with lazy arrays.")
+        raise ValueError(message)
 
     if not hasattr(_abw_state, 'a'):
         _abw_state.a = _ABW()
@@ -3098,29 +3121,43 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
-    exact = ((m < 55) and (n < 55) and not repeats)
-    if exact:
+
+    if method == "auto":
+        method = 'exact' if ((m < 55) and (n < 55) and not repeats) else 'asymptotic'
+
+    if method == 'exact':
         # np.vectorize converts to NumPy here, and we convert back to the result
         # type before returning
         cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
         sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
-        if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(cdf(AB, n, m),
-                                    sf(AB, n, m))
-        elif alternative == 'greater':
-            # AB statistic is _smaller_ when ratio of scales is larger,
-            # so this is the opposite of the usual calculation
-            pval = cdf(AB, n, m)
-        else:
-            pval = sf(AB, n, m)
+        def get_ansari_pvalue(AB):
+            if alternative == 'two-sided':
+                pval = 2.0 * np.minimum(cdf(AB, n, m), sf(AB, n, m))
+            elif alternative == 'greater':
+                # AB statistic is _smaller_ when ratio of scales is larger,
+                # so this is the opposite of the usual calculation
+                pval = cdf(AB, n, m)
+            else:
+                pval = sf(AB, n, m)
+            return pval
+
+        pval = xpx.lazy_apply(get_ansari_pvalue, AB, shape=AB.shape)
         pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
         AB = AB[()] if AB.ndim == 0 else AB
         pval = pval[()] if pval.ndim == 0 else pval
         return AnsariResult(AB, pval)
 
+    elif isinstance(method, stats.PermutationMethod):
+        def statistic(x, y, axis):
+            return ansari(x, y, axis=axis, method="asymptotic").statistic
+        alternative = dict(less='greater', greater='less').get(alternative, 'two-sided')
+        res = stats.permutation_test((x, y), statistic, axis=axis,
+                                     **method._asdict(), alternative=alternative)
+        return AnsariResult(AB, res.pvalue)
+
     mnAB = (n * (N + 1.0) ** 2 / 4.0 / N) if N % 2 else (n * (N + 2.0) / 4.0)
 
-    if repeats:   # adjust variance estimates
+    if is_lazy_array(repeats) or repeats:   # adjust variance estimates
         # compute np.sum(tj * rj**2,axis=0)
         fac = xp.sum(symrank**2, axis=-1)
         if N % 2:  # N odd
