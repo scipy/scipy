@@ -34,7 +34,7 @@ from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy.stats._stats_py import (_chk_asarray, _moment,
+from scipy.stats._stats_py import (_chk_asarray, _moment, _cdf_distance_ref,
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
@@ -8262,33 +8262,33 @@ class TestCdfDistanceValidation:
     def test_distinct_value_and_weight_lengths(self):
         # When the number of weights does not match the number of values,
         # a ValueError should be raised.
-        assert_raises(ValueError, stats.wasserstein_distance,
-                      [1], [2], [4], [3, 1])
-        assert_raises(ValueError, stats.wasserstein_distance, [1], [2], [1, 0])
+        assert_raises(ValueError, _cdf_distance_ref,
+                      1, [1], [2], [4], [3, 1])
+        assert_raises(ValueError, _cdf_distance_ref, 1, [1], [2], [1, 0])
 
     def test_zero_weight(self):
         # When a distribution is given zero weight, a ValueError should be
         # raised.
-        assert_raises(ValueError, stats.wasserstein_distance,
-                      [0, 1], [2], [0, 0])
-        assert_raises(ValueError, stats.wasserstein_distance,
-                      [0, 1], [2], [3, 1], [0])
+        assert_raises(ValueError, _cdf_distance_ref,
+                      1, [0, 1], [2], [0, 0])
+        assert_raises(ValueError, _cdf_distance_ref,
+                      1, [0, 1], [2], [3, 1], [0])
 
     def test_negative_weights(self):
         # A ValueError should be raised if there are any negative weights.
-        assert_raises(ValueError, stats.wasserstein_distance,
-                      [0, 1], [2, 2], [1, 1], [3, -1])
+        assert_raises(ValueError, _cdf_distance_ref,
+                      1, [0, 1], [2, 2], [1, 1], [3, -1])
 
     def test_empty_distribution(self):
         # A ValueError should be raised when trying to measure the distance
         # between something and nothing.
-        assert_raises(ValueError, stats.wasserstein_distance, [], [2, 2])
-        assert_raises(ValueError, stats.wasserstein_distance, [1], [])
+        assert_raises(ValueError, _cdf_distance_ref, 1, [], [2, 2])
+        assert_raises(ValueError, _cdf_distance_ref, 1, [1], [])
 
     def test_inf_weight(self):
         # An inf weight is not valid.
-        assert_raises(ValueError, stats.wasserstein_distance,
-                      [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
+        assert_raises(ValueError, _cdf_distance_ref,
+                      1, [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
 
 
 class TestWassersteinDistanceND:
@@ -8466,9 +8466,177 @@ class TestWassersteinDistanceND:
         assert_allclose(d3, d1)
 
 
-class TestWassersteinDistance:
+class CDFDistancesTest:
+    def get_arrays(self, wx, wy, batch_shape=(3,), ties=False):
+        rng = np.random.default_rng(2389234823489254)
+        shape_x = batch_shape + (12,)
+        shape_y = batch_shape + (14,)
+        x = rng.integers(6, size=shape_x) if ties else rng.random(size=shape_x)
+        y = rng.integers(7, size=shape_y) if ties else rng.random(size=shape_y)
+        wx = rng.random(x.shape) if wx else None
+        wy = rng.random(y.shape) if wy else None
+        return x, y, wx, wy
+
+    @pytest.mark.parametrize("ties", [False, True])
+    @pytest.mark.parametrize("wx", [False, True])
+    @pytest.mark.parametrize("wy", [False, True])
+    def test_2d(self, ties, wx, wy, xp):
+        # test function with 2d input against reference implementation
+        distance = getattr(stats, self.distance)
+        c, p = (2**0.5, 2) if self.distance == "energy_distance" else (1, 1)
+        x, y, wx, wy = self.get_arrays(wx, wy, ties=ties)
+        res = distance(x, y, wx, wy, axis=-1)
+        wx = [None]*len(x) if wx is None else wx
+        wy = [None]*len(y) if wy is None else wy
+        ref = c * xp.stack([_cdf_distance_ref(p, xi, yi, wxi, wyi)
+                            for xi, yi, wxi, wyi in zip(x, y, wx, wy)])
+        xp_assert_close(res, ref)
+
+    @pytest.mark.parametrize("axis", [-1, 0, 1])
+    @pytest.mark.parametrize("wx", [False, True])
+    @pytest.mark.parametrize("wy", [False, True])
+    def test_axis_integer(self, axis, wx, wy, xp):
+        # test that integer `axis` arguments work as expected
+        distance = getattr(stats, self.distance)
+        x, y, wx, wy = self.get_arrays(wx, wy, batch_shape=(2, 3))
+        ref = distance(x, y, wx, wy, axis=-1)
+
+        x, y = xp.moveaxis(x, -1, axis), xp.moveaxis(y, -1, axis)
+        wx = wx if wx is None else xp.moveaxis(wx, -1, axis)
+        wy = wy if wy is None else xp.moveaxis(wy, -1, axis)
+        res = distance(x, y, wx, wy, axis=axis)
+
+        xp_assert_close(res, ref)
+
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    @pytest.mark.parametrize("wx", [False, True])
+    @pytest.mark.parametrize("wy", [False, True])
+    def test_dtype(self, dtype, wx, wy, xp):
+        # test that dtype of output respects dtype of input
+        distance = getattr(stats, self.distance)
+        x, y, wx, wy = self.get_arrays(wx, wy)
+        ref = distance(x, y, wx, wy, axis=-1)
+
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x, y = xp.astype(x, dtype), xp.astype(y, dtype)
+        wx = wx if wx is None else xp.astype(wx, dtype)
+        wy = wy if wy is None else xp.astype(wy, dtype)
+        res = distance(x, y, wx, wy, axis=-1)
+
+        xp_assert_close(res, xp.asarray(ref, dtype=dtype))
+
+    def test_nan_inf_negative_weight(self, xp):
+        # test that negative, infinite, and NaN weights and
+        # NaN values produce NaN outputs.
+        distance = getattr(stats, self.distance)
+        x0, y0, wx0, wy0 = self.get_arrays(wx=True, wy=True)
+
+        x = xp_copy(x0)
+        x[1, 0] = xp.nan
+        ref = distance(x, y0, wx0, wy0, axis=-1)
+        assert not (xp.isnan(ref[0]) or xp.isnan(ref[2]))
+        assert xp.isnan(ref[1])
+
+        y = xp_copy(y0)
+        y[1, 1] = xp.nan
+        res = distance(x0, y, wx0, wy0, axis=-1)
+        xp_assert_close(res, ref)
+
+        wx = xp_copy(wx0)
+        wx[1, 2] = xp.nan
+        res = distance(x0, y0, wx, wy0, axis=-1)
+        xp_assert_close(res, ref)
+
+        wx = xp_copy(wx0)
+        wx[1, 3] = xp.inf
+        res = distance(x0, y0, wx, wy0, axis=-1)
+        xp_assert_close(res, ref)
+
+        wy = xp_copy(wy0)
+        wy[1, 4] = -1
+        res = distance(x0, y0, wx0, wy, axis=-1)
+        xp_assert_close(res, ref)
+
+    def test_zero_size(self, xp):
+        # test that zero-size input produces expected output
+        distance = getattr(stats, self.distance)
+        x = xp.ones((3, 0, 1))
+        y = xp.ones((3, 1, 4))
+
+        res = distance(x, y, x, y, axis=0)
+        xp_assert_equal(res, xp.full((0, 4), xp.nan))
+
+        res = distance(x, y, x, y, axis=1)
+        xp_assert_equal(res, xp.full((3, 4), xp.nan))
+
+        res = distance(x, y, x, y, axis=-1)
+        xp_assert_equal(res, xp.full((3, 0), xp.nan))
+
+    def test_axis_None(self, xp):
+        # check that `axis=None` works as expected
+        distance = getattr(stats, self.distance)
+        rng = np.random.default_rng(3498239817235824)
+        s = 2*3*4*5
+        x, y, wx, wy = rng.random(s), rng.random(s), rng.random(s), rng.random(s)
+        y = rng.random(s)
+
+        res = distance(x, xp.reshape(y, (2, 3, 4, 5)), axis=None)
+        ref = distance(x, y)
+        xp_assert_close(res, ref)
+
+        res = distance(xp.reshape(x, (5, 4, 3, 2)), xp.reshape(y, (2, -1)),
+                       xp.reshape(wx, (5, 4, 3, 2)),  axis=None)
+        ref = distance(x, y, wx)
+        xp_assert_close(res, ref)
+
+        res = distance(xp.reshape(x, (-1, 3, 2)), xp.reshape(y, (15, -1)),
+                       xp.reshape(wx, (-1, 3, 2)), xp.reshape(wy, (15, -1)), axis=None)
+        ref = distance(x, y, wx, wy)
+        xp_assert_close(res, ref)
+
+    def test_zero_weight(self, xp):
+        # test that zero weight is the same as eliminating the value
+        distance = getattr(stats, self.distance)
+        rng = np.random.default_rng(3498239817235824)
+        x = rng.random(50)
+        y = rng.random(50)
+        ix = rng.random(50) > 0.5
+        iy = rng.random(50) > 0.5
+        wx = np.ones(x.shape)
+        wx[ix] = 0
+        wy = np.ones(y.shape)
+        wy[iy] = 0
+
+        res = distance(x, y, wx)
+        ref = distance(x[~ix], y)
+        xp_assert_close(res, ref)
+
+        res = distance(x, y, v_weights=wy)
+        ref = distance(x, y[~iy])
+        xp_assert_close(res, ref)
+
+        res = distance(x, y, wx, wy)
+        ref = distance(x[~ix], y[~iy])
+        xp_assert_close(res, ref)
+
+        # Could silence the error in the function, but it may be justified
+        with np.errstate(invalid='ignore', divide='ignore'):
+            zeros = np.zeros_like(x)
+            res = distance(x, y, zeros)
+            xp_assert_equal(res, xp.asarray(xp.nan))
+
+            res = distance(x, y, v_weights=zeros)
+            xp_assert_equal(res, xp.asarray(xp.nan))
+
+            res = distance(x, y, zeros, zeros)
+            xp_assert_equal(res, xp.asarray(xp.nan))
+
+
+@make_xp_test_case(stats.wasserstein_distance)
+class TestWassersteinDistance(CDFDistancesTest):
     """ Tests for wasserstein_distance() output values.
     """
+    distance = 'wasserstein_distance'
 
     def test_simple(self):
         # For basic distributions, the value of the Wasserstein distance is
@@ -8559,9 +8727,11 @@ class TestWassersteinDistance:
                 np.nan)
 
 
-class TestEnergyDistance:
+@make_xp_test_case(stats.energy_distance)
+class TestEnergyDistance(CDFDistancesTest):
     """ Tests for energy_distance() output values.
     """
+    distance = 'energy_distance'
 
     def test_simple(self):
         # For basic distributions, the value of the energy distance is
