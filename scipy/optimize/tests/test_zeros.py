@@ -213,9 +213,7 @@ class TestBracketMethods(TestScalarRootFinders):
     @pytest.mark.parametrize('method', [zeros.bisect, zeros.ridder,
                                         zeros.toms748])
     def test_chandrupatla_collection(self, method):
-        known_fail = {'fun7.4'} if method == zeros.ridder else {}
-        self.run_collection('chandrupatla', method, method.__name__,
-                            known_fail=known_fail)
+        self.run_collection('chandrupatla', method, method.__name__)
 
     @pytest.mark.parametrize('method', bracket_methods)
     def test_lru_cached_individual(self, method):
@@ -993,3 +991,35 @@ def test_bisect_special_parameter(method):
        method(f, -1e8, 1e7, args=args, xtol=-1e-6, rtol=TOL)
     with pytest.raises(ValueError, match="rtol too small"):
        method(f, -1e8, 1e7, args=args, xtol=1e-6, rtol=rtolbad)
+
+class TestRidderUnderflow:
+    def test_gh_issue_underflow(self):
+        # Regression test for underflow in Ridder's method.
+        # Previously, intermediate calculations (fm*fm) would underflow 
+        # to zero before the ratio converged, causing a Runtime Error.
+        
+        def f(x): return x**5
+
+        # Before the fix, this raised a RuntimeError.
+        root, result = optimize.ridder(
+            f, -1, 5, 
+            xtol=1e-300, 
+            full_output=True, 
+            maxiter=10000
+        )
+        
+        assert result.converged
+        assert abs(root) < 1e-10  # Ensuring zero is found
+
+    def test_early_exit_funcalls(self):
+        # Test case for when midpoint is reached early (fm == 0).
+        def f(x): return x
+
+        root, result = optimize.ridder(
+            f, -1, 1, 
+            full_output=True
+        )
+        
+        assert result.converged
+        assert root == 0.0
+        assert result.function_calls == 3
