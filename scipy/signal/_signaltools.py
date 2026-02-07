@@ -1620,6 +1620,17 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
 
+    Examples
+    --------
+    Median filtering smooths local noise while keeping edges sharper than
+    linear smoothing. The output uses zero-padding at the boundaries.
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> x = np.array([0, 1, 2, 3, 4])
+    >>> signal.medfilt(x, kernel_size=3)
+    array([0, 1, 2, 3, 3])
+
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
