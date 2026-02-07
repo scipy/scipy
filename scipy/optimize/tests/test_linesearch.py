@@ -158,6 +158,27 @@ class TestLineSearch:
 
         assert c > 3  # check that the iterator really works...
 
+    def test_scalar_search_wolfe2_zoom_maxiter(self):
+        def f(x):
+            return (x - 1) ** 2
+        
+        def fprime(x):
+            return 2 * (x - 1)
+
+        x0 = 0  # starting point
+        p_large = 1e5  # large initial step size
+
+        with suppress_warnings() as sup:
+            sup.filter(LineSearchWarning, "The line search algorithm did not converge")
+            alpha_star1, _, _, _, _, derphi_star1 = ls.line_search_wolfe2(
+                f, fprime, x0, p_large
+            )
+            alpha_star2, _, _, _, _, derphi_star2 = ls.line_search_wolfe2(
+                f, fprime, x0, p_large, zoom_maxiter=100
+            )
+            assert alpha_star1 != alpha_star2
+            assert derphi_star1 != derphi_star2
+
     def test_scalar_search_wolfe2(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1, phi0, derphi1 = ls.scalar_search_wolfe2(
