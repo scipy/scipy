@@ -90,3 +90,4 @@ Smoothing and approximation of data
    interpolate/ND_unstructured
    interpolate/extrapolation_examples
    interpolate/interp_transition_guide.md
+   interpolate/2D_fill_from_border
