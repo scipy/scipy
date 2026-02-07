@@ -40,6 +40,15 @@ py3.extension_module('_sobol',
   subdir: 'scipy/stats'
 )
 
+py3.extension_module('_zipfian_rvs',
+  cython_gen.process('_zipfian_rvs.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/stats'
+)
+
 py3.install_sources([
     '_sobol_direction_numbers.npz'
   ],
