@@ -3346,12 +3346,17 @@ class TestCircFuncsNanPolicy:
 class TestMedianTest:
 
     def test_bad_n_samples(self):
-        # median_test requires at least two samples.
-        assert_raises(ValueError, stats.median_test, [1, 2, 3])
+        message = "median_test requires two or more samples."
+        with pytest.raises(ValueError, match=message):
+            stats.median_test([1, 2, 3])
 
     def test_empty_sample(self):
         # Each sample must contain at least one value.
-        assert_raises(ValueError, stats.median_test, [], [1, 2, 3])
+        message = "All axis-slices of one or more sample arguments..."
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.median_test([], [1, 2, 3])
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
     def test_empty_when_ties_ignored(self):
         # The grand median is 1, and all values in the first argument are
@@ -3374,16 +3379,14 @@ class TestMedianTest:
                       ties="above")
 
     def test_bad_ties(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
-                      ties="foo")
+        message = "invalid 'ties' option 'foo'..."
+        with pytest.raises(ValueError, match=message):
+            stats.median_test([1, 2, 3], [4, 5], ties="foo")
 
     def test_bad_nan_policy(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
-                      nan_policy='foobar')
-
-    def test_bad_keyword(self):
-        assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5],
-                      foo="foo")
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.median_test([1, 2, 3], [4, 5], nan_policy="foobar")
 
     def test_simple(self):
         x = [1, 2, 3]
@@ -3426,12 +3429,15 @@ class TestMedianTest:
         mt1 = stats.median_test(x, y, nan_policy='propagate')
         s, p, m, t = stats.median_test(x, y, nan_policy='omit')
 
-        assert_equal(mt1, (np.nan, np.nan, np.nan, None))
+        assert_equal(mt1, (np.nan, np.nan, np.nan, np.zeros((2, 2))))
         assert_allclose(s, 0.31250000000000006)
         assert_allclose(p, 0.57615012203057869)
         assert_equal(m, 4.0)
         assert_equal(t, np.array([[0, 2], [2, 1]]))
-        assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
+
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.median_test(x, y, nan_policy='raise')
 
     def test_basic(self):
         # median_test calls chi2_contingency to compute the test statistic
@@ -3471,6 +3477,18 @@ class TestMedianTest:
 
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+
+    def test_multidimensional(self):
+        rng = np.random.default_rng(723482348929883)
+        x = rng.random((3, 15))
+        y = rng.random(16)
+        res = stats.median_test(x, y)
+        for i, xi in enumerate(x):
+            ref = stats.median_test(xi, y)
+            assert_equal(res.statistic[i, ...], ref.statistic)
+            assert_equal(res.pvalue[i, ...], ref.pvalue)
+            assert_equal(res.median[i, ...], ref.median)
+            assert_equal(res.table[i, ...], ref.table)
 
 
 @make_xp_test_case(stats.directional_stats)
