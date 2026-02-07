@@ -122,8 +122,9 @@ class _FuncInfo:
 
         # If a native implementation is available, use that
         spx = scipy_namespace_for(xp)
+        namespace = xp if self.in_xp else scipy_namespace_for(xp)
         f = _get_native_func(
-            xp, spx, self.name, alt_names_map=self.alt_names_map, in_xp=self.in_xp
+            xp, namespace, self.name, alt_names_map=self.alt_names_map,
         )
         if f is not None:
             return f
