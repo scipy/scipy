@@ -2035,6 +2035,22 @@ class TestQR:
             if q.size != 0: # sanity check to prevent `q.T @ q` from being all zero
                 assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]))
 
+    @pytest.mark.parametrize("dtype", DTYPES)
+    def test_smoke_economic(self, dtype):
+        # smoke test to check if buffer size if not all too large
+        rng = np.random.default_rng(seed=12345)
+
+        a = rng.normal(size=(10000, 2))
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.normal(size=a.shape)
+        a = a.astype(dtype)
+
+        q, r = qr(a, mode="economic")
+
+        # default precision of 6 decimals fails for single precision here
+        assert_array_almost_equal(q @ r, a, decimal=5)
+        assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]))
+
 
 class TestRQ:
     def test_simple(self):
