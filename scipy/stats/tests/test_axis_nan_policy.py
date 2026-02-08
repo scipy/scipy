@@ -204,6 +204,7 @@ axis_nan_policy_cases = [
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
@@ -221,7 +222,7 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "Not enough other observations",
                       "Not enough observations.",
                       "At least one observation is required",
-                      "zero-size array to reduction operation maximum",
+                      "zero-size array to reduction operation",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
                       "Data input must not be empty",

@@ -4,6 +4,7 @@ py3.install_sources([
     'test_axis_nan_policy.py',
     'test_binned_statistic.py',
     'test_censored_data.py',
+    'test_circstats.py',
     'test_contingency.py',
     'test_continued_fraction.py',
     'test_continuous.py',
