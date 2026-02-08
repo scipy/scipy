@@ -1902,8 +1902,20 @@ def _yeojohnson_llf(data, *, lmb, axis=0):
     return loglike
 
 
+def _yeojohnson_inv_lmbda(x, y):
+    # compute lmbda given x and y for Yeo-Johnson transformation
+    if x >= 0:
+        num = special.lambertw(-((x + 1) ** (-1 / y) * np.log1p(x)) / y, k=-1)
+        return np.real(-num / np.log1p(x)) - 1 / y
+    else:
+        num = special.lambertw(((1 - x) ** (1 / y) * np.log1p(-x)) / y, k=-1)
+        return np.real(num / np.log1p(-x)) - 1 / y + 2
+
+
 @xp_capabilities(np_only=True)
-def yeojohnson_normmax(x, brack=None, *, nan_policy='propagate'):
+def yeojohnson_normmax(x, brack=None, *, ymax=_BigFloat_singleton,
+    nan_policy='propagate'
+):
     """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using
@@ -1913,11 +1925,17 @@ def yeojohnson_normmax(x, brack=None, *, nan_policy='propagate'):
     ----------
     x : array_like
         Input array.
-    brack : 2-tuple, optional
+    brack : 2-tuple, optional, default (-2.0, 2.0)
         The starting interval for a downhill bracket search with
         `optimize.brent`. Note that this is in most cases not critical; the
-        final result is allowed to be outside this bracket. If None,
-        `optimize.fminbound` is used with bounds that avoid overflow.
+        final result is allowed to be outside this bracket.
+    ymax : float, optional
+        The unconstrained optimal transform parameter may cause Yeo-Johnson
+        transformed data to have extreme magnitude or even overflow.
+        This parameter constrains MLE optimization such that the magnitude
+        of the transformed `x` does not exceed `ymax`. The default is
+        the maximum value of the input dtype. If set to infinity,
+        `yeojohnson_normmax` returns the unconstrained optimal lambda.
     nan_policy : {'propagate', 'omit', 'raise'}
         Defines how to handle input NaNs.
 
@@ -1978,32 +1996,50 @@ def yeojohnson_normmax(x, brack=None, *, nan_policy='propagate'):
             raise ValueError('Yeo-Johnson input must be finite.')
         if np.all(x == 0):
             return 1.0
-        if brack is not None:
-            return optimize.brent(_neg_llf, brack=brack, args=(x,))
 
-        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        # Allow values up to 20 times the maximum observed value to be safely
-        # transformed without over- or underflow.
-        log1p_max_x = np.log1p(20 * np.max(np.abs(x)))
-        # Use half of floating point's exponent range to allow safe computation
-        # of the variance of the transformed data.
-        log_eps = np.log(np.finfo(dtype).eps)
-        log_tiny_float = (np.log(np.finfo(dtype).tiny) - log_eps) / 2
-        log_max_float = (np.log(np.finfo(dtype).max) + log_eps) / 2
-        # Compute the bounds by approximating the inverse of the Yeo-Johnson
-        # transform on the smallest and largest floating point exponents, given
-        # the largest data we expect to observe. See [1] for further details.
-        # [1] https://github.com/scipy/scipy/pull/18852#issuecomment-1630286174
-        lb = log_tiny_float / log1p_max_x
-        ub = log_max_float / log1p_max_x
-        # Convert the bounds if all or some of the data is negative.
-        if np.all(x < 0):
-            lb, ub = 2 - ub, 2 - lb
-        elif np.any(x < 0):
-            lb, ub = max(2 - ub, lb), min(2 - lb, ub)
-        # Match `optimize.brent`'s tolerance.
-        tol_brent = 1.48e-08
-        return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
+        end_msg = "exceed specified `ymax`."
+        if ymax is _BigFloat_singleton:
+            dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+            # 10000 is a safety factor.
+            ymax = np.finfo(dtype).max / 10000
+            end_msg = f"overflow in {dtype}."
+        elif ymax <= 0:
+            raise ValueError("`ymax` must be strictly positive")
+
+        # Set default value for `brack`.
+        if brack is None:
+            brack = (-2.0, 2.0)
+
+        lmax = optimize.brent(_neg_llf, brack=brack, args=(x,))
+
+        if not np.isinf(ymax):  # adjust the final lambda
+            # x > 0, yeojohnson(x) > 0; x < 0, yeojohnson(x) < 0
+            xmax, xmin = np.max(x), np.min(x)
+            if xmin >= 0:
+                x_treme = xmax
+            elif xmax <= 0:
+                x_treme = xmin
+            else:  # xmin < 0 < xmax
+                with np.errstate(over="ignore"):
+                    indicator = yeojohnson(xmax, lmax) > abs(yeojohnson(xmin, lmax))
+                x_treme = xmax if indicator else xmin
+
+            with np.errstate(over="ignore"):
+                g_ymax = abs(yeojohnson(x_treme, lmax)) > ymax
+
+            if g_ymax:
+                message = (
+                    f"The optimal lambda is {lmax}, but the returned lambda is the "
+                    f"constrained optimum to ensure that the maximum or the minimum "
+                    f"of the transformed data does not " + end_msg
+                )
+                warnings.warn(message, stacklevel=2)
+
+                # Return the constrained lambda to ensure the transformation
+                # does not cause overflow or exceed specified `ymax`
+                lmax = _yeojohnson_inv_lmbda(x_treme, ymax * np.sign(x_treme))
+
+    return lmax
 
 
 @xp_capabilities(np_only=True)
