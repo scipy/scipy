@@ -5,7 +5,7 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_capabilities,
     xp_device,
-    _length_nonmasked,
+    _count_nonmasked,
 )
 import scipy._external.array_api_extra as xpx
 
@@ -109,7 +109,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         a = xp.reshape(a, (-1,))
         axis = 0
 
-    n = xp.asarray(_length_nonmasked(a, axis=axis), dtype=a.dtype, device=xp_device(a))
+    n = xp.asarray(_count_nonmasked(a, axis=axis), dtype=a.dtype, device=xp_device(a))
 
     with (np.errstate(divide='ignore', invalid='ignore'), warnings.catch_warnings()):
         warnings.simplefilter("ignore")

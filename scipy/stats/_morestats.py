@@ -28,7 +28,7 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_device,
     xp_ravel,
-    _length_nonmasked,
+    _count_nonmasked,
     is_lazy_array,
 )
 
@@ -325,7 +325,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -392,7 +392,7 @@ def kstatvar(data, n=2, *, axis=None):
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -3235,7 +3235,7 @@ def bartlett(*samples, axis=0):
         samples = _broadcast_arrays(samples, axis=axis, xp=xp)
         samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp),
+    Ni = [xp.asarray(_count_nonmasked(sample, axis=-1, xp=xp),
                      dtype=sample.dtype, device=xp_device(sample))
           for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]

@@ -78,7 +78,7 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_capabilities,
     xp_ravel,
-    _length_nonmasked,
+    _count_nonmasked,
     _share_masks,
     xp_swapaxes,
     xp_device,
@@ -1175,7 +1175,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
         rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
                           keepdims=True) / xp.abs(mean)
 
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
     with np.errstate(invalid='ignore'):
         device = {'device': xp_device(a)}
         precision_loss = xp.any(xp.asarray(rel_diff < eps, **device)
@@ -1249,7 +1249,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
-        n = _length_nonmasked(x, axis, xp=xp)
+        n = _count_nonmasked(x, axis, xp=xp)
         n = xp.asarray(n, dtype=x.dtype, device=xp_device(x))
         var *= (n / (n-ddof))  # to avoid error on division by zero
     return var
@@ -1337,7 +1337,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
@@ -1446,7 +1446,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean, xp=xp)
@@ -1557,7 +1557,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         raise ValueError("The input must not be empty.")
 
     # use xp.astype when data-apis/array-api-compat#226 is resolved
-    n = xp.asarray(_length_nonmasked(a, axis, xp=xp), dtype=xp.int64,
+    n = xp.asarray(_count_nonmasked(a, axis, xp=xp), dtype=xp.int64,
                    device=xp_device(a))
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
@@ -1679,7 +1679,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     b2 = skew(a, axis, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
+    n = xp.asarray(_count_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 8).set(xp.nan)
 
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -1781,7 +1781,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
+    n = xp.asarray(_count_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 5).set(xp.nan)
 
     E = 3.0*(n-1) / (n+1)
@@ -1957,7 +1957,7 @@ def jarque_bera(x, *, axis=None):
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(x, axis), dtype=mu.dtype, device=xp_device(x))
+    n = xp.asarray(_count_nonmasked(x, axis), dtype=mu.dtype, device=xp_device(x))
     statistic = n / 6 * (s**2 + k**2 / 4)
 
     chi2 = _SimpleChi2(xp.asarray(2., dtype=mu.dtype, device=xp_device(x)))
@@ -2657,7 +2657,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         a = xp.reshape(a, (-1,))
         axis = 0
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
@@ -3930,7 +3930,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     # axis is guaranteed to be -1 by the _axis_nan_policy decorator
     alldata = xp.concat(samples, axis=-1)
-    bign = _length_nonmasked(alldata, axis=-1, xp=xp)
+    bign = _count_nonmasked(alldata, axis=-1, xp=xp)
 
     # Check if the inputs are too small (for testing _axis_nan_policy decorator)
     if _f_oneway_is_too_small(samples):
@@ -3976,7 +3976,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         ssbn = 0
         for sample in samples:
             smo_ss = xp.sum(sample - offset, axis=-1)**2.
-            ssbn = ssbn + smo_ss / _length_nonmasked(sample, axis=-1, xp=xp)
+            ssbn = ssbn + smo_ss / _count_nonmasked(sample, axis=-1, xp=xp)
 
         # Naming: variables ending in bn/b are for "between treatments", wn/w are
         # for "within treatments"
@@ -3997,7 +3997,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         y_t = xp.stack([xp.mean(sample, axis=-1) for sample in samples])
         # "... of $n_t$ observations..."
         if is_marray(xp):
-            n_t = xp.stack([_length_nonmasked(sample, axis=-1, xp=xp)
+            n_t = xp.stack([_count_nonmasked(sample, axis=-1, xp=xp)
                             for sample in samples])
             n_t = xp.asarray(n_t, dtype=n_t.dtype)
         else:
@@ -4692,7 +4692,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`x` and `y` must have length at least 2.')
 
     x, y = _share_masks(x, y, xp=xp)
-    n = xp.asarray(_length_nonmasked(x, axis=axis), dtype=x.dtype)
+    n = xp.asarray(_count_nonmasked(x, axis=axis), dtype=x.dtype)
 
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
@@ -6226,7 +6226,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
     a, popmean = xp_promote(a, popmean, force_floating=True, xp=xp)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = _length_nonmasked(a, axis)
+    n = _count_nonmasked(a, axis)
     df = n - 1
 
     if a.shape[axis] == 0:
@@ -6762,8 +6762,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
     alternative_nums = {"less": -1, "two-sided": 0, "greater": 1}
 
-    n1 = _length_nonmasked(a, axis)
-    n2 = _length_nonmasked(b, axis)
+    n1 = _count_nonmasked(a, axis)
+    n2 = _count_nonmasked(b, axis)
 
     if trim == 0:
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -7241,7 +7241,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
     stat = xp.sum(terms, axis=axis)
 
-    num_obs = xp.asarray(_length_nonmasked(terms, axis), device=xp_device(terms),
+    num_obs = xp.asarray(_count_nonmasked(terms, axis), device=xp_device(terms),
                          dtype=f_obs.dtype)
 
     df = num_obs - 1 - ddof
@@ -8562,18 +8562,20 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    n = [sample.shape[-1] for sample in samples]
-    totaln = sum(n)
-    if any(n) < 1:  # Only needed for `test_axis_nan_policy`
+    lengths = [sample.shape[-1] for sample in samples]
+    if any(lengths) < 1:  # Only needed for `test_axis_nan_policy`
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
+              for sample in samples]
+    totaln = sum(counts)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
-    # Compute sum^2/n for each group and sum
-    j = list(itertools.accumulate(n, initial=0))
-    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+    # Compute sum^2/count for each group and sum
+    j = list(itertools.accumulate(lengths, initial=0))
+    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / counts[i]
                for i in range(num_groups))
 
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
@@ -8660,6 +8662,7 @@ def friedmanchisquare(*samples, axis=0):
     xp = array_namespace(*samples)
     samples = xp_promote(*samples, force_floating=True, xp=xp)
     dtype = samples[0].dtype
+    samples = _share_masks(*samples, xp=xp)  # paired-sample test
 
     n = samples[0].shape[-1]
     if n == 0:  # only for `test_axis_nan_policy`; user doesn't see this
@@ -8674,10 +8677,11 @@ def friedmanchisquare(*samples, axis=0):
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
-    c = 1 - ties / (k*(k*k - 1)*n)
+    count = xp.asarray(_count_nonmasked(samples[0], axis=-1), dtype=ties.dtype)
+    c = 1 - ties / (k*(k*k - 1)*count)
 
     ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
-    statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
+    statistic = (12.0 / (k*count*(k+1)) * ssbn - 3*count*(k+1)) / c
 
     chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
@@ -8776,14 +8780,15 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    xp = array_namespace(x, y)
-    nx = x.shape[-1]
-    ny = y.shape[-1]
-
     # _axis_nan_policy decorator ensures we can work along the last axis
+    xp = array_namespace(x, y)
+    length_x = x.shape[-1]
+    nx = _count_nonmasked(x, axis=-1)
+    ny = _count_nonmasked(y, axis=-1)
+
     rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
-    rankcx = rankc[..., 0:nx]
-    rankcy = rankc[..., nx:nx+ny]
+    rankcx = rankc[..., :length_x]
+    rankcy = rankc[..., length_x:]
     rankcx_mean = xp.mean(rankcx, axis=-1, keepdims=True)
     rankcy_mean = xp.mean(rankcy, axis=-1, keepdims=True)
     rankx = rankdata(x, axis=-1)
@@ -8963,7 +8968,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
 
-    n = _length_nonmasked(pvalues, axis)
+    n = _count_nonmasked(pvalues, axis)
     n = xp.asarray(n, dtype=pvalues.dtype, device=xp_device(pvalues))
 
     if method == 'fisher':
@@ -10145,6 +10150,23 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
             out.append(t)
         return out[0] if len(out) == 1 else tuple(out)
 
+    if is_marray(xp):
+        data, mask = x.data, x.mask
+        uxp = array_namespace(data)
+        data = uxp.where(mask, uxp.nan, data)
+        # TODO: have `_rankdata` always return three items, but allow them
+        #       to be `None` if they are not needed by the calling function.
+        #       Arguments controlling the number of outputs is a pain.
+        ranks, sorted, ties = _rankdata(data, method, True, True, xp=uxp)
+        out = [xp.asarray(ranks, mask=mask)]
+        if return_sorted or return_ties:
+            mask_sorted = uxp.isnan(sorted)
+        if return_sorted:
+            out.append(xp.asarray(sorted, mask=mask_sorted))
+        if return_ties:
+            out.append(xp.asarray(ties, mask=mask_sorted))
+        return out[0] if len(out) == 1 else tuple(out)
+
     shape = x.shape
 
     # Get sort order
@@ -10896,7 +10918,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        n = _length_nonmasked(x, axis, xp=xp)
+        n = _count_nonmasked(x, axis, xp=xp)
         # Or two lines with ternaries : )
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]

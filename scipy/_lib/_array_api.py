@@ -637,7 +637,7 @@ def is_marray(xp):
     return "marray" in xp.__name__
 
 
-def _length_nonmasked(x, axis, keepdims=False, xp=None):
+def _count_nonmasked(x, axis, keepdims=False, xp=None):
     xp = array_namespace(x) if xp is None else xp
     if is_marray(xp):
         if np.iterable(axis):
