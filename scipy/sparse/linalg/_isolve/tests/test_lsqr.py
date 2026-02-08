@@ -2,8 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal, assert_equal
 import pytest
 import scipy.sparse
-import scipy.sparse.linalg
-from scipy.sparse.linalg import lsqr
+from scipy.sparse.linalg import lsqr, LinearOperator
 
 # Set up a test problem
 n = 35
@@ -118,3 +117,12 @@ def test_initialization():
     x = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit, x0=x0)
     assert_allclose(x_ref[0], x[0])
     assert_array_equal(b_copy, b)
+
+def test_nD():
+    """Check that >2-D operators are rejected cleanly."""
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    b = np.ones((2, 2))
+    with pytest.raises(ValueError, match="expected 2-D"):
+        lsqr(A, b)
