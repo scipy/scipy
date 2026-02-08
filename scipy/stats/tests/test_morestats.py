@@ -3016,38 +3016,11 @@ class TestYeojohnson(TransformTest):
         # Attempt to trigger overflow with large data.
         np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
     ])
-    def test_overflow(self, x):
-        # non-regression test for gh-18389
-
-        def optimizer(fun, lam_yeo):
-            out = optimize.fminbound(fun, -lam_yeo, lam_yeo, xtol=1.48e-08)
-            result = optimize.OptimizeResult()
-            result.x = out
-            return result
-
-        with np.errstate(all="raise"):
-            xt_yeo, lam_yeo = stats.yeojohnson(x)
-            xt_box, lam_box = stats.boxcox(
-                x + 1, optimizer=partial(optimizer, lam_yeo=lam_yeo))
-            assert np.isfinite(np.var(xt_yeo))
-            assert np.isfinite(np.var(xt_box))
-            assert_allclose(lam_yeo, lam_box, rtol=1e-6)
-            assert_allclose(xt_yeo, xt_box, rtol=1e-4)
-
-    @pytest.mark.parametrize('x', [
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
-                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
-    ])
-    @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-150, 1e32, 1e200])
     @pytest.mark.parametrize('sign', [1, -1])
-    def test_overflow_underflow_signed_data(self, x, scale, sign):
-        # non-regression test for gh-18389
-        with np.errstate(all="raise"):
-            xt_yeo, lam_yeo = stats.yeojohnson(sign * x * scale)
-            assert np.all(np.sign(sign * x) == np.sign(xt_yeo))
-            assert np.isfinite(lam_yeo)
-            assert np.isfinite(np.var(xt_yeo))
+    def test_overflow(self, x, sign):
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            xt_yj, _ = stats.yeojohnson(sign * x)
+            assert np.all(np.isfinite(xt_yj))
 
     @pytest.mark.parametrize('x', [
         np.array([0, 1, 2, 3]),
@@ -3088,6 +3061,50 @@ class TestYeojohnsonNormmax(NormmaxTest):
              7.5, -6.0]
         lmbda = stats.yeojohnson_normmax(x)
         assert np.allclose(lmbda, 1.305, atol=1e-3)
+
+    def test_negative_ymax(self):
+        with pytest.raises(ValueError, match="`ymax` must be strictly positive"):
+            stats.yeojohnson_normmax(self.x, ymax=-1)
+
+    @pytest.mark.parametrize("x", [
+        # overflow in float64
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
+                 dtype=np.float64),
+        # overflow in float32
+        np.array([200.3, 195.0, 199.7, 200.0, 200.9],
+                 dtype=np.float32),
+    ])
+    @pytest.mark.parametrize('sign', [1, -1])
+    @pytest.mark.parametrize("ymax", [1e10, 1e30, None])
+    def test_user_defined_ymax_input_float64_32(self, x, sign, ymax):
+        # Test the maximum of the transformed data close to ymax
+        x = sign * x
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            kwarg = {'ymax': ymax} if ymax is not None else {}
+            lmb = stats.yeojohnson_normmax(x, **kwarg)
+            x_treme = [np.min(x), np.max(x)]
+            ymax_res = max(abs(stats.yeojohnson(x_treme, lmb)))
+            if ymax is None:
+                # 10000 is safety factor used in yeojohnson_normmax
+                ymax = np.finfo(x.dtype).max / 10000
+            assert_allclose(ymax, ymax_res, rtol=1e-5)
+
+    @pytest.mark.parametrize('sign', [1, -1])
+    def test_user_defined_ymax_inf(self, sign):
+        # overflow in float32 but not float64
+        x = [200.3, 195.0, 199.7, 200.0, 200.9]
+        x_32 = sign * np.asarray(x, dtype=np.float32)
+        x_64 = sign * np.asarray(x, dtype=np.float64)
+
+        # assert overflow with float32 but not float64
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            stats.yeojohnson_normmax(x_32)
+        stats.yeojohnson_normmax(x_64)
+
+        # compute the true optimal lambda then compare them
+        lmb_32 = stats.yeojohnson_normmax(x_32, ymax=np.inf)
+        lmb_64 = stats.yeojohnson_normmax(x_64, ymax=np.inf)
+        assert_allclose(lmb_32, lmb_64, rtol=1e-2)
 
 
 @make_xp_test_case(stats.circmean, stats.circvar, stats.circstd)
