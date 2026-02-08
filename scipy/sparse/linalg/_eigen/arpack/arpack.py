@@ -266,8 +266,7 @@ _NEUPD_ERRORS = {'d': DNEUPD_ERRORS,
 _SEUPD_WHICH = ['LM', 'SM', 'LA', 'SA', 'BE']
 
 # accepted values of parameter WHICH in _NAUPD
-_NEUPD_WHICH = ['LM', 'SM', 'LR', 'SR', 'LI', 'SI']
-
+_NEUPD_WHICH = ['LM', 'SM', 'LR', 'SR', 'LI', 'SI'] 
 # The enum values for the parameter WHICH in _NAUPD and _SEUPD
 WHICH_DICT = {
     'LM': 0, 'SM': 1, 'LR': 2, 'SR': 3, 'LI': 4, 'SI': 5, 'LA': 6, 'SA': 7, 'BE': 8
@@ -275,6 +274,38 @@ WHICH_DICT = {
 
 # The enum values for the parameter HOWMNY in _NEUPD and _SEUPD
 HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
+
+# Function to check if M is Hermitian
+def _is_hermitian(M, tol=1e-10):
+    """Check if matrix M is Hermitian (symmetric for real matrices).
+
+    Uses sampling to efficiently check M ≈ M^H for large matrices.
+    """
+    M_op = aslinearoperator(M)
+    n = M_op.shape[0]
+    
+    # Use a deterministic seed for reproducibility
+    rng = np.random.RandomState(0)
+    
+    # Sample a few random vectors to check M*v ≈ M^H*v
+    for _ in range(3):
+        if np.issubdtype(M_op.dtype, np.complexfloating):
+            v = rng.randn(n) + 1j * rng.randn(n)
+        else:
+            v = rng.randn(n)
+        
+        Mv = M_op.matvec(v)
+        try:
+            MHv = M_op.rmatvec(v)
+        except NotImplementedError:
+            # Cannot verify Hermiticity without adjoint
+            return True
+
+        # For Hermitian M: M*v should equal M^H*v
+        if not np.allclose(Mv, MHv, rtol=tol, atol=tol):
+            return False
+    return True
+
 
 class ArpackError(RuntimeError):
     """
@@ -749,7 +780,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
         if which not in _NEUPD_WHICH:
             raise ValueError("Parameter which must be one of"
-                             f" {' '.join(_NEUPD_WHICH)}")
+                             f" {' '.join(_NEUPD_WHICH)}") 
         if k >= n - 1:
             raise ValueError(f"k must be less than ndim(A)-1, k={k}")
 
@@ -1244,13 +1275,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
-    v0 : ndarray, optional
-        Starting vector for iteration.
-        Default: random
-    ncv : int, optional
-        The number of Lanczos vectors generated
-        `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, max(2*k + 1, 20))``
+
+        Note: For generalized eigenvalue problems (when M is specified) without
+        a shift (sigma=None), M must be Hermitian (symmetric for real matrices).
+        ARPACK mode=2 assumes M is Hermitian and will return incorrect results
+        for non-Hermitian M. Use shift-invert mode (specify sigma) instead.
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
         Default: ``n*10``
@@ -1375,6 +1404,16 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             #general eigenvalue problem
             mode = 2
+            
+            # ARPACK mode=2 assumes M is Hermitian
+            if not _is_hermitian(M):
+                raise ValueError(
+                    "M must be Hermitian (symmetric for real matrices). "
+                    "ARPACK mode=2 assumes M is Hermitian and will return "
+                    "incorrect results for non-Hermitian M. "
+                    "Use shift-invert mode by specifying sigma (e.g., sigma=0)."
+                )
+            
             if Minv is None:
                 Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
@@ -1701,6 +1740,16 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             #general eigenvalue problem
             mode = 2
+            
+            # ARPACK mode=2 assumes M is Hermitian
+            if not _is_hermitian(M):
+                raise ValueError(
+                    "M must be Hermitian (symmetric for real matrices). "
+                    "ARPACK mode=2 assumes M is Hermitian and will return "
+                    "incorrect results for non-Hermitian M. "
+                    "Use shift-invert mode by specifying sigma (e.g., sigma=0)."
+                )
+            
             if Minv is None:
                 Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
