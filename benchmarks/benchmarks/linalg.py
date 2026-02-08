@@ -174,6 +174,23 @@ class BatchedSVDBench(Benchmark):
             sl.svd(self.a)
 
 
+class BatchedPinvBench(Benchmark):
+    params = [
+        [(10, 10, 10, 2), (100, 10, 10), (100, 20, 20), (100, 100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ['shape',  'module']
+
+    def setup(self, shape, module):
+        self.a = random(shape)
+
+    def time_pinv(self, shape, module):
+        if module == 'numpy':
+            nl.pinv(self.a)
+        else:
+            sl.pinv(self.a)
+
+
 class BatchedLstsqBench(Benchmark):
     params = [
         [(10, 10, 50, 2), (100, 20, 5), (100, 10, 10), (100, 5, 20), (100, 2, 50)],

@@ -1381,7 +1381,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-@_apply_over_batch(('a', 2))
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1395,9 +1394,13 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     significance cut-off value is determined by ``atol + rtol * s``. Any
     singular value below this value is assumed insignificant.
 
+    The `a` array argument may have additional "batch" dimensions prepended to the core
+    shape. In this case, the array is treated as a batch of lower-dimensional slices;
+    see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Matrix to be pseudo-inverted.
     atol : float, optional
         Absolute threshold term, default value is 0.
@@ -1419,7 +1422,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
 
     Returns
     -------
-    B : (N, M) ndarray
+    B : (..., N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix. Returned if `return_rank` is True.
@@ -1480,24 +1483,35 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     >>> np.allclose((B @ A).conj().T, B @ A)  # Condition 4
     True
 
+    If the input array has more than two dimensions, it is interpreted as a batch of
+    two-dimensional slices:
+
+    >>> a = np.stack((np.zeros((3, 3)), np.eye(3)))
+    >>> p, ranks = linalg.pinv(a, return_rank=True)
+    >>> p.shape
+    (2, 3, 3)
+    >>> ranks
+    array([0, 3])
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
-    t = u.dtype.char.lower()
-    maxS = np.max(s, initial=0.)
+    u, s, vh = _decomp_svd.svd(a.conj(), full_matrices=False, check_finite=False)
 
     atol = 0. if atol is None else atol
-    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
-
+    rtol = max(a.shape[-2:]) * np.finfo(u.dtype).eps if (rtol is None) else rtol
     if (atol < 0.) or (rtol < 0.):
         raise ValueError("atol and rtol values must be positive.")
 
+    maxS = np.max(s, axis=-1, initial=0., keepdims=True)
     val = atol + maxS * rtol
-    rank = np.sum(s > val)
 
-    u = u[:, :rank]
-    u /= s[:rank]
-    B = (u @ vh[:rank]).conj().T
+    large = s > val
+    rank = np.sum(large, axis=-1)
+
+    # zero out small singular values, 1/s large singular values
+    np.divide(1, s, where=large, out=s)
+    s[~large] = 0
+
+    B = vh.mT @ (s[..., None] * u.mT)
 
     if return_rank:
         return B, rank
