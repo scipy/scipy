@@ -188,6 +188,71 @@ cdef object _setup_unuran():
 _setup_unuran()
 
 
+cdef class wrap_dist_continuous:
+    """Wrap frozen continuous distributions for being called by UNURAN.
+
+    This class is responsible for applying loc/scale, forcing the
+    argument to be an array, and clamping cdf values between 0 and 1."""
+    cdef object dist
+    cdef tuple args
+    cdef float loc
+    cdef float scale
+    cdef object support
+    def __init__(self, dist):
+        self.dist = dist
+        (self.args, self.loc,
+         self.scale) = dist.dist._parse_args(*dist.args,
+                                             **dist.kwds)
+        self.support = dist.support
+    def pdf(self, x):
+        # some distributions require array inputs.
+        x = np.asarray((x-self.loc)/self.scale)
+        return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
+    def logpdf(self, x):
+        # some distributions require array inputs.
+        x = np.asarray((x-self.loc)/self.scale)
+        if self.pdf(x) > 0:
+            return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
+        return -np.inf
+    def cdf(self, x):
+        x = np.asarray((x-self.loc)/self.scale)
+        res = self.dist.dist._cdf(x, *self.args)
+        if res < 0:
+            return 0
+        elif res > 1:
+            return 1
+        return res
+
+
+cdef class wrap_dist_discrete:
+    """Wrap frozen discrete distributions for being called by UNURAN.
+
+    This class is responsible for applying loc, forcing the
+    argument to be an array, and clamping cdf values between 0 and 1."""
+    cdef object dist
+    cdef tuple args
+    cdef float loc
+    cdef object support
+    def __init__(self, dist):
+        self.dist = dist
+        (self.args, self.loc,
+         _) = dist.dist._parse_args(*dist.args,
+                                    **dist.kwds)
+        self.support = dist.support
+    def pmf(self, x):
+        # some distributions require array inputs.
+        x = np.asarray(x-self.loc)
+        return max(0, self.dist.dist._pmf(x, *self.args))
+    def cdf(self, x):
+        x = np.asarray(x-self.loc)
+        res = self.dist.dist._cdf(x, *self.args)
+        if res < 0:
+            return 0
+        elif res > 1:
+            return 1
+        return res
+
+
 cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                        list optional_meths = None):
     """
@@ -220,52 +285,14 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
     cdef dict callbacks = {}
     if isinstance(dist, rv_frozen):
         if isinstance(dist.dist, stats.rv_continuous):
-            class wrap_dist:
-                def __init__(self, dist):
-                    self.dist = dist
-                    (self.args, self.loc,
-                     self.scale) = dist.dist._parse_args(*dist.args,
-                                                         **dist.kwds)
-                    self.support = dist.support
-                def pdf(self, x):
-                    # some distributions require array inputs.
-                    x = np.asarray((x-self.loc)/self.scale)
-                    return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
-                def logpdf(self, x):
-                    # some distributions require array inputs.
-                    x = np.asarray((x-self.loc)/self.scale)
-                    if self.pdf(x) > 0:
-                        return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
-                    return -np.inf
-                def cdf(self, x):
-                    x = np.asarray((x-self.loc)/self.scale)
-                    res = self.dist.dist._cdf(x, *self.args)
-                    if res < 0:
-                        return 0
-                    elif res > 1:
-                        return 1
-                    return res
+            dist = wrap_dist_continuous(dist)
         elif isinstance(dist.dist, stats.rv_discrete):
-            class wrap_dist:
-                def __init__(self, dist):
-                    self.dist = dist
-                    (self.args, self.loc,
-                     _) = dist.dist._parse_args(*dist.args,
-                                                **dist.kwds)
-                    self.support = dist.support
-                def pmf(self, x):
-                    # some distributions require array inputs.
-                    x = np.asarray(x-self.loc)
-                    return max(0, self.dist.dist._pmf(x, *self.args))
-                def cdf(self, x):
-                    x = np.asarray(x-self.loc)
-                    res = self.dist.dist._cdf(x, *self.args)
-                    if res < 0:
-                        return 0
-                    elif res > 1:
-                        return 1
-                    return res
-        dist = wrap_dist(dist)
+            dist = wrap_dist_discrete(dist)
+        else:
+            raise ValueError(
+                "Cannot wrap frozen dist unless it is either continuous or "
+                "discrete."
+            )
     if meths is not None:
         for meth in meths:
             if hasattr(dist, meth):
@@ -397,7 +424,6 @@ cdef class Method:
     cdef object numpy_rng
     cdef _URNG _urng_builder
     cdef object callbacks
-    cdef object _callback_wrapper
     cdef MessageStream _messages
     # save all the arguments to enable pickling
     cdef object _kwargs
@@ -428,7 +454,7 @@ cdef class Method:
         if self.urng == NULL:
             raise UNURANError(self._messages.get())
         self._check_errorcode(unur_set_urng(self.par, self.urng))
-        has_callback_wrapper = (self._callback_wrapper is not None)
+        has_callback_wrapper = (self.callbacks is not None)
         try:
             if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
@@ -446,6 +472,9 @@ cdef class Method:
         finally:
             if has_callback_wrapper:
                 release_unuran_callback(&callback)
+
+    cdef _callback_wrapper(self, x, name):
+        raise NotImplementedError("Must override _callback_wrapper if self.callbacks defined.")
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -467,7 +496,7 @@ cdef class Method:
             PyObject *value
             PyObject *traceback
 
-        has_callback_wrapper = (self._callback_wrapper is not None)
+        has_callback_wrapper = (self.callbacks is not None)
         error = 0
 
         _lock.acquire()
@@ -514,7 +543,7 @@ cdef class Method:
             PyObject *value
             PyObject *traceback
 
-        has_callback_wrapper = (self._callback_wrapper is not None)
+        has_callback_wrapper = (self.callbacks is not None)
         error = 0
 
         _lock.acquire()
@@ -839,9 +868,6 @@ cdef class TransformedDensityRejection(Method):
         }
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -884,6 +910,9 @@ cdef class TransformedDensityRejection(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     cdef object _validate_args(self, dist, domain, c, construction_points):
         domain = _validate_domain(domain, dist)
@@ -1126,9 +1155,6 @@ cdef class SimpleRatioUniforms(Method):
         }
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1160,6 +1186,9 @@ cdef class SimpleRatioUniforms(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     cdef object _validate_args(self, dist, domain, pdf_area):
         # validate args
@@ -1408,9 +1437,6 @@ cdef class NumericalInversePolynomial(Method):
             msg = ("Either of the methods `pdf` or `logpdf` must be specified "
                    "for the distribution object `dist`.")
             raise ValueError(msg)
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1445,6 +1471,9 @@ cdef class NumericalInversePolynomial(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     cdef object _validate_args(self, dist, domain, order, u_resolution):
         domain = _validate_domain(domain, dist)
@@ -1965,9 +1994,6 @@ cdef class NumericalInverseHermite(Method):
         }
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1993,6 +2019,9 @@ cdef class NumericalInverseHermite(Method):
             self._set_rng(random_state)
         finally:
             _lock.release()
+
+    cdef _callback_wrapper(self, x, name):
+        return self.callbacks[name](x)
 
     def _validate_args(self, dist, domain, order, u_resolution, construction_points):
         domain = _validate_domain(domain, dist)
