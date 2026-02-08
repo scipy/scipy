@@ -39,6 +39,17 @@ solve-group = "default"
 features = ["run-deps", "build-deps", "bench-common", "bench"]
 solve-group = "default"
 
+[environments.build-py313]
+# tasks: build-py313
+features = ["build-deps", "build-py313", "py313"]
+solve-group = "py313"
+
+[environments.profile]
+# tasks: flamegraph, py-spy
+# py313 as py-spy does not support py314 at the time of writing
+features = ["build-deps", "run-deps", "profile", "py313"]
+solve-group = "py313"
+
 [environments.build-debug]
 # tasks: build-debug
 features = ["build-deps", "build-debug"]
@@ -637,7 +648,56 @@ depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
 
 
+### Profiling ###
+
+[feature.profile]
+platforms = ["linux-64", "osx-arm64"]
+
+[feature.profile.dependencies]
+py-spy = "*"
+flamegraph-pl = "*"
+
+[feature.profile.pypi-dependencies]
+flamegraph.git = "https://github.com/nickodell/python-flamegraph.git"
+
+[feature.profile.tasks._log_flamegraph]
+cmd = "spin run --build-dir=build-py313 'cd tools/profiling && python -m flamegraph -o {{ log_name }}.log {{ script_name }}.py'"
+args = ["script_name", "log_name"]
+depends-on = "build-py313"
+
+[feature.profile.tasks.flamegraph]
+cmd = "flamegraph {{ log_name }}.log > {{ log_name }}.svg"
+args = ["script_name", "log_name"]
+cwd = "tools/profiling"
+depends-on = [{ task = "_log_flamegraph", args = ["{{ script_name }}", "{{ log_name }}"]}]
+description = "Generate a flamegraph {{ log_name }}.svg from tools/profiling/{{ script_name }}.py"
+
+[feature.profile.tasks.py-spy]
+cmd = "spin run --build-dir=build-py313 'cd tools/profiling && py-spy record --native -o {{ log_name }}.svg -- python {{ script_name }}.py'"
+args = ["script_name", "log_name"]
+depends-on = "build-py313"
+description = "Generate a py-spy flamegraph {{ log_name }}.svg from tools/profiling/{{ script_name }}.py"
+
+[feature.profile.target.osx.tasks.py-spy]
+# `--native` is unsupported on osx, and `sudo` is required
+cmd = "sudo spin run --build-dir=build-py313 'cd tools/profiling && py-spy record -o {{ log_name }}.svg -- python {{ script_name }}.py'"
+args = ["script_name", "log_name"]
+depends-on = "build-py313"
+description = "WARNING: REQUIRES `sudo` — Generate a py-spy flamegraph {{ log_name }}.svg from tools/profiling/{{ script_name }}.py"
+
+
 ### Alternative python versions ###
+
+[feature.py313]
+platforms = ["linux-64", "osx-arm64"]
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[feature.build-py313.tasks.build-py313]
+cmd = "spin build --build-dir=build-py313 --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy (with Python 3.13)"
 
 [feature.py312]
 platforms = ["linux-64", "osx-arm64", "win-64"]
