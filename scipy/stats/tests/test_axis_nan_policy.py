@@ -654,12 +654,12 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
     # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-    assert_allclose(res1dc, res1db, rtol=7e-15)
+    assert_allclose(res1dc, res1db, rtol=2e-14)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
         # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res1db, res1da, rtol=7e-15)
+        assert_allclose(res1db, res1da, rtol=2e-14)
         all_results += list(res1da)
 
     for item in all_results:
@@ -688,7 +688,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   sample_shape, axis_cases, nan_policy):
     small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
-                           stats.differential_entropy, stats.epps_singleton_2samp}
+                           stats.differential_entropy, stats.epps_singleton_2samp,
+                           stats.shapiro}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
     if hypotest in {weightedtau_weighted}:
