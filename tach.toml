@@ -112,7 +112,7 @@ depends_on = ["scipy.optimize"]
 
 [[modules]]
 path = "scipy.signal"
-depends_on = ["scipy._lib", "scipy.fft", "scipy.interpolate", "scipy.linalg", "scipy.ndimage", "scipy.optimize", "scipy.signal.windows", "scipy.spatial", "scipy.special", "scipy.stats", "scipy._external"]
+depends_on = ["scipy._lib", "scipy.fft", "scipy.interpolate", "scipy.linalg", "scipy.linalg.lapack", "scipy.ndimage", "scipy.optimize", "scipy.signal.windows", "scipy.spatial", "scipy.special", "scipy.stats", "scipy._external"]
 
 [[modules]]
 path = "scipy.signal.windows"
