@@ -1,0 +1,50 @@
+name: Address Sanitizer Tests
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+env:
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  test_ASAN:
+    name: Test under AddressSanitizer
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest, macos-15]
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: recursive
+
+    - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+      with:
+        pixi-version: v0.63.2
+        cache: false
+        environments: asan
+        log-level: "q" # hide long CPython & NumPy build logs
+
+    - name: Build SciPy against CPython & NumPy with ASAN
+      run: pixi run build-asan
+
+    - name: Test
+      run: pixi run --skip-deps test-asan -v -- --timeout=600 --durations=10
