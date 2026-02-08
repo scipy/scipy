@@ -50,9 +50,12 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="marray#99")
-@pytest.mark.parametrize('fun, kwargs', [make_xp_pytest_param(stats.gmean, {}),
-                                         make_xp_pytest_param(stats.hmean, {}),
-                                         make_xp_pytest_param(stats.pmean, {'p': 2})])
+@pytest.mark.parametrize('fun, kwargs', [
+    make_xp_pytest_param(stats.gmean, {}),
+    make_xp_pytest_param(stats.hmean, {}),
+    make_xp_pytest_param(stats.pmean, {'p': 2}),
+    make_xp_pytest_param(stats.expectile, {'alpha': 0.4})
+])
 @pytest.mark.parametrize('axis', [0, 1])
 def test_xmean(fun, kwargs, axis, xp):
     mxp, marrays, narrays = get_arrays(2, xp=xp)
@@ -106,6 +109,8 @@ def test_xp_mean(axis, keepdims, xp):
      make_xp_pytest_param(stats.tmax, {'upperlimit': 0.5}),
      make_xp_pytest_param(stats.tstd, {'limits': (0.1, 0.9)}),
      make_xp_pytest_param(stats.tsem, {'limits': (0.1, 0.9)}),
+     make_xp_pytest_param(stats.iqr, {}),
+     make_xp_pytest_param(stats.median_abs_deviation, {}),
      ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_several(fun, kwargs, axis, xp):
@@ -340,6 +345,9 @@ def test_directional_stats(xp):
 @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('fun, kwargs', [
     (stats.bartlett, {}),
+    (stats.alexandergovern, {}),
+    (stats.levene, {'center': 'median'}),
+    (stats.levene, {'center': 'mean'}),
     (stats.f_oneway, {'equal_var': True}),
     (stats.f_oneway, {'equal_var': False}),
 ])
@@ -375,6 +383,29 @@ def test_pearsonr(f, xp):
         xp_assert_close(res_ci_low.data, xp.asarray(ref_ci_low))
         xp_assert_close(res_ci_high.data, xp.asarray(ref_ci_high))
 
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('f', [make_xp_pytest_param(stats.linregress),
+                               ])
+def test_linregress(f, xp):
+    mxp, marrays, narrays = get_arrays(2, shape=(25,), xp=xp)
+    res = f(*marrays)
+
+    x, y = narrays
+    mask = np.isnan(x) | np.isnan(y)
+    ref = f(x[~mask], y[~mask])
+
+    xp_assert_close(res.slope.data, xp.asarray(ref.slope))
+    xp_assert_close(res.intercept.data, xp.asarray(ref.intercept))
+    xp_assert_close(res.rvalue.data, xp.asarray(ref.rvalue))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    xp_assert_close(res.stderr.data, xp.asarray(ref.stderr))
+    xp_assert_close(res.intercept_stderr.data, xp.asarray(ref.intercept_stderr))
+
+
 @make_xp_test_case(stats.entropy)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
@@ -385,3 +416,11 @@ def test_entropy(qk, axis, xp):
     res = stats.entropy(*marrays, axis=axis)
     ref = stats.entropy(*narrays, nan_policy='omit', axis=axis)
     xp_assert_close(res.data, xp.asarray(ref))
+
+
+@make_xp_test_case(stats.levene)
+def test_levene_center_trimmed(xp):
+    mxp, marrays, narrays = get_arrays(3, xp=xp)
+    message = "`center='trimmed'` is incompatible with MArray."
+    with pytest.raises(ValueError, match=message):
+        stats.levene(*marrays, center='trimmed', axis=-1)

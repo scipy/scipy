@@ -4164,7 +4164,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = [sample.shape[-1] for sample in samples]
+    lengths = [_length_nonmasked(sample, axis=-1, xp=xp) for sample in samples]
     means = xp.stack([_xp_mean(sample, axis=-1) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -4191,9 +4191,12 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     t_stats = _demean(means, var_w, axis=0, xp=xp) / standard_errors
 
     # calculate parameters to be used in transformation
-    v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
-    # align along 0th axis, which corresponds with separate samples
-    v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
+    if is_marray(xp):
+        v = xp.stack(lengths) - 1
+    else:
+        v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
+        # align along 0th axis, which corresponds with separate samples
+        v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
     a = v - .5
     b = 48 * a**2
     c = (a * xp.log(1 + (t_stats ** 2)/v))**.5
@@ -10657,7 +10660,8 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     TINY = 1.0e-20
 
     # _axis_nan_policy decorator ensures that `axis=-1`
-    n = x.shape[-1]
+    x, y = _share_masks(x, y, xp=xp)
+    n = _length_nonmasked(x, axis=-1, keepdims=False, xp=xp)
     xmean = xp.mean(x, axis=-1, keepdims=True)
     ymean = xp.mean(y, axis=-1, keepdims=True)
 
@@ -10686,7 +10690,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if n == 2:
+    if not is_marray(xp) and n == 2:
         # handle case when only two points are passed in
         one = xp.asarray(1.0, dtype=r.dtype)
         prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
