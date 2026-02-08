@@ -6,7 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
            'diags_array', 'block_array', 'eye_array', 'random_array',
-           'expand_dims', 'permute_dims', 'swapaxes']
+           'expand_dims', 'permute_dims', 'swapaxes', 'matrix_transpose']
 
 import numbers
 import math
@@ -203,6 +203,52 @@ def permute_dims(A, axes=None, copy=False):
     A.coords = tuple(A.coords[idx] for idx in axes)
     A.has_canonical_format = False  # data usually no longer sorted
     return A
+
+
+def matrix_transpose(A):
+    """Return the matrix transpose of `A`.
+    
+    Parameters
+    ----------
+    A : sparse array
+    
+    Returns
+    -------
+    sparse array
+        The matrix transpose of `A`
+        
+    Notes
+    -----
+    This is equivalent to ``A.T`` for 2-D arrays, and interprets
+    greater dimensional `A` as a stack of 2-D arrays on which
+    to perform the transpose.
+
+    See Also
+    --------
+    coo_array.mT : equivalent attribute
+    coo_array.T : full transposition reversing all dimensions
+    numpy.matrix_transpose : equivalent function in NumPy
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import coo_array, matrix_transpose
+    >>> data = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+    >>> array = coo_array(data)
+    >>> array.T.toarray()
+    array([[[1, 5],
+            [3, 7]],
+    
+           [[2, 6],
+            [4, 8]]])
+    >>> matrix_transpose(array)
+    array([[[1, 3],
+            [2, 4]],
+    
+           [[5, 7],
+            [6, 8]]])  
+    """
+    return A.mT
 
 
 def spdiags(data, diags, m=None, n=None, format=None):
