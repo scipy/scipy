@@ -1913,7 +1913,9 @@ def _yeojohnson_inv_lmbda(x, y):
 
 
 @xp_capabilities(np_only=True)
-def yeojohnson_normmax(x, brack=None, *, ymax=_BigFloat_singleton, nan_policy='propagate'):
+def yeojohnson_normmax(x, brack=None, *, ymax=_BigFloat_singleton,
+    nan_policy='propagate'
+):
     """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using

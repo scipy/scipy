@@ -6,7 +6,6 @@ import math
 import re
 import sys
 import warnings
-from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
