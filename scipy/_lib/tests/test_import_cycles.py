@@ -1,4 +1,4 @@
-import math
+import multiprocessing
 import subprocess
 import sys
 
@@ -10,18 +10,16 @@ from .test_public_api import PUBLIC_MODULES
 # Check that all modules are importable in a new Python process.
 # This is not necessarily true if there are import cycles present.
 
+
+def _check_single_module(module):
+    pid = subprocess.Popen([sys.executable, '-c', f'import {module}'])
+    assert pid.wait() == 0, f'Failed to import {module}'
+
+
 @pytest.mark.fail_slow(40)
 @pytest.mark.slow
-def test_public_modules_importable():
-    # Split into batches to limit peak resource usage (memory, file handles)
+def test_public_modules_importable_2():
+    # Ensure we use max 6 processes, to limit peak resource usage (memory, file handles)
     # on resource-constrained systems (e.g., RISC-V - see gh-24163).
-    # A regular for-loop over all modules is too slow (~4x slower).
-    n_batches = 6
-    batch_size = math.ceil(len(PUBLIC_MODULES) / n_batches)
-
-    for i in range(n_batches):
-        batch = PUBLIC_MODULES[i * batch_size:(i + 1) * batch_size]
-        pids = [subprocess.Popen([sys.executable, '-c', f'import {module}'])
-                for module in batch]
-        for j, pid in enumerate(pids):
-            assert pid.wait() == 0, f'Failed to import {batch[j]}'
+    with multiprocessing.Pool(processes=6) as pool:
+        pool.map(_check_single_module, PUBLIC_MODULES)
