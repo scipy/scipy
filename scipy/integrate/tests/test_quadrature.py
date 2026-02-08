@@ -95,22 +95,47 @@ class TestNewtonCotes:
         assert_almost_equal(wts, n*np.array([7.0, 32.0, 12.0, 32.0, 7.0])/90.0)
         assert_almost_equal(errcoff, -n**7/1935360.0)
 
-    def test_newton_cotes2(self):
+    def test_newton_cotes2(self, xp):
         """Test newton_cotes with points that are not evenly spaced."""
 
-        x = np.array([0.0, 1.5, 2.0])
+        x = xp.asarray([0.0, 1.5, 2.0])
         y = x**2
         wts, errcoff = newton_cotes(x)
-        exact_integral = 8.0/3
-        numeric_integral = np.dot(wts, y)
-        assert_almost_equal(numeric_integral, exact_integral)
+        exact_integral = xp.asarray(8.0/3)
+        numeric_integral = wts @ y
+        xp_assert_close(numeric_integral, exact_integral)
 
-        x = np.array([0.0, 1.4, 2.1, 3.0])
+        x = xp.asarray([0.0, 1.4, 2.1, 3.0])
         y = x**2
         wts, errcoff = newton_cotes(x)
-        exact_integral = 9.0
-        numeric_integral = np.dot(wts, y)
-        assert_almost_equal(numeric_integral, exact_integral)
+        exact_integral = xp.asarray(9.0)
+        numeric_integral = wts @ y
+        xp_assert_close(numeric_integral, exact_integral)
+
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_newton_cotes3(self, dtype, xp):
+        """Test the first few degrees for evenly spaced points (array input)."""
+        dtype = {'dtype': dtype if dtype is None else getattr(xp, dtype)}
+
+        n = 1
+        wts, errcoff = newton_cotes(xp.arange(n+1, **dtype), 1)
+        xp_assert_equal(wts, n*xp.asarray([0.5, 0.5], **dtype))
+        xp_assert_close(errcoff, xp.asarray(-n**3/12.0, **dtype))
+
+        n = 2
+        wts, errcoff = newton_cotes(xp.arange(n+1, **dtype), 1)
+        xp_assert_equal(wts, n*xp.asarray([1.0, 4.0, 1.0], **dtype)/6.0)
+        xp_assert_close(errcoff, xp.asarray(-n**5/2880.0, **dtype))
+
+        n = 3
+        wts, errcoff = newton_cotes(xp.arange(n+1, **dtype), 1)
+        xp_assert_equal(wts, n*xp.asarray([1.0, 3.0, 3.0, 1.0], **dtype)/8.0)
+        xp_assert_close(errcoff, xp.asarray(-n**5/6480.0, **dtype))
+
+        n = 4
+        wts, errcoff = newton_cotes(xp.arange(n+1, **dtype), 1)
+        xp_assert_equal(wts, n*xp.asarray([7.0, 32.0, 12.0, 32.0, 7.0], **dtype)/90.0)
+        xp_assert_close(errcoff, xp.asarray(-n**7/1935360.0, **dtype))
 
 
 @make_xp_test_case(simpson)
