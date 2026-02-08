@@ -9,7 +9,7 @@ from itertools import product
 import numpy as np
 from scipy._lib._util import _apply_over_batch
 from .lapack import (
-    get_lapack_funcs, _normalize_lapack_dtype,
+    get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
     _ensure_aligned_and_native, _ensure_dtype_cdsz,
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
@@ -1148,7 +1148,7 @@ def det(a, overwrite_a=False, check_finite=True):
                          f' but received shape {a1.shape}.')
 
     # Also check if dtype is LAPACK compatible
-    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _normalize_lapack_dtype1(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
