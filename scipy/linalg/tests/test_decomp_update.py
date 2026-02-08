@@ -1631,6 +1631,35 @@ class BaseQRupdate(BaseQRdeltas):
         a1 = np.dot(q, r) + np.outer(u, v.conj())
         check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
+    def test_qr_update_full_qr_high_rank(self):
+        # gh-22200 - Handle rank-p updates with p > m-n for full QR factors
+        # For tall matrices (M > N), the rank-p update algorithm requires p <= m-n.
+        # This test verifies that high-rank updates (p > m-n) are handled correctly.
+        rng = np.random.default_rng(1234)
+        for M in range(3, 10):
+            for N in range(3, 10):
+                for k in range(1, min(M, N) + 1):
+                    A = rng.random((M, N))
+                    u = rng.random((M, k))
+                    v = rng.random((N, k))
+                    q, r = linalg.qr(A)
+                    q1, r1 = linalg.qr_update(q, r, u, v)
+                    # check update: Q1 @ R1 == A + u @ v.T.conj()
+                    assert np.allclose(
+                        q1 @ r1, A + u @ v.T.conj(), rtol=self.rtol, atol=self.atol
+                    )
+                    # check shapes
+                    assert q1.shape == (M, M), (
+                        f"Expected Q shape (M, M), got {q1.shape}"
+                    )
+                    assert r1.shape == (M, N), (
+                        f"Expected R shape (M, N), got {r1.shape}"
+                    )
+                    # check orthogonality of Q1
+                    assert np.allclose(
+                        q1.T.conj() @ q1, np.eye(M), rtol=self.rtol, atol=self.atol
+                    ), "Updated Q is not orthogonal"
+
 class TestQRupdate_f(BaseQRupdate):
     dtype = np.dtype('f')
 
