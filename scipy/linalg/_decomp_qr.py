@@ -3,9 +3,13 @@ import numpy as np
 
 from scipy._lib._util import _apply_over_batch
 
+import warnings
+
 # Local imports
-from .lapack import get_lapack_funcs
+from .lapack import _normalize_lapack_dtype, get_lapack_funcs
 from ._misc import _datacopied
+from ._basic import _format_emit_errors_warnings
+from . import _batched_linalg
 
 __all__ = ['qr', 'qr_multiply', 'rq']
 
@@ -24,9 +28,8 @@ def safecall(f, name, *args, **kwargs):
     return ret[:-2]
 
 
-@_apply_over_batch(('a', 2))
-def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
-       check_finite=True):
+def qr(a, overwrite_a=False, lwork=None, mode="full", pivoting=False,
+    check_finite=True):
     """
     Compute QR decomposition of a matrix.
 
@@ -35,7 +38,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
 
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
         Whether data in `a` is overwritten (may improve performance if
@@ -53,7 +56,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the
+        ``A[..., :, P] = Q @ R`` as above, but where P is chosen such that the
         diagonal of R is non-increasing. Equivalently, albeit less efficiently,
         an explicit P matrix may be formed explicitly by permuting the rows or columns
         (depending on the side of the equation on which it is to be used) of
@@ -66,13 +69,13 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     Returns
     -------
     Q : float or complex ndarray
-        Of shape (M, M), or (M, K) for ``mode='economic'``. Not returned
+        Of shape (..., M, M), or (..., M, K) for ``mode='economic'``. Not returned
         if ``mode='r'``. Replaced by tuple ``(Q, TAU)`` if ``mode='raw'``.
     R : float or complex ndarray
-        Of shape (M, N), or (K, N) for ``mode in ['economic', 'raw']``.
+        Of shape (..., M, N), or (..., K, N) for ``mode in ['economic', 'raw']``.
         ``K = min(M, N)``.
     P : int ndarray
-        Of shape (N,) for ``pivoting=True``. Not returned if
+        Of shape (..., N,) for ``pivoting=True``. Not returned if
         ``pivoting=False``.
 
     Raises
@@ -85,8 +88,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
     dorgqr, zungqr, dgeqp3, and zgeqp3.
 
-    If ``mode=economic``, the shapes of Q and R are (M, K) and (K, N) instead
-    of (M,M) and (M,N), with ``K=min(M,N)``.
+    If ``mode=economic``, the shapes of Q and R are (..., M, K) and (..., K, N) instead
+    of (..., M,M) and (..., M,N), with ``K=min(M,N)``.
 
     Examples
     --------
@@ -129,35 +132,67 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     >>> P = np.eye(6)[:, p5]
     >>> np.allclose(a @ P, np.dot(q5, r5))
     True
-
     """
+    # structure mappings, keep in sync with the C side
+    modes = {
+        "full": 1,
+        "qr": 1, # equivalent to `full`
+        "r": 11,
+        "raw": 21,
+        "economic": 31
+    }
+
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply
-    if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
-        raise ValueError("Mode argument should be one of ['full', 'r', "
-                         "'economic', 'raw']")
+    if mode not in modes.keys():
+        raise ValueError(f"Mode argument should be one of {list(modes.keys())}")
+
+    modeFlag = modes[mode] # convert the string to an int for the C enum
 
     if check_finite:
         a1 = np.asarray_chkfinite(a)
     else:
         a1 = np.asarray(a)
-    if len(a1.shape) != 2:
-        raise ValueError("expected a 2-D array")
 
-    M, N = a1.shape
+    if a1.ndim < 2:
+        raise ValueError("Expected at least a 2-D array")
+
+    # Bookkeeping to throw errors for backwards compat, else raise DeprecationWarning
+    M, N = a1.shape[-2], a1.shape[-1]
+    if lwork is not None and lwork != -1:
+        # Checks for backwards compat
+        if (pivoting and lwork < max(3 * N + 1, M)):
+            raise ValueError(
+                "When pivoting an lwork of at least max(3M + 1, N) is required."
+            )
+        elif (not pivoting and lwork < max(M, N)):
+            raise ValueError(
+                "Without pivoting an lwork of at least max(N, M) is required."
+            )
+        else:
+            warnings.warn(
+                "The `lwork` keyword is deprecated in scipy 1.18.0 and will "
+                "be removed in 1.20.0",
+                DeprecationWarning,
+                stacklevel=2
+            )
+
+    # First normalize dtypes to ensure consistent return types
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     # accommodate empty arrays
     if a1.size == 0:
         K = min(M, N)
+        batch_shape = a1.shape[:-2]
 
         if mode not in ['economic', 'raw']:
-            Q = np.empty_like(a1, shape=(M, M))
-            Q[...] = np.identity(M)
+            Q = np.empty_like(a1, shape=batch_shape + (M, M))
+            Q[..., :, :] = np.identity(M)
             R = np.empty_like(a1)
         else:
-            Q = np.empty_like(a1, shape=(M, K))
-            R = np.empty_like(a1, shape=(K, N))
+            Q = np.empty_like(a1, shape=batch_shape + (M, K))
+            R = np.empty_like(a1, shape=batch_shape + (K, N))
 
         if pivoting:
             Rj = R, np.arange(N, dtype=np.int32)
@@ -167,53 +202,37 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         if mode == 'r':
             return Rj
         elif mode == 'raw':
-            qr = np.empty_like(a1, shape=(M, N))
-            tau = np.zeros_like(a1, shape=(K,))
+            qr = np.empty_like(a1, shape=batch_shape + (M, N))
+            tau = np.zeros_like(a1, shape=batch_shape + (K,))
             return ((qr, tau),) + Rj
+
         return (Q,) + Rj
+
+    if not (a1.flags['ALIGNED'] and a1.dtype.byteorder == '='):
+        overwrite_a = True
+        a1 = a1.copy()
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    if pivoting:
-        geqp3, = get_lapack_funcs(('geqp3',), (a1,))
-        qr, jpvt, tau = safecall(geqp3, "geqp3", a1, overwrite_a=overwrite_a)
-        jpvt -= 1  # geqp3 returns a 1-based index array, so subtract 1
-    else:
-        geqrf, = get_lapack_funcs(('geqrf',), (a1,))
-        qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork,
-                           overwrite_a=overwrite_a)
+    # heavy lifting
+    Q, R, tau, jpvt, err_lst = _batched_linalg._qr(a1, overwrite_a, modeFlag, pivoting)
 
-    if mode not in ['economic', 'raw'] or M < N:
-        R = np.triu(qr)
-    else:
-        R = np.triu(qr[:N, :])
+    if err_lst:
+        _format_emit_errors_warnings(err_lst)
 
+    # construct return objects
     if pivoting:
         Rj = R, jpvt
     else:
-        Rj = R,
+        Rj = (R,)
 
-    if mode == 'r':
+    if mode == "raw":
+        Q = (Q, tau)
+
+    if mode == "r":
         return Rj
-    elif mode == 'raw':
-        return ((qr, tau),) + Rj
-
-    gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
-
-    if M < N:
-        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:, :M], tau,
-                      lwork=lwork, overwrite_a=1)
-    elif mode == 'economic':
-        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork,
-                      overwrite_a=1)
     else:
-        t = qr.dtype.char
-        qqr = np.empty((M, M), dtype=t)
-        qqr[:, :N] = qr
-        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
-                      overwrite_a=1)
-
-    return (Q,) + Rj
+        return (Q,) + Rj
 
 
 @_apply_over_batch(('a', 2), ('c', '1|2'))

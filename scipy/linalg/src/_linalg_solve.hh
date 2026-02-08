@@ -403,7 +403,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
-    char trans = transposed ? 'T' : 'N';
+    char trans = transposed ? 'T' : 'N'; 
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';

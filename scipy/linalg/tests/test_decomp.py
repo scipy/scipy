@@ -19,7 +19,8 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
-                                 dsbevd, dsbevx, zhbevd, zhbevx)
+                                 dsbevd, dsbevx, zhbevd, zhbevx,
+                                 get_lapack_funcs)
 
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -1872,14 +1873,16 @@ class TestQR:
         q, r = qr(a, lwork=None)
 
         # Test against minimum valid lwork
-        q2, r2 = qr(a, lwork=3)
-        assert_array_almost_equal(q2, q)
-        assert_array_almost_equal(r2, r)
+        with pytest.warns(DeprecationWarning):
+            q2, r2 = qr(a, lwork=3)
+            assert_array_almost_equal(q2, q)
+            assert_array_almost_equal(r2, r)
 
         # Test against larger lwork
-        q3, r3 = qr(a, lwork=10)
-        assert_array_almost_equal(q3, q)
-        assert_array_almost_equal(r3, r)
+        with pytest.warns(DeprecationWarning):
+            q3, r3 = qr(a, lwork=10)
+            assert_array_almost_equal(q3, q)
+            assert_array_almost_equal(r3, r)
 
         # Test against explicit lwork=-1
         q4, r4 = qr(a, lwork=-1)
@@ -1887,8 +1890,11 @@ class TestQR:
         assert_array_almost_equal(r4, r)
 
         # Test against invalid lwork
-        assert_raises(Exception, qr, (a,), {'lwork': 0})
-        assert_raises(Exception, qr, (a,), {'lwork': 2})
+        with assert_raises(ValueError):
+            qr(a, lwork=0)
+
+        with assert_raises(ValueError):
+            qr(a, lwork=2)
 
     @pytest.mark.parametrize("m", [0, 1, 2])
     @pytest.mark.parametrize("n", [0, 1, 2])
@@ -1909,20 +1915,23 @@ class TestQR:
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int32)
 
-        r, *other = qr(a, mode='r', pivoting=pivoting)
-        assert_equal(r.shape, (m, n))
-        assert_equal(r.dtype, dtype)
+        r_r, *other = qr(a, mode='r', pivoting=pivoting)
+        assert_equal(r_r.shape, (m, n))
+        assert_equal(r_r.dtype, dtype)
+        assert_equal(r, r_r) # sanity check
         assert len(other) == (1 if pivoting else 0)
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int32)
 
-        q, r, *other = qr(a, mode='economic', pivoting=pivoting)
-        assert_equal(q.shape, (m, k))
-        assert_equal(q.dtype, dtype)
-        assert_equal(r.shape, (k, n))
-        assert_equal(r.dtype, dtype)
+        q_e, r_e, *other = qr(a, mode='economic', pivoting=pivoting)
+        assert_equal(q_e.shape, (m, k))
+        assert_equal(q_e.dtype, dtype)
+        assert_equal(r_e.shape, (k, n))
+        assert_equal(r_e.dtype, dtype)
+        assert_equal(q_e, q[:, :k])
+        assert_equal(r_e, r[:k, :])
         assert len(other) == (1 if pivoting else 0)
         if pivoting:
             p, = other
@@ -1940,7 +1949,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):
@@ -1983,6 +1992,64 @@ class TestQR:
         c = np.empty((0, 2))
         cq, r = qr_multiply(a, c)
         assert_allclose(cq, np.empty((0, 2)))
+
+    @pytest.mark.parametrize("pivoting", [True, False])
+    @pytest.mark.parametrize("shape", [(3, 3), (3, 2), (2, 3), (0, 3), (3, 0)])
+    @pytest.mark.parametrize("dtype", DTYPES)
+    def test_raw(self, shape, dtype, pivoting):
+        rng = np.random.default_rng(seed=12345)
+        K = min(shape)
+
+        a = rng.normal(size=shape)
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.normal(size=shape)
+        a = a.astype(dtype)
+
+        (q_raw, tau), r, *other = qr(a, mode="raw", pivoting=pivoting)
+
+        assert q_raw.shape == shape
+        assert q_raw.dtype == dtype
+        assert tau.shape == (K,)
+        assert tau.dtype == dtype
+        assert r.shape  == (K, shape[1])
+        assert r.dtype == dtype
+
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            jpvt = other[0]
+            assert jpvt.shape[0] == shape[1]
+            assert jpvt.dtype == np.int64 if HAS_ILP64 else np.int32
+
+        assert_array_almost_equal(np.triu(q_raw)[:K, :], r)
+
+        if shape[0] > 0: # `or_un_gqr` expects `ldab` (= `M` here) > 0
+            q_raw = q_raw[:, :K] # `or_un_gqr` expects tall/square matrices
+            or_un_gqr = get_lapack_funcs(("orgqr",), (q_raw,), ilp64="preferred")[0]
+            q, _, _ = or_un_gqr(q_raw, tau)
+
+            if pivoting:
+                assert_array_almost_equal(q @ r, a[:, jpvt])
+            else:
+                assert_array_almost_equal(q @ r, a)
+
+            if q.size != 0: # sanity check to prevent `q.T @ q` from being all zero
+                assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]))
+
+    @pytest.mark.parametrize("dtype", DTYPES)
+    def test_smoke_economic(self, dtype):
+        # smoke test to check if buffer size if not all too large
+        rng = np.random.default_rng(seed=12345)
+
+        a = rng.normal(size=(10000, 2))
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.normal(size=a.shape)
+        a = a.astype(dtype)
+
+        q, r = qr(a, mode="economic")
+
+        # default precision of 6 decimals fails for single precision here
+        assert_array_almost_equal(q @ r, a, decimal=5)
+        assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]))
 
 
 class TestRQ:

@@ -4,6 +4,7 @@
 #include "_linalg_svd.hh"
 #include "_linalg_lstsq.hh"
 #include "_linalg_eig.hh"
+#include "_linalg_qr.hh"
 #include "_common_array_utils.hh"
 
 
@@ -194,6 +195,162 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     return Py_BuildValue("NN", PyArray_Return(ap_x), ret_lst);
 }
 
+static PyObject*
+_linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_A = NULL;
+
+    int info = 0;
+    SliceStatusVec vec_status;
+    int overwrite_a = 0;
+    QR_mode mode = QR_mode::FULL;
+    int pivoting = 0;
+
+    PyArrayObject *ap_Q = NULL, *ap_R = NULL, *ap_tau = NULL, *ap_jpvt = NULL;
+    PyObject *ret_lst = NULL, *ret_Q = NULL, *ret_tau = NULL, *ret_jpvt = NULL;
+
+    // Get the input array
+    if (!PyArg_ParseTuple(args, "O!|pnp", &PyArray_Type, (PyObject **)&ap_A, &overwrite_a, &mode, &pivoting)) {
+        return NULL;
+    }
+
+    // Check for dtype compatibility & array flags
+    int typenum = PyArray_TYPE(ap_A);
+    bool dtype_ok = (typenum == NPY_FLOAT32)
+                     || (typenum == NPY_FLOAT64)
+                     || (typenum == NPY_COMPLEX64)
+                     || (typenum == NPY_COMPLEX128);
+    if(!dtype_ok || !PyArray_ISALIGNED(ap_A)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+        return NULL;
+    }
+
+    // Sanity checks
+    int ndim = PyArray_NDIM(ap_A);
+    npy_intp* shape = PyArray_SHAPE(ap_A);
+    if (ndim < 2) {
+        PyErr_SetString(PyExc_ValueError, "Matrix `a` should at least be 2D.");
+        return NULL;
+    }
+
+    // -------------------------------------------------------------------
+    // Conditionally allocate return objects
+    // -------------------------------------------------------------------
+    npy_intp M = shape[ndim-2], N = shape[ndim-1];
+    npy_intp K = std::min(M, N);
+
+    npy_intp shape_Q[NPY_MAXDIMS];
+    npy_intp shape_R[NPY_MAXDIMS];
+
+    for (npy_intp i = 0; i < ndim; i++) {
+        shape_Q[i] = shape[i];
+        shape_R[i] = shape[i];
+    }
+
+    switch (mode) {
+        case QR_mode::FULL:
+        {
+            shape_Q[ndim-1] = M;
+            shape_R[ndim-1] = N;
+            break;
+        }
+
+        case QR_mode::R:
+        {
+            // shape of `Q` irrelevant here
+            shape_R[ndim-1] = N;
+            break; // shape of `Q` irrelevant here
+        }
+
+        case QR_mode::RAW:
+        {
+            shape_Q[ndim-1] = N;
+            shape_R[ndim-2] = K;
+            shape_R[ndim-1] = N;
+            break;
+        }
+
+        case QR_mode::ECONOMIC:
+        {
+            shape_Q[ndim-1] = K;
+            shape_R[ndim-2] = K;
+            shape_R[ndim-1] = N;
+            break;
+        }
+    }
+
+    if (mode != QR_mode::R) { // Allocate Q if needed, if `mode == raw`, F-ordered array is required.
+        ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
+        if (!ap_Q) {
+            PyErr_NoMemory();
+            goto fail_qr;
+        }
+    }
+
+    ap_R = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_R, typenum);
+    if (!ap_R) {
+        PyErr_NoMemory();
+        goto fail_qr;
+    }
+
+    if (mode == QR_mode::RAW) {
+        shape_Q[ndim-2] = K; // Just reuse `shape_Q`; not used any longer.
+        ap_tau = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum); // Just a vector, so `ndim-1`.
+        if (!ap_tau) {
+            PyErr_NoMemory();
+            goto fail_qr;
+        }
+    }
+
+    // Set all elements to 0 immediately as the pivots are also used as inputs in `geqp3`.
+    // Allocate a C-ordered array, (hence the `0` magic number).
+    if (pivoting) {
+        shape_Q[ndim-2] = N;
+        ap_jpvt = (PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0);
+        if (!ap_jpvt) {
+            PyErr_NoMemory();
+            goto fail_qr;
+        }
+    }
+
+
+    switch(typenum) {
+        case(NPY_FLOAT32):
+            info = _qr<float>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            break;
+        case(NPY_FLOAT64):
+            info = _qr<double>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            break;
+        case(NPY_COMPLEX64):
+            info = _qr<npy_complex64>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            break;
+        case(NPY_COMPLEX128):
+            info = _qr<npy_complex128>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            break;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
+            return NULL;
+    }
+
+    if (info < 0) {
+        // Either OOM error or requiested lwork too large.
+        PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.qr.");
+        goto fail_qr;
+    }
+
+    ret_lst = convert_vec_status(vec_status);
+
+    ret_Q = (mode != QR_mode::R) ? PyArray_Return(ap_Q) : Py_None;
+    ret_tau = (mode == QR_mode::RAW) ? PyArray_Return(ap_tau) : Py_None;
+    ret_jpvt = (pivoting) ? PyArray_Return(ap_jpvt): Py_None;
+    return Py_BuildValue("NNNNN", ret_Q, PyArray_Return(ap_R), ret_tau, ret_jpvt, ret_lst);
+
+fail_qr:
+    Py_XDECREF(ap_Q);
+    Py_XDECREF(ap_R);
+    Py_XDECREF(ap_tau);
+    Py_XDECREF(ap_jpvt);
+    return NULL;
+}
 
 static PyObject*
 _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
@@ -233,7 +390,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     npy_intp m = shape[ndim - 2];
     npy_intp n = shape[ndim - 1];
-    npy_intp k = m < n ? m : n; 
+    npy_intp k = m < n ? m : n;
 
     // Allocate the output(s)
 
@@ -366,7 +523,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // At the python call site, 
+    // At the python call site,
     // 1) 1D `b` must have been converted into 2D, and
     // 2) batch dimensions of `a` and `b` have been broadcast
     // Therefore, if `a.shape == (s, p, r, m, n)`, then `b.shape == (s, p, r, m, nrhs)`
@@ -646,6 +803,7 @@ static char doc_solve[] = ("Solve the linear system of equations.");
 static char doc_svd[] = ("SVD factorization.");
 static char doc_lstsq[] = ("linear least squares.");
 static char doc_eig[] = ("eigenvalue solver.");
+static char doc_qr[] = ("Compute the qr decomposition.");
 
 static struct PyMethodDef inv_module_methods[] = {
   {"_inv", _linalg_inv, METH_VARARGS, doc_inv},
@@ -653,6 +811,7 @@ static struct PyMethodDef inv_module_methods[] = {
   {"_svd", _linalg_svd, METH_VARARGS, doc_svd},
   {"_lstsq", _linalg_lstsq, METH_VARARGS, doc_lstsq},
   {"_eig", _linalg_eig, METH_VARARGS, doc_eig},
+  {"_qr", _linalg_qr, METH_VARARGS, doc_qr},
   {NULL, NULL, 0, NULL}
 };
 
