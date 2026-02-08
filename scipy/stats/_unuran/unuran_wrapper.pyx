@@ -9,7 +9,6 @@ from numpy.random cimport bitgen_t
 from scipy._lib.ccallback cimport ccallback_t
 from scipy._lib.messagestream cimport MessageStream
 from .unuran cimport *
-import warnings
 import threading
 import functools
 from collections import namedtuple
@@ -179,6 +178,7 @@ cdef object _setup_unuran():
             msg = "Failed to initialize the default URNG."
             raise RuntimeError(msg) from e
     finally:
+        unur_set_stream(NULL)
         _lock.release()
 
     unur_set_default_urng(default_urng)
@@ -486,6 +486,7 @@ cdef class Method:
             if msg:
                 raise UNURANError(msg)
         finally:
+            unur_set_stream(NULL)
             if error:
                 PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
@@ -533,6 +534,7 @@ cdef class Method:
             if msg:
                 raise UNURANError(msg)
         finally:
+            unur_set_stream(NULL)
             if error:
                 PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
@@ -627,6 +629,7 @@ cdef class Method:
                 raise UNURANError(self._messages.get())
             unur_chg_urng(self.rng, self.urng)
         finally:
+            unur_set_stream(NULL)
             _lock.release()
 
     @cython.final
@@ -643,6 +646,10 @@ cdef class Method:
         if self.urng != NULL:
             unur_urng_free(self.urng)
             self.urng = NULL
+        self._callback_wrapper = None
+        self.callbacks = None
+        if self._messages is not None:
+            self._messages = None
 
     # Pickling support
     @cython.final
@@ -838,10 +845,9 @@ cdef class TransformedDensityRejection(Method):
             'random_state': random_state
         }
 
-        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
+        cdef dict local_callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
+        self.callbacks = local_callbacks
+        self._callback_wrapper = lambda x, name: local_callbacks[name](x)
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -883,6 +889,7 @@ cdef class TransformedDensityRejection(Method):
 
             self._set_rng(random_state)
         finally:
+            unur_set_stream(NULL)
             _lock.release()
 
     cdef object _validate_args(self, dist, domain, c, construction_points):
@@ -926,8 +933,14 @@ cdef class TransformedDensityRejection(Method):
     cdef inline void _ppf_hat(self, const double *u, double *out, size_t N) except *:
         cdef:
             size_t i
-        for i in range(N):
-            out[i] = unur_tdr_eval_invcdfhat(self.rng, u[i], NULL, NULL, NULL)
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+            for i in range(N):
+                out[i] = unur_tdr_eval_invcdfhat(self.rng, u[i], NULL, NULL, NULL)
+        finally:
+            unur_set_stream(NULL)
+            _lock.release()
 
     def ppf_hat(self, u):
         """
@@ -1125,10 +1138,9 @@ cdef class SimpleRatioUniforms(Method):
             'random_state': random_state
         }
 
-        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
+        cdef dict local_callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
+        self.callbacks = local_callbacks
+        self._callback_wrapper = lambda x, name: local_callbacks[name](x)
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1159,6 +1171,7 @@ cdef class SimpleRatioUniforms(Method):
 
             self._set_rng(random_state)
         finally:
+            unur_set_stream(NULL)
             _lock.release()
 
     cdef object _validate_args(self, dist, domain, pdf_area):
@@ -1403,14 +1416,13 @@ cdef class NumericalInversePolynomial(Method):
         }
 
         # either logpdf or pdf are required: use meths = None and check separately
-        self.callbacks = _unpack_dist(dist, "cont", meths=None, optional_meths=["cdf", "pdf", "logpdf"])
-        if not ("pdf" in self.callbacks or "logpdf" in self.callbacks):
+        cdef dict local_callbacks = _unpack_dist(dist, "cont", meths=None, optional_meths=["cdf", "pdf", "logpdf"])
+        if not ("pdf" in local_callbacks or "logpdf" in local_callbacks):
             msg = ("Either of the methods `pdf` or `logpdf` must be specified "
                    "for the distribution object `dist`.")
             raise ValueError(msg)
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
+        self.callbacks = local_callbacks
+        self._callback_wrapper = lambda x, name: local_callbacks[name](x)
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1444,6 +1456,7 @@ cdef class NumericalInversePolynomial(Method):
 
             self._set_rng(random_state)
         finally:
+            unur_set_stream(NULL)
             _lock.release()
 
     cdef object _validate_args(self, dist, domain, order, u_resolution):
@@ -1487,6 +1500,7 @@ cdef class NumericalInversePolynomial(Method):
                 if out[i] == UNUR_INFINITY or out[i] == -UNUR_INFINITY:
                     raise UNURANError(self._messages.get())
         finally:
+            unur_set_stream(NULL)
             if error:
                 PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
@@ -1600,6 +1614,7 @@ cdef class NumericalInversePolynomial(Method):
             self._check_errorcode(unur_pinv_estimate_error(self.rng, sample_size,
                                                            &max_error, &mae))
         finally:
+            unur_set_stream(NULL)
             _lock.release()
             release_unuran_callback(&callback)
         return UError(max_error, mae)
@@ -1673,7 +1688,7 @@ cdef class NumericalInversePolynomial(Method):
         except TypeError:
             tuple_size = (size,)
 
-        cdef unur_urng *unuran_urng
+        cdef unur_urng *unuran_urng = NULL
         cdef double[::1] qrvs_view
         N = 1 if size is None else np.prod(size)
         N = N*d
@@ -1684,9 +1699,11 @@ cdef class NumericalInversePolynomial(Method):
             unuran_urng = self._urng_builder.get_qurng(size=N, qmc_engine=qmc_engine)
             unur_chg_urng(self.rng, unuran_urng)
             self._rvs_cont(qrvs_view)
-            self.set_random_state(self.numpy_rng)
             qrvs = np.asarray(qrvs_view).reshape(tuple_size + (d,))
         finally:
+            if unuran_urng != NULL:
+                unur_chg_urng(self.rng, self.urng)
+                unur_urng_free(unuran_urng)
             _lock.release()
 
         # Output reshaping for user convenience
@@ -1964,10 +1981,9 @@ cdef class NumericalInverseHermite(Method):
             'random_state': random_state
         }
 
-        self.callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
+        cdef dict local_callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
+        self.callbacks = local_callbacks
+        self._callback_wrapper = lambda x, name: local_callbacks[name](x)
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -1992,6 +2008,7 @@ cdef class NumericalInverseHermite(Method):
                                                         len(self.construction_points_array)))
             self._set_rng(random_state)
         finally:
+            unur_set_stream(NULL)
             _lock.release()
 
     def _validate_args(self, dist, domain, order, u_resolution, construction_points):
@@ -2082,6 +2099,7 @@ cdef class NumericalInverseHermite(Method):
             self._check_errorcode(unur_hinv_estimate_error(self.rng, sample_size,
                                                            &max_error, &mae))
         finally:
+            unur_set_stream(NULL)
             _lock.release()
             release_unuran_callback(&callback)
         return UError(max_error, mae)
@@ -2154,7 +2172,7 @@ cdef class NumericalInverseHermite(Method):
         except TypeError:
             tuple_size = (size,)
 
-        cdef unur_urng *unuran_urng
+        cdef unur_urng *unuran_urng = NULL
         cdef double[::1] qrvs_view
         N = 1 if size is None else np.prod(size)
         N = N*d
@@ -2165,9 +2183,11 @@ cdef class NumericalInverseHermite(Method):
             unuran_urng = self._urng_builder.get_qurng(size=N, qmc_engine=qmc_engine)
             unur_chg_urng(self.rng, unuran_urng)
             self._rvs_cont(qrvs_view)
-            self.set_random_state(self.numpy_rng)
             qrvs = np.asarray(qrvs_view).reshape(tuple_size + (d,))
         finally:
+            if unuran_urng != NULL:
+                unur_chg_urng(self.rng, self.urng)
+                unur_urng_free(unuran_urng)
             _lock.release()
 
         # Output reshaping for user convenience
@@ -2403,6 +2423,7 @@ cdef class DiscreteAliasUrn(Method):
 
             self._set_rng(random_state)
         finally:
+            unur_set_stream(NULL)
             _lock.release()
 
     cdef object _validate_args(self, dist, domain):
@@ -2672,6 +2693,7 @@ cdef class DiscreteGuideTable(Method):
             self._check_errorcode(unur_dgt_set_guidefactor(self.par, guide_factor))
             self._set_rng(random_state)
         finally:
+            unur_set_stream(NULL)
             _lock.release()
 
     cdef object _validate_args(self, dist, domain, guide_factor):
