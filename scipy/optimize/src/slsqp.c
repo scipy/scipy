@@ -169,6 +169,7 @@ ITER_START:
     for (int i = 0; i < n; i++) { v[i] = gradx[i]; }
     dgemv_("T", &m, &n, &dmone, C, &lda, mult, &one, &done, v, &one);
 
+    // Compute convergence metrics
     S->f0 = *funx;
     for (int i = 0; i < n; i++) { x0[i] = sol[i]; }
     S->gs = ddot_(&n, gradx, &one, s, &one);
@@ -187,6 +188,10 @@ ITER_START:
         mu[j] = fmax(S->h3, (mu[j] + S->h3)/2.0);
         S->h1 = S->h1 + S->h3*fabs(d[j]);
     }
+
+    // Report Progress (Optimality & Constraint Violation)
+    S->optimality = S->h1;        // Variation of Lagrangian
+    S->constr_violation = S->h2;  // Sum of constraint violation
 
     // Check convergence
     S->mode = 0;
