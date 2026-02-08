@@ -6,8 +6,8 @@ from types import ModuleType
 
 import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
-    xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name
+    array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray, is_jax_array,
+    is_jax, xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name
 )
 import scipy._external.array_api_extra as xpx
 from . import _basic
@@ -71,6 +71,9 @@ class _FuncInfo:
     # but in the future I think it's likely we may want to add a warning to
     # xp_capabilities when not using native PyTorch on CPU.
     torch_native: bool = True
+    # Set to True if the function to be delegated to is in the xp namespace instead of
+    # the xp.scipy.special namespace. One example is jax.numpy.sinc.
+    in_xp: bool = False
 
     @property
     def name(self):
@@ -119,7 +122,10 @@ class _FuncInfo:
 
         # If a native implementation is available, use that
         spx = scipy_namespace_for(xp)
-        f = _get_native_func(xp, spx, self.name, alt_names_map=self.alt_names_map)
+        namespace = xp if self.in_xp else scipy_namespace_for(xp)
+        f = _get_native_func(
+            xp, namespace, self.name, alt_names_map=self.alt_names_map,
+        )
         if f is not None:
             return f
 
@@ -162,21 +168,40 @@ class _FuncInfo:
 
         # As a final resort, use the NumPy/SciPy implementation
         _f = self.func
-        def f(*args, _f=_f, xp=xp, **kwargs):
-            # TODO use xpx.lazy_apply to add jax.jit support
-            # (but dtype propagation can be non-trivial)
-            args = [np.asarray(arg) for arg in args]
-            out = _f(*args, **kwargs)
-            return xp.asarray(out)
+
+        if is_jax(xp) and self.is_ufunc:
+            # if this is a ufunc, we can use the resolve_dtypes method to figure
+            # out what the output dtype should be and use lazy_apply to make this
+            # work with the JAX JIT. TODO: explore making this work for other
+            # lazy backends.
+            def f(*args, _f=_f, xp=xp, **kwargs):
+                # JAX uses NumPy dtypes, so it's easy to get the dtypes for
+                # use in resolve_dtypes. Needs the is_jax_array arg to properly
+                # handle Python scalars. The (None, ) appended on the end is for the
+                # dtype of out, which resolve_dtypes needs. Since JAX arrays are
+                # immutable, there can be no out, so this will always be None.
+                dtypes = (
+                    tuple(arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
+                    + (None, )
+                )
+                out_dtype = getattr(xp, str(_f.resolve_dtypes(dtypes)[-1]))
+                return xpx.lazy_apply(
+                    _f, *args, xp=xp, as_numpy=True, dtype=out_dtype, **kwargs
+                )
+        else:
+            def f(*args, _f=_f, xp=xp, **kwargs):
+                args = [np.asarray(arg) for arg in args]
+                out = _f(*args, **kwargs)
+                return xp.asarray(out)
 
         return f
 
 
-def _get_native_func(xp, spx, f_name, *, alt_names_map=None):
+def _get_native_func(xp, spx, f_name, *, alt_names_map=None, in_xp=False):
     if alt_names_map is None:
         alt_names_map = {}
     f_name = alt_names_map.get(get_native_namespace_name(xp), f_name)
-    f = getattr(spx.special, f_name, None) if spx else None
+    f = getattr(xp if in_xp else spx.special, f_name, None) if spx else None
     if f is None and hasattr(xp, 'special'):
         # Currently dead branch, in anticipation of 'special' Array API extension
         # https://github.com/data-apis/array-api/issues/725
@@ -307,7 +332,7 @@ _special_funcs = (
         _ufuncs.bdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         int_only=(False, True, False), torch_native=False,
     ),
@@ -315,7 +340,7 @@ _special_funcs = (
         _ufuncs.bdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         int_only=(False, True, False), torch_native=False,
     ),
@@ -323,7 +348,7 @@ _special_funcs = (
         _ufuncs.bdtri, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         int_only=(False, True, False), torch_native=False,
     ),
@@ -334,7 +359,7 @@ _special_funcs = (
         _ufuncs.betaincinv, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         test_large_ints=False, positive_only=True, torch_native=False,
     ),
@@ -349,7 +374,7 @@ _special_funcs = (
         _ufuncs.binom, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -357,7 +382,7 @@ _special_funcs = (
         _ufuncs.boxcox, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -365,7 +390,7 @@ _special_funcs = (
         _ufuncs.boxcox1p, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -373,7 +398,7 @@ _special_funcs = (
         _ufuncs.cbrt, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -385,7 +410,7 @@ _special_funcs = (
         _ufuncs.chdtri, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -393,7 +418,7 @@ _special_funcs = (
         _ufuncs.cosdg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         test_large_ints=False, torch_native=False,
     ),
@@ -401,7 +426,7 @@ _special_funcs = (
         _ufuncs.cosm1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -409,7 +434,7 @@ _special_funcs = (
         _ufuncs.cotdg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -417,7 +442,7 @@ _special_funcs = (
         _ufuncs.ellipk, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -425,7 +450,7 @@ _special_funcs = (
         _ufuncs.ellipkm1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -436,7 +461,7 @@ _special_funcs = (
         _ufuncs.erfcx, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -445,7 +470,7 @@ _special_funcs = (
         _ufuncs.exp1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -453,7 +478,7 @@ _special_funcs = (
         _ufuncs.exp10, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -461,7 +486,7 @@ _special_funcs = (
         _ufuncs.exp2, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -469,7 +494,7 @@ _special_funcs = (
         _ufuncs.exprel, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -492,7 +517,7 @@ _special_funcs = (
         _ufuncs.fdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -500,7 +525,7 @@ _special_funcs = (
         _ufuncs.fdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -508,7 +533,7 @@ _special_funcs = (
         _ufuncs.fdtri, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -527,7 +552,7 @@ _special_funcs = (
         _ufuncs.gammainccinv, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -535,7 +560,7 @@ _special_funcs = (
         _ufuncs.gammaincinv, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -549,7 +574,7 @@ _special_funcs = (
         _ufuncs.gdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -557,7 +582,7 @@ _special_funcs = (
         _ufuncs.gdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -565,7 +590,7 @@ _special_funcs = (
         _ufuncs.huber, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -587,7 +612,7 @@ _special_funcs = (
         _ufuncs.inv_boxcox, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -595,7 +620,7 @@ _special_funcs = (
         _ufuncs.inv_boxcox1p, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -607,7 +632,7 @@ _special_funcs = (
         _ufuncs.j0, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "bessel_j0"}, test_large_ints=False,
     ),
@@ -615,7 +640,7 @@ _special_funcs = (
         _ufuncs.j1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "bessel_j1"}, test_large_ints=False,
     ),
@@ -623,7 +648,7 @@ _special_funcs = (
         _ufuncs.k0, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "modified_bessel_k0"},
     ),
@@ -631,7 +656,7 @@ _special_funcs = (
         _ufuncs.k0e, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "scaled_modified_bessel_k0"},
         test_large_ints=False,
@@ -640,7 +665,7 @@ _special_funcs = (
         _ufuncs.k1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "modified_bessel_k1"},
     ),
@@ -648,7 +673,7 @@ _special_funcs = (
         _ufuncs.k1e, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "scaled_modified_bessel_k1"},
         test_large_ints=False),
@@ -662,7 +687,7 @@ _special_funcs = (
         _ufuncs.loggamma, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -671,7 +696,7 @@ _special_funcs = (
         _ufuncs.lpmv, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
         test_large_ints=False,
@@ -697,7 +722,7 @@ _special_funcs = (
         _ufuncs.nbdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         int_only=(True, True, False), positive_only=True,
         torch_native=False,
@@ -706,7 +731,7 @@ _special_funcs = (
         _ufuncs.nbdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         int_only=(True, True, False), positive_only=True,
         torch_native=False,
@@ -715,7 +740,7 @@ _special_funcs = (
         _ufuncs.nbdtri, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         int_only=(True, True, False), positive_only=True,
         torch_native=False,
@@ -726,7 +751,7 @@ _special_funcs = (
         _ufuncs.pdtr, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         positive_only=True, torch_native=False,
     ),
@@ -734,7 +759,7 @@ _special_funcs = (
         _ufuncs.pdtrc, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         positive_only=True, torch_native=False,
     ),
@@ -742,7 +767,7 @@ _special_funcs = (
         _ufuncs.pdtri, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         int_only=(True, False), positive_only=True,
         torch_native=False,
@@ -756,7 +781,7 @@ _special_funcs = (
         _ufuncs.pseudo_huber, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -771,7 +796,7 @@ _special_funcs = (
         _ufuncs.radian, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -780,7 +805,7 @@ _special_funcs = (
         _ufuncs.rgamma, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
@@ -788,15 +813,16 @@ _special_funcs = (
         _basic.sinc, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         is_ufunc=False,
+        in_xp=True,
     ),
     _FuncInfo(
         _ufuncs.sindg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         test_large_ints=False, torch_native=False,
     ),
@@ -819,7 +845,7 @@ _special_funcs = (
         _ufuncs.tandg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         test_large_ints=False, torch_native=False,
     ),
@@ -829,7 +855,7 @@ _special_funcs = (
         _ufuncs.y0, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "bessel_y0"}, test_large_ints=False,
     ),
@@ -837,7 +863,7 @@ _special_funcs = (
         _ufuncs.y1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         alt_names_map={"torch": "bessel_y1"}, test_large_ints=False,
     ),
@@ -845,7 +871,7 @@ _special_funcs = (
         _ufuncs.yn, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         positive_only={"cupy": (True, False)}, int_only=(True, False),
         test_large_ints=False, torch_native=False,
@@ -859,7 +885,7 @@ _special_funcs = (
         _ufuncs.zetac, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=False,
+            jax_jit=True,
         ),
         torch_native=False,
     ),
