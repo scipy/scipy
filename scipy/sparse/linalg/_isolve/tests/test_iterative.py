@@ -809,3 +809,16 @@ class TestGMRES:
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20
+
+
+def test_nD(solver):
+    """Check that >2-D operators are rejected cleanly."""
+    if solver is cg:
+        # cg has batch support
+        return
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    b = np.ones((2, 2))
+    with pytest.raises(ValueError, match="expected 2-D"):
+        solver(A, b)

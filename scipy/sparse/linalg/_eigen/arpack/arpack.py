@@ -986,8 +986,7 @@ class SpLuInv(LinearOperator):
 
     def __init__(self, M):
         self.M_lu = splu(M)
-        self.shape = M.shape
-        self.dtype = M.dtype
+        super().__init__(dtype=M.dtype, shape=M.shape)
         self.isreal = not np.issubdtype(self.dtype, np.complexfloating)
 
     def _matvec(self, x):
@@ -1010,8 +1009,7 @@ class LuInv(LinearOperator):
 
     def __init__(self, M):
         self.M_lu = lu_factor(M)
-        self.shape = M.shape
-        self.dtype = M.dtype
+        super().__init__(dtype=M.dtype, shape=M.shape)
 
     def _matvec(self, x):
         return lu_solve(self.M_lu, x)
@@ -1036,11 +1034,11 @@ class IterInv(LinearOperator):
     def __init__(self, M, ifunc=gmres_loose, tol=0):
         self.M = M
         if hasattr(M, 'dtype'):
-            self.dtype = M.dtype
+            dtype = M.dtype
         else:
             x = np.zeros(M.shape[1])
-            self.dtype = (M * x).dtype
-        self.shape = M.shape
+            dtype = (M * x).dtype
+        super().__init__(dtype=dtype, shape=M.shape)
 
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
@@ -1088,7 +1086,7 @@ class IterOpInv(LinearOperator):
             self.OP = LinearOperator(self.A.shape,
                                      mult_func,
                                      dtype=dtype)
-        self.shape = A.shape
+        super().__init__(dtype=dtype, shape=A.shape)
 
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
@@ -1105,10 +1103,6 @@ class IterOpInv(LinearOperator):
                 f"did not converge (info = {info})."
             )
         return b
-
-    @property
-    def dtype(self):
-        return self.OP.dtype
 
 
 def _fast_spmatrix_to_csc(A, hermitian=False):
@@ -1320,6 +1314,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     """
     A = convert_pydata_sparse_to_scipy(A)
+    if (A_ndim := len(A.shape)) > 2:
+        raise ValueError(f"{A_ndim}-dimensional `A` is unsupported, expected 2-D.")
     M = convert_pydata_sparse_to_scipy(M)
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
@@ -1652,6 +1648,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             return ret.real
 
+    if (A_ndim := len(A.shape)) > 2:
+        raise ValueError(f"{A_ndim}-dimensional `A` is unsupported, expected 2-D.")
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
