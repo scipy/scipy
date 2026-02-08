@@ -15,7 +15,7 @@ For working with untrusted data the :doc:`numpy:reference/security`
 guidelines apply.
 
 The majority of SciPy does not establish a network connection.
-The sole exception to this is the :mod"`scipy.datasets` where
+The sole exception to this is the :mod:`scipy.datasets` where
 we rely on the `Pooch <https://www.fatiando.org/pooch/latest/>`_
 dependency to fetch data and use sha256 codes to verify the downloads.
 
@@ -28,10 +28,14 @@ repository which is modeled after the
 `Numpy release <https://github.com/numpy/numpy-release>`_ process.
 
 General security guidelines on the scipy-release repo:
-* We require commit history and audit log are easy to inspect
-* We require branch protection etc. and apply best practices
-* We required all release artifacts to be built in the scipy-release repo
-* We do not allow self-hosted runners on this repository
+
+- We require commit history and audit log are easy to inspect
+
+- We require branch protection etc. and apply best practices
+
+- We required all release artifacts to be built in the scipy-release repo
+
+- We do not allow self-hosted runners on this repository
 
 Disclosure
 ----------
