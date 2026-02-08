@@ -415,7 +415,10 @@ def test_hermitian_modes(D, typ, which, mattype, sigma):
     # (ARPACK mode=2 does not preserve real/imaginary part ordering)
     # For complex hermitian, LA->LR and SA->SR, so skip those too
     if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI', 'LA', 'SA']:
-        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which)) #Skips the test if the which value is problematic for generalized eigenvalue problems without sigma
+        pytest.skip(
+            f"which={which} is unreliable for generalized eigenvalue "
+            "problem without sigma"
+        )
     rng = np.random.default_rng(1749531706842957)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
@@ -456,7 +459,10 @@ def test_real_nonsymmetric_modes(D, typ, which, mattype,
     # Skip problematic which values for generalized problems without sigma
     # (ARPACK mode=2 does not preserve real/imaginary part ordering)
     if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
-        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which))
+        pytest.skip(
+            f"which={which} is unreliable for generalized eigenvalue "
+            "problem without sigma"
+        )
     rng = np.random.default_rng(174953334412726)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
@@ -471,7 +477,10 @@ def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
     # Skip problematic which values for generalized problems without sigma
     # (ARPACK mode=2 does not preserve real/imaginary part ordering)
     if 'bmat' in D and sigma is None and which in ['LR', 'SR', 'LI', 'SI']:
-        pytest.skip("which={} is unreliable for generalized eigenvalue problem without sigma".format(which))
+        pytest.skip(
+            f"which={which} is unreliable for generalized eigenvalue "
+            "problem without sigma"
+        )
     rng = np.random.default_rng(1749533536274527)
     k = 2
     eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
