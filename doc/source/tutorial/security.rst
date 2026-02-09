@@ -66,6 +66,6 @@ able to freely execute SciPy functions.
 Vendored Dependencies
 ---------------------
 
-Exceptions to the upstream dependency policy would be if a vulnerability was in
-a vendored dependency. Vendored dependencies are included
-in `subprojects <https://github.com/scipy/scipy/tree/main/subprojects>`_
+An exception to the upstream dependency policy described above
+is if a vulnerability is contained in
+a vendored dependency. See :doc:`dev/core-dev/vendored-code`.
