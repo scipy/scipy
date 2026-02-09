@@ -391,13 +391,13 @@ def kstatvar(data, n=2, *, axis=None):
     >>> import numpy as np
     >>> from scipy.stats import kstatvar
     
-    Compute the variance of the first k-statistic (n=1):
+    Compute the variance of the first k-statistic (``n=1``):
     
-    >>> data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> data = np.arange(1, 10)
     >>> kstatvar(data, n=1)
     np.float64(0.8333333333333334)
     
-    Compute the variance of the second k-statistic (n=2, default):
+    Compute the variance of the second k-statistic (``n=2``):
     
     >>> kstatvar(data)
     np.float64(5.25)
