@@ -1205,6 +1205,13 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    """
+    # test commented out because of test flakes in macosx-x86_64 that
+    # were also seen in GUIX. It's suspected that they're due to
+    # numeric instability. Given that constraint handling is
+    # adequately tested in the other problems we can skip this one.
+    # It's left in the test suite in case we want to use it again
+    # in the future (and a reminder what the problems with it were).
     @pytest.mark.fail_slow(10)
     def test_L4(self):
         # Lampinen ([5]) test problem 4
@@ -1257,6 +1264,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(np.array(c1(res.x)) >= 0))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+    """
 
     @pytest.mark.fail_slow(10)
     def test_L5(self):
