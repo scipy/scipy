@@ -6002,38 +6002,41 @@ add_newdoc("nrdtrisd",
 
     """)
 
-add_newdoc("ndtri",
+add_newdoc(
+    "ndtri",
     """
-    ndtri(y, out=None)
+    ndtri(p, out=None)
 
-    Inverse of `ndtr` vs x.
+    Inverse of `ndtr`.
 
-    Returns the argument x for which the area under the standard normal
-    probability density function (integrated from minus infinity to `x`)
-    is equal to y.
+    Returns the quantile `x` such that the cumulative distribution function of the
+    standard normal distribution evaluated at `x` equals `p`.
+
+    That is, ``ndtr(x) == p``.
 
     Parameters
     ----------
     p : array_like
-        Probability
+        Probability values.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
     x : scalar or ndarray
-        Value of x such that ``ndtr(x) == p``.
+        Quantile(s) corresponding to the probabilitie(s) in `p`.
 
     See Also
     --------
-    ndtr : Standard normal cumulative probability distribution
+    ndtr : Standard normal cumulative distribution function
     ndtri_exp : Inverse of log_ndtr
 
     Examples
     --------
-    `ndtri` is the percentile function of the standard normal distribution.
-    This means it returns the inverse of the cumulative density `ndtr`. First,
-    let us compute a cumulative density value.
+    `ndtri` is the percentile (quantile) function of the standard normal distribution,
+    i.e., the inverse of the cumulative distribution function `ndtr`.
+
+    First, compute a cumulative distribution value:
 
     >>> import numpy as np
     >>> from scipy.special import ndtri, ndtr
@@ -6041,21 +6044,23 @@ add_newdoc("ndtri",
     >>> cdf_val
     0.9772498680518208
 
-    Verify that `ndtri` yields the original value for `x` up to floating point
-    errors.
+    Verify that `ndtri` yields the original value for `x` up to floating point errors.
 
     >>> ndtri(cdf_val)
     2.0000000000000004
 
-    Plot the function. For that purpose, we provide a NumPy array as argument.
+    Plot the percentile function over a range of probabilities.
 
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0.01, 1, 200)
+    >>> p = np.linspace(1e-3, 1 - 1e-3, 201)
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, ndtri(x))
+    >>> ax.plot(p, ndtri(p))
+    >>> ax.set_xlabel("Probability")
+    >>> ax.set_ylabel("Quantile")
     >>> ax.set_title("Standard normal percentile function")
     >>> plt.show()
-    """)
+    """,
+)
 
 add_newdoc("pdtr",
     r"""
