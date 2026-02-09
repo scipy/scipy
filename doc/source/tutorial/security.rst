@@ -47,8 +47,8 @@ an upstream dependency. If the detected vulnerability requires remediation in
 an upstream dependency we ask that you report the disclosure to the upstream
 dependency.
 
-To report a security vulnerability on this repo please use
-`Tidelift <https://tidelift.com/docs/security>`_
+To report a security vulnerability on the SciPy repo, please use
+`Tidelift <https://tidelift.com/docs/security>`_.
 
 SciPy is not designed to be exposed directly to untrusted users. A user
 who can freely execute SciPy (or Python) functions must be considered
