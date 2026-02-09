@@ -76,10 +76,10 @@ class _FuncInfo:
     # but in the future I think it's likely we may want to add a warning to
     # xp_capabilities when not using native PyTorch on CPU.
     torch_native: bool = True
-    # Put backends in the `in_xp` list if `func` is available as `xp.func` in this
-    # backend but not available in the `scipy.special` namespace for this backend.
+    # Place a backend in this tuple if `func` is available as `xp.func` but not
+    # available in the `scipy.special` namespace for this backend.
     # One example is `jax.numpy.sinc` being available but not `jax.scipy.special.sinc`.
-    in_xp: list[str] | None = None
+    backends_with_func_in_xp: tuple[str] = ()
 
     @property
     def name(self):
@@ -127,8 +127,7 @@ class _FuncInfo:
             return self.func
 
         # If a native implementation is available, use that
-        in_xp = self.in_xp if self.in_xp is not None else []
-        in_xp = get_native_namespace_name(xp) in in_xp
+        in_xp = get_native_namespace_name(xp) in self.backends_with_func_in_xp
         namespace = xp if in_xp else _special_namespace_for(xp)
         f = _get_native_func(
             xp, namespace, self.name, alt_names_map=self.alt_names_map
@@ -137,6 +136,10 @@ class _FuncInfo:
             return f
 
         if in_xp:
+            # when namespace is passed to self.generic_impl below, we want to
+            # make sure that it is the special namespace for xp and not xp
+            # itself, so raise if xp was incorrectly placed in
+            # `backends_with_func_in_xp`.
             raise RuntimeError(
                 f"func {self.func} is not available as {xp.__name__}.{self.func}"
                 f" but {xp.__name__} was passed in ``in_xp``."
@@ -189,14 +192,13 @@ class _FuncInfo:
             # lazy backends.
             def f(*args, _f=_f, xp=xp, **kwargs):
                 # JAX uses NumPy dtypes, so it's easy to get the dtypes for
-                # use in resolve_dtypes. Needs the is_jax_array arg to properly
-                # handle Python scalars. The (None, ) appended on the end is for the
-                # dtype of out, which resolve_dtypes needs. Since JAX arrays are
-                # immutable, there can be no out, so this will always be None.
-                dtypes = (
-                    tuple(arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
-                    + (None, )
-                )
+                # use in resolve_dtypes, which only works with NumPy dtypes.
+                # This needs to call `is_jax_array(arg)` in the
+                # ternary below to properly handle Python scalars.
+                dtypes = (arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
+                # result_dtypes needs an arg for the dtype of the optional out param. Use
+                # `None` since `out` is incompatible with JAX's immutability.
+                dtypes = (*dtypes, None)
                 out_dtype = getattr(xp, str(_f.resolve_dtypes(dtypes)[-1]))
                 return xpx.lazy_apply(
                     _f, *args, xp=xp, as_numpy=True, dtype=out_dtype, **kwargs
@@ -829,7 +831,7 @@ _special_funcs = (
             jax_jit=True,
         ),
         is_ufunc=False,
-        in_xp=["jax.numpy"],
+        backends_with_func_in_xp=("jax.numpy",),
     ),
     _FuncInfo(
         _ufuncs.sindg, 1,
