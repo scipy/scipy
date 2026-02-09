@@ -417,7 +417,7 @@ def _validate_indices(key, self_shape, self_format):
             shapes = " ".join(str(shp) for shp in arr_shapes)
             msg = (f'shape mismatch: indexing arrays could not be broadcast '
                    f'together with shapes {shapes}')
-            raise ValueError(msg)
+            raise IndexError(msg)
         # len(array_indices) implies arr_int_pos has at least one element
         # if arrays and ints not adjacent, move to front of shape
         if len(arr_int_pos) != (arr_int_pos[-1] - arr_int_pos[0] + 1):
@@ -442,7 +442,7 @@ def _asindices(idx, length, format):
     except (ValueError, TypeError, MemoryError) as e:
         raise IndexError('invalid index') from e
 
-    if format != "coo" and ix.ndim not in (1, 2):
+    if format != "coo" and ix.ndim not in (1, 2) or format == "coo" and ix.ndim == 0:
         raise IndexError(f'Index dimension must be 1 or 2. Got {ix.ndim}')
 
     # LIL routines handle bounds-checking for us, so don't do it here.
