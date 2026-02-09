@@ -5299,7 +5299,7 @@ add_newdoc("nbdtrin",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     Formula 26.5.26 of [2]_ or [3]_,
 
@@ -5315,9 +5315,7 @@ add_newdoc("nbdtrin",
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -5339,7 +5337,7 @@ add_newdoc("nbdtrin",
     point accuracy.
 
     >>> nbdtrin(k, cdf_value, p)
-    1.999999999998137
+    2.0
     """)
 
 add_newdoc("ncfdtr",

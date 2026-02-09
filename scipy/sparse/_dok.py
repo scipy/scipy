@@ -76,7 +76,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 isintlike(idx) and 0 <= idx < max_idx
                 for idx, max_idx in zip(index, self.shape)
             ):
-                # Error handling. Re-search to find which error occured
+                # Error handling. Re-search to find which error occurred
                 for idx, max_idx in zip(index, self.shape):
                     if not isintlike(idx):
                         raise IndexError(f'integer keys required for update. Got {key}')

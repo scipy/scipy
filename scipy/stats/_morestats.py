@@ -2147,7 +2147,7 @@ def shapiro(x, *, axis=None):
 
     For a more detailed example, see :ref:`hypothesis_shapiro`.
     """
-    # `x` is a an array and axis=-1 due to _axis_nan_policy decorator
+    # `x` is an array and axis=-1 due to _axis_nan_policy decorator
     xp = array_namespace(x)
 
     N = x.shape[-1]
@@ -3851,7 +3851,7 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                 jax_jit=False, cpu_only=True)  # exact null distribution is NumPy-only
+                 cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
