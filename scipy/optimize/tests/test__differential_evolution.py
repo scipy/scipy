@@ -1229,66 +1229,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    """
-    # test commented out because of test flakes in macosx-x86_64 that
-    # were also seen in GUIX. It's suspected that they're due to
-    # numeric instability. Given that constraint handling is
-    # adequately tested in the other problems we can skip this one.
-    # It's left in the test suite in case we want to use it again
-    # in the future (and a reminder what the problems with it were).
-    @pytest.mark.fail_slow(10)
-    def test_L4(self):
-        # Lampinen ([5]) test problem 4
-        def f(x):
-            return np.sum(x[:3])
-
-        A = np.zeros((4, 9))
-        A[1, [4, 6]] = 0.0025, 0.0025
-        A[2, [5, 7, 4]] = 0.0025, 0.0025, -0.0025
-        A[3, [8, 5]] = 0.01, -0.01
-        A = A[1:, 1:]
-        b = np.array([1, 1, 1])
-
-        def c1(x):
-            x = np.hstack(([0], x))  # 1-indexed to match reference
-            return [x[1]*x[6] - 833.33252*x[4] - 100*x[1] + 83333.333,
-                    x[2]*x[7] - 1250*x[5] - x[2]*x[4] + 1250*x[4],
-                    x[3]*x[8] - 1250000 - x[3]*x[5] + 2500*x[5]]
-
-        L = LinearConstraint(A, -np.inf, 1)
-        N = NonlinearConstraint(c1, 0, np.inf)
-
-        bounds = [(100, 10000)] + [(1000, 10000)]*2 + [(10, 1000)]*5
-        constraints = (L, N)
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            res = differential_evolution(
-                f, bounds, strategy='best1bin', rng=1234,
-                constraints=constraints, popsize=3, tol=0.05
-            )
-
-        f_opt = 7049.248
-
-        x_opt = [579.306692, 1359.97063, 5109.9707, 182.0177, 295.601172,
-                217.9823, 286.416528, 395.601172]
-
-        assert_allclose(f(x_opt), f_opt, atol=0.001)
-        assert_allclose(res.fun, f_opt, atol=0.001)
-
-        # use higher tol here for 32-bit Windows, see gh-11693
-        if (platform.system() == 'Windows' and np.dtype(np.intp).itemsize < 8):
-            assert_allclose(res.x, x_opt, rtol=2.4e-6, atol=0.0035)
-        else:
-            # tolerance determined from macOS + MKL failure, see gh-12701
-            assert_allclose(res.x, x_opt, rtol=5e-6, atol=0.0024)
-
-        assert res.success
-        assert_(np.all(A @ res.x <= b))
-        assert_(np.all(np.array(c1(res.x)) >= 0))
-        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
-        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
-    """
+    # test_L4 was remove for flakiness due to numerical instability (gh24549)
 
     @pytest.mark.fail_slow(10)
     def test_L5(self):
