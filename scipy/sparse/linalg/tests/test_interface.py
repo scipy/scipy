@@ -14,7 +14,7 @@ import scipy.sparse as sparse
 
 import scipy.sparse.linalg._interface as interface
 from scipy.sparse._sputils import matrix
-from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._gcutils import assert_deallocated
 
 
 class TestLinearOperator:
@@ -829,7 +829,6 @@ def test_sparse_matmat_exception():
         np.identity(4) @ A
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_MatrixLinearOperator_refcycle():
     # gh-10634
     # Test that MatrixLinearOperator can be automatically garbage collected

@@ -472,7 +472,7 @@ def to_writeable(source):
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
     if isinstance(source, np.generic):
-        # NumPy scalars are never mappings (PyPy issue workaround)
+        # NumPy scalars are never mappings
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
         source = {key: value for key, value in source.__dict__.items()

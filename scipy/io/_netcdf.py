@@ -37,7 +37,6 @@ __all__ = ['netcdf_file', 'netcdf_variable']
 import warnings
 import weakref
 from operator import mul
-from platform import python_implementation
 
 import mmap as mm
 
@@ -46,8 +45,6 @@ from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-
-IS_PYPY = python_implementation() == 'PyPy'
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -250,10 +247,7 @@ class netcdf_file:
             omode = 'r+' if mode == 'a' else mode
             self.fp = open(self.filename, f'{omode}b')
             if mmap is None:
-                # Mmapped files on PyPy cannot be usually closed
-                # before the GC runs, so it's better to use mmap=False
-                # as the default.
-                mmap = (not IS_PYPY)
+                mmap = True
 
         if mode != 'r':
             # Cannot read write-only files

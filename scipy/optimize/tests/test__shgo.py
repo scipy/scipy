@@ -1,5 +1,4 @@
 import logging
-import sys
 import warnings
 
 import numpy as np
@@ -13,8 +12,6 @@ from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
 from scipy.optimize._constraints import new_constraint_to_old
 from scipy.optimize._shgo import SHGO
 from scipy.optimize.tests.test_minimize_constrained import MaratosTestArgs
-
-IS_PYPY = sys.implementation.name == 'pypy'
 
 
 class StructTestFunction:
@@ -747,8 +744,6 @@ class TestShgoArguments:
         """Test single function constraint passing"""
         SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
 
-    @pytest.mark.xfail(IS_PYPY and sys.platform == 'win32',
-            reason="Failing and fix in PyPy not planned (see gh-18632)")
     def test_10_finite_time(self):
         """Test single function constraint passing"""
         options = {'maxtime': 1e-15}
