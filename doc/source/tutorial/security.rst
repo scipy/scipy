@@ -1,9 +1,10 @@
 Security
 ========
 
-In general the core maintainers of SciPy are scientific experts in their
-domains and are not security experts. We are security conscious and have
+The SciPy maintenance team is security conscious and has
 mechanisms for resolving identified security issues.
+In general, however, core maintainers are not security experts
+(their expertise lying elsewhere in scientific domains and programming).
 
 We follow the guidelines under the NumPy security
 guidelines :doc:`numpy:reference/security` in addition to this document.
