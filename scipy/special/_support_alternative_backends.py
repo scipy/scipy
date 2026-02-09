@@ -76,9 +76,10 @@ class _FuncInfo:
     # but in the future I think it's likely we may want to add a warning to
     # xp_capabilities when not using native PyTorch on CPU.
     torch_native: bool = True
-    # Set to True if the function to be delegated to is in the xp namespace instead of
-    # the xp.scipy.special namespace. One example is jax.numpy.sinc.
-    in_xp: bool = False
+    # Put backends in the `in_xp` list if `func` is available as `xp.func` in this
+    # backend but not available in the `scipy.special` namespace for this backend.
+    # One example is `jax.numpy.sinc` being available but not `jax.scipy.special.sinc`.
+    in_xp: list[str] | None = None
 
     @property
     def name(self):
@@ -126,16 +127,24 @@ class _FuncInfo:
             return self.func
 
         # If a native implementation is available, use that
-        namespace = xp if self.in_xp else _special_namespace_for(xp)
+        in_xp = self.in_xp if self.in_xp is not None else []
+        in_xp = get_native_namespace_name(xp) in in_xp
+        namespace = xp if in_xp else _special_namespace_for(xp)
         f = _get_native_func(
             xp, namespace, self.name, alt_names_map=self.alt_names_map
         )
         if f is not None:
             return f
 
+        if in_xp:
+            raise RuntimeError(
+                f"func {func} is not available as {xp.__name__}.{func}"
+                f" but {xp.__name__} was passed in ``in_xp``."
+            )
+
         # If generic Array API implementation is available, use that
         if self.generic_impl is not None:
-            f = self.generic_impl(xp, _special_namespace_for(xp))
+            f = self.generic_impl(xp, namespace)
             if f is not None:
                 return f
 
@@ -820,7 +829,7 @@ _special_funcs = (
             jax_jit=True,
         ),
         is_ufunc=False,
-        in_xp=True,
+        in_xp=["jax.numpy"],
     ),
     _FuncInfo(
         _ufuncs.sindg, 1,
