@@ -384,7 +384,8 @@ class TestDifferentialEvolutionSolver:
         result = differential_evolution(quadratic,
                                         bounds,
                                         args=args,
-                                        polish=True)
+                                        polish=True,
+                                        rng=1980983098)
         assert_almost_equal(result.fun, 2 / 3.)
 
     def test_init_with_invalid_strategy(self):
@@ -412,7 +413,9 @@ class TestDifferentialEvolutionSolver:
                           bounds)
 
         # test that we can use a new-type Bounds object
-        result = differential_evolution(rosen, Bounds([0, 0], [2, 2]))
+        result = differential_evolution(
+            rosen, Bounds([0, 0], [2, 2]), rng=1980983098
+        )
         assert_almost_equal(result.x, (1., 1.))
 
     def test_select_samples(self):
@@ -437,6 +440,8 @@ class TestDifferentialEvolutionSolver:
     def test_maxfun_stops_solve(self):
         # test that if the maximum number of function evaluations is exceeded
         # during initialisation the solver stops
+        rng = np.random.default_rng(1980983098)
+
         solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1,
                                              polish=False)
         result = solver.solve()
@@ -456,7 +461,8 @@ class TestDifferentialEvolutionSolver:
                                              self.bounds,
                                              popsize=5,
                                              polish=False,
-                                             maxfun=40)
+                                             maxfun=40,
+                                             rng=rng)
         result = solver.solve()
 
         assert_equal(result.nfev, 41)
@@ -473,7 +479,8 @@ class TestDifferentialEvolutionSolver:
                                              popsize=5,
                                              polish=False,
                                              maxfun=47,
-                                             updating='deferred')
+                                             updating='deferred',
+                                             rng=rng)
         result = solver.solve()
 
         assert_equal(result.nfev, 47)
@@ -495,7 +502,8 @@ class TestDifferentialEvolutionSolver:
         differential_evolution(self.quadratic,
                                [(-100, 100)],
                                tol=0.02,
-                               seed=1)
+                               seed=1,
+                               rng=1980983098)
 
     def test_rng_gives_repeatability(self):
         result = differential_evolution(self.quadratic,
@@ -563,8 +571,9 @@ class TestDifferentialEvolutionSolver:
     def test_iteration(self):
         # test that DifferentialEvolutionSolver is iterable
         # if popsize is 3, then the overall generation has size (6,)
+        rng = np.random.default_rng(4210919)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3,
-                                             maxfun=12)
+                                             maxfun=12, rng=rng)
         x, fun = next(solver)
         assert_equal(np.size(x, 0), 2)
 
@@ -576,7 +585,7 @@ class TestDifferentialEvolutionSolver:
         assert_raises(StopIteration, next, solver)
 
         # check a proper minimisation can be done by an iterable solver
-        solver = DifferentialEvolutionSolver(rosen, self.bounds)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, rng=rng)
         _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
@@ -587,10 +596,11 @@ class TestDifferentialEvolutionSolver:
                 break
 
     def test_convergence(self):
+        rng = np.random.default_rng(4210919)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, tol=0.2,
-                                             polish=False)
+                                             polish=False, rng=rng)
         solver.solve()
-        assert_(solver.convergence < 0.2)
+        assert solver.convergence < 0.2
 
     def test_maxiter_none_GH5731(self):
         # Pre 0.17 the previous default for maxiter and maxfun was None.
@@ -673,7 +683,8 @@ class TestDifferentialEvolutionSolver:
 
     def test_x0(self):
         # smoke test that checks that x0 is usable.
-        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8])
+        rng = np.random.default_rng(4210919)
+        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8], rng=rng)
         assert res.success
 
         # check what happens if some of the x0 lay outside the bounds
@@ -692,16 +703,19 @@ class TestDifferentialEvolutionSolver:
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
+        rng = np.random.default_rng(4210919)
         bounds = [(0., 2.), (0., 2.)]
-        solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
-        assert_(solver._updating == 'deferred')
-        assert_(solver._mapwrapper._mapfunc is map)
+        solver = DifferentialEvolutionSolver(
+            rosen, bounds, updating='deferred', rng=rng
+        )
+        assert solver._updating == 'deferred'
+        assert solver._mapwrapper._mapfunc is map
         res = solver.solve()
         assert res.success
 
         # check that deferred updating works with an exponential crossover
         res = differential_evolution(
-            rosen, bounds, updating='deferred', strategy='best1exp'
+            rosen, bounds, updating='deferred', strategy='best1exp', rng=rng
         )
         assert res.success
 
@@ -740,9 +754,10 @@ class TestDifferentialEvolutionSolver:
             solver.solve()
 
     def test_converged(self):
-        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
+        rng = np.random.default_rng(4210919)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)], rng=rng)
         solver.solve()
-        assert_(solver.converged())
+        assert solver.converged()
 
     def test_constraint_violation_fn(self):
         def constr_f(x):
@@ -847,13 +862,15 @@ class TestDifferentialEvolutionSolver:
             assert cv.shape == (2, 3)
 
     def test_constraint_solve(self):
+        rng = np.random.default_rng(4210919)
+
         def constr_f(x):
             return np.array([x[0] + x[1]])
 
         nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc,))
+                                             constraints=(nlc,), rng=rng)
 
         # trust-constr warns if the constraint function is linear
         with warns(UserWarning):
@@ -864,13 +881,15 @@ class TestDifferentialEvolutionSolver:
 
     @pytest.mark.fail_slow(10)
     def test_impossible_constraint(self):
+        rng = np.random.default_rng(4210919)
+
         def constr_f(x):
             return np.array([x[0] + x[1]])
 
         nlc = NonlinearConstraint(constr_f, -np.inf, -1)
 
         solver = DifferentialEvolutionSolver(
-            rosen, [(0, 2), (0, 2)], constraints=(nlc,), popsize=1, rng=1, maxiter=100
+            rosen, [(0, 2), (0, 2)], constraints=(nlc,), popsize=1, rng=rng, maxiter=100
         )
 
         # a UserWarning is issued because the 'trust-constr' polishing is
