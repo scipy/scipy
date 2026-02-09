@@ -502,7 +502,6 @@ class TestDifferentialEvolutionSolver:
         differential_evolution(self.quadratic,
                                [(-100, 100)],
                                tol=0.02,
-                               seed=1,
                                rng=1980983098)
 
     def test_rng_gives_repeatability(self):
