@@ -18,7 +18,7 @@ guidelines apply.
 The majority of SciPy does not establish a network connection.
 The sole exception to this is the :mod:`scipy.datasets` where
 we rely on the `Pooch <https://www.fatiando.org/pooch/latest/>`_
-dependency to fetch data and use sha256 codes to verify the downloads.
+dependency to fetch data and use sha256 codes to verify downloads.
 
 Releases
 --------
