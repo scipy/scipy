@@ -41,8 +41,8 @@ General security guidelines on the scipy-release repo:
 Disclosure
 ----------
 
-To report vulnerabilities please review the guidelines here to determine
-whether the vulnerability indeed needs to be reported on the SciPy repo and not
+Before reporting a vulnerability, please determine
+whether the vulnerability is indeed located in the SciPy repo and not
 an upstream dependency. If the detected vulnerability requires remediation in
 an upstream dependency we ask that you disclose the vulnerability to the upstream
 dependency rather than SciPy.
