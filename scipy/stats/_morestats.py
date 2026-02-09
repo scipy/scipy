@@ -399,8 +399,6 @@ def kstatvar(data, n=2, *, axis=None):
     
     Compute the variance of the second k-statistic (``n=2``):
     
-    >>> kstatvar(data)
-    np.float64(5.25)
     >>> kstatvar(data, n=2)
     np.float64(5.25)
     
