@@ -138,7 +138,7 @@ class _FuncInfo:
 
         if in_xp:
             raise RuntimeError(
-                f"func {func} is not available as {xp.__name__}.{func}"
+                f"func {self.func} is not available as {xp.__name__}.{self.func}"
                 f" but {xp.__name__} was passed in ``in_xp``."
             )
 
