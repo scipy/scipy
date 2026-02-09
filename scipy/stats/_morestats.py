@@ -385,6 +385,31 @@ def kstatvar(data, n=2, *, axis=None):
     References
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import kstatvar
+    
+    Compute the variance of the first k-statistic (n=1):
+    
+    >>> data = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> kstatvar(data, n=1)
+    np.float64(0.8333333333333334)
+    
+    Compute the variance of the second k-statistic (n=2, default):
+    
+    >>> kstatvar(data)
+    np.float64(5.25)
+    >>> kstatvar(data, n=2)
+    np.float64(5.25)
+    
+    For 2D arrays, compute along a specific axis:
+    
+    >>> data_2d = np.array([[1, 2, 3, 4],
+    ...                      [5, 6, 7, 8]])
+    >>> kstatvar(data_2d, axis=1)
+    array([0.61111111, 0.61111111])
 
     """  # noqa: E501
     xp = array_namespace(data)
