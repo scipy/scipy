@@ -401,14 +401,6 @@ def kstatvar(data, n=2, *, axis=None):
     
     >>> kstatvar(data, n=2)
     np.float64(5.25)
-    
-    For 2D arrays, compute along a specific axis:
-    
-    >>> data_2d = np.array([[1, 2, 3, 4],
-    ...                      [5, 6, 7, 8]])
-    >>> kstatvar(data_2d, axis=1)
-    array([0.61111111, 0.61111111])
-
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
