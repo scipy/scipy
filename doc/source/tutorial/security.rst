@@ -6,8 +6,8 @@ mechanisms for resolving identified security issues.
 In general, however, core maintainers are not security experts
 (their expertise lying elsewhere in scientific domains and programming).
 
-We follow the guidelines under the NumPy security
-guidelines :doc:`numpy:reference/security` in addition to this document.
+We follow the :doc:`numpy:reference/security` guidelines
+in addition to this document.
 
 Data and Network Access
 -----------------------
