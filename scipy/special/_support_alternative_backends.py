@@ -15,6 +15,11 @@ from . import _spfun_stats
 from . import _ufuncs
 
 
+def _special_namespace_for(xp):
+    spx = scipy_namespace_for(xp)
+    return getattr(spx, "special", None)
+
+
 @dataclass
 class _FuncInfo:
     # NumPy-only function. IT MUST BE ELEMENTWISE.
@@ -121,16 +126,16 @@ class _FuncInfo:
             return self.func
 
         # If a native implementation is available, use that
-        spx = scipy_namespace_for(xp)
+        namespace = xp if self.in_xp else _special_namespace_for(xp)
         f = _get_native_func(
-            xp, spx, self.name, alt_names_map=self.alt_names_map, in_xp=self.in_xp
+            xp, namespace, self.name, alt_names_map=self.alt_names_map
         )
         if f is not None:
             return f
 
         # If generic Array API implementation is available, use that
         if self.generic_impl is not None:
-            f = self.generic_impl(xp, spx)
+            f = self.generic_impl(xp, _special_namespace_for(xp))
             if f is not None:
                 return f
 
@@ -196,11 +201,11 @@ class _FuncInfo:
         return f
 
 
-def _get_native_func(xp, spx, f_name, *, alt_names_map=None, in_xp=False):
+def _get_native_func(xp, namespace, f_name, *, alt_names_map=None):
     if alt_names_map is None:
         alt_names_map = {}
     f_name = alt_names_map.get(get_native_namespace_name(xp), f_name)
-    f = getattr(xp if in_xp else spx.special, f_name, None) if spx else None
+    f = getattr(namespace, f_name, None)
     if f is None and hasattr(xp, 'special'):
         # Currently dead branch, in anticipation of 'special' Array API extension
         # https://github.com/data-apis/array-api/issues/725
@@ -208,7 +213,7 @@ def _get_native_func(xp, spx, f_name, *, alt_names_map=None, in_xp=False):
     return f
 
 
-def _rel_entr(xp, spx):
+def _rel_entr(xp, spsx):
     def __rel_entr(x, y, *, xp=xp):
         # https://github.com/data-apis/array-api-extra/issues/160
         mxp = array_namespace(x._meta, y._meta) if is_dask(xp) else xp
@@ -229,7 +234,7 @@ def _rel_entr(xp, spx):
     return __rel_entr
 
 
-def _xlogy(xp, spx):
+def _xlogy(xp, spsx):
     def __xlogy(x, y, *, xp=xp):
         x, y = xp_promote(x, y, force_floating=True, xp=xp)
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -239,12 +244,12 @@ def _xlogy(xp, spx):
 
 
 
-def _chdtr(xp, spx):
+def _chdtr(xp, spsx):
     # The difference between this and just using `gammainc`
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = _get_native_func(xp, spx, 'gammainc')
+    gammainc = _get_native_func(xp, spsx, 'gammainc')
     if gammainc is None:
         return None
 
@@ -258,12 +263,12 @@ def _chdtr(xp, spx):
     return __chdtr
 
 
-def _chdtrc(xp, spx):
+def _chdtrc(xp, spsx):
     # The difference between this and just using `gammaincc`
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = _get_native_func(xp, spx, 'gammaincc')
+    gammaincc = _get_native_func(xp, spsx, 'gammaincc')
     if gammaincc is None:
         return None
 
@@ -275,8 +280,8 @@ def _chdtrc(xp, spx):
     return __chdtrc
 
 
-def _betaincc(xp, spx):
-    betainc = _get_native_func(xp, spx, 'betainc')
+def _betaincc(xp, spsx):
+    betainc = _get_native_func(xp, spsx, 'betainc')
     if betainc is None:
         return None
 
@@ -286,8 +291,8 @@ def _betaincc(xp, spx):
     return __betaincc
 
 
-def _stdtr(xp, spx):
-    betainc = _get_native_func(xp, spx, 'betainc')
+def _stdtr(xp, spsx):
+    betainc = _get_native_func(xp, spsx, 'betainc')
     if betainc is None:
         return None
 
@@ -299,9 +304,9 @@ def _stdtr(xp, spx):
     return __stdtr
 
 
-def _stdtrit(xp, spx):
+def _stdtrit(xp, spsx):
     # Need either native stdtr or native betainc
-    stdtr = _get_native_func(xp, spx, 'stdtr') or _stdtr(xp, spx)
+    stdtr = _get_native_func(xp, spsx, 'stdtr') or _stdtr(xp, spsx)
     # If betainc is not defined, the root-finding would be done with `xp`
     # despite `stdtr` being evaluated with SciPy/NumPy `stdtr`. Save the
     # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
