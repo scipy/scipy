@@ -281,7 +281,13 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
             for exp_height in [100, 10, 5]
             # exp_height = 1 is handled by peak
         ]
-        intg_points = [0, peak] + tail_points
+        # Run into numerical issues in the special case when beta = +/-1
+        # In this case, let `quad` handle integration points
+        if np.abs(beta) != 1:
+            intg_points = [0, peak] + tail_points
+        else:
+            intg_points = None
+
         intg, *ret = integrate.quad(
             integrand,
             -xi,
