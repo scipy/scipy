@@ -68,4 +68,4 @@ Vendored Dependencies
 
 An exception to the upstream dependency policy described above
 is if a vulnerability is contained in
-a vendored dependency. See :doc:`dev/core-dev/vendored-code`.
+a vendored dependency. See :ref:`vendored-code`.
