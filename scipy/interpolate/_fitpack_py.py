@@ -679,7 +679,7 @@ def insert(x, tck, m=1, per=0):
 
     Parameters
     ----------
-    x (u) : float
+    x : float
         A knot value at which to insert a new knot.  If `tck` was returned
         from ``splprep``, then the parameter values, u should be given.
     tck : a `BSpline` instance or a tuple
@@ -768,7 +768,7 @@ def insert(x, tck, m=1, per=0):
 @xp_capabilities(out_of_scope=True)
 def splder(tck, n=1):
     """
-    Compute the spline representation of the derivative of a given spline
+    Compute the spline representation of the derivative of a given spline.
 
     .. legacy:: function
 

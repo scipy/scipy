@@ -90,6 +90,15 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
     PYERR("hrow and hcol must be odd length");
   }
 
+  /**
+   * TODO: The following functions assume Nh <= N and violation of this causes a
+   * segfault. This is also caught by the ASAN tests and currently ignored.
+   *
+   * A proper fix is either to put an input validation or fix the boundary condition
+   * logic for filters larger than the signal.
+   *
+   */
+
   switch (thetype) {
   case NPY_FLOAT:
     ret = _separable_2Dconvolve_mirror((float *) PyArray_DATA(a_image), (float *) PyArray_DATA(out), M, N,
@@ -506,37 +515,47 @@ static struct PyMethodDef toolbox_module_methods[] = {
     {"sepfir2d", FIRsepsym2d, METH_VARARGS, doc_FIRsepsym2d},
     {"symiirorder1_ic", IIRsymorder1_ic, METH_VARARGS, doc_IIRsymorder1_ic},
     {"symiirorder2_ic_fwd", IIRsymorder2_ic_fwd, METH_VARARGS, doc_IIRsymorder2_ic_fwd},
-    {"symiirorder2_ic_bwd", IIRsymorder2_ic_bwd, METH_VARARGS,doc_IIRsymorder2_ic_bwd },
+    {"symiirorder2_ic_bwd", IIRsymorder2_ic_bwd, METH_VARARGS, doc_IIRsymorder2_ic_bwd},
     {NULL, NULL, 0, NULL}       /* sentinel */
 };
 
+
+static int module_exec(PyObject *module) {
+    (void)module;  /* unused */
+
+    if (_import_array() < 0) { return -1; }
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot spline_slots[] = {
+    {Py_mod_exec, (void *)module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    /* signal that this module supports running without an active GIL */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 /* Initialization function for the module */
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_spline",
-    NULL,
-    -1,
-    toolbox_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    /* m_base     */ PyModuleDef_HEAD_INIT,
+    /* m_name     */ "_spline",
+    /* m_doc      */ NULL,
+    /* m_size     */ 0,
+    /* m_methods  */ toolbox_module_methods,
+    /* m_slots    */ spline_slots,
+    /* m_traverse */ NULL,
+    /* m_clear    */ NULL,
+    /* m_free     */ NULL
 };
+
 
 PyMODINIT_FUNC
 PyInit__spline(void)
 {
-    PyObject *module;
-
-    import_array();
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return module;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }

@@ -29,8 +29,8 @@ from ._sosfilt import _sosfilt
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
     xp_promote, xp_swapaxes,)
-from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import is_array_api_obj
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -727,7 +727,7 @@ def _calc_oa_lens(s1, s2):
     in1_step : int
         The size of each step for the first array.
     in2_step : int
-        The size of each step for the first array.
+        The size of each step for the second array.
 
     """
     # Set up the arguments for the conventional FFT approach.
@@ -820,7 +820,7 @@ def _calc_oa_lens(s1, s2):
 # may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
-    """A simplified version of np.split, with `indices` being an list.
+    """A simplified version of np.split, with `indices` being a list.
     """
     # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
     Ntotal = x.shape[axis]
@@ -3590,7 +3590,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     axis : int, optional
         The time/frequency axis of `x` along which the resampling take place.
         The Default is 0.
-    window : array_like, callable, string, float, or tuple, optional
+    window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
         ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
@@ -3882,10 +3882,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         The downsampling factor.
     axis : int, optional
         The axis of `x` that is resampled. Default is 0.
-    window : string, tuple, or array_like, optional
+    window : str, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
-    padtype : string, optional
+    padtype : str, optional
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,
@@ -4195,7 +4195,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    overwrite_data: bool, optional
+    overwrite_data : bool, optional
         If True, allow in place detrending and avoid a copy. Default is
         False. In place modification applies only if ``type == 'linear'``
         and `data` is of the floating point dtype ``float32``, ``float64``,

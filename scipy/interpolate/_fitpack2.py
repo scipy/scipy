@@ -957,14 +957,14 @@ class UnivariateSpline:
             Spline of order k2=k+n representing the antiderivative of this
             spline.
 
+        See Also
+        --------
+        splantider, derivative
+
         Notes
         -----
 
         .. versionadded:: 0.13.0
-
-        See Also
-        --------
-        splantider, derivative
 
         Examples
         --------
@@ -1299,8 +1299,16 @@ class _BivariateSplineBase:
         return self
 
     def get_residual(self):
-        """ Return weighted sum of squared residuals of the spline
-        approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
+        """Return weighted sum of squared residuals of the spline approximation.
+
+        This is given by::
+
+            sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
+
+        Returns
+        -------
+        float
+            Weighted sum of squared residuals of the spline approximation.
         """
         return self.fp
 
@@ -1309,11 +1317,22 @@ class _BivariateSplineBase:
         of the spline with respect to x-, y-variable, respectively.
         The position of interior and additional knots are given as
         t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
+
+        Returns
+        -------
+        tuple of 1D arrays
+            Spline knots with respect to x- and y-variable.
         """
         return self.tck[:2]
 
     def get_coeffs(self):
-        """ Return spline coefficients."""
+        """ Return spline coefficients.
+
+        Returns
+        -------
+        1D array
+            Spline coefficients.
+        """
         return self.tck[2]
 
     def __call__(self, x, y, dx=0, dy=0, grid=True):
@@ -1563,7 +1582,7 @@ class BivariateSpline(_BivariateSplineBase):
 
     def ev(self, xi, yi, dx=0, dy=0):
         """
-        Evaluate the spline at points
+        Evaluate the spline at points.
 
         Returns the interpolated value at ``(xi[i], yi[i]),
         i=0,...,len(xi)-1``.
@@ -1583,6 +1602,11 @@ class BivariateSpline(_BivariateSplineBase):
             Order of y-derivative
 
             .. versionadded:: 0.14.0
+
+        Returns
+        -------
+        z : ndarray
+            Evaluated values. Shape is the result of broadcasting `xi` and `yi`.
 
         Examples
         --------
@@ -1902,7 +1926,7 @@ class RectBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x,y : array_like
+    x, y : array_like
         1-D arrays of coordinates in strictly ascending order.
         Evaluated points outside the data range will be extrapolated.
     z : array_like
@@ -2115,7 +2139,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
     def ev(self, theta, phi, dtheta=0, dphi=0):
         """
-        Evaluate the spline at points
+        Evaluate the spline at points.
 
         Returns the interpolated value at ``(theta[i], phi[i]),
         i=0,...,len(theta)-1``.
@@ -2135,6 +2159,11 @@ class SphereBivariateSpline(_BivariateSplineBase):
             Order of phi-derivative
 
             .. versionadded:: 0.14.0
+
+        Returns
+        -------
+        z : ndarray
+            Evaluated values. Shape is the result of broadcasting `theta` and `phi`.
 
         Examples
         --------

@@ -54,7 +54,7 @@ __all__ = ['LinearOperator', 'aslinearoperator']
 
 
 class LinearOperator:
-    """Common interface for performing matrix vector products
+    """Common interface for performing matrix vector products.
 
     Many iterative methods (e.g. `cg`, `gmres`) do not need to know the
     individual entries of a matrix to solve a linear system ``A@x = b``.
@@ -578,8 +578,12 @@ class LinearOperator:
     def transpose(self):
         """Transpose this linear operator.
 
-        Returns a LinearOperator that represents the transpose of this one.
         Can be abbreviated self.T instead of self.transpose().
+
+        Returns
+        -------
+        A_T : LinearOperator
+            Transpose of the linear operator.
         """
         return self._transpose()
 
@@ -870,14 +874,22 @@ class IdentityOperator(LinearOperator):
 def aslinearoperator(A):
     """Return A as a LinearOperator.
 
-    'A' may be any of the following types:
-     - ndarray
-     - matrix
-     - sparse array (e.g. csr_array, lil_array, etc.)
-     - LinearOperator
-     - An object with .shape and .matvec attributes
-
     See the LinearOperator documentation for additional information.
+
+    Parameters
+    ----------
+    A : object
+        Object to convert to a `LinearOperator`. May be any one of the following types:
+        - ndarray
+        - matrix
+        - sparse array (e.g. csr_array, lil_array, etc.)
+        - `LinearOperator`
+        - An object with .shape and .matvec attributes
+
+    Returns
+    -------
+    B : LinearOperator
+        A `LinearOperator` corresponding with `A`
 
     Notes
     -----

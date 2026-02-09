@@ -2,8 +2,6 @@
 SciPy 1.17.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.17.0 is not released yet!
-
 .. contents::
 
 SciPy 1.17.0 is the culmination of 6 months of hard work. It contains
@@ -27,18 +25,19 @@ Highlights of this release
   array input and additional support for the array API standard. An overall
   summary of the latter is now available in a
   :ref:`set of tables <dev-arrayapi_coverage>`.
-- In `scipy.sparse`, ``coo_array`` now has full support for indexing across
-  dimensions without needing to convert between sparse formats. ARPACK
-  and PROPACK rewrites from Fortran77 to C now empower the use of external
-  pseudorandom number generators.
+- In `scipy.sparse`, ``coo_array`` now supports indexing. This includes integers,
+  slices, arrays, ``np.newaxis``, ``Ellipsis``, in 1D, 2D and the relatively
+  new nD. In `scipy.sparse.linalg`, ARPACK and PROPACK rewrites from Fortran77
+  to C now empower the use of external pseudorandom number generators, e.g.
+  from numpy.
 - In `scipy.spatial`, ``transform.Rotation`` and ``transform.RigidTransform``
   have been extended to support N-D arrays. ``geometric_slerp`` now has support
   for extrapolation.
 - `scipy.stats` has gained the matrix t and logistic distributions and many
   performance and accuracy improvements.
 - Initial support for 64-bit integer (ILP64) BLAS and LAPACK libraries has
-  been added, including for MKL, Apple Accelerate and OpenBLAS. Please
-  report any issues with ILP64 you encounter.
+  been added, including for MKL and Apple Accelerate. Please report any issues with
+  ILP64 you encounter.
 
 
 
@@ -52,6 +51,9 @@ New features
   ``zvode`` have been ported from Fortran77 to C.
 - `scipy.integrate.quad` now has a fast path for returning 0 when the integration
   interval is empty.
+- The ``BDF``, ``DOP853``, ``RK23``, ``RK45``, ``OdeSolver``, ``DenseOutput``,
+  ``ode``, and ``complex_ode`` classes now support subscription, making them
+  generic types, for compatibility with ``scipy-stubs``.
 
 ``scipy.cluster`` improvements
 ==============================
@@ -60,20 +62,30 @@ New features
 
 ``scipy.interpolate`` improvements
 ==================================
-- A new ``bc_type`` argument has been added to `scipy.interpolate.make_splrep`
-  and `scipy.interpolate.make_splprep` to control the boundary conditions for
-  spline fitting. Allowed values are ``"not-a-knot"`` (default) and
-  ``"periodic"``.
+- A new ``bc_type`` argument has been added to `scipy.interpolate.make_splrep`,
+  `scipy.interpolate.make_splprep`, and `scipy.interpolate.generate_knots` to
+  control the boundary conditions for spline fitting. Allowed values are
+  ``"not-a-knot"`` (default) and ``"periodic"``.
 - A new ``derivative`` method has been added to the
   `scipy.interpolate.NdBSpline` class, to construct a new spline representing a
   partial derivative of the given spline. This method is similar to the
-  ``BSpline.derivative`` method of 1-D spline objects.
+  ``BSpline.derivative`` method of 1-D spline objects. In addition, the
+  ``NdBSpline`` mutable instance attribute ``.c`` was changed into a read-only
+  ``@property``.
 - Performance of ``"cubic"`` and ``"quintic"`` modes of
-  `scipy.interpolate.RegularGridInterpolator` has been improved.
-- Numerical stability of `scipy.interpolate.AAA` has been improved.
+  `scipy.interpolate.RegularGridInterpolator` has been improved. Furthermore,
+  the (mutable) instance attributes ``.grid`` and ``.values`` were changed into
+  (read-only) properties.
+- Numerical stability of `scipy.interpolate.AAA` has been improved and it has
+  gained a new ``axis`` parameter.
 - `scipy.interpolate.FloaterHormannInterpolator` added support for
   multidimensional, batched inputs and gained a new ``axis`` parameter to
   select the interpolation axis.
+- ``RBFInterpolator`` has gained an array API standard compatible backend, with an
+  improved support for GPU arrays. 
+- The ``AAA``, ``*Interpolator``, ``*Poly``, and ``*Spline`` classes now
+  support subscription, making them generic types, for compatibility with
+  ``scipy-stubs``.
 
 
 ``scipy.linalg`` improvements
@@ -105,6 +117,9 @@ New features
 - Callback functions used by ``optimize.minimize(method="slsqp")`` can
   opt into the new callback interface by accepting a single keyword argument
   ``intermediate_result``.
+- The ``BroydenFirst``, ``*Jacobian``, and ``Bounds`` classes now support
+  subscription, making them generic types, for compatibility with
+  ``scipy-stubs``.
 
 
 ``scipy.signal`` improvements
@@ -122,6 +137,9 @@ New features
   axes along which the two-dimensional analytic signal should be calculated.
   Furthermore, the documentation of `~scipy.signal.hilbert` and
   `~scipy.signal.hilbert2` was significantly improved.
+- The ``ShortTimeFFT`` and ``LinearTimeInvariant`` classes now support
+  subscription, making them generic types, for compatibility with
+  ``scipy-stubs``.
 
 
 ``scipy.sparse`` improvements
@@ -143,10 +161,15 @@ New features
   or another ``dok_array`` matrix. It performs additional validation that keys
   are valid index tuples.
 - `~scipy.sparse.dia_array.tocsr` is approximately three times faster and
-  some unneccesary copy operations have been removed from sparse format
+  some unnecessary copy operations have been removed from sparse format
   interconversions more broadly.
 - Added `scipy.sparse.linalg.funm_multiply_krylov`, a restarted Krylov method
   for evaluating ``y = f(tA) b``.
+- In ``sparse.linalg``, the ``LinearOperator``, ``LaplacianNd``, and ``SuperLU``
+  classes now support subscription, making them generic types, for
+  compatibility with ``scipy-stubs``.
+- In ``sparse.linalg`` the ``eigs`` and ``eigsh`` functions now accept a new
+  ``rng`` parameter.
 
 ``scipy.spatial`` improvements
 ==============================
@@ -183,6 +206,8 @@ New features
   point at the south pole.
 - ``Rotation.as_euler`` and ``Rotation.as_davenport`` methods have gained a
   ``suppress_warnings`` parameter to enable suppression of gimbal lock warnings.
+- ``Rotation.__init__`` has gained a new optional ``scalar_first`` parameter and
+  there is a new ``Rotation.__setitem__`` method.
 
 ``scipy.special`` improvements
 ==============================
@@ -221,6 +246,19 @@ New features
   `scipy.stats.ks_1samp`, `scipy.stats.levene`, and `scipy.stats.mood`.
   Typically, this improves performance with multidimensional (batch) input.
 - The critical value tables of `scipy.stats.anderson` have been updated.
+- A new ``method`` parameter of `scipy.stats.anderson` allows the user
+  to compute p-values by interpolating between tabulated values or using Monte
+  Carlo simulation. The ``method`` parameter must be passed explicitly
+  to add a ``pvalue`` attribute to the result object and avoid a warning
+  about the upcoming removal of ``critical_value``, ``significance_level``,
+  and ``fit_result`` attributes.
+- A new ``variant`` parameter of `scipy.stats.anderson_ksamp` allows the user
+  to select between three different variants of the statistic, superseding the
+  ``midrank`` parameter which allowed toggling between two. The new ``'continuous'``
+  variant is equivalent to ``'discrete'`` when there are no ties in the sample, but
+  the calculation is faster. The ``variant`` parameter must be passed explicitly to
+  avoid a warning about the deprecation of the ``midrank`` attribute and the upcoming
+  removal of ``critical_values`` from the result object.
 - The speed and accuracy of most `scipy.stats.zipfian` methods has been
   improved.
 - The accuracies of the `scipy.stats.Binomial` methods ``logcdf`` and
@@ -228,13 +266,25 @@ New features
 - The default guess of ``scipy.stats.trapezoid.fit`` has been improved.
 - The accuracy and range of the ``cdf``, ``sf``, ``isf``, and ``ppf`` methods
   of `scipy.stats.binom` and `scipy.stats.nbinom` has been improved.
-
+- The ``Covariance``, ``Uniform``, ``Normal``, ``Binomial``, ``Mixture``,
+  ``rv_frozen``, and ``multi_rv_frozen`` classes now support subscription,
+  making them generic types, for compatibility with ``scipy-stubs``.
+- The ``multivariate_t`` and ``multivariate_normal`` distributions have gained
+  a new ``marginal`` method.
+- ``yeojohnson_llf`` gained new parameters ``axis``, ``nan_policy``,
+  and ``keepdims``, and now returns a numpy scalar where it would previously
+  return a 0D array.
+- The new ``spearmanrho`` function is an array API compatible substitute for
+  ``spearmanr``.
+- The ``median_abs_deviation`` function has gained a ``keepdims`` parameter.
+- The ``trim_mean`` function has gained new ``nan_policy`` and ``keepdims``
+  parameters.
 
 **************************
 Array API Standard Support
 **************************
 - An overall summary table for our array API standard support/coverage is
-  :ref:`now availalble <dev-arrayapi_coverage>`.
+  :ref:`now available <dev-arrayapi_coverage>`.
 - The overhead associated with array namespace determination has been reduced,
   providing improved performance in dispatching to different backends.
 - `scipy.cluster.hierarchy.is_isomorphic` has gained support.
@@ -290,6 +340,15 @@ Deprecated features and future changes
 - The ``precenter`` argument of `scipy.signal.lombscargle` is deprecated and
   will be removed in v1.19.0. Furthermore, some arguments will become keyword
   only.
+- For `scipy.stats.anderson`, the tuple-unpacking behavior of the return object
+  and attributes ``critical_values``, ``significance_level``, and
+  ``fit_result`` are deprecated. Use the new ``method`` parameter to avoid the
+  deprecation warning. Beginning in SciPy 1.19.0, these features will
+  no longer be available, and the object returned will have attributes
+  ``statistic`` and ``pvalue``.
+- For `scipy.stats.anderson_ksamp`, the ``midrank`` parameter is deprecated
+  and the new ``variant`` parameter should be preferred. This also means that
+  the presence of the ``critical_values`` return array is deprecated.
 
 ********************
 Expired deprecations
@@ -340,8 +399,7 @@ Other changes
 - Initial support for 64-bit integer (ILP64) BLAS and LAPACK libraries has been
   added. To enable it, build SciPy with ``-Duse-ilp64=true`` meson option, and make
   sure to have a LAPACK library which exposes both LP64 and ILP64 symbols.
-  Currently supported LAPACK libraries are MKL, Apple Accelerate and OpenBLAS
-  through the ``scipy-openblas64`` package. Note that:
+  Currently supported LAPACK libraries are MKL and Apple Accelerate. Note that:
 
   - the ILP64 support is optional, and is in addition to the always-available
     LP64 interface;
@@ -369,17 +427,17 @@ Authors
 * Marco Berzborn (1) +
 * Ole Bialas (1) +
 * Om Biradar (1) +
-* Florian Bourgey (1)
-* Jake Bowhay (102)
+* Florian Bourgey (2)
+* Jake Bowhay (103)
 * Matteo Brivio (1) +
 * Dietrich Brunn (34)
 * Johannes Buchner (2) +
-* Evgeni Burovski (288)
+* Evgeni Burovski (292)
 * Nicholas Carlini (1) +
 * Luca Cerina (1) +
 * Christine P. Chai (35)
 * Saransh Chopra (1)
-* Lucas Colley (117)
+* Lucas Colley (121)
 * Björn Ingvar Dahlgren (2) +
 * Sumit Das (1) +
 * Hans Dembinski (1)
@@ -395,17 +453,18 @@ Authors
 * Neil Girdhar (1)
 * Ilan Gold (35)
 * Nathan Goldbaum (3) +
-* Ralf Gommers (121)
+* Ralf Gommers (124)
 * Nicolas Guidotti (1) +
 * Geoffrey Gunter (1) +
-* Matt Haberland (177)
-* Joren Hammudoglu (56)
+* Matt Haberland (183)
+* Joren Hammudoglu (60)
 * Jacob Hass (2) +
 * Nick Hodgskin (1) +
 * Stephen Huan (1) +
 * Guido Imperiale (41)
 * Gert-Ludwig Ingold (1)
 * Jaime Rodríguez-Guerra (2) +
+* Jan Möseritz-Schmidt (2) +
 * JBlitzar (1) +
 * Adam Jones (2)
 * Dustin Kenefake (1) +
@@ -436,33 +495,32 @@ Authors
 * Suriyaa MM (1) +
 * Andrew Nelson (72)
 * newyork_loki (2) +
-* Nick ODell (33)
+* Nick ODell (34)
 * Dimitri Papadopoulos Orfanos (2)
 * Drew Parsons (1)
 * Gilles Peiffer (3) +
 * Matti Picus (1)
 * Jonas Pleyer (2) +
-* Ilhan Polat (116)
+* Ilhan Polat (119)
 * Akshay Priyadarshi (2) +
 * Mohammed Abdul Rahman (1) +
 * Daniele Raimondi (2) +
 * Ritesh Rana (1) +
 * Adrian Raso (1) +
 * Dan Raviv (1) +
-* Tyler Reddy (116)
+* Tyler Reddy (136)
 * Lucas Roberts (4)
 * Bernard Roesler (1) +
 * Mikhail Ryazanov (27)
-* Jan Möseritz-Schmidt (1) +
 * Daniel Schmitz (25)
 * Martin Schuck (25)
-* Dan Schult (29)
+* Dan Schult (33)
 * Mugunthan Selvanayagam (1) +
 * Scott Shambaugh (14)
 * Rodrigo Silva (1) +
 * Samaresh Kumar Singh (8) +
 * Kartik Sirohi (1) +
-* Albert Steppi (178)
+* Albert Steppi (179)
 * Matthias Straka (1) +
 * Theo Teske (1) +
 * Noam Teyssier (1) +
@@ -528,6 +586,7 @@ Issues closed for 1.17.0
 * `#22310 <https://github.com/scipy/scipy/issues/22310>`__: BUG: scipy.sparse.linalg.eigsh returns an error when LinearOperator.dtype=None
 * `#22365 <https://github.com/scipy/scipy/issues/22365>`__: BUG: ndimage: C++ memory management issues in ``_rank_filter_1d.cpp``
 * `#22412 <https://github.com/scipy/scipy/issues/22412>`__: RFC/API: move ``clarkson_woodruff_transform`` from ``linalg``...
+* `#22436 <https://github.com/scipy/scipy/issues/22436>`__: BUG: special.itj0y0: regression for ``t > 19``
 * `#22500 <https://github.com/scipy/scipy/issues/22500>`__: ENH: spatial.transform: Add array API standard support
 * `#22510 <https://github.com/scipy/scipy/issues/22510>`__: performance: _construct_docstrings slow in scipy.stats
 * `#22682 <https://github.com/scipy/scipy/issues/22682>`__: BUG: special.betainc: inaccurate/incorrect for small a and b...
@@ -549,11 +608,13 @@ Issues closed for 1.17.0
 * `#23160 <https://github.com/scipy/scipy/issues/23160>`__: DOC: signal.medfilt: remove outdated note
 * `#23166 <https://github.com/scipy/scipy/issues/23166>`__: BENCH/DEV: ``spin bench`` option ``--quick`` is useless (always...
 * `#23171 <https://github.com/scipy/scipy/issues/23171>`__: BUG: ``interpolate.RegularGridInterpolator`` fails on a 2D grid...
+* `#23195 <https://github.com/scipy/scipy/issues/23195>`__: BUG: New backend for interpolative decomposition breaks for (1xn)...
 * `#23204 <https://github.com/scipy/scipy/issues/23204>`__: BUG/TST: stats: XSLOW test failures of ``ttest_ind``
 * `#23208 <https://github.com/scipy/scipy/issues/23208>`__: DOC: Missing docstrings for some warnings in scipy.io
 * `#23231 <https://github.com/scipy/scipy/issues/23231>`__: DOC: Fix bug in release notes for scipy v1.12.0
 * `#23237 <https://github.com/scipy/scipy/issues/23237>`__: DOC: Breadcrumbs missing and sidebar different in API reference...
 * `#23248 <https://github.com/scipy/scipy/issues/23248>`__: BUG/TST: ``differentiate`` ``test_dtype`` fails with ``float16``...
+* `#23272 <https://github.com/scipy/scipy/issues/23272>`__: BUG: linalg.interpolative.reconstruct_matrix_from_id: segfault...
 * `#23297 <https://github.com/scipy/scipy/issues/23297>`__: BUG [nightly]: spatial.transform.Rotation.from_quat: fails for...
 * `#23301 <https://github.com/scipy/scipy/issues/23301>`__: BUG: free-threading: functionality based on multiprocessing.Pool...
 * `#23303 <https://github.com/scipy/scipy/issues/23303>`__: BUG: spatial.transform.Rotation: Warning Inconsistency
@@ -568,6 +629,7 @@ Issues closed for 1.17.0
 * `#23371 <https://github.com/scipy/scipy/issues/23371>`__: BUG: (interpolate) _dierckx.data_matrix gives ValueError if input...
 * `#23382 <https://github.com/scipy/scipy/issues/23382>`__: BUG: setting with ``sparse.xxx_{matrix,array}`` 2D singleton
 * `#23383 <https://github.com/scipy/scipy/issues/23383>`__: DOC/DEV: correct editable install ``spin`` guidance
+* `#23390 <https://github.com/scipy/scipy/issues/23390>`__: BUG: stats.sampling: segfault in various classes on osx-arm64
 * `#23391 <https://github.com/scipy/scipy/issues/23391>`__: ENH: spatial.transform: array API standard support tracker
 * `#23400 <https://github.com/scipy/scipy/issues/23400>`__: ENH: spatial.geometric_slerp: allow for extrapolation
 * `#23409 <https://github.com/scipy/scipy/issues/23409>`__: BUG: stats.qmc.Sobol: stuck in infinite loop in low_0_bit after...
@@ -623,6 +685,11 @@ Issues closed for 1.17.0
 * `#24046 <https://github.com/scipy/scipy/issues/24046>`__: TST: stats: TestStudentT.test_moments_t failure
 * `#24052 <https://github.com/scipy/scipy/issues/24052>`__: CI: TypeError: Multiple namespaces for array inputs
 * `#24089 <https://github.com/scipy/scipy/issues/24089>`__: ENH: spatial.transform: Add ``normalize`` argument to ``Rotation.from_matrix``
+* `#24131 <https://github.com/scipy/scipy/issues/24131>`__: BUG: ``1.17.0rc1``\ : ModuleNotFoundError: No module named 'scipy.integrate._lso...
+* `#24152 <https://github.com/scipy/scipy/issues/24152>`__: DOC: 1.17 API changes not mentioned in the 1.17.0rc1 release...
+* `#24212 <https://github.com/scipy/scipy/issues/24212>`__: BENCH, MAINT: (sparse) asv suite compat with NumPy 2.4.0
+* `#24251 <https://github.com/scipy/scipy/issues/24251>`__: CI: linalg: several test failures for ILP64
+* `#24256 <https://github.com/scipy/scipy/issues/24256>`__: DOC: 1.17 API changes not mentioned in the 1.17.0rc2 release...
 
 ************************
 Pull requests for 1.17.0
@@ -1094,6 +1161,8 @@ Pull requests for 1.17.0
 * `#24025 <https://github.com/scipy/scipy/pull/24025>`__: DOC: stats: add equations for Cramer von Mises functions
 * `#24028 <https://github.com/scipy/scipy/pull/24028>`__: MAINT:integrate: Initialize variable to silence compiler warnings
 * `#24029 <https://github.com/scipy/scipy/pull/24029>`__: ENH: stats.mood: add array API support
+* `#24030 <https://github.com/scipy/scipy/pull/24030>`__: ENH: stats.anderson: add ``method`` parameter
+* `#24031 <https://github.com/scipy/scipy/pull/24031>`__: ENH: stats.anderson_ksamp: add ``variant`` parameter
 * `#24033 <https://github.com/scipy/scipy/pull/24033>`__: DEP: deprecate ``scipy.odr``
 * `#24036 <https://github.com/scipy/scipy/pull/24036>`__: CI: run Windows OneAPI job on main every 2 days to prefetch cache
 * `#24039 <https://github.com/scipy/scipy/pull/24039>`__: DOC/TST: fft: mark array api coverage with ``xp_capabilities``
@@ -1124,6 +1193,33 @@ Pull requests for 1.17.0
 * `#24095 <https://github.com/scipy/scipy/pull/24095>`__: DOC: differential_evolution - fix typo in custom strategy example
 * `#24097 <https://github.com/scipy/scipy/pull/24097>`__: ENH: stats: added marginal function to ``stats.multivariate_t``
 * `#24098 <https://github.com/scipy/scipy/pull/24098>`__: TST: linalg: unskip a test
+* `#24100 <https://github.com/scipy/scipy/pull/24100>`__: DOC: SciPy 1.17.0 release notes
 * `#24106 <https://github.com/scipy/scipy/pull/24106>`__: BUG: interpolate: Fix h[m] -> h[n] typo in _deBoor_D derivative...
 * `#24107 <https://github.com/scipy/scipy/pull/24107>`__: ENH: linalg/solve: move the tridiagonal solve slice iteration...
+* `#24111 <https://github.com/scipy/scipy/pull/24111>`__: BLD/DEV: fix windows build
 * `#24113 <https://github.com/scipy/scipy/pull/24113>`__: DOC: signal: mark some legacy functions as out of scope for array...
+* `#24118 <https://github.com/scipy/scipy/pull/24118>`__: MAINT: version pins/prep for 1.17.0rc1
+* `#24129 <https://github.com/scipy/scipy/pull/24129>`__: REL: set 1.17.0rc2 unreleased
+* `#24132 <https://github.com/scipy/scipy/pull/24132>`__: DOC: update mailmap
+* `#24133 <https://github.com/scipy/scipy/pull/24133>`__: BUG: integrate: fix no module named 'scipy.integrate._lsoda'
+* `#24138 <https://github.com/scipy/scipy/pull/24138>`__: DOC: release notes: improve wording of sparse highlight
+* `#24139 <https://github.com/scipy/scipy/pull/24139>`__: API: ``linalg.inv``\ : keyword-only ``assume_a`` and ``lower``...
+* `#24140 <https://github.com/scipy/scipy/pull/24140>`__: API: ``signal.savgol_coeffs``\ : keyword-only ``xp`` and ``device``
+* `#24143 <https://github.com/scipy/scipy/pull/24143>`__: TYP: generic ``signal.LinearTimeInvariant`` type
+* `#24145 <https://github.com/scipy/scipy/pull/24145>`__: BUG: ``sparse``\ : fix ``coo_matrix.__setitem__`` signature
+* `#24151 <https://github.com/scipy/scipy/pull/24151>`__: MAINT: linalg: raise for zero-size batch
+* `#24155 <https://github.com/scipy/scipy/pull/24155>`__: MAINT: bump ``xsf`` to fix ``special.itj0y0`` regression
+* `#24161 <https://github.com/scipy/scipy/pull/24161>`__: BUG:linalg.interpolative: Fix two edge cases for id_dist Cython...
+* `#24174 <https://github.com/scipy/scipy/pull/24174>`__: REV:integrate: Revert the stepsize change in LSODA
+* `#24207 <https://github.com/scipy/scipy/pull/24207>`__: MAINT: backports for SciPy 1.17.0rc2
+* `#24213 <https://github.com/scipy/scipy/pull/24213>`__: TST: fft: Add allow_dask_compute=True to more places in fft
+* `#24214 <https://github.com/scipy/scipy/pull/24214>`__: DOC: update 1.17.0 notes for RBFInterpolator
+* `#24218 <https://github.com/scipy/scipy/pull/24218>`__: BENCH, MAINT: NumPy 2.4.0 bench compat
+* `#24223 <https://github.com/scipy/scipy/pull/24223>`__: BLD: linalg: ``link_language: 'fortran'`` for ``_fblas``
+* `#24239 <https://github.com/scipy/scipy/pull/24239>`__: MAINT: bump array-api-compat for JAX>=0.8.2 compat
+* `#24240 <https://github.com/scipy/scipy/pull/24240>`__: MAINT: bump array-api-compat to 1.13 tag
+* `#24250 <https://github.com/scipy/scipy/pull/24250>`__: BUG: stats._unuran: fix va_args memory corruption bug
+* `#24255 <https://github.com/scipy/scipy/pull/24255>`__: REL: set 1.17.0rc3 unreleased
+* `#24260 <https://github.com/scipy/scipy/pull/24260>`__: DOC: stats.anderson/anderson_ksamp: improve release notes
+* `#24284 <https://github.com/scipy/scipy/pull/24284>`__: CI: fix ILP64 jobs for build failures and unpinned scipy-openblas...
+* `#24304 <https://github.com/scipy/scipy/pull/24304>`__: DOC: clarify ILP64 support caveats in the release notes

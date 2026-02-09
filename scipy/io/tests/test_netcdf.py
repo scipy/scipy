@@ -9,12 +9,13 @@ from glob import glob
 from contextlib import chdir, contextmanager
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           break_cycles, IS_PYPY)
+from numpy.testing import assert_, assert_allclose, assert_equal
+
 import pytest
 from pytest import raises as assert_raises
 
 from scipy.io import netcdf_file
+from scipy._lib._gcutils import IS_PYPY, break_cycles
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -163,7 +164,6 @@ def test_read_write_files():
         if IS_PYPY:
             # windows cannot remove a dead file held by a mmap
             # that has not been collected in PyPy
-            break_cycles()
             break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)

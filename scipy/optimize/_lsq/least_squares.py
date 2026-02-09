@@ -427,18 +427,6 @@ def least_squares(
         and ``rho`` is determined by `loss` parameter. This parameter has
         no effect with ``loss='linear'``, but for other `loss` values it is
         of crucial importance.
-    max_nfev : None or int, optional
-        For all methods this parameter controls the maximum number of function
-        evaluations used by each method, separate to those used in numerical
-        approximation of the jacobian.
-        If None (default), the value is chosen automatically as 100 * n.
-
-        .. versionchanged:: 1.16.0
-            The default for the 'lm' method is changed to 100 * n, for both a callable
-            and a numerically estimated jacobian. Previously the default when using an
-            estimated jacobian was 100 * n * (n + 1), because the method included
-            evaluations used in the estimation.
-
     diff_step : None or array_like, optional
         Determines the relative step size for the finite difference
         approximation of the Jacobian. The actual step is computed as
@@ -480,6 +468,18 @@ def least_squares(
         zero. If provided, forces the use of 'lsmr' trust-region solver.
         If None (default), then dense differencing will be used. Has no effect
         for 'lm' method.
+    max_nfev : None or int, optional
+        For all methods this parameter controls the maximum number of function
+        evaluations used by each method, separate to those used in numerical
+        approximation of the jacobian.
+        If None (default), the value is chosen automatically as 100 * n.
+
+        .. versionchanged:: 1.16.0
+            The default for the 'lm' method is changed to 100 * n, for both a callable
+            and a numerically estimated jacobian. Previously the default when using an
+            estimated jacobian was 100 * n * (n + 1), because the method included
+            evaluations used in the estimation.
+
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 

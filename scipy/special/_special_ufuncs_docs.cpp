@@ -287,7 +287,7 @@ const char *cosdg_doc = R"(
 const char *cosm1_doc = R"(
     cosm1(x, out=None)
 
-    cos(x) - 1 for use when `x` is near zero.
+    Compute ``cos(x) - 1``, especially when `x` is near zero.
 
     Parameters
     ----------
@@ -444,7 +444,7 @@ const char *airy_doc = R"(
 
     Notes
     -----
-    The Airy functions :math:`\operatorname{Ai}` and :math:`\operatorname{Bi}` are two 
+    The Airy functions :math:`\operatorname{Ai}` and :math:`\operatorname{Bi}` are two
     independent solutions of
 
     .. math:: y''(z) = z y(z).
@@ -461,11 +461,11 @@ const char *airy_doc = R"(
     .. math::
 
         \operatorname{Ai}(z) = \frac{1}{\pi}\sqrt{\frac{z}{3}} \, K_{1/3}(t)
-        
+
         \operatorname{Ai}'(z) = -\frac{z}{\pi \sqrt{3}} \, K_{2/3}(t)
-        
+
         \operatorname{Bi}(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t)\right)
-        
+
         \operatorname{Bi}'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
 
     References
@@ -752,7 +752,7 @@ const char *binom_doc = R"(
 
     Parameters
     ----------
-    x, y: array_like
+    x, y : array_like
        Real arguments to :math:`\binom{x}{y}`.
     out : ndarray, optional
         Optional output array for the function values
@@ -857,7 +857,7 @@ const char *cotdg_doc = R"(
 const char *ellipe_doc = R"(
     ellipe(m, out=None)
 
-    Complete elliptic integral of the second kind
+    Complete elliptic integral of the second kind.
 
     This function is defined as
 
@@ -951,7 +951,7 @@ const char *ellipe_doc = R"(
 const char *ellipeinc_doc = R"(
     ellipeinc(phi, m, out=None)
 
-    Incomplete elliptic integral of the second kind
+    Incomplete elliptic integral of the second kind.
 
     This function is defined as
 
@@ -1028,7 +1028,7 @@ const char *ellipeinc_doc = R"(
 const char *ellipj_doc = R"(
     ellipj(u, m, out=None)
 
-    Jacobi elliptic functions
+    Jacobi elliptic functions.
 
     Calculates the Jacobi elliptic functions of parameter `m` between
     0 and 1, and real argument `u`.
@@ -1081,7 +1081,7 @@ const char *ellipj_doc = R"(
 const char *ellipkm1_doc = R"(
     ellipkm1(p, out=None)
 
-    Complete elliptic integral of the first kind around `m` = 1
+    Complete elliptic integral of the first kind around `m` = 1.
 
     This function is defined as
 
@@ -1190,7 +1190,7 @@ const char *ellipk_doc = R"(
 const char *ellipkinc_doc = R"(
     ellipkinc(phi, m, out=None)
 
-    Incomplete elliptic integral of the first kind
+    Incomplete elliptic integral of the first kind.
 
     This function is defined as
 
@@ -1535,7 +1535,7 @@ const char *exp1_doc = R"(
 
     Parameters
     ----------
-    z: array_like
+    z : array_like
         Real or complex argument.
     out : ndarray, optional
         Optional output array for the function results
@@ -2076,7 +2076,7 @@ const char *fresnel_doc = R"(
 const char *gamma_doc = R"(
     gamma(z, out=None)
 
-    gamma function.
+    Compute the gamma function.
 
     The gamma function is defined as
 
@@ -2567,7 +2567,7 @@ const char *gammasgn_doc = R"(
 const char *hankel1_doc = R"(
     hankel1(v, z, out=None)
 
-    Hankel function of the first kind
+    Hankel function of the first kind.
 
     Parameters
     ----------
@@ -2644,7 +2644,7 @@ const char *hankel1_doc = R"(
 const char *hankel1e_doc = R"(
     hankel1e(v, z, out=None)
 
-    Exponentially scaled Hankel function of the first kind
+    Exponentially scaled Hankel function of the first kind.
 
     Defined as::
 
@@ -2689,7 +2689,7 @@ const char *hankel1e_doc = R"(
 const char *hankel2_doc = R"(
     hankel2(v, z, out=None)
 
-    Hankel function of the second kind
+    Hankel function of the second kind.
 
     Parameters
     ----------
@@ -2734,7 +2734,7 @@ const char *hankel2_doc = R"(
 const char *hankel2e_doc = R"(
     hankel2e(v, z, out=None)
 
-    Exponentially scaled Hankel function of the second kind
+    Exponentially scaled Hankel function of the second kind.
 
     Defined as::
 
@@ -2780,7 +2780,7 @@ const char *hankel2e_doc = R"(
 const char *hyp2f1_doc = R"(
     hyp2f1(a, b, c, z, out=None)
 
-    Gauss hypergeometric function 2F1(a, b; c; z)
+    Gauss hypergeometric function 2F1(a, b; c; z).
 
     Parameters
     ----------
@@ -3080,7 +3080,7 @@ const char *it2struve0_doc = R"(
 const char *itairy_doc = R"(
     itairy(x, out=None)
 
-    Integrals of Airy functions
+    Integrals of Airy functions.
 
     Calculates the integrals of Airy functions from 0 to `x`.
 
@@ -4394,7 +4394,7 @@ const char *keip_doc = R"(
 const char *kelvin_doc = R"(
     kelvin(x, out=None)
 
-    Kelvin functions as complex numbers
+    Kelvin functions as complex numbers.
 
     Parameters
     ----------
@@ -4557,7 +4557,7 @@ const char *k0_doc = R"(
 const char *k0e_doc = R"(
     k0e(x, out=None)
 
-    Exponentially scaled modified Bessel function K of order 0
+    Exponentially scaled modified Bessel function K of order 0.
 
     Defined as::
 
@@ -4681,7 +4681,7 @@ const char *k1_doc = R"(
 const char *k1e_doc = R"(
     k1e(x, out=None)
 
-    Exponentially scaled modified Bessel function K of order 1
+    Exponentially scaled modified Bessel function K of order 1.
 
     Defined as::
 
@@ -4746,7 +4746,7 @@ const char *k1e_doc = R"(
 const char *kv_doc = R"(
     kv(v, z, out=None)
 
-    Modified Bessel function of the second kind of real order `v`
+    Modified Bessel function of the second kind of real order `v`.
 
     Returns the modified Bessel function of the second kind for real order
     `v` at complex `z`.
@@ -5349,7 +5349,7 @@ const char *log_wright_bessel_doc = R"(
 const char *mathieu_a_doc = R"(
     mathieu_a(m, q, out=None)
 
-    Characteristic value of even Mathieu functions
+    Characteristic value of even Mathieu functions.
 
     Parameters
     ----------
@@ -5375,7 +5375,7 @@ const char *mathieu_a_doc = R"(
 const char *mathieu_b_doc = R"(
     mathieu_b(m, q, out=None)
 
-    Characteristic value of odd Mathieu functions
+    Characteristic value of odd Mathieu functions.
 
     Parameters
     ----------
@@ -5401,7 +5401,7 @@ const char *mathieu_b_doc = R"(
 const char *mathieu_cem_doc = R"(
     mathieu_cem(m, q, x, out=None)
 
-    Even Mathieu function and its derivative
+    Even Mathieu function and its derivative.
 
     Returns the even Mathieu function, ``ce_m(x, q)``, of order `m` and
     parameter `q` evaluated at `x` (given in degrees).  Also returns the
@@ -5470,7 +5470,7 @@ const char *mathieu_cem_doc = R"(
 const char *mathieu_modcem1_doc = R"(
     mathieu_modcem1(m, q, x, out=None)
 
-    Even modified Mathieu function of the first kind and its derivative
+    Even modified Mathieu function of the first kind and its derivative.
 
     Evaluates the even modified Mathieu function of the first kind,
     ``Mc1m(x, q)``, and its derivative at `x` for order `m` and parameter
@@ -5503,7 +5503,7 @@ const char *mathieu_modcem1_doc = R"(
 const char *mathieu_modcem2_doc = R"(
     mathieu_modcem2(m, q, x, out=None)
 
-    Even modified Mathieu function of the second kind and its derivative
+    Even modified Mathieu function of the second kind and its derivative.
 
     Evaluates the even modified Mathieu function of the second kind,
     Mc2m(x, q), and its derivative at `x` (given in degrees) for order `m`
@@ -5536,7 +5536,7 @@ const char *mathieu_modcem2_doc = R"(
 const char *mathieu_modsem1_doc = R"(
     mathieu_modsem1(m, q, x, out=None)
 
-    Odd modified Mathieu function of the first kind and its derivative
+    Odd modified Mathieu function of the first kind and its derivative.
 
     Evaluates the odd modified Mathieu function of the first kind,
     Ms1m(x, q), and its derivative at `x` (given in degrees) for order `m`
@@ -5569,7 +5569,7 @@ const char *mathieu_modsem1_doc = R"(
 const char *mathieu_modsem2_doc = R"(
     mathieu_modsem2(m, q, x, out=None)
 
-    Odd modified Mathieu function of the second kind and its derivative
+    Odd modified Mathieu function of the second kind and its derivative.
 
     Evaluates the odd modified Mathieu function of the second kind,
     Ms2m(x, q), and its derivative at `x` (given in degrees) for order `m`
@@ -5602,7 +5602,7 @@ const char *mathieu_modsem2_doc = R"(
 const char *mathieu_sem_doc = R"(
     mathieu_sem(m, q, x, out=None)
 
-    Odd Mathieu function and its derivative
+    Odd Mathieu function and its derivative.
 
     Returns the odd Mathieu function, se_m(x, q), of order `m` and
     parameter `q` evaluated at `x` (given in degrees).  Also returns the
@@ -5671,7 +5671,7 @@ const char *mathieu_sem_doc = R"(
 const char *modfresnelm_doc = R"(
     modfresnelm(x, out=None)
 
-    Modified Fresnel negative integrals
+    Modified Fresnel negative integrals.
 
     Parameters
     ----------
@@ -5696,7 +5696,7 @@ const char *modfresnelm_doc = R"(
 const char *modfresnelp_doc = R"(
     modfresnelp(x, out=None)
 
-    Modified Fresnel positive integrals
+    Modified Fresnel positive integrals.
 
     Parameters
     ----------
@@ -5721,7 +5721,7 @@ const char *modfresnelp_doc = R"(
 const char *obl_ang1_doc = R"(
     obl_ang1(m, n, c, x, out=None)
 
-    Oblate spheroidal angular function of the first kind and its derivative
+    Oblate spheroidal angular function of the first kind and its derivative.
 
     Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5813,7 +5813,7 @@ const char *ndtr_doc = R"(
 const char *obl_ang1_cv_doc = R"(
     obl_ang1_cv(m, n, c, cv, x, out=None)
 
-    Oblate spheroidal angular function obl_ang1 for precomputed characteristic value
+    Oblate spheroidal angular function obl_ang1 for precomputed characteristic value.
 
     Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5851,7 +5851,7 @@ const char *obl_ang1_cv_doc = R"(
 const char *obl_cv_doc = R"(
     obl_cv(m, n, c, out=None)
 
-    Characteristic value of oblate spheroidal function
+    Characteristic value of oblate spheroidal function.
 
     Computes the characteristic value of oblate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
@@ -5877,7 +5877,7 @@ const char *obl_cv_doc = R"(
 const char *obl_rad1_doc = R"(
     obl_rad1(m, n, c, x, out=None)
 
-    Oblate spheroidal radial function of the first kind and its derivative
+    Oblate spheroidal radial function of the first kind and its derivative.
 
     Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5912,7 +5912,7 @@ const char *obl_rad1_doc = R"(
 const char *obl_rad1_cv_doc = R"(
     obl_rad1_cv(m, n, c, cv, x, out=None)
 
-    Oblate spheroidal radial function obl_rad1 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad1 for precomputed characteristic value.
 
     Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5985,7 +5985,7 @@ const char *obl_rad2_doc = R"(
 const char *obl_rad2_cv_doc = R"(
     obl_rad2_cv(m, n, c, cv, x, out=None)
 
-    Oblate spheroidal radial function obl_rad2 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad2 for precomputed characteristic value.
 
     Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6022,7 +6022,7 @@ const char *obl_rad2_cv_doc = R"(
 const char *pbdv_doc = R"(
     pbdv(v, x, out=None)
 
-    Parabolic cylinder function D
+    Parabolic cylinder function D.
 
     Returns (d, dp) the parabolic cylinder function Dv(x) in d and the
     derivative, Dv'(x) in dp.
@@ -6047,7 +6047,7 @@ const char *pbdv_doc = R"(
 const char *pbvv_doc = R"(
     pbvv(v, x, out=None)
 
-    Parabolic cylinder function V
+    Parabolic cylinder function V.
 
     Returns the parabolic cylinder function Vv(x) in v and the
     derivative, Vv'(x) in vp.
@@ -6116,7 +6116,7 @@ const char *pbwa_doc = R"(
 const char *pro_ang1_doc = R"(
     pro_ang1(m, n, c, x, out=None)
 
-    Prolate spheroidal angular function of the first kind and its derivative
+    Prolate spheroidal angular function of the first kind and its derivative.
 
     Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6146,7 +6146,7 @@ const char *pro_ang1_doc = R"(
 const char *pro_ang1_cv_doc = R"(
     pro_ang1_cv(m, n, c, cv, x, out=None)
 
-    Prolate spheroidal angular function pro_ang1 for precomputed characteristic value
+    Prolate spheroidal angular function pro_ang1 for precomputed characteristic value.
 
     Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6179,7 +6179,7 @@ const char *pro_ang1_cv_doc = R"(
 const char *pro_cv_doc = R"(
     pro_cv(m, n, c, out=None)
 
-    Characteristic value of prolate spheroidal function
+    Characteristic value of prolate spheroidal function.
 
     Computes the characteristic value of prolate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
@@ -6204,7 +6204,7 @@ const char *pro_cv_doc = R"(
 const char *pro_rad1_doc = R"(
     pro_rad1(m, n, c, x, out=None)
 
-    Prolate spheroidal radial function of the first kind and its derivative
+    Prolate spheroidal radial function of the first kind and its derivative.
 
     Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6234,7 +6234,7 @@ const char *pro_rad1_doc = R"(
 const char *pro_rad1_cv_doc = R"(
     pro_rad1_cv(m, n, c, cv, x, out=None)
 
-    Prolate spheroidal radial function pro_rad1 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad1 for precomputed characteristic value.
 
     Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6267,7 +6267,7 @@ const char *pro_rad1_cv_doc = R"(
 const char *pro_rad2_doc = R"(
     pro_rad2(m, n, c, x, out=None)
 
-    Prolate spheroidal radial function of the second kind and its derivative
+    Prolate spheroidal radial function of the second kind and its derivative.
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6297,7 +6297,7 @@ const char *pro_rad2_doc = R"(
 const char *pro_rad2_cv_doc = R"(
     pro_rad2_cv(m, n, c, cv, x, out=None)
 
-    Prolate spheroidal radial function pro_rad2 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad2 for precomputed characteristic value.
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6906,7 +6906,7 @@ const char *voigt_profile_doc = R"(
 const char *wofz_doc = R"(
     wofz(z, out=None)
 
-    Faddeeva function
+    Faddeeva function.
 
     Returns the value of the Faddeeva function for complex argument::
 

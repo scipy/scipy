@@ -153,9 +153,6 @@ class TestCephes:
     def test_bdtrc(self):
         assert_equal(cephes.bdtrc(1,3,0.5),0.5)
 
-    def test_bdtrin(self):
-        assert_equal(cephes.bdtrin(1,0,1),5.0)
-
     def test_bdtrik(self):
         cephes.bdtrik(1,3,0.5)
 
@@ -701,9 +698,6 @@ class TestCephes:
 
     def test_nbdtrik(self):
         cephes.nbdtrik(1,.4,.5)
-
-    def test_nbdtrin(self):
-        assert_equal(cephes.nbdtrin(1,0,0),5.0)
 
     def test_ncfdtr(self):
         assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
