@@ -427,6 +427,8 @@ cdef class Method:
     cdef MessageStream _messages
     # save all the arguments to enable pickling
     cdef object _kwargs
+    # enable this class to be weakly referenced
+    cdef object __weakref__
 
     cdef inline void _check_errorcode(self, int errorcode) except *:
         # check for non-zero errorcode
