@@ -7,7 +7,8 @@ from types import ModuleType
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray, is_jax_array,
-    is_jax, xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name
+    is_jax, xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name,
+    is_array_api_obj
 )
 import scipy._external.array_api_extra as xpx
 from . import _basic
@@ -188,24 +189,36 @@ class _FuncInfo:
         if is_jax(xp) and self.is_ufunc:
             # if this is a ufunc, we can use the resolve_dtypes method to figure
             # out what the output dtype should be and use lazy_apply to make this
-            # work with the JAX JIT. TODO: explore making this work for other
-            # lazy backends.
+            # work with the JAX JIT. Since pure_callback used in lazy_apply will
+            # convert all of the inputs to eager JAX arrays, we will also need to
+            # get the input dtypes inferred from resolve_dtypes so that Python
+            # scalar inputs can be cast to the correct dtype under NEP50 weak
+            # promotion rules rather than getting promoted to the default currently
+            # set in JAX. One cannot just use xp_promote for the input dtypes because
+            # some ufuncs have integer only args.
             def f(*args, _f=_f, xp=xp, **kwargs):
-                # JAX uses NumPy dtypes, so it's easy to get the dtypes for
-                # use in resolve_dtypes, which only works with NumPy dtypes.
-                # This needs to call `is_jax_array(arg)` in the
-                # ternary below to properly handle Python scalars.
                 dtypes = (arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
                 # result_dtypes needs an arg for the dtype of the optional out param.
                 # Use `None` since `out` is incompatible with JAX's immutability.
                 dtypes = (*dtypes, None)
-                out_dtype = getattr(xp, str(_f.resolve_dtypes(dtypes)[-1]))
+                # JAX uses NumPy dtypes so we can just pass these directly to
+                # resolve_dtypes. TODO: generalize to other lazy backends.
+                dtypes = _f.resolve_dtypes(dtypes)
+                out_dtype = dtypes[-1]
+                args = [
+                    xp.asarray(arg, dtype=dtype)
+                    for arg, dtype in zip(args, dtypes[:-1])
+                ]
                 return xpx.lazy_apply(
                     _f, *args, xp=xp, as_numpy=True, dtype=out_dtype, **kwargs
                 )
         else:
             def f(*args, _f=_f, xp=xp, **kwargs):
-                args = [np.asarray(arg) for arg in args]
+                # Check with `is_array_api_obj` to keep Python scalars untouched so that
+                # NEP50 can be followed.
+                args = [
+                    np.asarray(arg) if is_array_api_obj(arg) else arg for arg in args
+                ]
                 out = _f(*args, **kwargs)
                 return xp.asarray(out)
 
