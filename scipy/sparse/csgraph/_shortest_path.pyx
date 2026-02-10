@@ -66,7 +66,7 @@ def shortest_path(csgraph, method='auto',
     ----------
     csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
-    method : string ['auto'|'FW'|'D'], optional
+    method : str ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
 
         'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
@@ -294,7 +294,7 @@ def floyd_warshall(csgraph, directed=True,
     floyd_warshall(csgraph, directed=True, return_predecessors=False,
                    unweighted=False, overwrite=False)
 
-    Compute the shortest path lengths using the Floyd-Warshall algorithm
+    Compute the shortest path lengths using the Floyd-Warshall algorithm.
 
     .. versionadded:: 0.11.0
 
@@ -487,7 +487,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False, limit=np.inf, min_only=False)
 
-    Dijkstra algorithm using priority queue
+    Dijkstra algorithm using priority queue.
 
     .. versionadded:: 0.11.0
 

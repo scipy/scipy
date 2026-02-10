@@ -130,7 +130,7 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
-    Class for 2D interpolation (deprecated and removed)
+    Class for 2D interpolation (deprecated and removed).
 
     .. versionremoved:: 1.14.0
 
@@ -219,7 +219,7 @@ class interp1d(_Interpolator1D):
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised unless ``fill_value="extrapolate"``.
     fill_value : array-like or (array-like, array_like) or "extrapolate", optional
-        - if a ndarray (or float), this value will be used to fill in for
+        - if an ndarray (or float), this value will be used to fill in for
           requested points outside of the data range. If not provided, then
           the default is NaN. The array-like must broadcast properly to the
           dimensions of the non-interpolation axes.
@@ -1591,7 +1591,7 @@ class BPoly(_PPolyBase):
         k = max(self._c.shape[0], c.shape[0])
         self._c = self._raise_degree(self._c, k - self._c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
-        return _PPolyBase.extend(self, c, x)
+        _PPolyBase.extend(self, c, x)
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod
@@ -1849,7 +1849,7 @@ class BPoly(_PPolyBase):
         ----------
         c : array_like
             coefficient array, 1-D
-        d : integer
+        d : int
 
         Returns
         -------
@@ -1881,7 +1881,7 @@ class BPoly(_PPolyBase):
 
 class NdPPoly:
     """
-    Piecewise tensor product polynomial
+    Piecewise tensor product polynomial.
 
     The value at point ``xp = (x', y', z', ...)`` is evaluated by first
     computing the interval indices `i` such that::
@@ -2204,7 +2204,7 @@ class NdPPoly:
 
     def integrate_1d(self, a, b, axis, extrapolate=None):
         r"""
-        Compute NdPPoly representation for one dimensional definite integral
+        Compute NdPPoly representation for one dimensional definite integral.
 
         The result is a piecewise polynomial representing the integral:
 

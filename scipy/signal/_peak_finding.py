@@ -538,7 +538,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     * Draw a horizontal line at the evaluation height to both sides, starting at
       the peak's current vertical position until the lines either intersect a
       slope, the signal border or cross the vertical position of the peak's
-      base (see `peak_prominences` for an definition). For the first case,
+      base (see `peak_prominences` for a definition). For the first case,
       intersection with the signal, the true intersection point is estimated
       with linear interpolation.
     * Calculate the width as the horizontal distance between the chosen

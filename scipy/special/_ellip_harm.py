@@ -6,7 +6,7 @@ from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
 
 def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     r"""
-    Ellipsoidal harmonic functions E^p_n(l)
+    Ellipsoidal harmonic functions E^p_n(l).
 
     These are also known as Lamé functions of the first kind, and are
     solutions to the Lamé equation:
@@ -25,10 +25,10 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
         ``k**2``; should be larger than ``h**2``
     n : int
         Degree
+    p : int
+        Order, can range between ``[1, 2n+1]``
     s : float
         Coordinate
-    p : int
-        Order, can range between [1,2n+1]
     signm : {1, -1}, optional
         Sign of prefactor of functions. Can be +/-1. See Notes.
     signn : {1, -1}, optional
@@ -104,7 +104,7 @@ _ellip_harm_2_vec = np.vectorize(_ellipsoid, otypes='d')
 
 def ellip_harm_2(h2, k2, n, p, s):
     r"""
-    Ellipsoidal harmonic functions F^p_n(l)
+    Ellipsoidal harmonic functions F^p_n(l).
 
     These are also known as Lamé functions of the second kind, and are
     solutions to the Lamé equation:
@@ -169,7 +169,7 @@ _ellip_normal_vec = np.vectorize(_ellip_normal_vec, otypes='d')
 
 def ellip_normal(h2, k2, n, p):
     r"""
-    Ellipsoidal harmonic normalization constants gamma^p_n
+    Ellipsoidal harmonic normalization constants gamma^p_n.
 
     The normalization constant is defined as
 

@@ -17,12 +17,12 @@ from scipy._lib._util import float_factorial
 from scipy.signal._arraytools import _validate_fs
 from scipy.signal import _polyutils as _pu
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
     xp_result_type,
 )
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -38,7 +38,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
 
 
 class BadCoefficients(UserWarning):
-    """Warning about badly conditioned filter coefficients"""
+    """Warning about badly conditioned filter coefficients."""
     pass
 
 
@@ -1244,7 +1244,7 @@ def tf2zpk(b, a):
 
 def zpk2tf(z, p, k):
     r"""
-    Return polynomial transfer function representation from zeros and poles
+    Return polynomial transfer function representation from zeros and poles.
 
     Parameters
     ----------
@@ -1314,7 +1314,7 @@ def zpk2tf(z, p, k):
 
 def tf2sos(b, a, pairing=None, *, analog=False):
     r"""
-    Return second-order sections from transfer function representation
+    Return second-order sections from transfer function representation.
 
     Parameters
     ----------
@@ -1371,7 +1371,7 @@ def tf2sos(b, a, pairing=None, *, analog=False):
 
 def sos2tf(sos):
     r"""
-    Return a single transfer function from a series of second-order sections
+    Return a single transfer function from a series of second-order sections.
 
     Parameters
     ----------
@@ -1422,7 +1422,7 @@ def sos2tf(sos):
 
 def sos2zpk(sos):
     """
-    Return zeros, poles, and gain of a series of second-order sections
+    Return zeros, poles, and gain of a series of second-order sections.
 
     Parameters
     ----------
@@ -1485,7 +1485,7 @@ def _single_zpksos(z, p, k):
 
 
 def zpk2sos(z, p, k, pairing=None, *, analog=False):
-    """Return second-order sections from zeros, poles, and gain of a system
+    """Return second-order sections from zeros, poles, and gain of a system.
 
     Parameters
     ----------
@@ -2850,7 +2850,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
-                             "design an Chebyshev II filter.")
+                             "design a Chebyshev II filter.")
         z, p, k = typefunc(N, rs, xp=xp)
     elif typefunc == ellipap:
         if rs is None or rp is None:
@@ -4061,10 +4061,10 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         Two element sequence of fixed passband edges.
     stopb : ndarray
         Two element sequence of fixed stopband edges.
-    gstop : float
-        Amount of attenuation in stopband in dB.
     gpass : float
         Amount of ripple in the passband in dB.
+    gstop : float
+        Amount of attenuation in stopband in dB.
     type : {'butter', 'cheby', 'ellip'}
         Type of filter.
 

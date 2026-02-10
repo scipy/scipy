@@ -149,9 +149,31 @@ class TestEig:
         assert_array_almost_equal(v2, v[:, 2]*sign(v[0, 2]))
         for i in range(3):
             assert_array_almost_equal(a @ v[:, i], w[i]*v[:, i])
+
         w, v = eig(a, left=1, right=0)
         for i in range(3):
             assert_array_almost_equal(a.T @ v[:, i], w[i]*v[:, i])
+
+    def test_simple_dtype(self):
+        # Backwards compat: the input matrix is real, eigenvalues have zero
+        # imaginary part =>
+        #  - eigenvectors are real,
+        #  - *but* eigenvalues are still complex-valued!
+        # the `a` matrix is from test_simple
+        a = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
+        w, vl, vr = eig(a, left=True, right=True)
+        assert w.dtype == np.complex128
+        assert (w.imag == 0).all()
+        assert vl.dtype == np.float64
+        assert vr.dtype == np.float64
+
+        # repeat for a generalized eigenvalue problem
+        b = np.diag([3, 2, 1])
+        w, vl, vr = eig(a, b, left=True, right=True)
+        assert w.dtype == np.complex128
+        assert (w.imag == 0.).all()
+        assert vl.dtype == np.float64
+        assert vr.dtype == np.float64
 
     def test_simple_complex_eig(self):
         a = array([[1, 2], [-2, 1]])
@@ -162,6 +184,18 @@ class TestEig:
         for i in range(2):
             assert_array_almost_equal(a.conj().T @ vl[:, i],
                                       w[i].conj()*vl[:, i])
+
+    def test_simple_complex_eig_dtype(self):
+        # Backwards compat: the matrix is real, the true eigenvalues are complex
+        # Thus, all of `w`, `vr` and `vl` arrays have a complex dtype
+        # The matrix `a` is from test_simple_complex_eig
+
+        a = np.asarray([[1, 2], [-2, 1]])
+        w, vl, vr = eig(a, left=True, right=True)
+        assert w.dtype == np.complex128
+        assert vl.dtype == np.complex128
+        assert vr.dtype == np.complex128
+
 
     def test_simple_complex(self):
         a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]])

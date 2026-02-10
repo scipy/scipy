@@ -1,5 +1,3 @@
-fs = import('fs')
-
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
 if is_mingw and ff.get_id() != 'gcc'
@@ -123,7 +121,6 @@ print(incdir)
   endif
   pythran_dep = declare_dependency(
     include_directories: incdir_pythran,
-    dependencies: xsimd_dep,
   )
 else
   pythran_dep = []

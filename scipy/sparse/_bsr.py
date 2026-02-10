@@ -363,6 +363,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         If blocksize=(R, C) is provided, it will be used for determining
         block size of the bsr_array/bsr_matrix.
+
+        Returns
+        -------
+        bsr array/matrix
+            The converted array/matrix in BSR format.
         """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
@@ -404,6 +409,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         When copy=False the data array will be shared between
         this array/matrix and the resultant coo_array/coo_matrix.
+
+        Returns
+        -------
+        coo array/matrix
+            The converted array/matrix in COO format.
         """
 
         M,N = self.shape
@@ -494,7 +504,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.prune()
 
     def sum_duplicates(self):
-        """Eliminate duplicate array/matrix entries by adding them together
+        """Eliminate duplicate array/matrix entries by adding them together.
 
         The is an *in place* operation
         """
@@ -527,7 +537,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.has_canonical_format = True
 
     def sort_indices(self):
-        """Sort the indices of this array/matrix *in place*
+        """Sort the indices of this array/matrix *in place*.
         """
         if self.has_sorted_indices:
             return

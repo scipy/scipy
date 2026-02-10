@@ -203,7 +203,7 @@ def powerlaw_pdf(x, a):
 #   (as an example, see the entry for the beta distribution)
 # - rvs_transform_inv: the inverse of rvs_transform (it is required
 #   for the transformed ppf)
-# - mirror_uniform: boolean or a callable that returns true or false
+# - mirror_uniform: bool or a callable that returns true or false
 #   depending on the shape parameters. If True, the ppf is applied
 #   to 1-u instead of u to generate rvs, where u is a uniform rv.
 #   While both u and 1-u are uniform, it can be required to use 1-u
@@ -440,7 +440,7 @@ class FastGeneratorInversion:
         The default is None. In that case, the random variates are not
         truncated, and the domain is inferred from the support of the
         distribution.
-    ignore_shape_range : boolean, optional
+    ignore_shape_range : bool, optional
         If False, shape parameters that are outside of the valid range
         of values to ensure that the numerical accuracy (see Notes) is
         high, raise a ValueError. If True, any shape parameters that are valid
@@ -1264,7 +1264,7 @@ class RatioUniforms:
         self._rng = check_random_state(random_state)
 
     def rvs(self, size=1):
-        """Sampling of random variates
+        """Sampling of random variates.
 
         Parameters
         ----------

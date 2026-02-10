@@ -42,7 +42,7 @@ from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 
 # standard status messages of optimizers
@@ -1260,7 +1260,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Number of function_calls made.
     grad_calls : int
         Number of gradient calls made.
-    warnflag : integer
+    warnflag : int
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
         3 : NaN result encountered.

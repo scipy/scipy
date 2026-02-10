@@ -12,7 +12,7 @@ from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
                                    is_lazy_array)
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -1035,7 +1035,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         contingency table.
     fisher_exact : Fisher exact test on a 2x2 contingency table.
     boschloo_exact : Boschloo's exact test on a 2x2 contingency table,
-        which is an uniformly more powerful alternative to Fisher's exact test.
+        which is a uniformly more powerful alternative to Fisher's exact test.
 
     Notes
     -----
@@ -1784,7 +1784,6 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # in case of ties, use midrank (see [1])
     r = scipy.stats.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
-    r = xp.astype(r, dtype, copy=False)
     rx = r[..., :nx]
     ry = r[..., nx:]
 

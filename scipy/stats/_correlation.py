@@ -1,8 +1,7 @@
 import numpy as np
 import math
 from scipy import stats
-from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
-                                   xp_result_type)
+from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
@@ -30,7 +29,6 @@ def _xi_statistic(x, y, y_continuous, xp):
     # " additionally define li to be the number of j such that Y(j) ≥ Y(i)"
     # Could probably compute this from r, but that can be an enhancement
     l = stats.rankdata(-y, method='max', axis=-1)
-    r, l = xp.astype(r, x.dtype), xp.astype(l, x.dtype)
 
     num = xp.sum(xp.abs(xp.diff(r, axis=-1)), axis=-1)
     if y_continuous:  # [1] Eq. 1.1
@@ -93,7 +91,7 @@ def _unpack(res, _):
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
 def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
-    r"""Compute the xi correlation and perform a test of independence
+    r"""Compute the xi correlation and perform a test of independence.
 
     The xi correlation coefficient is a measure of association between two
     variables; the value tends to be close to zero when the variables are
@@ -108,6 +106,11 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         dependent variable. The (N-d) arrays must be broadcastable.
     axis : int, default: 0
         Axis along which to perform the test.
+    y_continuous : bool, default: False
+        Whether `y` is assumed to be drawn from a continuous distribution.
+        If `y` is drawn from a continuous distribution, results are valid
+        whether this is assumed or not, but enabling this assumption will
+        result in faster computation and typically produce similar results.
     method : 'asymptotic' or `PermutationMethod` instance, optional
         Selects the method used to calculate the *p*-value.
         Default is 'asymptotic'. The following options are available.
@@ -117,12 +120,6 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         * `PermutationMethod` instance. In this case, the p-value
           is computed using `permutation_test` with the provided
           configuration options and other appropriate settings.
-
-    y_continuous : bool, default: False
-        Whether `y` is assumed to be drawn from a continuous distribution.
-        If `y` is drawn from a continuous distribution, results are valid
-        whether this is assumed or not, but enabling this assumption will
-        result in faster computation and typically produce similar results.
 
     Returns
     -------
@@ -379,12 +376,8 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
            [0.14526128, 0.        ]])
 
     """
-    xp = array_namespace(x, y)
-    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
     rx = stats.rankdata(x, axis=axis)
     ry = stats.rankdata(y, axis=axis)
-    rx = xp.astype(rx, dtype, copy=False)
-    ry = xp.astype(ry, dtype, copy=False)
     res = stats.pearsonr(rx, ry, method=method, alternative=alternative, axis=axis)
     return SignificanceResult(res.statistic, res.pvalue)
 

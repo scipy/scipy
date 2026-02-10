@@ -14,6 +14,8 @@ project(
   ],
 )
 
+fs = import('fs')
+
 meson.add_dist_script('tools/trim_sdist_content.py')
 
 py3 = import('python').find_installation(pure: false)
@@ -181,20 +183,64 @@ tempita = find_program('scipy/_build_utils/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran
-  pythran = find_program('pythran', native: true, version: '>=0.14.0')
-  # xsimd is unvendored from pythran by conda-forge, and due to a compiler
-  # activation bug the default <prefix>/include/ may not be visible (see
-  # gh-15698). Hence look for xsimd explicitly.
-  xsimd_dep = dependency('xsimd', required: false)
+  pythran = find_program('pythran', native: true, version: '>=0.18.1')
 endif
 
-fs = import('fs')
+# Subprojects
+if not fs.exists('subprojects/array_api_compat/array_api_compat/README.md')
+  error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/array_api_extra/README.md')
+  error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/cobyqa/README.rst')
+  error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/pocketfft/README.md')
+  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/unuran/README.md')
+  error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
+endif
 if not fs.exists('subprojects/xsf/README.md')
   error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
 endif
 
+external_dir = 'scipy/_external'
+
+array_api_compat = subproject('array_api_compat')
+array_api_compat_sources = array_api_compat.get_variable('sources')
+foreach prefix, files : array_api_compat_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+array_api_extra = subproject('array_api_extra')
+array_api_extra_sources = array_api_extra.get_variable('sources')
+foreach prefix, files : array_api_extra_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+cobyqa = subproject('cobyqa')
+cobyqa_sources = cobyqa.get_variable('sources')
+foreach prefix, files : cobyqa_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+pyprima = subproject('pyprima')
+pyprima_sources = pyprima.get_variable('sources')
+foreach prefix, files : pyprima_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+pocketfft = subproject('pocketfft')
+pocketfft_dep = pocketfft.get_variable('pocketfft_dep')
+
+unuran = subproject('unuran')
+
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
+
+# System libraries / subprojects
 
 use_system_libraries = get_option('use-system-libraries')
 all_system_libraries = false

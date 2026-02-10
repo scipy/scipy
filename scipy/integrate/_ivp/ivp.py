@@ -197,7 +197,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
         complex data type (even if the initial value is purely real).
-    method : string or `OdeSolver`, optional
+    method : str or `OdeSolver`, optional
         Integration method to use:
 
         * **'RK45' (default)**: Explicit Runge-Kutta method of order 5(4) [1]_.
@@ -392,7 +392,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             *  0: The solver successfully reached the end of `tspan`.
             *  1: A termination event occurred.
 
-        message : string
+        message : str
             Human-readable description of the termination reason.
         success : bool
             True if the solver reached the interval end or a termination event

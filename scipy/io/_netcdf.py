@@ -111,7 +111,7 @@ class netcdf_file:
 
     Parameters
     ----------
-    filename : string or file-like
+    filename : str or file-like
         string -> filename
     mode : {'r', 'w', 'a'}, optional
         read-write-append mode, default is 'r'
@@ -914,6 +914,11 @@ class netcdf_variable:
     def getValue(self):
         """
         Retrieve a scalar value from a `netcdf_variable` of length one.
+
+        Returns
+        -------
+        scalar
+            The scalar value contained in the length-one netcdf variable.
 
         Raises
         ------

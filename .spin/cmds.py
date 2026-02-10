@@ -142,7 +142,8 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         n_cores = cpu_count(only_physical_cores=True)
         jobs = n_cores
 
-    meson_install_args = meson_install_args + ("--tags=" + tags, )
+    meson_install_args += ("--tags=" + tags, )
+    meson_install_args += ("--skip-subprojects",)
 
     if show_build_log:
         verbose = show_build_log
@@ -443,9 +444,9 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
     if (
         not importlib.util.find_spec("scipy_doctest")
-        or importlib.metadata.version("scipy_doctest") < "1.8.0"
+        or importlib.metadata.version("scipy_doctest") < "2.0.0"
     ):
-        raise ModuleNotFoundError("Please install scipy-doctest>=1.8.0")
+        raise ModuleNotFoundError("Please install scipy-doctest>=2.0.0")
 
     tests = kwargs["tests"]
     if kwargs["submodule"]:

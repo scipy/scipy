@@ -467,9 +467,6 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
         See SuperLU documentation for details.
 
-    Remaining other options
-        Same as for `splu`
-
     Returns
     -------
     invA_approx : scipy.sparse.linalg.SuperLU
@@ -753,7 +750,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
 
 def is_sptriangular(A):
-    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``.
 
     Checks for triangular structure in ``A``. The result is summarized in
     two boolean values ``lower`` and ``upper`` to designate whether ``A`` is
