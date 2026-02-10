@@ -50,7 +50,7 @@ There are also additional user guides for these topics:
 
 For guidance on organizing and importing functions from SciPy subpackages, refer to the `Guidelines for Importing Functions from SciPy <https://scipy.github.io/devdocs/reference/index.html#guidelines-for-importing-functions-from-scipy>`_.
 
-For information on support for parallel execution, thread safety, and our threat model see
+For information on support for parallel execution, thread safety, and security see
 :ref:`scipy_parallel_execution`, :ref:`scipy_thread_safety`, and :ref:`security` respectively.
 
 .. raw:: latex

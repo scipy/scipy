@@ -36,18 +36,12 @@ General security guidelines on the scipy-release repo:
 
 - We require branch protection etc. and apply best practices
 
-- We required all release artifacts to be built in the scipy-release repo
+- We require all release artifacts to be built in the scipy-release repo
 
 - We do not allow self-hosted runners on this repository
 
 Disclosure
 ----------
-
-Before reporting a vulnerability, please determine
-whether the vulnerability is indeed located in the SciPy repo and not
-an upstream dependency. If the detected vulnerability requires remediation in
-an upstream dependency we ask that you disclose the vulnerability to the upstream
-dependency rather than SciPy.
 
 To report a security vulnerability on the SciPy repo, please use
 `Tidelift <https://tidelift.com/docs/security>`_.
@@ -64,10 +58,3 @@ are not security issues.
 Before reporting a security issue, please consider and describe the attack
 vector in detail - and in particular whether that attack vector assumes being
 able to freely execute SciPy functions.
-
-Vendored Dependencies
----------------------
-
-An exception to the upstream dependency policy described above
-is if a vulnerability is contained in
-a vendored dependency. See :ref:`vendored-code`.
