@@ -1065,7 +1065,7 @@ class TestDifferentialEvolutionSolver:
         bounds = [(0, 1)]*9 + [(0, 100)]*3 + [(0, 1)]
 
         # using a lower popsize to speed the test up
-        rng = rng = np.random.default_rng(np.random.RandomState(12345))
+        rng = np.random.default_rng(np.random.RandomState(12345))
         res = differential_evolution(
             f, bounds, strategy='best1bin', rng=rng, constraints=(L,),
             popsize=5, tol=0.01
@@ -1089,10 +1089,10 @@ class TestDifferentialEvolutionSolver:
         L = LinearConstraint(csr_array(A), -np.inf, b)
 
         # using a lower popsize to speed the test up
-        rng = np.random.default_rng(np.random.RandomState(1211134))
+        rng = np.random.default_rng(np.random.RandomState(12345))
         res = differential_evolution(
             f, bounds, strategy='best1bin', rng=rng, constraints=(L,),
-            popsize=2, tol=0.05
+            popsize=5, tol=0.01
         )
 
         assert_allclose(f(x_opt), f_opt)
@@ -1122,11 +1122,11 @@ class TestDifferentialEvolutionSolver:
         constraints = (L, N, L2, N2)
 
         with warnings.catch_warnings():
-            rng = np.random.default_rng(np.random.RandomState(1211134))
+            rng = np.random.default_rng(np.random.RandomState(12345))
             warnings.simplefilter("ignore", UserWarning)
             res = differential_evolution(
                 f, bounds, strategy='best1bin', rng=rng,
-                constraints=constraints, popsize=2, tol=0.05
+                constraints=constraints, popsize=5, tol=0.05
             )
 
         assert_allclose(res.x, x_opt, atol=6e-4)
