@@ -80,6 +80,7 @@ cdef object get_numpy_rng(object seed = None):
         return np.random.default_rng(seed._bit_generator)
     return seed
 
+
 @cython.final
 cdef class _URNG:
     """
@@ -198,22 +199,26 @@ cdef class wrap_dist_continuous:
     cdef float loc
     cdef float scale
     cdef object support
+
     def __init__(self, dist):
         self.dist = dist
         (self.args, self.loc,
          self.scale) = dist.dist._parse_args(*dist.args,
                                              **dist.kwds)
         self.support = dist.support
+
     def pdf(self, x):
         # some distributions require array inputs.
         x = np.asarray((x-self.loc)/self.scale)
         return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
+
     def logpdf(self, x):
         # some distributions require array inputs.
         x = np.asarray((x-self.loc)/self.scale)
         if self.pdf(x) > 0:
             return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
         return -np.inf
+
     def cdf(self, x):
         x = np.asarray((x-self.loc)/self.scale)
         res = self.dist.dist._cdf(x, *self.args)
@@ -233,16 +238,19 @@ cdef class wrap_dist_discrete:
     cdef tuple args
     cdef float loc
     cdef object support
+
     def __init__(self, dist):
         self.dist = dist
         (self.args, self.loc,
          _) = dist.dist._parse_args(*dist.args,
                                     **dist.kwds)
         self.support = dist.support
+
     def pmf(self, x):
         # some distributions require array inputs.
         x = np.asarray(x-self.loc)
         return max(0, self.dist.dist._pmf(x, *self.args))
+
     def cdf(self, x):
         x = np.asarray(x-self.loc)
         res = self.dist.dist._cdf(x, *self.args)
@@ -390,7 +398,7 @@ def _validate_qmc_input(qmc_engine, d):
         qmc_engine = stats.qmc.Halton(d)
     else:
         message = ("`qmc_engine` must be an instance of "
-                    "`scipy.stats.qmc.QMCEngine` or `None`.")
+                   "`scipy.stats.qmc.QMCEngine` or `None`.")
         raise ValueError(message)
 
     return qmc_engine, d
@@ -1634,7 +1642,6 @@ cdef class NumericalInversePolynomial(Method):
             _lock.release()
             release_unuran_callback(&callback)
         return UError(max_error, mae)
-
 
     def qrvs(self, size=None, d=None, qmc_engine=None):
         """
