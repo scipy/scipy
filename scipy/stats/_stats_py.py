@@ -4048,7 +4048,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     # calculate p value
     # ref.[4] p.334 eq.28
-    prob = xpx.lazy_apply(special.fdtrc, dfn, dfd, f, shape=f.shape, as_numpy=True)
+    prob = special.fdtrc(dfn, dfd, f)
 
     f, prob = (f[()], prob[()]) if f.ndim == 0 else (f, prob)
     return F_onewayResult(f, prob)
