@@ -1062,17 +1062,21 @@ class TestWindowSpectralProperties:
         window_func = getattr(windows, window_name)
         w = window_func(M_win, sym=False)
         
-        # Compute spectrum in dB
+        # Compute spectrum and normalize by the mainlobe peak
         spec = np.abs(fft(w, N_fft))
-        spec_db = 20 * np.log10(spec / spec.max())
-        
-        # Find first zero crossing to separate mainlobe from sidelobes
-        first_zero = int(np.argmax(np.diff(spec_db) > 0))
-        assert first_zero > 0, "Could not find mainlobe-sidelobe transition"
-        
-        # Measure peak sidelobe level
-        psll = float(np.max(spec_db[first_zero:-first_zero]))
-        
+        spec = spec / spec.max()
+        half_spectrum = spec[:N_fft // 2]
+
+        # Find the first null to delimit the mainlobe; fail clearly if missing
+        null_candidates = np.flatnonzero(half_spectrum <= 1e-6)
+        assert null_candidates.size, "Could not find first null"
+        first_null = int(null_candidates[0])
+
+        # Peak sidelobe level (ratio) in the sidelobe region, excluding mainlobe
+        sidelobe_region = half_spectrum[first_null + 1:]
+        assert sidelobe_region.size, "Sidelobe region is empty"
+        psll = 20 * np.log10(float(np.max(sidelobe_region)))
+
         # Allow 0.5 dB tolerance for numerical precision
         assert psll == pytest.approx(expected_psll, abs=0.5)
     
@@ -1091,13 +1095,13 @@ class TestWindowSpectralProperties:
         window_func = getattr(windows, window_name)
         w = window_func(M_win, sym=False)
         
-        # Find first null (magnitude drops below threshold)
+        # Find first null (magnitude drops below threshold) robustly
         spec = np.abs(fft(w, N_fft))
         normalized = spec / spec.max()
         half_spectrum = normalized[:N_fft // 2]
-        first_null = int(np.argmax(half_spectrum <= 1e-6))
-        
-        assert first_null > 0, "Could not find first null"
+        null_candidates = np.flatnonzero(half_spectrum <= 1e-6)
+        assert null_candidates.size, "Could not find first null"
+        first_null = int(null_candidates[0])
         
         # Convert to normalized bins (relative to window length)
         width_bins = 2 * first_null / N_fft * M_win
