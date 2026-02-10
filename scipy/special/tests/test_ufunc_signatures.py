@@ -13,6 +13,8 @@ import pytest
 import scipy.special._ufuncs
 import scipy.special._gufuncs
 
+from numpy.testing import assert_equal
+
 
 # Single precision is not implemented for these ufuncs;
 # floating point inputs must be float64.
@@ -49,3 +51,39 @@ def test_ufunc_signatures(ufunc):
              sig.replace("f", "d").replace("F", "D")]
         )
     assert types == expanded_types
+
+
+def _get_nan_val(typecode):
+    return {
+        "f": np.float32("nan"),
+        "d": np.float64("nan"),
+        "g": np.float128("nan"),
+        "F": np.complex64("nan"),
+        "D": np.complex128("nan"),
+        "G": np.complex256("nan"),
+    }[typecode]
+
+
+_multi_arg_ufuncs = [ufunc for ufunc in _ufuncs if ufunc.nargs > 1]
+
+
+@pytest.mark.parametrize("ufunc", _multi_arg_ufuncs)
+def test_nep50(ufunc):
+    # Test that functions with multiple arguments respect nep50 promotion rules.
+    rng = np.random.default_rng(1234)
+    # As in test_ufunc_signatures, filter out functions with integer arguments.
+    types = set(sig for sig in ufunc.types
+                if not ("l" in sig or "i" in sig or "q" in sig or "p" in sig))
+    for sig in types:
+        input_types, output_types = sig.split("->")
+        # since we only care about dtypes and not values here, just use an appropriately
+        # typed nan for each argument.
+        args = [_get_nan_val(typecode) for typecode in input_types]
+        # swap out a random one of the nans with an appropriately typed numpy scalar.
+        idx = rng.choice(len(args))
+        args[idx] = float("nan") if np.isrealobj(args[idx]) else complex("nan")
+        result = ufunc(*args)
+        result = [result] if len(output_types) == 1 else result
+        # Test that the output is an appropriately typed nan. This also implicitly
+        # tests that ufuncs propagate nans correctly.
+        assert_equal(result, [_get_nan_val(typecode) for typecode in output_types])
