@@ -196,8 +196,8 @@ class _FuncInfo:
                 # This needs to call `is_jax_array(arg)` in the
                 # ternary below to properly handle Python scalars.
                 dtypes = (arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
-                # result_dtypes needs an arg for the dtype of the optional out param. Use
-                # `None` since `out` is incompatible with JAX's immutability.
+                # result_dtypes needs an arg for the dtype of the optional out param.
+                # Use `None` since `out` is incompatible with JAX's immutability.
                 dtypes = (*dtypes, None)
                 out_dtype = getattr(xp, str(_f.resolve_dtypes(dtypes)[-1]))
                 return xpx.lazy_apply(
