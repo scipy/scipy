@@ -3850,7 +3850,10 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                 cpu_only=True)  # null distribution is CPU only
+                 cpu_only=True,  # null distribution is CPU only
+                 extra_note=("``method='auto'`` is incompatible with JAX arrays. "
+                             "Only `method='asymptotic'`/`zero_method='zsplit'` is compatible "
+                             "with MArrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,

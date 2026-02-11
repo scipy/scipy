@@ -333,11 +333,26 @@ def test_directional_stats(xp):
     assert not xp.any(res.mean_resultant_length.mask)
 
 
+@make_xp_test_case(stats.wilcoxon)
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun, kwargs', [
+    (stats.wilcoxon, {'method': 'asymptotic', 'zero_method': 'zsplit'}),
+])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_one_sample_tests(fun, kwargs, axis, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp, seed=84912165484322)
+    res = fun(*marrays, axis=axis, **kwargs)
+    ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
 @make_xp_test_case(stats.brunnermunzel)
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun, kwargs', [
     (stats.brunnermunzel, {}),
     (stats.mannwhitneyu, {'method': 'asymptotic'}),
+    (stats.wilcoxon, {'method': 'asymptotic', 'zero_method': 'zsplit'}),
     (stats.cramervonmises_2samp, {'method': 'exact'}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
