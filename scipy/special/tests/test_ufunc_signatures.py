@@ -66,28 +66,28 @@ def _get_nan_val(typecode):
 
 skips = {
     # These hit https://github.com/scipy/xsf/issues/94
-    special.eval_chebyc,
-    special.eval_chebys,
-    special.eval_chebyt,
-    special.eval_chebyu,
-    special.eval_gegenbauer,
-    special.eval_genlaguerre,
-    special.eval_jacobi,
-    special.eval_laguerre,
-    special.eval_legendre,
-    special.eval_sh_chebyt,
-    special.eval_sh_chebyu,
-    special.eval_sh_jacobi,
-    special.eval_sh_legendre,
-    special.hyp1f1,
-    special.hyp2f1,
+    "eval_chebyc",
+    "eval_chebys",
+    "eval_chebyt",
+    "eval_chebyu",
+    "eval_gegenbauer",
+    "eval_genlaguerre",
+    "eval_jacobi",
+    "eval_laguerre",
+    "eval_legendre",
+    "eval_sh_chebyt",
+    "eval_sh_chebyu",
+    "eval_sh_jacobi",
+    "eval_sh_legendre",
+    "hyp1f1",
+    "hyp2f1",
     # warns if called with noninteger values of some args
-    special.bdtr,
-    special.bdtrc,
-    special.bdtri,
+    "bdtr",
+    "bdtrc",
+    "bdtri",
 }
 _multi_arg_public_ufuncs = [
-    ufunc for ufunc in _ufuncs if ufunc.nargs > 2 and ufunc not in skips
+    ufunc for ufunc in _ufuncs if ufunc.nargs > 2 and ufunc.__name__ not in skips
     and ufunc.__name__ in special.__all__
 ]
 
