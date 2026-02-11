@@ -26,7 +26,7 @@ Releases
 --------
 
 To mitigate the risk of supply chain attacks (as of the v1.18.0 release)
-we rely on the `release <https://github.com/scipy/scipy-release>`_
+we rely on the `scipy-release <https://github.com/scipy/scipy-release>`_
 repository which is modeled after the
 `Numpy release <https://github.com/numpy/numpy-release>`_ process.
 
