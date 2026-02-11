@@ -113,4 +113,6 @@ def test_nep50(ufunc):
         
         # Test that the output is an appropriately typed nan. This also implicitly
         # tests that ufuncs propagate nans correctly.
-        assert_equal(result, np.asarray([_get_nan_val(typecode) for typecode in output_types]))
+        assert_equal(
+            result, np.asarray([_get_nan_val(typecode) for typecode in output_types])
+        )
