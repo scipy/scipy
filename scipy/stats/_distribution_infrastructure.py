@@ -4939,9 +4939,9 @@ class OrderStatisticDistribution(TransformedDistribution):
     :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
     :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
 
-    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
+    If the PDF, CDF, and CCDF underlying :math:`X` are denoted :math:`f`,
     :math:`F`, and :math:`F'`, respectively, then the PDF underlying
-    math:`X_{(r)}` is given by:
+    :math:`X_{(r)}` is given by:
 
     .. math::
 
@@ -5086,9 +5086,9 @@ def order_statistic(X, /, *, r, n):
     :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
     :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
 
-    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
+    If the PDF, CDF, and CCDF underlying :math:`X` are denoted :math:`f`,
     :math:`F`, and :math:`F'`, respectively, then the PDF underlying
-    math:`X_{(r)}` is given by:
+    :math:`X_{(r)}` is given by:
 
     .. math::
 
