@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 import scipy.special._ufuncs
 import scipy.special._gufuncs
+import scipy.special as special
 
 from numpy.testing import assert_equal
 
@@ -55,19 +56,43 @@ def test_ufunc_signatures(ufunc):
 
 def _get_nan_val(typecode):
     return {
-        "f": np.float32("nan"),
-        "d": np.float64("nan"),
-        "g": np.float128("nan"),
-        "F": np.complex64("nan"),
-        "D": np.complex128("nan"),
-        "G": np.complex256("nan"),
+        "f": np.asarray(np.nan, dtype=np.float32),
+        "d": np.asarray(np.nan, dtype=np.float64),
+        "g": np.asarray(np.nan, dtype=np.float128),
+        "F": np.asarray(np.nan + np.nan*1j, dtype=np.complex64),
+        "D": np.asarray(np.nan + np.nan*1j, dtype=np.complex128),
+        "G": np.asarray(np.nan + np.nan*1j, dtype=np.complex256),
     }[typecode]
 
+skips = {
+    # These hit https://github.com/scipy/xsf/issues/94
+    special.eval_chebyc,
+    special.eval_chebys,
+    special.eval_chebyt,
+    special.eval_chebyu,
+    special.eval_gegenbauer,
+    special.eval_genlaguerre,
+    special.eval_jacobi,
+    special.eval_laguerre,
+    special.eval_legendre,
+    special.eval_sh_chebyt,
+    special.eval_sh_chebyu,
+    special.eval_sh_jacobi,
+    special.eval_sh_legendre,
+    special.hyp1f1,
+    special.hyp2f1,
+    # warns if called with noninteger values of some args
+    special.bdtr,
+    special.bdtrc,
+    special.bdtri,
+}
+_multi_arg_public_ufuncs = [
+    ufunc for ufunc in _ufuncs if ufunc.nargs > 2 and ufunc not in skips
+    and ufunc.__name__ in special.__all__
+]
 
-_multi_arg_ufuncs = [ufunc for ufunc in _ufuncs if ufunc.nargs > 1]
 
-
-@pytest.mark.parametrize("ufunc", _multi_arg_ufuncs)
+@pytest.mark.parametrize("ufunc", _multi_arg_public_ufuncs)
 def test_nep50(ufunc):
     # Test that functions with multiple arguments respect nep50 promotion rules.
     rng = np.random.default_rng(1234)
@@ -84,6 +109,8 @@ def test_nep50(ufunc):
         args[idx] = float("nan") if np.isrealobj(args[idx]) else complex("nan")
         result = ufunc(*args)
         result = [result] if len(output_types) == 1 else result
+        result = np.asarray(result)
+        
         # Test that the output is an appropriately typed nan. This also implicitly
         # tests that ufuncs propagate nans correctly.
-        assert_equal(result, [_get_nan_val(typecode) for typecode in output_types])
+        assert_equal(result, np.asarray([_get_nan_val(typecode) for typecode in output_types]))
