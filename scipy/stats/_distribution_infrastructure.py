@@ -4916,41 +4916,43 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
 
 class OrderStatisticDistribution(TransformedDistribution):
-    r"""Probability distribution of an order statistic
+    r"""Probability distribution of an order statistic.
 
     An instance of this class represents a random variable that follows the
-    distribution underlying the :math:`r^{\text{th}}` order statistic of a
+    distribution of the :math:`r^{\text{th}}` order statistic of a
     sample of :math:`n` observations of a random variable :math:`X`.
 
     Parameters
     ----------
     dist : `ContinuousDistribution`
-        The random variable :math:`X`
+        The random variable :math:`X`.
     n : array_like
-        The (integer) sample size :math:`n`
+        The (positive integer) sample size :math:`n`.
     r : array_like
-        The (integer) rank of the order statistic :math:`r`
+        The (positive integer) rank of the order statistic :math:`r`,
+        satisfying :math:`1 \leq r \leq n`.
 
 
     Notes
     -----
     If we make :math:`n` observations of a continuous random variable
     :math:`X` and sort them in increasing order
-    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
-    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`, then :math:`X_{(r)}`
+    is known as the :math:`r^{\text{th}}` order statistic.
 
-    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
-    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
-    math:`X_{(r)}` is given by:
+    If the PDF, CDF, and CCDF of :math:`X` are denoted by :math:`f`,
+    :math:`F`, and :math:`G = 1 - F`, respectively, then the PDF of
+    :math:`X_{(r)}` is given by:
 
     .. math::
 
-        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} G(x)^{n - r}
 
-    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
-    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
-    a standard uniform random variable, and that the order statistics of
-    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+    The CDF and other methods of the distribution of :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is a
+    standard uniform random variable, together with the fact that the order statistics
+    of i.i.d. uniform random variables follow a beta distribution
+    :math:`B(r, n - r + 1)`.
 
     References
     ----------
@@ -4959,7 +4961,7 @@ class OrderStatisticDistribution(TransformedDistribution):
     Examples
     --------
     Suppose we are interested in order statistics of samples of size five drawn
-    from the standard normal distribution. Plot the PDF underlying the fourth
+    from the standard normal distribution. Plot the PDF of the fourth
     order statistic and compare with a normalized histogram from simulation.
 
     >>> import numpy as np
@@ -4969,12 +4971,12 @@ class OrderStatisticDistribution(TransformedDistribution):
     >>>
     >>> X = stats.Normal()
     >>> data = X.sample(shape=(10000, 5))
-    >>> ranks = np.sort(data, axis=1)
+    >>> sorted_data = np.sort(data, axis=1)
     >>> Y = OrderStatisticDistribution(X, r=4, n=5)
     >>>
     >>> ax = plt.gca()
     >>> Y.plot(ax=ax)
-    >>> ax.hist(ranks[:, 3], density=True, bins=30)
+    >>> ax.hist(sorted_data[:, 3], density=True, bins=30)
     >>> plt.show()
 
     """
@@ -5060,18 +5062,19 @@ class OrderStatisticDistribution(TransformedDistribution):
 def order_statistic(X, /, *, r, n):
     r"""Probability distribution of an order statistic.
 
-    Returns a random variable that follows the distribution underlying the
+    Returns a random variable that follows the distribution of the
     :math:`r^{\text{th}}` order statistic of a sample of :math:`n`
     observations of a random variable :math:`X`.
 
     Parameters
     ----------
     X : `ContinuousDistribution`
-        The random variable :math:`X`
+        The random variable :math:`X`.
     r : array_like
-        The (positive integer) rank of the order statistic :math:`r`
+        The (positive integer) rank of the order statistic :math:`r`,
+        satisfying ``1 <= r <= n``.
     n : array_like
-        The (positive integer) sample size :math:`n`
+        The (positive integer) sample size :math:`n`.
 
     Returns
     -------
@@ -5083,21 +5086,22 @@ def order_statistic(X, /, *, r, n):
     -----
     If we make :math:`n` observations of a continuous random variable
     :math:`X` and sort them in increasing order
-    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
-    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`, then :math:`X_{(r)}`
+    is known as the :math:`r^{\text{th}}` order statistic.
 
-    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
-    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
-    math:`X_{(r)}` is given by:
+    If the PDF, CDF, and CCDF of :math:`X` are denoted by :math:`f`,
+    :math:`F`, and :math:`G = 1 - F`, respectively, then the PDF of
+    :math:`X_{(r)}` is given by:
 
     .. math::
 
-        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} G(x)^{n - r}
 
-    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
-    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
-    a standard uniform random variable, and that the order statistics of
-    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+    The CDF and other methods of the distribution of :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is a
+    standard uniform random variable, together with the fact that the order statistics
+    of i.i.d. uniform random variables follow a beta distribution
+    :math:`B(r, n - r + 1)`.
 
     References
     ----------
@@ -5106,7 +5110,7 @@ def order_statistic(X, /, *, r, n):
     Examples
     --------
     Suppose we are interested in order statistics of samples of size five drawn
-    from the standard normal distribution. Plot the PDF underlying each
+    from the standard normal distribution. Plot the PDF of each
     order statistic and compare with a normalized histogram from simulation.
 
     >>> import numpy as np
@@ -5115,13 +5119,13 @@ def order_statistic(X, /, *, r, n):
     >>>
     >>> X = stats.Normal()
     >>> data = X.sample(shape=(10000, 5))
-    >>> sorted = np.sort(data, axis=1)
+    >>> sorted_data = np.sort(data, axis=1)
     >>> Y = stats.order_statistic(X, r=[1, 2, 3, 4, 5], n=5)
     >>>
     >>> ax = plt.gca()
     >>> colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     >>> for i in range(5):
-    ...     y = sorted[:, i]
+    ...     y = sorted_data[:, i]
     ...     ax.hist(y, density=True, bins=30, alpha=0.1, color=colors[i])
     >>> Y.plot(ax=ax)
     >>> plt.show()

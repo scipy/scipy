@@ -3766,8 +3766,8 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
-# JAX JIT / Torch GPU need fdtrc
-@xp_capabilities(jax_jit=False, cpu_only=True, exceptions=['cupy'])
+# Torch GPU need fdtrc
+@xp_capabilities(cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -4049,7 +4049,6 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # calculate p value
     # ref.[4] p.334 eq.28
     prob = special.fdtrc(dfn, dfd, f)
-    prob = xp.asarray(prob, dtype=f.dtype)
 
     f, prob = (f[()], prob[()]) if f.ndim == 0 else (f, prob)
     return F_onewayResult(f, prob)
