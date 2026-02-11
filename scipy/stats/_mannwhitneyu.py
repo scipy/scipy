@@ -474,9 +474,6 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         method = _mwu_choose_method(n1, n2, xp.any(t > 1))
 
     if method == "exact":
-        if is_marray(xp):
-            message = "`method='exact'` is incompatible with MArrays."
-            raise ValueError(message)
         if not hasattr(_mwu_state, 's'):
             _mwu_state.s = _MWU(0, 0)
         _mwu_state.s.set_shapes(n1, n2)
