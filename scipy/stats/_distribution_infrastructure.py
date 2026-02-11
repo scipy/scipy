@@ -4930,29 +4930,29 @@ class OrderStatisticDistribution(TransformedDistribution):
         The (positive integer) sample size :math:`n`.
     r : array_like
         The (positive integer) rank of the order statistic :math:`r`,
-        satisfying ``1 <= r <= n``.
+        satisfying :math:`1 \leq r \leq n`.
 
 
     Notes
     -----
     If we make :math:`n` observations of a continuous random variable
     :math:`X` and sort them in increasing order
-    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
-    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`, then :math:`X_{(r)}`
+    is known as the :math:`r^{\text{th}}` order statistic.
 
     If the PDF, CDF, and CCDF of :math:`X` are denoted by :math:`f`,
-    :math:`F`, and :math:`\\bar F = 1 - F`, respectively, then the PDF of
+    :math:`F`, and :math:`G = 1 - F`, respectively, then the PDF of
     :math:`X_{(r)}` is given by:
 
     .. math::
 
-        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} \\bar F(x)^{n - r}
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} G(x)^{n - r}
 
     The CDF and other methods of the distribution of :math:`X_{(r)}`
-    are calculated using the fact that :math:`X = F^{-1}(U)`, where
-    :math:`U \\sim \\mathrm{Uniform}(0, 1)`, together with the fact that the order
-    statistics of i.i.d. uniform random variables follow a beta distribution,
-    :math:`\\mathrm{Beta}(r, n - r + 1)`.
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is a
+    standard uniform random variable, together with the fact that the order statistics
+    of i.i.d. uniform random variables follow a beta distribution
+    :math:`B(r, n - r + 1)`.
 
     References
     ----------
@@ -5086,22 +5086,22 @@ def order_statistic(X, /, *, r, n):
     -----
     If we make :math:`n` observations of a continuous random variable
     :math:`X` and sort them in increasing order
-    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
-    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`, then :math:`X_{(r)}`
+    is known as the :math:`r^{\text{th}}` order statistic.
 
     If the PDF, CDF, and CCDF of :math:`X` are denoted by :math:`f`,
-    :math:`F`, and :math:`\\bar F = 1 - F`, respectively, then the PDF of
+    :math:`F`, and :math:`G = 1 - F`, respectively, then the PDF of
     :math:`X_{(r)}` is given by:
 
     .. math::
 
-        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} \\bar F(x)^{n - r}
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} G(x)^{n - r}
 
     The CDF and other methods of the distribution of :math:`X_{(r)}`
-    are calculated using the fact that :math:`X = F^{-1}(U)`, where
-    :math:`U \\sim \\mathrm{Uniform}(0, 1)`, together with the fact that the order
-    statistics of i.i.d. uniform random variables follow a beta distribution,
-    :math:`\\mathrm{Beta}(r, n - r + 1)`.
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is a
+    standard uniform random variable, together with the fact that the order statistics
+    of i.i.d. uniform random variables follow a beta distribution
+    :math:`B(r, n - r + 1)`.
 
     References
     ----------
