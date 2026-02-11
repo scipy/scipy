@@ -376,6 +376,8 @@ def test_two_sample_tests(fun, kwargs, axis, xp):
     (stats.f_oneway, {'equal_var': True}),
     (stats.f_oneway, {'equal_var': False}),
     (stats.kruskal, {}),
+    (stats.fligner, {'center': 'median'}),
+    (stats.fligner, {'center': 'mean'}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_k_sample_tests(fun, kwargs, axis, xp):
@@ -446,3 +448,11 @@ def test_rankdata(axis, xp):
     ref = stats.rankdata(*narrays, nan_policy='omit', axis=axis)
     xp_assert_close(res.data[~res.mask], xp.asarray(ref[~np.isnan(ref)]))
     xp_assert_close(res.mask, xp.asarray(np.isnan(ref)))
+
+
+@make_xp_test_case(stats.levene)
+def test_fligner_center_trimmed(xp):
+    mxp, marrays, narrays = get_arrays(3, xp=xp)
+    message = "`center='trimmed'` is incompatible with MArray."
+    with pytest.raises(ValueError, match=message):
+        stats.fligner(*marrays, center='trimmed', axis=-1)

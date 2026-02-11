@@ -3476,7 +3476,8 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')])
+                                ('cupy', 'no rankdata')],
+                 extra_note="Option ``center='trimmed'`` is incompatible with MArray.")
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3600,12 +3601,19 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
 
     else:  # center == 'trimmed'
 
+        if is_marray(xp):
+            message = "`center='trimmed'` is incompatible with MArray."
+            raise ValueError(message)
+
         def func(x):
             # keepdims=True doesn't currently work for lazy arrays
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    ni = [sample.shape[-1] for sample in samples]
+    lengths = [sample.shape[-1] for sample in samples]
+    ni = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+          for sample in samples]
     N = sum(ni)
+    ni = [xp.squeeze(ni_, axis=-1) for ni_ in ni] if is_marray(xp) else ni
 
     # Implementation follows [3] pg 355 F-K.
     Xibar = [func(sample) for sample in samples]
@@ -3615,7 +3623,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
-    splits = list(itertools.accumulate(ni, initial=0))
+    splits = list(itertools.accumulate(lengths, initial=0))
     Ai = [a_Ni[..., i:j] for i, j in zip(splits[:-1], splits[1:])]
     Aibar = [xp.mean(Ai_, axis=-1) for Ai_ in Ai]
     abar = xp.mean(a_Ni, axis=-1)
