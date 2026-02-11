@@ -6002,17 +6002,14 @@ add_newdoc("nrdtrisd",
 
     """)
 
-add_newdoc(
-    "ndtri",
+add_newdoc("ndtri",
     """
     ndtri(p, out=None)
 
     Inverse of `ndtr`.
 
     Returns the quantile `x` such that the cumulative distribution function of the
-    standard normal distribution evaluated at `x` equals `p`.
-
-    That is, ``ndtr(x) == p``.
+    standard normal distribution evaluated at `x` equals `p`, that is, ``ndtr(x) == p``.
 
     Parameters
     ----------
@@ -6055,12 +6052,9 @@ add_newdoc(
     >>> p = np.linspace(1e-3, 1 - 1e-3, 201)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(p, ndtri(p))
-    >>> ax.set_xlabel("Probability")
-    >>> ax.set_ylabel("Quantile")
     >>> ax.set_title("Standard normal percentile function")
     >>> plt.show()
-    """,
-)
+    """)
 
 add_newdoc("pdtr",
     r"""
