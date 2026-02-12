@@ -3772,36 +3772,36 @@ class DiscreteDistribution(UnivariateDistribution):
             "for continuous distributions.")
 
     def _solve_bounded_discrete(self, func, p, params, comp):
-        # The calling function, `_base_discrete_inversion` is solving either:
+        # We're trying to solve one of these two problems:
         # a) find the smallest integer x* within the support s.t. F(x*) >= p
         # b) find the smallest integer x* within the support s.t. G(x*) = 1 - F(x*) <= p
-        # The job of `_solve_bounded_discrete` is to narrow the solution down to an
-        # integer x s.t. either x* = x or x* = x + 1; `_base_discrete_inversion` will
-        # choose between them.
+        # Our approach is to solve a continuous version of the problem that narrows the
+        # solution down to an integer x s.t. either x* = x or x* = x + 1. At the end,
+        # we'll choose between them.
 
-        # First try to find where func(x) == p where func is the continuous extension
+        # First, solve func(x) == p where func is a continuous, monotone interpolant
         # of either the monotone increasing F or monotone decreasing G.
         res = self._solve_bounded(func, p, params=params, xatol=0.9)
         # Here, `_solve_bounded` can terminate for one of three reasons:
-        # 1. func(res.x) == p (`fatol = 0` is satisfied),
-        # 2. res.xl and res.xr bracket the root and |res.xr - res.xl| <= xatol, or
+        # 1. `func(res.x) == p` (`fatol = 0` is satisfied),
+        # 2. `res.xl` and `res.xr` bracket the root and `|res.xr - res.xl| <= xatol`, or
         # 3. There is no solution within the support.
         # There are several possible strategies for using `res.xl`, `res.x`, and/or
         # `res.xr` to find a solution to the original, discrete problem. Here is ours.
 
-        # First let's consider case 2a. Because F is an increasing function, we know
+        # Consider case 2a. Because F is an increasing function, we know
         # that F(xr) >= p (and F(xl) <= p), so F(floor(xr) + 1) >= p.
         # F(floor(xr)) *may* be >= p, but we can't know until we evaluate it.
         # F(floor(xr) - 1) < p (strictly) because floor(xr) - 1 < xl and F decreases
         # monotonically as the argument decreases. So we choose x = floor(xr), and
-        # `_base_discrete_inversion` will choose between x* = x and x* = x + 1.
+        # later we'll choose between x* = x and x* = x + 1.
         x = np.asarray(np.floor(res.xr))
         # This is also suitable for case 2b. Because G is a *decreasing* function, we
         # know that G(xr) <= p (and G(xl) >= p), so G(floor(xr) + 1) <= p.
         # G(floor(xr)) *may* be <= p, but we can't know until we evaluate it.
         # G(floor(xr) - 1) > p (strictly) because floor(xr) - 1 < xl and G increases
         # as the argument decreases. So we would still want to choose x = floor(xr), and
-        # again, `_base_discrete_inversion` will choose between x* = x and x* = x + 1.
+        # later we'll choose between x* = x and x* = x + 1.
 
         # Now we consider case 1a/b. In this case, `res.x` solved the equation
         # *exactly*, so the algorithm may have terminated before the bracket is tight
@@ -3812,41 +3812,52 @@ class DiscreteDistribution(UnivariateDistribution):
         #    floor(res.x) + 1 is the solution to the discrete problem.
         # b) G(floor(res.x)) > p (strictly) and G(floor(res.x) + 1) < p (strictly). So
         #    floor(res.x) + 1 is again the solution to the discrete problem.
-        # Either way, we can choose x = res.x, and `_base_discrete_inversion` will
-        # choose between x* = x and x* = x + 1.
+        # Either way, we can choose x = res.x, and at the end we'll choose between
+        # x* = x and x* = x + 1.
         mask = res.fun == 0
         x[mask] = np.floor(res.x[mask])
 
         # For case 3, let xmin be the left endpoint of the support, and note that in
-        # general, F(xmin) > 0 and G(xmin) < 1. Therefore we have these possibilities:
-        # a) F(xmin) > p (e.g. because p ~ 0)
-        # a) G(xmin) < p (e.g. because p ~ 1)
-        # In either case, the solution to the discrete problem (by convention) is the
-        # left endpoint of the support, so we let x = xmin.
-        xmin, xmax = self._support(**params)
-        p, xmin, xmax = np.broadcast_arrays(p, xmin, xmax)
-        mask = comp(func(xmin, **params), p)
-        x[mask] = xmin[mask]
+        # general, F(xmin) > 0 and G(xmin) < 1. Therefore it is possible that:
+        # a) F(x) > p for all x in the support (e.g. because p ~ 0)
+        # a) G(x) < p for all x in the support (e.g. because p ~ 1)
+        # In these cases, `_solve_bounded` would fail to find a root of the continuous
+        # equation above, but the solution to the original, discrete problem is the left
+        # endpoint of the support.
+        # This case is handled before we get to this function; otherwise,
+        # `_solve_bounded` may spin its wheels for a long time in vain.
+
+        # Now, we choose between x* = x and x* = x + 1: if func(x) satisfies the
+        # comparison `comp` (>= for cdf, <= for ccdf), the solution is x* = x;
+        # otherwise the solution must be x* = x + 1.
+        f = func(x, **params)
+        x = np.where(comp(f, p), x, x + 1.0)
+        x[np.isnan(f)] = np.nan  # needed? why would func(x) be NaN within support?
 
         return x
 
     def _base_discrete_inversion(self, p, func, comp, /, **params):
-        # For discrete distributions, icdf(p) is defined as the smallest integer x*
-        # within the support such that F(x*) >= p; iccdf(p) is the smallest integer x*
-        # within the support such that G(x*) <= p. `_solve_bounded_discrete` narrows the
-        # solution down to an integer x s.t. either x* = x or x* = x + 1.
-        x = self._solve_bounded_discrete(func, p, params=params, comp=comp)
+        # For discrete distributions, icdf(p) is defined as the minimum integer x*
+        # within the support such that F(x*) >= p; iccdf(p) is the minimum integer x*
+        # within the support such that G(x*) <= p.
 
-        # Now, we choose between them: if func(x) satisfies the comparison `comp`
-        # (>= for cdf, <= for ccdf), the solution is x* = x; otherwise the solution must
-        # be x* = x + 1.
-        f = func(x, **params)
-        res = np.where(comp(f, p), x, x + 1.0)
+        # Identify where the solution is xmin.
+        # (See rationale in `_solve_bounded_discrete`.)
+        xmin, xmax = self._support(**params)
+        p, xmin, _ = np.broadcast_arrays(p, xmin, xmax)
+        mask = comp(func(xmin, **params), p)
 
-        # It turns out that x above may be a finite value even when p or func(x) is NaN,
-        # so the returned value should be NaN. We need to handle this as a special case.
-        res[np.isnan(f) | np.isnan(p)] = np.nan
-        return res[()]
+        # Use `apply_where` to perform the inversion only when necessary.
+        def f1(p, *args):
+            return self._solve_bounded_discrete(
+                func, p, params=dict(zip(params.keys(), args)), comp=comp)
+
+        x = xpx.apply_where(~mask, (p, *params.values()), f1, fill_value=xmin)
+
+        # x above may be a finite value even when p is NaN, so the returned value
+        # should be NaN. We need to handle this as a special case.
+        x[np.isnan(p)] = np.nan
+        return x[()]
 
     def _icdf_inversion(self, x, **params):
         return self._base_discrete_inversion(x, self._cdf_dispatch,
