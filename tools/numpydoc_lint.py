@@ -18,7 +18,6 @@ skip_errors = [
     "SS06",
     "ES01",
     "PR01",
-    "PR02",
     "PR08",
     "PR09",
     "RT02",  # questionable rule; see gh-24348

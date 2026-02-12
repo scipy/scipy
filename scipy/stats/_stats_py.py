@@ -4025,7 +4025,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples
         The sample measurements for each group.  There must be at least
         two samples, and each sample must contain at least two observations.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
