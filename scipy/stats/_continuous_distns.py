@@ -5470,11 +5470,12 @@ geninvgauss = geninvgauss_gen(a=0.0, name="geninvgauss")
 @np.vectorize
 def _norminvgauss_quadrature(x, y, a, b):
     mean = b / np.sqrt(a**2 - b**2)
-    if y < mean or x > mean:
-        res = integrate.quad(norminvgauss._pdf, x, y, args=(a, b))[0]
+    if np.isneginf(x) and y > abs(mean):
+        return 1 - integrate.quad(norminvgauss._pdf, y, np.inf, args=(a, b))[0]
+    if np.isposinf(y) and x < -abs(mean):
+        return 1 - integrate.quad(norminvgauss._pdf, -np.inf, x, args=(a, b))[0]
     else:
-        res = (integrate.quad(norminvgauss._pdf, x, mean, args=(a, b))[0]
-               + integrate.quad(norminvgauss._pdf, mean, y, args=(a, b))[0])
+        res = integrate.quad(norminvgauss._pdf, x, y, args=(a, b))[0]
     return np.clip(res, 0, 1)
 
 
