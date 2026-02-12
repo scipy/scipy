@@ -337,7 +337,7 @@ swap_cf_z(SCIPY_Z* restrict src, SCIPY_Z* restrict dst, const Py_ssize_t r, cons
  *  data: the float/double array to be checked (in Fortran-contiguous layout)
  *  n: the size of the array
  *
- *  returns: a int value indicating it is Schur (1) or not (0).
+ *  returns: an int value indicating it is Schur (1) or not (0).
  *
  * For complex arrays, being Schur is equivalent to being upper triangular.
  */

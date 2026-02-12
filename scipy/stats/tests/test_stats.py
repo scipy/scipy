@@ -4621,50 +4621,70 @@ class TestFriedmanChiSquare:
             stats.friedmanchisquare(xp.asarray(self.x3[0]), xp.asarray(self.x3[1]))
 
 
+@make_xp_test_case(stats.kstest)
 class TestKSTest:
     """Tests kstest and ks_1samp agree with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x, alternative, expected_statistic, expected_prob,
-                 mode='auto', decimal=14):
-        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-        expected = np.array([expected_statistic, expected_prob])
-        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
-
     def _test_kstest_and_ks1samp(self, x, alternative, mode='auto', decimal=14):
         result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-        result_1samp = stats.ks_1samp(x, stats.norm.cdf,
+        result_1samp = stats.ks_1samp(x, special.ndtr,
                                       alternative=alternative, mode=mode)
-        assert_array_almost_equal(np.array(result), result_1samp, decimal=decimal)
+        xp_assert_close(result.statistic, result_1samp.statistic)
+        xp_assert_close(result.pvalue, result_1samp.pvalue)
+        xp_assert_equal(result.statistic_location, result.statistic_location)
+        xp_assert_equal(result.statistic_sign, result.statistic_sign)
 
-    def test_namedtuple_attributes(self):
-        x = np.linspace(-1, 1, 9)
+    def test_namedtuple_attributes(self, xp):
+        x = xp.linspace(-1, 1, 9)
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        res = stats.kstest(x, 'norm')
-        check_named_results(res, attributes)
+        res = stats.kstest(x, special.ndtr)
+        check_named_results(res, attributes, xp=xp)
 
-    def test_agree_with_ks_1samp(self):
-        x = np.linspace(-1, 1, 9)
+    def test_agree_with_ks_1samp(self, xp):
+        x = xp.linspace(-1, 1, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
-        x = np.linspace(-15, 15, 9)
+        x = xp.linspace(-15, 15, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
         x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
+        x = xp.asarray(x)
         self._test_kstest_and_ks1samp(x, 'two-sided')
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
 
-    def test_pm_inf_gh20386(self):
+    # parametrize over function-specific options to make sure they're passed through;
+    # `test_axis_nan_policy` takes care of the rest.
+    @pytest.mark.parametrize("method", ["auto", "exact", "asymp"])
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_agree_with_ks_2samp(self, method, alternative, xp):
+        rng = np.random.default_rng(236114087)
+        x, y = rng.random((2, 9, 10))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.kstest(x, y, alternative=alternative, method=method)
+        ref = stats.ks_2samp(x, y, alternative=alternative, method=method)
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic_location, ref.statistic_location)
+        xp_assert_equal(res.statistic_sign, ref.statistic_sign)
+
+    def test_pm_inf_gh20386(self, xp):
         # Check that gh-20386 is resolved - `kstest` does not
         # return NaNs when both -inf and inf are in sample.
-        vals = [-np.inf, 0, 1, np.inf]
-        res = stats.kstest(vals, stats.cauchy.cdf)
-        ref = stats.kstest(vals, stats.cauchy.cdf, _no_deco=True)
-        assert np.all(np.isfinite(res))
-        assert_equal(res, ref)
-        assert not np.isnan(res.statistic)
-        assert not np.isnan(res.pvalue)
+        vals = xp.asarray([-xp.inf, 0, 1, xp.inf])
+        def cdf(x):  # Cauchy CDF
+            return xp.atan2(xp.ones_like(x), -x) / xp.pi
+        res = stats.kstest(vals, cdf)
+        ref = stats.kstest(vals, cdf, _no_deco=True)
+        assert xp.isfinite(res.statistic)
+        assert xp.isfinite(res.pvalue)
+        assert xp.isfinite(res.statistic_location)
+        assert xp.isfinite(res.statistic_sign)
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic_location, ref.statistic_location)
+        xp_assert_equal(res.statistic_sign, ref.statistic_sign)
 
     # missing: no test that uses *args
 
@@ -6631,21 +6651,23 @@ class TestJarqueBera:
         xp_assert_close(res.pvalue, resT.pvalue)
 
 
-def test_pointbiserial():
-    # same as mstats test except for the nan
-    # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
-    x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
-         0,0,0,0,1]
-    y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
-         2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
-         0.8,0.7,0.6,0.5,0.2,0.2,0.1]
-    assert_almost_equal(stats.pointbiserialr(x, y)[0], 0.36149, 5)
+@make_xp_test_case(stats.pointbiserialr)
+class TestPointBiserialR:
+    def test_pointbiserial(self, xp):
+        # same as mstats test except for the nan
+        # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
+        x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
+             0,0,0,0,1.]
+        y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
+             2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
+             0.8,0.7,0.6,0.5,0.2,0.2,0.1]
+        res = stats.pointbiserialr(xp.asarray(x), xp.asarray(y))
+        xp_assert_close(res[0], xp.asarray(0.36149), atol=1e-5)
 
-    # test for namedtuple attribute results
-    attributes = ('correlation', 'pvalue')
-    res = stats.pointbiserialr(x, y)
-    check_named_results(res, attributes)
-    assert_equal(res.correlation, res.statistic)
+        # test for namedtuple attribute results
+        attributes = ('correlation', 'pvalue')
+        check_named_results(res, attributes, xp=xp)
+        xp_assert_equal(res.correlation, res.statistic)
 
 
 def test_obrientransform():

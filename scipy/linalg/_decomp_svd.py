@@ -489,8 +489,8 @@ def subspace_angles(A, B):
 
     Examples
     --------
-    An Hadamard matrix, which has orthogonal columns, so we expect that
-    the suspace angle to be :math:`\frac{\pi}{2}`:
+    A Hadamard matrix, which has orthogonal columns, so we expect that
+    the subspace angle to be :math:`\frac{\pi}{2}`:
 
     >>> import numpy as np
     >>> from scipy.linalg import hadamard, subspace_angles

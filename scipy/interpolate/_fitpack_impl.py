@@ -36,7 +36,7 @@ dfitpack_int = np.int32
 
 
 def _int_overflow(x, exception, msg=None):
-    """Cast the value to an dfitpack_int and raise an OverflowError if the value
+    """Cast the value to a dfitpack_int and raise an OverflowError if the value
     cannot fit.
     """
     if x > iinfo(dfitpack_int).max:

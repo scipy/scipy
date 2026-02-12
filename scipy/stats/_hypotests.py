@@ -1035,7 +1035,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         contingency table.
     fisher_exact : Fisher exact test on a 2x2 contingency table.
     boschloo_exact : Boschloo's exact test on a 2x2 contingency table,
-        which is an uniformly more powerful alternative to Fisher's exact test.
+        which is a uniformly more powerful alternative to Fisher's exact test.
 
     Notes
     -----
@@ -1784,7 +1784,6 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # in case of ties, use midrank (see [1])
     r = scipy.stats.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
-    r = xp.astype(r, dtype, copy=False)
     rx = r[..., :nx]
     ry = r[..., nx:]
 

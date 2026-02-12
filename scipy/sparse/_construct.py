@@ -47,7 +47,7 @@ def expand_dims(A, /, *, axis=0):
     Returns
     -------
     out : sparse array
-        A expanded copy output in COO format with the same dtype as `A`.
+        An expanded copy output in COO format with the same dtype as `A`.
 
     Raises
     ------
