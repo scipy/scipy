@@ -3701,7 +3701,6 @@ class TestMoments:
                          order=order)
         xp_assert_equal(y, xp.full((), expect, dtype=dtype))
 
-
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
