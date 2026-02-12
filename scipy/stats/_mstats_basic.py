@@ -1869,7 +1869,7 @@ def kruskal(*args):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *args : array_like
        Two or more arrays with the sample measurements can be given as
        arguments.
 

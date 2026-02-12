@@ -1973,7 +1973,7 @@ def tukey_hsd(*args, equal_var=True):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *args : array_like
         The sample measurements for each group. There must be at least
         two arguments.
     equal_var : bool, optional

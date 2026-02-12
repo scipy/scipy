@@ -48,6 +48,7 @@ legacy_functions = [
     "scipy.interpolate.LSQUnivariateSpline",
     "scipy.interpolate.UnivariateSpline",
     "scipy.interpolate.splder",
+    "scipy.interpolate.Rbf",
     "scipy.sparse.lil_matrix",
     "scipy.sparse.dok_matrix",
     "scipy.sparse.dia_matrix",
@@ -66,6 +67,7 @@ legacy_functions = [
     "scipy.sparse.spmatrix",
     "scipy.optimize.BroydenFirst",
     "scipy.optimize.KrylovJacobian",
+    "scipy.optimize.newton_krylov"
     "scipy.linalg.LinAlgError",  # this is from numpy
     "scipy.optimize.fmin_bfgs",
     "scipy.optimize.fmin_tnc",
