@@ -5467,7 +5467,7 @@ class geninvgauss_gen(rv_continuous):
 geninvgauss = geninvgauss_gen(a=0.0, name="geninvgauss")
 
 
-@np.vectorize
+@np.vectorize(otypes=[np.float64])
 def _norminvgauss_quadrature(x, y, a, b):
     mean = b / np.sqrt(a**2 - b**2)
     if np.isneginf(x) and y > abs(mean):
