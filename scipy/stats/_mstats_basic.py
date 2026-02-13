@@ -1863,13 +1863,13 @@ def mannwhitneyu(x,y, use_continuity=True):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-def kruskal(*args):
+def kruskal(*samples):
     """
     Compute the Kruskal-Wallis H-test for independent samples
 
     Parameters
     ----------
-    *args : array_like
+    *samples : array_like
        Two or more arrays with the sample measurements can be given as
        arguments.
 

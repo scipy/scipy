@@ -1953,7 +1953,7 @@ def _tukey_hsd_iv(args, equal_var):
 
 
 @xp_capabilities(np_only=True)
-def tukey_hsd(*args, equal_var=True):
+def tukey_hsd(*samples, equal_var=True):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 
     Tukey's honestly significant difference (HSD) test performs pairwise
@@ -1973,7 +1973,7 @@ def tukey_hsd(*args, equal_var=True):
 
     Parameters
     ----------
-    *args : array_like
+    *samples : array_like
         The sample measurements for each group. There must be at least
         two arguments.
     equal_var : bool, optional

@@ -1194,9 +1194,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Parameters
         ----------
-        a, b : array_like
-            Tensors to "dot".
-
+        other : array_like
+            Tensor to "dot".
         axes : int or (2,) array_like
             * integer_like
               If an int N, sum over the last N axes of `a` and the first N axes

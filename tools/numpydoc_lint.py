@@ -67,7 +67,7 @@ legacy_functions = [
     "scipy.sparse.spmatrix",
     "scipy.optimize.BroydenFirst",
     "scipy.optimize.KrylovJacobian",
-    "scipy.optimize.newton_krylov"
+    "scipy.optimize.newton_krylov",
     "scipy.linalg.LinAlgError",  # this is from numpy
     "scipy.optimize.fmin_bfgs",
     "scipy.optimize.fmin_tnc",
