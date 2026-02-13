@@ -633,6 +633,12 @@ class _CustomLinearOperator(LinearOperator):
         if self.__rmatmat_impl is not None:
             return self.__rmatmat_impl(X)
         else:
+            if self.__rmatvec_impl is None:
+                raise NotImplementedError(
+                    "rmatmat is not defined, and cannot be computed "
+                    "using rmatvec or adjoint because neither rmatvec "
+                    "nor adjoint is defined"
+                )
             return super()._rmatmat(X)
 
     def _adjoint(self):

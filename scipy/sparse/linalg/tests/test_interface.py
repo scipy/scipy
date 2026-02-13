@@ -979,3 +979,495 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype):
         # c. with matrix (or batch of matrices)
         np.testing.assert_allclose(x_mat.mT.conj() @ A, x_mat.mT.conj() @ A_)
         # np.testing.assert_allclose(A.rdot(x_mat.mT.conj()), x_mat.mT.conj() @ A_)
+
+
+class TestRmatmatErrorMessage:
+    """Tests for issue #18140: rmatmat should raise a clear error message when
+    neither rmatmat, rmatvec, nor adjoint is defined."""
+
+    def test_rmatmat_no_rmatvec_raises_not_implemented(self):
+        """rmatmat on LinearOperator with only matvec should raise
+        NotImplementedError, not TypeError."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_rmatmat_no_rmatvec_single_column(self):
+        """rmatmat with single column matrix also raises clear error
+        when rmatvec is not defined."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1], [2]]))
+
+    def test_rmatmat_no_rmatvec_identity_shape(self):
+        """rmatmat raises clear error for 1x1 operator with only matvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(1, 1)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1]]))
+
+    def test_rmatmat_no_rmatvec_rectangular(self):
+        """rmatmat raises clear error for rectangular operator without rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x[:2], shape=(2, 3)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_rmatmat_error_message_mentions_rmatvec(self):
+        """Error message should mention rmatvec as one of the missing
+        operations."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError, match="rmatvec"):
+            A.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_rmatmat_error_message_mentions_adjoint(self):
+        """Error message should mention adjoint as one of the missing
+        operations."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError, match="adjoint"):
+            A.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_rmatmat_works_with_rmatvec_defined(self):
+        """rmatmat should work when rmatvec is provided even without
+        explicit rmatmat."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T.conj() @ x,
+            shape=(2, 2),
+        )
+        X = np.array([[1, 0], [0, 1]])
+        result = A.rmatmat(X)
+        expected = mat.T.conj() @ X
+        assert_allclose(result, expected)
+
+    def test_rmatmat_works_with_rmatmat_defined(self):
+        """rmatmat should work when rmatmat is explicitly provided."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatmat=lambda x: mat.T.conj() @ x,
+            shape=(2, 2),
+        )
+        X = np.array([[5, 6], [7, 8]])
+        result = A.rmatmat(X)
+        expected = mat.T.conj() @ X
+        assert_allclose(result, expected)
+
+    def test_rmatmat_works_with_both_rmatvec_and_rmatmat(self):
+        """rmatmat should work when both rmatvec and rmatmat are provided,
+        preferring the explicit rmatmat implementation."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T.conj() @ x,
+            rmatmat=lambda x: mat.T.conj() @ x,
+            shape=(2, 2),
+        )
+        X = np.array([[1, 2], [3, 4]])
+        result = A.rmatmat(X)
+        expected = mat.T.conj() @ X
+        assert_allclose(result, expected)
+
+    def test_rmatvec_no_rmatvec_raises_not_implemented(self):
+        """rmatvec on LinearOperator with only matvec should raise
+        NotImplementedError with a clear message."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError, match="rmatvec is not defined"):
+            A.rmatvec(np.array([1, 2]))
+
+    def test_rmatmat_dimension_mismatch_still_works(self):
+        """Dimension mismatch error should still be raised before the
+        NotImplementedError for rmatmat."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(ValueError, match="dimension mismatch"):
+            A.rmatmat(np.array([[1, 2, 3]]))
+
+    def test_rmatmat_ndim_check_still_works(self):
+        """1-d array error should still be raised before the
+        NotImplementedError for rmatmat."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(ValueError, match="expected 2-d"):
+            A.rmatmat(np.array([1, 2]))
+
+    def test_rmatmat_3d_input_raises_value_error(self):
+        """3-d array should raise ValueError for expected 2-d."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(ValueError, match="expected 2-d"):
+            A.rmatmat(np.ones((2, 2, 2)))
+
+    def test_rmatmat_no_rmatvec_complex_operator(self):
+        """rmatmat raises clear error for complex operator without rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x * (1 + 1j), shape=(2, 2),
+            dtype=np.complex128,
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_rmatmat_no_rmatvec_large_operator(self):
+        """rmatmat raises clear error for larger operator without rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(10, 10)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.eye(10))
+
+    def test_rmatmat_correct_result_with_rmatvec_identity(self):
+        """rmatmat with identity-like rmatvec gives correct results."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x,
+            rmatvec=lambda x: x,
+            shape=(3, 3),
+        )
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        result = A.rmatmat(X)
+        assert_allclose(result, X)
+
+    def test_rmatmat_correct_result_with_rmatvec_scaling(self):
+        """rmatmat with scaling rmatvec gives correct results."""
+        A = interface.LinearOperator(
+            matvec=lambda x: 2 * x,
+            rmatvec=lambda x: 3 * x,
+            shape=(2, 2),
+        )
+        X = np.array([[1, 2], [3, 4]])
+        result = A.rmatmat(X)
+        expected = 3 * X
+        assert_allclose(result, expected)
+
+    def test_rmatmat_correct_result_rectangular_with_rmatvec(self):
+        """rmatmat with rectangular operator and rmatvec gives correct
+        results."""
+        mat = np.array([[1, 2, 3], [4, 5, 6]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T.conj() @ x,
+            shape=(2, 3),
+        )
+        X = np.array([[1, 0], [0, 1]])
+        result = A.rmatmat(X)
+        expected = mat.T.conj() @ X
+        assert_allclose(result, expected)
+
+    def test_rmatmat_correct_result_complex_with_rmatvec(self):
+        """rmatmat with complex operator and rmatvec gives correct results."""
+        mat = np.array([[1 + 1j, 2], [3, 4 - 1j]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T.conj() @ x,
+            shape=(2, 2),
+            dtype=np.complex128,
+        )
+        X = np.array([[1, 2], [3, 4]])
+        result = A.rmatmat(X)
+        expected = mat.T.conj() @ X
+        assert_allclose(result, expected)
+
+    def test_rmatmat_with_matmat_only_no_rmatvec(self):
+        """rmatmat raises clear error when only matmat is given, without
+        rmatvec or rmatmat."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            matmat=lambda x: mat @ x,
+            shape=(2, 2),
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_rmatmat_list_input_no_rmatvec(self):
+        """rmatmat with list input raises clear error when rmatvec is
+        not defined."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat([[1, 2], [3, 4]])
+
+    def test_rmatmat_nested_list_input_no_rmatvec(self):
+        """rmatmat with nested list input raises clear error when rmatvec
+        is not defined."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(1, 1)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat([[1]])
+
+    def test_rmatmat_original_issue_reproducer(self):
+        """Reproduce the exact scenario from issue #18140."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(1, 1)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat([[1]])
+
+    def test_rmatmat_error_type_is_not_type_error(self):
+        """Ensure the error is NotImplementedError, not TypeError, which
+        was the original bug."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        # Before the fix this raised TypeError: 'NoneType' object is
+        # not callable
+        with pytest.raises(NotImplementedError):
+            A.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_rmatmat_with_rmatmat_only_works(self):
+        """rmatmat should work when only rmatmat is provided without
+        rmatvec."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatmat=lambda x: mat.T @ x,
+            shape=(2, 2),
+        )
+        X = np.array([[1, 0], [0, 1]])
+        result = A.rmatmat(X)
+        expected = mat.T @ X
+        assert_allclose(result, expected)
+
+    def test_rmatmat_with_rmatmat_and_matmat_works(self):
+        """rmatmat should work when both matmat and rmatmat are provided."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            matmat=lambda x: mat @ x,
+            rmatmat=lambda x: mat.T @ x,
+            shape=(2, 2),
+        )
+        X = np.array([[5, 6], [7, 8]])
+        result = A.rmatmat(X)
+        expected = mat.T @ X
+        assert_allclose(result, expected)
+
+    def test_rmatvec_error_message_content(self):
+        """rmatvec error message should clearly state rmatvec is not
+        defined."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError,
+                           match="rmatvec is not defined"):
+            A.rmatvec(np.array([1, 2]))
+
+    def test_rmatmat_multi_column_no_rmatvec(self):
+        """rmatmat with multiple columns raises clear error when rmatvec
+        is not defined."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(3, 3)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.ones((3, 5)))
+
+    def test_rmatmat_wide_matrix_no_rmatvec(self):
+        """rmatmat with wide matrix raises clear error when rmatvec is not
+        defined."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x[:2], shape=(2, 3)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.ones((2, 10)))
+
+    def test_rmatmat_tall_matrix_with_rmatvec(self):
+        """rmatmat works with tall input matrix when rmatvec is defined."""
+        mat = np.array([[1, 2], [3, 4], [5, 6]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T.conj() @ x,
+            shape=(3, 2),
+        )
+        X = np.array([[1], [2], [3]])
+        result = A.rmatmat(X)
+        expected = mat.T.conj() @ X
+        assert_allclose(result, expected)
+
+    def test_rmatmat_float32_no_rmatvec(self):
+        """rmatmat raises clear error for float32 operator without rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x.astype(np.float32),
+            shape=(2, 2),
+            dtype=np.float32,
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1, 2], [3, 4]], dtype=np.float32))
+
+    def test_rmatmat_integer_input_no_rmatvec(self):
+        """rmatmat raises clear error with integer input array."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.array([[1, 2], [3, 4]], dtype=int))
+
+    def test_rmatmat_zeros_input_no_rmatvec(self):
+        """rmatmat raises clear error even with zeros input."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(3, 3)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.zeros((3, 2)))
+
+    def test_rmatmat_eye_input_no_rmatvec(self):
+        """rmatmat raises clear error with identity matrix input."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(4, 4)
+        )
+        with pytest.raises(NotImplementedError, match="rmatmat is not defined"):
+            A.rmatmat(np.eye(4))
+
+    def test_matmat_still_works_with_only_matvec(self):
+        """matmat (forward) should still work with only matvec defined,
+        ensuring the fix doesn't break forward operations."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x, shape=(2, 2)
+        )
+        X = np.array([[1, 0], [0, 1]])
+        result = A.matmat(X)
+        expected = mat @ X
+        assert_allclose(result, expected)
+
+    def test_matvec_still_works_with_only_matvec(self):
+        """matvec should still work with only matvec defined."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x, shape=(2, 2)
+        )
+        x = np.array([1, 2])
+        result = A.matvec(x)
+        expected = mat @ x
+        assert_allclose(result, expected)
+
+    def test_rmatmat_via_rmatmul_no_rmatvec(self):
+        """Using @ operator from the right (rmatmul) should raise a clear
+        error when rmatvec is not defined."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        X = np.array([[1, 2], [3, 4]])
+        # X @ A triggers __rmatmul__ on A
+        # This goes through _rdot -> self.T.matmat -> adjoint path
+        # which may also produce unhelpful errors
+        with pytest.raises((NotImplementedError, ValueError)):
+            X @ A
+
+    def test_rmatmat_via_rmatmul_with_rmatvec(self):
+        """Using @ operator from the right should work when rmatvec is
+        defined."""
+        mat = np.array([[1, 2], [3, 4]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T @ x,
+            shape=(2, 2),
+        )
+        X = np.array([[1, 0], [0, 1]])
+        result = X @ A
+        expected = X @ mat
+        assert_allclose(result, expected)
+
+    def test_rmatmat_with_rmatvec_multiple_shapes(self):
+        """rmatmat with various input shapes works correctly when rmatvec
+        is defined."""
+        mat = np.array([[1, 2, 3], [4, 5, 6]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T.conj() @ x,
+            shape=(2, 3),
+        )
+        # Single column
+        X1 = np.array([[1], [2]])
+        assert_allclose(A.rmatmat(X1), mat.T.conj() @ X1)
+
+        # Two columns
+        X2 = np.array([[1, 2], [3, 4]])
+        assert_allclose(A.rmatmat(X2), mat.T.conj() @ X2)
+
+        # Three columns
+        X3 = np.array([[1, 2, 3], [4, 5, 6]])
+        assert_allclose(A.rmatmat(X3), mat.T.conj() @ X3)
+
+    def test_rmatmat_preserves_dtype_with_rmatvec(self):
+        """rmatmat should preserve appropriate dtype when using rmatvec
+        fallback."""
+        mat = np.array([[1.0, 2.0], [3.0, 4.0]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T @ x,
+            shape=(2, 2),
+        )
+        X = np.array([[1.0, 2.0], [3.0, 4.0]])
+        result = A.rmatmat(X)
+        assert result.dtype == np.float64
+
+    def test_rmatmat_preserves_complex_dtype_with_rmatvec(self):
+        """rmatmat should preserve complex dtype when using rmatvec
+        fallback."""
+        mat = np.array([[1 + 1j, 2], [3, 4 - 1j]])
+        A = interface.LinearOperator(
+            matvec=lambda x: mat @ x,
+            rmatvec=lambda x: mat.T.conj() @ x,
+            shape=(2, 2),
+            dtype=np.complex128,
+        )
+        X = np.array([[1 + 0j, 2], [3, 4]])
+        result = A.rmatmat(X)
+        assert np.issubdtype(result.dtype, np.complexfloating)
+
+    def test_scaled_operator_rmatmat_no_rmatvec(self):
+        """Scaled operator rmatmat should raise clear error when base
+        operator has no rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        B = 2 * A
+        with pytest.raises(NotImplementedError):
+            B.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_sum_operator_rmatmat_no_rmatvec(self):
+        """Sum operator rmatmat should raise error when base operators
+        have no rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        B = A + A
+        with pytest.raises(NotImplementedError):
+            B.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_product_operator_rmatmat_no_rmatvec(self):
+        """Product operator rmatmat should raise error when base operators
+        have no rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        B = A @ A
+        with pytest.raises(NotImplementedError):
+            B.rmatmat(np.array([[1, 2], [3, 4]]))
+
+    def test_power_operator_rmatmat_no_rmatvec(self):
+        """Power operator rmatmat should raise error when base operator
+        has no rmatvec."""
+        A = interface.LinearOperator(
+            matvec=lambda x: x, shape=(2, 2)
+        )
+        B = A ** 2
+        with pytest.raises(NotImplementedError):
+            B.rmatmat(np.array([[1, 2], [3, 4]]))
