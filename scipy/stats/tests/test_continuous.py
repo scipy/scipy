@@ -615,32 +615,36 @@ def check_nans_and_edges(dist, fname, arg, res):
         ref = 0 if not is_discrete else np.inf
         assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
         assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
-    elif fname in {'logcdf'} and not is_discrete:
+    elif fname in {'logcdf'}:
         assert_equal(res[outside_arg_minus], -inf)
         assert_equal(res[outside_arg_plus], 0)
-        assert_equal(res[endpoint_arg_minus], -inf)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], -inf)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'cdf'} and not is_discrete:
+    elif fname in {'cdf'}:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], 1)
-        assert_equal(res[endpoint_arg_minus], 0)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], 1)
-    elif fname in {'logccdf'} and not is_discrete:
+    elif fname in {'logccdf'}:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], -inf)
-        assert_equal(res[endpoint_arg_minus], 0)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], -inf)
-    elif fname in {'ccdf'} and not is_discrete:
+    elif fname in {'ccdf'}:
         assert_equal(res[outside_arg_minus], 1)
         assert_equal(res[outside_arg_plus], 0)
-        assert_equal(res[endpoint_arg_minus], 1)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], 1)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'ilogcdf', 'icdf'} and not is_discrete:
+    elif fname in {'ilogcdf', 'icdf'}:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], a[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], b[endpoint_arg == 1])
-    elif fname in {'ilogccdf', 'iccdf'} and not is_discrete:
+    elif fname in {'ilogccdf', 'iccdf'}:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], b[endpoint_arg == -1])
