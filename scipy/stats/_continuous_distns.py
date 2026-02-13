@@ -2212,22 +2212,56 @@ class exponnorm_gen(rv_continuous):
     def _pdf(self, x, K):
         return np.exp(self._logpdf(x, K))
 
-    def _logpdf(self, x, K):
+    def _logpdf_negative_u(self, x, K):
         invK = 1.0 / K
         exparg = invK * (0.5 * invK - x)
         return exparg + _norm_logcdf(x - invK) - np.log(K)
 
-    def _cdf(self, x, K):
+    def _logpdf_nonnegative_u(self, x, K):
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        return -np.log(2) - 0.5 * (x ** 2) - np.log(K) + np.log(sc.erfcx(u))
+
+    def _logpdf(self, x, K):
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        return xpx.apply_where(
+            u >= 0, (x, K), self._logpdf_nonnegative_u,
+            self._logpdf_negative_u)
+
+    def _cdf_negative_u(self, x, K):
         invK = 1.0 / K
         expval = invK * (0.5 * invK - x)
         logprod = expval + _norm_logcdf(x - invK)
         return _norm_cdf(x) - np.exp(logprod)
 
-    def _sf(self, x, K):
+    def _cdf_nonnegative_u(self, x, K):
+        normal_term = _norm_cdf(x)
+        correction = -0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(
+            (-x + 1.0 / K) / np.sqrt(2))
+        return normal_term + correction
+
+    def _cdf(self, x, K):
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        return xpx.apply_where(
+            u >= 0, (x, K), self._cdf_nonnegative_u,
+            self._cdf_negative_u)
+
+    def _sf_negative_u(self, x, K):
         invK = 1.0 / K
         expval = invK * (0.5 * invK - x)
         logprod = expval + _norm_logcdf(x - invK)
         return _norm_cdf(-x) + np.exp(logprod)
+
+    def _sf_nonnegative_u(self, x, K):
+        normal_term = _norm_cdf(-x)
+        correction = 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(
+            (-x + 1.0 / K) / np.sqrt(2))
+        return normal_term + correction
+
+    def _sf(self, x, K):
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        return xpx.apply_where(
+            u >= 0, (x, K), self._sf_nonnegative_u,
+            self._sf_negative_u)
 
     def _stats(self, K):
         K2 = K * K
