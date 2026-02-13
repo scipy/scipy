@@ -14,6 +14,9 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
 
 
+_NoValue = object()
+
+
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
     _allow_nd = (1, 2)
@@ -134,7 +137,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         """Remove all items from the dok_array."""
         self._dict.clear()
 
-    def pop(self, /, *args):
+    def pop(self, key, default=_NoValue, /):
         """Remove specified key and return the corresponding value.
 
         Parameters
@@ -155,7 +158,10 @@ class _dok_base(_spbase, IndexMixin, dict):
         KeyError
             If the key is not found and default is not provided.
         """
-        return self._dict.pop(*args)
+        if default is _NoValue:
+            return self._dict.pop(key)
+        else:
+            return self._dict.pop(key, default)
 
     def __reversed__(self):
         raise TypeError("reversed is not defined for dok_array type")

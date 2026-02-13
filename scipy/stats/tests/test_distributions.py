@@ -8760,7 +8760,7 @@ class TestGenGamma:
         p = stats.gengamma._munp(-2, 10, 1.)
         assert_almost_equal(p, 1./9/8)
 
-    def test_gengamma_logpdf_broadcasting_gh24575(self):
+    def test_gengamma_logpdf_broadcasting_gh24574(self):
         # gh-24574 reported a broadcasting error when `x` included 0s.
         assert_allclose(stats.gengamma.logpdf([0, 1, 1], 1, -1), [-np.inf, -1, -1])
 
