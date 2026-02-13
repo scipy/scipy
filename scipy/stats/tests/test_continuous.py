@@ -743,7 +743,6 @@ def check_moment_funcs(dist, result_shape):
             dist.moment(i, 'raw')
             check(i, 'central', 'transform', ref)
 
-    variance = dist.variance()
     dist.reset_cache()
 
     # If we have standard moment formulas, or if there are
