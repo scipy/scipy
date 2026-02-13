@@ -3850,11 +3850,7 @@ class DiscreteDistribution(UnivariateDistribution):
             # The two imaginary components "cancel" each other out (which we would
             # expect because each term of the entropy summand is positive).
             return np.where(np.isfinite(logpmf), logpmf + np.log(-logpmf), -np.inf)
-
-        with np.errstate(invalid='ignore', divide='ignore'):
-            # Zeros and infinities in the integrand are noisy. It is slow and cumbersome
-            # to use apply_where to avoid the warnings, so silence them.
-            return self._quadrature(logintegrand, params=params, log=True)
+        return self._quadrature(logintegrand, params=params, log=True)
 
 
 # Special case the names of some new-style distributions in `make_distribution`
