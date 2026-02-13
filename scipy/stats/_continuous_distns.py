@@ -3871,8 +3871,9 @@ class gengamma_gen(rv_continuous):
 
     def _logpdf(self, x, a, c):
         return xpx.apply_where(
-            (x != 0) | (c > 0), (x, c),
-            lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)),
+            (x != 0) | (c > 0), (x, c, a),
+            lambda x, c, a: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
+                             - x**c - sc.gammaln(a)),
             fill_value=-np.inf)
 
     def _cdf(self, x, a, c):
