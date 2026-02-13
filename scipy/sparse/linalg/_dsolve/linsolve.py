@@ -132,7 +132,7 @@ def _get_umf_family(A):
 
     return family, A_new
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
+def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_block_size=10):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -155,13 +155,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
         if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
         [6]_ . This is only referenced if b is a vector and
         ``scikits.umfpack`` is installed.
-    rhs_batch_size : int, optional
+    rhs_block_size : int, optional
         If ``b`` is a 2D sparse array, this parameter controls the number of
         columns to be solved simultaneously. A larger number will increase
         memory consumption by converting more columns at a time to dense
         arrays, but may improve runtime. This option only applies when
         ``use_umfpack=False``, since the low-level scikit-umfpack routines do
-        not support multiple right-hand sides. In that case, ``rhs_batch_size=1``.
+        not support multiple right-hand sides. In that case, ``rhs_block_size=1``.
 
         .. versionadded:: 1.18.0
 
@@ -228,6 +228,11 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
     A = convert_pydata_sparse_to_scipy(A)
     b = convert_pydata_sparse_to_scipy(b)
 
+    # TODO generalize spsolve to use batched arrays, like:
+    # A.shape == (2, 3, N, N)
+    # b.shape == (2, 3, N, K) =>
+    # x.shape == (2, 3, N, K)
+
     if not (issparse(A) and A.format in ("csc", "csr")):
         A = csc_array(A)
         warn('spsolve requires A be CSC or CSR matrix format',
@@ -261,7 +266,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
 
     use_umfpack = use_umfpack and useUmfpack.u
 
-    _validate_int(rhs_batch_size, "rhs_batch_size", minimum=1)
+    _validate_int(rhs_block_size, "rhs_block_size", minimum=1)
 
     if b_is_vector and use_umfpack:
         if b_is_sparse:
@@ -320,22 +325,22 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
                      SparseEfficiencyWarning, stacklevel=2)
                 b = csc_array(b)
 
-            if use_umfpack and rhs_batch_size > 1:
-                rhs_batch_size = 1
+            if use_umfpack and rhs_block_size > 1:
+                rhs_block_size = 1
 
-            # Solve in batches to reduce memory consumption
+            # Solve in blocks to reduce memory consumption
             K = b.shape[1]
             x_blocks = []
 
             # Pre-allocate arrays to avoid repeated allocations
-            b_batch = np.empty((N, min(rhs_batch_size, K)), dtype=b.dtype, order="F")
+            b_block = np.empty((N, min(rhs_block_size, K)), dtype=b.dtype, order="F")
 
-            for k in range(0, K, rhs_batch_size):
-                batch_end = min(k + rhs_batch_size, K)
-                width = batch_end - k
+            for k in range(0, K, rhs_block_size):
+                block_end = min(k + rhs_block_size, K)
+                width = block_end - k
                 # Convert sparse to dense in the buffer
-                b_view = b_batch[:, :width]
-                b[:, k:batch_end].toarray(out=b_view)
+                b_view = b_block[:, :width]
+                b[:, k:block_end].toarray(out=b_view)
                 # Solve the linear systems
                 x_dense = Afactsolve(b_view)
                 x_blocks.append(csc_array(x_dense, dtype=b.dtype))

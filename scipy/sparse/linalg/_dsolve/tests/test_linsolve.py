@@ -451,32 +451,32 @@ class TestLinsolve:
         x = spsolve(A, b)
         assert_array_almost_equal(A @ x, b)
 
-    @pytest.mark.parametrize("bad_rhs_batch_size", ['foo', None])
-    def test_bad_rhs_batch_size_type(self, bad_rhs_batch_size):
+    @pytest.mark.parametrize("bad_rhs_block_size", ['foo', None])
+    def test_bad_rhs_block_size_type(self, bad_rhs_block_size):
         N = 5
         A = eye_array(N, dtype=float, format='csc')
         b = np.arange(N)
         with assert_raises(TypeError, match="must be an integer"):
-            spsolve(A, b, rhs_batch_size=bad_rhs_batch_size)
+            spsolve(A, b, rhs_block_size=bad_rhs_block_size)
 
-    @pytest.mark.parametrize("bad_rhs_batch_size", [0, -1])
-    def test_bad_rhs_batch_size_value(self, bad_rhs_batch_size):
+    @pytest.mark.parametrize("bad_rhs_block_size", [0, -1])
+    def test_bad_rhs_block_size_value(self, bad_rhs_block_size):
         N = 5
         A = eye_array(N, dtype=float, format='csc')
         b = np.arange(N)
         with assert_raises(ValueError, match="must be an integer not less than 1"):
-            spsolve(A, b, rhs_batch_size=bad_rhs_batch_size)
+            spsolve(A, b, rhs_block_size=bad_rhs_block_size)
 
     @pytest.mark.parametrize("K", [0, 1, 10])
-    @pytest.mark.parametrize("rhs_batch_size", [1, 2, 3, 10, 20])
-    def test_rhs_batch_size(self, K, rhs_batch_size):
+    @pytest.mark.parametrize("rhs_block_size", [1, 2, 3, 10, 20])
+    def test_rhs_block_size(self, K, rhs_block_size):
         rng = np.random.default_rng(56)
         N = 5
         A = eye_array(N, dtype=float, format='csc')
         s = rng.random(N)
         x_true = np.outer(s, 1 + np.arange(K))  # (N, K)
         b = A @ x_true
-        x = spsolve(A, b, rhs_batch_size=rhs_batch_size, use_umfpack=False)
+        x = spsolve(A, b, rhs_block_size=rhs_block_size, use_umfpack=False)
         if K == 1:
             x_true = x_true.ravel()
         assert_allclose(x, x_true)
