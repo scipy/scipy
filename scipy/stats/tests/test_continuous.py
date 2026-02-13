@@ -652,16 +652,9 @@ def check_nans_and_edges(dist, fname, arg, res):
 
     exclude = {'logmean', 'mean', 'logskewness', 'skewness', 'support'}
     if isinstance(dist, DiscreteDistribution):
-        exclude.update({'pdf', 'logpdf'})
+        exclude.update({'pdf', 'logpdf', 'logentropy'})  # 0 is -inf in log-space
 
-    if (
-            fname not in exclude
-            and not (isinstance(dist, Binomial)
-                     and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1)))):
-        # This can fail in degenerate case where Binomial distribution is a point
-        # distribution. Further on, we could factor out an is_degenerate function
-        # for the tests, or think about storing info about degeneracy in the
-        # instances.
+    if fname not in exclude:
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
@@ -747,16 +740,19 @@ def check_moment_funcs(dist, result_shape):
     dist.reset_cache()
 
     # If we have standard moment formulas, or if there are
-    # values in their cache, we can use method='normalize'
-    dist.moment(0, 'standardized')  # build up the cache
-    dist.moment(1, 'standardized')
-    dist.moment(2, 'standardized')
-    for i in range(3, 6):
-        ref = dist.moment(i, 'central', method='quadrature')
-        check(i, 'central', 'normalize', ref,
-              success=has_formula(i, 'standardized'))
-        dist.moment(i, 'standardized')  # build up the cache
-        check(i, 'central', 'normalize', ref)
+    # values in their cache, we can use method='normalize'.
+    if not np.any(variance == 0):  # ...unless the variance is zero.
+        # (In that case the standardized moment is NaN; we can't recover the central
+        #  moment from that.)
+        dist.moment(0, 'standardized')  # build up the cache
+        dist.moment(1, 'standardized')
+        dist.moment(2, 'standardized')
+        for i in range(3, 6):
+            ref = dist.moment(i, 'central', method='quadrature')
+            check(i, 'central', 'normalize', ref,
+                  success=has_formula(i, 'standardized'))
+            dist.moment(i, 'standardized')  # build up the cache
+            check(i, 'central', 'normalize', ref)
 
     ### Check Standardized Moments ###
 
@@ -769,12 +765,9 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        if not (
-                isinstance(dist, Binomial)
-                and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1))
-        ):
-            # This test will fail for degenerate case where binomial distribution
-            # is a point distribution.
+        if not np.any(variance == 0):
+            # `method='general'` results just aren't correct for degenerate
+            # distributions or when moments are not defined. That's OK.
             check(i, 'standardized', 'general', ref, success=i <= 2)
         check(i, 'standardized', 'normalize', ref)
 
