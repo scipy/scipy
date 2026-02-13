@@ -754,9 +754,9 @@ def check_moment_funcs(dist, result_shape):
     for i in range(3, 6):
         ref = dist.moment(i, 'central', method='quadrature')
         check(i, 'central', 'normalize', ref,
-              success=has_formula(i, 'standardized') and not np.any(variance == 0))
+              success=has_formula(i, 'standardized'))
         dist.moment(i, 'standardized')  # build up the cache
-        check(i, 'central', 'normalize', ref, success=not np.any(variance == 0))
+        check(i, 'central', 'normalize', ref)
 
     ### Check Standardized Moments ###
 

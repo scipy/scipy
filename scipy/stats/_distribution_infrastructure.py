@@ -2679,12 +2679,17 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
 
     def _cdf2_subtraction_safe(self, x, y, **params):
+        # The "safe" version of this function may be used if `method` is unspecified,
+        # but if `method='subtraction'`, the regular version  above is used.
         cdf_x = self._cdf_dispatch(x, **params)
         cdf_y = self._cdf_dispatch(y, **params)
         ccdf_x = self._ccdf_dispatch(x, **params)
         ccdf_y = self._ccdf_dispatch(y, **params)
         i = (ccdf_x < 0.5) & (ccdf_y < 0.5)
         out = np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
+        # Can't just call `out = _cdf2_subtraction(self, x, y, **params)` here
+        # because we need the partial results below. Could refactor, but we'll leave
+        # that to future work, say if the improvements to _cdf2_subtraction are made.
 
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
