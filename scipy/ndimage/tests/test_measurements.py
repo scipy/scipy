@@ -389,6 +389,26 @@ def test_label_output_wrong_size(xp):
         assert_raises(ValueError, ndimage.label, data, output=output)
 
 
+
+@skip_xp_backends(np_only=True, reason="in-place output is numpy-specific")
+@make_xp_test_case(ndimage.label)
+def test_label_output_bool_dtype(xp):
+    # gh-24502: boolean output cannot store labels > 1
+    data = xp.ones([5])
+    # passing a boolean array as output should raise
+    output = xp.zeros([5], dtype=xp.bool_)
+    assert_raises(RuntimeError, ndimage.label, data, output=output)
+
+
+@skip_xp_backends(np_only=True, exceptions=["cupy"],
+                  reason='output=dtype is numpy-specific')
+@make_xp_test_case(ndimage.label)
+def test_label_output_bool_dtype_kwarg(xp):
+    # gh-24502: boolean dtype passed as output keyword should raise
+    data = xp.ones([5])
+    assert_raises(RuntimeError, ndimage.label, data, output=xp.bool_)
+
+
 @make_xp_test_case(ndimage.label)
 def test_label_structuring_elements(xp):
     data = np.loadtxt(os.path.join(os.path.dirname(

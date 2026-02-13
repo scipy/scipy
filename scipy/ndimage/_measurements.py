@@ -200,6 +200,11 @@ def label(input, structure=None, output=None):
         else:
             output = np.empty(input.shape, output)
 
+    if output.dtype == np.bool_:
+        raise RuntimeError(
+            "output dtype of bool is insufficient to store labels"
+        )
+
     # handle scalars, 0-D arrays
     if input.ndim == 0 or input.size == 0:
         if input.ndim == 0:
