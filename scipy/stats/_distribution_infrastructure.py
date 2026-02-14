@@ -4212,7 +4212,7 @@ def make_distribution(dist):
     >>>
     >>> MyBinomial = stats.make_distribution(MyBinomial())
     >>> X = stats.Binomial(n=10, p=0.4)
-    >>>  Y = MyBinomial(n=10, p=0.4)
+    >>> Y = MyBinomial(n=10, p=0.4)
     >>> np.isclose(Y.cdf(8.), X.cdf(8.))
     np.True_
 
@@ -4405,8 +4405,8 @@ def _make_distribution_custom(dist):
         pxf = 'PMF'
         distribution_subclass = DiscreteDistribution
     else:
-        message = ("Object must implement either `pmf` OR `pdf` (not both) to be used "
-                   "with `make_distribution`.")
+        message = ("The argument of `make_distribution` must implement "
+                   "either `pdf` OR `pmf` (not both).")
         raise ValueError(message)
 
     _x_param = _RealParameter('x', domain=_x_support)
