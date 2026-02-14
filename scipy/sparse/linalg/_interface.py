@@ -643,12 +643,20 @@ class _CustomLinearOperator(LinearOperator):
             return super()._rmatmat(X)
 
     def _adjoint(self):
+        if self.__rmatvec_impl is None and self.__rmatmat_impl is None:
+            raise ValueError("Cannot compute adjoint without rmatvec or rmatmat implementation.")
+        
         return _CustomLinearOperator(shape=(self.shape[1], self.shape[0]),
                                      matvec=self.__rmatvec_impl,
                                      rmatvec=self.__matvec_impl,
                                      matmat=self.__rmatmat_impl,
                                      rmatmat=self.__matmat_impl,
                                      dtype=self.dtype)
+        
+    def _transpose(self):
+        if self.__rmatvec_impl is None and self.__rmatmat_impl is None:
+            raise ValueError("Cannot compute transpose without rmatvec or rmatmat implementation.")
+        return super()._transpose()
 
 
 class _AdjointLinearOperator(LinearOperator):
