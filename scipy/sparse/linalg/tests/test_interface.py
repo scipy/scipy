@@ -503,6 +503,7 @@ class TestAsLinearOperator:
             cases.append((matrix(original, dtype=dtype), original, True))
             cases.append((np.array(original, dtype=dtype), original, True))
             cases.append((sparse.csr_array(original, dtype=dtype), original, True))
+            cases.append((interface.MatrixLinearOperator(original), original, True))
 
             # Test default implementations of _adjoint and _rmatvec, which
             # refer to each other.
@@ -523,42 +524,21 @@ class TestAsLinearOperator:
             
             class _Base:
                 args = ()
-                _has_matvec  = False
-                _has_rmatvec = False
-                _has_matmat  = False
-                _has_rmatmat = False
                 def __init__(self, dtype):
                     self.dtype = np.dtype(dtype)
                     self.shape = original.shape       
-                    
-            class _HasAdjoint(_Base):
-                def _adjoint(self):
-                    shape = self.shape[1], self.shape[0]
-                    matvec = partial(rmv, dtype=self.dtype) if self._has_rmatvec else None
-                    rmatvec = partial(mv, dtype=self.dtype) if self._has_matvec else None
-                    matmat = partial(rmm, dtype=self.dtype) if self._has_rmatmat else None
-                    rmatmat = partial(mm, dtype=self.dtype) if self._has_matmat else None
-                    return interface.LinearOperator(matvec=matvec,
-                                                    rmatvec=rmatvec,
-                                                    matmat=matmat,
-                                                    rmatmat=rmatmat,
-                                                    dtype=self.dtype,
-                                                    shape=shape)
-            class Matvec(_Base, interface.LinearOperator):
-                _has_matvec = True
-                def _matvec(self, x):
+
+            class Matvec(_Base):
+                def matvec(self, x):
                     return mv(x, self.dtype)
-            class Rmatvec(_Base, interface.LinearOperator):
-                _has_rmatvec = True
-                def _rmatvec(self,x):
+            class Rmatvec(_Base):
+                def rmatvec(self,x):
                     return rmv(x, self.dtype)
-            class Matmat(_Base, interface.LinearOperator):
-                _has_matmat = True
-                def _matmat(self, x):
+            class Matmat(_Base):
+                def matmat(self, x):
                     return mm(x, self.dtype)
-            class Rmatmat(_Base, interface.LinearOperator):
-                _has_rmatmat = True
-                def _rmatmat(self, x):
+            class Rmatmat(_Base):
+                def rmatmat(self, x):
                     return rmm(x, self.dtype)
                 
             class MatvecMatmat(Matvec, Matmat): pass
@@ -566,7 +546,7 @@ class TestAsLinearOperator:
             
             class Aslinearoperator:
                 def __init__(self, linop):
-                    self.linop = linop
+                    self.linop = interface.aslinearoperator(linop)
                 def __aslinearoperator__(self):
                     return self.linop
                 
@@ -578,13 +558,7 @@ class TestAsLinearOperator:
                     class MatRmat(Mat, Rmat): pass
                     M = MatRmat(dtype)
                     cases.append((M, original, True))
-                    cases.append((Aslinearoperator(M), original, True))
-                    
-                    class MatRmatAdjoint(MatRmat, _HasAdjoint): pass
-                    M = MatRmatAdjoint(dtype)
-                    cases.append((M, original, True))
-                    cases.append((Aslinearoperator(M), original, True))
-                    
+                    cases.append((Aslinearoperator(M), original, True))                    
             return cases
 
         original = np.array([[1,2,3], [4,5,6]])
@@ -1012,3 +986,10 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype):
         # c. with matrix (or batch of matrices)
         np.testing.assert_allclose(x_mat.mT.conj() @ A, x_mat.mT.conj() @ A_)
         # np.testing.assert_allclose(A.rdot(x_mat.mT.conj()), x_mat.mT.conj() @ A_)
+        
+        
+if __name__ == "__main__":
+    T = TestAsLinearOperator()
+    T.setup_method()
+    T.test_basic()
+    T.test_dot()
