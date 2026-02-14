@@ -223,5 +223,23 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     mathematical inverse Hankel transform is commonly defined using :math:`k \, dk`.
 
     See `fht` for further details.
+
+    Examples
+    --------
+    This example shows that `ifht` inverts `fht`.  We set up a
+    logarithmically spaced grid and transform a Gaussian with `fht`,
+    then recover it with `ifht`:
+
+    >>> import numpy as np
+    >>> from scipy.fft import fht, ifht, fhtoffset
+    >>> r = np.logspace(-4, 4, 16)
+    >>> dln = np.log(r[1] / r[0])
+    >>> mu = 0.0
+    >>> offset = fhtoffset(dln, initial=0, mu=mu)
+    >>> a = np.exp(-r**2 / 2)
+    >>> A = fht(a, dln, mu, offset=offset)
+    >>> a_roundtrip = ifht(A, dln, mu, offset=offset)
+    >>> np.allclose(a_roundtrip, a)
+    True
     """
     return (Dispatchable(A, np.ndarray),)

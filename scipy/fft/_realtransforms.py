@@ -713,5 +713,15 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     type. DST type 1 and 4 are their own inverse and DSTs 2 and 3 are each
     other's inverses.
 
+    Examples
+    --------
+    The IDST is the inverse of the DST:
+
+    >>> import numpy as np
+    >>> from scipy.fft import dst, idst
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> np.allclose(idst(dst(x, type=2), type=2), x)
+    True
+
     """
     return (Dispatchable(x, np.ndarray),)

@@ -1350,6 +1350,15 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     This is really `irfftn` with different defaults.
     For more details see `irfftn`.
 
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> import numpy as np
+    >>> x = np.broadcast_to([1, 0, -1, 0], (4, 4)).copy()
+    >>> X = scipy.fft.rfft2(x)
+    >>> np.allclose(scipy.fft.irfft2(X, s=x.shape), x)
+    True
+
     """
     return (Dispatchable(x, np.ndarray),)
 
@@ -1665,6 +1674,15 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     -----
     This is really `ihfftn` with different defaults.
     For more details see `ihfftn`.
+
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> import numpy as np
+    >>> x = np.array([[1+0j, 2+0j], [2+0j, 1+0j]])
+    >>> h = scipy.fft.hfft2(x, s=(2, 2))
+    >>> np.allclose(scipy.fft.ihfft2(h, s=(2, 2)), x)
+    True
 
     """
     return (Dispatchable(x, np.ndarray),)
