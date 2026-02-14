@@ -18,19 +18,12 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy._lib._util import AxisError
+from scipy._lib._util import AxisError, USING_ACCELERATE
 from scipy.conftest import skip_xp_invalid_arg
 
 
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
-
-
-def _using_accelerate():
-    config = np.show_config('dicts')
-    return config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
-
-
-RTOL = 1e-6 if _using_accelerate() else 1e-15
+RTOL = 1e-6 if USING_ACCELERATE else 1e-15
 
 
 def unpack_ttest_result(res):

@@ -21,6 +21,8 @@ from scipy._lib._sparse import issparse
 
 from numpy.exceptions import AxisError
 
+_config = np.show_config('dicts')
+USING_ACCELERATE = _config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
 
 np_long: type
 np_ulong: type

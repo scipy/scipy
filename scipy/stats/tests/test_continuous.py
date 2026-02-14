@@ -10,6 +10,7 @@ from numpy.testing import assert_allclose, assert_equal
 from hypothesis import strategies, given, reproduce_failure, settings  # noqa: F401
 import hypothesis.extra.numpy as npst
 
+from scipy._lib._util import USING_ACCELERATE
 from scipy import special
 from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
@@ -1182,7 +1183,8 @@ class TestMakeDistribution:
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
         p = X.cdf(x)
-        rtol = custom_tolerances.get(distname, 1e-7)
+        default_rtol = 1e-5 if USING_ACCELERATE else 1e-7
+        rtol = custom_tolerances.get(distname, default_rtol)
         atol = 1e-12
 
         with np.errstate(divide='ignore', invalid='ignore'):
