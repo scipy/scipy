@@ -4329,8 +4329,14 @@ def _make_distribution_rv_generic(dist):
 
 def _get_domain_info(info):
     domain_info = {"endpoints": info} if isinstance(info, tuple) else info
+    domain_type_str = domain_info.pop("domain", "continuous")
+    if domain_type_str not in {"discrete", "continuous"}:
+        message = ("If specified, the `domain` value of a parameter "
+                   "must be either 'continuous' or 'discrete'.")
+        raise ValueError(message)
+    domain_type = _IntegerInterval if domain_type_str == 'discrete' else _RealInterval
     typical = domain_info.pop("typical", None)
-    return domain_info, typical
+    return domain_type, domain_info, typical
 
 
 def _make_distribution_custom(dist):
@@ -4347,18 +4353,30 @@ def _make_distribution_custom(dist):
         parameters = []
 
         for name, info in parameterization.items():
-            domain_info, typical = _get_domain_info(info)
-            domain = _RealInterval(**domain_info)
+            domain_type, domain_info, typical = _get_domain_info(info)
+            domain = domain_type(**domain_info)
             param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
         parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    domain_info, _ = _get_domain_info(dist.support)
-    _x_support = _RealInterval(**domain_info)
+    domain_type, domain_info, _ = _get_domain_info(dist.support)
+    _x_support = domain_type(**domain_info)
+
+    if hasattr(dist, 'pdf') and not hasattr(dist, 'pmf'):
+        pxf = 'PDF'
+        distribution_subclass = ContinuousDistribution
+    elif hasattr(dist, 'pmf') and not hasattr(dist, 'pdf'):
+        pxf = 'PMF'
+        distribution_subclass = DiscreteDistribution
+    else:
+        message = ("Object must implement either `pmf` OR `pdf` (not both) to be used "
+                   "with `make_distribution`.")
+        raise ValueError(message)
+
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
-    class CustomDistribution(ContinuousDistribution):
+    class CustomDistribution(distribution_subclass):
         _parameterizations = parameterizations
         _variable = _x_param
 
@@ -4371,7 +4389,7 @@ def _make_distribution_custom(dist):
             return s.replace('CustomDistribution', repr_str)
 
     methods = {'sample', 'logentropy', 'entropy',
-               'median', 'mode', 'logpdf', 'pdf',
+               'median', 'mode', 'logpdf', 'pdf', 'logpmf', 'pmf',
                'logcdf2', 'logcdf', 'cdf2', 'cdf',
                'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
                'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
@@ -4407,8 +4425,8 @@ def _make_distribution_custom(dist):
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
         f"This class represents `{repr_str}` as a subclass of "
-        "`ContinuousDistribution`.",
-        f"The PDF of the distribution is defined {support_etc}"
+        f"`{str(distribution_subclass)}`.",
+        f"The {pxf} of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
 
