@@ -455,6 +455,19 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
     -------
     output : ndarray
         The filtered signal.
+
+    Examples
+    --------
+    Compute quadratic B-spline coefficients for a 2-D signal:
+
+    >>> from scipy.signal import qspline2d
+    >>> import numpy as np
+    >>> x = np.linspace(0, 2 * np.pi, 20)
+    >>> img = np.sin(x[:, None]) * np.cos(x[None, :])
+    >>> coeffs = qspline2d(img)
+    >>> coeffs.shape
+    (20, 20)
+
     """
     if precision < 0.0 or precision >= 1.0:
         if signal.dtype in [float32, complex64]:
@@ -496,6 +509,19 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
     -------
     output : ndarray
         The filtered signal.
+
+    Examples
+    --------
+    Compute cubic B-spline coefficients for a 2-D signal:
+
+    >>> from scipy.signal import cspline2d
+    >>> import numpy as np
+    >>> x = np.linspace(0, 2 * np.pi, 20)
+    >>> img = np.sin(x[:, None]) * np.cos(x[None, :])
+    >>> coeffs = cspline2d(img)
+    >>> coeffs.shape
+    (20, 20)
+
     """
     xp = array_namespace(signal)
     signal = np.asarray(signal)
@@ -717,6 +743,18 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     -------
     output : ndarray
         The filtered signal.
+
+    Examples
+    --------
+    Apply a first-order symmetric IIR filter to a ramp signal:
+
+    >>> from scipy.signal import symiirorder1
+    >>> import numpy as np
+    >>> sig = np.arange(10, dtype=float)
+    >>> out = symiirorder1(sig, 6.0, 0.2, precision=1e-6)
+    >>> out.shape
+    (10,)
+
     """
     xp = array_namespace(signal)
     signal = xp_promote(signal, force_floating=True, xp=xp)
@@ -797,6 +835,18 @@ def symiirorder2(input, r, omega, precision=-1.0):
     -------
     output : ndarray
         The filtered signal.
+
+    Examples
+    --------
+    Apply a second-order symmetric IIR filter to a ramp signal:
+
+    >>> from scipy.signal import symiirorder2
+    >>> import numpy as np
+    >>> sig = np.arange(50, dtype=float)
+    >>> out = symiirorder2(sig, 0.5, 0.3)
+    >>> out.shape
+    (50,)
+
     """
     xp = array_namespace(input)
     input = xp_promote(input, force_floating=True, xp=xp)

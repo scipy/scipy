@@ -1620,6 +1620,24 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
 
+    Examples
+    --------
+    Apply a median filter with a window size of 3 to a 1-D signal:
+
+    >>> from scipy.signal import medfilt
+    >>> import numpy as np
+    >>> x = np.array([1, 10, 2, 3, 4])
+    >>> medfilt(x, 3)
+    array([1, 2, 3, 3, 3])
+
+    Apply a 3x3 median filter to a 2-D array:
+
+    >>> x2 = np.array([[1, 10, 2], [3, 4, 5], [6, 7, 8]])
+    >>> medfilt(x2, 3)
+    array([[0, 2, 0],
+           [3, 5, 4],
+           [0, 4, 0]])
+
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
@@ -2284,6 +2302,27 @@ def lfiltic(b, a, y, x=None):
     See Also
     --------
     lfilter, lfilter_zi
+
+    Examples
+    --------
+    Construct initial conditions for a first-order IIR filter with known
+    previous output:
+
+    >>> from scipy.signal import lfiltic, lfilter
+    >>> import numpy as np
+    >>> b = [1, 0]
+    >>> a = [1, -0.5]
+    >>> y = [1.0]  # previous output y[-1] = 1.0
+    >>> zi = lfiltic(b, a, y)
+    >>> zi
+    array([0.5])
+
+    Use these initial conditions to filter a signal:
+
+    >>> x = np.ones(5)
+    >>> y, _ = lfilter(b, a, x, zi=zi)
+    >>> y
+    array([1.5    , 1.75   , 1.875  , 1.9375 , 1.96875])
 
     """
     xp = array_namespace(a, b, y, x)
@@ -3160,6 +3199,21 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     --------
     residue, invresz, unique_roots
 
+    Examples
+    --------
+    Reconstruct a transfer function from its partial fraction expansion.
+    Given H(s) = -1/(s-1) + 2/(s-2):
+
+    >>> from scipy.signal import invres
+    >>> r = [-1, 2]
+    >>> p = [1, 2]
+    >>> k = []
+    >>> b, a = invres(r, p, k)
+    >>> b
+    array([1., 0.])
+    >>> a
+    array([ 1., -3.,  2.])
+
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
@@ -3307,6 +3361,31 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     .. [1] J. F. Mahoney, B. D. Sivazlian, "Partial fractions expansion: a
            review of computational methodology and efficiency", Journal of
            Computational and Applied Mathematics, Vol. 9, 1983.
+
+    Examples
+    --------
+    Compute the partial fraction expansion of
+    H(s) = s / (s^2 - 3s + 2) = s / ((s-1)(s-2)):
+
+    >>> from scipy.signal import residue
+    >>> r, p, k = residue([1, 0], [1, -3, 2])
+    >>> r
+    array([-1.,  2.])
+    >>> p
+    array([1., 2.])
+    >>> k
+    array([], dtype=float64)
+
+    This means H(s) = -1/(s-1) + 2/(s-2).  We can verify by
+    reconstructing the transfer function with `invres`:
+
+    >>> from scipy.signal import invres
+    >>> b, a = invres(r, p, k)
+    >>> b
+    array([1., 0.])
+    >>> a
+    array([ 1., -3.,  2.])
+
     """
     b = np.asarray(b)
     a = np.asarray(a)
@@ -3402,6 +3481,30 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     See Also
     --------
     invresz, residue, unique_roots
+
+    Examples
+    --------
+    Compute the partial fraction expansion of the discrete-time transfer
+    function H(z) = 1 / (1 - 0.5z^{-1}):
+
+    >>> from scipy.signal import residuez
+    >>> r, p, k = residuez([1], [1, -0.5])
+    >>> r
+    array([1.])
+    >>> p
+    array([0.5])
+    >>> k
+    array([], dtype=float64)
+
+    Reconstruct the transfer function with `invresz`:
+
+    >>> from scipy.signal import invresz
+    >>> b, a = invresz(r, p, k)
+    >>> b
+    array([1.])
+    >>> a
+    array([ 1. , -0.5])
+
     """
     b = np.asarray(b)
     a = np.asarray(a)
@@ -3536,6 +3639,21 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     See Also
     --------
     residuez, unique_roots, invres
+
+    Examples
+    --------
+    Reconstruct a discrete-time transfer function from its partial fraction
+    expansion. Given H(z) = 1 / (1 - 0.5z^{-1}):
+
+    >>> from scipy.signal import invresz
+    >>> r = [1.0]
+    >>> p = [0.5]
+    >>> k = []
+    >>> b, a = invresz(r, p, k)
+    >>> b
+    array([1.])
+    >>> a
+    array([ 1. , -0.5])
 
     """
     r = np.atleast_1d(r)
@@ -4129,6 +4247,27 @@ def vectorstrength(events, period):
         when we vary the "probing" frequency while keeping the spike times
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
+
+    Examples
+    --------
+    Events perfectly synchronized to a period of 1.0 give a vector strength
+    of 1.0:
+
+    >>> from scipy.signal import vectorstrength
+    >>> import numpy as np
+    >>> events = np.array([0.0, 1.0, 2.0, 3.0])
+    >>> strength, phase = vectorstrength(events, 1.0)
+    >>> np.isclose(strength, 1.0)
+    True
+
+    Events uniformly spread across one period produce a vector strength
+    near zero:
+
+    >>> events = np.array([0.0, 0.25, 0.5, 0.75])
+    >>> strength, phase = vectorstrength(events, 1.0)
+    >>> np.isclose(strength, 0.0, atol=1e-10)
+    True
+
     '''
     xp = array_namespace(events, period)
 

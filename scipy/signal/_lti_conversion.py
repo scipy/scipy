@@ -347,6 +347,24 @@ def zpk2ss(z, p, k):
         State space representation of the system, in controller canonical
         form.
 
+    Examples
+    --------
+    Convert a system with a zero at s = -1, poles at s = -2 and s = -3,
+    and gain 5 to state-space form:
+
+    >>> from scipy.signal import zpk2ss
+    >>> A, B, C, D = zpk2ss([-1], [-2, -3], 5)
+    >>> A
+    array([[-5., -6.],
+           [ 1.,  0.]])
+    >>> B
+    array([[1.],
+           [0.]])
+    >>> C
+    array([[5., 5.]])
+    >>> D
+    array([[0.]])
+
     """
     return tf2ss(*zpk2tf(z, p, k))
 
@@ -376,6 +394,24 @@ def ss2zpk(A, B, C, D, input=0):
         Zeros and poles.
     k : float
         System gain.
+
+    Examples
+    --------
+    Convert state-space matrices back to zero-pole-gain form:
+
+    >>> from scipy.signal import ss2zpk
+    >>> import numpy as np
+    >>> A = np.array([[-5., -6.], [1., 0.]])
+    >>> B = np.array([[1.], [0.]])
+    >>> C = np.array([[5., 5.]])
+    >>> D = np.array([[0.]])
+    >>> z, p, k = ss2zpk(A, B, C, D)
+    >>> z
+    array([-1.])
+    >>> p
+    array([-3., -2.])
+    >>> k
+    5.0
 
     """
     return tf2zpk(*ss2tf(A, B, C, D, input=input))

@@ -977,6 +977,12 @@ def sosfreqz(*args, **kwargs):
         New code should use the function :func:`scipy.signal.freqz_sos`.
         This function became obsolete from version 1.15.0.
 
+    Examples
+    --------
+    This function is a legacy alias for `freqz_sos`. New code should use
+    `scipy.signal.freqz_sos` directly. See `freqz_sos` for full
+    documentation and examples.
+
     """  # numpydoc ignore=RT01
     return freqz_sos(*args, **kwargs)
 
@@ -1446,6 +1452,23 @@ def sos2zpk(sos):
     even if some of these are (effectively) zero.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Convert a system of two second-order sections to zero-pole-gain form:
+
+    >>> from scipy.signal import sos2zpk
+    >>> import numpy as np
+    >>> sos = np.array([[1, 0, -1, 1, 0, -0.81],
+    ...                 [1, 0,  0, 1, 0, -0.49]])
+    >>> z, p, k = sos2zpk(sos)
+    >>> z
+    array([-1.+0.j,  1.+0.j,  0.+0.j,  0.+0.j])
+    >>> p
+    array([-0.9+0.j,  0.9+0.j, -0.7+0.j,  0.7+0.j])
+    >>> k
+    1.0
+
     """
     xp = array_namespace(sos)
     sos = xp.asarray(sos)
@@ -4673,6 +4696,25 @@ def buttap(N, *, xp=None, device=None):
     --------
     butter : Filter design function using this prototype
 
+    Examples
+    --------
+    Design a 5th-order Butterworth analog prototype and plot the poles
+    in the complex plane. All poles lie on the unit circle in the left
+    half-plane:
+
+    >>> from scipy.signal import buttap
+    >>> import numpy as np
+    >>> z, p, k = buttap(5)
+    >>> z  # Butterworth has no zeros
+    array([], dtype=float64)
+    >>> k
+    1.0
+
+    The poles are evenly spaced on the left half of the unit circle:
+
+    >>> np.abs(p)  # all magnitudes are 1
+    array([1., 1., 1., 1., 1.])
+
     """
     if xp is None:
         xp = np_compat
@@ -4715,6 +4757,22 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     See Also
     --------
     cheby1 : Filter design function using this prototype
+
+    Examples
+    --------
+    Design a 4th-order Chebyshev type I analog prototype with 1 dB passband
+    ripple:
+
+    >>> from scipy.signal import cheb1ap
+    >>> z, p, k = cheb1ap(4, 1)
+    >>> z  # Chebyshev type I has no zeros
+    array([], dtype=float64)
+
+    The poles lie on an ellipse in the left half of the complex plane:
+
+    >>> p  # doctest: +NORMALIZE_WHITESPACE
+    array([-0.139536  +0.98337916j, -0.33686969+0.40732899j,
+           -0.33686969-0.40732899j, -0.139536  -0.98337916j])
 
     """
     if xp is None:
@@ -4776,6 +4834,20 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     See Also
     --------
     cheby2 : Filter design function using this prototype
+
+    Examples
+    --------
+    Design a 4th-order Chebyshev type II analog prototype with 40 dB
+    stopband attenuation:
+
+    >>> from scipy.signal import cheb2ap
+    >>> z, p, k = cheb2ap(4, 40)
+
+    Unlike Chebyshev type I, type II has finite zeros:
+
+    >>> z  # doctest: +NORMALIZE_WHITESPACE
+    array([-0.        -1.0823922j , -0.        -2.61312593j,
+            0.        +2.61312593j,  0.        +1.0823922j ])
 
     """
     if xp is None:
@@ -4981,6 +5053,21 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
 
     .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
            https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
+
+    Examples
+    --------
+    Design a 4th-order elliptic analog prototype with 1 dB passband ripple
+    and 40 dB stopband attenuation:
+
+    >>> from scipy.signal import ellipap
+    >>> z, p, k = ellipap(4, 1, 40)
+
+    Elliptic filters have both finite zeros and poles:
+
+    >>> len(z), len(p)
+    (4, 4)
+    >>> k
+    0.009999999999999997
 
     """
     if xp is None:
@@ -5333,6 +5420,24 @@ def besselap(N, norm='phase', *, xp=None, device=None):
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
+
+    Examples
+    --------
+    Design a 4th-order Bessel analog prototype with the default phase-matched
+    normalization:
+
+    >>> from scipy.signal import besselap
+    >>> z, p, k = besselap(4)
+    >>> z  # Bessel filters have no finite zeros
+    array([], dtype=float64)
+    >>> k  # Phase normalization always gives unity gain
+    1.0
+
+    With delay normalization, the group delay in the passband is 1:
+
+    >>> _, _, k_delay = besselap(4, norm='delay')
+    >>> k_delay
+    105.0
 
     """
     if xp is None:
