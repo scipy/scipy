@@ -3691,10 +3691,23 @@ class ContinuousDistribution(UnivariateDistribution):
         return super()._overrides(method_name)
 
     def _pmf_formula(self, x, **params):
-        return np.zeros_like(x)
+        # using idiom from DiscreteDistribution `_pdf_formula` for now;
+        # this will be removed if gh-24582 is merged with item #1 included,
+        # and will be replaced with something more concise/readable otherwise.
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan, 0.)
 
     def _logpmf_formula(self, x, **params):
-        return np.full_like(x, -np.inf)
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan, -np.inf)
 
     def _pxf_dispatch(self, x, *, method=None, **params):
         return self._pdf_dispatch(x, method=method, **params)
@@ -5261,7 +5274,7 @@ class Mixture(_ProbabilityDistribution):
     >>> Y = Poisson(mu=lmb)
     >>> ZIP = stats.Mixture((X, Y), weights=(pi, 1-pi))
     >>> true_mean = (1 - pi) * lmb  # see e.g. [2]
-    >>> print(np.allclose(ZIP.mean(), true_mean)
+    >>> print(np.allclose(ZIP.mean(), true_mean))
     True
     >>> true_variance = lmb*(1 - pi)*(1 + pi*lmb)  # see e.g. [2]
     >>> print(np.allclose(ZIP.variance(), true_variance))

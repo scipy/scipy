@@ -197,7 +197,6 @@ discrete_families = [
 
 families = continuous_families + discrete_families
 
-
 class TestDistributions:
     @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
     @settings(max_examples=20)
@@ -234,6 +233,8 @@ class TestDistributions:
                               ('kurtosis', {'cache'}, None),
                               ('pdf', {'log/exp'}, 'x'),
                               ('logpdf', {'log/exp'}, 'x'),
+                              ('pmf', {'log/exp'}, 'x'),  # add these when nan
+                              ('logpmf', {'log/exp'}, 'x'),
                               ('logcdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
                               ('cdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
                               ('logccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
@@ -454,8 +455,7 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
 
     # Remove this after fixing `draw`
     tol_override = {'atol': 1e-15}
-    # Mean can be 0, which makes logmean -inf.
-    if fname in {'logmean', 'mean', 'logskewness', 'skewness'}:
+    if fname in {'mean', 'skewness'}:
         tol_override = {'atol': 1e-15}
     elif fname in {'mode'}:
         # can only expect about half of machine precision for optimization
@@ -646,12 +646,20 @@ def check_nans_and_edges(dist, fname, arg, res):
         assert_equal(res[endpoint_arg == -1], b[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], a[endpoint_arg == 1])
 
-    exclude = {'logmean', 'mean', 'logskewness', 'skewness', 'support'}
+    exclude = {'mean', 'variance', 'support'}
+    if isinstance(dist, ContinuousDistribution):
+        # Continuous distributions zero PMF everywhere (-inf in log-space)
+        exclude.update({'logpmf'})
     if isinstance(dist, DiscreteDistribution):
-        exclude.update({'pdf', 'logpdf', 'logentropy'})  # 0 is -inf in log-space
+        # Discrete distributions have infinite pdf at supported points
+        exclude.update({'pdf', 'logpdf'})
 
     if fname not in exclude:
-        assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
+        dist.cache_policy = 'no_cache'
+        variance = dist.variance()
+        dist.cache_policy = None
+        mask_finite = all_valid & (endpoint_arg == 0) & (variance > 0)
+        assert np.isfinite(res[mask_finite]).all()
 
 
 def check_moment_funcs(dist, result_shape):
