@@ -986,10 +986,3 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype):
         # c. with matrix (or batch of matrices)
         np.testing.assert_allclose(x_mat.mT.conj() @ A, x_mat.mT.conj() @ A_)
         # np.testing.assert_allclose(A.rdot(x_mat.mT.conj()), x_mat.mT.conj() @ A_)
-        
-        
-if __name__ == "__main__":
-    T = TestAsLinearOperator()
-    T.setup_method()
-    T.test_basic()
-    T.test_dot()
