@@ -175,6 +175,21 @@ sph_legendre_p = MultiUFunc(
 
     It is the same as the spherical harmonic :math:`Y_{n}^{m}(\theta, \phi)`
     with :math:`\phi = 0`.
+
+    Examples
+    --------
+    Compute the spherical Legendre polynomial of degree 2, order 0
+    at :math:`\theta = \pi/4`:
+
+    >>> import numpy as np
+    >>> from scipy.special import sph_legendre_p
+    >>> sph_legendre_p(2, 0, np.pi / 4)
+    array([0.15769578])
+
+    Include the first derivative by setting ``diff_n=1``:
+
+    >>> sph_legendre_p(2, 0, np.pi / 4, diff_n=1)
+    array([ 0.15769578, -0.9461747 ])
     """, diff_n=0
 )
 
@@ -212,6 +227,21 @@ sph_legendre_p_all = MultiUFunc(
     See Also
     --------
     sph_legendre_p
+
+    Examples
+    --------
+    Compute all spherical Legendre polynomials up to degree 2 and
+    order 1. The output shape is ``(diff_n + 1, n + 1, 2*m + 1)``:
+
+    >>> import numpy as np
+    >>> from scipy.special import sph_legendre_p_all
+    >>> result = sph_legendre_p_all(2, 1, np.pi / 4)
+    >>> result.shape
+    (1, 3, 3)
+    >>> result[0]
+    array([[ 0.28209479,  0.        ,  0.        ],
+           [ 0.34549415, -0.24430126,  0.24430126],
+           [ 0.15769578, -0.3862742 ,  0.3862742 ]])
     """, diff_n=0
 )
 
@@ -284,6 +314,19 @@ assoc_legendre_p = MultiUFunc(
     .. math::
 
         \sqrt{\frac{(2 n + 1) (n - m)!}{2 (n + m)!}}
+
+    Examples
+    --------
+    Compute the associated Legendre polynomial :math:`P_2^1(0.5)`:
+
+    >>> from scipy.special import assoc_legendre_p
+    >>> assoc_legendre_p(2, 1, 0.5)
+    array([-1.29903811])
+
+    Compute the normalized variant:
+
+    >>> assoc_legendre_p(2, 1, 0.5, norm=True)
+    array([-0.83852549])
     """, branch_cut=2, norm=False, diff_n=0
 )
 
@@ -326,6 +369,21 @@ assoc_legendre_p_all = MultiUFunc(
     See Also
     --------
     assoc_legendre_p
+
+    Examples
+    --------
+    Compute all associated Legendre polynomials up to degree 2 and
+    order 1. The output shape is ``(diff_n + 1, n + 1, 2*m + 1)``,
+    where the last axis ranges over orders from ``-m`` to ``m``:
+
+    >>> from scipy.special import assoc_legendre_p_all
+    >>> result = assoc_legendre_p_all(2, 1, 0.5)
+    >>> result.shape
+    (1, 3, 3)
+    >>> result[0]
+    array([[ 1.        ,  0.        ,  0.        ],
+           [ 0.5       , -0.8660254 ,  0.4330127 ],
+           [-0.125     , -1.29903811,  0.21650635]])
     """, branch_cut=2, norm=False, diff_n=0
 )
 
@@ -404,6 +462,20 @@ legendre_p = MultiUFunc(
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    Compute the Legendre polynomial :math:`P_2(x)` at ``x = 0.5``:
+
+    >>> from scipy.special import legendre_p
+    >>> legendre_p(2, 0.5)
+    array([-0.125])
+
+    Include the first derivative by setting ``diff_n=1``.
+    :math:`P_2'(x) = 3x`, so :math:`P_2'(0.5) = 1.5`:
+
+    >>> legendre_p(2, 0.5, diff_n=1)
+    array([-0.125,  1.5  ])
     """, diff_n=0
 )
 
@@ -442,6 +514,18 @@ legendre_p_all = MultiUFunc(
     See Also
     --------
     legendre_p
+
+    Examples
+    --------
+    Compute all Legendre polynomials up to degree 3 at ``x = 0.5``.
+    The output shape is ``(diff_n + 1, n + 1)``:
+
+    >>> from scipy.special import legendre_p_all
+    >>> result = legendre_p_all(3, 0.5)
+    >>> result.shape
+    (1, 4)
+    >>> result[0]
+    array([ 1.    ,  0.5   , -0.125 , -0.4375])
     """, diff_n=0
 )
 
@@ -540,6 +624,26 @@ sph_harm_y = MultiUFunc(
     .. [1] Digital Library of Mathematical Functions, 14.30.
            https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
+
+    Examples
+    --------
+    Verify that :math:`Y_0^0 = \frac{1}{2\sqrt{\pi}}`:
+
+    >>> import numpy as np
+    >>> from scipy.special import sph_harm_y
+    >>> sph_harm_y(0, 0, 0.0, 0.0)
+    array(0.28209479+0.j)
+    >>> np.allclose(sph_harm_y(0, 0, 0.0, 0.0), 1 / (2 * np.sqrt(np.pi)))
+    True
+
+    Verify the conjugate symmetry
+    :math:`Y_n^{-m} = (-1)^m \overline{Y_n^m}`:
+
+    >>> theta, phi = np.pi / 4, np.pi / 3
+    >>> y = sph_harm_y(2, 1, theta, phi)
+    >>> y_neg = sph_harm_y(2, -1, theta, phi)
+    >>> np.allclose(y_neg, (-1) * np.conj(y))
+    True
     """, force_complex_output=True, diff_n=0
 )
 
@@ -587,6 +691,21 @@ sph_harm_y_all = MultiUFunc(
     See Also
     --------
     sph_harm_y
+
+    Examples
+    --------
+    Compute all spherical harmonics up to degree 2 and order 1.
+    The output shape is ``(n + 1, 2*m + 1)``:
+
+    >>> import numpy as np
+    >>> from scipy.special import sph_harm_y_all
+    >>> result = sph_harm_y_all(2, 1, np.pi / 4, 0.0)
+    >>> result.shape
+    (3, 3)
+    >>> result
+    array([[ 0.28209479+0.j,  0.        +0.j,  0.        +0.j],
+           [ 0.34549415+0.j, -0.24430126+0.j,  0.24430126+0.j],
+           [ 0.15769578+0.j, -0.3862742 +0.j,  0.3862742 +0.j]])
     """, force_complex_output=True, diff_n=0
 )
 

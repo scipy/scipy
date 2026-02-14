@@ -272,6 +272,15 @@ add_newdoc("bdtr",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the probability of 1 or fewer successes in 3 trials with
+    p = 0.5:
+
+    >>> from scipy.special import bdtr
+    >>> bdtr(1, 3, 0.5)
+    0.5
+
     """)
 
 add_newdoc("bdtrc",
@@ -324,6 +333,16 @@ add_newdoc("bdtrc",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    The survival function is the complement of the CDF:
+
+    >>> from scipy.special import bdtr, bdtrc
+    >>> bdtrc(1, 3, 0.5)
+    0.5
+    >>> 1 - bdtr(1, 3, 0.5)
+    0.5
+
     """)
 
 add_newdoc("bdtri",
@@ -371,6 +390,15 @@ add_newdoc("bdtri",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Find the event probability such that ``bdtr(1, 3, p) = 0.5``:
+
+    >>> from scipy.special import bdtri
+    >>> bdtri(1, 3, 0.5)
+    0.5
+
     """)
 
 add_newdoc("bdtrik",
@@ -424,6 +452,14 @@ add_newdoc("bdtrik",
     .. [3] Barry Brown, James Lovato, and Kathy Russell,
            CDFLIB: Library of Fortran Routines for Cumulative Distribution
            Functions, Inverses, and Other Parameters.
+
+    Examples
+    --------
+    Find the number of successes ``k`` such that ``bdtr(k, 3, 0.5) = 0.5``:
+
+    >>> from scipy.special import bdtrik
+    >>> bdtrik(0.5, 3, 0.5)
+    0.9999999999999961
 
     """)
 
@@ -2347,6 +2383,12 @@ add_newdoc("eval_jacobi",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E7
 
+    Examples
+    --------
+    >>> from scipy.special import eval_jacobi
+    >>> eval_jacobi(3, 0.5, 0.5, 0.5)
+    -0.546875
+
     """)
 
 add_newdoc("eval_sh_jacobi",
@@ -2396,6 +2438,12 @@ add_newdoc("eval_sh_jacobi",
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.1.E2
+
+    Examples
+    --------
+    >>> from scipy.special import eval_sh_jacobi
+    >>> eval_sh_jacobi(3, 2, 1, 0.25)
+    0.013839285714285714
 
     """)
 
@@ -2448,6 +2496,12 @@ add_newdoc("eval_gegenbauer",
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E9
+
+    Examples
+    --------
+    >>> from scipy.special import eval_gegenbauer
+    >>> eval_gegenbauer(3, 1.5, 0.5)
+    -1.5625
 
     """)
 
@@ -2505,6 +2559,12 @@ add_newdoc("eval_chebyt",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E11_2
 
+    Examples
+    --------
+    >>> from scipy.special import eval_chebyt
+    >>> eval_chebyt(3, 0.5)
+    -1.0
+
     """)
 
 add_newdoc("eval_chebyu",
@@ -2554,6 +2614,12 @@ add_newdoc("eval_chebyu",
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E11_4
+
+    Examples
+    --------
+    >>> from scipy.special import eval_chebyu
+    >>> eval_chebyu(3, 0.5)
+    -1.0
 
     """)
 
@@ -2729,6 +2795,12 @@ add_newdoc("eval_sh_chebyt",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E7
 
+    Examples
+    --------
+    >>> from scipy.special import eval_sh_chebyt
+    >>> eval_sh_chebyt(3, 0.25)
+    1.0
+
     """)
 
 add_newdoc("eval_sh_chebyu",
@@ -2776,6 +2848,12 @@ add_newdoc("eval_sh_chebyu",
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E8
+
+    Examples
+    --------
+    >>> from scipy.special import eval_sh_chebyu
+    >>> eval_sh_chebyu(3, 0.25)
+    1.0
 
     """)
 
@@ -2912,6 +2990,12 @@ add_newdoc("eval_sh_legendre",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E10
 
+    Examples
+    --------
+    >>> from scipy.special import eval_sh_legendre
+    >>> eval_sh_legendre(3, 0.25)
+    0.4375
+
     """)
 
 add_newdoc("eval_genlaguerre",
@@ -2967,6 +3051,12 @@ add_newdoc("eval_genlaguerre",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E12
 
+    Examples
+    --------
+    >>> from scipy.special import eval_genlaguerre
+    >>> eval_genlaguerre(3, 1, 0.5)
+    1.479166666666667
+
     """)
 
 add_newdoc("eval_laguerre",
@@ -3020,6 +3110,12 @@ add_newdoc("eval_laguerre",
     .. [DLMF2] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E12
 
+    Examples
+    --------
+    >>> from scipy.special import eval_laguerre
+    >>> eval_laguerre(3, 0.5)
+    -0.14583333333333331
+
      """)
 
 add_newdoc("eval_hermite",
@@ -3066,6 +3162,12 @@ add_newdoc("eval_hermite",
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.T1
+
+    Examples
+    --------
+    >>> from scipy.special import eval_hermite
+    >>> eval_hermite(3, 0.5)
+    -5.000000000000001
 
     """)
 
@@ -3114,6 +3216,12 @@ add_newdoc("eval_hermitenorm",
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.T1
+
+    Examples
+    --------
+    >>> from scipy.special import eval_hermitenorm
+    >>> eval_hermitenorm(3, 0.5)
+    -1.375
 
     """)
 
@@ -4390,6 +4498,18 @@ add_newdoc("kl_div",
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
            :doi:`10.1017/CBO9780511804441`.
+
+    Examples
+    --------
+    >>> from scipy.special import kl_div
+
+    When both arguments are equal, the divergence is zero:
+
+    >>> kl_div(0.5, 0.5)
+    0.0
+
+    >>> kl_div(0.5, 1.0)
+    0.1534264097200273
 
     """)
 
@@ -6597,6 +6717,18 @@ add_newdoc("rel_entr",
            :doi:`10.1017/CBO9780511804441`.
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+
+    Examples
+    --------
+    >>> from scipy.special import rel_entr
+
+    When both arguments are equal, the relative entropy is zero:
+
+    >>> rel_entr(0.5, 0.5)
+    0.0
+
+    >>> rel_entr(0.5, 1.0)
+    -0.34657359027997264
 
     """)
 

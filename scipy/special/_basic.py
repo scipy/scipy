@@ -226,6 +226,13 @@ def jnjnp_zeros(nt):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import jnjnp_zeros
+    >>> jn, jnp, yn, ynp = jnjnp_zeros(3)
+    >>> jn
+    array([0.        , 1.84118378, 2.40482556])
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt > 1200):
         raise ValueError("Number must be integer <= 1200.")
@@ -1315,6 +1322,15 @@ def riccati_jn(n, x):
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
 
+    Examples
+    --------
+    >>> from scipy.special import riccati_jn
+    >>> jn, djn = riccati_jn(2, 1.0)
+    >>> jn
+    array([0.84147098, 0.30116868, 0.06203505])
+    >>> djn
+    array([0.54030231, 0.54030231, 0.17709857])
+
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -1371,6 +1387,15 @@ def riccati_yn(n, x):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
+
+    Examples
+    --------
+    >>> from scipy.special import riccati_yn
+    >>> yn, dyn = riccati_yn(2, 1.0)
+    >>> yn
+    array([-0.54030231, -1.38177329, -3.60501757])
+    >>> dyn
+    array([0.84147098, 0.84147098, 5.82826184])
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -1447,6 +1472,13 @@ def fresnelc_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import fresnelc_zeros
+    >>> fresnelc_zeros(3)
+    array([1.74366749+0.30573506j, 2.6514596 +0.25290396j,
+           3.32035934+0.22395346j])
+
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -1471,6 +1503,13 @@ def fresnels_zeros(nt):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import fresnels_zeros
+    >>> fresnels_zeros(3)
+    array([2.00925701+0.2885479j , 2.83347723+0.24428524j,
+           3.46753308+0.21849268j])
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1498,6 +1537,13 @@ def fresnel_zeros(nt):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import fresnel_zeros
+    >>> zs, zc = fresnel_zeros(3)
+    >>> len(zs), len(zc)
+    (3, 3)
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1529,6 +1575,12 @@ def assoc_laguerre(x, n, k=0.0):
     -----
     `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    Examples
+    --------
+    >>> from scipy.special import assoc_laguerre
+    >>> assoc_laguerre(1.0, 2, 1)
+    0.5
 
     """
     return _ufuncs.eval_genlaguerre(n, k, x)
@@ -1615,6 +1667,13 @@ def mathieu_even_coef(m, q):
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/28.4#i
 
+    Examples
+    --------
+    >>> from scipy.special import mathieu_even_coef
+    >>> c = mathieu_even_coef(2, 5)
+    >>> c[:3]
+    array([ 0.43873717,  0.65364026, -0.42657894])
+
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
@@ -1674,6 +1733,13 @@ def mathieu_odd_coef(m, q):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import mathieu_odd_coef
+    >>> c = mathieu_odd_coef(2, 5)
+    >>> c[:3]
+    array([ 0.93342944, -0.35480392,  0.05296373])
+
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
@@ -1730,6 +1796,15 @@ def lqmn(m, n, z):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import lqmn
+    >>> Lz, Lz_d = lqmn(1, 2, 0.5)
+    >>> Lz.shape
+    (2, 3)
+    >>> Lz[0, 0]
+    0.5493061443340549
 
     """
     if not isscalar(m) or (m < 0):
@@ -2082,6 +2157,14 @@ def lmbda(v, x):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] Jahnke, E. and Emde, F. "Tables of Functions with Formulae and
            Curves" (4th ed.), Dover, 1945
+
+    Examples
+    --------
+    >>> from scipy.special import lmbda
+    >>> lam, lam_d = lmbda(2, 1.0)
+    >>> lam
+    array([0.76519769, 0.88010117, 0.91922788])
+
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -2124,6 +2207,13 @@ def pbdv_seq(v, x):
            Functions", John Wiley and Sons, 1996, chapter 13.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import pbdv_seq
+    >>> dv, dp = pbdv_seq(2, 0.5)
+    >>> dv
+    array([ 0.93941306,  0.46970653, -0.7045598 ])
+
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -2160,6 +2250,13 @@ def pbvv_seq(v, x):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 13.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import pbvv_seq
+    >>> vv, vp = pbvv_seq(2, 0.5)
+    >>> vv
+    array([ 0.39099051, -0.65384844, -0.35895737])
 
     """
     if not (isscalar(v) and isscalar(x)):
@@ -2198,6 +2295,15 @@ def pbdn_seq(n, z):
            Functions", John Wiley and Sons, 1996, chapter 13.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import pbdn_seq
+    >>> dv, dp = pbdn_seq(2, 0.5+0.5j)
+    >>> dv.shape
+    (3,)
+    >>> dv[0]
+    (0.9645049185174789+0.04757888523894056j)
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -2234,6 +2340,12 @@ def ber_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import ber_zeros
+    >>> ber_zeros(3)
+    array([ 2.84891782,  7.23882945, 11.67396355])
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -2262,6 +2374,12 @@ def bei_zeros(nt):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import bei_zeros
+    >>> bei_zeros(3)
+    array([ 5.02622395,  9.4554063 , 13.89348785])
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -2292,6 +2410,12 @@ def ker_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import ker_zeros
+    >>> ker_zeros(3)
+    array([ 1.71854296,  6.12727913, 10.56294271])
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -2320,6 +2444,12 @@ def kei_zeros(nt):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import kei_zeros
+    >>> kei_zeros(3)
+    array([ 3.91466761,  8.34422506, 12.78255715])
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -2388,6 +2518,12 @@ def beip_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import beip_zeros
+    >>> beip_zeros(3)
+    array([ 3.7726733 ,  8.28098785, 12.74214752])
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -2416,6 +2552,12 @@ def kerp_zeros(nt):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import kerp_zeros
+    >>> kerp_zeros(3)
+    array([ 2.66583979,  7.17212212, 11.63218639])
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -2446,6 +2588,12 @@ def keip_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import keip_zeros
+    >>> keip_zeros(3)
+    array([ 4.93181194,  9.40405458, 13.85826916])
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -2466,6 +2614,15 @@ def kelvin_zeros(nt):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import kelvin_zeros
+    >>> result = kelvin_zeros(3)
+    >>> len(result)
+    8
+    >>> result[0]
+    array([ 2.84891782,  7.23882945, 11.67396355])
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -2498,6 +2655,12 @@ def pro_cv_seq(m, n, c):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    >>> from scipy.special import pro_cv_seq
+    >>> pro_cv_seq(0, 3, 1.0)
+    array([ 0.31900006,  2.59308458,  6.5334718 , 12.51446215])
+
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
         raise ValueError("Arguments must be scalars.")
@@ -2526,6 +2689,12 @@ def obl_cv_seq(m, n, c):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import obl_cv_seq
+    >>> obl_cv_seq(0, 3, 1.0)
+    array([-0.3486024 ,  1.39320631,  5.48680005, 11.4921209 ])
 
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):

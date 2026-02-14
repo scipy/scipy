@@ -443,6 +443,15 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_jacobi
+    >>> x, w = roots_sh_jacobi(3, 2, 1)
+    >>> x
+    array([0.08858796, 0.40946686, 0.78765946])
+    >>> w
+    array([0.20093191, 0.22924111, 0.06982698])
+
     """
     if (p1-q1) <= -1 or q1 <= 0:
         message = "(p - q) must be greater than -1, and q must be greater than 0."
@@ -492,6 +501,13 @@ def sh_jacobi(n, p, q, monic=False):
     For fixed :math:`p, q`, the polynomials :math:`G_n^{(p, q)}` are
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
+
+    Examples
+    --------
+    >>> from scipy.special import sh_jacobi
+    >>> poly = sh_jacobi(3, 2, 1)
+    >>> poly.order
+    3
 
     """
     if n < 0:
@@ -553,6 +569,15 @@ def roots_genlaguerre(n, alpha, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_genlaguerre
+    >>> x, w = roots_genlaguerre(3, 1)
+    >>> x
+    array([0.93582223, 3.30540729, 7.75877048])
+    >>> w
+    array([0.58868148, 0.39121606, 0.02010246])
 
     """
     m = int(n)
@@ -724,6 +749,15 @@ def roots_laguerre(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_laguerre
+    >>> x, w = roots_laguerre(3)
+    >>> x
+    array([0.41577456, 2.29428036, 6.28994508])
+    >>> w
+    array([0.71109301, 0.27851773, 0.01038926])
+
     """
     return roots_genlaguerre(n, 0.0, mu=mu)
 
@@ -884,6 +918,15 @@ def roots_hermite(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_hermite
+    >>> x, w = roots_hermite(3)
+    >>> x
+    array([-1.22474487,  0.        ,  1.22474487])
+    >>> w
+    array([0.29540898, 1.1816359 , 0.29540898])
 
     """
     m = int(n)
@@ -1405,6 +1448,15 @@ def roots_hermitenorm(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_hermitenorm
+    >>> x, w = roots_hermitenorm(3)
+    >>> x
+    array([-1.73205081,  0.        ,  1.73205081])
+    >>> w
+    array([0.41777138, 1.67108552, 0.41777138])
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1460,6 +1512,12 @@ def hermitenorm(n, monic=False):
 
     The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2/2}`.
+
+    Examples
+    --------
+    >>> from scipy.special import hermitenorm
+    >>> hermitenorm(3)(1)
+    -2.0
 
     """
     if n < 0:
@@ -1523,6 +1581,15 @@ def roots_gegenbauer(n, alpha, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_gegenbauer
+    >>> x, w = roots_gegenbauer(3, 1.5)
+    >>> x
+    array([-0.65465367,  0.        ,  0.65465367])
+    >>> w
+    array([0.31111111, 0.71111111, 0.31111111])
 
     """
     m = int(n)
@@ -1686,6 +1753,15 @@ def roots_chebyt(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebyt
+    >>> x, w = roots_chebyt(3)
+    >>> x
+    array([-0.8660254,  0.       ,  0.8660254])
+    >>> w
+    array([1.04719755, 1.04719755, 1.04719755])
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1845,6 +1921,16 @@ def roots_chebyu(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import roots_chebyu
+    >>> x, w = roots_chebyu(3)
+    >>> np.allclose(x, [-np.sqrt(2)/2, 0, np.sqrt(2)/2])
+    True
+    >>> w
+    array([0.39269908, 0.78539816, 0.39269908])
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1994,6 +2080,15 @@ def roots_chebyc(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_chebyc
+    >>> x, w = roots_chebyc(3)
+    >>> x
+    array([-1.73205081,  0.        ,  1.73205081])
+    >>> w
+    array([2.0943951, 2.0943951, 2.0943951])
+
     """
     x, w, m = roots_chebyt(n, True)
     x *= 2
@@ -2037,6 +2132,12 @@ def chebyc(n, monic=False):
     ----------
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import chebyc
+    >>> chebyc(3)(1)
+    -2.0
 
     """
     if n < 0:
@@ -2099,6 +2200,16 @@ def roots_chebys(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import roots_chebys
+    >>> x, w = roots_chebys(3)
+    >>> np.allclose(x, [-np.sqrt(2), 0, np.sqrt(2)])
+    True
+    >>> w
+    array([0.78539816, 1.57079633, 0.78539816])
+
     """
     x, w, m = roots_chebyu(n, True)
     x *= 2
@@ -2142,6 +2253,12 @@ def chebys(n, monic=False):
     ----------
     .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
            Section 22. National Bureau of Standards, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import chebys
+    >>> chebys(3)(1)
+    -1.0
 
     """
     if n < 0:
@@ -2205,6 +2322,15 @@ def roots_sh_chebyt(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_chebyt
+    >>> x, w = roots_sh_chebyt(3)
+    >>> x
+    array([0.0669873, 0.5      , 0.9330127])
+    >>> w
+    array([1.04719755, 1.04719755, 1.04719755])
+
     """
     xw = roots_chebyt(n, mu)
     return ((xw[0] + 1) / 2,) + xw[1:]
@@ -2233,6 +2359,12 @@ def sh_chebyt(n, monic=False):
     -----
     The polynomials :math:`T^*_n` are orthogonal over :math:`[0, 1]`
     with weight function :math:`(x - x^2)^{-1/2}`.
+
+    Examples
+    --------
+    >>> from scipy.special import sh_chebyt
+    >>> sh_chebyt(3)(1)
+    1.0
 
     """
     base = sh_jacobi(n, 0.0, 0.5, monic=monic)
@@ -2284,6 +2416,15 @@ def roots_sh_chebyu(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_chebyu
+    >>> x, w = roots_sh_chebyu(3)
+    >>> x
+    array([0.14644661, 0.5       , 0.85355339])
+    >>> w
+    array([0.09817477, 0.19634954, 0.09817477])
+
     """
     x, w, m = roots_chebyu(n, True)
     x = (x + 1) / 2
@@ -2318,6 +2459,12 @@ def sh_chebyu(n, monic=False):
     -----
     The polynomials :math:`U^*_n` are orthogonal over :math:`[0, 1]`
     with weight function :math:`(x - x^2)^{1/2}`.
+
+    Examples
+    --------
+    >>> from scipy.special import sh_chebyu
+    >>> sh_chebyu(3)(1)
+    4.0
 
     """
     base = sh_jacobi(n, 2.0, 1.5, monic=monic)
@@ -2547,6 +2694,15 @@ def roots_sh_legendre(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> from scipy.special import roots_sh_legendre
+    >>> x, w = roots_sh_legendre(3)
+    >>> x
+    array([0.11270167, 0.5       , 0.88729833])
+    >>> w
+    array([0.27777778, 0.44444444, 0.27777778])
 
     """
     x, w = roots_legendre(n)

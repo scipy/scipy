@@ -654,6 +654,12 @@ const char *beip_doc = R"(
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
 
+    Examples
+    --------
+    >>> from scipy.special import beip
+    >>> beip(1.0)
+    0.49739651146809727
+
     )";
 
 const char *ber_doc = R"(
@@ -732,6 +738,12 @@ const char *berp_doc = R"(
     ----------
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
+
+    Examples
+    --------
+    >>> from scipy.special import berp
+    >>> berp(1.0)
+    -0.06244575217903096
 
     )";
 
@@ -1076,6 +1088,13 @@ const char *ellipj_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> from scipy.special import ellipj
+    >>> sn, cn, dn, ph = ellipj(0.5, 0.5)
+    >>> sn
+    0.47075047365565736
     )";
 
 const char *ellipkm1_doc = R"(
@@ -1130,6 +1149,12 @@ const char *ellipkm1_doc = R"(
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> from scipy.special import ellipkm1
+    >>> ellipkm1(0.5)
+    1.8540746773013719
     )";
 
 const char *ellipk_doc = R"(
@@ -1185,6 +1210,12 @@ const char *ellipk_doc = R"(
     .. [2] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    >>> from scipy.special import ellipk
+    >>> ellipk(0.5)
+    1.8540746773013719
     )";
 
 const char *ellipkinc_doc = R"(
@@ -1247,6 +1278,12 @@ const char *ellipkinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    >>> from scipy.special import ellipkinc
+    >>> ellipkinc(0.5, 0.5)
+    0.5104671356280046
     )";
 
 const char *xlogy_doc = R"(
@@ -2684,6 +2721,12 @@ const char *hankel1e_doc = R"(
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    >>> from scipy.special import hankel1e
+    >>> hankel1e(1, 1.0)
+    (-0.41960757590749614-0.792380888474382j)
     )";
 
 const char *hankel2_doc = R"(
@@ -2729,6 +2772,12 @@ const char *hankel2_doc = R"(
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    >>> from scipy.special import hankel2
+    >>> hankel2(1, 1.0)
+    (0.44005058574493355+0.7812128213002889j)
     )";
 
 const char *hankel2e_doc = R"(
@@ -2774,6 +2823,12 @@ const char *hankel2e_doc = R"(
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    >>> from scipy.special import hankel2e
+    >>> hankel2e(1, 1.0)
+    (-0.41960757590749614+0.792380888474382j)
 
     )";
 
@@ -4389,6 +4444,12 @@ const char *keip_doc = R"(
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
 
+    Examples
+    --------
+    >>> from scipy.special import keip
+    >>> keip(1.0)
+    0.3523699133361705
+
     )";
 
 const char *kelvin_doc = R"(
@@ -4411,6 +4472,13 @@ const char *kelvin_doc = R"(
         derivatives evaluated at `x`.  For example, kelvin(x)[0].real =
         ber x and kelvin(x)[0].imag = bei x with similar relationships
         for ker and kei.
+
+    Examples
+    --------
+    >>> from scipy.special import kelvin
+    >>> ber, bei, ker, kei = kelvin(1.0)
+    >>> ber
+    (0.984381781213087+0.24956604003665972j)
     )";
 
 const char *ker_doc = R"(
@@ -4490,6 +4558,12 @@ const char *kerp_doc = R"(
     ----------
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
+
+    Examples
+    --------
+    >>> from scipy.special import kerp
+    >>> kerp(1.0)
+    -0.6946038911006908
 
     )";
 
@@ -5370,6 +5444,12 @@ const char *mathieu_a_doc = R"(
     --------
     mathieu_b, mathieu_cem, mathieu_sem
 
+    Examples
+    --------
+    >>> from scipy.special import mathieu_a
+    >>> mathieu_a(1, 1.0)
+    1.8591080725143634
+
     )";
 
 const char *mathieu_b_doc = R"(
@@ -5395,6 +5475,12 @@ const char *mathieu_b_doc = R"(
     See Also
     --------
     mathieu_a, mathieu_cem, mathieu_sem
+
+    Examples
+    --------
+    >>> from scipy.special import mathieu_b
+    >>> mathieu_b(1, 1.0)
+    -0.11024881699209521
 
     )";
 
@@ -5498,6 +5584,13 @@ const char *mathieu_modcem1_doc = R"(
     --------
     mathieu_modsem1
 
+    Examples
+    --------
+    >>> from scipy.special import mathieu_modcem1
+    >>> val, deriv = mathieu_modcem1(1, 1.0, 1.0)
+    >>> val
+    0.40718809884858753
+
     )";
 
 const char *mathieu_modcem2_doc = R"(
@@ -5530,6 +5623,13 @@ const char *mathieu_modcem2_doc = R"(
     See Also
     --------
     mathieu_modsem2
+
+    Examples
+    --------
+    >>> from scipy.special import mathieu_modcem2
+    >>> val, deriv = mathieu_modcem2(1, 1.0, 1.0)
+    >>> val
+    0.3023577458361811
 
     )";
 
@@ -5564,6 +5664,13 @@ const char *mathieu_modsem1_doc = R"(
     --------
     mathieu_modcem1
 
+    Examples
+    --------
+    >>> from scipy.special import mathieu_modsem1
+    >>> val, deriv = mathieu_modsem1(1, 1.0, 1.0)
+    >>> val
+    0.4571569664985514
+
     )";
 
 const char *mathieu_modsem2_doc = R"(
@@ -5596,6 +5703,13 @@ const char *mathieu_modsem2_doc = R"(
     See Also
     --------
     mathieu_modcem2
+
+    Examples
+    --------
+    >>> from scipy.special import mathieu_modsem2
+    >>> val, deriv = mathieu_modsem2(1, 1.0, 1.0)
+    >>> val
+    0.1379349011479173
 
     )";
 
@@ -5691,6 +5805,11 @@ const char *modfresnelm_doc = R"(
     --------
     modfresnelp
 
+    Examples
+    --------
+    >>> from scipy.special import modfresnelm
+    >>> fm, km = modfresnelm(1.0)
+
     )";
 
 const char *modfresnelp_doc = R"(
@@ -5715,6 +5834,11 @@ const char *modfresnelp_doc = R"(
     See Also
     --------
     modfresnelm
+
+    Examples
+    --------
+    >>> from scipy.special import modfresnelp
+    >>> fp, kp = modfresnelp(1.0)
 
     )";
 
@@ -5750,6 +5874,13 @@ const char *obl_ang1_doc = R"(
     See Also
     --------
     obl_ang1_cv
+
+    Examples
+    --------
+    >>> from scipy.special import obl_ang1
+    >>> val, deriv = obl_ang1(0, 0, 1.0, 0.5)
+    >>> val
+    1.0441336969542285
 
     )";
 
@@ -5846,6 +5977,14 @@ const char *obl_ang1_cv_doc = R"(
     --------
     obl_ang1
 
+    Examples
+    --------
+    >>> from scipy.special import obl_ang1_cv, obl_cv
+    >>> cv = obl_cv(0, 0, 1.0)
+    >>> val, deriv = obl_ang1_cv(0, 0, 1.0, cv, 0.5)
+    >>> val
+    1.0441336969542285
+
     )";
 
 const char *obl_cv_doc = R"(
@@ -5871,6 +6010,12 @@ const char *obl_cv_doc = R"(
     -------
     cv : scalar or ndarray
         Characteristic value
+
+    Examples
+    --------
+    >>> from scipy.special import obl_cv
+    >>> obl_cv(0, 0, 1.0)
+    -0.34860239947026983
 
     )";
 
@@ -5906,6 +6051,13 @@ const char *obl_rad1_doc = R"(
     See Also
     --------
     obl_rad1_cv
+
+    Examples
+    --------
+    >>> from scipy.special import obl_rad1
+    >>> val, deriv = obl_rad1(0, 0, 1.0, 1.0)
+    >>> val
+    0.7472999495632598
 
     )";
 
@@ -5945,6 +6097,14 @@ const char *obl_rad1_cv_doc = R"(
     --------
     obl_rad1
 
+    Examples
+    --------
+    >>> from scipy.special import obl_rad1_cv, obl_cv
+    >>> cv = obl_cv(0, 0, 1.0)
+    >>> val, deriv = obl_rad1_cv(0, 0, 1.0, cv, 1.0)
+    >>> val
+    0.7472999495632598
+
     )";
 
 const char *obl_rad2_doc = R"(
@@ -5979,6 +6139,13 @@ const char *obl_rad2_doc = R"(
     See Also
     --------
     obl_rad2_cv
+
+    Examples
+    --------
+    >>> from scipy.special import obl_rad2
+    >>> val, deriv = obl_rad2(0, 0, 1.0, 2.0)
+    >>> val
+    0.2547979316777333
 
     )";
 
@@ -6017,6 +6184,14 @@ const char *obl_rad2_cv_doc = R"(
     See Also
     --------
     obl_rad2
+
+    Examples
+    --------
+    >>> from scipy.special import obl_rad2_cv, obl_cv
+    >>> cv = obl_cv(0, 0, 1.0)
+    >>> val, deriv = obl_rad2_cv(0, 0, 1.0, cv, 2.0)
+    >>> val
+    0.2547979316777333
     )";
 
 const char *pbdv_doc = R"(
@@ -6042,6 +6217,13 @@ const char *pbdv_doc = R"(
         Value of the function
     dp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pbdv
+    >>> val, deriv = pbdv(1, 0.5)
+    >>> val
+    0.4697065314067379
     )";
 
 const char *pbvv_doc = R"(
@@ -6067,6 +6249,13 @@ const char *pbvv_doc = R"(
         Value of the function
     vp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pbvv
+    >>> val, deriv = pbvv(1, 0.5)
+    >>> val
+    -0.6538484371138077
     )";
 
 const char *pbwa_doc = R"(
@@ -6111,6 +6300,13 @@ const char *pbwa_doc = R"(
     .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import pbwa
+    >>> val, deriv = pbwa(1, 0.5)
+    >>> val
+    0.4679105355315857
     )";
 
 const char *pro_ang1_doc = R"(
@@ -6141,6 +6337,13 @@ const char *pro_ang1_doc = R"(
         Value of the function
     sp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pro_ang1
+    >>> val, deriv = pro_ang1(0, 0, 1.0, 0.5)
+    >>> val
+    0.9606110837921175
     )";
 
 const char *pro_ang1_cv_doc = R"(
@@ -6174,6 +6377,14 @@ const char *pro_ang1_cv_doc = R"(
         Value of the function
     sp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pro_ang1_cv, pro_cv
+    >>> cv = pro_cv(0, 0, 1.0)
+    >>> val, deriv = pro_ang1_cv(0, 0, 1.0, cv, 0.5)
+    >>> val
+    0.9606110837921175
     )";
 
 const char *pro_cv_doc = R"(
@@ -6199,6 +6410,12 @@ const char *pro_cv_doc = R"(
     -------
     cv : scalar or ndarray
         Characteristic value
+
+    Examples
+    --------
+    >>> from scipy.special import pro_cv
+    >>> pro_cv(0, 0, 1.0)
+    0.31900005514689334
     )";
 
 const char *pro_rad1_doc = R"(
@@ -6229,6 +6446,13 @@ const char *pro_rad1_doc = R"(
         Value of the function
     sp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pro_rad1
+    >>> val, deriv = pro_rad1(0, 0, 1.0, 2.0)
+    >>> val
+    0.5322603846816454
     )";
 
 const char *pro_rad1_cv_doc = R"(
@@ -6262,6 +6486,14 @@ const char *pro_rad1_cv_doc = R"(
         Value of the function
     sp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pro_rad1_cv, pro_cv
+    >>> cv = pro_cv(0, 0, 1.0)
+    >>> val, deriv = pro_rad1_cv(0, 0, 1.0, cv, 2.0)
+    >>> val
+    0.5322603846816454
     )";
 
 const char *pro_rad2_doc = R"(
@@ -6292,6 +6524,13 @@ const char *pro_rad2_doc = R"(
         Value of the function
     sp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pro_rad2
+    >>> val, deriv = pro_rad2(0, 0, 1.0, 2.0)
+    >>> val
+    0.13356117654632796
     )";
 
 const char *pro_rad2_cv_doc = R"(
@@ -6325,6 +6564,14 @@ const char *pro_rad2_cv_doc = R"(
         Value of the function
     sp : scalar or ndarray
         Value of the derivative vs x
+
+    Examples
+    --------
+    >>> from scipy.special import pro_rad2_cv, pro_cv
+    >>> cv = pro_cv(0, 0, 1.0)
+    >>> val, deriv = pro_rad2_cv(0, 0, 1.0, cv, 2.0)
+    >>> val
+    0.13356117654632796
     )";
 
 const char *psi_doc = R"(
