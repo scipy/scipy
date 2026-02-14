@@ -1974,6 +1974,17 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     ----------
     Wright & Nocedal, 'Numerical Optimization', 1999, p. 140.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize import fmin_ncg
+    >>> def f(x):
+    ...     return (x[0] - 1)**2 + (x[1] - 2.5)**2
+    >>> def grad(x):
+    ...     return np.array([2*(x[0] - 1), 2*(x[1] - 2.5)])
+    >>> fmin_ncg(f, [0.0, 0.0], grad, disp=False)
+    array([1. , 2.5])
+
     """
     opts = {'xtol': avextol,
             'eps': epsilon,

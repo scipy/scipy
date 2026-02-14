@@ -1014,6 +1014,27 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     generic_laplace : ndarray
         Filtered array. Has the same shape as `input`.
 
+    Examples
+    --------
+    Compute the Laplacian using a custom second derivative based on
+    `~scipy.ndimage.correlate1d`:
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import generic_laplace, correlate1d
+    >>> def derivative2(input, axis, output, mode, cval):
+    ...     return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
+    >>> a = np.array([[0, 0, 0, 0, 0],
+    ...               [0, 0, 1, 0, 0],
+    ...               [0, 1, 1, 1, 0],
+    ...               [0, 0, 1, 0, 0],
+    ...               [0, 0, 0, 0, 0]], dtype=np.float64)
+    >>> generic_laplace(a, derivative2)
+    array([[ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  2., -3.,  2.,  0.],
+           [ 1., -3.,  0., -3.,  1.],
+           [ 0.,  2., -3.,  2.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.]])
+
     """
     if extra_keywords is None:
         extra_keywords = {}
@@ -1172,6 +1193,27 @@ def generic_gradient_magnitude(input, derivative, output=None,
     -------
     generic_gradient_magnitude : ndarray
         Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    Compute the gradient magnitude using a central difference derivative:
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import generic_gradient_magnitude, correlate1d
+    >>> def derivative(input, axis, output, mode, cval):
+    ...     return correlate1d(input, [-0.5, 0, 0.5], axis, output, mode,
+    ...                        cval, 0)
+    >>> a = np.array([[0, 0, 0, 0, 0],
+    ...               [0, 0, 1, 0, 0],
+    ...               [0, 1, 1, 1, 0],
+    ...               [0, 0, 1, 0, 0],
+    ...               [0, 0, 0, 0, 0]], dtype=np.float64)
+    >>> generic_gradient_magnitude(a, derivative)
+    array([[0.        , 0.        , 0.5       , 0.        , 0.        ],
+           [0.        , 0.70710678, 0.5       , 0.70710678, 0.        ],
+           [0.5       , 0.5       , 0.        , 0.5       , 0.5       ],
+           [0.        , 0.70710678, 0.5       , 0.70710678, 0.        ],
+           [0.        , 0.        , 0.5       , 0.        , 0.        ]])
 
     """
     if extra_keywords is None:

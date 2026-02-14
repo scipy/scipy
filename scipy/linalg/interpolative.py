@@ -480,6 +480,21 @@ def interp_decomp(A, eps_or_k, rand=True, rng=None):
         Column index array.
     proj : :class:`numpy.ndarray`
         Interpolation coefficients.
+
+    Examples
+    --------
+    Compute a rank-5 interpolative decomposition of a random matrix:
+
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> idx, proj = sli.interp_decomp(A, 5)
+    >>> idx[:5]  # doctest: +SKIP
+    array([ 3,  9, 14, 28, 18])
+    >>> proj.shape
+    (5, 25)
+
     """  # numpy/numpydoc#87  # noqa: E501
     from scipy.sparse.linalg import LinearOperator
     rng = np.random.default_rng(rng)
@@ -562,6 +577,20 @@ def reconstruct_matrix_from_id(B, idx, proj):
     -------
     :class:`numpy.ndarray`
         Reconstructed matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> k = 5
+    >>> idx, proj = sli.interp_decomp(A, k)
+    >>> B = A[:, idx[:k]]
+    >>> A_recon = sli.reconstruct_matrix_from_id(B, idx, proj)
+    >>> np.linalg.norm(A - A_recon) / np.linalg.norm(A)  # doctest: +SKIP
+    0.829...
+
     """
     B = np.atleast_2d(_C_contiguous_copy(B))
     if _is_real(B):
@@ -600,6 +629,19 @@ def reconstruct_interp_matrix(idx, proj):
     -------
     :class:`numpy.ndarray`
         Interpolation matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> k = 5
+    >>> idx, proj = sli.interp_decomp(A, k)
+    >>> P = sli.reconstruct_interp_matrix(idx, proj)
+    >>> P.shape
+    (5, 30)
+
     """
     n, krank = len(idx), proj.shape[0]
     if _is_real(proj):
@@ -647,6 +689,19 @@ def reconstruct_skel_matrix(A, k, idx):
     -------
     :class:`numpy.ndarray`
         Skeleton matrix.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> k = 5
+    >>> idx, proj = sli.interp_decomp(A, k)
+    >>> B = sli.reconstruct_skel_matrix(A, k, idx)
+    >>> B.shape
+    (50, 5)
+
     """
     return A[:, idx[:k]]
 
@@ -684,6 +739,20 @@ def id_to_svd(B, idx, proj):
         Singular values.
     V : :class:`numpy.ndarray`
         Right singular vectors.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> k = 5
+    >>> idx, proj = sli.interp_decomp(A, k)
+    >>> B = A[:, idx[:k]]
+    >>> U, S, V = sli.id_to_svd(B, idx, proj)
+    >>> U.shape, S.shape, V.shape
+    ((50, 5), (5,), (30, 5))
+
     """
     B = _C_contiguous_copy(B)
     if _is_real(B):
@@ -720,6 +789,17 @@ def estimate_spectral_norm(A, its=20, rng=None):
     -------
     float
         Spectral norm estimate.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> norm_est = sli.estimate_spectral_norm(A, rng=rng)
+    >>> norm_est  # doctest: +SKIP
+    12.47...
+
     """
     from scipy.sparse.linalg import aslinearoperator
     rng = np.random.default_rng(rng)
@@ -761,6 +841,17 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
     -------
     float
         Spectral norm estimate of matrix difference.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> B = A + 0.01 * rng.standard_normal((50, 30))
+    >>> sli.estimate_spectral_norm_diff(A, B, rng=rng)  # doctest: +SKIP
+    0.12...
+
     """
     from scipy.sparse.linalg import aslinearoperator
     rng = np.random.default_rng(rng)
@@ -825,6 +916,19 @@ def svd(A, eps_or_k, rand=True, rng=None):
         1D array of singular values.
     V : :class:`numpy.ndarray`
         2D array right singular vectors.
+
+    Examples
+    --------
+    Compute a rank-5 SVD via interpolative decomposition:
+
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> U, S, V = sli.svd(A, 5, rng=rng)
+    >>> U.shape, S.shape, V.shape
+    ((50, 5), (5,), (30, 5))
+
     """
     from scipy.sparse.linalg import LinearOperator
     rng = np.random.default_rng(rng)
@@ -916,6 +1020,16 @@ def estimate_rank(A, eps, rng=None):
     -------
     int
         Estimated matrix rank.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.linalg.interpolative as sli
+    >>> rng = np.random.default_rng(0)
+    >>> A = rng.standard_normal((50, 30))
+    >>> sli.estimate_rank(A, 1e-3, rng=rng)  # doctest: +SKIP
+    30
+
     """
     from scipy.sparse.linalg import LinearOperator
 

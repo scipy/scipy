@@ -243,6 +243,22 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     Nash S.G. (1984), "Newton-Type Minimization Via the Lanczos Method",
     SIAM Journal of Numerical Analysis 21, pp. 770-778
 
+    Examples
+    --------
+    Minimize a quadratic function with bounds. When `func` returns both the
+    objective value and the gradient, `fprime` can be omitted:
+
+    >>> import numpy as np
+    >>> from scipy.optimize import fmin_tnc
+    >>> def func_and_grad(x):
+    ...     f = (x[0] - 2)**2 + (x[1] - 1)**2
+    ...     g = np.array([2*(x[0] - 2), 2*(x[1] - 1)])
+    ...     return f, g
+    >>> x, nfeval, rc = fmin_tnc(func_and_grad, [0.0, 0.0],
+    ...                          bounds=[(-5, 5), (-5, 5)], disp=0)
+    >>> x
+    array([2., 1.])
+
     """
     # handle fprime/approx_grad
     if approx_grad:

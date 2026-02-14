@@ -385,6 +385,17 @@ def kstatvar(data, n=2, *, axis=None):
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import kstatvar
+    >>> rng = np.random.default_rng(0)
+    >>> data = rng.normal(0, 1, size=100)
+    >>> kstatvar(data, 1)  # variance of the mean estimator
+    0.009350454790150309
+    >>> kstatvar(data, 2)  # variance of the variance estimator
+    0.012592777495757611
+
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)

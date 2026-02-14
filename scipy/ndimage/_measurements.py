@@ -708,6 +708,17 @@ def sum(input, labels=None, index=None):
     reasons, for new code please prefer `sum_labels`.  See the `sum_labels`
     docstring for more details.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.ndimage import sum as ndsum
+    >>> a = np.array([1, 2, 3, 4])
+    >>> ndsum(a)
+    10
+    >>> labels = np.array([1, 1, 2, 2])
+    >>> ndsum(a, labels, index=[1, 2])
+    array([3., 7.])
+
     """  # numpydoc ignore=RT01
     return sum_labels(input, labels, index)
 
@@ -1647,6 +1658,25 @@ def watershed_ift(input, markers, structure=None, output=None):
     .. [1] A.X. Falcao, J. Stolfi and R. de Alencar Lotufo, "The image
            foresting transform: theory, algorithms, and applications",
            Pattern Analysis and Machine Intelligence, vol. 26, pp. 19-29, 2004.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.ndimage import watershed_ift
+    >>> image = np.array([[0, 0, 0, 5, 5],
+    ...                   [0, 0, 0, 5, 5],
+    ...                   [5, 5, 5, 5, 5],
+    ...                   [5, 5, 5, 0, 0],
+    ...                   [5, 5, 5, 0, 0]], dtype=np.uint8)
+    >>> markers = np.zeros_like(image, dtype=np.int32)
+    >>> markers[0, 0] = 1
+    >>> markers[4, 4] = 2
+    >>> watershed_ift(image, markers)
+    array([[1, 1, 1, 1, 1],
+           [1, 1, 1, 1, 1],
+           [1, 1, 1, 2, 2],
+           [1, 1, 2, 2, 2],
+           [2, 1, 2, 2, 2]])
 
     """
     input = np.asarray(input)

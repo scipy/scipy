@@ -84,6 +84,17 @@ def linprog_verbose_callback(res):
             The number of iterations performed.
         message : str
             A string descriptor of the exit status of the optimization.
+
+    Examples
+    --------
+    Pass as a callback to `linprog` to print progress at each iteration:
+
+    >>> from scipy.optimize import linprog
+    >>> from scipy.optimize._linprog import linprog_verbose_callback
+    >>> res = linprog([-1, -2], A_ub=[[1, 1], [1, 0]], b_ub=[4, 3],
+    ...              method='revised simplex',  # doctest: +SKIP
+    ...              callback=linprog_verbose_callback)
+
     """
     x = res['x']
     fun = res['fun']

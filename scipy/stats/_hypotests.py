@@ -103,6 +103,21 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
+    Examples
+    --------
+    Test whether two samples come from the same distribution:
+
+    >>> import numpy as np
+    >>> from scipy.stats import epps_singleton_2samp
+    >>> rng = np.random.default_rng(0)
+    >>> x = rng.normal(0, 1, size=100)
+    >>> y = rng.normal(0.5, 1, size=100)
+    >>> res = epps_singleton_2samp(x, y)
+    >>> res.statistic
+    8.552948387284649
+    >>> res.pvalue
+    0.07329843027931278
+
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator

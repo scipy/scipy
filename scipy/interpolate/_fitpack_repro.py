@@ -1137,6 +1137,22 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
     .. versionadded:: 1.15.0
+
+    Examples
+    --------
+    Fit a smoothing spline to noisy data:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import make_splrep
+    >>> x = np.linspace(0, 2*np.pi, 20)
+    >>> y = np.sin(x)
+    >>> spl = make_splrep(x, y)
+
+    Evaluate the spline at a new point:
+
+    >>> float(spl(np.pi / 4))  # doctest: +SKIP
+    0.7071...
+
     """  # noqa:E501
     xp = array_namespace(x, y, w, t)
     if t is not None:
@@ -1292,6 +1308,24 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
         20 (1982) 171-184.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    Fit a parametric spline to a unit circle:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import make_splprep
+    >>> theta = np.linspace(0, 2*np.pi, 50)
+    >>> x = np.cos(theta)
+    >>> y = np.sin(theta)
+    >>> spl, u = make_splprep([x, y], s=0)
+
+    Evaluate the spline at a few parameter values:
+
+    >>> result = spl(np.array([0.0, 0.25, 0.5]))
+    >>> result.shape
+    (2, 3)
+
     """  # noqa:E501
 
     bc_type = _validate_bc_type(bc_type)

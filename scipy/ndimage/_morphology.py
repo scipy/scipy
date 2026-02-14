@@ -1794,6 +1794,22 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
     morphological_laplace : ndarray
         Output
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.ndimage import morphological_laplace
+    >>> a = np.array([[0, 0, 0, 0, 0],
+    ...               [0, 1, 1, 1, 0],
+    ...               [0, 1, 2, 1, 0],
+    ...               [0, 1, 1, 1, 0],
+    ...               [0, 0, 0, 0, 0]])
+    >>> morphological_laplace(a, size=(3, 3))
+    array([[ 1,  1,  1,  1,  1],
+           [ 1,  0,  0,  0,  1],
+           [ 1,  0, -1,  0,  1],
+           [ 1,  0,  0,  0,  1],
+           [ 1,  1,  1,  1,  1]])
+
     """
     input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,

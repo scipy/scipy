@@ -1276,6 +1276,19 @@ class LinearMixing(GenericBroyden):
     root : Interface to root finding algorithms for multivariate
            functions. See ``method='linearmixing'`` in particular.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize._nonlin import linearmixing
+    >>> def F(x):
+    ...     d = np.diag([3, 2, 1.5, 1, 0.5])
+    ...     c = 0.01
+    ...     return -d @ x - c * float(x @ x) * x
+    >>> x = linearmixing(F, [1, 1, 1, 1, 1], iter=60, alpha=0.5,
+    ...                  verbose=False)
+    >>> np.linalg.norm(F(x)) < 1e-5
+    True
+
     """
 
     def __init__(self, alpha=None):
@@ -1326,6 +1339,20 @@ class ExcitingMixing(GenericBroyden):
     --------
     root : Interface to root finding algorithms for multivariate
            functions. See ``method='excitingmixing'`` in particular.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize._nonlin import excitingmixing
+    >>> def F(x):
+    ...     d = np.diag([3, 2, 1.5, 1, 0.5])
+    ...     c = 0.01
+    ...     return -d @ x - c * float(x @ x) * x
+    >>> x = excitingmixing(F, [1, 1, 1, 1, 1], iter=20, alpha=0.5,
+    ...                    verbose=False)
+    >>> np.linalg.norm(F(x)) < 1e-3
+    True
+
     """
 
     def __init__(self, alpha=None, alphamax=1.0):
