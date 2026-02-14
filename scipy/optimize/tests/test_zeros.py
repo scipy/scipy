@@ -213,9 +213,7 @@ class TestBracketMethods(TestScalarRootFinders):
     @pytest.mark.parametrize('method', [zeros.bisect, zeros.ridder,
                                         zeros.toms748])
     def test_chandrupatla_collection(self, method):
-        known_fail = {'fun7.4'} if method == zeros.ridder else {}
-        self.run_collection('chandrupatla', method, method.__name__,
-                            known_fail=known_fail)
+        self.run_collection('chandrupatla', method, method.__name__)
 
     @pytest.mark.parametrize('method', bracket_methods)
     def test_lru_cached_individual(self, method):

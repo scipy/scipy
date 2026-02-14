@@ -87,5 +87,3 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     solver_stats->error_num = CONVERR;
     return xn;
 }
-
-
