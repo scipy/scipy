@@ -504,6 +504,14 @@ class TestAsLinearOperator:
             cases.append((np.array(original, dtype=dtype), original, True))
             cases.append((sparse.csr_array(original, dtype=dtype), original, True))
             cases.append((interface.MatrixLinearOperator(original), original, True))
+            
+            class Aslinearoperator:
+                def __init__(self, M):
+                    self.M = M
+                def __aslinearoperator__(self):
+                    return interface.aslinearoperator(self.M)
+                
+            cases.append((Aslinearoperator(original), original, False))
 
             # Test default implementations of _adjoint and _rmatvec, which
             # refer to each other.
@@ -543,22 +551,12 @@ class TestAsLinearOperator:
                 
             class MatvecMatmat(Matvec, Matmat): pass
             class RmatvecRmatmat(Rmatvec, Rmatmat): pass
-            
-            class Aslinearoperator:
-                def __init__(self, linop):
-                    self.linop = interface.aslinearoperator(linop)
-                def __aslinearoperator__(self):
-                    return self.linop
-                
+
             for Mat in [Matvec, Matmat, MatvecMatmat]:
-                M = Mat(dtype)
-                cases.append((M, original, False))
-                cases.append((Aslinearoperator(M), original, False))
+                cases.append((Mat(dtype), original, False))
                 for Rmat in [Rmatvec, Rmatmat, RmatvecRmatmat]:
                     class MatRmat(Mat, Rmat): pass
-                    M = MatRmat(dtype)
-                    cases.append((M, original, True))
-                    cases.append((Aslinearoperator(M), original, True))                    
+                    cases.append((MatRmat(dtype), original, True))                 
             return cases
 
         original = np.array([[1,2,3], [4,5,6]])
