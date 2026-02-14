@@ -2248,6 +2248,61 @@ class TestMixture:
         np.testing.assert_allclose(X.ilogcdf(p), X0.ilogcdf(p))
         np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))
 
+    def test_mixed_continuous_discrete(self):
+        X = stats.Binomial(n=0, p=0)
+        Y = stats.Normal()
+        Z = stats.Mixture((X, Y))
+
+        # These are just spot-checks; reference values are supposed to be
+        # obviously correct. Not the strongest tests, but they should be
+        # sensitive enough to detect major regressions.
+        np.testing.assert_allclose(Z.support(), (-np.inf, np.inf))
+        np.testing.assert_allclose(Z.mean(), 0.)
+        np.testing.assert_allclose(Z.variance(), 0.5)
+        np.testing.assert_allclose(Z.standard_deviation(), np.sqrt(Z.variance()))
+        np.testing.assert_allclose(Z.skewness(), 0.0)
+        np.testing.assert_allclose(Z.kurtosis(), 6.0)
+        np.testing.assert_allclose(Z.logpmf(0), np.log(0.5))
+        np.testing.assert_allclose(Z.logpmf(1), -np.inf)
+        np.testing.assert_allclose(Z.pmf(0), 0.5)
+        np.testing.assert_allclose(Z.pmf(1), 0)
+        np.testing.assert_allclose(Z.logpdf(0), np.inf)
+        np.testing.assert_allclose(Z.logpdf(1), np.log(Y.pdf(1)/2))
+        np.testing.assert_allclose(Z.pdf(0), np.inf)
+        np.testing.assert_allclose(Z.pdf(1), Y.pdf(1)/2)
+        np.testing.assert_allclose(Z.logcdf(0), np.log(0.75))
+        np.testing.assert_allclose(Z.logcdf(-1e-10), np.log(0.25))
+        np.testing.assert_allclose(Z.logcdf(1e-10), np.log(0.75))
+        np.testing.assert_allclose(Z.cdf(0), 0.75)
+        np.testing.assert_allclose(Z.cdf(-1e-10), 0.25)
+        np.testing.assert_allclose(Z.cdf(1e-10), 0.75)
+        np.testing.assert_allclose(Z.logccdf(0), np.log(0.25))
+        np.testing.assert_allclose(Z.logccdf(-1e-10), np.log(0.75))
+        np.testing.assert_allclose(Z.logccdf(1e-10), np.log(0.25))
+        np.testing.assert_allclose(Z.ccdf(0), 0.25)
+        np.testing.assert_allclose(Z.ccdf(-1e-10), 0.75)
+        np.testing.assert_allclose(Z.ccdf(1e-10), 0.25)
+
+        rng = np.random.default_rng(847823487109293)
+        n = 100000
+        sample = Z.sample(shape=n, rng=rng)
+        atol = n/500
+        np.testing.assert_allclose(np.count_nonzero(sample == 0), n/2, atol=atol)
+        np.testing.assert_allclose(np.count_nonzero(sample > 0), n/4, atol=atol)
+        np.testing.assert_allclose(np.count_nonzero(sample < 0), n/4, atol=atol)
+
+    @pytest.mark.parametrize('method', ['median', 'mode', 'entropy', 'logentropy',
+                                        'icdf', 'iccdf', 'ilogcdf', 'ilogccdf'])
+    def test_mixed_not_implemented(self, method):
+        X = stats.Binomial(n=0, p=0)
+        Y = stats.Normal()
+        Z = stats.Mixture((X, Y))
+        args = (0.,) if method.startswith('i') else ()
+        f = getattr(Z, method)
+        message = f"`{method}` is implemented only..."
+        with pytest.raises(NotImplementedError, match=message):
+            f(*args)
+
 
 def test_zipfian_distribution_wrapper():
     # Regression test for gh-23678: calling the cdf method at the end

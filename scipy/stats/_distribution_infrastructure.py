@@ -5138,6 +5138,16 @@ def order_statistic(X, /, *, r, n):
     return OrderStatisticDistribution(X, r=r, n=n)
 
 
+def _raise_if_not_continuous(f):
+    functools.wraps(f)
+    def wrapped(self, *args, **kwargs):
+        if not self._continuous:
+            raise NotImplementedError(f"`{f.__name__}` is implemented only for "
+                                      "purely continuous `Mixture`s.")
+        return f(self, *args, **kwargs)
+    return wrapped
+
+
 class Mixture(_ProbabilityDistribution):
     r"""Representation of a mixture distribution.
 
@@ -5148,10 +5158,10 @@ class Mixture(_ProbabilityDistribution):
 
     Parameters
     ----------
-    components : sequence of `ContinuousDistribution`
-        The underlying instances of `ContinuousDistribution`.
-        All must have scalar shape parameters (if any); e.g., the `pdf` evaluated
-        at a scalar argument must return a scalar.
+    components : sequence of `UnivariateDistribution`
+        The underlying instances of `UnivariateDistribution`.
+        All must have scalar shape parameters (if any); e.g., the `mean`
+        must return a scalar.
     weights : sequence of floats, optional
         The corresponding probabilities of selecting each random variable.
         Must be non-negative and sum to one. The default behavior is to weight
@@ -5159,8 +5169,8 @@ class Mixture(_ProbabilityDistribution):
 
     Attributes
     ----------
-    components : sequence of `ContinuousDistribution`
-        The underlying instances of `ContinuousDistribution`.
+    components : sequence of `UnivariateDistribution`
+        The underlying instances of `UnivariateDistribution`.
     weights : ndarray
         The corresponding probabilities of selecting each random variable.
 
@@ -5199,6 +5209,10 @@ class Mixture(_ProbabilityDistribution):
 
     Notes
     -----
+    Methods `median`, `mode`, `entropy`, `logentropy`, `icdf`, `iccdf`, `ilogcdf`,
+    and `ilogccdf` are currently implemented only when all components are continuous
+    distributions.
+
     The following abbreviations are used throughout the documentation.
 
     - PDF: probability density function
@@ -5212,7 +5226,8 @@ class Mixture(_ProbabilityDistribution):
     ----------
     .. [1] Mixture distribution, *Wikipedia*,
            https://en.wikipedia.org/wiki/Mixture_distribution
-
+    .. [2] Zero-inflated model, *Wikipedia*,
+           https://en.wikipedia.org/wiki/Zero-inflated_model
 
     Examples
     --------
@@ -5233,6 +5248,21 @@ class Mixture(_ProbabilityDistribution):
     >>> plt.title('PDF of normal distribution mixture')
     >>> plt.show()
 
+    A zero-inflated Poisson model.
+
+    >>> Poisson = stats.make_distribution(stats.poisson)
+    >>> lmb = 10  # expected Poisson count
+    >>> pi = 0.4  # probability of extra zeros
+    >>> X = stats.Binomial(n=0, p=0)  # degenerate distribution; all zero
+    >>> Y = Poisson(mu=lmb)
+    >>> ZIP = stats.Mixture((X, Y), weights=(pi, 1-pi))
+    >>> true_mean = (1 - pi) * lmb  # see e.g. [2]
+    >>> print(np.allclose(ZIP.mean(), true_mean)
+    True
+    >>> true_variance = lmb*(1 - pi)*(1 + pi*lmb)  # see e.g. [2]
+    >>> print(np.allclose(ZIP.variance(), true_variance))
+    True
+
     """
     # Todo:
     # Add support for array shapes, weights
@@ -5242,19 +5272,19 @@ class Mixture(_ProbabilityDistribution):
             message = ("`components` must contain at least one random variable.")
             raise ValueError(message)
 
+        continuous = True
         for var in components:
-            # will generalize to other kinds of distributions when there
-            # *are* other kinds of distributions
-            if not isinstance(var, ContinuousDistribution):
+            if not isinstance(var, UnivariateDistribution):
                 message = ("Each element of `components` must be an instance of "
-                           "`ContinuousDistribution`.")
+                           "`UnivariateDistribution`.")
                 raise ValueError(message)
             if not var._shape == ():
                 message = "All elements of `components` must have scalar shapes."
                 raise ValueError(message)
+            continuous = continuous and isinstance(var, ContinuousDistribution)
 
         if weights is None:
-            return components, weights
+            return components, weights, continuous
 
         weights = np.asarray(weights)
         if weights.shape != (len(components),):
@@ -5273,15 +5303,16 @@ class Mixture(_ProbabilityDistribution):
             message = "All `weights` must be non-negative."
             raise ValueError(message)
 
-        return components, weights
+        return components, weights, continuous
 
     def __init__(self, components, *, weights=None):
-        components, weights = self._input_validation(components, weights)
+        components, weights, continuous = self._input_validation(components, weights)
         n = len(components)
         dtype = np.result_type(*(var._dtype for var in components))
         self._shape = np.broadcast_shapes(*(var._shape for var in components))
         self._dtype, self._components = dtype, components
         self._weights = np.full(n, 1/n, dtype=dtype) if weights is None else weights
+        self._continuous = continuous
         self.validation_policy = None
 
     @property
@@ -5322,6 +5353,7 @@ class Mixture(_ProbabilityDistribution):
         if method is not None:
             raise NotImplementedError("`method` not implemented for this distribution.")
 
+    @_raise_if_not_continuous
     def logentropy(self, *, method=None):
         self._raise_if_method(method)
         def log_integrand(x):
@@ -5334,11 +5366,13 @@ class Mixture(_ProbabilityDistribution):
         res = _tanhsinh(log_integrand, *self.support(), log=True).integral
         return _log_real_standardize(res + np.pi*1j)
 
+    @_raise_if_not_continuous
     def entropy(self, *, method=None):
         self._raise_if_method(method)
         return _tanhsinh(lambda x: -self.pdf(x) * self.logpdf(x),
                          *self.support()).integral
 
+    @_raise_if_not_continuous
     def mode(self, *, method=None):
         self._raise_if_method(method)
         a, b = self.support()
@@ -5347,6 +5381,7 @@ class Mixture(_ProbabilityDistribution):
         res = _chandrupatla_minimize(f, res.xl, res.xm, res.xr)
         return res.x
 
+    @_raise_if_not_continuous
     def median(self, *, method=None):
         self._raise_if_method(method)
         return self.icdf(0.5)
@@ -5449,18 +5484,22 @@ class Mixture(_ProbabilityDistribution):
         res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
+    @_raise_if_not_continuous
     def icdf(self, p, /, *, method=None):
         self._raise_if_method(method)
         return self._invert('cdf', p)
 
+    @_raise_if_not_continuous
     def iccdf(self, p, /, *, method=None):
         self._raise_if_method(method)
         return self._invert('ccdf', p)
 
+    @_raise_if_not_continuous
     def ilogcdf(self, p, /, *, method=None):
         self._raise_if_method(method)
         return self._invert('logcdf', p)
 
+    @_raise_if_not_continuous
     def ilogccdf(self, p, /, *, method=None):
         self._raise_if_method(method)
         return self._invert('logccdf', p)
