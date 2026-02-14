@@ -495,14 +495,14 @@ class TestDotTests:
 
 class TestAsLinearOperator:
     def setup_method(self):
-        self.cases = []
+        self.cases = [] # list: (LinOp, reference as ndarray, testR as bool for whether at least one of rmatvec/rmatmat is present)
 
         def make_cases(original, dtype):
             cases = []
 
-            cases.append((matrix(original, dtype=dtype), original))
-            cases.append((np.array(original, dtype=dtype), original))
-            cases.append((sparse.csr_array(original, dtype=dtype), original))
+            cases.append((matrix(original, dtype=dtype), original, True))
+            cases.append((np.array(original, dtype=dtype), original, True))
+            cases.append((sparse.csr_array(original, dtype=dtype), original, True))
 
             # Test default implementations of _adjoint and _rmatvec, which
             # refer to each other.
@@ -514,70 +514,102 @@ class TestAsLinearOperator:
 
             def rmv(x, dtype):
                 return original.T.conj().dot(x)
-
-            class BaseMatlike(interface.LinearOperator):
+            
+            def mm(x, dtype):
+                return original.dot(x)
+            
+            def rmm(x, dtype):
+                return original.T.conj().dot(x)
+            
+            class _Base:
                 args = ()
-
+                _has_matvec  = False
+                _has_rmatvec = False
+                _has_matmat  = False
+                _has_rmatmat = False
                 def __init__(self, dtype):
                     self.dtype = np.dtype(dtype)
-                    self.shape = original.shape
-
-                def _matvec(self, x):
-                    return mv(x, self.dtype)
-
-            class HasRmatvec(BaseMatlike):
-                args = ()
-
-                def _rmatvec(self,x):
-                    return rmv(x, self.dtype)
-
-            class HasAdjoint(BaseMatlike):
-                args = ()
-
+                    self.shape = original.shape       
+                    
+            class _HasAdjoint(_Base):
                 def _adjoint(self):
                     shape = self.shape[1], self.shape[0]
-                    matvec = partial(rmv, dtype=self.dtype)
-                    rmatvec = partial(mv, dtype=self.dtype)
+                    matvec = partial(rmv, dtype=self.dtype) if self._has_rmatvec else None
+                    rmatvec = partial(mv, dtype=self.dtype) if self._has_matvec else None
+                    matmat = partial(rmm, dtype=self.dtype) if self._has_rmatmat else None
+                    rmatmat = partial(mm, dtype=self.dtype) if self._has_matmat else None
                     return interface.LinearOperator(matvec=matvec,
                                                     rmatvec=rmatvec,
+                                                    matmat=matmat,
+                                                    rmatmat=rmatmat,
                                                     dtype=self.dtype,
                                                     shape=shape)
-
-            class HasRmatmat(HasRmatvec):
+            class Matvec(_Base, interface.LinearOperator):
+                _has_matvec = True
+                def _matvec(self, x):
+                    return mv(x, self.dtype)
+            class Rmatvec(_Base, interface.LinearOperator):
+                _has_rmatvec = True
+                def _rmatvec(self,x):
+                    return rmv(x, self.dtype)
+            class Matmat(_Base, interface.LinearOperator):
+                _has_matmat = True
                 def _matmat(self, x):
-                    return original.dot(x)
-
+                    return mm(x, self.dtype)
+            class Rmatmat(_Base, interface.LinearOperator):
+                _has_rmatmat = True
                 def _rmatmat(self, x):
-                    return original.T.conj().dot(x)
-
-            cases.append((HasRmatvec(dtype), original))
-            cases.append((HasAdjoint(dtype), original))
-            cases.append((HasRmatmat(dtype), original))
+                    return rmm(x, self.dtype)
+                
+            class MatvecMatmat(Matvec, Matmat): pass
+            class RmatvecRmatmat(Rmatvec, Rmatmat): pass
+            
+            class Aslinearoperator:
+                def __init__(self, linop):
+                    self.linop = linop
+                def __aslinearoperator__(self):
+                    return self.linop
+                
+            for Mat in [Matvec, Matmat, MatvecMatmat]:
+                M = Mat(dtype)
+                cases.append((M, original, False))
+                cases.append((Aslinearoperator(M), original, False))
+                for Rmat in [Rmatvec, Rmatmat, RmatvecRmatmat]:
+                    class MatRmat(Mat, Rmat): pass
+                    M = MatRmat(dtype)
+                    cases.append((M, original, True))
+                    cases.append((Aslinearoperator(M), original, True))
+                    
+                    class MatRmatAdjoint(MatRmat, _HasAdjoint): pass
+                    M = MatRmatAdjoint(dtype)
+                    cases.append((M, original, True))
+                    cases.append((Aslinearoperator(M), original, True))
+                    
             return cases
 
         original = np.array([[1,2,3], [4,5,6]])
         self.cases += make_cases(original, np.int32)
         self.cases += make_cases(original, np.float32)
         self.cases += make_cases(original, np.float64)
-        self.cases += [(interface.aslinearoperator(M).T, A.T)
-                       for M, A in make_cases(original.T, np.float64)]
-        self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
-                       for M, A in make_cases(original.T, np.float64)]
-        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj())
-                       for M, A in make_cases(original.T, np.float64)]
+        self.cases += [(interface.aslinearoperator(M).T, A.T, testR)
+                       for M, A, testR in make_cases(original.T, np.float64) if testR]
+        self.cases += [(interface.aslinearoperator(M).H, A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.float64) if testR]
+        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.float64) if testR]
 
         original = np.array([[1, 2j, 3j], [4j, 5j, 6]])
         self.cases += make_cases(original, np.complex128)
-        self.cases += [(interface.aslinearoperator(M).T, A.T)
-                       for M, A in make_cases(original.T, np.complex128)]
-        self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
-                       for M, A in make_cases(original.T, np.complex128)]
-        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj())
-                       for M, A in make_cases(original.T, np.complex128)]
-
+        self.cases += [(interface.aslinearoperator(M).T, A.T, testR)
+                       for M, A, testR in make_cases(original.T, np.complex128) if testR]
+        self.cases += [(interface.aslinearoperator(M).H, A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.complex128) if testR]
+        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.complex128) if testR]
+        
     def test_basic(self):
 
-        for M, A_array in self.cases:
+        for M, A_array, testR in self.cases:
             A = interface.aslinearoperator(M)
             M,N = A.shape
 
@@ -599,19 +631,20 @@ class TestAsLinearOperator:
             assert_equal(A.matmat(x2), A_array.dot(x2))
             assert_equal(A @ x2, A_array.dot(x2))
 
-            for y in ys:
-                assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
-                assert_equal(A.T.matvec(y), A_array.T.dot(y))
-                assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
-                assert_equal(A.adjoint().matvec(y), A_array.T.conj().dot(y))
+            if testR:
+                for y in ys:
+                    assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
+                    assert_equal(A.T.matvec(y), A_array.T.dot(y))
+                    assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
+                    assert_equal(A.adjoint().matvec(y), A_array.T.conj().dot(y))
 
-            for y in ys:
-                if y.ndim < 2:
-                    continue
-                assert_equal(A.rmatmat(y), A_array.T.conj().dot(y))
-                assert_equal(A.T.matmat(y), A_array.T.dot(y))
-                assert_equal(A.H.matmat(y), A_array.T.conj().dot(y))
-                assert_equal(A.adjoint().matmat(y), A_array.T.conj().dot(y))
+                for y in ys:
+                    if y.ndim < 2:
+                        continue
+                    assert_equal(A.rmatmat(y), A_array.T.conj().dot(y))
+                    assert_equal(A.T.matmat(y), A_array.T.dot(y))
+                    assert_equal(A.H.matmat(y), A_array.T.conj().dot(y))
+                    assert_equal(A.adjoint().matmat(y), A_array.T.conj().dot(y))
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)
@@ -620,7 +653,7 @@ class TestAsLinearOperator:
 
     def test_dot(self):
 
-        for M, A_array in self.cases:
+        for M, A_array, testR in self.cases:
             A = interface.aslinearoperator(M)
             M,N = A.shape
 

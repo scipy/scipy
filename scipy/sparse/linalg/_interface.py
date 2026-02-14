@@ -601,8 +601,12 @@ class LinearOperator:
 class _CustomLinearOperator(LinearOperator):
     """Linear operator defined in terms of user-specified operations."""
 
-    def __init__(self, shape, matvec, rmatvec=None, matmat=None,
+    def __init__(self, shape, matvec=None, rmatvec=None, matmat=None,
                  dtype=None, rmatmat=None):
+        
+        if matvec is None and matmat is None:
+            raise ValueError("At least one of matvec and matmat must be provided.")
+        
         super().__init__(dtype, shape)
 
         self.args = ()
@@ -621,13 +625,16 @@ class _CustomLinearOperator(LinearOperator):
             return super()._matmat(X)
 
     def _matvec(self, x):
-        return self.__matvec_impl(x)
+        if self.__matvec_impl is not None:
+            return self.__matvec_impl(x)
+        else:
+            return super()._matvec(x)
 
     def _rmatvec(self, x):
-        func = self.__rmatvec_impl
-        if func is None:
-            raise NotImplementedError("rmatvec is not defined")
-        return self.__rmatvec_impl(x)
+        if self.__rmatvec_impl is not None:
+            return self.__rmatvec_impl(x)
+        else:
+            return super()._rmatvec(x)
 
     def _rmatmat(self, X):
         if self.__rmatmat_impl is not None:
@@ -871,25 +878,23 @@ class IdentityOperator(LinearOperator):
         return self
 
 
-def aslinearoperator(A):
+def aslinearoperator(A) -> LinearOperator:
     """Return A as a LinearOperator.
+    
+    See the :class:`LinearOperator` documentation for additional information.
 
-    See the LinearOperator documentation for additional information.
-
-    Parameters
-    ----------
-    A : object
-        Object to convert to a `LinearOperator`. May be any one of the following types:
-        - ndarray
-        - matrix
-        - sparse array (e.g. csr_array, lil_array, etc.)
-        - `LinearOperator`
-        - An object with .shape and .matvec attributes
-
-    Returns
-    -------
-    B : LinearOperator
-        A `LinearOperator` corresponding with `A`
+    'A' may be any of the following types:
+     - ndarray
+     - matrix
+     - sparse array (e.g. csr_array, lil_array, etc.)
+     - LinearOperator
+     - an object with a __aslinearoperator__() method that returns a LinearOperator
+     - an object with attributes 
+        - .shape
+        - .matvec and/or .matmat
+        - .rmatvec and/or .rmatmat (optional)
+        - .dtype (optional)
+       see the :class:`LinearOperator` documentation for additional information on each attribute.
 
     Notes
     -----
@@ -916,21 +921,24 @@ def aslinearoperator(A):
 
     elif issparse(A) or is_pydata_spmatrix(A):
         return MatrixLinearOperator(A)
+    
+    elif hasattr(A, '__aslinearoperator__'):
+        op = A.__aslinearoperator__()
+        if not isinstance(op, LinearOperator):
+            raise TypeError(f'__aslinearoperator__() method did not return a LinearOperator, got {type(op)}')
+        return op
+
+    elif hasattr(A, 'shape') and (hasattr(A, 'matvec') or hasattr(A, 'matmat')):
+            matvec  = getattr(A, 'matvec',  None)
+            rmatvec = getattr(A, 'rmatvec', None)
+            matmat  = getattr(A, 'matmat',  None)
+            rmatmat = getattr(A, 'rmatmat', None)
+            dtype   = getattr(A, 'dtype',   None)
+
+            return LinearOperator(A.shape, 
+                                  matvec=matvec, matmat=matmat,
+                                  rmatvec=rmatvec, rmatmat=rmatmat,
+                                  dtype=dtype)
 
     else:
-        if hasattr(A, 'shape') and hasattr(A, 'matvec'):
-            rmatvec = None
-            rmatmat = None
-            dtype = None
-
-            if hasattr(A, 'rmatvec'):
-                rmatvec = A.rmatvec
-            if hasattr(A, 'rmatmat'):
-                rmatmat = A.rmatmat
-            if hasattr(A, 'dtype'):
-                dtype = A.dtype
-            return LinearOperator(A.shape, A.matvec, rmatvec=rmatvec,
-                                  rmatmat=rmatmat, dtype=dtype)
-
-        else:
-            raise TypeError('type not understood')
+        raise TypeError(f'type {type(A)} not understood, object must have either 1) __aslinearoperator__ or 2) shape and matvec or matmat attributes')
