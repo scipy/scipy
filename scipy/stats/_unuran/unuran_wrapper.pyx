@@ -1702,6 +1702,7 @@ cdef class NumericalInversePolynomial(Method):
 cdef class NumericalInverseHermite(Method):
     """
     NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, random_state=None)
+    --
 
     Hermite interpolation based INVersion of CDF (HINV).
 

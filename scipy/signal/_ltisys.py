@@ -1827,7 +1827,7 @@ class StateSpace(LinearTimeInvariant):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Additional keywords passed to `ss2zpk`
 
         Returns
