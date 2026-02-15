@@ -32,6 +32,7 @@ Again, thanks for contributing!
 <!-- If this pull request includes AI-generated code or text, please disclose
 the tool(s) used and specify which lines were generated. Disclosure is not
 required for minor assistive tasks, such as spell-checking or code reviewing,
-in primarily human-authored work. Otherwise, leave this area blank. Read our
+in primarily human-authored work. If no AI tools were used, please write
+"No AI tools used" in this section. Read our
 Policy on AI Generated Code at
 https://scipy.github.io/devdocs/dev/conduct/ai_policy.html -->
