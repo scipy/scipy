@@ -1440,12 +1440,45 @@ def sos2zpk(sos):
     k : float
         System gain.
 
+    See Also
+    --------
+    zpk2sos, sosfilt, sos2tf
+
     Notes
     -----
     The number of zeros and poles returned will be ``n_sections * 2``
     even if some of these are (effectively) zero.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Extract zeros, poles, and gain from a single second-order section
+    representing a discrete-time filter with a zero at `z = -1` and a
+    pole at `z = 0.5`:
+
+    >>> import numpy as np
+    >>> from scipy.signal import sos2zpk
+    >>> sos = np.array([[1, 1, 0, 1, -0.5, 0]])
+    >>> z, p, k = sos2zpk(sos)
+    >>> z
+    array([-1.+0.j,  0.+0.j])
+    >>> p
+    array([0.5+0.j, 0. +0.j])
+    >>> k
+    1.0
+
+    With multiple sections, the zeros and poles are concatenated and the
+    gains are multiplied. Note that ``n_sections * 2`` zeros and poles
+    are always returned, even if some are effectively zero:
+
+    >>> sos = np.array([[1, 1, 0, 1, -0.5, 0],
+    ...                 [1, -1, 0, 1, -0.9, 0]])
+    >>> z, p, k = sos2zpk(sos)
+    >>> z
+    array([-1.+0.j,  0.+0.j,  1.+0.j,  0.+0.j])
+    >>> p
+    array([0.5+0.j, 0. +0.j, 0.9+0.j, 0. +0.j])
     """
     xp = array_namespace(sos)
     sos = xp.asarray(sos)

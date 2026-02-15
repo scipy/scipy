@@ -332,7 +332,7 @@ def ss2tf(A, B, C, D, input=0):
 
 
 def zpk2ss(z, p, k):
-    """Zero-pole-gain representation to state-space representation.
+    r"""Zero-pole-gain representation to state-space representation.
 
     Parameters
     ----------
@@ -346,6 +346,37 @@ def zpk2ss(z, p, k):
     A, B, C, D : ndarray
         State space representation of the system, in controller canonical
         form.
+
+    See Also
+    --------
+    ss2zpk, zpk2tf, tf2ss
+
+    Examples
+    --------
+    Convert a system with no zeros, one pole at `s = -3`, and a gain of 5:
+
+    .. math:: H(s) = \frac{5}{s + 3}
+
+    to state-space form:
+
+    >>> from scipy.signal import zpk2ss
+    >>> A, B, C, D = zpk2ss([], [-3], 5)
+    >>> A
+    array([[-3.]])
+    >>> B
+    array([[ 1.]])
+    >>> C
+    array([[ 5.]])
+    >>> D
+    array([[ 0.]])
+
+    A second-order system with complex conjugate poles:
+
+    >>> import numpy as np
+    >>> A, B, C, D = zpk2ss([], [-1+2j, -1-2j], 1)
+    >>> A
+    array([[-2., -5.],
+           [ 1.,  0.]])
 
     """
     return tf2ss(*zpk2tf(z, p, k))
@@ -376,6 +407,29 @@ def ss2zpk(A, B, C, D, input=0):
         Zeros and poles.
     k : float
         System gain.
+
+    See Also
+    --------
+    zpk2ss, ss2tf, tf2zpk
+
+    Examples
+    --------
+    Convert the state-space representation of a first-order lowpass filter
+    to zero-pole-gain form:
+
+    >>> import numpy as np
+    >>> from scipy.signal import ss2zpk
+    >>> A = np.array([[-2.]])
+    >>> B = np.array([[1.]])
+    >>> C = np.array([[3.]])
+    >>> D = np.array([[0.]])
+    >>> z, p, k = ss2zpk(A, B, C, D)
+    >>> z
+    array([], dtype=float64)
+    >>> p
+    array([-2.])
+    >>> k
+    3.0
 
     """
     return tf2zpk(*ss2tf(A, B, C, D, input=input))
