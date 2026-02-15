@@ -1621,8 +1621,8 @@ def medfilt(volume, kernel_size=None):
     scipy.signal.medfilt2d
 
     Examples
---------
-    Apply a median filter to a 1D array with an outlier:
+    --------
+    Use a median filter on an array with an outlier.
 
     >>> import numpy as np
     >>> from scipy.signal import medfilt
@@ -1630,6 +1630,12 @@ def medfilt(volume, kernel_size=None):
     >>> medfilt(x, kernel_size=3)
     array([2, 5, 2, 5, 2])
 
+    The input is zero-padded at both ends internally.
+    A median filter removes isolated spikes:
+
+    >>> x = np.array([10, 10, 10, 100, 10, 10, 10])
+    >>> medfilt(x, kernel_size=3)
+    array([10, 10, 10, 10, 10, 10, 10])
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
