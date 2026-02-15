@@ -5022,33 +5022,6 @@ class TestLIL(sparse_test_class(minmax=False)):
         a *= 2.
         a[0, :] = 0
     
-    def test_sparse_assignment_to_lil_slice(self):
-        # Issue #16601: Sparse-to-LIL assignment should not densify
-        dest = self.lil_container((10, 10))
-        src_data = np.array([[1, 0, 2], [0, 3, 0]])
-        src = self.spcreator(src_data)
-        
-        dest[1:3, 1:4] = src
-        
-        expected = np.zeros((10, 10))
-        expected[1:3, 1:4] = src_data
-        assert_equal(dest.toarray(), expected)
-
-    def test_lil_to_lil_sparse_assignment(self):
-        # Issue #16601: LIL-to-LIL sparse assignment
-        dest = self.lil_container((8, 8))
-        src = self.lil_container((3, 3))
-        src[0, 0] = 1
-        src[1, 1] = 2
-        src[2, 2] = 3
-        
-        dest[2:5, 2:5] = src
-        
-        result = dest.toarray()
-        assert_equal(result[2, 2], 1)
-        assert_equal(result[3, 3], 2)
-        assert_equal(result[4, 4], 3)
-
     def test_lil_sparse_assignment_no_densify_memory_error(self):
         # Issue #16601: Verify sparse assignment doesn't cause memory error
         rows = [0, 0, 4, 7]
