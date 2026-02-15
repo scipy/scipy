@@ -1397,8 +1397,8 @@ def minimum_phase(h,
         win = xp.zeros(n_fft)
         win[0] = 1
         stop = n_fft // 2
-        win[1:stop] = 2
-        if n_fft % 2:
+        win[1:stop + 1] = 2
+        if n_fft % 2 == 0:
             win[stop] = 1
         h_temp *= win
         h_temp = ifft(xp.exp(fft(h_temp)))

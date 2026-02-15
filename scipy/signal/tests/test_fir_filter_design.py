@@ -762,6 +762,21 @@ class TestMinimumPhase:
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         xp_assert_close(m, k, rtol=2e-3)
 
+    def test_homomorphic_mask_gh22752(self):
+        # Regression test for gh-22752: the homomorphic method's analytic
+        # signal mask had an off-by-one error and a flipped even/odd check,
+        # causing incorrect magnitude response in the passband.
+        freq = [0, 0.2, 0.3, 1.0]
+        desired = [1, 0]
+        for order in (31, 64, 101):
+            h_linear = remez(order, freq, desired, fs=2.)
+            # Test with both even and odd n_fft to exercise both code paths
+            for n_fft in (len(h_linear), len(h_linear) + 1):
+                h_min = minimum_phase(h_linear, method='homomorphic',
+                                      n_fft=n_fft, half=False)
+                xp_assert_close(np.abs(fft(h_min, n_fft)),
+                                np.abs(fft(h_linear, n_fft)), rtol=0.05)
+
 
 class Testfirwin_2d:
     def test_invalid_args(self):
