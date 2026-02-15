@@ -29,10 +29,8 @@ Again, thanks for contributing!
 
 #### AI Generation Disclosure
 
-<!-- If this pull request includes AI-generated code or text, please disclose
-the tool(s) used and specify which lines were generated. Disclosure is not
-required for minor assistive tasks, such as spell-checking or code reviewing,
-in primarily human-authored work. If no AI tools were used, please write
-"No AI tools used" in this section. Read our
-Policy on AI Generated Code at
+<!-- If this AI was used in the preparation of this pull request, please disclose
+the tool(s) used, how they were used, and specify what code or text is AI generated.
+If no AI tools were used, please write "No AI tools used" in this section. Read our
+policy on AI generated code at
 https://scipy.github.io/devdocs/dev/conduct/ai_policy.html -->
