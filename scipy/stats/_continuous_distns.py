@@ -2213,21 +2213,40 @@ class exponnorm_gen(rv_continuous):
         return np.exp(self._logpdf(x, K))
 
     def _logpdf(self, x, K):
-        invK = 1.0 / K
-        exparg = invK * (0.5 * invK - x)
-        return exparg + _norm_logcdf(x - invK) - np.log(K)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def logpdf_nonnegative_u(x, K):
+            erfcx_term = np.log(sc.erfcx((-x + 1.0 / K) / np.sqrt(2)))
+            return -np.log(2) - 0.5 * (x ** 2) - np.log(K) + erfcx_term
+        def logpdf_negative_u(x, K):
+            invK = 1.0 / K
+            exparg = invK * (-x + 0.5 * invK)
+            return -np.log(K) + exparg + _norm_logcdf(x - invK)
+        return xpx.apply_where(
+            u >= 0, (x, K), logpdf_nonnegative_u, logpdf_negative_u)
 
     def _cdf(self, x, K):
-        invK = 1.0 / K
-        expval = invK * (0.5 * invK - x)
-        logprod = expval + _norm_logcdf(x - invK)
-        return _norm_cdf(x) - np.exp(logprod)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def cdf_nonnegative_u(x, K):
+            eterm = sc.erfcx((-x + 1.0 / K) / np.sqrt(2))
+            return _norm_cdf(x) - 0.5 * np.exp(-0.5 * x ** 2) * eterm 
+        def cdf_negative_u(x, K):
+            invK = 1.0 / K
+            logprod = invK * (0.5 * invK - x) + _norm_logcdf(x - invK)
+            return _norm_cdf(x) - np.exp(logprod)
+        return xpx.apply_where(
+            u >= 0, (x, K), cdf_nonnegative_u, cdf_negative_u)
 
     def _sf(self, x, K):
-        invK = 1.0 / K
-        expval = invK * (0.5 * invK - x)
-        logprod = expval + _norm_logcdf(x - invK)
-        return _norm_cdf(-x) + np.exp(logprod)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def sf_nonnegative_u(x, K):
+            eterm = sc.erfcx((-x + 1.0 / K) / np.sqrt(2))    
+            return _norm_cdf(-x) + 0.5 * np.exp(-0.5 * x ** 2) * eterm
+        def sf_negative_u(x, K):
+            invK = 1.0 / K
+            logprod = invK * (0.5 * invK - x) + _norm_logcdf(x - invK)
+            return _norm_cdf(-x) + np.exp(logprod)        
+        return xpx.apply_where(
+            u >= 0, (x, K), sf_nonnegative_u, sf_negative_u)
 
     def _stats(self, K):
         K2 = K * K
@@ -2235,7 +2254,6 @@ class exponnorm_gen(rv_continuous):
         skw = 2 * K**3 * opK2**(-1.5)
         krt = 6.0 * K2 * K2 * opK2**(-2)
         return K, opK2, skw, krt
-
 
 exponnorm = exponnorm_gen(name='exponnorm')
 
