@@ -363,7 +363,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     >>> whosmat(f)
     [('a', (2, 3), 'int32'), ('b', (1, 5), 'double')]
 
-    """
+    """  # numpydoc ignore=PR02
     with _open_file_context(file_name, appendmat) as f:
         ML, file_opened = mat_reader_factory(f, **kwargs)
         variables = ML.list_variables()
