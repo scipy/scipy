@@ -402,9 +402,7 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
 # ==================
 
 cdef class cKDTree:
-    """
-    cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True, boxsize=None)
+    """cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True, boxsize=None)\n--
 
     kd-tree for quick nearest-neighbor lookup.
 

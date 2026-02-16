@@ -36,13 +36,16 @@ def use_solver(**kwargs):
 
     Parameters
     ----------
-    useUmfpack : bool, optional
-        Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
-        if ``scikits.umfpack`` is installed. Default: True
-    assumeSortedIndices : bool, optional
-        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
-        installed. Default: False
+    **kwargs
+        The following options may be passed as keyword arguments.
+
+        useUmfpack : bool, optional
+            Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
+            if ``scikits.umfpack`` is installed. Default: True
+        assumeSortedIndices : bool, optional
+            Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+            Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+            installed. Default: False
 
     Notes
     -----
