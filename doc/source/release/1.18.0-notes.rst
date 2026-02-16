@@ -36,6 +36,11 @@ New features
 ``scipy.interpolate`` improvements
 ==================================
 
+- Added `scipy.interpolate.splev_arclength` and `scipy.interpolate.spline_arclength`
+  for arc-length parameterization of B-splines. These functions enable sampling
+  splines at equal arc-length intervals and computing total arc length, useful for
+  shape analysis, motion planning, and computer graphics applications.
+
 
 ``scipy.linalg`` improvements
 =============================
