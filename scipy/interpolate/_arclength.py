@@ -69,6 +69,8 @@ def splev_arclength(tck, n_samples, u_range=None):
     that are equally spaced along the curve's arc length, rather than equally
     spaced in the parameter domain.
 
+    .. versionadded:: 1.18.0
+
     Parameters
     ----------
     tck : tuple
@@ -139,7 +141,8 @@ def splev_arclength(tck, n_samples, u_range=None):
         raise ValueError("n_samples must be a positive integer")
     
     # Extract arc-length derivative and metadata
-    arc_deriv, parametric, ndim, u_min_default, u_max_default = _make_arc_derivative(tck)
+    result = _make_arc_derivative(tck)
+    arc_deriv, parametric, ndim, u_min_default, u_max_default = result
     t, c, k = tck
     
     # Use provided range or default
@@ -195,6 +198,8 @@ def splev_arclength(tck, n_samples, u_range=None):
 def spline_arclength(tck, u_range=None):
     """
     Compute the arc length of a B-spline curve.
+
+    .. versionadded:: 1.18.0
 
     Parameters
     ----------
