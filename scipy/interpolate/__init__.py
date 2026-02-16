@@ -116,6 +116,8 @@ functional.
    splrep
    splprep
    splev
+   splev_arclength
+   spline_arclength
    splint
    sproot
    spalde
@@ -193,6 +195,8 @@ from ._interpolate import *
 from ._fitpack_py import *
 
 from ._fitpack2 import *
+
+from ._arclength import splev_arclength, spline_arclength
 
 from ._rbf import Rbf
 
