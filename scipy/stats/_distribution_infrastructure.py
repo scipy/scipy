@@ -956,6 +956,7 @@ def _set_invalid_nan(f):
 
         method_name = f.__name__
         x = np.asarray(x)
+        nan_x = np.isnan(x)
         dtype = self._dtype
         shape = self._shape
         discrete = isinstance(self, DiscreteDistribution)
@@ -1075,6 +1076,10 @@ def _set_invalid_nan(f):
             res = res.real  # exp(res) > 0
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
+        # Ensure invalid shape parameters and NaN arguments produce NaN result
+        if self._any_invalid or np.any(nan_x):
+            res = np.where(nan_x | self._invalid, np.nan, res)
+
         return res[()]
 
     return filtered
@@ -1114,9 +1119,8 @@ def _set_invalid_nan_property(f):
         if needs_copy:
             res = res.astype(dtype=dtype, copy=True)
 
+        # Ensure invalid shape parameters produce NaN result
         if self._any_invalid:
-            # may be redundant when quadrature is used, but not necessarily
-            # when formulas are used.
             res[self._invalid] = np.nan
 
         return res[()]
@@ -1188,6 +1192,7 @@ def _cdf2_input_validation(f):
         func_name = f.__name__
 
         low, high = self.support()
+        nan_x, nan_y = np.isnan(x), np.isnan(y)
         x, y, low, high = np.broadcast_arrays(x, y, low, high)
         dtype = np.result_type(x.dtype, y.dtype, self._dtype)
         # yes, copy to avoid modifying input arrays
@@ -1229,6 +1234,11 @@ def _cdf2_input_validation(f):
             # res[i_swap] is always positive and less than 1, so it's
             # safe to ensure that the result is real
             res[i_swap] = _logexpxmexpy(np.log(2), res[i_swap]).real
+
+        # Ensure invalid shape parameters and NaN arguments produce NaN result
+        if self._any_invalid or np.any(nan_x) or np.any(nan_y):
+            res = np.where(nan_x | nan_y | self._invalid, np.nan, res)
+
         return res[()]
 
     return wrapped
@@ -2110,12 +2120,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         else:
             res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum
             res = np.asarray(res)
-            # The result should be nan when parameters are nan, so need to special
-            # case this.
-            cond = np.isnan(params.popitem()[1]) if params else np.True_
-            cond = np.broadcast_to(cond, a.shape)
             res[(a > b)] = -np.inf if log else 0  # fix in nsum?
-            res[cond] = np.nan
 
             return res[()]
 
@@ -2674,12 +2679,17 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
 
     def _cdf2_subtraction_safe(self, x, y, **params):
+        # The "safe" version of this function may be used if `method` is unspecified,
+        # but if `method='subtraction'`, the regular version  above is used.
         cdf_x = self._cdf_dispatch(x, **params)
         cdf_y = self._cdf_dispatch(y, **params)
         ccdf_x = self._ccdf_dispatch(x, **params)
         ccdf_y = self._ccdf_dispatch(y, **params)
         i = (ccdf_x < 0.5) & (ccdf_y < 0.5)
         out = np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
+        # Can't just call `out = _cdf2_subtraction(self, x, y, **params)` here
+        # because we need the partial results below. Could refactor, but we'll leave
+        # that to future work, say if the improvements to _cdf2_subtraction are made.
 
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
@@ -3713,20 +3723,10 @@ class DiscreteDistribution(UnivariateDistribution):
         return super()._overrides(method_name)
 
     def _logpdf_formula(self, x, **params):
-        if params:
-            p = next(iter(params.values()))
-            nan_result = np.isnan(x) | np.isnan(p)
-        else:
-            nan_result = np.isnan(x)
-        return np.where(nan_result, np.nan, np.inf)
+        return np.full_like(x, np.inf)
 
     def _pdf_formula(self, x, **params):
-        if params:
-            p = next(iter(params.values()))
-            nan_result = np.isnan(x) | np.isnan(p)
-        else:
-            nan_result = np.isnan(x)
-        return np.where(nan_result, np.nan, np.inf)
+        return np.full_like(x, np.inf)
 
     def _pxf_dispatch(self, x, *, method=None, **params):
         return self._pmf_dispatch(x, method=method, **params)
@@ -3802,10 +3802,7 @@ class DiscreteDistribution(UnivariateDistribution):
         # comp should be <= for ccdf, >= for cdf.
         f = func(x, **params)
         res = np.where(comp(f, p), x, x + 1.0)
-        # xr is a bracket endpoint, and will usually be a finite value even when
-        # the computed result should be nan. We need to explicitly handle this
-        # case.
-        res[np.isnan(f) | np.isnan(p)] = np.nan
+
         return res[()]
 
     def _icdf_inversion(self, x, **params):
