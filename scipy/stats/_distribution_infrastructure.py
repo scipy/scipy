@@ -2334,9 +2334,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             logpxf = self._logpxf_dispatch(x, **params)
             temp = np.asarray(pxf)
             i = (pxf != 0)  # 0 * inf -> nan; should be 0
-            temp[i] = pxf[i]*logpxf[i]
+            temp[i] = -pxf[i]*logpxf[i]
             return temp
-        return -self._quadrature(integrand, params=params)
+        return self._quadrature(integrand, params=params)
 
     @_set_invalid_nan_property
     def median(self, *, method=None):

@@ -2927,7 +2927,7 @@ class _TestSlicing:
         assert_array_equal(toarray(a[..., ix5, ix10]), numpy_a[..., ix5, ix10])
         assert_array_equal(toarray(a[ix5, ix10, ...]), numpy_a[ix5, ix10, ...])
 
-        with assert_raises(ValueError, match="shape mismatch"):
+        with assert_raises(IndexError, match="shape mismatch"):
             a[ix5, ix10_6True]
 
     def test_ellipsis_fancy_slicing(self):
@@ -3082,7 +3082,7 @@ class _TestSlicingAssign:
         assert_raises(ValueError, A.__setitem__, (slice(None), 1), A.copy())
         assert_raises(ValueError, A.__setitem__,
                       ([[1, 2, 3], [0, 3, 4]], [1, 2, 3]), [1, 2, 3, 4])
-        assert_raises(ValueError, A.__setitem__,
+        assert_raises(IndexError, A.__setitem__,
                       ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
         assert_raises(ValueError, A.__setitem__, (slice(4), 0),
@@ -3121,10 +3121,10 @@ class _TestFancyIndexing:
 
     def test_bad_index(self):
         A = self.spcreator(np.zeros([5, 5]))
-        assert_raises((IndexError, ValueError, TypeError), A.__getitem__, "foo")
-        assert_raises((IndexError, ValueError, TypeError), A.__getitem__, (2, "foo"))
-        assert_raises((IndexError, ValueError), A.__getitem__,
-                      ([1, 2, 3], [1, 2, 3, 4]))
+        assert_raises(IndexError, A.__getitem__, "foo").match('Index dimension')
+        assert_raises(IndexError, A.__getitem__, (2, "foo")).match('Index dimension')
+        idx = ([1, 2, 3], [1, 2, 3, 4])
+        assert_raises(IndexError, A.__getitem__, idx).match('shape mismatch')
 
     def test_fancy_indexing(self):
         B = self.asdense(arange(50).reshape(5,10))
