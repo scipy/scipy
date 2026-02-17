@@ -36,7 +36,8 @@ ODE solvers, and more.
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
 - **Code of Conduct:** https://docs.scipy.org/doc/scipy/dev/conduct/code_of_conduct.html
-- **Report a security vulnerability:** via Tidelift, as explained in [our docs on Security](https://scipy.github.io/devdocs/tutorial/security.html)
+- **Report a security vulnerability:** via Tidelift, as explained in
+  `our docs on Security <https://scipy.github.io/devdocs/tutorial/security.html>`__
 - **Citing in your work:** https://www.scipy.org/citing-scipy/
 
 SciPy is built to work with
