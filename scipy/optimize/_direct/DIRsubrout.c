@@ -7,8 +7,19 @@
 #include <math.h>
 // #include "numpy/ndarrayobject.h"
 
-/* Table of constant values */
-
+/*
+ * SCIPY NOTE (2026-01-15):
+ * The following are read-only variables after initialization.
+ *
+ * They exist because f2c passes all arguments by reference (Fortran convention),
+ * so literal constants need addresses. The code is still thread-safe since they
+ * are never modified.
+ *
+ * Note: Cannot mark as 'const' due to f2c function signatures expecting non-const
+ * pointers which makes the surgery more involved. Instead an f2c-free rewrite
+ * is better for long-term maintenance.
+ *
+ */
 static integer c__1 = 1;
 static integer c__32 = 32;
 static integer c__0 = 0;
@@ -1295,11 +1306,15 @@ L50:
 /* | JG 01/22/01 Added variable to keep track of the maximum value found.  | */
 /* |             Added variable to keep track if feasible point was found. | */
 /* +-----------------------------------------------------------------------+ */
-    direct_dirsamplef_(&c__[c_offset], &arrayi[1], &delta, &c__1, &new__, &length[
+    Py_DECREF(ret);  /* DECREF before overwriting with new return value */
+    ret = direct_dirsamplef_(&c__[c_offset], &arrayi[1], &delta, &c__1, &new__, &length[
         length_offset], logfile, &f[3], free, maxi, &point[
         1], fcn, &x[1], x_seq, &l[1], minf, minpos, &u[1], n, maxfunc,
         maxdeep, &oops, fmax, ifeasiblef, iinfeasible, args,
         force_stop);
+    if (!ret) {
+        return NULL;
+    }
     if (force_stop && *force_stop) {
      *ierror = -102;
      return ret;

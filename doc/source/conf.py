@@ -191,6 +191,9 @@ warnings.filterwarnings(
     category=Warning,
 )
 
+warnings.filterwarnings("ignore", message="`scipy.odr` is deprecated",
+                        category=DeprecationWarning)
+
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
     'autosummary.import_cycle',
@@ -349,6 +352,7 @@ plot_pre_code = """
 import warnings
 for key in (
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
+        'odr'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

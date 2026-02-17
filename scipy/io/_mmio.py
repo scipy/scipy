@@ -154,10 +154,6 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
 
-    Returns
-    -------
-    None
-
     Examples
     --------
     >>> from io import BytesIO

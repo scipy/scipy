@@ -96,6 +96,11 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: >-
+            build-cuda
+            torch-cuda
+            jax-cuda
+            cupy
 
       - name: Build SciPy
         run: pixi run build-cuda

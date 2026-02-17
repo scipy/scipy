@@ -348,8 +348,6 @@ def test_failure_to_run_iterations_nonsymmetric():
     assert np.max(eigenvalues) > 0
 
 
-@pytest.mark.skipif(_IS_32BIT and np.lib.NumpyVersion(np.__version__) < "2.0.0",
-                  reason="Was failing in CI, see gh-23077")
 @pytest.mark.filterwarnings("ignore:The problem size")
 def test_hermitian():
     """Check complex-value Hermitian cases.

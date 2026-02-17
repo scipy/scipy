@@ -1,7 +1,7 @@
 from scipy._lib._util import float_factorial
-from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._external.array_api_compat import numpy as np_compat
 from scipy._lib._array_api import array_namespace, xp_swapaxes, xp_device
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy.ndimage import convolve1d  # type: ignore[attr-defined]
 from scipy.signal import _polyutils as _pu
@@ -9,7 +9,7 @@ from ._arraytools import axis_slice
 
 
 def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
-                  use="conv", xp=None, device=None):
+                  use="conv", *, xp=None, device=None):
     """Compute the coefficients for a 1-D Savitzky-Golay FIR filter.
 
     Parameters
@@ -307,15 +307,15 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     -----
     Details on the `mode` options:
 
-        'mirror':
-            Repeats the values at the edges in reverse order. The value
-            closest to the edge is not included.
-        'nearest':
-            The extension contains the nearest input value.
-        'constant':
-            The extension contains the value given by the `cval` argument.
-        'wrap':
-            The extension contains the values from the other end of the array.
+    - 'mirror':
+      Repeats the values at the edges in reverse order. The value
+      closest to the edge is not included.
+    - 'nearest':
+      The extension contains the nearest input value.
+    - 'constant':
+      The extension contains the value given by the `cval` argument.
+    - 'wrap':
+      The extension contains the values from the other end of the array.
 
     For example, if the input is [1, 2, 3, 4, 5, 6, 7, 8], and
     `window_length` is 7, the following shows the extended data for

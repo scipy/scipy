@@ -287,6 +287,12 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     condA = 1
     normx = 0
 
+    # Initialize print strings
+    str1 = ''
+    str2 = ''
+    str3 = ''
+    str4 = ''
+
     # Items for use in stopping rules, normb set earlier
     istop = 0
     ctol = 0

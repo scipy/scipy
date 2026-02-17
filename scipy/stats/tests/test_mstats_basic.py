@@ -996,6 +996,8 @@ class TestTheilslopes:
         # Test for correct masking.
         y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
         slope, intercept, lower, upper = mstats.theilslopes(y)
+        # These reference values are incorrect. With 100 masked, the outputs
+        # should be the same as above.
         assert_almost_equal(slope, 1./3)
         assert_almost_equal(intercept, 2./3)
 

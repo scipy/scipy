@@ -9,7 +9,7 @@ from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
 from scipy._lib._util import _asarray_validated, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
@@ -668,7 +668,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         case.
 
         .. versionadded:: 0.17
-    jac : callable, string or None, optional
+    jac : callable, str or None, optional
         Function with signature ``jac(x, ...)`` which computes the Jacobian
         matrix of the model function with respect to parameters as a dense
         array_like structure. It will be scaled according to provided `sigma`.
@@ -677,7 +677,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         a finite difference scheme, see `least_squares`.
 
         .. versionadded:: 0.18
-    full_output : boolean, optional
+    full_output : bool, optional
         If True, this function returns additional information: `infodict`,
         `mesg`, and `ier`.
 
@@ -1136,14 +1136,14 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
     Find a fixed point of the function.
 
     Given a function of one or more variables and a starting point, find a
-    fixed point of the function: i.e., where ``func(x0) == x0``.
+    fixed point of the function: i.e., where ``func(xf) == xf``.
 
     Parameters
     ----------
     func : function
         Function to evaluate.
     x0 : array_like
-        Fixed point of function.
+        Guess of fixed point of function.
     args : tuple, optional
         Extra arguments to `func`.
     xtol : float, optional
@@ -1156,6 +1156,11 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
         convergence acceleration [1]_. The "iteration" method simply iterates
         the function until convergence is detected, without attempting to
         accelerate the convergence.
+
+    Returns
+    -------
+    xf : array
+        Fixed point of function.
 
     References
     ----------

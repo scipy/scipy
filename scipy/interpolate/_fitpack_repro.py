@@ -15,7 +15,7 @@
     .. [3] P. Dierckx, "An algorithm for smoothing, differentiation and integration
          of experimental data using spline functions",
          Journal of Computational and Applied Mathematics, vol. I, no 3, p. 165 (1975).
-         https://doi.org/10.1016/0771-050X(75)90034-0
+         :doi:`10.1016/0771-050X(75)90034-0`.
 """
 import warnings
 import operator
@@ -101,10 +101,17 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
 
+    if not x.flags.c_contiguous:
+        x = x.copy()
+    if not y.flags.c_contiguous:
+        y = y.copy()
+
     if w is None:
         w = np.ones_like(x, dtype=float)
     else:
         w = np.asarray(w, dtype=float)
+        if not w.flags.c_contiguous:
+            w = w.copy()
         if w.ndim != 1:
             raise ValueError(f"{w.ndim = } not implemented yet.")
         if (w < 0).any():
@@ -524,7 +531,7 @@ class F:
     ----------
     [1] P. Dierckx, Algorithms for Smoothing Data with Periodic and Parametric Splines,
         COMPUTER GRAPHICS AND IMAGE PROCESSING vol. 20, pp 171-184 (1982.)
-        https://doi.org/10.1016/0146-664X(82)90043-0
+        :doi:`10.1016/0146-664X(82)90043-0`.
 
     """
     def __init__(self, x, y, t, k, s, w=None, *, R=None, Y=None):
@@ -1052,11 +1059,6 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         The actual number of knots returned by this routine may be slightly
         larger than `nest`.
         Default is None (no limit, add up to ``m + k + 1`` knots).
-    periodic : bool, optional
-        If True, data points are considered periodic with period ``x[m-1]`` -
-        ``x[0]`` and a smooth periodic spline approximation is returned. Values of
-        ``y[m-1]`` and ``w[m-1]`` are not used.
-        The default is False, corresponding to boundary condition 'not-a-knot'.
     bc_type : str, optional
         Boundary conditions.
         Default is `"not-a-knot"`.

@@ -84,7 +84,7 @@ def _kernel_matrix(x, kernel):
     return out
 
 
-# pythran export _polynomial_matrix(float[:, :], int[:, :])
+# pythran export _polynomial_matrix(float[:, :], int64[:, :])
 def _polynomial_matrix(x, powers):
     """Return monomials, with exponents from `powers`, evaluated at `x`."""
     out = np.empty((x.shape[0], powers.shape[0]), dtype=float)
@@ -97,7 +97,7 @@ def _polynomial_matrix(x, powers):
 #                              float[:],
 #                              str,
 #                              float,
-#                              int[:, :])
+#                              int64[:, :])
 def _build_system(y, d, smoothing, kernel, epsilon, powers):
     """Build the system used to solve for the RBF interpolant coefficients.
 
@@ -168,7 +168,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
 #                          float[:, :],
 #                          str,
 #                          float,
-#                          int[:, :],
+#                          int64[:, :],
 #                          float[:],
 #                          float[:])
 def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,

@@ -24,7 +24,7 @@ def polynomial_matrix(x, powers, xp):
 
 def _monomial_powers(ndim, degree, xp):
     out = _monomial_powers_impl(ndim, degree)
-    out = np.asarray(out, dtype=np.dtype("long"))
+    out = np.asarray(out, dtype=np.int64)
     if len(out) == 0:
         out = out.reshape(0, ndim)
     return out

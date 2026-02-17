@@ -69,7 +69,7 @@ your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab-item:: Fedora
+      .. tab-item:: Fedora / RHEL & CentOS 8+
 
         To install SciPy build requirements, you can do::
 
@@ -83,7 +83,7 @@ your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab-item:: CentOS/RHEL
+      .. tab-item:: CentOS & RHEL <=7
 
         To install SciPy build requirements, you can do::
 

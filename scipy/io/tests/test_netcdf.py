@@ -6,16 +6,16 @@ import tempfile
 import warnings
 from io import BytesIO
 from glob import glob
-from contextlib import contextmanager
+from contextlib import chdir, contextmanager
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           break_cycles, IS_PYPY)
+from numpy.testing import assert_, assert_allclose, assert_equal
+
 import pytest
 from pytest import raises as assert_raises
 
 from scipy.io import netcdf_file
-from scipy._lib._tmpdirs import in_tempdir
+from scipy._lib._gcutils import IS_PYPY, break_cycles
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -24,6 +24,28 @@ VARTYPE_EG = 'b'  # var type for example variable
 
 
 pytestmark = pytest.mark.thread_unsafe
+
+
+@contextmanager
+def in_tempdir():
+    ''' Create, return, and change directory to a temporary directory
+
+    Examples
+    --------
+    >>> import os
+    >>> my_cwd = os.getcwd()
+    >>> with in_tempdir() as tmpdir:
+    ...     _ = open('test.txt', 'wt').write('some text')
+    ...     assert os.path.isfile('test.txt')
+    ...     assert os.path.isfile(os.path.join(tmpdir, 'test.txt'))
+    >>> os.path.exists(tmpdir)
+    False
+    >>> os.getcwd() == my_cwd
+    True
+    '''
+    with tempfile.TemporaryDirectory() as td:
+        with chdir(td):
+            yield td
 
 
 @contextmanager
@@ -142,7 +164,6 @@ def test_read_write_files():
         if IS_PYPY:
             # windows cannot remove a dead file held by a mmap
             # that has not been collected in PyPy
-            break_cycles()
             break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)

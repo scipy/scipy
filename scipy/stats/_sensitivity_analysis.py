@@ -93,11 +93,13 @@ def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """AB matrix.
 
     AB: rows of B into A. Shape (d, d, n).
+
     - Copy A into d "pages"
     - In the first page, replace 1st rows of A with 1st row of B.
     ...
     - In the dth page, replace dth row of A with dth row of B.
     - return the stack of pages
+
     """
     d, n = A.shape
     AB = np.tile(A, (d, 1, 1))
@@ -579,7 +581,7 @@ def sobol_indices(
     of the mean is zero leading to :math:`S_{x_3} = 0`. But we can further
     observe that the variance of the output is not constant along the parameter
     values of :math:`x_3`. This heteroscedasticity is explained by higher order
-    interactions. Moreover, an heteroscedasticity is also noticeable on
+    interactions. Moreover, a heteroscedasticity is also noticeable on
     :math:`x_1` leading to an interaction between :math:`x_3` and :math:`x_1`.
     On :math:`x_2`, the variance seems to be constant and thus null interaction
     with this parameter can be supposed.

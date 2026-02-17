@@ -171,15 +171,11 @@ scipy/fftpack/convolvemodule.c
 scipy/fftpack/convolve.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
-scipy/integrate/_vodemodule.c
-scipy/integrate/_vode-f2pywrappers.f
 scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
 scipy/interpolate/_rgi_cython.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
-scipy/interpolate/src/dfitpack-f2pywrappers.f
-scipy/interpolate/src/dfitpackmodule.c
 scipy/io/_test_fortranmodule.c
 scipy/io/matlab/_mio5_utils.c
 scipy/io/matlab/_mio_utils.c
@@ -282,7 +278,6 @@ scipy/special/ellint_carlson_cpp_lite/Makefile
 scipy/special/ellint_carlson_cpp_lite/cellint.*
 scipy/special/ellint_carlson_cpp_lite/tests
 scipy/stats/_rank.c
-scipy/stats/_mvn-f2pywrappers.f
 scipy/stats/_mvnmodule.c
 scipy/stats/_statlibmodule.c
 scipy/stats/vonmises_cython.c

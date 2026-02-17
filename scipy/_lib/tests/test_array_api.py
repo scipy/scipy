@@ -11,9 +11,9 @@ from scipy._lib._array_api import (
     xp_capabilities_table, _xp_copy_to_numpy
 )
 from scipy._lib._array_api_docs_tables import is_named_function_like_object
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
-from scipy._lib.array_api_extra.testing import lazy_xp_function
+from scipy._external.array_api_extra.testing import lazy_xp_function
 
 # Run all tests in this module in the Array API CI,
 # including those without the `xp` fixture
@@ -23,6 +23,7 @@ lazy_xp_function(_asarray)
 lazy_xp_function(xp_copy)
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
 @pytest.mark.skipif(not SCIPY_ARRAY_API,
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
@@ -309,6 +310,7 @@ def is_inexact(x, xp):
 
 @pytest.mark.parametrize('x', scalars + lists + types + arrays)
 @pytest.mark.parametrize('y', scalars + lists + types + arrays)
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
 def test_xp_result_type_no_force(x, y, xp):
     # When force_floating==False (default), behavior of `xp_result_type`
     # should match that of `xp.result_type` on the same arguments after
@@ -335,6 +337,7 @@ def test_xp_result_type_no_force(x, y, xp):
 
 @pytest.mark.parametrize('x', scalars + lists + types + arrays)
 @pytest.mark.parametrize('y', scalars + lists + types + arrays)
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
 def test_xp_result_type_force_floating(x, y, xp):
     # When `force_floating==True`, behavior of `xp_result_type`
     # should match that of `xp.result_type` with `1.0` appended to the set of

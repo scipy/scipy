@@ -82,13 +82,22 @@
         }
     },
     "bdtrik": {
-        "_cdflib_wrappers.pxd": {
-            "bdtrik": "ddd->d"
+        "boost_special_functions.h++": {
+            "bdtrik_double": "ddd->d",
+            "bdtrik_float": "fff->f"
+        }
+    },
+    "_binom_ppf": {
+        "boost_special_functions.h++": {
+            "binom_ppf_double": "ddd->d",
+            "binom_ppf_float": "fff->f"
         }
     },
     "bdtrin": {
-        "_cdflib_wrappers.pxd": {
-            "bdtrin": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "bdtrin_double": "ddd->d",
+            "bdtrin_float": "fff->f"
+        }
     },
     "betainc": {
         "boost_special_functions.h++": {
@@ -370,8 +379,8 @@
         }
     },
     "gdtria": {
-        "_cdflib_wrappers.pxd": {
-            "gdtria": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtria": "ddd->d"
         }
     },
     "gdtrib": {
@@ -380,8 +389,8 @@
         }
     },
     "gdtrix": {
-        "_cdflib_wrappers.pxd": {
-            "gdtrix": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtrix": "ddd->d"
         }
     },
     "huber": {
@@ -520,8 +529,9 @@
             "nbdtrik": "ddd->d"        }
     },
     "nbdtrin": {
-        "_cdflib_wrappers.pxd": {
-            "nbdtrin": "ddd->d"
+        "boost_special_functions.h++": {
+            "nbinom_invn_float": "fff->f",
+            "nbinom_invn_double": "ddd->d"
         }
     },
     "ncfdtr": {
@@ -911,12 +921,6 @@
         "boost_special_functions.h++": {
             "binom_cdf_float": "fff->f",
             "binom_cdf_double": "ddd->d"
-        }
-    },
-    "_binom_ppf": {
-        "boost_special_functions.h++": {
-            "binom_ppf_float": "fff->f",
-            "binom_ppf_double": "ddd->d"
         }
     },
     "_binom_sf": {

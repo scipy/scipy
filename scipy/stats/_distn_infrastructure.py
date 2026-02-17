@@ -12,9 +12,10 @@ import warnings
 from itertools import zip_longest
 
 from scipy._lib import doccer
+from scipy._lib._docscrape import FunctionDoc
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy.special import comb, entr
 
@@ -1155,7 +1156,7 @@ class rv_generic:
             instance object for more information)
         loc : array_like, optional
             location parameter (default=0)
-        scale : array_like, optional (continuous RVs only)
+        scale : array_like, optional
             scale parameter (default=1)
         moments : str, optional
             composed of letters ['mvsk'] defining which moments to compute:
@@ -1268,7 +1269,7 @@ class rv_generic:
             instance object for more information).
         loc : array_like, optional
             Location parameter (default=0).
-        scale : array_like, optional  (continuous distributions only).
+        scale : array_like, optional
             Scale parameter (default=1).
 
         Notes
@@ -1828,13 +1829,13 @@ class rv_continuous(rv_generic):
     Statistics are computed using numerical integration by default.
     For speed you can redefine this using ``_stats``:
 
-     - take shape parameters and return mu, mu2, g1, g2
-     - If you can't compute one of these, return it as None
-     - Can also be defined with a keyword argument ``moments``, which is a
-       string composed of "m", "v", "s", and/or "k".
-       Only the components appearing in string should be computed and
-       returned in the order "m", "v", "s", or "k"  with missing values
-       returned as None.
+    - take shape parameters and return mu, mu2, g1, g2
+    - If you can't compute one of these, return it as None
+    - Can also be defined with a keyword argument ``moments``, which is a
+      string composed of "m", "v", "s", and/or "k".
+      Only the components appearing in string should be computed and
+      returned in the order "m", "v", "s", or "k"  with missing values
+      returned as None.
 
     Alternatively, you can override ``_munp``, which takes ``n`` and shape
     parameters and returns the n-th non-central moment of the distribution.
@@ -3189,7 +3190,7 @@ class rv_discrete(rv_generic):
         ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
         probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
         and ``pk`` must have the same shape, and ``xk`` must be unique.
-    inc : integer, optional
+    inc : int, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
     badvalue : float, optional
@@ -3950,6 +3951,48 @@ class rv_discrete(rv_generic):
         param_info = shape_info + [loc_info]
         return param_info
 
+    # these methods are identical to those of `rv_generic` except that
+    # they don't accept the `scale` parameter. They need their own copy
+    # of the methods so we can adjust the documentation.
+
+    def entropy(self, *args, **kwargs):
+        return super().entropy(*args, **kwargs)
+
+    def interval(self, confidence, *args, **kwargs):
+        return super().interval(confidence, *args, **kwargs)
+
+    def mean(self, *args, **kwargs):
+        return super().mean(*args, **kwargs)
+
+    def median(self, *args, **kwargs):
+        return super().median(*args, **kwargs)
+
+    def moment(self, order, *args, **kwargs):
+        return super().moment(order, *args, **kwargs)
+
+    def stats(self, *args, **kwargs):
+        return super().stats(*args, **kwargs)
+
+    def std(self, *args, **kwargs):
+        return super().std(*args, **kwargs)
+
+    def support(self, *args, **kwargs):
+        return super().support(*args, **kwargs)
+
+    def var(self, *args, **kwargs):
+        return super().var(*args, **kwargs)
+
+
+_remove_scale_methods = ['entropy', 'interval', 'mean', 'median',
+                         'moment', 'stats', 'std', 'support', 'var']
+for method_name in _remove_scale_methods:
+    # remove `scale` parameter from method documentation
+    method = getattr(rv_discrete, method_name)
+    doc = FunctionDoc(method)
+    doc['Parameters'] = [p for p in doc['Parameters'] if p.name != 'scale']
+    doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
+    method.__doc__ = str(doc)
+
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
             chunksize=32):
@@ -4180,7 +4223,7 @@ def _check_shape(argshape, size):
         output array of _rvs().
 
     bc : tuple of booleans
-        bc is an tuple the same length as size. bc[j] is True if the data
+        bc is a tuple the same length as size. bc[j] is True if the data
         associated with that index is generated in one call of _rvs_scalar().
 
     """

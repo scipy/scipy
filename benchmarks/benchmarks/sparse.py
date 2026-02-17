@@ -323,9 +323,9 @@ class Getset(Benchmark):
         v = np.random.rand(n)
 
         if N == 1:
-            i = int(i)
-            j = int(j)
-            v = float(v)
+            i = int(i[0])
+            j = int(j[0])
+            v = float(v[0])
 
         base = A.asformat(format)
 

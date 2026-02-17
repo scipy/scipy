@@ -1,5 +1,6 @@
 import sys
 import warnings
+import platform
 
 import numpy as np
 import numpy.testing as npt
@@ -205,7 +206,8 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
     check_meth_dtype(distfn, arg, meths)
     check_ppf_dtype(distfn, arg)
 
-    if distname not in fails_cmplx:
+    # complex special functions known to fail on sparc64 (gh-22577)
+    if distname not in fails_cmplx and platform.machine() != 'sparc64':
         check_cmplx_deriv(distfn, arg)
 
     if distname != 'truncnorm':

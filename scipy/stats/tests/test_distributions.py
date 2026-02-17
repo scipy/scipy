@@ -3907,7 +3907,8 @@ class TestStudentT:
         assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
         assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
         assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
-        assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
+        assert_allclose(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)),
+                        rtol=1e-14)
 
     def test_t_entropy(self):
         df = [1, 2, 25, 100]
@@ -6399,6 +6400,26 @@ class TestLevyStable:
             frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
             assert_equal(frozen_b, unfrozen_b)
 
+    @pytest.mark.parametrize(
+        "param, alpha, beta, xs, expected",
+        [
+            (0, 1.6, 1, [-15, -14, -13], [-187.1444263, -157.1411663, -130.3526688]),
+            (1, 1.6, 1, [-15, -14, -13], [-165.0203129, -137.3671717, -112.8223545]),
+            (0, 1.4, -1, [13, 14, 15], [-367.1943293, -464.7049565, -579.4399286]),
+            (1, 1.4, -1, [13, 14, 15], [-258.1216497, -334.6139857, -426.0724094]),
+        ],
+    )
+    @pytest.mark.xfail_on_32bit("`bisect` fails to recognize valid bracket")
+    def test_logpdf_tail(self, param, alpha, beta, xs, expected):
+        # gh-20636
+        # Expected values computed from Mathematica. Mathematica command is:
+        # Log[PDF[StableDistribution[0, 1.6, 1, 0, 1], -15.0]] // InputForm
+        # Test levy_stable.logpdf accuracy in the tails when beta=1 or beta=-1
+        # for both S0/S1 parameterizations.
+        # Testing logpdf instead of pdf as more compact.
+        stats.levy_stable.parameterization = f"S{param}"
+        logpdfs = stats.levy_stable(alpha=alpha, beta=beta).logpdf(xs)
+        assert_allclose(logpdfs, expected, rtol=1e-5)
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
@@ -8466,7 +8487,23 @@ class TestTukeyLambda:
         expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
         assert_almost_equal(mv, expected, decimal=10)
 
+    @pytest.mark.xfail(reason="Precision in tail hasn't been fixed in xsf")
+    def test_large_argument_ticket_21370(self):
+        # Check that survival function goes to 0 as x gets large
+        x = [1e4, 1e6, 1e8, 1e10, 1e12, 1e24]
+        lam = -0.5
+        sf = stats.tukeylambda.sf(x, lam)
+        # Check that the sf is 0 for large x
+        assert sf[-1] == 0.0
+        # Check that the sf is always decreasing except when it is 0
+        assert_array_less(np.diff(sf[sf > 0]), 0)
 
+        cdf = stats.tukeylambda.cdf(x, lam)
+        assert cdf[-1] == 1.0
+        # Check that the cdf is always increasing except when it saturates 
+        # to 1.0
+        assert np.all(np.diff(cdf[cdf < 1]) > 0)
+        
 class TestLevy:
 
     def test_levy_cdf_ppf(self):
@@ -8684,46 +8721,48 @@ def test_exponpow_edge():
     assert_equal(p, [np.inf, 0.0, -np.inf])
 
 
-def test_gengamma_edge():
-    # Regression test for gh-3985.
-    p = stats.gengamma.pdf(0, 1, 1)
-    assert_equal(p, 1.0)
+class TestGenGamma:
+    def test_gengamma_edge(self):
+        # Regression test for gh-3985.
+        p = stats.gengamma.pdf(0, 1, 1)
+        assert_equal(p, 1.0)
 
+    @pytest.mark.parametrize("a, c, ref, tol",
+                             [(1500000.0, 1, 8.529426144018633, 1e-15),
+                              (1e+30, 1, 35.95771492811536, 1e-15),
+                              (1e+100, 1, 116.54819318290696, 1e-15),
+                              (3e3, 1, 5.422011196659015, 1e-13),
+                              (3e6, -1e100, -236.29663213396054, 1e-15),
+                              (3e60, 1e-100, 1.3925371786831085e+102, 1e-15)])
+    def test_gengamma_extreme_entropy(self, a, c, ref, tol):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def gen_entropy(a, c):
+        #     a, c = mp.mpf(a), mp.mpf(c)
+        #     val = mp.digamma(a)
+        #     h = (a * (mp.one - val) + val/c + mp.loggamma(a) - mp.log(abs(c)))
+        #     return float(h)
+        assert_allclose(stats.gengamma.entropy(a, c), ref, rtol=tol)
 
-@pytest.mark.parametrize("a, c, ref, tol",
-                         [(1500000.0, 1, 8.529426144018633, 1e-15),
-                          (1e+30, 1, 35.95771492811536, 1e-15),
-                          (1e+100, 1, 116.54819318290696, 1e-15),
-                          (3e3, 1, 5.422011196659015, 1e-13),
-                          (3e6, -1e100, -236.29663213396054, 1e-15),
-                          (3e60, 1e-100, 1.3925371786831085e+102, 1e-15)])
-def test_gengamma_extreme_entropy(a, c, ref, tol):
-    # The reference values were calculated with mpmath:
-    # from mpmath import mp
-    # mp.dps = 500
-    #
-    # def gen_entropy(a, c):
-    #     a, c = mp.mpf(a), mp.mpf(c)
-    #     val = mp.digamma(a)
-    #     h = (a * (mp.one - val) + val/c + mp.loggamma(a) - mp.log(abs(c)))
-    #     return float(h)
-    assert_allclose(stats.gengamma.entropy(a, c), ref, rtol=tol)
+    def test_gengamma_endpoint_with_neg_c(self):
+        p = stats.gengamma.pdf(0, 1, -1)
+        assert p == 0.0
+        logp = stats.gengamma.logpdf(0, 1, -1)
+        assert logp == -np.inf
 
+    def test_gengamma_munp(self):
+        # Regression tests for gh-4724.
+        p = stats.gengamma._munp(-2, 200, 1.)
+        assert_almost_equal(p, 1./199/198)
 
-def test_gengamma_endpoint_with_neg_c():
-    p = stats.gengamma.pdf(0, 1, -1)
-    assert p == 0.0
-    logp = stats.gengamma.logpdf(0, 1, -1)
-    assert logp == -np.inf
+        p = stats.gengamma._munp(-2, 10, 1.)
+        assert_almost_equal(p, 1./9/8)
 
-
-def test_gengamma_munp():
-    # Regression tests for gh-4724.
-    p = stats.gengamma._munp(-2, 200, 1.)
-    assert_almost_equal(p, 1./199/198)
-
-    p = stats.gengamma._munp(-2, 10, 1.)
-    assert_almost_equal(p, 1./9/8)
+    def test_gengamma_logpdf_broadcasting_gh24574(self):
+        # gh-24574 reported a broadcasting error when `x` included 0s.
+        assert_allclose(stats.gengamma.logpdf([0, 1, 1], 1, -1), [-np.inf, -1, -1])
 
 
 def test_ksone_fit_freeze():
@@ -8755,6 +8794,8 @@ def test_ksone_fit_freeze():
             stats.ksone.fit(d)
 
 
+@pytest.mark.xfail(platform.machine() == "sparc64",
+    reason="complex special functions known to fail on sparc64 (gh-22577)")
 def test_norm_logcdf():
     # Test precision of the logcdf of the normal distribution.
     # This precision was enhanced in ticket 1614.

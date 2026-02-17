@@ -346,8 +346,6 @@ def test_api_importable():
                           ('scipy.ndimage.interpolation', None),
                           ('scipy.ndimage.measurements', None),
                           ('scipy.ndimage.morphology', None),
-                          ('scipy.odr.models', None),
-                          ('scipy.odr.odrpack', None),
                           ('scipy.optimize.cobyla', None),
                           ('scipy.optimize.lbfgsb', None),
                           ('scipy.optimize.linesearch', None),
