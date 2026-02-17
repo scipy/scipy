@@ -530,7 +530,8 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
             continue
         res = (np.exp(dist.logcdf(x, y, method=method)) if log
                else dist.cdf(x, y, method=method))
-        np.testing.assert_allclose(res, ref, atol=1e-14)
+        rtol = 1e-5 if USING_ACCELERATE else 1e-7
+        np.testing.assert_allclose(res, ref, rtol=rtol, atol=1e-14)
         if log:
             np.testing.assert_equal(res.dtype, (ref + 0j).dtype)
         else:
@@ -565,7 +566,8 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
             continue
         res = (np.exp(dist.logccdf(x, y, method=method)) if log
                else dist.ccdf(x, y, method=method))
-        np.testing.assert_allclose(res, ref, atol=1e-14)
+        rtol = 1e-5 if USING_ACCELERATE else 1e-7
+        np.testing.assert_allclose(res, ref, rtol=rtol, atol=1e-14)
         np.testing.assert_equal(res.dtype, ref.dtype)
         np.testing.assert_equal(res.shape, result_shape)
         if result_shape == tuple():
