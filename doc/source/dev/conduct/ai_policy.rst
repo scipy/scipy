@@ -21,7 +21,7 @@ Disclosure
 ----------
 
 If you make use of AI to assist in the development of your pull request,
-you must disclose disclose the tool(s) used, how they were used, and specify what code
+you must disclose the tool(s) used, how they were used, and specify what code
 or text is AI generated. We will reject any pull request that does not include the
 disclosure.
 
