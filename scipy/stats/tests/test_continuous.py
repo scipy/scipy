@@ -234,7 +234,7 @@ class TestDistributions:
                               ('kurtosis', {'cache'}, None),
                               ('pdf', {'log/exp'}, 'x'),
                               ('logpdf', {'log/exp'}, 'x'),
-                              ('pmf', {'log/exp'}, 'x'),  # add these when nan
+                              ('pmf', {'log/exp'}, 'x'),
                               ('logpmf', {'log/exp'}, 'x'),
                               ('logcdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
                               ('cdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
@@ -454,8 +454,8 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
     ref = getattr(dist, fname)(*args)
     check_nans_and_edges(dist, fname, arg, ref)
 
-    # Remove this after fixing `draw`
-    tol_override = {'atol': 1e-15}
+    tol_override = {'atol': 1e-15, 'rtol': 1e-5 if USING_ACCELERATE else 1e-7}
+
     if fname in {'mean', 'skewness'}:
         tol_override = {'atol': 1e-15}
     elif fname in {'mode'}:
@@ -1183,8 +1183,7 @@ class TestMakeDistribution:
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
         p = X.cdf(x)
-        default_rtol = 1e-5 if USING_ACCELERATE else 1e-7
-        rtol = custom_tolerances.get(distname, default_rtol)
+        rtol = custom_tolerances.get(distname, 1e-7)
         atol = 1e-12
 
         with np.errstate(divide='ignore', invalid='ignore'):
