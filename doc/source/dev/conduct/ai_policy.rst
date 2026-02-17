@@ -50,8 +50,8 @@ requests, AI generated or not, where the copyright is in question.
 Communication
 -------------
 
-When interacting in communication among developers (forum, discussions,
-issues, pull requests, etc.) do not use AI to speak for you, other than for
+When interacting with developers (forum, discussions,
+issues, pull requests, etc.) do not use AI to speak for you, except for
 translation or grammar editing. If the developers want to chat with a chatbot,
 they can do so themselves. Human-to-human communication is essential for an
 open source community to thrive.
