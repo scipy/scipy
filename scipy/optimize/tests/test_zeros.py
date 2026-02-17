@@ -1029,3 +1029,5 @@ class TestRidderUnderflow:
         
         assert result.converged
         assert root == 0.0
+        assert result.function_calls == nfev
+        assert result.function_calls == 3
