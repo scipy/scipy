@@ -62,7 +62,6 @@ The use of an AI agent that writes code and then submits a pull request autonomo
 not permitted. A human must check any generated code and submit a pull request according
 to the 'Responsibility' section above.
 
-
 Other Resources
 ---------------
 While these do not formally form part of SciPy's AI policy, the following resources
