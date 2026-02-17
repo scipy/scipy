@@ -4000,7 +4000,6 @@ _distribution_names = {
 }
 
 
-# beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 @xp_capabilities(np_only=True)
 def make_distribution(dist):
     """Generate a `UnivariateDistribution` class from a compatible object.
