@@ -73,8 +73,6 @@ _NO_CACHE = "no_cache"
 #  Make ShiftedScaledDistribution more efficient - only process underlying
 #    distribution parameters as necessary.
 #  Reconsider `all_inclusive` - see comment in `contains` method of `_interval`
-#  Should process_parameters update kwargs rather than returning? Should we
-#    update parameters rather than setting to what `process_parameters` returns?
 # `validation_policy` needs testing
 # `tol` does not affect offer very fine-grained control; consider improving
 # report accuracy estimates? How?
@@ -1567,14 +1565,19 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         Parameters
         ----------
+        validation_policy : {None, "skip_all"}
+            Specifies the level of input validation to perform. Left unspecified,
+            input validation is performed to ensure appropriate behavior in edge
+            case (e.g. parameters out of domain, argument outside of distribution
+            support, etc.) and improve consistency of output dtype, shape, etc.
+            Pass ``'skip_all'`` to avoid the computational overhead of these
+            checks when rough edges are acceptable.
+
         **params : array_like
             Desired numerical values of the distribution parameters. Any or all
             of the parameters initially used to instantiate the distribution
             may be modified. Parameters used in alternative parameterizations
             are not accepted.
-
-        validation_policy : str
-            To be documented. See Question 3 at the top.
         """
 
         parameters = original_parameters = self._original_parameters.copy()
@@ -1601,7 +1604,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # distributions, the domain of a parameter doesn't depend on other
             # parameters, so parameters could safely be modified without
             # re-validating all other parameters. To handle these cases more
-            # efficiently, we could allow the developer  to override this
+            # efficiently, we could allow the developer to override this
             # behavior.
 
             # Currently the user can only update the original parameterization.
