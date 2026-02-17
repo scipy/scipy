@@ -2214,39 +2214,42 @@ class exponnorm_gen(rv_continuous):
 
     def _logpdf(self, x, K):
         u = (-x + 1.0 / K) / np.sqrt(2)
-        def logpdf_nonnegative_u(x, K):
-            erfcx_term = np.log(sc.erfcx((-x + 1.0 / K) / np.sqrt(2)))
+        def logpdf_erfcx(x, K, u):
+            erfcx_term = np.log(sc.erfcx(u))
             return -np.log(2) - 0.5 * (x ** 2) - np.log(K) + erfcx_term
-        def logpdf_negative_u(x, K):
+        def logpdf_default(x, K, u):
             invK = 1.0 / K
             exparg = invK * (-x + 0.5 * invK)
-            return -np.log(K) + exparg + _norm_logcdf(x - invK)
+            return exparg + _norm_logcdf(x - invK) - np.log(K)
+        use_erfcx = np.logical_and(u >=0, K < 1e-6)
         return xpx.apply_where(
-            u >= 0, (x, K), logpdf_nonnegative_u, logpdf_negative_u)
+            use_erfcx, (x, K, u), logpdf_erfcx, logpdf_default)
 
     def _cdf(self, x, K):
         u = (-x + 1.0 / K) / np.sqrt(2)
-        def cdf_nonnegative_u(x, K):
-            eterm = sc.erfcx((-x + 1.0 / K) / np.sqrt(2))
-            return _norm_cdf(x) - 0.5 * np.exp(-0.5 * x ** 2) * eterm 
-        def cdf_negative_u(x, K):
+        def cdf_erfcx(x, K, u):
+            return _norm_cdf(x) - 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u) 
+        def cdf_default(x, K, u):
             invK = 1.0 / K
-            logprod = invK * (0.5 * invK - x) + _norm_logcdf(x - invK)
+            expval = invK * (0.5 * invK - x)
+            logprod = expval + _norm_logcdf(x - invK)
             return _norm_cdf(x) - np.exp(logprod)
+        use_erfcx = np.logical_and(u >=0, K < 1e-6)
         return xpx.apply_where(
-            u >= 0, (x, K), cdf_nonnegative_u, cdf_negative_u)
+            use_erfcx, (x, K, u), cdf_erfcx, cdf_default)
 
     def _sf(self, x, K):
         u = (-x + 1.0 / K) / np.sqrt(2)
-        def sf_nonnegative_u(x, K):
-            eterm = sc.erfcx((-x + 1.0 / K) / np.sqrt(2))    
-            return _norm_cdf(-x) + 0.5 * np.exp(-0.5 * x ** 2) * eterm
-        def sf_negative_u(x, K):
+        def sf_erfcx(x, K, u):
+            return _norm_cdf(-x) + 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u)
+        def sf_default(x, K, u):
             invK = 1.0 / K
-            logprod = invK * (0.5 * invK - x) + _norm_logcdf(x - invK)
-            return _norm_cdf(-x) + np.exp(logprod)        
+            expval = invK * (0.5 * invK - x)
+            logprod = expval + _norm_logcdf(x - invK)
+            return _norm_cdf(-x) + np.exp(logprod)   
+        use_erfcx = np.logical_and(u >=0, K < 1e-6)  
         return xpx.apply_where(
-            u >= 0, (x, K), sf_nonnegative_u, sf_negative_u)
+            use_erfcx, (x, K, u), sf_erfcx, sf_default)
 
     def _stats(self, K):
         K2 = K * K
