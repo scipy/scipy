@@ -19,7 +19,7 @@ def _sparse_frobenius_norm(x):
 
 def norm(x, ord=None, axis=None):
     """
-    Norm of a sparse matrix
+    Norm of a sparse matrix.
 
     This function is able to return one of seven different matrix norms,
     depending on the value of the ``ord`` parameter.

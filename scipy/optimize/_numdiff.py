@@ -8,7 +8,7 @@ from ..sparse import issparse, isspmatrix, find, csc_array, csr_array, csr_matri
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace, xp_result_type
 from scipy._lib._util import MapWrapper
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
@@ -389,7 +389,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         If `as_linear_operator` is True returns a LinearOperator
         with shape (m, n). Otherwise it returns a dense array or sparse
         array depending on how `sparsity` is defined. If `sparsity`
-        is None then a ndarray with shape (m, n) is returned. If
+        is None then an ndarray with shape (m, n) is returned. If
         `sparsity` is not None returns a csr_array or csr_matrix with
         shape (m, n) following the array/matrix type of the incoming structure.
         For sparse arrays and linear operators it is always returned as

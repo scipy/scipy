@@ -1311,7 +1311,7 @@ add_newdoc("chndtr",
     r"""
     chndtr(x, df, nc, out=None)
 
-    Non-central chi square cumulative distribution function
+    Non-central chi square cumulative distribution function.
 
     The cumulative distribution function is given by:
 
@@ -1386,7 +1386,7 @@ add_newdoc("chndtrix",
     """
     chndtrix(p, df, nc, out=None)
 
-    Inverse to `chndtr` vs `x`
+    Inverse to `chndtr` vs `x`.
 
     Calculated using a search to find a value for `x` that produces the
     desired value of `p`.
@@ -1446,7 +1446,7 @@ add_newdoc("chndtridf",
     """
     chndtridf(x, p, nc, out=None)
 
-    Inverse to `chndtr` vs `df`
+    Inverse to `chndtr` vs `df`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -1505,7 +1505,7 @@ add_newdoc("chndtrinc",
     """
     chndtrinc(x, df, p, out=None)
 
-    Inverse to `chndtr` vs `nc`
+    Inverse to `chndtr` vs `nc`.
 
     Calculated using a search to find a value for `df` that produces the
     desired value of `p`.
@@ -2145,6 +2145,19 @@ add_newdoc("entr",
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
            :doi:`10.1017/CBO9780511804441`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import entr
+
+    Calculate the entropy (in nats) of a 3-outcome probability distribution
+
+    >>> p = np.array([0.2, 0.5, 0.3])
+    >>> entr(p)
+    array([0.32188758, 0.34657359, 0.36119184])
+    >>> entr(p).sum()
+    1.0296530140645737
 
     """)
 
@@ -3490,7 +3503,7 @@ add_newdoc("fdtridfd",
     """
     fdtridfd(dfn, p, x, out=None)
 
-    Inverse to `fdtr` vs dfd
+    Inverse to `fdtr` vs dfd.
 
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
 
@@ -3845,24 +3858,12 @@ add_newdoc("gdtria",
     gdtr : CDF of the gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `a`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtria` is implemented in terms of the incomplete gamma inverse as
+    ``gdtria(p, b, x) = gammaincinv(b, p)/x``.
 
     Examples
     --------
@@ -3991,24 +3992,12 @@ add_newdoc("gdtrix",
     gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of ``gdtr(a, b, x)``.
     gdtrib : Inverse with respect to `b` of ``gdtr(a, b, x)``.
+    gammaincinv : Inverse of the incomplete regularized gamma function.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `x` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `x`.
-
-    References
-    ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Computation of the incomplete gamma function ratios and their
-           inverse.  ACM Trans. Math. Softw. 12 (1986), 377-393.
+    `gdtrix` is implemented in terms of the incomplete gamma inverse as
+    ``gdtrix(a, b, p) = gammaincinv(b, p)/a``.
 
     Examples
     --------
@@ -4022,7 +4011,7 @@ add_newdoc("gdtrix",
     Verify the inverse.
 
     >>> gdtrix(1.2, 3.4, p)
-    5.5999999999999996
+    5.6
     """)
 
 
@@ -4286,7 +4275,7 @@ add_newdoc("hyperu",
     r"""
     hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U
+    Confluent hypergeometric function U.
 
     It is defined as the solution to the equation
 
@@ -4408,7 +4397,7 @@ add_newdoc("kn",
     r"""
     kn(n, x, out=None)
 
-    Modified Bessel function of the second kind of integer order `n`
+    Modified Bessel function of the second kind of integer order `n`.
 
     Returns the modified Bessel function of the second kind for integer order
     `n` at real `z`.
@@ -4475,7 +4464,7 @@ add_newdoc("kolmogi",
     """
     kolmogi(p, out=None)
 
-    Inverse Survival Function of Kolmogorov distribution
+    Inverse Survival Function of Kolmogorov distribution.
 
     It is the inverse function to `kolmogorov`.
     Returns y such that ``kolmogorov(y) == p``.
@@ -5323,7 +5312,7 @@ add_newdoc("nbdtrin",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     Formula 26.5.26 of [2]_ or [3]_,
 
@@ -5339,9 +5328,7 @@ add_newdoc("nbdtrin",
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -5363,7 +5350,7 @@ add_newdoc("nbdtrin",
     point accuracy.
 
     >>> nbdtrin(k, cdf_value, p)
-    1.999999999998137
+    2.0
     """)
 
 add_newdoc("ncfdtr",
@@ -6030,36 +6017,36 @@ add_newdoc("nrdtrisd",
 
 add_newdoc("ndtri",
     """
-    ndtri(y, out=None)
+    ndtri(p, out=None)
 
-    Inverse of `ndtr` vs x
+    Inverse of `ndtr`.
 
-    Returns the argument x for which the area under the standard normal
-    probability density function (integrated from minus infinity to `x`)
-    is equal to y.
+    Returns the quantile `x` such that the cumulative distribution function of the
+    standard normal distribution evaluated at `x` equals `p`, that is, ``ndtr(x) == p``.
 
     Parameters
     ----------
     p : array_like
-        Probability
+        Probability values.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
     x : scalar or ndarray
-        Value of x such that ``ndtr(x) == p``.
+        Quantile(s) corresponding to the probabilitie(s) in `p`.
 
     See Also
     --------
-    ndtr : Standard normal cumulative probability distribution
+    ndtr : Standard normal cumulative distribution function
     ndtri_exp : Inverse of log_ndtr
 
     Examples
     --------
-    `ndtri` is the percentile function of the standard normal distribution.
-    This means it returns the inverse of the cumulative density `ndtr`. First,
-    let us compute a cumulative density value.
+    `ndtri` is the percentile (quantile) function of the standard normal distribution,
+    i.e., the inverse of the cumulative distribution function `ndtr`.
+
+    First, compute a cumulative distribution value:
 
     >>> import numpy as np
     >>> from scipy.special import ndtri, ndtr
@@ -6067,18 +6054,17 @@ add_newdoc("ndtri",
     >>> cdf_val
     0.9772498680518208
 
-    Verify that `ndtri` yields the original value for `x` up to floating point
-    errors.
+    Verify that `ndtri` yields the original value for `x` up to floating point errors.
 
     >>> ndtri(cdf_val)
     2.0000000000000004
 
-    Plot the function. For that purpose, we provide a NumPy array as argument.
+    Plot the percentile function over a range of probabilities.
 
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0.01, 1, 200)
+    >>> p = np.linspace(1e-3, 1 - 1e-3, 201)
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, ndtri(x))
+    >>> ax.plot(p, ndtri(p))
     >>> ax.set_title("Standard normal percentile function")
     >>> plt.show()
     """)
@@ -6143,7 +6129,7 @@ add_newdoc("pdtrc",
     """
     pdtrc(k, m, out=None)
 
-    Poisson survival function
+    Poisson survival function.
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
@@ -6193,7 +6179,7 @@ add_newdoc("pdtri",
     """
     pdtri(k, y, out=None)
 
-    Inverse to `pdtr` vs m
+    Inverse to `pdtr` vs m.
 
     Returns the Poisson variable `m` such that the sum from 0 to `k` of
     the Poisson density is equal to the given probability `y`:
@@ -6885,7 +6871,7 @@ add_newdoc("smirnov",
     r"""
     smirnov(n, d, out=None)
 
-    Kolmogorov-Smirnov complementary cumulative distribution function
+    Kolmogorov-Smirnov complementary cumulative distribution function.
 
     Returns the exact Kolmogorov-Smirnov complementary cumulative
     distribution function,(aka the Survival Function) of Dn+ (or Dn-)
@@ -6998,7 +6984,7 @@ add_newdoc("smirnovi",
     """
     smirnovi(n, p, out=None)
 
-    Inverse to `smirnov`
+    Inverse to `smirnov`.
 
     Returns `d` such that ``smirnov(n, d) == p``, the critical value
     corresponding to `p`.
@@ -7168,7 +7154,7 @@ add_newdoc(
     r"""
     stdtr(df, t, out=None)
 
-    Student t distribution cumulative distribution function
+    Student t distribution cumulative distribution function.
 
     Returns the integral:
 
@@ -7268,7 +7254,7 @@ add_newdoc("stdtridf",
     """
     stdtridf(p, t, out=None)
 
-    Inverse of `stdtr` vs df
+    Inverse of `stdtr` vs df.
 
     Returns the argument df such that stdtr(df, t) is equal to `p`.
 

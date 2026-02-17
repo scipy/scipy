@@ -132,7 +132,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 
 
 def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
-    """Solve an equation system, a x = b, given the LU factorization of a
+    """Solve an equation system, ``a @ x = b``, given the LU factorization of a.
 
     The documentation is written assuming array arguments are of specified
     "core" shapes. However, array argument(s) of this function may have additional
@@ -141,9 +141,9 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
     Parameters
     ----------
-    (lu, piv)
-        Factorization of the coefficient matrix a, as given by lu_factor.
-        In particular piv are 0-indexed pivot indices.
+    lu_and_piv : tuple
+        Factorization of the coefficient matrix a in the form ``(lu, piv)``, as given
+        by lu_factor. In particular piv are 0-indexed pivot indices.
     b : array
         Right-hand side
     trans : {0, 1, 2}, optional

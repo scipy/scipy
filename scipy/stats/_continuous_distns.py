@@ -21,7 +21,7 @@ import scipy.special as sc
 
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import xp_promote
 
 from . import _stats
@@ -3871,8 +3871,9 @@ class gengamma_gen(rv_continuous):
 
     def _logpdf(self, x, a, c):
         return xpx.apply_where(
-            (x != 0) | (c > 0), (x, c),
-            lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)),
+            (x != 0) | (c > 0), (x, c, a),
+            lambda x, c, a: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
+                             - x**c - sc.gammaln(a)),
             fill_value=-np.inf)
 
     def _cdf(self, x, a, c):
@@ -11622,7 +11623,7 @@ halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 class crystalball_gen(rv_continuous):
     r"""
-    Crystalball distribution
+    Crystalball distribution.
 
     %(before_notes)s
 
@@ -11807,7 +11808,7 @@ def _argus_phi(chi):
 
 class argus_gen(rv_continuous):
     r"""
-    Argus distribution
+    Argus distribution.
 
     %(before_notes)s
 
