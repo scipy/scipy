@@ -1224,18 +1224,9 @@ def _logexpxmexpy(x, y):
 
     Avoids over/underflow, but does not prevent loss of precision otherwise.
     """
-    # TODO: properly avoid NaN when y is negative infinity
-    # TODO: silence warning with taking log of complex nan
-    # TODO: deal with x == y better
-    i = np.isneginf(np.real(y))
-    if np.any(i):
-        y = np.asarray(y.copy())
-        y[i] = np.finfo(y.dtype).min
-    x, y = np.broadcast_arrays(x, y)
-    res = np.asarray(special.logsumexp([x, y+np.pi*1j], axis=0))
-    i = (x == y)
-    res[i] = -np.inf
-    return res
+    return xpx.apply_where(x != y, (x, y),
+                           lambda x, y: special.logsumexp([x, y+np.pi*1j], axis=0),
+                           fill_value=-np.inf)
 
 
 def _guess_bracket(xmin, xmax):
