@@ -5027,14 +5027,14 @@ class TestLIL(sparse_test_class(minmax=False)):
         rows = [0, 0, 4, 7]
         cols = [1, 0, 3, 3]
         vals = [2, 1, 3, 9]
-        m, n = int(1E3), int(1E4)
+        m, n = int(1E4), int(1E8)
         mat = sparse.csr_matrix((vals, (rows, cols)), shape=(m, n), dtype=np.float32)
         
         # Create a smaller sparse matrix to assign
         mini_rows = [0, 0, 2, 3]
         mini_cols = [1, 0, 2, 2]
         mini_vals = [2, 1, 3, 9]
-        mini_m, mini_n = 100, 500
+        mini_m, mini_n = int(5E3), int(1E7)
         mini_mat = sparse.csr_matrix((mini_vals, (mini_rows, mini_cols)), 
                                   shape=(mini_m, mini_n), dtype=np.float32)
         
@@ -5042,8 +5042,12 @@ class TestLIL(sparse_test_class(minmax=False)):
         mini_lil = mini_mat.tolil()
         mat_lil[1:mini_m+1, 10:mini_n+10] = mini_lil
         
-        result = mat_lil.toarray()
-        assert result[1, 11] == 2 or result[1, 10] == 1
+        # verify a couple of sentinel values without densifying
+        v10 = mat_lil[1, 10]
+        v11 = mat_lil[1, 11]
+
+        assert v10 == 1
+        assert v11 == 2
 
 
 @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
