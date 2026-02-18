@@ -20,10 +20,11 @@ descriptions.
 Disclosure
 ----------
 
-If you make use of AI to assist in the development of your pull request,
-you must disclose the tool(s) used, how they were used, and specify what code
-or text is AI generated. We will reject any pull request that does not include the
-disclosure.
+You must disclose whether AI has been used to assist in the development of
+your pull request.
+If so, you must document which tool(s) have been used, how they were used,
+and specify what code or text is AI generated. We will reject any pull request
+that does not include the disclosure.
 
 Code Quality
 ------------
