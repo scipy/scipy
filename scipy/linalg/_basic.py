@@ -7,7 +7,7 @@
 import warnings
 from itertools import product
 import numpy as np
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
     _ensure_aligned_and_native, _ensure_dtype_cdsz,
@@ -200,6 +200,8 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    _deprecate_dtypes("linalg.solve", a1, b1)
+
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
@@ -923,6 +925,8 @@ def solve_circulant(c, b, singular='raise', tol=None,
     if nc != nb:
         raise ValueError(f'Shapes of c {c.shape} and b {b.shape} are incompatible')
 
+    _deprecate_dtypes('solve_circulant', c, b)
+
     # accommodate empty arrays
     if b.size == 0:
         dt = solve_circulant(np.arange(3, dtype=c.dtype),
@@ -1074,6 +1078,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
             [3.  , 0.25]]])
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
+    _deprecate_dtypes("linalg.inv", a1)
 
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
@@ -1183,6 +1188,8 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # First we check and make arrays.
     a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    _deprecate_dtypes("linalg.det", a1)
+
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
     if a1.shape[-1] != a1.shape[-2]:
@@ -1390,6 +1397,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    _deprecate_dtypes("linalg.lstsq", a1, b1)
+
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # NB: makes a1.dtype == b1.dtype, if needed
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 

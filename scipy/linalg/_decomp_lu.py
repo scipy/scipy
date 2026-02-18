@@ -6,7 +6,7 @@ from numpy import asarray, asarray_chkfinite
 import numpy as np
 from itertools import product
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
@@ -196,6 +196,8 @@ def _lu_solve(lu, piv, b, trans, overwrite_b, check_finite):
     else:
         b1 = asarray(b)
 
+    _deprecate_dtypes("lu_solve", lu, b)
+
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     if lu.shape[0] != b1.shape[0]:
@@ -310,6 +312,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     """
     a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    _deprecate_dtypes("lu", a1)
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
 

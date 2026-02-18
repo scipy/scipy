@@ -125,6 +125,7 @@ class TestLU:
         assert_allclose(l, np.ones(shape=(4, 5, 1, 1), dtype=np.complex64))
         assert_allclose(u, a)
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_empty_edge_cases(self):
         a = np.empty([0, 0])
         p, l, u = lu(a)

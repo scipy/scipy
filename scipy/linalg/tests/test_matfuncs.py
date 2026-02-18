@@ -491,6 +491,7 @@ class TestSqrtM:
         M = np.array([[2, 4], [0, -2]], dtype=np.int64)
         assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_float_out(self):
         M = np.eye(10, dtype=np.float16)
         assert sqrtm(M).dtype == np.float32
@@ -502,6 +503,7 @@ class TestSqrtM:
             M = np.eye(10, dtype=np.float128)
             assert sqrtm(M).dtype == np.float64
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.float16)
         assert sqrtm(M).dtype == np.complex64
@@ -513,6 +515,7 @@ class TestSqrtM:
             M = np.array([[2, 4], [0, -2]], dtype=np.float128)
             assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_comp_in_comp_out(self):
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
         assert sqrtm(M).dtype == np.complex64

@@ -379,6 +379,7 @@ def test_kde_integer_input():
 _ftypes = ['float32', 'float64', 'float96', 'float128', 'int32', 'int64']
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
 @pytest.mark.parametrize("dtype", _ftypes)
 def test_kde_output_dtype(dtype, bw_type):
