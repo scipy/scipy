@@ -16,7 +16,7 @@ from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
