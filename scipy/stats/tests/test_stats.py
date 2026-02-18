@@ -3594,9 +3594,6 @@ class TestMoments:
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
     def test_moment_center_scalar_moment(self, size, m, c, xp):
         rng = np.random.default_rng(6581432544381372042)
         x = xp.asarray(rng.random(size=size))
@@ -3607,16 +3604,13 @@ class TestMoments:
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('c', (None, 0, 1))
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
     def test_moment_center_array_moment(self, size, c, xp):
         rng = np.random.default_rng(1706828300224046506)
         x = xp.asarray(rng.random(size=size))
         m = [0, 1, 2, 3]
         res = stats.moment(x, m, center=c)
         ref = xp.concat([stats.moment(x, i, center=c)[xp.newaxis, ...] for i in m])
-        xp_assert_equal(res, ref)
+        xp_assert_close(res, ref)  # JAX JIT doesn't pass with equality
 
     def test_moment(self, xp):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
@@ -3640,26 +3634,39 @@ class TestMoments:
         y = stats.moment(testcase, [1, 2, 3, 4])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
-        # check moment input consists only of integers
+        # check floating point integer order
         y = stats.moment(testcase, 0.0)
         xp_assert_close(y, xp.asarray(1.0))
-        message = 'All elements of `order` must be integral.'
-        with pytest.raises(ValueError, match=message):
-            stats.moment(testcase, 1.2)
+
         y = stats.moment(testcase, [1.0, 2, 3, 4.0])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
-        def test_cases():
+    @skip_xp_backends("jax.numpy", reason="array value-dependent error")
+    def test_order_input_validation(self, xp):
+        testcase = xp.asarray(self.testcase)
+        message = 'All elements of `order` must be integral.'
+        with pytest.raises(ValueError, match=message):
+            stats.moment(testcase, 1.2)
+
+    def test_zero_size(self, xp):
+        message = "One or more sample arguments..."
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([]))
             xp_assert_equal(y, xp.asarray(xp.nan))
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([], dtype=xp.float32))
             xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
-            y = stats.moment(xp.zeros((1, 0)), axis=0)
-            xp_assert_equal(y, xp.empty((0,)))
+
+        message = "All axis-slices of one or more"
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([[]]), axis=1)
             xp_assert_equal(y, xp.asarray([xp.nan]))
-            y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
-            xp_assert_equal(y, xp.empty((2, 0)))
+
+        y = stats.moment(xp.zeros((1, 0)), axis=0)
+        xp_assert_equal(y, xp.empty((0,)))
+
+        y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
+        xp_assert_equal(y, xp.empty((2, 0)))
 
     def test_nan_policy(self):
         x = np.arange(10.)
@@ -3680,12 +3687,15 @@ class TestMoments:
         y = stats.moment(x, order=order)
         xp_assert_equal(y, xp.asarray(expect, dtype=dtype))
 
-        y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
-        xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
+        message = "Precision loss occurred in moment calculation"
+        with eager_warns(RuntimeWarning, match=message, xp=xp):
+            y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
+            xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
 
-        y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
-                         order=order)
-        xp_assert_equal(y, xp.full((1, 2, 4, 5), expect, dtype=dtype))
+        with eager_warns(RuntimeWarning, match=message, xp=xp):
+            y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
+                             order=order)
+            xp_assert_equal(y, xp.full((1, 2, 4, 5), expect, dtype=dtype))
 
         y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
                          order=order)
@@ -3724,15 +3734,13 @@ class TestMoments:
 
     @pytest.mark.parametrize('order', [0, 1, 2, 3])
     @pytest.mark.parametrize('axis', [-1, 0, 1])
-    @pytest.mark.parametrize('center', [None, 0])
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
+    @pytest.mark.parametrize('center', [None, 0.])
     def test_moment_array_api(self, xp, order, axis, center):
         rng = np.random.default_rng(34823589259425)
         x = rng.random(size=(5, 6, 7))
         res = stats.moment(xp.asarray(x), order, axis=axis, center=center)
-        ref = xp.asarray(_moment(x, order, axis, mean=center))
+        center = center if center is None else np.asarray(center)
+        ref = xp.asarray(_moment(x, order, axis, center=center)[()])
         xp_assert_close(res, ref)
 
 
@@ -3755,7 +3763,7 @@ class TestSkew(SkewKurtosisTest):
         return stats.skew(x)
 
     @pytest.mark.filterwarnings(
-        "ignore:invalid value encountered in scalar divide:RuntimeWarning:dask"
+        "ignore:invalid value encountered:RuntimeWarning:dask"
     )
     def test_skewness(self, xp):
         # Scalar test case
@@ -3852,7 +3860,7 @@ class TestKurtosis(SkewKurtosisTest):
     def stat_fun(self, x):
         return stats.kurtosis(x)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_kurtosis(self, xp):
         # Scalar test case
         y = stats.kurtosis(xp.asarray(self.scalar_testcase))
@@ -6651,21 +6659,23 @@ class TestJarqueBera:
         xp_assert_close(res.pvalue, resT.pvalue)
 
 
-def test_pointbiserial():
-    # same as mstats test except for the nan
-    # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
-    x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
-         0,0,0,0,1]
-    y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
-         2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
-         0.8,0.7,0.6,0.5,0.2,0.2,0.1]
-    assert_almost_equal(stats.pointbiserialr(x, y)[0], 0.36149, 5)
+@make_xp_test_case(stats.pointbiserialr)
+class TestPointBiserialR:
+    def test_pointbiserial(self, xp):
+        # same as mstats test except for the nan
+        # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
+        x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
+             0,0,0,0,1.]
+        y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
+             2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
+             0.8,0.7,0.6,0.5,0.2,0.2,0.1]
+        res = stats.pointbiserialr(xp.asarray(x), xp.asarray(y))
+        xp_assert_close(res[0], xp.asarray(0.36149), atol=1e-5)
 
-    # test for namedtuple attribute results
-    attributes = ('correlation', 'pvalue')
-    res = stats.pointbiserialr(x, y)
-    check_named_results(res, attributes)
-    assert_equal(res.correlation, res.statistic)
+        # test for namedtuple attribute results
+        attributes = ('correlation', 'pvalue')
+        check_named_results(res, attributes, xp=xp)
+        xp_assert_equal(res.correlation, res.statistic)
 
 
 def test_obrientransform():
