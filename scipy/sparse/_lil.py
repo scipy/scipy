@@ -275,9 +275,9 @@ class _lil_base(_spbase, IndexMixin):
         # is performed on a 1D sparse matrix, therefore nonzero rows are
         # irrelevant
         result = self[row, col].nonzero()
-        nnz_cols = result[-1]
-        mapped_nnz_rows = row[nnz_cols]
-        mapped_nnz_cols = col[nnz_cols]
+        nz_cols = result[-1]
+        mapped_nnz_rows = row[nz_cols]
+        mapped_nnz_cols = col[nz_cols]
         _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
                                            self.rows, self.data,
                                            mapped_nnz_rows, mapped_nnz_cols,
@@ -302,9 +302,9 @@ class _lil_base(_spbase, IndexMixin):
         self._clear_cells(row.flatten(), col.flatten())
 
         # extract sparsity structure from x
-        x_nnz_rows, x_nnz_cols = x.nonzero()
-        row = row[x_nnz_rows, x_nnz_cols].flatten()
-        col = col[x_nnz_rows, x_nnz_cols].flatten()
+        x_row_indices, x_col_indices = x.nonzero()
+        row = row[x_row_indices, x_col_indices]
+        col = col[x_row_indices, x_col_indices]
         # write in the locations specified by the sparsity structure
         _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
                                            self.rows, self.data, row, col,
