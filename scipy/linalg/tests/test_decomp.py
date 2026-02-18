@@ -959,6 +959,7 @@ class TestEigh:
         w, z = eigh(a, b)
 
     @skip_xp_invalid_arg
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.
         import scipy.sparse

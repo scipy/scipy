@@ -1,7 +1,7 @@
 """SVD decomposition functions."""
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from . import _batched_linalg
 
 # Local imports.
@@ -149,6 +149,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # basic sanity checks of the input matrix
     a1 = _asarray_validated(a, check_finite=check_finite)
+    _deprecate_dtypes("svd", a1)
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if a1.ndim < 2:
