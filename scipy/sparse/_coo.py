@@ -18,7 +18,7 @@ from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
-                       check_shape, check_reshape_kwargs, isscalarlike,
+                       check_shape, isscalarlike,
                        isintlike, isdense)
 from ._index import _validate_indices, _broadcast_arrays
 
@@ -127,9 +127,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         new_col = np.asarray(new_col, dtype=self.coords[-1].dtype)
         self.coords = self.coords[:-1] + (new_col,)
 
-    def reshape(self, *args, **kwargs):
-        shape = check_shape(args, self.shape, allow_nd=self._allow_nd)
-        order, copy = check_reshape_kwargs(kwargs)
+    def reshape(self, *shape, order="C", copy=False):
+        shape = check_shape(shape, self.shape, allow_nd=self._allow_nd)
 
         # Return early if reshape is not required
         if shape == self.shape:

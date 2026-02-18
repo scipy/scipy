@@ -495,19 +495,19 @@ class dlti(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Create an instance of the appropriate subclass."""
         if cls is dlti:
             N = len(system)
             if N == 2:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete, *system, **kwargs)
+                    TransferFunctionDiscrete, *system, dt=dt)
             elif N == 3:
                 return ZerosPolesGainDiscrete.__new__(ZerosPolesGainDiscrete,
-                                                      *system, **kwargs)
+                                                      *system, dt=dt)
             elif N == 4:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
-                                                  **kwargs)
+                                                  dt=dt)
             else:
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")

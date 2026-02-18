@@ -2110,7 +2110,7 @@ def tukey_hsd(*samples, equal_var=True):
     (2 - 0) -4.620  5.140
     (2 - 1) -9.220  0.540
     """
-    args = _tukey_hsd_iv(args, equal_var)
+    args = _tukey_hsd_iv(samples, equal_var)
     ntreatments = len(args)
     means = np.asarray([np.mean(arg) for arg in args])
     nsamples_treatments = np.asarray([a.size for a in args])

@@ -1906,7 +1906,7 @@ def kruskal(*samples):
     because the returned p-value is less than the critical value of 5%.
 
     """
-    output = argstoarray(*args)
+    output = argstoarray(*samples)
     ranks = ma.masked_equal(rankdata(output, use_missing=False), 0)
     sumrk = ranks.sum(-1)
     ngrp = ranks.count(-1)
