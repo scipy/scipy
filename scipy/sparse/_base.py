@@ -1422,11 +1422,11 @@ class _spbase(SparseABC):
             if self.nnz == 0:
                 return np.sum(self._ascontainer([0]), dtype=dtype or res_dtype, out=out)
             return np.sum(self._ascontainer(_todata(self)), dtype=dtype, out=out)
-        elif isspmatrix(self):
+        elif isinstance(self, sparray):
+            new_shape = tuple(self.shape[i] for i in range(self.ndim) if i not in axis)
+        else:
             # Ensure spmatrix sums stay 2D
             new_shape = (1, self.shape[1]) if axis == (0,) else (self.shape[0], 1)
-        else:
-            new_shape = tuple(self.shape[i] for i in range(self.ndim) if i not in axis)
 
         if out is None:
             # create out array with desired dtype

@@ -100,6 +100,8 @@ Recommended steps for migration
    -  Change any logic regarding ``issparse()`` and ``isspmatrix()`` as
       needed. Usually, this means replacing ``isspmatrix`` with ``issparse``,
       and ``isspmatrix_csr(G)`` with ``issparse(G) and G.format == "csr"``.
+      If you need to see whether a sparse object is a sparray or spmatrix
+      use ``isinstance(G, sparray)``, or ``issparse(G) and not isinstance(G, sparray)``
       Moreover ``isspmatrix_csr(G) or isspmatrix_csc(G)`` becomes
       ``issparse(G) and G.format in ['csr', 'csc']``.
       The git search idiom ``git grep 'isspm[a-z_]*('`` can help find these.
