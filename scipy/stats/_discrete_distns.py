@@ -68,7 +68,7 @@ class binom_gen(rv_discrete):
     def _rvs(self, n, p, size=None, random_state=None):
         if not np.all(n == np.floor(n)):
             raise ValueError("`n` must be integral.")
-        return random_state.binomial(np.asarray(n, dtype=np.int64), p, size)
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _argcheck(self, n, p):
         return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
@@ -234,7 +234,7 @@ class betabinom_gen(rv_discrete):
         p = random_state.beta(a, b, size)
         if not np.all(n == np.floor(n)):
             raise ValueError("`n` must be integral.")
-        return random_state.binomial(np.asarray(n, dtype=np.int64), p, size)
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _get_support(self, n, a, b):
         return 0, n
