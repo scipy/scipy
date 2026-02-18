@@ -29,7 +29,7 @@ Again, thanks for contributing!
 
 #### AI Generation Disclosure
 
-<!-- If this AI was used in the preparation of this pull request, please disclose
+<!-- If AI was used in the preparation of this pull request, please disclose
 the tool(s) used, how they were used, and specify what code or text is AI generated.
 If no AI tools were used, please write "No AI tools used" in this section. Read our
 policy on AI generated code at
