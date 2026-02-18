@@ -4949,12 +4949,10 @@ class OrderStatisticDistribution(TransformedDistribution):
 
     """
 
-    # These can be restricted to _IntegerInterval/_IntegerParameter in a separate
-    # PR if desired.
-    _r_domain = _RealInterval(endpoints=(1, 'n'), inclusive=(True, True))
+    _r_domain = _IntegerInterval(endpoints=(1, 'n'), inclusive=(True, True))
     _r_param = _RealParameter('r', domain=_r_domain, typical=(1, 2))
 
-    _n_domain = _RealInterval(endpoints=(1, np.inf), inclusive=(True, True))
+    _n_domain = _IntegerInterval(endpoints=(1, np.inf), inclusive=(True, True))
     _n_param = _RealParameter('n', domain=_n_domain, typical=(1, 4))
 
     _r_domain.define_parameters(_n_param)
