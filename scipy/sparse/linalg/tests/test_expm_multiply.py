@@ -160,6 +160,16 @@ class TestExpmActionSimple:
                     "CSC matrix format",
                     SparseEfficiencyWarning,
                 )
+                warnings.filterwarnings(
+                    "ignore",
+                    "spsolve requires A be CSC format",
+                    SparseEfficiencyWarning,
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    r"Input.*not in CSC format",
+                    SparseEfficiencyWarning,
+                )
                 expected = sp_expm(A).dot(B)
             assert_allclose(observed, expected)
             with estimated_warns():
@@ -210,6 +220,16 @@ class TestExpmActionInterval:
                         "ignore",
                         "spsolve is more efficient when sparse b is in"
                         " the CSC matrix format",
+                        SparseEfficiencyWarning,
+                    )
+                    warnings.filterwarnings(
+                        "ignore",
+                        "spsolve requires A be CSC format",
+                        SparseEfficiencyWarning,
+                    )
+                    warnings.filterwarnings(
+                        "ignore",
+                        r"Input.*not in CSC format",
                         SparseEfficiencyWarning,
                     )
                     for solution, t in zip(X, samples):
