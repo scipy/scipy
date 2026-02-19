@@ -1197,28 +1197,6 @@ def _fiinfo(x):
         return np.iinfo(x)
 
 
-def _kwargs2args(f, args=None, kwargs=None):
-    # Wraps a function that accepts a primary argument `x`, secondary
-    # arguments `args`, and secondary keyward arguments `kwargs` such that the
-    # wrapper accepts only `x` and `args`. The keyword arguments are extracted
-    # from `args` passed into the wrapper, and these are passed to the
-    # underlying function as `kwargs`.
-    # This is a temporary workaround until the scalar algorithms `_tanhsinh`,
-    # `_chandrupatla`, etc., support `kwargs` or can operate with compressing
-    # arguments to the callable.
-    args = args or []
-    kwargs = kwargs or {}
-    names = list(kwargs.keys())
-    n_args = len(args)
-
-    def wrapped(x, *args):
-        return f(x, *args[:n_args], **dict(zip(names, args[n_args:])))
-
-    args = tuple(args) + tuple(kwargs.values())
-
-    return wrapped, args
-
-
 def _logexpxmexpy(x, y):
     """ Compute the log of the difference of the exponentials of two arguments.
 
@@ -2053,42 +2031,23 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
         # Finds the argument of a function that produces the desired output.
-        # Much of this should be added to _bracket_root / _chandrupatla.
         xmin, xmax = self._support(**params) if bounds is None else bounds
-        params = {} if params is None else params
-
-        p, xmin, xmax = np.broadcast_arrays(p, xmin, xmax)
-        if not p.size:
-            # might need to figure out result type based on p
-            res = _RichResult()
-            empty = np.empty(p.shape, dtype=self._dtype)
-            res.xl, res.x, res.xr = empty, empty, empty
-            res.fl, res.fr = empty, empty
 
         def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
             return f(x, **kwargs) - _p
 
-        f3, args = _kwargs2args(f2, args=[p], kwargs=params)
-        # If we know the median or mean, should use it
-
-        # Any operations between 0d array and a scalar produces a scalar, so...
-        shape = xmin.shape
-        xmin, xmax = np.atleast_1d(xmin, xmax)
-
         xl0, xr0 = _guess_bracket(xmin, xmax)
-        xmin = xmin.reshape(shape)
-        xmax = xmax.reshape(shape)
-        xl0 = xl0.reshape(shape)
-        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
+        res = _bracket_root(f2, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
+                            args=(p,), kwargs=params)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate.
 
         xrtol = None if _isnull(self.tol) else self.tol
         xatol = None if xatol is None else xatol
         tolerances = dict(xrtol=xrtol, xatol=xatol, fatol=0, frtol=0)
-        return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, **tolerances)
+        return _chandrupatla(f2, a=res.xl, b=res.xr,
+                             args=(p,), kwargs=params, **tolerances)
 
     ## Other
 
@@ -2306,18 +2265,21 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _mode_optimization(self, xatol=None, **params):
-        if not self._size:
-            return np.empty(self._shape, dtype=self._dtype)
-
         a, b = self._support(**params)
         m = self._median_dispatch(**params)
 
-        f, args = _kwargs2args(lambda x, **params: -self._pxf_dispatch(x, **params),
-                               args=(), kwargs=params)
-        res_b = _bracket_minimum(f, m, xmin=a, xmax=b, args=args)
+        def f(x, **params):
+            return -self._pxf_dispatch(x, **params)
+
+        res_b = _bracket_minimum(f, m, xmin=a, xmax=b, kwargs=params)
         res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr,
-                                     args=args, xatol=xatol)
+                                     kwargs=params, xatol=xatol)
         mode = np.asarray(res.x)
+
+        # _bracket_minimum fails with status == -1 if the mode is at a boundary.
+        # We have to consider this as a special case; there's no way to include
+        # this logic in _chandrupatla_minimize because _bracket_minimum doesn't
+        # produce a valid bracket.
         mode_at_boundary = res_b.status == -1
         mode_at_left = mode_at_boundary & (res_b.fl <= res_b.fm)
         mode_at_right = mode_at_boundary & (res_b.fr < res_b.fm)
