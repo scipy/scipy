@@ -29,6 +29,7 @@ from scipy._external.array_api_compat import (
     is_torch_array,
     is_jax_array,
     is_dask_array,
+    is_pydata_sparse_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -50,7 +51,7 @@ from scipy._external import array_api_extra as xpx
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray',
+    'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray', 'is_pydata_sparse_array',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
@@ -1033,3 +1034,7 @@ def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:
         return xp_device_type(a._meta)
     # array-api-strict is a stand-in for unknown libraries; don't special-case it
     return None
+
+
+def xp_isscalar(x):
+    return np.isscalar(x) or (is_array_api_obj(x) and x.ndim == 0)
