@@ -498,6 +498,9 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     nlower = np.broadcast_to(nlower, batch_shape).astype(np.int16)
     nupper = np.broadcast_to(nupper, batch_shape).astype(np.int16)
 
+    if not np.all(nlower + nupper == ab1.shape[-2] - 1):
+        raise ValueError("Sum of l and u should be equal to number of rows of ab")
+
     # accomodate empty arrays
     if ab1.size == 0 or b1.size == 0:
         x = np.empty_like(b1)
