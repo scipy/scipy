@@ -756,6 +756,7 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
         return (int)info;
     }
 
+    // find size of the buffer
     npy_intp *kls = &ks[0];
     npy_intp *kus = &ks[outer_size];
 
@@ -822,19 +823,8 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
     // Main loop traversal, taken from `_solve`
     // -------------------------------------------------------------------
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-
-        npy_intp offset_ab = 0;
-        npy_intp offset_b = 0;
-        npy_intp temp_idx = idx; // Due to broadcasting identical for all involved slices
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset_ab += (temp_idx % shape[i]) * strides[i];
-            offset_b += (temp_idx % shape_b[i]) * strides_b[i];
-
-            temp_idx /= shape[i];
-        }
-
-        T* slice_ptr_ab = (T *)(ab_data + (offset_ab / sizeof(T)));
-        T* slice_ptr_b = (T *)(bm_data + (offset_b / sizeof(T)));
+        T *slice_ptr_ab = compute_slice_ptr(idx, ab_data, ndim, shape, strides);
+        T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
 
         CBLAS_INT ldab = 2 * kls[idx] + kus[idx] + 1;
 
