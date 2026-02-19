@@ -1170,3 +1170,18 @@ class TestNSum:
 
         res = nsum(f, 1, np.inf)
         assert_allclose(res.sum, ref)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**-p + c
+
+        a = xp.ones((), dtype=xp.float32)
+        b = xp.full((), 10, dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = nsum(f, a, b, args=(c,), kwargs={'p': p})
+        x = xp.arange(1, 11, dtype=xp.float32)
+        ref = xp.sum(f(x, c[..., xp.newaxis], p=p[..., xp.newaxis]), axis=-1)
+        xp_assert_close(res.sum, ref)
