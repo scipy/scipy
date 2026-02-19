@@ -2033,36 +2033,23 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ## Algorithms
 
-    def _quadrature(self, integrand, limits=None, args=None,
-                    params=None, log=False):
-        # Performs numerical integration of an integrand between limits.
-        # Much of this should be added to `_tanhsinh`.
+    def _quadrature(self, integrand, limits=None, args=(), params=None, log=False):
+        # Performs numerical integration/summation between limits or over support.
         a, b = self._support(**params) if limits is None else limits
-        a, b = np.broadcast_arrays(a, b)
-        if not a.size:
-            # maybe need to figure out result type from a, b
-            return np.empty(a.shape, dtype=self._dtype)
-        args = [] if args is None else args
-        params = {} if params is None else params
-        f, args = _kwargs2args(integrand, args=args, kwargs=params)
-        args = np.broadcast_arrays(*args)
-        # If we know the median or mean, consider breaking up the interval
         rtol = None if _isnull(self.tol) else self.tol
+
         # For now, we ignore the status, but I want to return the error estimate
         if isinstance(self, ContinuousDistribution):
-            res = _tanhsinh(f, a, b, args=args, log=log, rtol=rtol)
-            return res.integral
+            return _tanhsinh(integrand, a, b, args=args, kwargs=params,
+                             log=log, rtol=rtol).integral
         else:
-            res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum
-            res = np.asarray(res)
-            # The result should be nan when parameters are nan, so need to special
-            # case this.
-            cond = np.isnan(params.popitem()[1]) if params else np.True_
-            cond = np.broadcast_to(cond, a.shape)
-            res[(a > b)] = -np.inf if log else 0  # fix in nsum? See gh-22321
-            res[cond] = np.nan
+            res = nsum(integrand, a, b, args=args, kwargs=params,
+                       log=log, tolerances=dict(rtol=rtol)).sum
 
-            return res[()]
+            # b > a -> sum is zero... unless the parameters are nan.
+            # (Resolving gh-22321 should fix this in nsum.)
+            cond = np.isnan(params.popitem()[1]) if params else np.True_
+            return np.where(cond, np.nan, res)[()]
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
         # Finds the argument of a function that produces the desired output.
