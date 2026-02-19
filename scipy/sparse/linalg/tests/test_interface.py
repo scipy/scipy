@@ -341,8 +341,7 @@ class TestDotTests:
 
         dtype = np.dtype(data_dtype)
         *batch_shape, M, N = op.shape
-        
-        # TODO: handle empty batches
+
         u_broadcast, v_broadcast = generate_broadcastable_shapes(
             2, ndim=3, min=0, max=5
         )
@@ -397,8 +396,7 @@ class TestDotTests:
 
         dtype = np.dtype(data_dtype)
         *batch_shape, M, N = op.shape
-        
-        # TODO: handle empty batches
+
         # Test `U` and `V` with the same batch shape as `op`
         U = rng.standard_normal(size=(*batch_shape, N, k), dtype=dtype)
         V = rng.standard_normal(size=(*batch_shape, M, k), dtype=dtype)
@@ -429,8 +427,7 @@ class TestDotTests:
         atol = 2e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
         assert_allclose(op_U_H_V, UH_opH_V, rtol=rtol, atol=atol)
 
-    # TODO: batch shape (0,)
-    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize("args", square_args_list)
     def test_identity_square(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
         """
@@ -449,9 +446,8 @@ class TestDotTests:
 
         self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
-    
-    # TODO: batch shape (0,)
-    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
+
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize("args", all_args_list)
     def test_identity_nonsquare(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
         """
@@ -496,9 +492,8 @@ class TestDotTests:
         
         self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
-        
-    # TODO: batch shape (0,)
-    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
+
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize("args", square_args_list)
     def test_scaling_square(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
         """
@@ -522,8 +517,7 @@ class TestDotTests:
         self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
 
-    # TODO: batch shape (0,)
-    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     def test_subclass_matmat(self, batch_shape: tuple[int, ...]):
         """
         Simple rotation operator defined by `matmat` and `adjoint`,
@@ -557,8 +551,7 @@ class TestDotTests:
         self.check_matvec(op, data_dtype=dtype, complex_data=False)
         self.check_matmat(op, data_dtype=dtype, complex_data=False)
 
-    # TODO: batch shape (0,)
-    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,), (0,)])
     @pytest.mark.parametrize(
         "format", ["dense", "sparse"]
     )
@@ -940,8 +933,8 @@ def test_MatrixLinearOperator_refcycle():
 @pytest.mark.parametrize("operator_definition", ["subclass_matvec", "subclass_matmat",
                                                  "__init__matvec", "__init__matmat",
                                                  "aslinearoperator"])
-@pytest.mark.parametrize("batch_A", [(), (5,)])
-@pytest.mark.parametrize("batch_x", [(), (6, 1)])
+@pytest.mark.parametrize("batch_A", [(), (5,), (0,)])
+@pytest.mark.parametrize("batch_x", [(), (6, 1), (0, 1)])
 @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
 def test_batch(left, operator_definition, batch_A, batch_x, dtype):
     # TODO ideas:
@@ -1062,9 +1055,19 @@ def test_batch(left, operator_definition, batch_A, batch_x, dtype):
         np.testing.assert_allclose(A.dot(x_mat), A_ @ x_mat)
     else:
         # a. with row vector (or batch of row vectors)
-        if batch_x and batch_A:
+        broadcastable = True
+        try:
+            # `batch_x[-1]` becomes part of the core shape for matrix
+            # multiplication with 1-D row vector
+            # success thus depends on whether `batch_A` can broadcast
+            # with `batch_x[:-1]`
+            np.broadcast_shapes(batch_A, batch_x[:-1])
+        except ValueError:
+            broadcastable = False
+        if not broadcastable:
             # Maybe should be "Dimension mismatch..."?
-            with pytest.raises(ValueError, match="operands could not be broadcast..."):
+            msg = "operands could not be broadcast..."
+            with pytest.raises(ValueError, match=msg):
                 x_row @ A
         else:
             np.testing.assert_allclose(x_row @ A, x_row @ A_)
