@@ -237,7 +237,6 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.beta" : ['PR02'],
     "scipy.special.betaln" : ['PR02'],
     "scipy.special.besselpoly" : ['PR02'],
-    "scipy.special.gammaln" : ['PR02'],
     "scipy.special.gammasgn" : ['PR02'],
     "scipy.special.cbrt" : ['PR02'],
     "scipy.special.radian" : ['PR02'],
