@@ -3,7 +3,8 @@ import pytest
 import numpy as np
 
 from scipy.optimize._bracket import _ELIMITS
-from scipy.optimize.elementwise import bracket_root, bracket_minimum
+from scipy.optimize.elementwise import (bracket_root, bracket_minimum,
+                                        find_root, find_minimum)
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
@@ -375,6 +376,19 @@ class TestBracketRoot:
         res = _bracket_root(lambda x: x + 0.25, xl0=-0.5, xmin=-np.inf, xmax=0)
         assert res.success
 
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x - (p + c)
+
+        a = xp.zeros((), dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        bracket = bracket_root(f, a, args=(c,), kwargs={'p': p})
+        res = find_root(f, bracket.bracket, args=(c,), kwargs={'p': p})
+        ref = p + c
+        xp_assert_close(res.x, ref)
 
 @make_xp_test_case(bracket_minimum)
 class TestBracketMinimum:
@@ -886,3 +900,17 @@ class TestBracketMinimum:
         result = _bracket_minimum(f, xp.asarray(-0.5535723499480897),
                                   xmin=xmin, xmax=xmax)
         xp_assert_close(result.xr, xmax)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return (x - (p + c))**2
+
+        a = xp.zeros((), dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        bracket = bracket_minimum(f, a, args=(c,), kwargs={'p': p})
+        res = find_minimum(f, bracket.bracket, args=(c,), kwargs={'p': p})
+        ref = p + c
+        xp_assert_close(res.x, ref)
