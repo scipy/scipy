@@ -43,7 +43,6 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         Initial spectral coefficient.
     M : int, optional, default: 10
         Number of iterates to include in the nonmonotonic line search.
-        Default: 10
     line_search : {'cruz', 'cheng'}, default: 'cruz'
         Type of line search to employ. 'cruz' is the original one defined in
         [Martinez & Raydan. Math. Comp. 75, 1429 (2006)], 'cheng' is
