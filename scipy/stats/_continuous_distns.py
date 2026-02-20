@@ -2221,20 +2221,20 @@ class exponnorm_gen(rv_continuous):
             invK = 1.0 / K
             exparg = invK * (-x + 0.5 * invK)
             return exparg + _norm_logcdf(x - invK) - np.log(K)
-        use_erfcx = np.logical_and(u >=0, K < 1e-6)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
         return xpx.apply_where(
             use_erfcx, (x, K, u), logpdf_erfcx, logpdf_default)
 
     def _cdf(self, x, K):
         u = (-x + 1.0 / K) / np.sqrt(2)
         def cdf_erfcx(x, K, u):
-            return _norm_cdf(x) - 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u) 
+            return _norm_cdf(x) - 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u)
         def cdf_default(x, K, u):
             invK = 1.0 / K
             expval = invK * (0.5 * invK - x)
             logprod = expval + _norm_logcdf(x - invK)
             return _norm_cdf(x) - np.exp(logprod)
-        use_erfcx = np.logical_and(u >=0, K < 1e-6)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
         return xpx.apply_where(
             use_erfcx, (x, K, u), cdf_erfcx, cdf_default)
 
@@ -2246,8 +2246,8 @@ class exponnorm_gen(rv_continuous):
             invK = 1.0 / K
             expval = invK * (0.5 * invK - x)
             logprod = expval + _norm_logcdf(x - invK)
-            return _norm_cdf(-x) + np.exp(logprod)   
-        use_erfcx = np.logical_and(u >=0, K < 1e-6)  
+            return _norm_cdf(-x) + np.exp(logprod)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
         return xpx.apply_where(
             use_erfcx, (x, K, u), sf_erfcx, sf_default)
 
