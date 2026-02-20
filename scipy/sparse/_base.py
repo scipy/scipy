@@ -157,7 +157,8 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        *shape
+        *shape : int
+            Integers specifying the new shape.
             The new shape should be compatible with the original shape.
         order : {'C', 'F'}, optional
             Read the elements using this index order. 'C' means to read and
@@ -201,7 +202,7 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        *shape
+        *shape : int
             number of rows and columns in the new array/matrix
 
         Notes
