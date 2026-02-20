@@ -200,7 +200,7 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     Options
     -------
-    col_deriv : bool-like, default: 0
+    col_deriv : bool, default: False
         Specify whether the Jacobian function computes derivatives down
         the columns (faster, because there is no transpose operation).
     xtol : float, default: 1.49012e-08
