@@ -1021,6 +1021,12 @@ class TestAttributes:
         cached_mean = dist.mean(method='cache')
         assert_equal(cached_mean, mean)
 
+        # cache is not cleared when used in a TransformedDistribution
+        dist2 = stats.exp(dist)
+        assert_equal(dist.mean(method='cache'), cached_mean)
+        dist2.reset_cache()
+        assert_equal(dist.mean(method='cache'), cached_mean)
+
         # cache is overridden by latest evaluation
         quadrature_mean = dist.mean(method='quadrature')
         cached_mean = dist.mean(method='cache')
