@@ -39,7 +39,6 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         Default: ``||F||**2 / (1 + k)**2``.
     sigma_eps : float, optional, default: 1e-10
         The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
-        Default: 1e-10
     sigma_0 : float, optional, default: 1.0
         Initial spectral coefficient.
         Default: 1.0
