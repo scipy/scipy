@@ -278,7 +278,7 @@ def _warn_jac_unused(jac, method):
 
 
 def _root_leastsq(fun, x0, args=(), jac=None,
-                  col_deriv=0, xtol=1.49012e-08, ftol=1.49012e-08,
+                  col_deriv=False, xtol=1.49012e-08, ftol=1.49012e-08,
                   gtol=0.0, maxiter=0, eps=0.0, factor=100, diag=None,
                   **unknown_options):
     """
