@@ -31,7 +31,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         Maximum number of function evaluations.
     disp : bool, optional, default: False
         Whether to print convergence process to stdout.
-    eta_strategy : callable, optional, default: None
+    eta_strategy : callable, optional
         Choice of the ``eta_k`` parameter, which gives slack for growth
         of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
         `k` the iteration number, `x` the current iterate and `F` the current
