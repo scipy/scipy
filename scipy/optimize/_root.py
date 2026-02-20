@@ -286,7 +286,7 @@ def _root_leastsq(fun, x0, args=(), jac=None,
 
     Options
     -------
-    col_deriv : bool, default: 0
+    col_deriv : bool, default: False
         non-zero to specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
     ftol : float, default: 1.49012e-08
