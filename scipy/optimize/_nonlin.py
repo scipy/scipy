@@ -2,6 +2,7 @@
 # Distributed under the same license as SciPy.
 
 import inspect
+import os
 import sys
 import warnings
 
@@ -1311,11 +1312,6 @@ class ExcitingMixing(GenericBroyden):
        This algorithm may be useful for specific problems, but whether
        it will work may depend strongly on the problem.
 
-    See Also
-    --------
-    root : Interface to root finding algorithms for multivariate
-           functions. See ``method='excitingmixing'`` in particular.
-
     Parameters
     ----------
     %(params_basic)s
@@ -1325,6 +1321,11 @@ class ExcitingMixing(GenericBroyden):
         The entries of the diagonal Jacobian are kept in the range
         ``[alpha, alphamax]``.
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method='excitingmixing'`` in particular.
     """
 
     def __init__(self, alpha=None, alphamax=1.0):
@@ -1533,10 +1534,8 @@ class KrylovJacobian(Jacobian):
                     " It will be ignored."
                     "Please check inner method documentation for valid options."
                     + suggestion_msg,
-                    stacklevel=3,
                     category=UserWarning,
-                    # using `skip_file_prefixes` would be a good idea
-                    # and should be added once we drop support for Python 3.11
+                    skip_file_prefixes=(os.path.dirname(__file__),)
                 )
                 # ignore this parameter and continue
                 continue

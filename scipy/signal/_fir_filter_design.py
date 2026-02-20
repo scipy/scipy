@@ -13,7 +13,7 @@ from .windows import get_window
 from . import _sigtools
 
 from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
@@ -285,7 +285,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         `~scipy.signal.kaiser_atten` to calculate an attenuation which is passed to
         `~scipy.signal.kaiser_beta` for determining the β parameter for the kaiser
         window. In this case, the `window` argument is ignored.
-    window : string or tuple of string and parameter values, optional
+    window : str or tuple of str and parameter values, optional
         Desired window to use. Default is ``'hamming'``. The window will be symmetric,
         unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
         ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
@@ -605,7 +605,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
         (e.g, 129, 257, etc). The default is one more than the smallest
         power of 2 that is not less than `numtaps`. `nfreqs` must be greater
         than `numtaps`.
-    window : string or (string, float) or float, or None, optional
+    window : str or (str, float) or float, or None, optional
         Desired window to use. Default is ``'hamming'``. The window will be symmetric,
         unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
         ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
@@ -805,13 +805,10 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     type : {'bandpass', 'differentiator', 'hilbert'}, optional
         The type of filter:
 
-          * 'bandpass' : flat response in bands. This is the default.
-
-          * 'differentiator' : frequency proportional response in bands.
-
-          * 'hilbert' : filter with odd symmetry, that is, type III
-                        (for even order) or type IV (for odd order)
-                        linear phase filters.
+        * 'bandpass' : flat response in bands. This is the default.
+        * 'differentiator' : frequency proportional response in bands.
+        * 'hilbert' : filter with odd symmetry, that is, type III
+          (for even order) or type IV (for odd order) linear phase filters.
 
     maxiter : int, optional
         Maximum number of iterations of the algorithm. Default is 25.
@@ -1006,11 +1003,11 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     This implementation follows the algorithm given in [1]_.
     As noted there, least squares design has multiple advantages:
 
-        1. Optimal in a least-squares sense.
-        2. Simple, non-iterative method.
-        3. The general solution can obtained by solving a linear
-           system of equations.
-        4. Allows the use of a frequency dependent weighting function.
+    1. Optimal in a least-squares sense.
+    2. Simple, non-iterative method.
+    3. The general solution can obtained by solving a linear
+       system of equations.
+    4. Allows the use of a frequency dependent weighting function.
 
     This function constructs a Type I linear phase FIR filter, which
     contains an odd number of `coeffs` satisfying for :math:`n < numtaps`:
@@ -1200,7 +1197,7 @@ def _dhtm(mag, xp):
 def minimum_phase(h,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
                   n_fft: int | None = None, *, half: bool = True):
-    """Convert a linear-phase FIR filter to minimum phase
+    """Convert a linear-phase FIR filter to minimum phase.
 
     Parameters
     ----------
@@ -1209,19 +1206,18 @@ def minimum_phase(h,
     method : {'hilbert', 'homomorphic'}
         The provided methods are:
 
-            'homomorphic' (default)
-                This method [4]_ [5]_ works best with filters with an
-                odd number of taps, and the resulting minimum phase filter
-                will have a magnitude response that approximates the square
-                root of the original filter's magnitude response using half
-                the number of taps when ``half=True`` (default), or the
-                original magnitude spectrum using the same number of taps
-                when ``half=False``.
-
-            'hilbert'
-                This method [1]_ is designed to be used with equiripple
-                filters (e.g., from `remez`) with unity or zero gain
-                regions.
+        - 'homomorphic' (default):
+          This method [4]_ [5]_ works best with filters with an
+          odd number of taps, and the resulting minimum phase filter
+          will have a magnitude response that approximates the square
+          root of the original filter's magnitude response using half
+          the number of taps when ``half=True`` (default), or the
+          original magnitude spectrum using the same number of taps
+          when ``half=False``.
+        - 'hilbert'
+          This method [1]_ is designed to be used with equiripple
+          filters (e.g., from `remez`) with unity or zero gain
+          regions.
 
     n_fft : int
         The number of points to use for the FFT. Should be at least a
@@ -1427,7 +1423,7 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         Lengths of the filter in each dimension. `hsize[0]` specifies the
         number of coefficients in the row direction and `hsize[1]` specifies
         the number of coefficients in the column direction.
-    window : tuple or list of length 2 or string
+    window : tuple or list of length 2 or str
         Desired window to use for each 1D filter or a single window type for creating
         circularly symmetric 2-D windows. Each element should be a string or tuple of
         string and parameter values. The generated windows will be symmetric, unless a

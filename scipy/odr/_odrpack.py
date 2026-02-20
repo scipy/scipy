@@ -493,7 +493,7 @@ class Model:
           Provides estimates of the fit parameters from the data
 
           estimate(data) --> estbeta
-    implicit : boolean
+    implicit : bool
           If TRUE, specifies that the model
           is implicit; i.e `fcn(beta, x)` ~= 0 and there is no y data to fit
           against

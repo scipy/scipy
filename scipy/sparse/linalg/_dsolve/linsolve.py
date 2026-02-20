@@ -285,9 +285,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             options = dict(ColPerm=permc_spec)
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
-            if info != 0:
+            if info == 0:
+                pass  # Success
+            elif 0 < info <= N:
                 warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
                 x.fill(np.nan)
+            elif info > N:
+                raise MemoryError("Out of memory during gssv")
+            else:
+                # gssv is not supposed to return any info < 0
+                # However, it calls gstrf, which can set info < 0
+                raise Exception(f"gssv exited with unknown exit code {info}")
             if b_is_vector:
                 x = x.ravel()
         else:
@@ -366,7 +374,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     invA : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
-    See also
+    See Also
     --------
     spilu : incomplete LU decomposition
 
@@ -450,6 +458,11 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
+
+        Note that `drop_tol` primarily affects entries generated as fill-in
+        during the ILU factorization; for matrices that produce little or no
+        fill-in, changing this parameter may have no visible effect on the
+        sparsity pattern of the factors.
     fill_factor : float, optional
         Specifies the fill ratio upper bound (>= 1.0) for ILU. (default: 10)
     drop_rule : str, optional
@@ -459,15 +472,12 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
         See SuperLU documentation for details.
 
-    Remaining other options
-        Same as for `splu`
-
     Returns
     -------
     invA_approx : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
-    See also
+    See Also
     --------
     splu : complete LU decomposition
 
@@ -479,6 +489,12 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
+
+    The effect of `drop_tol` is matrix-dependent. In particular, `drop_tol`
+    does not guarantee that existing off-diagonal entries will be removed;
+    it controls dropping of candidate entries during factorization (often
+    fill-in). For some sparsity patterns, the ILU factors can be identical
+    to the full LU factors even for large `drop_tol`.
 
     This function uses the SuperLU library.
 
@@ -745,7 +761,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
 
 def is_sptriangular(A):
-    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``.
 
     Checks for triangular structure in ``A``. The result is summarized in
     two boolean values ``lower`` and ``upper`` to designate whether ``A`` is
@@ -770,6 +786,7 @@ def is_sptriangular(A):
     Returns
     -------
     lower, upper : 2-tuple of bool
+        Whether `A` is lower / upper triangular.
 
         .. versionadded:: 1.15.0
 

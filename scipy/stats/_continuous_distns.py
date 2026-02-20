@@ -21,7 +21,7 @@ import scipy.special as sc
 
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import xp_promote
 
 from . import _stats
@@ -3871,8 +3871,9 @@ class gengamma_gen(rv_continuous):
 
     def _logpdf(self, x, a, c):
         return xpx.apply_where(
-            (x != 0) | (c > 0), (x, c),
-            lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)),
+            (x != 0) | (c > 0), (x, c, a),
+            lambda x, c, a: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
+                             - x**c - sc.gammaln(a)),
             fill_value=-np.inf)
 
     def _cdf(self, x, a, c):
@@ -8389,7 +8390,8 @@ lomax = lomax_gen(a=0.0, name="lomax")
 
 
 class pearson3_gen(rv_continuous):
-    r"""A pearson type III continuous random variable.
+    r"""
+    A pearson type III continuous random variable.
 
     %(before_notes)s
 
@@ -8419,8 +8421,6 @@ class pearson3_gen(rv_continuous):
 
     %(after_notes)s
 
-    %(example)s
-
     References
     ----------
     R.W. Vogel and D.E. McMartin, "Probability Plot Goodness-of-Fit and
@@ -8433,6 +8433,7 @@ class pearson3_gen(rv_continuous):
     "Using Modern Computing Tools to Fit the Pearson Type III Distribution to
     Aviation Loads Data", Office of Aviation Research (2003).
 
+    %(example)s
     """
     def _preprocess(self, x, skew):
         # The real 'loc' and 'scale' are handled in the calling pdf(...). The
@@ -9909,7 +9910,8 @@ skewnorm = skewnorm_gen(name='skewnorm')
 
 
 class trapezoid_gen(rv_continuous):
-    r"""A trapezoidal continuous random variable.
+    r"""
+    A trapezoidal continuous random variable.
 
     %(before_notes)s
 
@@ -9932,15 +9934,13 @@ class trapezoid_gen(rv_continuous):
     The location parameter shifts the start to `loc`.
     The scale parameter changes the width from 1 to `scale`.
 
-    %(example)s
-
     References
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
        Metrologia 44, 117-127. :doi:`10.1088/0026-1394/44/2/003`
 
-
+    %(example)s
     """
     def _argcheck(self, c, d):
         return (c >= 0) & (c <= 1) & (d >= 0) & (d <= 1) & (d >= c)
@@ -11623,7 +11623,7 @@ halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 class crystalball_gen(rv_continuous):
     r"""
-    Crystalball distribution
+    Crystalball distribution.
 
     %(before_notes)s
 
@@ -11808,7 +11808,7 @@ def _argus_phi(chi):
 
 class argus_gen(rv_continuous):
     r"""
-    Argus distribution
+    Argus distribution.
 
     %(before_notes)s
 

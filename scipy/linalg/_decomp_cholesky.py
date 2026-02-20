@@ -111,7 +111,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 @_apply_over_batch(("a", 2))
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     """
-    Compute the Cholesky decomposition of a matrix, to use in cho_solve
+    Compute the Cholesky decomposition of a matrix, to use in cho_solve.
 
     Returns a matrix containing the Cholesky decomposition,
     ``A = L L*`` or ``A = U* U`` of a Hermitian positive-definite matrix `a`.
@@ -262,7 +262,7 @@ def _cho_solve(c, b, lower, overwrite_b, check_finite):
 @_apply_over_batch(("ab", 2))
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """
-    Cholesky decompose a banded Hermitian positive-definite matrix
+    Cholesky decompose a banded Hermitian positive-definite matrix.
 
     The matrix a is stored in ab either in lower-diagonal or upper-
     diagonal ordered form::

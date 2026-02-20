@@ -29,8 +29,8 @@ from ._sosfilt import _sosfilt
 from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
     xp_promote, xp_swapaxes,)
-from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import is_array_api_obj
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -727,7 +727,7 @@ def _calc_oa_lens(s1, s2):
     in1_step : int
         The size of each step for the first array.
     in2_step : int
-        The size of each step for the first array.
+        The size of each step for the second array.
 
     """
     # Set up the arguments for the conventional FFT approach.
@@ -820,7 +820,7 @@ def _calc_oa_lens(s1, s2):
 # may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
-    """A simplified version of np.split, with `indices` being an list.
+    """A simplified version of np.split, with `indices` being a list.
     """
     # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
     Ntotal = x.shape[axis]
@@ -2777,16 +2777,10 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     which produces a complex-valued signal with the same envelope :math:`|a(t)|`.
 
     The implementation is based on computing the FFT of the input signal and then
-    performing the necessary operations in Fourier space. Hence, the typical FFT
-    caveats need to be taken into account:
-
-    * The signal is assumed to be periodic. Discontinuities between signal start and
-      end can lead to unwanted results due to Gibbs phenomenon.
-    * The FFT is slow if the signal length is prime or very long. Also, the memory
-      demands are typically higher than a comparable FIR/IIR filter based
-      implementation.
-    * The frequency spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter
-      corresponds to the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
+    performing the necessary operations in Fourier space. Hence, the typical :ref:`FFT
+    caveats <tutorial_FFT_Caveats>` need to be taken into account. The frequency
+    spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter corresponds to
+    the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
 
     If the envelope of a complex-valued signal `z` with no bandpass filtering is
     desired, i.e., ``bp_in=(None, None)``, then the envelope corresponds to the
@@ -3039,9 +3033,9 @@ def unique_roots(p, tol=1e-3, rtype='min'):
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          - 'max', 'maximum': pick the maximum of those roots
-          - 'min', 'minimum': pick the minimum of those roots
-          - 'avg', 'mean': take the average of those roots
+        - 'max', 'maximum': pick the maximum of those roots
+        - 'min', 'minimum': pick the minimum of those roots
+        - 'avg', 'mean': take the average of those roots
 
         When finding minimum or maximum among complex roots they are compared
         first by the real part and then by the imaginary part.
@@ -3590,7 +3584,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     axis : int, optional
         The time/frequency axis of `x` along which the resampling take place.
         The Default is 0.
-    window : array_like, callable, string, float, or tuple, optional
+    window : array_like, callable, str, float, or tuple, optional
         If not ``None``, it specifies a filter in the Fourier domain, which is applied
         before resampling. I.e., the FFT ``X`` of `x` is calculated by
         ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
@@ -3882,10 +3876,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         The downsampling factor.
     axis : int, optional
         The axis of `x` that is resampled. Default is 0.
-    window : string, tuple, or array_like, optional
+    window : str, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
-    padtype : string, optional
+    padtype : str, optional
         `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
         the other signal extension modes supported by `scipy.signal.upfirdn`.
         Changes assumptions on values beyond the boundary. If `constant`,
@@ -4195,7 +4189,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    overwrite_data: bool, optional
+    overwrite_data : bool, optional
         If True, allow in place detrending and avoid a copy. Default is
         False. In place modification applies only if ``type == 'linear'``
         and `data` is of the floating point dtype ``float32``, ``float64``,

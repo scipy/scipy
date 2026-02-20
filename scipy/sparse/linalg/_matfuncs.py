@@ -30,7 +30,7 @@ UPPER_TRIANGULAR = 'upper_triangular'
 
 def inv(A):
     """
-    Compute the inverse of a sparse arrays
+    Compute the inverse of a sparse arrays.
 
     Parameters
     ----------

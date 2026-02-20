@@ -24,6 +24,7 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class Test_measurements_stats:
     """ndimage._measurements._stats() is a utility used by other functions.
 
@@ -107,6 +108,7 @@ class Test_measurements_stats:
 
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class Test_measurements_select:
     """ndimage._measurements._select() is a utility used by other functions."""
 
@@ -702,7 +704,7 @@ def test_sum12(xp):
         assert_array_almost_equal(output, xp.asarray([4.0, 0.0, 5.0]))
 
 
-@make_xp_test_case(ndimage.sum)
+@make_xp_test_case(ndimage.sum, ndimage.sum_labels)
 def test_sum_labels(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:

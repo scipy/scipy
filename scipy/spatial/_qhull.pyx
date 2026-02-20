@@ -398,8 +398,7 @@ cdef class _Qhull:
         # Note: this is direct copypaste from __dealloc__(), keep it
         # in sync with that.  The code must be written directly in
         # __dealloc__, because otherwise the generated C code tries to
-        # call PyObject_GetAttrStr(self, "close") which on Pypy
-        # crashes.
+        # call PyObject_GetAttrStr(self, "close") which resuscitates self
 
         cdef int curlong, totlong
 
@@ -2403,6 +2402,10 @@ class ConvexHull(_QhullUser):
     The convex hull is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
+    References
+    ----------
+    .. [Qhull] http://www.qhull.org/
+
     Examples
     --------
 
@@ -2469,11 +2472,6 @@ class ConvexHull(_QhullUser):
     >>> convex_hull_plot_2d(hull, ax=ax)
         <Figure size 640x480 with 1 Axes> # may vary
     >>> plt.show()
-
-    References
-    ----------
-    .. [Qhull] http://www.qhull.org/
-
     """
 
     def __init__(self, points, incremental=False, qhull_options=None):
@@ -2775,6 +2773,12 @@ class HalfspaceIntersection(_QhullUser):
     `Qhull library <http://www.qhull.org/>`__.
     This reproduces the "qhalf" functionality of Qhull.
 
+    References
+    ----------
+    .. [Qhull] http://www.qhull.org/
+    .. [1] S. Boyd, L. Vandenberghe, Convex Optimization, available
+           at http://stanford.edu/~boyd/cvxbook/
+
     Examples
     --------
 
@@ -2847,13 +2851,6 @@ class HalfspaceIntersection(_QhullUser):
     >>> ax.add_patch(circle)
     >>> plt.legend(bbox_to_anchor=(1.6, 1.0))
     >>> plt.show()
-
-    References
-    ----------
-    .. [Qhull] http://www.qhull.org/
-    .. [1] S. Boyd, L. Vandenberghe, Convex Optimization, available
-           at http://stanford.edu/~boyd/cvxbook/
-
     """
 
     def __init__(self, halfspaces, interior_point,

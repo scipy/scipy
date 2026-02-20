@@ -10,7 +10,7 @@ from scipy import linalg
 
 from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
                                    xp_result_type)
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
 
@@ -332,7 +332,7 @@ def ss2tf(A, B, C, D, input=0):
 
 
 def zpk2ss(z, p, k):
-    """Zero-pole-gain representation to state-space representation
+    """Zero-pole-gain representation to state-space representation.
 
     Parameters
     ----------
@@ -391,23 +391,23 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1: (instance of `lti`)
-            * 2: (num, den)
-            * 3: (zeros, poles, gain)
-            * 4: (A, B, C, D)
+        * 1: (instance of `lti`)
+        * 2: (num, den)
+        * 3: (zeros, poles, gain)
+        * 4: (A, B, C, D)
 
     dt : float
         The discretization time step.
     method : str, optional
         Which method to use:
 
-            * gbt: generalized bilinear transformation
-            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
-            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
-            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
-            * zoh: zero-order hold (default)
-            * foh: first-order hold (*versionadded: 1.3.0*)
-            * impulse: equivalent impulse response (*versionadded: 1.3.0*)
+        * gbt: generalized bilinear transformation
+        * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+        * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+        * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+        * zoh: zero-order hold (default)
+        * foh: first-order hold (*versionadded: 1.3.0*)
+        * impulse: equivalent impulse response (*versionadded: 1.3.0*)
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which

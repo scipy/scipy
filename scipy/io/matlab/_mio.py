@@ -49,17 +49,9 @@ def _open_file(file_like, appendmat, mode='rb'):
             ) from e
 
 
-@docfiller
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
     """
     Create reader for matlab .mat format files.
-
-    Parameters
-    ----------
-    %(file_arg)s
-    %(append_arg)s
-    %(load_args)s
-    %(struct_arg)s
 
     Returns
     -------
@@ -83,7 +75,6 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         raise TypeError(f'Did not recognize version {mjv}')
 
 
-@docfiller
 def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     """
     Load MATLAB file.
@@ -249,7 +240,6 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     return mdict
 
 
-@docfiller
 def savemat(file_name, mdict,
             appendmat=True,
             format='5',

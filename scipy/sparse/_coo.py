@@ -20,7 +20,7 @@ from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs, isscalarlike,
                        isintlike, isdense)
-from ._index import _validate_indices
+from ._index import _validate_indices, _broadcast_arrays
 
 import operator
 
@@ -314,9 +314,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
     toarray.__doc__ = _spbase.toarray.__doc__
 
     def tocsc(self, copy=False):
-        """Convert this array/matrix to Compressed Sparse Column format
+        """Convert this array/matrix to Compressed Sparse Column format.
 
         Duplicate entries will be summed together.
+
+        Returns
+        -------
+        csc array/matrix
+            The converted array/matrix in CSC format.
 
         Examples
         --------
@@ -347,9 +352,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return x
 
     def tocsr(self, copy=False):
-        """Convert this array/matrix to Compressed Sparse Row format
+        """Convert this array/matrix to Compressed Sparse Row format.
 
         Duplicate entries will be summed together.
+
+        Returns
+        -------
+        csr array/matrix
+            The converted array/matrix in CSR format.
 
         Examples
         --------
@@ -567,6 +577,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # handle array indices
         if arr_indices:
+            arr_indices = _broadcast_arrays(*arr_indices)
             arr_shape = arr_indices[0].shape  # already broadcast in validate_indices
             # There are three dimensions required to check array indices against coords
             # Their lengths are described as:
@@ -622,6 +633,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
             for j in none_pos[::-1]:
                 new_shape.pop(j)
             new_shape = tuple(new_shape)
+
+        # broadcast arrays
+        if arr_int_pos:
+            index = list(index)
+            arr_pos = {i: arr for i in arr_int_pos if not isintlike(arr := index[i])}
+            arr_indices = _broadcast_arrays(*arr_pos.values())
+            for i, arr in zip(arr_pos, arr_indices):
+                index[i] = arr
 
         # get coords and data from x
         if issparse(x):
@@ -757,7 +776,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return pruned_data, pruned_coords
 
     def sum_duplicates(self) -> None:
-        """Eliminate duplicate entries by adding them together
+        """Eliminate duplicate entries by adding them together.
 
         This is an *in place* operation
         """
@@ -787,9 +806,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return coords, data
 
     def eliminate_zeros(self):
-        """Remove zero entries from the array/matrix
+        """Remove zero entries from the array/matrix.
 
-        This is an *in place* operation
+        This is an *in place* operation.
         """
         mask = self.data != 0
         self.data = self.data[mask]
