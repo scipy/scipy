@@ -41,7 +41,6 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
     sigma_0 : float, optional, default: 1.0
         Initial spectral coefficient.
-        Default: 1.0
     M : int, optional, default: 10
         Number of iterates to include in the nonmonotonic line search.
         Default: 10
