@@ -302,8 +302,8 @@ def _root_leastsq(fun, x0, args=(), jac=None,
     eps : float, default: 0.0
         A suitable step length for the forward-difference approximation of
         the Jacobian (for Dfun=None). If `eps` is less than the machine
-        precision, it is assumed that the relative errors in the functions
-        are of the order of the machine precision.
+        precision (default), it is assumed that the relative errors in the 
+        functions are of the order of the machine precision.
     factor : float, default: 100
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
