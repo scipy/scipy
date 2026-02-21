@@ -1,4 +1,5 @@
 from io import StringIO
+import pytest
 import tempfile
 
 import numpy as np
@@ -50,8 +51,9 @@ class TestHBReader:
         assert isinstance(m, sparray)
         m = hb_read(StringIO(SIMPLE), spmatrix=True)
         assert issparse(m) and not isinstance(m, sparray)
-        m = hb_read(StringIO(SIMPLE))  # default
-        assert issparse(m) and not isinstance(m, sparray)
+        with pytest.deprecated_call(match="The default value for `spmatrix"):
+            m = hb_read(StringIO(SIMPLE))  # default
+            assert issparse(m) and not isinstance(m, sparray)
 
 
 class TestHBReadWrite:
