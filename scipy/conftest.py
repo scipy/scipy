@@ -193,7 +193,7 @@ if SCIPY_ARRAY_API:
         if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
-            api_version='2024.12'
+            api_version='2025.12'
         )
     except ImportError:
         pass
@@ -516,7 +516,7 @@ def devices(xp):
         # open an issue about this - cannot branch based on `any`/`all`?
         return (device for device in devices if device.type != 'meta')
 
-    return xp.__array_namespace_info__().devices() + [None]
+    return xp.__array_namespace_info__().devices() + (None,)
 
 
 if hypothesis_available:
