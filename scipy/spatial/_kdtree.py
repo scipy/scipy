@@ -2,6 +2,8 @@
 # Released under the scipy license
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
+from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
+from warnings import warn
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -836,7 +838,7 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2.0, output_type='dok_matrix'):
+            self, other, max_distance, p=2.0, output_type=_NoValue):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
@@ -853,14 +855,22 @@ class KDTree(cKDTree):
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
         output_type : str, optional
-            Which container to use for output data. Options: ``'dok_matrix'``,
-            ``'coo_matrix'``, ``'dict'``, or ``'ndarray'``. Default: ``'dok_matrix'``.
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``. Default: ``'dok_matrix'``.
+
+               .. deprecated:: 1.18.0
+                   The default value for output_type is deprecated
+                   and will change to 'dok_array' in v1.19. The value
+                   'dok_matrix' is available until that class is removed.
+                   Unless you use * instead of @, ** for matrix power
+                   or depend on 2D shapes from e.g. `A.sum(axis=0)` it may
+                   not matter to you. See the sparray migration guide.
 
             .. versionadded:: 1.6.0
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
             format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
             If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
@@ -896,8 +906,16 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        return super().sparse_distance_matrix(
-            other, max_distance, p, output_type)
+        if output_type is _NoValue:
+            msg = """The default value for output_type is changing to 'dok_array'
+            in v1.19. Unless you use * instead of @, ** for matrix power
+            or depend on 2D shapes for e.g. A.sum(axis=1) it may not matter to
+            you. See the spmatrix to sparray migration guide for details.
+            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+            """
+            warn(msg, DeprecationWarning, stacklevel=2)
+            output_dtype = "dok_matrix"
+        return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
 def distance_matrix(x, y, p=2.0, threshold=1000000):

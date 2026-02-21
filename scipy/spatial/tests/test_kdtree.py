@@ -617,7 +617,7 @@ class sparse_distance_matrix_consistency:
         return minkowski_distance(a, b, p)
 
     def test_consistency_with_neighbors(self):
-        M = self.T1.sparse_distance_matrix(self.T2, self.r)
+        M = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dok_array')
         r = self.T1.query_ball_tree(self.T2, self.r)
         for i, l in enumerate(r):
             for j in l:
@@ -631,11 +631,11 @@ class sparse_distance_matrix_consistency:
 
     def test_zero_distance(self):
         # raises an exception for bug 870 (FIXME: Does it?)
-        self.T1.sparse_distance_matrix(self.T1, self.r)
+        self.T1.sparse_distance_matrix(self.T1, self.r, output_type='dok_array')
 
     def test_consistency(self):
         # Test consistency with a distance_matrix
-        M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
+        M1 = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dok_array')
         expected = distance_matrix(self.T1.data, self.T2.data)
         expected[expected > self.r] = 0
         assert_array_almost_equal(M1.toarray(), expected, decimal=14)
@@ -646,7 +646,7 @@ class sparse_distance_matrix_consistency:
         too_many = np.array(np.random.randn(18, 2), dtype=int)
         tree = self.kdtree_type(
             too_many, balanced_tree=False, compact_nodes=False)
-        d = tree.sparse_distance_matrix(tree, 3).toarray()
+        d = tree.sparse_distance_matrix(tree, 3, output_type='dok_array').toarray()
         assert_array_almost_equal(d, d.T, decimal=14)
 
     def test_ckdtree_return_types(self):
@@ -674,14 +674,19 @@ class sparse_distance_matrix_consistency:
             v = r['v'][k]
             dist[i, j] = v
         assert_array_almost_equal(ref, dist, decimal=14)
-        # test return type 'dok_matrix'
+        # test return type 'dok_array'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
-            output_type='dok_matrix')
+            output_type='dok_array')
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
-        # test return type 'coo_matrix'
+        # test return type 'coo_array'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
-            output_type='coo_matrix')
+            output_type='coo_array')
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
+
+
+    def test_sparse_distance_matrix_output_type_deprecation(self):
+        with pytest.deprecated_call(match="The default value for output_type"):
+            self.T1.sparse_distance_matrix(self.T2, self.r)
 
 
 @KDTreeTest
@@ -1189,9 +1194,9 @@ def test_len0_arrays(kdtree_type):
     y = tree.count_neighbors(other, 0.1*mind)
     assert_(y == 0)
     # sparse_distance_matrix
-    y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='dok_matrix')
+    y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='dok_array')
     assert_array_equal(y == np.zeros((10, 10)), True)
-    y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='coo_matrix')
+    y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='coo_array')
     assert_array_equal(y == np.zeros((10, 10)), True)
     y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='dict')
     assert_equal(y, {})
@@ -1349,7 +1354,7 @@ def test_kdtree_empty_input(kdtree_type, balanced_tree, compact_nodes):
     N = tree.count_neighbors(tree, [0, 1])
     assert_array_equal(N, [0, 0])
 
-    M = tree.sparse_distance_matrix(tree, 0.3)
+    M = tree.sparse_distance_matrix(tree, 0.3, output_type='dok_array')
     assert M.shape == (0, 0)
 
 @KDTreeTest

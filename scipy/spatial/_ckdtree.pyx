@@ -10,6 +10,7 @@
 import numpy as np
 import scipy.sparse
 from scipy._lib._util import copy_if_needed
+from scipy._lib.deprecation import _NoValue
 
 cimport numpy as np
 
@@ -17,6 +18,7 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
+from warnings import warn
 
 cimport cython
 import os
@@ -171,7 +173,7 @@ cdef class coo_entries:
         if self.buf != NULL:
             del self.buf
 
-    # The methods ndarray, dict, coo_matrix, and dok_matrix must only
+    # The methods ndarray, dict, coo_array, and dok_array must only
     # be called after the buffer is filled with coo_entry data. This
     # is because std::vector can reallocate its internal buffer when
     # push_back is called.
@@ -218,6 +220,15 @@ cdef class coo_entries:
             return res_dict
         else:
             return {}
+
+    def coo_array(coo_entries self, m, n):
+        res_arr = self.ndarray()
+        return scipy.sparse.coo_array(
+                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
+                                       shape=(m, n))
+
+    def dok_array(coo_entries self, m, n):
+        return self.coo_array(m,n).todok()
 
     def coo_matrix(coo_entries self, m, n):
         res_arr = self.ndarray()
@@ -1465,7 +1476,7 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.0,
-                               output_type='dok_matrix'):
+                               output_type=_NoValue):
         """
         sparse_distance_matrix(self, other, max_distance, p=2.0)
 
@@ -1485,12 +1496,20 @@ cdef class cKDTree:
             A finite large p may cause a ValueError if overflow can occur.
 
         output_type : str, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            Which container to use for output data. Options: 'dok_array',
+            'coo_array', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+
+               .. deprecated:: 1.18.0
+                   The default value for output_type is deprecated
+                   and will change to 'dok_array' in v1.19. The value
+                   'dok_matrix' is available until that class is removed.
+                   Unless you use * instead of @, ** for matrix power
+                   or depend on 2D shapes from e.g. `A.sum(axis=0)` it may
+                   not matter to you. See the sparray migration guide.
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
             format. If a dict is returned the keys are (i,j) tuples of indices.
             If output_type is 'ndarray' a record array with fields 'i', 'j',
@@ -1540,14 +1559,28 @@ cdef class cKDTree:
             sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
 
+        if output_type == _NoValue:
+            msg = """The default value for output_type is changing to 'dok_array'
+            in v1.19. Unless you use * instead of @, ** for matrix power
+            or depend on 2D shapes for e.g. A.sum(axis=1) it may not matter to
+            you. See the spmatrix to sparray migration guide for details.
+            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+            """
+            warn(msg, DeprecationWarning, stacklevel=2)
+            output_type = 'dok_matrix'
+
         if output_type == 'dict':
             return res.dict()
         elif output_type == 'ndarray':
             return res.ndarray()
-        elif output_type == 'coo_matrix':
-            return res.coo_matrix(self.n, other.n)
         elif output_type == 'dok_matrix':
             return res.dok_matrix(self.n, other.n)
+        elif output_type == 'dok_array':
+            return res.dok_array(self.n, other.n)
+        elif output_type == 'coo_matrix':
+            return res.coo_matrix(self.n, other.n)
+        elif output_type == 'coo_array':
+            return res.coo_array(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
 
