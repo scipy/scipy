@@ -99,6 +99,27 @@ class Rectangle:
     """Hyperrectangle class.
 
     Represents a Cartesian product of intervals.
+
+    Parameters
+    ----------
+    maxes : array_like of shape (m,)
+        Upper bounds of the hyperrectangle along each dimension.
+    mins : array_like of shape (m,)
+        Lower bounds of the hyperrectangle along each dimension.
+
+    Attributes
+    ----------
+    maxes : ndarray of shape (m,)
+        Upper bounds for each dimension.
+    mins : ndarray of shape (m,)
+        Lower bounds for each dimension.
+    m : int
+        Dimensionality of the hyperrectangle.
+
+    Notes
+    -----
+    If any element of `maxes` is smaller than the corresponding element in `mins`, the
+    values are swapped automatically.
     """
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""

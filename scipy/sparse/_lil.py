@@ -133,6 +133,11 @@ class _lil_base(_spbase, IndexMixin):
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
 
+        Parameters
+        ----------
+        i : int
+            Row to return view of.
+
         Returns
         -------
         lil_array or lil_matrix

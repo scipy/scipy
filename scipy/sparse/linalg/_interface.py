@@ -179,7 +179,7 @@ class LinearOperator:
     >>> A @ np.ones(2)
     array([ 2.,  3.])
 
-    """  # numpydoc ignore=PR02
+    """  # numpydoc ignore=PR01,PR02
 
     # Necessary for right matmul with numpy arrays.
     __array_ufunc__ = None

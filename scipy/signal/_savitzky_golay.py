@@ -35,6 +35,14 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
         coefficients are ordered to be used in a convolution. With
         use='dot', the order is reversed, so the filter is applied by
         dotting the coefficients with the data set.
+    xp : array_namespace, optional
+        Optional array namespace.
+        Should be compatible with the array API standard, or supported by
+        array-api-compat.
+        Default: ``numpy``
+    device : any
+        optional device specification for output. Should match one of the
+        supported device specification in ``xp``.
 
     Returns
     -------

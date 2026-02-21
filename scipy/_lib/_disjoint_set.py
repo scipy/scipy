@@ -4,9 +4,14 @@ Disjoint set data structure
 
 
 class DisjointSet:
-    """ Disjoint set data structure for incremental connectivity queries.
+    """Disjoint set data structure for incremental connectivity queries.
 
     .. versionadded:: 1.6.0
+
+    Parameters
+    ----------
+    elements : sequence
+        Elements of the disjoint set.
 
     Attributes
     ----------

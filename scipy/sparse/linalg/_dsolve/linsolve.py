@@ -459,7 +459,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         Sparse array to factorize. Most efficient when provided in CSC format.
         Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
-        Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
+        Drop tolerance (``0 <= tol <= 1``) for an incomplete LU decomposition.
         (default: 1e-4)
 
         Note that `drop_tol` primarily affects entries generated as fill-in
@@ -467,7 +467,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         fill-in, changing this parameter may have no visible effect on the
         sparsity pattern of the factors.
     fill_factor : float, optional
-        Specifies the fill ratio upper bound (>= 1.0) for ILU. (default: 10)
+        Specifies the fill ratio upper bound (``>= 1.0``) for ILU. (default: 10)
     drop_rule : str, optional
         Comma-separated string of drop rules to use.
         Available rules: ``basic``, ``prows``, ``column``, ``area``,
@@ -487,7 +487,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Notes
     -----
     When a real array is factorized and the returned SuperLU object's ``solve()`` method
-    is used with complex arguments an error is generated. Instead, cast the initial 
+    is used with complex arguments an error is generated. Instead, cast the initial
     array to complex and then factorize.
 
     To improve the better approximation to the inverse, you may need to

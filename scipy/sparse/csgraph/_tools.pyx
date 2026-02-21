@@ -97,13 +97,14 @@ def csgraph_masked_from_dense(graph,
     ----------
     graph : array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
-    null_value : float or None (optional)
+    null_value : float or None, optional
         Value that denotes non-edges in the graph.  Default is zero.
-    infinity_null : bool
+    infinity_null : bool, optional
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
-    nan_null : bool
+    nan_null : bool, optional
         If True (default), then NaN entries are treated as non-edges
+    copy : bool, optional
 
     Returns
     -------

@@ -92,6 +92,20 @@ class RigidTransform:
 
     For rigorous introductions to rigid transforms, see [2]_, [3]_, and [4]_.
 
+    Parameters
+    ----------
+    matrix : array_like, shape (..., 4, 4)
+        A single transformation matrix or a stack of transformation
+        matrices.
+    normalize : bool, optional
+        If True, orthonormalize the rotation matrix using singular value
+        decomposition. If False, the rotation matrix is not checked for
+        orthogonality or right-handedness.
+    copy : bool, optional
+        If True, copy the input matrix. If False, a reference to the input
+        matrix is used. If normalize is True, the input matrix is always
+        copied regardless of the value of copy.
+
     Attributes
     ----------
     single

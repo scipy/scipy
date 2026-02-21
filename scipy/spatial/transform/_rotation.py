@@ -90,6 +90,22 @@ class Rotation:
     To create `Rotation` objects use ``from_...`` methods (see examples below).
     ``Rotation(...)`` is not supposed to be instantiated directly.
 
+    Parameters
+    ----------
+    quat : array_like
+        Quaternion representing the rotation.
+    normalize : bool, optional
+        If True, orthonormalize the rotation matrix using singular value
+        decomposition. If False, the rotation matrix is not checked for
+        orthogonality or right-handedness.
+    copy : bool, optional
+        If True, copy the input matrix. If False, a reference to the input
+        matrix is used. If normalize is True, the input matrix is always
+        copied regardless of the value of copy.
+    scalar_first : bool, optional
+        If ``True`` then `quat` is expect in scalar-first format otherwise it is
+        expected in scalar-last format. Defaults to ``False``.
+
     Attributes
     ----------
     single

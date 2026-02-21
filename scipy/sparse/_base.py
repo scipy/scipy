@@ -593,6 +593,11 @@ class _spbase(SparseABC):
     def maximum(self, other):
         """Element-wise maximum between this and another array/matrix.
 
+        Parameters
+        ----------
+        other : array_like or sparse array
+            Array to compare against.
+
         Returns
         -------
         sparse array/matrix or ndarray
@@ -605,6 +610,11 @@ class _spbase(SparseABC):
 
     def minimum(self, other):
         """Element-wise minimum between this and another array/matrix.
+
+        Parameters
+        ----------
+        other : array_like or sparse array
+            Array to compare against.
 
         Returns
         -------
