@@ -12,15 +12,15 @@ compared to 1.17.0.
 Authors
 =======
 * Name (commits)
-* Evgeni Burovski (3)
+* Evgeni Burovski (5)
 * Lucas Colley (1)
 * Christoph Gohlke (1)
 * Ralf Gommers (6)
 * Matt Haberland (5)
 * Matthias Koeppe (1)
 * Nick ODell (1)
-* Ilhan Polat (4)
-* Tyler Reddy (27)
+* Ilhan Polat (10)
+* Tyler Reddy (37)
 * Martin Schuck (3)
 * Dan Schult (2)
 * stratakis (1) +
@@ -40,6 +40,7 @@ Issues closed for 1.17.1
 * `#24141 <https://github.com/scipy/scipy/issues/24141>`__: BUG: ``milp`` solver claims optimality but returns an infeasible...
 * `#24208 <https://github.com/scipy/scipy/issues/24208>`__: BUG: ndimage: uninitialized variable "icoor" in NI_GeometricTransform
 * `#24339 <https://github.com/scipy/scipy/issues/24339>`__: BUG: sparse: Sparse array slicing (CSC Matrix) seemingly initializes...
+* `#24345 <https://github.com/scipy/scipy/issues/24345>`__: BUG: linalg.solve: ``overwrite_b=True`` ignored in 1.17.0
 * `#24354 <https://github.com/scipy/scipy/issues/24354>`__: BUG: spatial: ``Rotation.from_quat``\ : fails with read-only...
 * `#24355 <https://github.com/scipy/scipy/issues/24355>`__: BUG: linalg solve behavior change breaking downstream tests
 * `#24358 <https://github.com/scipy/scipy/issues/24358>`__: BUG: ``sparse.linalg.eigs`` results differ in``1.17.0``
@@ -50,6 +51,7 @@ Issues closed for 1.17.1
 * `#24403 <https://github.com/scipy/scipy/issues/24403>`__: BUG: integrate.dop: C dop implementation not calculating max...
 * `#24406 <https://github.com/scipy/scipy/issues/24406>`__: BUG: Regression in 1.17.0: generate_f2py mod is called by the...
 * `#24436 <https://github.com/scipy/scipy/issues/24436>`__: BUG: _quat become a MemoryView of 'ndarray' object after applying...
+* `#24508 <https://github.com/scipy/scipy/issues/24508>`__: BUG: ``linalg.sqrtm`` does not issue warning on sigularity at...
 * `#24555 <https://github.com/scipy/scipy/issues/24555>`__: BUG: spatial.transform.Rotation.from_mrp: leaked Cython memoryview
 * `#24574 <https://github.com/scipy/scipy/issues/24574>`__: BUG: scipy.stats.gengamma.logpdf ValueError when c < 0 and 0...
 
@@ -73,10 +75,13 @@ Pull requests for 1.17.1
 * `#24404 <https://github.com/scipy/scipy/pull/24404>`__: BUG:integrate:Fix a pointer dereference problem in DOPRI5
 * `#24407 <https://github.com/scipy/scipy/pull/24407>`__: BLD: tools/generate_f2pymod.py: Do not try to invoke f2py via...
 * `#24440 <https://github.com/scipy/scipy/pull/24440>`__: BUG: spatial.transform: Fix leaking MemoryViews from cy backend
+* `#24442 <https://github.com/scipy/scipy/pull/24442>`__: ENH: linalg/inv: re-enable overwrite_a for 2D inputs
 * `#24453 <https://github.com/scipy/scipy/pull/24453>`__: BUG: ndimage: Initialize icoor array in ``NI_GeometricTransform``
 * `#24499 <https://github.com/scipy/scipy/pull/24499>`__: BUG: sparse: Fix CSR/C index broadcasting
+* `#24507 <https://github.com/scipy/scipy/pull/24507>`__: BUG: linalg: restore backwards compatibility with dtypes in inv,...
 * `#24511 <https://github.com/scipy/scipy/pull/24511>`__: BUG: sparse: Fix CSR/C index broadcasting part 2
 * `#24537 <https://github.com/scipy/scipy/pull/24537>`__: TST: decrease resource usage (file handles, memory) of import...
+* `#24558 <https://github.com/scipy/scipy/pull/24558>`__: BUG:linalg: Improve linalg.sqrtm singularity catching logic
 * `#24564 <https://github.com/scipy/scipy/pull/24564>`__: BUG: spatial.transform.Rotation.from_mrp: fix leaking Cython...
 * `#24573 <https://github.com/scipy/scipy/pull/24573>`__: ENH: stats.DiscreteDistribution.icdf/iccdf: improve performance...
 * `#24576 <https://github.com/scipy/scipy/pull/24576>`__: MAINT: stats.gengamma.logpdf: fix broadcasting bug
