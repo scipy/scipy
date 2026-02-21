@@ -99,17 +99,17 @@ def minimum_spanning_tree(csgraph, overwrite=False):
                              copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
 
-    data = csgraph.data
-    indices = csgraph.indices
-    indptr = csgraph.indptr
+    cdef np.ndarray data = csgraph.data
+    cdef np.ndarray indices = csgraph.indices
+    cdef np.ndarray indptr = csgraph.indptr
 
-    rank = np.zeros(N, dtype=ITYPE)
-    predecessors = np.arange(N, dtype=ITYPE)
+    cdef np.ndarray rank = np.zeros(N, dtype=ITYPE)
+    cdef np.ndarray predecessors = np.arange(N, dtype=ITYPE)
 
     # Stable sort is a necessary but not sufficient operation
     # to get to a canonical representation of solutions.
-    i_sort = np.argsort(data, kind='stable').astype(ITYPE)
-    row_indices = np.zeros(len(data), dtype=ITYPE)
+    cdef np.ndarray i_sort = np.argsort(data, kind='stable').astype(ITYPE)
+    cdef np.ndarray row_indices = np.zeros(len(data), dtype=ITYPE)
 
     _min_spanning_tree(data, indices, indptr, i_sort,
                        row_indices, predecessors, rank)
@@ -136,15 +136,26 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     return sp_tree
 
 
+def _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode="c"] data,
+                       np.ndarray[int32_or_int64, ndim=1, mode="c"] col_indices,
+                       np.ndarray[int32_or_int64, ndim=1, mode="c"] indptr,
+                       np.ndarray[ITYPE_t, ndim=1, mode="c"] i_sort,
+                       np.ndarray[ITYPE_t, ndim=1, mode="c"] row_indices,
+                       np.ndarray[ITYPE_t, ndim=1, mode="c"] predecessors,
+                       np.ndarray[ITYPE_t, ndim=1, mode="c"] rank):
+    _min_spanning_tree2(data, col_indices, indptr, i_sort,
+                       row_indices, predecessors, rank)
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void _min_spanning_tree(DTYPE_t[::1] data,
-                             const ITYPE_t[::1] col_indices,
-                             const ITYPE_t[::1] indptr,
-                             const ITYPE_t[::1] i_sort,
-                             ITYPE_t[::1] row_indices,
-                             ITYPE_t[::1] predecessors,
-                             ITYPE_t[::1] rank) noexcept nogil:
+cdef void _min_spanning_tree2(np.ndarray[DTYPE_t, ndim=1, mode="c"] data,
+                              np.ndarray[int32_or_int64, ndim=1, mode="c"] col_indices,
+                              np.ndarray[int32_or_int64, ndim=1, mode="c"] indptr,
+                              np.ndarray[ITYPE_t, ndim=1, mode="c"] i_sort,
+                              np.ndarray[ITYPE_t, ndim=1, mode="c"] row_indices,
+                              np.ndarray[ITYPE_t, ndim=1, mode="c"] predecessors,
+                              np.ndarray[ITYPE_t, ndim=1, mode="c"] rank) noexcept:
     # Work-horse routine for computing minimum spanning tree using
     #  Kruskal's algorithm.  By separating this code here, we get more
     #  efficient indexing.
