@@ -341,95 +341,73 @@ swap_cf_z(SCIPY_Z* restrict src, SCIPY_Z* restrict dst, const Py_ssize_t r, cons
  *
  * For complex arrays, being Schur is equivalent to being upper triangular.
  */
-static inline int
+static int
 isschurf(const float* restrict data, const Py_ssize_t n)
 {
-    float prev_a, prev_b;
-    int isSchur = 1;
-    int expect_zero = 0;
-    for (Py_ssize_t j = 0; j < n; j++) {
-        if (data[j*n + j+1] == 0.0f) {
-            // Subdiagonal is zero
-            if (expect_zero) {
-                // Previous column had a non-zero entry and this marks the 2x2
-                // block. Check the [[a, b], [c, a]] form with b*c < 0.
-                if ((prev_a == data[j*n + j]) && (prev_b*data[j*n + j-1] < 0.0))
-                {
-                    expect_zero = 0; // All good, reset the flag
-                } else {
-                    // Broken 2x2 form
-                    return 0;
-                }
-            }
-            expect_zero = 0;
-        } else {
-            // Subdiagonal is non-zero. Either first column of 2x2 or not Schur
-            if (expect_zero)
-            {
-                // Already nonzero in the previous col so not Schur.
-                return 0;
-            } else {
-                // First column of 2x2 block
-                prev_a = data[j*n + j];
-                prev_b = data[j*n + j+1];
-                expect_zero = 1; // Next should be zero
-            }
+    int in_block = 0;
+    float block_diag, block_offdiag;
+
+    for (Py_ssize_t k = 0; k < n - 1; k++) {
+        // Below-subdiagonal entries in column k must be zero
+        for (Py_ssize_t i = k + 2; i < n; i++) {
+            if (data[k*n + i] != 0.0f) { return 0; }
         }
 
-        // Check the remaining entries in the col for zero.
-        if (j < n - 2)
-        {
-            for (Py_ssize_t i = j+2; i < n; i++) {
-                if (data[j*n + i] != 0.0f) {
-                    // Nonzero value below the subdiagonal
-                    return 0;
-                }
-            }
+        if (in_block) {
+            // Second column of 2x2 block: validate using current column only
+            if (block_diag != data[k*n + k]) { return 0; }
+            if (block_offdiag * data[k*n + k - 1] >= 0.0f) { return 0; }
+            if (data[k*n + k + 1] != 0.0f) { return 0; }
+            in_block = 0;
+        } else if (data[k*n + k + 1] != 0.0f) {
+            // First column of 2x2 block: save and mark
+            block_diag = data[k*n + k];
+            block_offdiag = data[k*n + k + 1];
+            in_block = 1;
         }
-        if (!isSchur) { break; }
     }
-    return isSchur;
+    // Validate if last block was 2x2.
+    if (in_block) {
+        Py_ssize_t k = n - 1;
+        if (block_diag != data[k*n + k]) { return 0; }
+        if (block_offdiag * data[k*n + k - 1] >= 0.0f) { return 0; }
+    }
+    return 1;
 }
 
 
-static inline int
+static int
 isschur(const double* restrict data, const Py_ssize_t n)
 {
-    double prev_a, prev_b;
-    int isSchur = 1;
-    int expect_zero = 0;
-    for (Py_ssize_t j = 0; j < n; j++) {
-        if (data[j*n + j+1] == 0.0) {
-            if (expect_zero) {
-                if ((prev_a == data[j*n + j]) && (prev_b*data[j*n + j-1] < 0.0))
-                {
-                    expect_zero = 0;
-                } else {
-                    return 0;
-                }
-            }
-            expect_zero = 0;
-        } else {
-            if (expect_zero)
-            {
-                return 0;
-            } else {
-                prev_a = data[j*n + j];
-                prev_b = data[j*n + j+1];
-                expect_zero = 1;
-            }
+    int in_block = 0;
+    double block_diag, block_offdiag;
+
+    for (Py_ssize_t k = 0; k < n - 1; k++) {
+        // Below-subdiagonal entries in column k must be zero
+        for (Py_ssize_t i = k + 2; i < n; i++) {
+            if (data[k*n + i] != 0.0) { return 0; }
         }
-        if (j < n - 2)
-        {
-            for (Py_ssize_t i = j+2; i < n; i++) {
-                if (data[j*n + i] != 0.0) {
-                    return 0;
-                }
-            }
+
+        if (in_block) {
+            // Second column of 2x2 block: validate using current column only
+            if (block_diag != data[k*n + k]) { return 0; }
+            if (block_offdiag * data[k*n + k - 1] >= 0.0) { return 0; }
+            if (data[k*n + k + 1] != 0.0) { return 0; }
+            in_block = 0;
+        } else if (data[k*n + k + 1] != 0.0) {
+            // First column of 2x2 block: save and mark
+            block_diag = data[k*n + k];
+            block_offdiag = data[k*n + k + 1];
+            in_block = 1;
         }
-        if (!isSchur) { break; }
     }
-    return isSchur;
+    // Validate if last block was 2x2.
+    if (in_block) {
+        Py_ssize_t k = n - 1;
+        if (block_diag != data[k*n + k]) { return 0; }
+        if (block_offdiag * data[k*n + k - 1] >= 0.0) { return 0; }
+    }
+    return 1;
 }
 
 #endif

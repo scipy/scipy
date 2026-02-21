@@ -5,7 +5,7 @@ import math
 import numpy as np
 import operator
 
-from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
+from ._sputils import (asmatrix, check_shape,
                        get_sum_dtype, isdense, isscalarlike, _todata,
                        matrix, validateaxis, getdtype, is_pydata_spmatrix)
 from scipy._lib._sparse import SparseABC, issparse
@@ -150,14 +150,15 @@ class _spbase(SparseABC):
     def shape(self):
         return self._shape
 
-    def reshape(self, *args, **kwargs):
+    def reshape(self, *shape, order="C", copy=False):
         """reshape(self, shape, order='C', copy=False)
 
         Gives a new shape to a sparse array/matrix without changing its data.
 
         Parameters
         ----------
-        shape : tuple of ints
+        *shape : int
+            Integers specifying the new shape.
             The new shape should be compatible with the original shape.
         order : {'C', 'F'}, optional
             Read the elements using this index order. 'C' means to read and
@@ -183,8 +184,7 @@ class _spbase(SparseABC):
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
         # Don't restrict ndim on this first call. That happens in constructor
-        shape = check_shape(args, self.shape, allow_nd=range(1, 65))
-        order, copy = check_reshape_kwargs(kwargs)
+        shape = check_shape(shape, self.shape, allow_nd=range(1, 65))
         if shape == self.shape:
             if copy:
                 return self.copy()
@@ -193,7 +193,7 @@ class _spbase(SparseABC):
 
         return self.tocoo(copy=copy).reshape(shape, order=order, copy=False)
 
-    def resize(self, shape):
+    def resize(self, *shape):
         """Resize the array/matrix in-place to dimensions given by ``shape``.
 
         Any elements that lie within the new shape will remain at the same
@@ -202,7 +202,7 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        shape : (int, int)
+        *shape : int
             number of rows and columns in the new array/matrix
 
         Notes

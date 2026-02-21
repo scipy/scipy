@@ -36,13 +36,16 @@ def use_solver(**kwargs):
 
     Parameters
     ----------
-    useUmfpack : bool, optional
-        Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
-        if ``scikits.umfpack`` is installed. Default: True
-    assumeSortedIndices : bool, optional
-        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
-        installed. Default: False
+    **kwargs
+        The following options may be passed as keyword arguments.
+
+        useUmfpack : bool, optional
+            Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
+            if ``scikits.umfpack`` is installed. Default: True
+        assumeSortedIndices : bool, optional
+            Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+            Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+            installed. Default: False
 
     Notes
     -----
@@ -458,6 +461,11 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
+
+        Note that `drop_tol` primarily affects entries generated as fill-in
+        during the ILU factorization; for matrices that produce little or no
+        fill-in, changing this parameter may have no visible effect on the
+        sparsity pattern of the factors.
     fill_factor : float, optional
         Specifies the fill ratio upper bound (>= 1.0) for ILU. (default: 10)
     drop_rule : str, optional
@@ -484,6 +492,12 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
+
+    The effect of `drop_tol` is matrix-dependent. In particular, `drop_tol`
+    does not guarantee that existing off-diagonal entries will be removed;
+    it controls dropping of candidate entries during factorization (often
+    fill-in). For some sparsity patterns, the ILU factors can be identical
+    to the full LU factors even for large `drop_tol`.
 
     This function uses the SuperLU library.
 
