@@ -200,10 +200,10 @@ class PchipInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
-    extrapolate : {bool, 'periodic', None}, optional
+    extrapolate : bool, optional
         If bool, determines whether to extrapolate to out-of-bounds points
-        based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. If None (default), it is set to True.
+        based on first and last intervals, or to return NaNs. If None (default), it is
+        set to True.
 
     Methods
     -------
