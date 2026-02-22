@@ -19,15 +19,6 @@ struct csr_array {
     T *data;
 };
 
-template <class I, class T>
-struct const_csr_array {
-    const I n_row;
-    const I n_col;
-    const I *indptr;
-    const I *indices;
-    const T *data;
-};
-
 /*
  * Extract k-th diagonal of CSR matrix A
  *
@@ -707,9 +698,9 @@ void csr_matmat(const I n_row,
  *
  */
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_general(const_csr_array<I,T> A,
-                           const_csr_array<I,T> B,
-                           csr_array<I,T2> C,
+void csr_binop_csr_general(csr_array<const I, const T> A,
+                           csr_array<const I, const T> B,
+                           csr_array<I, T2> C,
                            const binary_op& op)
 {
     //Method that works for duplicate and/or unsorted indices
@@ -796,8 +787,8 @@ void csr_binop_csr_general(const_csr_array<I,T> A,
  *
  */
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_canonical(const_csr_array<I,T> A,
-                             const_csr_array<I,T> B,
+void csr_binop_csr_canonical(csr_array<const I, const T> A,
+                             csr_array<const I, const T> B,
                              csr_array<I,T2> C,
                              const binary_op& op)
 {
@@ -916,8 +907,8 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
-    const_csr_array<I,T> A = {n_row, n_col, Ap, Aj, Ax};
-    const_csr_array<I,T> B = {n_row, n_col, Bp, Bj, Bx};
+    csr_array<const I, const T> A = {n_row, n_col, Ap, Aj, Ax};
+    csr_array<const I, const T> B = {n_row, n_col, Bp, Bj, Bx};
     csr_array<I,T2> C = {n_row, n_col, Cp, Cj, Cx};
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
         csr_binop_csr_canonical(A, B, C, op);
