@@ -20,9 +20,9 @@ Authors
 * Matthias Koeppe (1)
 * Nick ODell (1)
 * Ilhan Polat (10)
-* Tyler Reddy (37)
+* Tyler Reddy (44)
 * Martin Schuck (3)
-* Dan Schult (2)
+* Dan Schult (3)
 * stratakis (1) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (1)
 
@@ -54,6 +54,7 @@ Issues closed for 1.17.1
 * `#24508 <https://github.com/scipy/scipy/issues/24508>`__: BUG: ``linalg.sqrtm`` does not issue warning on sigularity at...
 * `#24555 <https://github.com/scipy/scipy/issues/24555>`__: BUG: spatial.transform.Rotation.from_mrp: leaked Cython memoryview
 * `#24574 <https://github.com/scipy/scipy/issues/24574>`__: BUG: scipy.stats.gengamma.logpdf ValueError when c < 0 and 0...
+* `#24629 <https://github.com/scipy/scipy/issues/24629>`__: MAINT: CI failures with new ``pydata/sparse`` release
 
 Pull requests for 1.17.1
 ------------------------
@@ -86,3 +87,4 @@ Pull requests for 1.17.1
 * `#24573 <https://github.com/scipy/scipy/pull/24573>`__: ENH: stats.DiscreteDistribution.icdf/iccdf: improve performance...
 * `#24576 <https://github.com/scipy/scipy/pull/24576>`__: MAINT: stats.gengamma.logpdf: fix broadcasting bug
 * `#24607 <https://github.com/scipy/scipy/pull/24607>`__: ENH: stats.DiscreteDistribution: entropy speedup
+* `#24646 <https://github.com/scipy/scipy/pull/24646>`__: BUG: sparse: csgraph and superLU index dtype need 32bit
