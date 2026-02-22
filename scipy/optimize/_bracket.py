@@ -214,6 +214,15 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # This is needed due to inner workings of `eim._loop`.
     # We're abusing it a tiny bit.
     shape = shape + (2,)
+    preserve_shape = False  # add preserve_shape as an argument
+    if preserve_shape:
+        # Calls in the `_loop` have *two* more dimensions than the call in
+        # `_initialize`, but the last is a singleton, so remove it.
+        def func(*args, func=func, **kwargs):
+            args = (arg[..., 0] for arg in args)
+            vals = (val[..., 0] for val in kwargs.values())
+            res = func(*args, **dict(zip(kwargs.keys(), vals)))
+            return res[..., xp.newaxis]
 
     # `d` is for "distance".
     # For searches without a limit, the distance between the fixed end of the

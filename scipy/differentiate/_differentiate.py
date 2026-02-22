@@ -1122,7 +1122,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     def df(x):
         tolerances = dict(rtol=rtol/100, atol=atol)
         temp = jacobian(f, x, tolerances=tolerances, **kwargs)
-        nfev.append(temp.nfev if len(nfev) == 0 else temp.nfev.sum(axis=-1))
+        nfev.append(temp.nfev.sum(axis=-1))
         return temp.df
 
     nfev = []  # track inner function evaluations

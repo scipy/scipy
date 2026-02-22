@@ -87,7 +87,16 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
     xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
     xs, args = xas[:nx], xas[nx:]
     xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
-    fs = [xp.asarray(func(x, *args)) for x in xs]
+    # When preserve_shape=True, the user needs to be able to easily predict the shape
+    # of the array passed to their callable. In particular, the arguments should always
+    # have the same number of dimensions. Calls to `func` in the loop will have an extra
+    # dimension, so we need to add an extra dimension in the call here, too.
+    if preserve_shape:
+        fs = [(xp.asarray(func(x[..., xp.newaxis],
+                               *(arg[..., xp.newaxis] for arg in args))))[..., 0]
+              for x in xs]
+    else:
+        fs = [xp.asarray(func(x, *args)) for x in xs]
     shape = xs[0].shape
     fshape = fs[0].shape
 
