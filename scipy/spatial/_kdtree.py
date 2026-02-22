@@ -2,7 +2,7 @@
 # Released under the scipy license
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
-from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
+from scipy._lib.deprecation import _NoValue
 from warnings import warn
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
@@ -914,7 +914,7 @@ class KDTree(cKDTree):
             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
             """
             warn(msg, DeprecationWarning, stacklevel=2)
-            output_dtype = "dok_matrix"
+            output_type = "dok_matrix"
         return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
