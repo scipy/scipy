@@ -201,7 +201,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     npy_intp lower_band = 0, upper_band = 0;
-    bool is_symm_or_herm = false, is_symm_not_herm = false;
+    bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
@@ -257,14 +257,47 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     lwork = (4*n > lwork ? 4*n : lwork);
 
-    // Finally, can start allocating memory
-    T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
+    /*
+     * Finally, we can start allocating memory.
+     *
+     * The key point is that LAPACK always operates on F-ordered arrays.
+     * The memory strategy thus depends on the `overwrite_a` value.
+     *
+     * For `overwrite_a=False` (default), we:
+     *   - allocate a temp buffer (`scratch` and `data` below) once
+     *   - for each slice, we
+     *       - copy-and-transpose the slice into the temp buffer,
+     *       - feed the buffer to LAPACK
+     *       - copy-and-transpose the result back to the C-ordered result array
+     *
+     * For `overwrite_a=True`, we assume that
+     *   - `ret_data` may point to the same memory as `ap_Am` array
+     *   - the caller had ensured that the input array is Fortran-ordered
+     *   - the caller wants to get the result also Fortran ordered
+     *
+     * It's a caller's responsibility to make sure that these pre-conditions are met,
+     * none of them is checked here.
+     * Therefore, if `overwrite_a = True`, we skip the copy-and-transpose steps above,
+     * and `ret_data` will simply contain the result from the LAPACK call.
+     *
+     */
+    CBLAS_INT buf_size = overwrite_a ? lwork : 2*n*n + lwork;
+
+    T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
-    // Chop buffer into parts, one for data and one for work
-    T* data = &buffer[0];
-    T* scratch = &buffer[n*n];
-    T* work = &buffer[2*n*n];
+    T *data=NULL, *scratch=NULL, *work=NULL;
+    if (overwrite_a) {
+        // work in-place 
+        data = ret_data;
+        work = &buffer[0];
+    }
+    else {
+        // Chop buffer into parts, one for data and one for work
+        data = &buffer[0];
+        scratch = &buffer[n*n];
+        work = &buffer[2*n*n];
+    }
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
@@ -287,15 +320,17 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         return (int)info;
     }
 
-    // normalize the structure detection inputs
+    /*
+     * Normalize the structure detection inputs.
+     */
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
     }
     else if (structure == St::SYM) {
-        is_symm_not_herm = true;
+        is_symm = true;
     }
     else if (structure == St::HER) {
-        is_symm_not_herm = false;
+        is_herm = true;
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -304,7 +339,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         uplo = 'U';
     }
 
-    // Main loop to traverse the slices
+    /*
+     * Main loop to traverse the slices.
+     */
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
         npy_intp offset = 0;
@@ -314,8 +351,10 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             temp_idx /= shape[i];
         }
         T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
-        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-        swap_cf(scratch, data, n, n, n);
+        if (!overwrite_a) {
+            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+            swap_cf(scratch, data, n, n, n);
+        }
 
         // detect the structure if not given
         slice_structure = structure;
@@ -334,19 +373,39 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 uplo = 'L';
             } else {
                 // Check if symmetric/hermitian
-                std::tie(is_symm_or_herm, is_symm_not_herm) = is_sym_herm(data, n);
-                if (is_symm_or_herm) {
-                    slice_structure = St::POS_DEF;
+                std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
+
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real: is_symm and is_herm are always equal
+                    if (is_symm) {
+                        // try Cholesky first, fall back to sytrf if it fails
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        slice_structure = St::GENERAL;
+                    }
                 }
                 else {
-                    // give up auto-detection
-                    slice_structure = St::GENERAL;
+                    // Complex
+                    if (!is_symm && !is_herm) {
+                        slice_structure = St::GENERAL;
+                    }
+                    else if (is_herm) {
+                        // Hermitian (may also be symmetric if entries are real)
+                        // try Cholesky first, fall back to hetrf if it fails
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        // is_symm && !is_herm: complex symmetric, not hermitian
+                        slice_structure = St::SYM;
+                    }
                 }
             }
         }
 
         init_status(slice_status, idx, slice_structure);
 
+        // Use the appropriate LAPACK function for the `slice_structure`.
         switch(slice_structure) {
             case St::DIAGONAL:
             {
@@ -408,7 +467,14 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             case St::SYM:     // NB: if POS_DEF failed, fall-through to here
             case St::HER:
             {
-                invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, is_symm_not_herm, slice_status);
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real: always use sytrf/sytri
+                    invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, true, slice_status);
+                }
+                else {
+                    // Complex: use sytrf if symmetric-only, hetrf if hermitian
+                    invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, !is_herm, slice_status);
+                }
 
                 if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
                     vec_status.push_back(slice_status);
@@ -418,11 +484,18 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     vec_status.push_back(slice_status);
                 }
 
-                if (is_symm_not_herm) {
+                if constexpr (!type_traits<T>::is_complex) {
+                    // Real symmetric
                     fill_other_triangle_noconj(uplo, data, intn);
                 }
                 else {
-                    fill_other_triangle(uplo, data, intn);
+                    // Complex: depends on whether symmetric or hermitian
+                    if (!is_herm) {
+                        fill_other_triangle_noconj(uplo, data, intn);
+                    }
+                    else {
+                        fill_other_triangle(uplo, data, intn);
+                    }
                 }
                 break;
             }
@@ -436,16 +509,18 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     vec_status.push_back(slice_status);
                 }
             }
-        }
+        } // end of `switch(slice_structure)`
 
         if (slice_status.is_singular == 1) {
             // nan_matrix(data, n);
             goto free_exit;     // fail fast and loud
         }
 
-        // Swap back to original order
-        swap_cf(data, &ret_data[idx*n*n], n, n, n);
-    }
+        if (!overwrite_a) {
+            // Swap back to original order
+            swap_cf(data, &ret_data[idx*n*n], n, n, n);
+        }
+    } // end of `for(idx=...)`
 
 free_exit:
     free(buffer);

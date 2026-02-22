@@ -1,3 +1,5 @@
+import os
+import platform
 import itertools
 import warnings
 
@@ -27,7 +29,14 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 parametrize_overwrite_arg = pytest.mark.parametrize(
-    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}],
+    ids=["True", "False", "None"]
+)
+
+
+parametrize_overwrite_b_arg = pytest.mark.parametrize(
+    "overwrite_b_kw", [{"overwrite_b": True}, {"overwrite_b": False}, {}],
+    ids=["True", "False", "None"]
 )
 
 
@@ -808,6 +817,21 @@ class TestSolve:
         with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
             solve(A, b, assume_a=structure)
 
+    @pytest.mark.parametrize('b', [0, 1, [0, 1]])
+    def test_singular_scalar(self, b):
+        # regression test for gh-24355: scalar a=0 is singular
+        # thus should raise the same error 
+
+        with pytest.raises(LinAlgError):
+            a = np.zeros((1, 1))
+            solve(a, b)
+
+        with pytest.raises(LinAlgError):
+            solve(0, b)
+
+        with pytest.raises(LinAlgError):
+            solve([[0]], b)
+
     def test_multiple_rhs(self):
         a = np.eye(2)
         rng = np.random.default_rng(1234)
@@ -1015,6 +1039,30 @@ class TestSolve:
         out = solve(a.T, b, assume_a='pos', lower=False)
         assert_allclose(out, result_np, atol=1e-15)
 
+    def test_pos_fails_sym_complex(self):
+        # regression test for the `solve` analog of gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+        b = np.eye(2)
+
+        ainv = solve(a, b)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = solve(a, b, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does solve.
+        ainv_chol = solve(a, b, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with inv.
+        ainv_inv = inv(a, assume_a="pos")
+        assert_allclose(ainv_chol, ainv_inv, atol=1e-14)
+
     def test_readonly(self):
         a = np.eye(3)
         a.flags.writeable = False
@@ -1092,6 +1140,47 @@ class TestSolve:
         x = solve(a, b, **overwrite_kw)
         assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize('a_dtype', [int, float])
+    @pytest.mark.parametrize('a_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_dtype', [int, float])
+    @pytest.mark.parametrize('b_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
+    @pytest.mark.parametrize('transposed', [True, False])
+    def test_overwrite_args(
+        self, overwrite_kw, overwrite_b_kw, a_dtype, a_order,
+        b_dtype, b_order, b_ndim, transposed
+    ):
+        n = 3
+        a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
+        a = a.astype(a_dtype, order=a_order)
+
+        b = np.arange(n)
+        if b_ndim > 1:
+            b = np.stack([b*j for j in range(b_ndim)]).T
+        b = b.astype(b_dtype, order=b_order)
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        # solve and check that the solution is correct for all parameters
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw, transposed=transposed)
+        a_or_aT = a_ref.T if transposed else a_ref
+        assert_allclose(a_or_aT @ x, b_ref, atol=1e-14)
+
+        # now check that it worked in-place where expected
+        overwrite_a = overwrite_kw.get('overwrite_a', False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags['F_CONTIGUOUS']
+
+        overwrite_b = overwrite_b_kw.get('overwrite_b', False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags['F_CONTIGUOUS']
+
+        assert np.shares_memory(x, b) == b_inplace
+
+        assert (b == b_ref).all() != b_inplace
+        assert (a == a_ref).all() != a_inplace
 
     def test_posdef_not_posdef(self):
         # the `b` matrix is invertible but not positive definite
@@ -1286,17 +1375,53 @@ class TestInv:
         a_inv = inv(a)
         assert a_inv.shape == (3, 1, 0, 0)
 
-    @pytest.mark.xfail(reason="TODO: re-enable overwrite_a")
-    def test_overwrite_a(self):
-        a = np.arange(1, 5).reshape(2, 2)
-        a_inv = inv(a, overwrite_a=True)
-        assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
-        assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
+    @parametrize_overwrite_arg
+    def test_overwrite_a(self, overwrite_kw):
+        n = 3
+        a0 = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace 
-        a = a.astype(float).copy(order='F')
-        a_inv = inv(a, overwrite_a=True)
-        assert np.shares_memory(a, a_inv)
+        # int arrays are copied internally
+        a = a0.copy()
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # float C ordered arrays are copied, too
+        a = a0.copy().astype(float)
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: inv works inplace.
+        # IOW, the output is always the inverse, and the original input may be
+        # destroyed, depending on the `overwrite_a` kwarg value
+        a = a0.astype(float).copy(order='F')
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        assert (a == a0).all() != overwrite_a
+        assert np.shares_memory(a, a_inv) == overwrite_a
+
+    @pytest.mark.parametrize(
+        "dtyp", [np.float16, np.float32, np.longdouble, np.clongdouble]
+    )
+    def test_dtypes(self, dtyp):
+        # backwards compat: inv(float16)->float32 ; inv(clongdouble)->complex128 etc
+        a = np.arange(4).reshape(2, 2).astype(dtyp)
+
+        a_inv = inv(a)
+        assert_allclose(a @ a_inv, np.eye(a.shape[0]), atol=100*np.finfo(a.dtype).eps)
+
+        dt_map = {
+            'e': 'f',  # float16 -> float32
+            'f': 'f',
+            'g': 'd',  # longdouble -> float64
+            'G': 'D'   # clongdouble -> complex128
+        }
+        assert a_inv.dtype.char == dt_map[a.dtype.char]
 
     def test_readonly(self):
         a = np.eye(3)
@@ -1436,6 +1561,86 @@ class TestInv:
             a = a + 1j*a
             b = a + a.T.conj() + np.eye(3)
             assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
+
+    def test_pos_fails_sym_complex(self):
+        # regression test for gh-24359
+        # the matrix is 1) symmetric not hermitian, and 2) not positive definite:
+        a = np.asarray([[ 182.56985285-64.28859483j, -177.24879835+11.0780499j ],
+                        [-177.24879835+11.0780499j ,  177.24879835-11.0780499j ]])
+
+        ainv = inv(a)
+        assert_allclose(ainv @ a, np.eye(2), atol=1e-14)
+
+        ainv_sym = inv(a, assume_a="sym")
+        assert_allclose(ainv_sym, ainv, atol=1e-14)
+
+        # Specifying assume_a="pos" disables the structure detection, and directly
+        # calls LAPACK routines zportf and zpotri.
+        # Since zportf(a) does not error out, neither does inv
+        ainv_chol = inv(a, assume_a="pos")
+        assert not np.allclose(ainv, ainv_chol, atol=1e-14)
+
+        # Setting assume_a="pos" with a non-pos def matrix returned nonsense.
+        # This is at least consistent with solve.
+        ainv_slv = solve(a, np.eye(2), assume_a="pos")
+        assert_allclose(ainv_chol, ainv_slv, atol=1e-14)
+
+        # Repeat it for bunch of simple cases to cover more branches
+        # Real symmetric, positive definite
+        a = np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real symmetric, NOT positive definite
+        a = -np.eye(4) + np.ones(4)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Real, not symmetric
+        a = -np.eye(4) + np.ones(4)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # | Test                                  | is_symm | is_herm | pos def |
+        # |---------------------------------------|---------|---------|---------|
+        # | Complex, both sym+herm, pos def       |    1    |    1    |   yes   |
+        # | Complex, symmetric only               |    1    |    0    |    -    |
+        # | Complex, both sym+herm, NOT pos def   |    1    |    1    |   no    |
+        # | Complex, neither                      |    0    |    0    |    -    |
+        # | Complex, hermitian only, pos def      |    0    |    1    |   yes   |
+        # | Complex, hermitian only, NOT pos def  |    0    |    1    |   no    |
+
+        # Complex, both symmetric and hermitian, positive definite
+        a = (np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, symmetric only (not hermitian)
+        a = (np.eye(4)*1.0j + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, both symmetric and hermitian, NOT positive definite
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, neither symmetric nor hermitian
+        a = (-np.eye(4) + np.ones(4)).astype(np.complex128)
+        a[0, -1] = 2.
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(4), atol=1e-14)
+
+        # Complex, hermitian only, positive definite
+        a = np.array([[2, 1+1j], [1-1j, 2]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
+
+        # Complex, hermitian only, NOT positive definite
+        a = np.array([[-1, 1+1j], [1-1j, -1]], dtype=np.complex128)
+        res = inv(a)
+        assert_allclose(res @ a, np.eye(2), atol=1e-14)
 
     @pytest.mark.parametrize('complex_', [False, True])
     @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
@@ -2484,3 +2689,79 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
+
+
+class TestDTypes:
+    """Check backwards compatibility for dtypes vs scipy 1.16."""
+
+    def get_arr2D(self, tcode):
+        # return a valid 2D array for the typecode
+        if tcode == 'M':
+            return np.eye(2, dtype='datetime64[ms]')
+        elif tcode == 'V':
+            return np.asarray([[b'a', b'b'], [b'c', b'd']], dtype='V')
+        else:
+            return np.eye(2, dtype=tcode)
+
+    def get_arr1D(self, tcode):
+        # return a valid 1D array for the typecode
+        if tcode == 'M':
+            return np.ones(2, dtype='datetime64[ms]')
+        elif tcode == 'V':
+            return np.asarray([b'a', b'b'], dtype='V')
+        else:
+            return np.ones(2, dtype=tcode)
+
+    @pytest.mark.parametrize("tcode", np.typecodes['All'])
+    def test_inv(self, tcode):
+        # check backwards compat vs scipy 1.16
+        a = self.get_arr2D(tcode)
+        if tcode in 'SUVO':
+            # raises
+            with pytest.raises(ValueError):
+                inv(a)
+        else:
+            # passes
+            inv(a)
+
+    @pytest.mark.parametrize("tcode", np.typecodes['All'])
+    def test_det(self, tcode):
+        a = self.get_arr2D(tcode)
+
+        is_arm = platform.machine() == 'arm64'
+        is_windows = os.name == 'nt'
+
+        failing_tcodes = 'SUVOmM'
+        if not (is_arm or is_windows):
+            failing_tcodes += 'gG'
+
+        if tcode in failing_tcodes:
+            # raises
+            with pytest.raises(TypeError):
+                det(a)
+        else:
+            # passes
+            det(a)
+
+    @pytest.mark.filterwarnings("ignore:Casting complex values")
+    @pytest.mark.parametrize("tcode_a", np.typecodes['All'])
+    @pytest.mark.parametrize("tcode_b", np.typecodes['All'])
+    def test_solve(self, tcode_a, tcode_b):
+        a = self.get_arr2D(tcode_a)
+        b = self.get_arr1D(tcode_b)
+
+        can_combine = True
+        try:
+            np.result_type(tcode_a, tcode_b)
+        except TypeError:
+            can_combine = False
+
+        if not can_combine:
+            # np.exceptions.DTypePromotionError subclasses TypeError
+            with pytest.raises(TypeError):
+                solve(a, b)
+        elif tcode_a in 'SUVO' or tcode_b in 'VO':
+            with pytest.raises(ValueError):
+                solve(a, b)
+        else:
+            solve(a, b)

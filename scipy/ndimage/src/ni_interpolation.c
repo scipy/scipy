@@ -265,7 +265,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     npy_intp ftmp[NPY_MAXDIMS], *fcoordinates = NULL, *foffsets = NULL;
     npy_intp cstride = 0, kk, hh, ll, jj;
     npy_intp size;
-    double **splvals = NULL, icoor[NPY_MAXDIMS], tmp;
+    double **splvals = NULL, icoor[NPY_MAXDIMS] = {0}, tmp;
     npy_intp idimensions[NPY_MAXDIMS], istrides[NPY_MAXDIMS];
     NI_Iterator io, ic;
     npy_double *matrix = matrix_ar ? (npy_double*)PyArray_DATA(matrix_ar) : NULL;
@@ -467,6 +467,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                                 "coordinate array data type not supported");
                 goto exit;
             }
+        } else {
+            NPY_END_THREADS;
+            PyErr_SetString(PyExc_RuntimeError,
+                            "One of `map`, `matrix` or `coordinates` must be provided");
+            goto exit;
         }
 
         /* iterate over axes: */

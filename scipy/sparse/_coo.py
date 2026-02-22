@@ -20,7 +20,7 @@ from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs, isscalarlike,
                        isintlike, isdense)
-from ._index import _validate_indices
+from ._index import _validate_indices, _broadcast_arrays
 
 import operator
 
@@ -567,6 +567,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # handle array indices
         if arr_indices:
+            arr_indices = _broadcast_arrays(*arr_indices)
             arr_shape = arr_indices[0].shape  # already broadcast in validate_indices
             # There are three dimensions required to check array indices against coords
             # Their lengths are described as:
@@ -622,6 +623,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
             for j in none_pos[::-1]:
                 new_shape.pop(j)
             new_shape = tuple(new_shape)
+
+        # broadcast arrays
+        if arr_int_pos:
+            index = list(index)
+            arr_pos = {i: arr for i in arr_int_pos if not isintlike(arr := index[i])}
+            arr_indices = _broadcast_arrays(*arr_pos.values())
+            for i, arr in zip(arr_pos, arr_indices):
+                index[i] = arr
 
         # get coords and data from x
         if issparse(x):

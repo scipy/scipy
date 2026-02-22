@@ -649,14 +649,7 @@ def check_nans_and_edges(dist, fname, arg, res):
     if isinstance(dist, DiscreteDistribution):
         exclude.update({'pdf', 'logpdf'})
 
-    if (
-            fname not in exclude
-            and not (isinstance(dist, Binomial)
-                     and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1)))):
-        # This can fail in degenerate case where Binomial distribution is a point
-        # distribution. Further on, we could factor out an is_degenerate function
-        # for the tests, or think about storing info about degeneracy in the
-        # instances.
+    if fname not in exclude:
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
@@ -764,13 +757,7 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        if not (
-                isinstance(dist, Binomial)
-                and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1))
-        ):
-            # This test will fail for degenerate case where binomial distribution
-            # is a point distribution.
-            check(i, 'standardized', 'general', ref, success=i <= 2)
+        check(i, 'standardized', 'general', ref, success=i <= 2)
         check(i, 'standardized', 'normalize', ref)
 
     if isinstance(dist, ShiftedScaledDistribution):
@@ -1108,7 +1095,7 @@ class TestMakeDistribution:
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
                 'vonmises_line', # continuous
-                'betanbinom', 'logser', 'skellam', 'zipf'}  # discrete
+                'betanbinom', 'logser', 'zipf'}  # discrete
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 

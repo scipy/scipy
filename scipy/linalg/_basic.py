@@ -10,7 +10,10 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
+from .lapack import (
+    get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
+    _compute_lwork
+)
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
@@ -277,11 +280,21 @@ def solve(a, b, lower=False, overwrite_a=False,
         return x
 
     if a_is_scalar:
+        if a1.item() == 0:
+            raise LinAlgError("A singular matrix detected.")
+
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
 
+    # XXX a1.ndim > 2 ; b1.ndim > 2
+    # XXX can do something if a1 C ordered & transposed==True ?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
+    overwrite_b = overwrite_b and (b1.ndim <= 2) and (b1.flags["F_CONTIGUOUS"])
+
     # heavy lifting
-    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed)
+    x, err_lst = _batched_linalg._solve(
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
@@ -1438,6 +1451,9 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
         overwrite_a = True
         a1 = a1.copy()
 
+    # XXX can relax a1.ndim == 2?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
+
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
         None: -1,
@@ -1536,7 +1552,7 @@ def det(a, overwrite_a=False, check_finite=True):
                          f' but received shape {a1.shape}.')
 
     # Also check if dtype is LAPACK compatible
-    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _normalize_lapack_dtype1(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:

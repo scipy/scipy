@@ -396,6 +396,7 @@ class _ArpackParams:
             'aup2_getv0': 0,
             'aup2_cnorm': 0,
             'aup2_kplusp': 0,
+            'aup2_nev': 0,
             'aup2_nev0': 0,
             'aup2_np0': 0,
             'aup2_numcnv': 0,

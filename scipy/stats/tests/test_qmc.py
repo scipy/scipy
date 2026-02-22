@@ -956,13 +956,35 @@ class TestPoisson(QMCEngineTests):
             assert len(sample) <= ns
             assert l2_norm(sample) >= radius
 
-    def test_fill_space(self):
+    @pytest.mark.parametrize("l_bounds, u_bounds",  # add bounds to test gh-22819
+        [(None, None), ([-5, -5], [5, 5]),  ([1.1, 1.1], [5.1, 5.1])])
+    def test_fill_space(self, l_bounds, u_bounds):
         radius = 0.2
-        engine = self.qmce(d=2, radius=radius)
+        engine = self.qmce(d=2, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
 
         sample = engine.fill_space()
         # circle packing problem is np complex
         assert l2_norm(sample) >= radius
+
+    def test_bounds_shift_scale(self):
+        # test a reasonable property: as long as shape of region is a hypercube,
+        # bounds just shift and scale the sample.
+        radius = 0.2  # arbitrary parameters
+        shift = np.asarray([-2.1, 3.4])
+        scale = 2.6
+
+        rng = np.random.default_rng(8504196751)
+        engine = self.qmce(d=2, radius=radius*scale, rng=rng,
+                           l_bounds=shift, u_bounds=shift + scale)
+        res = engine.fill_space()
+
+        rng = np.random.default_rng(8504196751)
+        engine = self.qmce(d=2, radius=radius, rng=rng)
+        ref = engine.fill_space()
+
+        # circle packing problem is np complex
+        assert l2_norm(res) >= radius
+        assert_allclose(res, ref*scale + shift)
 
     @pytest.mark.parametrize("l_bounds", [[-1, -2, -1], [1, 2, 1]])
     def test_sample_inside_lower_bounds(self, l_bounds):

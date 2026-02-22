@@ -8685,46 +8685,48 @@ def test_exponpow_edge():
     assert_equal(p, [np.inf, 0.0, -np.inf])
 
 
-def test_gengamma_edge():
-    # Regression test for gh-3985.
-    p = stats.gengamma.pdf(0, 1, 1)
-    assert_equal(p, 1.0)
+class TestGenGamma:
+    def test_gengamma_edge(self):
+        # Regression test for gh-3985.
+        p = stats.gengamma.pdf(0, 1, 1)
+        assert_equal(p, 1.0)
 
+    @pytest.mark.parametrize("a, c, ref, tol",
+                             [(1500000.0, 1, 8.529426144018633, 1e-15),
+                              (1e+30, 1, 35.95771492811536, 1e-15),
+                              (1e+100, 1, 116.54819318290696, 1e-15),
+                              (3e3, 1, 5.422011196659015, 1e-13),
+                              (3e6, -1e100, -236.29663213396054, 1e-15),
+                              (3e60, 1e-100, 1.3925371786831085e+102, 1e-15)])
+    def test_gengamma_extreme_entropy(self, a, c, ref, tol):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def gen_entropy(a, c):
+        #     a, c = mp.mpf(a), mp.mpf(c)
+        #     val = mp.digamma(a)
+        #     h = (a * (mp.one - val) + val/c + mp.loggamma(a) - mp.log(abs(c)))
+        #     return float(h)
+        assert_allclose(stats.gengamma.entropy(a, c), ref, rtol=tol)
 
-@pytest.mark.parametrize("a, c, ref, tol",
-                         [(1500000.0, 1, 8.529426144018633, 1e-15),
-                          (1e+30, 1, 35.95771492811536, 1e-15),
-                          (1e+100, 1, 116.54819318290696, 1e-15),
-                          (3e3, 1, 5.422011196659015, 1e-13),
-                          (3e6, -1e100, -236.29663213396054, 1e-15),
-                          (3e60, 1e-100, 1.3925371786831085e+102, 1e-15)])
-def test_gengamma_extreme_entropy(a, c, ref, tol):
-    # The reference values were calculated with mpmath:
-    # from mpmath import mp
-    # mp.dps = 500
-    #
-    # def gen_entropy(a, c):
-    #     a, c = mp.mpf(a), mp.mpf(c)
-    #     val = mp.digamma(a)
-    #     h = (a * (mp.one - val) + val/c + mp.loggamma(a) - mp.log(abs(c)))
-    #     return float(h)
-    assert_allclose(stats.gengamma.entropy(a, c), ref, rtol=tol)
+    def test_gengamma_endpoint_with_neg_c(self):
+        p = stats.gengamma.pdf(0, 1, -1)
+        assert p == 0.0
+        logp = stats.gengamma.logpdf(0, 1, -1)
+        assert logp == -np.inf
 
+    def test_gengamma_munp(self):
+        # Regression tests for gh-4724.
+        p = stats.gengamma._munp(-2, 200, 1.)
+        assert_almost_equal(p, 1./199/198)
 
-def test_gengamma_endpoint_with_neg_c():
-    p = stats.gengamma.pdf(0, 1, -1)
-    assert p == 0.0
-    logp = stats.gengamma.logpdf(0, 1, -1)
-    assert logp == -np.inf
+        p = stats.gengamma._munp(-2, 10, 1.)
+        assert_almost_equal(p, 1./9/8)
 
-
-def test_gengamma_munp():
-    # Regression tests for gh-4724.
-    p = stats.gengamma._munp(-2, 200, 1.)
-    assert_almost_equal(p, 1./199/198)
-
-    p = stats.gengamma._munp(-2, 10, 1.)
-    assert_almost_equal(p, 1./9/8)
+    def test_gengamma_logpdf_broadcasting_gh24574(self):
+        # gh-24574 reported a broadcasting error when `x` included 0s.
+        assert_allclose(stats.gengamma.logpdf([0, 1, 1], 1, -1), [-np.inf, -1, -1])
 
 
 def test_ksone_fit_freeze():

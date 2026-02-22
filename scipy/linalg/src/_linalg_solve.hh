@@ -243,13 +243,13 @@ inline void solve_slice_diagonal(
 
 template<typename T>
 int
-_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, SliceStatusVec& vec_status)
+_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     char trans = transposed ? 'T' : 'N'; 
     npy_intp lower_band = 0, upper_band = 0;
-    bool is_symm_or_herm = false, is_symm_not_herm = false;
+    bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
@@ -297,16 +297,49 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // gecon needs lwork of at least 4*n
     lwork = (4*n > lwork ? 4*n : lwork);
 
-    T* buffer = (T *)malloc((2*n*n + n*nrhs + 2*n + lwork)*sizeof(T));
+    CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
+    CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
+    CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
+    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork; 
+
+    T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
-    // Chop the buffer into parts
-    T* data = &buffer[0];
-    T* scratch = &buffer[n*n];
+    /*
+     * Chop the buffer into parts:
+     *
+     *    size_a     size_a    size_b     2n     lwork
+     * |----------|---------|----------|------|---------|
+     * ^          ^         ^          ^      ^
+     * scratch    data      data_b     work2  work
+     *
+     * - scrach & data are for A (lhs)
+     * - data_b is for b (rhs)
+     * - work2 is for the tridiag solver, trcon's work array
+     * - work is for all other LAPACK functions
+     *
+     */
 
-    T *data_b = &buffer[2*n*n];
-    T *work2 = &buffer[2*n*n + n*nrhs]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
-    T* work = &buffer[2*n*n + n*nrhs + 2*n];
+    T *scratch = NULL, *data = NULL;
+    if (overwrite_a) {
+        data = (T *)Am_data;
+    }
+    else {
+        scratch = &buffer[0];
+        data = &buffer[buf_size_a];
+    }
+
+    T *data_b = NULL;
+    if(overwrite_b) {
+        // work in-place
+        data_b = ret_data;
+    }
+    else {
+        data_b = &buffer[2*buf_size_a];
+    }
+
+    T *work2 = &buffer[2*buf_size_a + buf_size_b]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
+    T* work = &buffer[2*buf_size_a + buf_size_b + 2*n];
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
@@ -334,10 +367,10 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
         posdef_fallback = false;
     }
     else if (structure == St::SYM) {
-        is_symm_not_herm = true;
+        is_symm = true;
     }
     else if (structure == St::HER) {
-        is_symm_not_herm = false;
+        is_herm = true;
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -356,18 +389,22 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             temp_idx /= shape[i];
         }
         T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
-        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-        swap_cf(scratch, data, n, n, n);
-
-        // copy the r.h.s, too; XXX: dedupe
-        offset = 0;
-        temp_idx = idx;
-        for (int i = ndim_b - 3; i >= 0; i--) {
-            offset += (temp_idx % shape_b[i]) * strides_b[i];
-            temp_idx /= shape_b[i];
+        if (!overwrite_a) {
+            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+            swap_cf(scratch, data, n, n, n);
         }
-        T *slice_ptr_b = (T *)(bm_data + (offset/sizeof(T)));
-        copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+
+        if (!overwrite_b) {
+            // copy the r.h.s, too; XXX: dedupe
+            offset = 0;
+            temp_idx = idx;
+            for (int i = ndim_b - 3; i >= 0; i--) {
+                offset += (temp_idx % shape_b[i]) * strides_b[i];
+                temp_idx /= shape_b[i];
+            }
+            T *slice_ptr_b = (T *)(bm_data + (offset/sizeof(T)));
+            copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        }
 
         // detect the structure if not given
         slice_structure = structure;
@@ -390,9 +427,15 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 uplo = 'L';
             } else {
                 // Check if symmetric/hermitian
-                std::tie(is_symm_or_herm, is_symm_not_herm) = is_sym_herm(data, n);
-                if (is_symm_or_herm) {
+                std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
+                if (is_herm || (is_symm && !type_traits<T>::is_complex)) {
+                    // either real symmetric or complex hermitian; try Cholesky first,
+                    // fall back to sym/her if it fails
                     slice_structure = St::POS_DEF;
+                }
+                else if (is_symm && type_traits<T>::is_complex) {
+                    // complex symmetric, not hermitian
+                    slice_structure = St::SYM;
                 }
                 else {
                     // give up auto-detection
@@ -480,7 +523,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             case St::SYM:  // pos def fails, fall through to here
             case St::HER:
             {
-                solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv, work, irwork, lwork, is_symm_not_herm, slice_status);
+                solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv, work, irwork, lwork, (is_symm && !is_herm), slice_status);
 
                 if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
                     vec_status.push_back(slice_status);
@@ -490,7 +533,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                     vec_status.push_back(slice_status);
                 }
 
-                if (is_symm_not_herm) {
+                if (is_symm && !is_herm) {
                     fill_other_triangle_noconj(uplo, data, intn);
                 }
                 else {
@@ -516,8 +559,10 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             goto free_exit;     // fail fast and loud
         }
 
-        // Swap back to the C order
-        copy_slice_F_to_C(&ret_data[idx*n*nrhs], data_b, n, nrhs);
+        if (!overwrite_b) {
+            // Swap back to the C order
+            copy_slice_F_to_C(&ret_data[idx*n*nrhs], data_b, n, nrhs);
+        }
     }
 
 free_exit:
