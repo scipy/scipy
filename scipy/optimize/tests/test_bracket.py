@@ -3,7 +3,8 @@ import pytest
 import numpy as np
 
 from scipy.optimize._bracket import _ELIMITS
-from scipy.optimize.elementwise import bracket_root, bracket_minimum, find_root
+from scipy.optimize.elementwise import (bracket_root, bracket_minimum,
+                                        find_root, find_minimum)
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
@@ -590,6 +591,11 @@ class TestBracketMinimum:
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, xp.asarray(-4), xr0=4, maxiter="ekki")
 
+        message = '`preserve_shape` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xr0=4,
+                             preserve_shape='a herring')
+
     @pytest.mark.parametrize("xl0", [0.0, None])
     @pytest.mark.parametrize("xm0", (0.05, 0.1, 0.15))
     @pytest.mark.parametrize("xr0", (0.2, 0.4, 0.6, None))
@@ -906,3 +912,20 @@ class TestBracketMinimum:
         result = _bracket_minimum(f, xp.asarray(-0.5535723499480897),
                                   xmin=xmin, xmax=xmax)
         xp_assert_close(result.xr, xmax)
+
+    @pytest.mark.parametrize('shape', [(4,), (4, 2), (4, 2, 3)])
+    def test_preserve_shape(self, xp, shape):
+        # Test `preserve_shape` option
+        def f(x, p):
+            assert x.shape[:-1] == p.shape[:-1] == shape
+            out = [-xp.cos(x[0]), (x[1] - 1)**2, (x[2] - 2)**2, (x[3] - 3)**2]
+            return xp.stack(out)
+
+        a = xp.full(shape, -1.)
+        p = xp.asarray(2.)
+        ref = xp.stack([xp.full(shape[1:], 0.), xp.full(shape[1:], 1.),
+                        xp.full(shape[1:], 2.), xp.full(shape[1:], 3.)])
+        bracket = _bracket_minimum(f, a, args=(p,), preserve_shape=True)
+        res = find_minimum(f, (bracket.xl, bracket.xm, bracket.xr), args=(p,),
+                           preserve_shape=True)
+        xp_assert_close(res.x, ref, atol=1e-8)
