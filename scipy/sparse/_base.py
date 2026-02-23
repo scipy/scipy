@@ -86,7 +86,6 @@ class _spbase(SparseABC):
     """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
-    
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
@@ -1549,17 +1548,16 @@ class _spbase(SparseABC):
 
 
 class sparray:
+    """A namespace class to separate sparray from spmatrix.
+
+    This class serves as the base namespace for SciPy sparse array types.
+
+    Attributes
+    ----------
+    format : str
+        String representation of the sparse array format
+        (e.g. ``'csr'``, ``'csc'``, ``'coo'``, etc.).
     """
-A namespace class to separate sparray from spmatrix.
-
-This class serves as the base namespace for SciPy sparse array types.
-
-Attributes
-----------
-format : str
-    String representation of the sparse array format
-    (e.g. ``'csr'``, ``'csc'``, ``'coo'``).
-"""
 
     @classmethod
     def __class_getitem__(cls, arg, /):
