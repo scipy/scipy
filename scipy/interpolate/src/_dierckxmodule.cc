@@ -203,7 +203,7 @@ py_fpbacp(PyObject* self, PyObject *args)
     Py_ssize_t m = PyArray_DIM(a_x, 0);
     Py_ssize_t len_t = PyArray_DIM(a_t, 0);
 
-    int64_t nc = len_t - k - 1;
+    Py_ssize_t nc = len_t - k - 1;
 
     // allocate the output buffer
     npy_intp dims[2] = {nc, PyArray_DIM(a_y, 1)};

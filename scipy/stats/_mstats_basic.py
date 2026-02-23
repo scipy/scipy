@@ -46,12 +46,8 @@ from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
 import scipy.stats._stats_py as _stats_py
-
-from ._stats_mstats_common import (
-        _find_repeats,
-        TheilslopesResult,
-        siegelslopes as stats_siegelslopes
-        )
+from scipy.stats._stats_pythran import siegelslopes as siegelslopes_pythran
+from ._stats_mstats_common import _find_repeats, TheilslopesResult, SiegelslopesResult
 
 
 def _chk_asarray(a, axis):
@@ -284,7 +280,7 @@ def rankdata(data, axis=None, use_missing=False):
         Whether the masked values have a rank of 0 (False) or equal to the
         average rank of the unmasked values (True).
 
-    """
+    """  # numpydoc ignore=RT01
     def _rank1d(data, use_missing=False):
         n = data.count()
         rk = np.empty(data.size, dtype=float)
@@ -391,7 +387,7 @@ def _betai(a, b, x):
 
 
 def msign(x):
-    """Returns the sign of x, or 0 if x is masked."""
+    """Returns the sign of x, or 0 if x is masked."""  # numpydoc ignore=RT01
     return ma.filled(np.sign(x), 0)
 
 
@@ -925,7 +921,7 @@ def kendalltau_seasonal(x):
     x : 2-D ndarray
         Array of seasonal data, with seasons in columns.
 
-    """
+    """  # numpydoc ignore=RT01
     x = ma.array(x, subok=True, copy=False, ndmin=2)
     (n,m) = x.shape
     n_p = x.count(0)
@@ -1412,6 +1408,26 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     return _theilslopes(y, x, alpha=alpha, method=method)
 
 
+def _siegelslopes(y, x=None, method="hierarchical"):
+    if method not in ['hierarchical', 'separate']:
+        raise ValueError("method can only be 'hierarchical' or 'separate'")
+    y = np.asarray(y).ravel()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.asarray(x, dtype=float).ravel()
+        if len(x) != len(y):
+            raise ValueError("Array shapes are incompatible for broadcasting.")
+    if len(x) < 2:
+        raise ValueError("`x` and `y` must have length at least 2.")
+
+    dtype = np.result_type(x, y, np.float32)  # use at least float32
+    y, x = y.astype(dtype), x.astype(dtype)
+    medslope, medinter = siegelslopes_pythran(y, x, method)
+    medslope, medinter = np.asarray(medslope)[()], np.asarray(medinter)[()]
+    return SiegelslopesResult(slope=medslope, intercept=medinter)
+
+
 def siegelslopes(y, x=None, method="hierarchical"):
     r"""
     Computes the Siegel estimator for a set of points (x, y).
@@ -1466,7 +1482,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `scipy.stats.siegelslopes`
-    return stats_siegelslopes(y, x, method=method)
+    return _siegelslopes(y, x, method=method)
 
 
 SenSeasonalSlopesResult = _make_tuple_bunch('SenSeasonalSlopesResult',
@@ -1847,13 +1863,13 @@ def mannwhitneyu(x,y, use_continuity=True):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-def kruskal(*args):
+def kruskal(*samples):
     """
     Compute the Kruskal-Wallis H-test for independent samples
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
        Two or more arrays with the sample measurements can be given as
        arguments.
 
@@ -1890,7 +1906,7 @@ def kruskal(*args):
     because the returned p-value is less than the critical value of 5%.
 
     """
-    output = argstoarray(*args)
+    output = argstoarray(*samples)
     ranks = ma.masked_equal(rankdata(output, use_missing=False), 0)
     sumrk = ranks.sum(-1)
     ngrp = ranks.count(-1)
@@ -2013,7 +2029,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     -------
     tuple of (K-S statistic, probability)
 
-    """
+    """  # numpydoc ignore=RT03
     return scipy.stats._stats_py.kstest(data1, data2, args,
                                         alternative=alternative, method=method)
 
@@ -2052,7 +2068,7 @@ def trima(a, limits=None, inclusive=(True,True)):
                         True,  True],
            fill_value=999999)
 
-    """
+    """  # numpydoc ignore=RT01
     a = ma.asarray(a)
     a.unshare_mask()
     if (limits is None) or (limits == (None, None)):
@@ -2102,7 +2118,7 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
 
-    """
+    """  # numpydoc ignore=RT01
     def _trimr1D(a, low_limit, up_limit, low_inclusive, up_inclusive):
         n = a.count()
         idx = a.argsort()
@@ -2194,7 +2210,7 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
     >>> print(trim(z,(0.1,0.2),relative=True))
     [-- 2 3 4 5 6 7 8 -- --]
 
-    """
+    """  # numpydoc ignore=RT01
     if relative:
         return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
@@ -2229,7 +2245,7 @@ def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):
         Axis along which to perform the trimming.
         If None, the input array is first flattened.
 
-    """
+    """  # numpydoc ignore=RT01
     return trimr(data, limits=(proportiontocut,proportiontocut),
                  inclusive=inclusive, axis=axis)
 
@@ -2285,7 +2301,7 @@ def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
 
     %s
 
-    """
+    """  # numpydoc ignore=RT01
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -2308,7 +2324,7 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
-    """
+    """  # numpydoc ignore=RT01
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -2333,7 +2349,7 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
-    """
+    """  # numpydoc ignore=RT01
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -2375,7 +2391,7 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     -------
     trimmed_stde : scalar or ndarray
 
-    """
+    """  # numpydoc ignore=RT03
     def _trimmed_stde_1D(a, low_limit, up_limit, low_inclusive, up_inclusive):
         "Returns the standard error of the trimmed mean for a 1D input data."
         n = a.count()
@@ -2517,7 +2533,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
                  mask=[False, False, False, False],
            fill_value=1e+20)
 
-    """
+    """  # numpydoc ignore=RT03
     return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
 
 
@@ -2608,7 +2624,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
                  mask=[False, False, False,  True],
            fill_value=999999)
 
-    """
+    """  # numpydoc ignore=RT03
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
@@ -2660,7 +2676,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
                  mask=[False,  True, False, False],
            fill_value=999999)
 
-    """
+    """  # numpydoc ignore=RT03
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
@@ -2700,7 +2716,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     -----
     For more details on `tsem`, see `scipy.stats.tsem`.
 
-    """
+    """  # numpydoc ignore=RT03
     a = ma.asarray(a).ravel()
     if limits is None:
         n = float(a.count())
@@ -2771,7 +2787,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                  mask=False,
            fill_value=999999)
 
-    """
+    """  # numpydoc ignore=RT01
     def _winsorize1D(a, low_limit, up_limit, low_include, up_include,
                      contains_nan, nan_policy):
         n = a.count()
@@ -3481,7 +3497,7 @@ def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
 
     This function is a shortcut to mquantile
 
-    """
+    """  # numpydoc ignore=RT01
     if (per < 0) or (per > 100.):
         raise ValueError(f"The percentile should be between 0. and 100. ! (got {per})")
 
@@ -3554,7 +3570,7 @@ def obrientransform(*args):
     Maxwell and Delaney, p.112.
 
     Returns: transformed data for use in an ANOVA
-    """
+    """  # numpydoc ignore=RT01
     data = argstoarray(*args).T
     v = data.var(axis=0,ddof=1)
     m = data.mean(0)
@@ -3747,7 +3763,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     statistic : float
         The Brunner-Munzer W statistic.
     pvalue : float
-        p-value assuming an t distribution. One-sided or
+        p-value assuming a t distribution. One-sided or
         two-sided, depending on the choice of `alternative` and `distribution`.
 
     See Also

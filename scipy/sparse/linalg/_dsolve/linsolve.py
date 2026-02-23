@@ -36,13 +36,16 @@ def use_solver(**kwargs):
 
     Parameters
     ----------
-    useUmfpack : bool, optional
-        Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
-        if ``scikits.umfpack`` is installed. Default: True
-    assumeSortedIndices : bool, optional
-        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
-        installed. Default: False
+    **kwargs
+        The following options may be passed as keyword arguments.
+
+        useUmfpack : bool, optional
+            Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
+            if ``scikits.umfpack`` is installed. Default: True
+        assumeSortedIndices : bool, optional
+            Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+            Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+            installed. Default: False
 
     Notes
     -----
@@ -285,9 +288,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             options = dict(ColPerm=permc_spec)
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
-            if info != 0:
+            if info == 0:
+                pass  # Success
+            elif 0 < info <= N:
                 warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
                 x.fill(np.nan)
+            elif info > N:
+                raise MemoryError("Out of memory during gssv")
+            else:
+                # gssv is not supposed to return any info < 0
+                # However, it calls gstrf, which can set info < 0
+                raise Exception(f"gssv exited with unknown exit code {info}")
             if b_is_vector:
                 x = x.ravel()
         else:
@@ -450,6 +461,11 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
+
+        Note that `drop_tol` primarily affects entries generated as fill-in
+        during the ILU factorization; for matrices that produce little or no
+        fill-in, changing this parameter may have no visible effect on the
+        sparsity pattern of the factors.
     fill_factor : float, optional
         Specifies the fill ratio upper bound (>= 1.0) for ILU. (default: 10)
     drop_rule : str, optional
@@ -458,9 +474,6 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         ``secondary``, ``dynamic``, ``interp``. (Default: ``basic,area``)
 
         See SuperLU documentation for details.
-
-    Remaining other options
-        Same as for `splu`
 
     Returns
     -------
@@ -479,6 +492,12 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
+
+    The effect of `drop_tol` is matrix-dependent. In particular, `drop_tol`
+    does not guarantee that existing off-diagonal entries will be removed;
+    it controls dropping of candidate entries during factorization (often
+    fill-in). For some sparsity patterns, the ILU factors can be identical
+    to the full LU factors even for large `drop_tol`.
 
     This function uses the SuperLU library.
 
@@ -730,9 +749,12 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         U = A
         U.setdiag(0)
 
+    L_indices, L_indptr = safely_cast_index_arrays(L, np.intc, "SuperLU")
+    U_indices, U_indptr = safely_cast_index_arrays(U, np.intc, "SuperLU")
+
     x, info = _superlu.gstrs(trans,
-                             N, L.nnz, L.data, L.indices, L.indptr,
-                             N, U.nnz, U.data, U.indices, U.indptr,
+                             N, L.nnz, L.data, L_indices, L_indptr,
+                             N, U.nnz, U.data, U_indices, U_indptr,
                              b)
     if info:
         raise LinAlgError('A is singular.')
@@ -745,7 +767,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
 
 def is_sptriangular(A):
-    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``.
 
     Checks for triangular structure in ``A``. The result is summarized in
     two boolean values ``lower`` and ``upper`` to designate whether ``A`` is
@@ -770,6 +792,7 @@ def is_sptriangular(A):
     Returns
     -------
     lower, upper : 2-tuple of bool
+        Whether `A` is lower / upper triangular.
 
         .. versionadded:: 1.15.0
 

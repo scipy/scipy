@@ -496,18 +496,6 @@ One may declare a function as not supporting the JAX JIT with the option
 for more information.
 
 
-Dask Compute
-````````````
-
-The default, ``allow_dask_compute=False`` declares that a function works lazily
-in Dask and will not materialize any Dask arrays with ``dask.compute`` or
-otherwise initiate computation with ``dask.persist``. Use
-``allow_dask_compute=True`` to declare that a function supports Dask arrays but
-not lazily. Developers can also pass an integer to give a cap for the number of
-combined calls to ``dask.compute`` and ``dask.persist`` that are allowed. If a function
-is not array-agnostic, then it will typically be the case that
-``allow_dask_compute=True`` should be set, unless Dask specific codepaths have been added.
-
 Unsupported functions
 `````````````````````
 
@@ -641,6 +629,26 @@ and passing in any backends which are not supported even on CPU to ``skip_backen
 Such situations are hopefully rare enough that special handling isn't needed.
 ``xp_capabilities`` has evolved naturally over time to meet developer needs; good
 suggestions for ways to improve developer ergonomics are welcome.
+
+Dask Compute
+````````````
+
+The default, ``allow_dask_compute=False`` declares that a function works lazily
+in Dask and will not materialize any Dask arrays with ``dask.compute`` or
+otherwise initiate computation with ``dask.persist``. Use
+``allow_dask_compute=True`` to declare that a function supports Dask arrays but
+not lazily. Developers can also pass an integer to give a cap for the number of
+combined calls to ``dask.compute`` and ``dask.persist`` that are allowed. If a function
+is not array-agnostic, then it will typically be the case that
+``allow_dask_compute=True`` should be set, unless Dask specific codepaths have been added.
+
+Dask support is currently deprioritized due to structural barriers
+that make the development of meaningful Dask support particularly challenging. At present,
+developers should feel free to reflexively add ``skip_backends=[("dask.array", "deprioritized")]``
+to the ``xp_capabilities`` entry of any function they are working on. Reprioritization may
+be considered in the future if a champion emerges and the structural outlook improves.
+See `RFC: Should Dask support remain a priority? #24205 <https://github.com/scipy/scipy/issues/24205>`_
+for relevant discussion.
 
 .. _dev-arrayapi_extra_note:
 
@@ -986,6 +994,26 @@ functions without explicitly setting the dtype. At the time of writing, there ar
 tests in the test suite which do not follow this practice, and this could be a good source
 of first issues for new contributors.
 
+Tests are not optional
+``````````````````````
+
+It is not permitted for a function ``f`` to have an ``xp_capabilities``
+entry advertising some level of alternative backend support if there are
+no tests in the test suite for ``f`` that use the ``xp`` fixture along with
+``make_xp_test_case(f)`` or one of its equivalents. All documented alternative
+backend support must be tested and the only valid ``xp_capabilities`` entries
+for a function without tests of the form described above are ``np_only=True``
+with no ``exceptions``, or ``out_of_scope=True``.
+
+The command::
+
+  spin check --xp-markers
+
+can be used to check that all functions advertising alternative backend
+support have at least one test using the ``xp`` fixture that draws from
+``xp_capabilities`` through ``make_xp_test_case`` or one of its equivalents.
+This check is run in CI.
+
 .. _dev-arrayapi_backend_isolation:
 
 Backend isolation in tests
@@ -1057,7 +1085,7 @@ To achieve this for private functions without ``xp_capabilities`` entries,
 you should tag them as follows in your test module::
 
   from scipy._lib._array_api import xp_assert_close
-  from scipy._lib.array_api_extra.testing import lazy_xp_function
+  from scipy._external.array_api_extra.testing import lazy_xp_function
   from scipy.mymodule import _private_toto_helper
 
   lazy_xp_function(_private_toto_helper)

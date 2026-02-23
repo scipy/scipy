@@ -526,10 +526,6 @@ def hb_write(path_or_open_file, m, hb_info=None):
     hb_info : HBInfo
         contains the meta-data for write
 
-    Returns
-    -------
-    None
-
     Notes
     -----
     At the moment not the full Harwell-Boeing format is supported. Supported
@@ -562,10 +558,10 @@ def hb_write(path_or_open_file, m, hb_info=None):
 
     def _set_matrix(fid):
         hb = HBFile(fid, hb_info)
-        return hb.write_matrix(m)
+        hb.write_matrix(m)
 
     if hasattr(path_or_open_file, 'write'):
-        return _set_matrix(path_or_open_file)
+        _set_matrix(path_or_open_file)
     else:
         with open(path_or_open_file, 'w') as f:
-            return _set_matrix(f)
+            _set_matrix(f)

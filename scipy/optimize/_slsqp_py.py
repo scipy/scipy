@@ -24,7 +24,7 @@ from ._optimize import (OptimizeResult, _check_unknown_options,
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _call_callback_maybe_halt
 from numpy.typing import NDArray
 
@@ -73,7 +73,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
                iprint=1, disp=None, full_output=0, epsilon=_epsilon,
                callback=None):
     """
-    Minimize a function using Sequential Least Squares Programming
+    Minimize a function using Sequential Least Squares Programming.
 
     Python interface function for the SLSQP Optimization subroutine
     originally implemented by Dieter Kraft.
@@ -150,7 +150,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         The number of iterations.
     imode : int, if full_output is true
         The exit mode from the optimizer (see below).
-    smode : string, if full_output is true
+    smode : str, if full_output is true
         Message describing the exit mode from the optimizer.
 
     See Also

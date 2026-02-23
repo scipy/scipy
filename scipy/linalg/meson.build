@@ -184,6 +184,7 @@ py3.extension_module('_batched_linalg',
   ],
   dependencies: [np_dep, lapack_dep],
   include_directories: ['../_build_utils/src'],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )

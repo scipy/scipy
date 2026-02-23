@@ -33,7 +33,7 @@ import warnings
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 from scipy import special
 from . import _ni_support

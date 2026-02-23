@@ -66,7 +66,7 @@ def shortest_path(csgraph, method='auto',
     ----------
     csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
-    method : string ['auto'|'FW'|'D'], optional
+    method : str ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
 
         'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
@@ -163,14 +163,14 @@ def shortest_path(csgraph, method='auto',
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 6 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 2)	7
-    	(1, 2)	8
-    	(1, 3)	5
-    	(2, 0)	7
-    	(2, 1)	8
-    	(3, 1)	5
+        with 6 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 2)	7
+        (1, 2)	8
+        (1, 3)	5
+        (2, 0)	7
+        (2, 1)	8
+        (3, 1)	5
 
     >>> sources = [0, 2]
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=sources, return_predecessors=True)
@@ -294,7 +294,7 @@ def floyd_warshall(csgraph, directed=True,
     floyd_warshall(csgraph, directed=True, return_predecessors=False,
                    unweighted=False, overwrite=False)
 
-    Compute the shortest path lengths using the Floyd-Warshall algorithm
+    Compute the shortest path lengths using the Floyd-Warshall algorithm.
 
     .. versionadded:: 0.11.0
 
@@ -357,13 +357,13 @@ def floyd_warshall(csgraph, directed=True,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
@@ -487,7 +487,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False, limit=np.inf, min_only=False)
 
-    Dijkstra algorithm using priority queue
+    Dijkstra algorithm using priority queue.
 
     .. versionadded:: 0.11.0
 
@@ -588,12 +588,12 @@ def dijkstra(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 4 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 3)	3
+        with 4 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -946,13 +946,13 @@ def bellman_ford(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1189,13 +1189,13 @@ def johnson(csgraph, directed=True, indices=None,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1485,13 +1485,13 @@ def yen(
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+        with 5 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 0)	2
+        (2, 3)	3
 
     >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2,
     ...                                directed=False, return_predecessors=True)
@@ -1548,10 +1548,12 @@ def yen(
                                      csgraphT.indptr, johnson_dist_array)
             csrT_data = csgraphT.data
 
+    indices, indptr = safely_cast_index_arrays(csgraph, ITYPE, "csgraph")
+    indicesT, indptrT = safely_cast_index_arrays(csgraphT, ITYPE, "csgraph")
     _yen(
         source, sink,
-        csr_data, csgraph.indices, csgraph.indptr,
-        csrT_data, csgraphT.indices, csgraphT.indptr,
+        csr_data, indices, indptr,
+        csrT_data, indicesT, indptrT,
         dist_array, predecessor_matrix,
     )
     if has_negative_weights:

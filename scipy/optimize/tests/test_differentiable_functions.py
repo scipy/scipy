@@ -1,5 +1,4 @@
 import pytest
-import platform
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
@@ -995,10 +994,6 @@ def test_IdentityVectorFunction():
     assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_ScalarFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     ex = ExScalarFunction()
@@ -1008,10 +1003,6 @@ def test_ScalarFunctionNoReferenceCycle():
         pass
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_VectorFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     ex = ExVectorialFunction()
@@ -1021,10 +1012,6 @@ def test_VectorFunctionNoReferenceCycle():
         pass
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_LinearVectorFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     A_dense = np.array([
