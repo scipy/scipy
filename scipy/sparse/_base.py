@@ -405,7 +405,7 @@ class _spbase(SparseABC):
         
         See Also
         --------
-        sparse.matrix_transpose : equivalent function
+        scipy.sparse.matrix_transpose : equivalent function
         """
         return self.transpose()
 

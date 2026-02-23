@@ -246,7 +246,8 @@ def matrix_transpose(A):
             [2, 4]],
     
            [[5, 7],
-            [6, 8]]])  
+            [6, 8]]])
+
     """
     return A.mT
 
