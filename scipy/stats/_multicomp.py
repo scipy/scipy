@@ -195,7 +195,7 @@ def dunnett(
 
     Parameters
     ----------
-    sample1, sample2, ... : 1D array_like
+    *samples : 1D array_like
         The sample measurements for each experimental group.
     control : 1D array_like
         The sample measurements for the control group.

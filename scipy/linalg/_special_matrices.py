@@ -377,9 +377,9 @@ def block_diag(*arrs):
 
     Parameters
     ----------
-    A, B, C, ... : array_like
-        Input arrays.  A 1-D array or array_like sequence of length ``n`` is
-        treated as a 2-D array with shape ``(1, n)``.
+    *arrs : array_like
+        Input arrays ``A, B, C, ...``. A 1-D array or array_like sequence of length
+        ``n`` is treated as a 2-D array with shape ``(1, n)``.
 
     Returns
     -------

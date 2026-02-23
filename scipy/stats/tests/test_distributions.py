@@ -4644,6 +4644,16 @@ class TestExponNorm:
         else:
             assert_allclose(p, expected, rtol=5e-13)
 
+    @pytest.mark.parametrize('K', [1e-9, 1e-12, 1e-15])
+    def test_extremely_small_K(self, K):
+        # see gh-issue 24551
+        # test whether distribution approaches standard normal for K -> 0
+        x = np.array([-10.5, -3.0, -1.0, 1.0, 3.0, 10.5])
+        dist = stats.exponnorm(K)
+        dist_norm = stats.norm()
+        assert_allclose(dist.logpdf(x), dist_norm.logpdf(x))
+        assert_allclose(dist.cdf(x), dist_norm.cdf(x))
+        assert_allclose(dist.sf(x), dist_norm.sf(x)) 
 
 class TestGenExpon:
     def test_pdf_unity_area(self):

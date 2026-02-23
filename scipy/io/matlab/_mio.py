@@ -82,62 +82,65 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     Parameters
     ----------
     file_name : str
-       Name of the mat file (do not need .mat extension if
-       appendmat==True). Can also pass open file-like object.
+        Name of the mat file (do not need .mat extension if
+        appendmat==True). Can also pass open file-like object.
     mdict : dict, optional
         Dictionary in which to insert matfile variables.
     appendmat : bool, optional
-       True to append the .mat extension to the end of the given
-       filename, if not already present. Default is True.
+        True to append the .mat extension to the end of the given
+        filename, if not already present. Default is True.
     spmatrix : bool, optional (default: True)
         If ``True``, return sparse matrix. Otherwise return sparse array.
         Format is `COO` for MatFile 4 and `CSC` for MatFile 5.
         Only relevant for sparse variables.
-    byte_order : str or None, optional
-       None by default, implying byte order guessed from mat
-       file. Otherwise can be one of ('native', '=', 'little', '<',
-       'BIG', '>').
-    mat_dtype : bool, optional
-       If True, return arrays in same dtype as would be loaded into
-       MATLAB (instead of the dtype with which they are saved).
-    squeeze_me : bool, optional
-       Whether to squeeze unit matrix dimensions or not.
-    chars_as_strings : bool, optional
-       Whether to convert char arrays to string arrays.
-    matlab_compatible : bool, optional
-       Returns matrices as would be loaded by MATLAB (implies
-       squeeze_me=False, chars_as_strings=False, mat_dtype=True,
-       struct_as_record=True).
-    struct_as_record : bool, optional
-       Whether to load MATLAB structs as NumPy record arrays, or as
-       old-style NumPy arrays with dtype=object. Setting this flag to
-       False replicates the behavior of scipy version 0.7.x (returning
-       NumPy object arrays). The default setting is True, because it
-       allows easier round-trip load and save of MATLAB files.
-    verify_compressed_data_integrity : bool, optional
-        Whether the length of compressed sequences in the MATLAB file
-        should be checked, to ensure that they are not longer than we expect.
-        It is advisable to enable this (the default) because overlong
-        compressed sequences in MATLAB files generally indicate that the
-        files have experienced some sort of corruption.
-    variable_names : None or sequence
-        If None (the default) - read all variables in file. Otherwise,
-        `variable_names` should be a sequence of strings, giving names of the
-        MATLAB variables to read from the file. The reader will skip any
-        variable with a name not in this sequence, possibly saving some read
-        processing.
-    simplify_cells : False, optional
-        If True, return a simplified dict structure (which is useful if the mat
-        file contains cell arrays). Note that this only affects the structure
-        of the result and not its contents (which is identical for both output
-        structures). If True, this automatically sets `struct_as_record` to
-        False and `squeeze_me` to True, which is required to simplify cells.
-    uint16_codec : str, optional
-        The codec to use for decoding characters, which are stored as uint16
-        values. The default uses the system encoding, but this can be manually
-        set to other values such as 'ascii', 'latin1', and 'utf-8'. This
-        parameter is relevant only for files stored as v6 and above, and not
-        for files stored as v4.
+    **kwargs
+        The following aditional keyword arguments can be passed:
+
+        byte_order : str or None, optional
+            None by default, implying byte order guessed from mat
+            file. Otherwise can be one of ('native', '=', 'little', '<',
+            'BIG', '>').
+        mat_dtype : bool, optional
+            If True, return arrays in same dtype as would be loaded into
+            MATLAB (instead of the dtype with which they are saved).
+        squeeze_me : bool, optional
+            Whether to squeeze unit matrix dimensions or not.
+        chars_as_strings : bool, optional
+            Whether to convert char arrays to string arrays.
+        matlab_compatible : bool, optional
+            Returns matrices as would be loaded by MATLAB (implies
+            squeeze_me=False, chars_as_strings=False, mat_dtype=True,
+            struct_as_record=True).
+        struct_as_record : bool, optional
+            Whether to load MATLAB structs as NumPy record arrays, or as
+            old-style NumPy arrays with dtype=object. Setting this flag to
+            False replicates the behavior of scipy version 0.7.x (returning
+            NumPy object arrays). The default setting is True, because it
+            allows easier round-trip load and save of MATLAB files.
+        verify_compressed_data_integrity : bool, optional
+            Whether the length of compressed sequences in the MATLAB file
+            should be checked, to ensure that they are not longer than we expect.
+            It is advisable to enable this (the default) because overlong
+            compressed sequences in MATLAB files generally indicate that the
+            files have experienced some sort of corruption.
+        variable_names : None or sequence
+            If None (the default) - read all variables in file. Otherwise,
+            `variable_names` should be a sequence of strings, giving names of the
+            MATLAB variables to read from the file. The reader will skip any
+            variable with a name not in this sequence, possibly saving some read
+            processing.
+        simplify_cells : False, optional
+            If True, return a simplified dict structure (which is useful if the mat
+            file contains cell arrays). Note that this only affects the structure
+            of the result and not its contents (which is identical for both output
+            structures). If True, this automatically sets `struct_as_record` to
+            False and `squeeze_me` to True, which is required to simplify cells.
+        uint16_codec : str, optional
+            The codec to use for decoding characters, which are stored as uint16
+            values. The default uses the system encoding, but this can be manually
+            set to other values such as 'ascii', 'latin1', and 'utf-8'. This
+            parameter is relevant only for files stored as v6 and above, and not
+            for files stored as v4.
 
     Returns
     -------
@@ -360,7 +363,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     >>> whosmat(f)
     [('a', (2, 3), 'int32'), ('b', (1, 5), 'double')]
 
-    """
+    """  # numpydoc ignore=PR02
     with _open_file_context(file_name, appendmat) as f:
         ML, file_opened = mat_reader_factory(f, **kwargs)
         variables = ML.list_variables()

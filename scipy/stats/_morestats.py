@@ -3222,7 +3222,7 @@ def bartlett(*samples, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         arrays of sample data.  Only 1d arrays are accepted, they may have
         different lengths.
 
@@ -3342,7 +3342,7 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample data, possibly with different lengths.
     center : {'mean', 'median', 'trimmed'}, optional
         Which statistics to use to center data points within each sample.  Default
@@ -3487,7 +3487,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
         Which statistics to use to center data points within each sample. Default
@@ -4111,7 +4111,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The set of samples.  There must be at least two samples.
         Each sample must be a one-dimensional sequence containing at least
         one value.  The samples are not required to have the same length.
