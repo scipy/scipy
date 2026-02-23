@@ -396,6 +396,19 @@ class TestBracketRoot:
         res = find_root(f, (bracket.xl, bracket.xr), args=(p,), preserve_shape=True)
         xp_assert_close(res.x, ref)
 
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x - (p + c)
+
+        a = xp.zeros((), dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        bracket = bracket_root(f, a, args=(c,), kwargs={'p': p})
+        res = find_root(f, bracket.bracket, args=(c,), kwargs={'p': p})
+        ref = p + c
+        xp_assert_close(res.x, ref)
 
 @make_xp_test_case(bracket_minimum)
 class TestBracketMinimum:
@@ -930,3 +943,17 @@ class TestBracketMinimum:
                            preserve_shape=True)
         atol = 1e-5 if ref.dtype == xp.float32 else 1e-8
         xp_assert_close(res.x, ref, atol=atol)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return (x - (p + c))**2
+
+        a = xp.zeros((), dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        bracket = bracket_minimum(f, a, args=(c,), kwargs={'p': p})
+        res = find_minimum(f, bracket.bracket, args=(c,), kwargs={'p': p})
+        ref = p + c
+        xp_assert_close(res.x, ref)

@@ -6,7 +6,8 @@ from scipy._lib._array_api import array_namespace, xp_ravel, xp_promote
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
 
-def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args,
+
+def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, kwargs,
                      maxiter, preserve_shape):
 
     if not callable(func):
@@ -55,7 +56,7 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args,
     # Calculate the default value of xr0 if a value has not been supplied.
     # Be careful to ensure xr0 is not larger than xmax.
     if xr0_not_supplied:
-        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, 1.0)
+        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.ones_like(xmax))
         xr0 = xp.astype(xr0, xl0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter)
@@ -71,11 +72,11 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args,
     if preserve_shape not in {True, False}:
         raise ValueError(message)
 
-    return func, xl0, xr0, xmin, xmax, factor, args, maxiter, xp, preserve_shape
+    return func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter, xp, preserve_shape
 
 
 def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
-                  args=(), maxiter=1000, preserve_shape=False):
+                  args=(), kwargs=None, maxiter=1000, preserve_shape=False):
     """Bracket the root of a monotonic scalar function of one variable
 
     This function works elementwise when `xl0`, `xr0`, `xmin`, `xmax`, `factor`, and
@@ -107,6 +108,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         bracketed requires arguments that are not broadcastable with these
         arrays, wrap that callable with `func` such that `func` accepts
         only `x` and broadcastable arrays.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `func`. See `args`.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform.
     preserve_shape : bool, default: False
@@ -179,12 +182,13 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # - allow factor < 1?
 
     callback = None  # works; I just don't want to test it
-    temp = _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args,
+    temp = _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, kwargs,
                             maxiter, preserve_shape)
-    func, xl0, xr0, xmin, xmax, factor, args, maxiter, xp, preserve_shape = temp
+    func, xl0, xr0, xmin, xmax, factor, args, kwargs, maxiter, xp, preserve_shape = temp
 
     xs = (xl0, xr0)
-    temp = eim._initialize(func, xs, args, preserve_shape=preserve_shape)
+    temp = eim._initialize(func, xs, args, kwargs=kwargs, preserve_shape=preserve_shape)
+
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     xl0, xr0 = xs
     xmin = xp_ravel(xp.astype(xp.broadcast_to(xmin, shape), dtype, copy=False), xp=xp)
@@ -432,7 +436,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
 
 def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor,
-                        args, maxiter, preserve_shape):
+                        args, kwargs, maxiter, preserve_shape):
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -511,11 +515,13 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor,
     if preserve_shape not in {True, False}:
         raise ValueError(message)
 
-    return func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter, xp, preserve_shape
+    return (func, xm0, xl0, xr0, xmin, xmax, factor, args, kwargs, 
+            maxiter, xp, preserve_shape)
 
 
 def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
-                     factor=None, args=(), maxiter=1000, preserve_shape=False):
+                     factor=None, args=(), kwargs=None, maxiter=1000,
+                     preserve_shape=False):
     """Bracket the minimum of a unimodal scalar function of one variable
 
     This function works elementwise when `xm0`, `xl0`, `xr0`, `xmin`, `xmax`,
@@ -551,6 +557,8 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         callable to be bracketed requires arguments that are not broadcastable
         with these arrays, wrap that callable with `func` such that `func`
         accepts only ``x`` and broadcastable arrays.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform. The number
         of function evaluations is three greater than the number of iterations.
@@ -621,12 +629,14 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     """  # noqa: E501
     callback = None  # works; I just don't want to test it
 
-    temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args,
-                               maxiter, preserve_shape)
-    func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter, xp, preserve_shape = temp
+    temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, 
+                               args, kwargs, maxiter, preserve_shape)
+    (func, xm0, xl0, xr0, xmin, xmax, factor, 
+     args, kwargs, maxiter, xp, preserve_shape) = temp
 
     xs = (xl0, xm0, xr0)
-    temp = eim._initialize(func, xs, args, preserve_shape=preserve_shape)
+    temp = eim._initialize(func, xs, args, kwargs=kwargs, preserve_shape=preserve_shape)
+
     func, xs, fs, args, shape, dtype, xp = temp
 
     xl0, xm0, xr0 = xs

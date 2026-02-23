@@ -246,6 +246,7 @@ def test_hyp2f1_real_random():
 # erf (complex)
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow()
 @check_version(mpmath, '0.14')
 def test_erf_complex():
     # need to increase mpmath precision for this test

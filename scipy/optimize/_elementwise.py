@@ -8,7 +8,7 @@ from scipy._lib._array_api import xp_capabilities
     skip_backends=[('dask.array', 'boolean indexing assignment'),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
-def find_root(f, init, /, *, args=(),
+def find_root(f, init, /, *, args=(), kwargs=None,
               tolerances=None, maxiter=None, callback=None, preserve_shape=False):
     """Find the root of a monotonic, real-valued function of a real variable.
 
@@ -52,6 +52,8 @@ def find_root(f, init, /, *, args=(),
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances on the root and function value.
         Valid keys of the dictionary are:
@@ -249,7 +251,7 @@ def find_root(f, init, /, *, args=(),
     else:
         _callback = callback
 
-    res = _chandrupatla(f, xl, xr, args=args, **tolerances,
+    res = _chandrupatla(f, xl, xr, args=args, kwargs=kwargs, **tolerances,
                         maxiter=maxiter, callback=_callback,
                         preserve_shape=preserve_shape)
     return reformat_result(res)
@@ -259,7 +261,7 @@ def find_root(f, init, /, *, args=(),
     skip_backends=[('dask.array', 'boolean indexing assignment'),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
-def find_minimum(f, init, /, *, args=(),
+def find_minimum(f, init, /, *, args=(), kwargs=None,
                  tolerances=None, maxiter=100, callback=None, preserve_shape=False):
     """Find the minimum of a unimodal, real-valued function of a real variable.
 
@@ -305,6 +307,8 @@ def find_minimum(f, init, /, *, args=(),
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances on the root and function value.
         Valid keys of the dictionary are:
@@ -497,7 +501,7 @@ def find_minimum(f, init, /, *, args=(),
     else:
         _callback = callback
 
-    res = _chandrupatla_minimize(f, xl, xm, xr, args=args, **tolerances,
+    res = _chandrupatla_minimize(f, xl, xm, xr, args=args, kwargs=kwargs, **tolerances,
                                  maxiter=maxiter, callback=_callback,
                                  preserve_shape=preserve_shape)
     return reformat_result(res)
@@ -508,7 +512,7 @@ def find_minimum(f, init, /, *, args=(),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
 def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
-                 args=(), maxiter=1000, preserve_shape=False):
+                 args=(), kwargs=None, maxiter=1000, preserve_shape=False):
     """Bracket the root of a monotonic, real-valued function of a real variable.
 
     For each element of the output of `f`, `bracket_root` seeks the scalar
@@ -549,6 +553,8 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     maxiter : int, default: 1000
         The maximum number of iterations of the algorithm to perform.
     preserve_shape : bool, default: False
@@ -679,7 +685,8 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     """  # noqa: E501
 
     res = _bracket_root(f, xl0, xr0=xr0, xmin=xmin, xmax=xmax, factor=factor,
-                        args=args, maxiter=maxiter, preserve_shape=preserve_shape)
+                        args=args, kwargs=kwargs, maxiter=maxiter, 
+                        preserve_shape=preserve_shape)
     res.bracket = res.xl, res.xr
     res.f_bracket = res.fl, res.fr
     del res.xl
@@ -695,7 +702,8 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
                    ('jax.numpy', 'JAX arrays do not support item assignment.'),
                    ('torch', 'data-apis/array-api-compat#271')])
 def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
-                     factor=None, args=(), maxiter=1000, preserve_shape=False):
+                    factor=None, args=(), kwargs=None, maxiter=1000, 
+                    preserve_shape=False):
     """Bracket the minimum of a unimodal, real-valued function of a real variable.
 
     For each element of the output of `f`, `bracket_minimum` seeks the scalar
@@ -737,6 +745,8 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     maxiter : int, default: 1000
         The maximum number of iterations of the algorithm to perform.
     preserve_shape : bool, default: False
@@ -876,7 +886,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     """  # noqa: E501
 
     res = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
-                           factor=factor, args=args, maxiter=maxiter,
+                           factor=factor, args=args, kwargs=kwargs, maxiter=maxiter,
                            preserve_shape=preserve_shape)
     res.bracket = res.xl, res.xm, res.xr
     res.f_bracket = res.fl, res.fm, res.fr
