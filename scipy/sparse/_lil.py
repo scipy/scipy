@@ -13,7 +13,7 @@ from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       check_shape, check_reshape_kwargs)
+                       check_shape)
 from . import _csparsetools
 
 
@@ -132,6 +132,11 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
+
+        Returns
+        -------
+        lil_array or lil_matrix
+            A view of the 'i'th row.
         """
         new = self._lil_container((1, self.shape[1]), dtype=self.dtype)
         new.rows[0] = self.rows[i]
@@ -140,6 +145,11 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
+
+        Returns
+        -------
+        lil_array or lil_matrix
+            A copy of the 'i'th row.
         """
         M, N = self.shape
         if i < 0:
@@ -313,9 +323,8 @@ class _lil_base(_spbase, IndexMixin):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def reshape(self, *args, **kwargs):
-        shape = check_shape(args, self.shape)
-        order, copy = check_reshape_kwargs(kwargs)
+    def reshape(self, *shape, order="C", copy=False):
+        shape = check_shape(shape, self.shape)
 
         # Return early if reshape is not required
         if shape == self.shape:

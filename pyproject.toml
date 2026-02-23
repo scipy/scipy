@@ -20,7 +20,7 @@ requires = [
     "meson-python>=0.15.0",
     "Cython>=3.0.8",        # when updating version, also update check in meson.build
     "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
-    "pythran>=0.14.0",
+    "pythran>=0.18.1",      # when updating version, also update check in meson.build
 
     # numpy requirement for wheel builds for distribution on PyPI - building
     # against 2.x yields wheels that are also compatible with numpy 1.x at
@@ -86,6 +86,7 @@ test = [
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
+    "scipy-doctest>=2.0.0"
 ]
 doc = [
     "sphinx>=5.0.0,<8.2.0",
@@ -172,11 +173,12 @@ PKG_CONFIG_PATH = "{project}"
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
 
 [tool.spin.commands]
-"Build" = [
+"Build & Develop" = [
   ".spin/cmds.py:build",
   ".spin/cmds.py:test",
   ".spin/cmds.py:mypy",
   ".spin/cmds.py:lint",
+  ".spin/cmds.py:check",
   "spin.cmds.pip.install"
 ]
 "Environments" = [

@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
 )
 
 import scipy.signal._waveforms as waveforms
-from scipy.signal import square
+from scipy.signal import square, sawtooth
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -383,15 +383,42 @@ class TestUnitImpulse:
         assert np.issubdtype(imp.dtype, np.complexfloating)
 
 
+@make_xp_test_case(sawtooth)
 class TestSawtoothWaveform:
-    def test_dtype(self):
-        waveform = waveforms.sawtooth(
-            np.array(1, dtype=np.float32), width=np.float32(1)
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")
+    @pytest.mark.parametrize("t_dtype", ["float32", "float64"])
+    @pytest.mark.parametrize("width_dtype", ["float32", "float64"])
+    def test_dtype(self, t_dtype, width_dtype, xp):
+        t_dtype = getattr(xp, t_dtype)
+        width_dtype = getattr(xp, width_dtype)
+        waveform = sawtooth(
+            xp.asarray(1, dtype=t_dtype), width=xp.asarray(1, dtype=width_dtype)
         )
-        assert waveform.dtype == np.float64
+        assert waveform.dtype == xp.result_type(t_dtype, width_dtype)
 
-        waveform = waveforms.sawtooth(1)
-        assert waveform.dtype == np.float64
+    def test_periodic(self, xp):
+        t = xp.linspace(0, 2*xp.pi, 100, dtype=xp.float64)
+        y1 = sawtooth(t, width=0.4)
+        y2 = sawtooth(t + 2*xp.pi, width=0.4)
+        xp_assert_close(y1, y2)
+
+    def test_known_values(self, xp):
+        eps = xp.finfo(xp_default_dtype(xp)).eps
+        t = xp.asarray([0, xp.pi, 2*xp.pi - 10*eps, 2*xp.pi])
+        y = sawtooth(t)
+        xp_assert_close(y, xp.asarray([-1., 0., 1., -1.]))
+
+    def test_invalid_width_nan(self, xp):
+        t = xp.linspace(0, 2*xp.pi, 10)
+        y = sawtooth(t, width=1.5)
+        assert xp.all(xp.isnan(y))
+
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9568")
+    def test_triangle_symmetry(self, xp):
+        t = xp.linspace(0, 2*xp.pi, 1000)
+        y = sawtooth(t, width=0.5)
+        xp_assert_close(y, xp.flip(y))
+        xp_assert_close(sawtooth(-t, 0.)[1:-1], sawtooth(t)[1:-1])
 
 
 @make_xp_test_case(square)

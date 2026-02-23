@@ -176,7 +176,7 @@ notes`` again.
 
 Uploading release artifacts
 ---------------------------
-For a release there are currently five places on the web to upload things to:
+For a release there are currently four places on the web to upload things to:
 
 - PyPI (sdist, wheels)
 - GitHub Releases (sdist, release notes, Changelog)

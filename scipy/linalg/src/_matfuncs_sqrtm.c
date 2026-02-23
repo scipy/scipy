@@ -777,15 +777,29 @@ sqrtm_recursion_s(float* T, npy_intp bign, npy_intp n)
         // Bottom right block
         i2 = sqrtm_recursion_s(&T[halfn*(bign + 1)], bign, otherhalfn);
 
-        // Solve the Sylvester equation for the top right block
-        strsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
-        if (scale != 1.0)
-        {
-            for (i = 0; i < otherhalfn; i++)
+        // When n == 3, the Sylvester equation is 1x2 or 2x1. If both
+        // sides have a zero diagonal, strsyl_ produces garbage instead
+        // of inf. Detect this and set INFINITY so it propagates.
+        int sylvester12 = (n == 3) && (halfn == 1);
+        int sylvester21 = (n == 3) && (halfn == 2);
+        if (sylvester12 && (T[0] == 0.0f) && ((T[intbign + 1] == 0.0f) || (T[2*(intbign + 1)] == 0.0f))) {
+            T[intbign] = INFINITY;
+            T[2*intbign] = INFINITY;
+            info = 1;
+        } else if (sylvester21 && (T[2*(intbign + 1)] == 0.0f) && ((T[0] == 0.0f) || (T[intbign + 1] == 0.0f))) {
+            T[2*intbign] = INFINITY;
+            T[2*intbign + 1] = INFINITY;
+            info = 1;
+        } else {
+            strsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
+            if (scale != 1.0)
             {
-                for (j = 0; j < halfn; j++)
+                for (i = 0; i < otherhalfn; i++)
                 {
-                    T[(halfn + i)*bign + j] *= scale;
+                    for (j = 0; j < halfn; j++)
+                    {
+                        T[(halfn + i)*bign + j] *= scale;
+                    }
                 }
             }
         }
@@ -853,16 +867,29 @@ sqrtm_recursion_d(double* T, npy_intp bign, npy_intp n)
         // Bottom right block
         i2 = sqrtm_recursion_d(&T[halfn*(bign + 1)], bign, otherhalfn);
 
-        // Solve the Sylvester equation for the top right block
-        dtrsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
-
-        if (scale != 1.0)
-        {
-            for (i = 0; i < otherhalfn; i++)
+        // When n == 3, the Sylvester equation is 1x2 or 2x1. If both
+        // sides have a zero diagonal, dtrsyl_ produces garbage instead
+        // of inf. Detect this and set INFINITY so it propagates.
+        int sylvester12 = (n == 3) && (halfn == 1);
+        int sylvester21 = (n == 3) && (halfn == 2);
+        if (sylvester12  && (T[0] == 0.0) && ((T[intbign + 1] == 0.0 )|| (T[2*(intbign + 1)] == 0.0))) {
+            T[intbign] = INFINITY;
+            T[2*intbign] = INFINITY;
+            info = 1;
+        } else if (sylvester21 && (T[2*(intbign + 1)] == 0.0) && ((T[0] == 0.0) || (T[intbign + 1] == 0.0))) {
+            T[2*intbign] = INFINITY;
+            T[2*intbign + 1] = INFINITY;
+            info = 1;
+        } else {
+            dtrsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
+            if (scale != 1.0)
             {
-                for (j = 0; j < halfn; j++)
+                for (i = 0; i < otherhalfn; i++)
                 {
-                    T[(halfn + i)*bign + j] *= scale;
+                    for (j = 0; j < halfn; j++)
+                    {
+                        T[(halfn + i)*bign + j] *= scale;
+                    }
                 }
             }
         }
@@ -914,18 +941,28 @@ sqrtm_recursion_c(SCIPY_C* T, npy_intp bign, npy_intp n)
         i1 = sqrtm_recursion_c(T11, bign, halfn);
         i2 = sqrtm_recursion_c(T22, bign, otherhalfn);
 
-        ctrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
-        if (scale != 1.0)
-        {
-            for (i = 0; i < otherhalfn; i++)
+        // When n == 3, the Sylvester equation is 1x2 (complex Schur has
+        // no 2x2 blocks so halfn is always 1). If both sides have a zero
+        // diagonal, ctrsyl_ produces garbage. Set INFINITY to propagate.
+        if ((n == 3) && (cabsf(T11[0]) == 0.0f) && ((cabsf(T22[0]) == 0.0f) || (cabsf(T22[intbign + 1]) == 0.0f))) {
+            SCIPY_C cinf = CPLX_C(INFINITY, 0.0f);
+            T12[0] = cinf;
+            T12[intbign] = cinf;
+            info = 1;
+        } else {
+            ctrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
+            if (scale != 1.0)
             {
-                for (j = 0; j < halfn; j++)
+                for (i = 0; i < otherhalfn; i++)
                 {
+                    for (j = 0; j < halfn; j++)
+                    {
 #if defined(_MSC_VER)
-                    T[(halfn + i)*bign + j] = _FCmulcr(T[(halfn + i)*bign + j], scale);
+                        T[(halfn + i)*bign + j] = _FCmulcr(T[(halfn + i)*bign + j], scale);
 #else
-                    T[(halfn + i)*bign + j] *= scale;
+                        T[(halfn + i)*bign + j] *= scale;
 #endif
+                    }
                 }
             }
         }
@@ -976,18 +1013,29 @@ sqrtm_recursion_z(SCIPY_Z* T, npy_intp bign, npy_intp n)
         SCIPY_Z* T12 = &T[halfn*bign];
         i1 = sqrtm_recursion_z(T11, bign, halfn);
         i2 = sqrtm_recursion_z(T22, bign, otherhalfn);
-        ztrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
-        if (scale != 1.0)
-        {
-            for (i = 0; i < otherhalfn; i++)
+
+        // When n == 3, the Sylvester equation is 1x2 (complex Schur has
+        // no 2x2 blocks so halfn is always 1). If both sides have a zero
+        // diagonal, ztrsyl_ produces garbage. Set INFINITY to propagate.
+        if ((n == 3) && (cabs(T11[0]) == 0.0) && ((cabs(T22[0]) == 0.0) || (cabs(T22[intbign + 1]) == 0.0))) {
+            SCIPY_Z zinf = CPLX_Z(INFINITY, 0.0);
+            T12[0] = zinf;
+            T12[intbign] = zinf;
+            info = 1;
+        } else {
+            ztrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
+            if (scale != 1.0)
             {
-                for (j = 0; j < halfn; j++)
+                for (i = 0; i < otherhalfn; i++)
                 {
+                    for (j = 0; j < halfn; j++)
+                    {
 #if defined(_MSC_VER)
-                    T[(halfn + i)*bign + j] = _Cmulcr(T[(halfn + i)*bign + j], scale);
+                        T[(halfn + i)*bign + j] = _Cmulcr(T[(halfn + i)*bign + j], scale);
 #else
-                    T[(halfn + i)*bign + j] *= scale;
+                        T[(halfn + i)*bign + j] *= scale;
 #endif
+                    }
                 }
             }
         }

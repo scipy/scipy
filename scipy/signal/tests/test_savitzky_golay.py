@@ -24,6 +24,7 @@ def check_polyder(p, m, expected, xp):
     xp_assert_equal(dp, expected)
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 def test_polyder(xp):
     cases = [
         ([5], 0, [5]),

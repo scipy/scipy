@@ -276,12 +276,12 @@ class TestMMIOSparseCSR(TestMMIOArray):
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(p, b.toarray())
-        assert not scipy.sparse.isspmatrix(b)
+        assert isinstance(b, scipy.sparse.sparray)
 
         b = mmread(self.fn, spmatrix=True)
-        assert scipy.sparse.isspmatrix(b)
+        assert isinstance(b, scipy.sparse.spmatrix)
         b = mmread(self.fn)  # chk default
-        assert scipy.sparse.isspmatrix(b)
+        assert isinstance(b, scipy.sparse.spmatrix)
 
     def test_gh13634_non_skew_symmetric_int(self):
         a = scipy.sparse.csr_array([[1, 2], [-2, 99]], dtype=np.int32)
