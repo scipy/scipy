@@ -507,8 +507,8 @@ def find_minimum(f, init, /, *, args=(),
     skip_backends=[('dask.array', 'boolean indexing assignment'),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
-def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=(),
-                 maxiter=1000):
+def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
+                 args=(), maxiter=1000, preserve_shape=False):
     """Bracket the root of a monotonic, real-valued function of a real variable.
 
     For each element of the output of `f`, `bracket_root` seeks the scalar
@@ -526,15 +526,15 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     f : callable
         The function for which the root is to be bracketed. The signature must be::
 
-            f(x: array, *args) -> array
+            f(xi: array, *argsi) -> array
 
-        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        where each element of ``xi`` is a finite real and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with ``x``.
+        with ``xi``.
 
-        `f` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
-        array ``x`` or the arrays in ``args``.
+        `f` must be an elementwise function: each element ``f(xi)[j]``
+        must equal ``f(xi[j])`` for all indices ``j``. It must not mutate the
+        array ``xi`` or the arrays in ``argsi``.
     xl0, xr0 : float array_like
         Starting guess of bracket, which need not contain a root. If `xr0` is
         not provided, ``xr0 = xl0 + 1``. Must be broadcastable with all other
@@ -551,6 +551,23 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
         accepts only `x` and broadcastable ``*args``.
     maxiter : int, default: 1000
         The maximum number of iterations of the algorithm to perform.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
+        of all elements of `init` and `args` (which is conceptually
+        distinct from ``xi` and ``argsi`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
+
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``xi``.
 
     Returns
     -------
@@ -662,7 +679,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     """  # noqa: E501
 
     res = _bracket_root(f, xl0, xr0=xr0, xmin=xmin, xmax=xmax, factor=factor,
-                        args=args, maxiter=maxiter)
+                        args=args, maxiter=maxiter, preserve_shape=preserve_shape)
     res.bracket = res.xl, res.xr
     res.f_bracket = res.fl, res.fr
     del res.xl

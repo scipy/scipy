@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 from scipy.optimize._bracket import _ELIMITS
-from scipy.optimize.elementwise import bracket_root, bracket_minimum
+from scipy.optimize.elementwise import bracket_root, bracket_minimum, find_root
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
@@ -272,6 +272,10 @@ class TestBracketRoot:
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, maxiter="shrubbery")
 
+        message = '`preserve_shape` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            _bracket_root(lambda x: x, -4, 4, preserve_shape='a herring')
+
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
         # Test that integers are not passed to `f`
@@ -374,6 +378,22 @@ class TestBracketRoot:
         # https://github.com/scipy/scipy/pull/22560#discussion_r1962947434
         res = _bracket_root(lambda x: x + 0.25, xl0=-0.5, xmin=-np.inf, xmax=0)
         assert res.success
+
+    @pytest.mark.parametrize('shape', [(4,), (4, 2), (4, 2, 3)])
+    def test_preserve_shape(self, xp, shape):
+        # Test `preserve_shape` option
+        def f(x, p):
+            assert x.shape[:-1] == p.shape[:-1] == shape
+            out = [x[0], x[1] - 1, x[2] - 2, (x[3] - 3) ** 3]
+            return xp.stack(out)
+
+        a = xp.full(shape, -1.)
+        p = xp.asarray(2.)
+        ref = xp.stack([xp.full(shape[1:], 0.), xp.full(shape[1:], 1.),
+                        xp.full(shape[1:], 2.), xp.full(shape[1:], 3.)])
+        bracket = _bracket_root(f, a, a+1., args=(p,), preserve_shape=True)
+        res = find_root(f, (bracket.xl, bracket.xr), args=(p,), preserve_shape=True)
+        xp_assert_close(res.x, ref)
 
 
 @make_xp_test_case(bracket_minimum)
