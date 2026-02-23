@@ -294,7 +294,7 @@ def test_integration_sparse_difference():
     y0 = np.zeros(2 * n)
     y0[1::2] = 1
     sparsity = medazko_sparsity(n)
-    sparsity.indices, sparsity.indptr = safely_cast_index_arrays(sparsity, np.intc, "LSODA")
+    sparsity.indices, sparsity.indptr = safely_cast_index_arrays(sparsity, np.intc)
 
     for method in ['BDF', 'Radau']:
         res = solve_ivp(fun_medazko, t_span, y0, method=method,
