@@ -2106,6 +2106,27 @@ def test_jensenshannon():
                         [0.1954288, 0.1447697, 0.1138377, 0.0927636])
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
+    
+    # Regression test: proportional vectors normalize to identical distributions.
+    # Jensen-Shannon distance must be finite (not NaN) and ~0.
+    for dtype, atol in [(np.float64, 1e-12), (np.float32, 1e-6)]:
+        p = np.full(10, 0.34, dtype=dtype)
+        q = np.full(10, 0.42, dtype=dtype)
+        d = jensenshannon(p, q)
+        assert np.isfinite(d)
+        assert_allclose(d, 0.0, atol=atol, rtol=0)
+
+        p = np.full(3, 0.1, dtype=dtype)
+        q = np.full(3, 0.32, dtype=dtype)
+        d = jensenshannon(p, q)
+        assert np.isfinite(d)
+        assert_allclose(d, 0.0, atol=atol, rtol=0)
+
+        p = np.full(21, 0.29, dtype=dtype)
+        q = np.full(21, 0.09, dtype=dtype)
+        d = jensenshannon(p, q)
+        assert np.isfinite(d)
+        assert_allclose(d, 0.0, atol=atol, rtol=0)
 
 
 def test_gh_17703():
