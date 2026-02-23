@@ -541,6 +541,22 @@ class TestChandrupatlaMinimize:
         assert res.xl < res.xm < res.xr
         assert f(res.xl) == f(res.xm) == f(res.xr)
 
+    @pytest.mark.parametrize('shape', [(4,), (4, 2), (4, 2, 3)])
+    def test_preserve_shape(self, xp, shape):
+        # Test `preserve_shape` option
+        def f(x, p):
+            assert x.shape[:-1] == p.shape[:-1] == shape
+            out = [-xp.cos(x[0]), (x[1] - 1)**2, (x[2] - 2)**2, (x[3] - 3)**2]
+            return xp.stack(out)
+
+        a = xp.full(shape, -8.)
+        c = xp.full(shape, -1.)
+        b = xp.full(shape, 8.)
+        ref = xp.stack([xp.full(shape[1:], 0.), xp.full(shape[1:], 1.),
+                        xp.full(shape[1:], 2.), xp.full(shape[1:], 3.)])
+        res = find_minimum(f, (a, c, b), args=(xp.asarray(2.),), preserve_shape=True)
+        xp_assert_close(res.x, ref, atol=1e-8)
+
 
 @make_xp_test_case(find_root)
 class TestFindRoot:

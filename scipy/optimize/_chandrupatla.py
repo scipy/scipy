@@ -283,7 +283,7 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
 
 def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
                            xrtol=None, fatol=None, frtol=None, maxiter=100,
-                           callback=None):
+                           callback=None, preserve_shape=False):
     """Find the minimizer of an elementwise function.
 
     For each element of the output of `func`, `_chandrupatla_minimize` seeks
@@ -327,6 +327,9 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         the current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
         `_chandrupatla_minimize` will return a result.
+    preserve_shape : bool, default: False
+        Whether calls to `func` must preserve the broadcasted shape of the arguments to
+        `_chandrupatla_minimize`. See `find_minimum` documentation.
 
     Returns
     -------
@@ -399,12 +402,12 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     array([1. , 1.5, 2. ])
     """
     res = _chandrupatla_iv(func, args, xatol, xrtol,
-                           fatol, frtol, maxiter, callback, False)
-    func, args, xatol, xrtol, fatol, frtol, maxiter, callback, _ = res
+                           fatol, frtol, maxiter, callback, preserve_shape)
+    func, args, xatol, xrtol, fatol, frtol, maxiter, callback, preserve_shape = res
 
     # Initialization
     xs = (x1, x2, x3)
-    temp = eim._initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args, preserve_shape=preserve_shape)
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
@@ -556,4 +559,4 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     xp=xp)
+                     xp=xp, preserve_shape=preserve_shape)

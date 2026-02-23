@@ -259,7 +259,8 @@ def find_root(f, init, /, *, args=(),
     skip_backends=[('dask.array', 'boolean indexing assignment'),
                    ('array_api_strict', 'Currently uses fancy indexing assignment.'),
                    ('jax.numpy', 'JAX arrays do not support item assignment.')])
-def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None):
+def find_minimum(f, init, /, *, args=(),
+                 tolerances=None, maxiter=100, callback=None, preserve_shape=False):
     """Find the minimum of a unimodal, real-valued function of a real variable.
 
     For each element of the output of `f`, `find_minimum` seeks the scalar minimizer
@@ -280,17 +281,17 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     f : callable
         The function whose minimizer is desired. The signature must be::
 
-            f(x: array, *args) -> array
+            f(xi: array, *argsi) -> array
 
-        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        where each element of ``xi`` is a finite real and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with ``x``.
+        with ``xi``.
 
-        `f` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
-        array ``x`` or the arrays in ``args``.
+        `f` must be an elementwise function: each element ``f(xi)[j]``
+        must equal ``f(xi[j])`` for all indices ``j``. It must not mutate the
+        array ``xi`` or the arrays in ``argsi``.
 
-        `find_minimum` seeks an array ``x`` such that ``f(x)`` is an array of
+        `find_minimum` seeks an array ``x`` such that ``f(xi)`` is an array of
         local minima.
     init : 3-tuple of float array_like
         The abscissae of a standard scalar minimization bracket. A bracket is
@@ -325,6 +326,23 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
         ``StopIteration``, the algorithm will terminate immediately and
         `find_root` will return a result. `callback` must not mutate
         `res` or its attributes.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
+        of all elements of `init` and `args` (which is conceptually
+        distinct from ``xi` and ``argsi`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
+
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``xi``.
 
     Returns
     -------
@@ -480,7 +498,8 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
         _callback = callback
 
     res = _chandrupatla_minimize(f, xl, xm, xr, args=args, **tolerances,
-                                 maxiter=maxiter, callback=_callback)
+                                 maxiter=maxiter, callback=_callback,
+                                 preserve_shape=preserve_shape)
     return reformat_result(res)
 
 
