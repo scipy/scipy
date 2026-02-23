@@ -860,7 +860,7 @@ class KDTree(cKDTree):
 
                .. deprecated:: 1.18.0
                    The default value for output_type is deprecated
-                   and will change to 'dok_array' in v1.19. The value
+                   and will change to 'dok_array' in v1.20. The value
                    'dok_matrix' is available until that class is removed.
                    Unless you use * instead of @, ** for matrix power
                    or depend on 2D shapes from e.g. `A.sum(axis=0)` it may
@@ -908,7 +908,7 @@ class KDTree(cKDTree):
         """
         if output_type is _NoValue:
             msg = """The default value for output_type is changing to 'dok_array'
-            in v1.19. Unless you use * instead of @, ** for matrix power
+            in v1.20. Unless you use * instead of @, ** for matrix power
             or depend on 2D shapes for e.g. A.sum(axis=1) it may not matter to
             you. See the spmatrix to sparray migration guide for details.
             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
