@@ -1158,7 +1158,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         in `rvs` must match the number of elements of `n_observations`, i.e.
         ``len(rvs) == len(n_observations)``. If `rvs` is a single callable,
         `n_observations` is treated as a single element.
-    n_observations : tuple of ints or tuple of integer arrays
+    n_observations : tuple of ints or tuple of int arrays
         If a sequence of ints, each is the sizes of a sample to be passed to `test`.
         If a sequence of integer arrays, the power is simulated for each
         set of corresponding sample sizes. See Examples.

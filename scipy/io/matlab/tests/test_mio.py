@@ -1185,11 +1185,12 @@ def test_empty_sparse():
     sio.seek(0)
 
     res = loadmat(sio, spmatrix=False)
-    assert not scipy.sparse.isspmatrix(res['x'])
+    sparray = scipy.sparse.sparray
+    assert isinstance(res['x'], sparray)
     res = loadmat(sio, spmatrix=True)
-    assert scipy.sparse.isspmatrix(res['x'])
+    assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
     res = loadmat(sio)  # chk default
-    assert scipy.sparse.isspmatrix(res['x'])
+    assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
 
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].toarray(), 0)

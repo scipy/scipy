@@ -609,7 +609,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     k : int or ndarray
         The number of clusters to form as well as the number of
         centroids to generate. If `minit` initialization string is
-        'matrix', or if a ndarray is given instead, it is
+        'matrix', or if an ndarray is given instead, it is
         interpreted as initial cluster to use instead.
     iter : int, optional
         Number of iterations of the k-means algorithm to run. Note
@@ -638,7 +638,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         'warn': give a warning and continue.
 
-        'raise': raise an ClusterError and terminate the algorithm.
+        'raise': raise a ClusterError and terminate the algorithm.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems

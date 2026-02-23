@@ -620,7 +620,7 @@ def read(filename, mmap=False):
 
     Parameters
     ----------
-    filename : string or open file handle
+    filename : str or open file handle
         Input WAV file.
     mmap : bool, optional
         Whether to read data as memory-mapped (default: False).  Not compatible
@@ -792,7 +792,7 @@ def write(filename, rate, data):
 
     Parameters
     ----------
-    filename : string or open file handle
+    filename : str or open file handle
         Output wav file.
     rate : int
         The sample rate (in samples/sec).

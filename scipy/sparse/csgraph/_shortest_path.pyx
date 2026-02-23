@@ -66,7 +66,7 @@ def shortest_path(csgraph, method='auto',
     ----------
     csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
-    method : string ['auto'|'FW'|'D'], optional
+    method : str ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
 
         'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
@@ -1548,10 +1548,12 @@ def yen(
                                      csgraphT.indptr, johnson_dist_array)
             csrT_data = csgraphT.data
 
+    indices, indptr = safely_cast_index_arrays(csgraph, ITYPE, "csgraph")
+    indicesT, indptrT = safely_cast_index_arrays(csgraphT, ITYPE, "csgraph")
     _yen(
         source, sink,
-        csr_data, csgraph.indices, csgraph.indptr,
-        csrT_data, csgraphT.indices, csgraphT.indptr,
+        csr_data, indices, indptr,
+        csrT_data, indicesT, indptrT,
         dist_array, predecessor_matrix,
     )
     if has_negative_weights:

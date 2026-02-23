@@ -441,7 +441,7 @@ class KDTree(cKDTree):
                shape ``tuple``, containing lists of distances. This behavior
                has been removed, use `query_ball_point` instead.
 
-        i : integer or array of integers
+        i : int or array of integers
             The index of each neighbor in ``self.data``.
             ``i`` is the same shape as d.
             Missing neighbors are indicated with ``self.n``.
@@ -654,7 +654,7 @@ class KDTree(cKDTree):
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : string, optional
+        output_type : str, optional
             Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
             .. versionadded:: 1.6.0
@@ -852,7 +852,7 @@ class KDTree(cKDTree):
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
-        output_type : string, optional
+        output_type : str, optional
             Which container to use for output data. Options: ``'dok_matrix'``,
             ``'coo_matrix'``, ``'dict'``, or ``'ndarray'``. Default: ``'dok_matrix'``.
 

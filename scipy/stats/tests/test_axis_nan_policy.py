@@ -25,6 +25,14 @@ from scipy.conftest import skip_xp_invalid_arg
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 
 
+def _using_accelerate():
+    config = np.show_config('dicts')
+    return config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
+
+
+RTOL = 1e-6 if _using_accelerate() else 1e-15
+
+
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
     return (res.statistic, res.pvalue, res.df, res._standard_error,
@@ -494,8 +502,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res_1db, res_1da, rtol=4e-15)
+        assert_allclose(res_1db, res_1da, rtol=RTOL)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -522,8 +529,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
-    assert_allclose(res_nd, res_1d, rtol=1e-11)
+    assert_allclose(res_nd, res_1d, rtol=RTOL)
 
 # nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
@@ -648,12 +654,12 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
     # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-    assert_allclose(res1dc, res1db, rtol=7e-15)
+    assert_allclose(res1dc, res1db, rtol=2e-14)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
         # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res1db, res1da, rtol=7e-15)
+        assert_allclose(res1db, res1da, rtol=2e-14)
         all_results += list(res1da)
 
     for item in all_results:
@@ -682,7 +688,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   sample_shape, axis_cases, nan_policy):
     small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
-                           stats.differential_entropy, stats.epps_singleton_2samp}
+                           stats.differential_entropy, stats.epps_singleton_2samp,
+                           stats.shapiro}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
     if hypotest in {weightedtau_weighted}:

@@ -121,7 +121,7 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    step_direction : integer array_like
+    step_direction : int array_like
         An array representing the direction of the finite difference steps (for
         use when `x` lies near to the boundary of the domain of the function.)
         Must be broadcastable with `x` and all `args`.
@@ -761,7 +761,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    step_direction : integer array_like
+    step_direction : int array_like
         An array representing the direction of the finite difference steps (e.g.
         for use when `x` lies near to the boundary of the domain of the function.)
         Must be broadcastable with `x` and `initial_step`.

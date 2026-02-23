@@ -4,7 +4,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.4
+    jupytext_version: 1.17.3
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
@@ -536,9 +536,7 @@ For method of [L-moments](https://en.wikipedia.org/wiki/L-moment) (which attempt
 def lmoment_residual(x):
     c, scale = x
     X = Weibull(c=c) * scale
-    E11 = stats.order_statistic(X, r=1, n=1).mean()
-    E12, E22 = stats.order_statistic(X, r=[1, 2], n=2).mean()
-    lmoments_X = [E11, 0.5*(E22 - E12)]  # the first two l-moments of the distribution
+    lmoments_X = [X.lmoment(1), X.lmoment(2)]  # the first two l-moments of the distribution
     lmoments_x = stats.lmoment(data, order=[1, 2])  # first two l-moments of the data
     return np.linalg.norm(lmoments_x - lmoments_X)  # Minimize the norm of the difference
 

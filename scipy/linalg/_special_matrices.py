@@ -229,7 +229,7 @@ def hankel(c, r=None):
 
 def hadamard(n, dtype=int):
     """
-    Construct an Hadamard matrix.
+    Construct a Hadamard matrix.
 
     Constructs an n-by-n Hadamard matrix, using Sylvester's
     construction. `n` must be a power of 2.
@@ -272,7 +272,7 @@ def hadamard(n, dtype=int):
     else:
         lg2 = int(math.log(n, 2))
     if 2 ** lg2 != n:
-        raise ValueError("n must be an positive integer, and n must be "
+        raise ValueError("n must be a positive integer, and n must be "
                          "a power of 2")
 
     H = np.array([[1]], dtype=dtype)
@@ -377,9 +377,9 @@ def block_diag(*arrs):
 
     Parameters
     ----------
-    A, B, C, ... : array_like
-        Input arrays.  A 1-D array or array_like sequence of length ``n`` is
-        treated as a 2-D array with shape ``(1, n)``.
+    *arrs : array_like
+        Input arrays ``A, B, C, ...``. A 1-D array or array_like sequence of length
+        ``n`` is treated as a 2-D array with shape ``(1, n)``.
 
     Returns
     -------
@@ -522,7 +522,7 @@ def companion(a):
 
 def helmert(n, full=False):
     """
-    Create an Helmert matrix of order `n`.
+    Create a Helmert matrix of order `n`.
 
     This has applications in statistics, compositional or simplicial analysis,
     and in Aitchison geometry.

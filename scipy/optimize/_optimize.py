@@ -1260,7 +1260,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Number of function_calls made.
     grad_calls : int
         Number of gradient calls made.
-    warnflag : integer
+    warnflag : int
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
         3 : NaN result encountered.

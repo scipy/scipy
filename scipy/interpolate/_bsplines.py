@@ -807,7 +807,7 @@ class BSpline:
         pp : CubicSpline
             A piecewise polynomial in the power basis, as created
             by ``CubicSpline``
-        bc_type : string, optional
+        bc_type : str, optional
             Boundary condition type as in ``CubicSpline``: one of the
             ``not-a-knot``, ``natural``, ``clamped``, or ``periodic``.
             Necessary for construction an instance of ``BSpline`` class.
@@ -1291,20 +1291,20 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
     ----------
     t : ndarray, shape (nt + k + 1,)
         knots
-    k : integer
+    k : int
         B-spline order
     xval : float
         The value at which to evaluate the derivatives at.
     ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
         B-spline colocation matrix.
         This argument is modified *in-place*.
-    kl : integer
+    kl : int
         Number of lower diagonals of ab.
-    ku : integer
+    ku : int
         Number of upper diagonals of ab.
     deriv_ords : 1D ndarray
         Orders of derivatives known at xval
-    offset : integer, optional
+    offset : int, optional
         Skip this many rows of the matrix ab.
 
     """

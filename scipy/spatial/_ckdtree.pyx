@@ -402,9 +402,7 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
 # ==================
 
 cdef class cKDTree:
-    """
-    cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True, boxsize=None)
+    """cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True, boxsize=None)\n--
 
     kd-tree for quick nearest-neighbor lookup.
 
@@ -1113,7 +1111,7 @@ cdef class cKDTree:
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : string, optional
+        output_type : str, optional
             Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
         Returns
@@ -1486,7 +1484,7 @@ cdef class cKDTree:
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
 
-        output_type : string, optional
+        output_type : str, optional
             Which container to use for output data. Options: 'dok_matrix',
             'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
 

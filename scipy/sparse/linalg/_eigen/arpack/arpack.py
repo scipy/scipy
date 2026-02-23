@@ -1320,6 +1320,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     """
     A = convert_pydata_sparse_to_scipy(A)
+    if (A_ndim := len(A.shape)) > 2:
+        raise ValueError(f"{A_ndim}-dimensional `A` is unsupported, expected 2-D.")
     M = convert_pydata_sparse_to_scipy(M)
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
@@ -1556,7 +1558,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         See notes in M, above.
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
-    mode : string ['normal' | 'buckling' | 'cayley']
+    mode : str ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
         ARPACK internally solves the eigenvalue problem
@@ -1652,6 +1654,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             return ret.real
 
+    if (A_ndim := len(A.shape)) > 2:
+        raise ValueError(f"{A_ndim}-dimensional `A` is unsupported, expected 2-D.")
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:

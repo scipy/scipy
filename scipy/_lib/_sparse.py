@@ -12,7 +12,7 @@ def issparse(x):
 
     Parameters
     ----------
-    x
+    x : object
         object to check for being a sparse array or sparse matrix
 
     Returns

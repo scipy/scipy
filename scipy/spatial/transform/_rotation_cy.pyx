@@ -644,8 +644,8 @@ def from_mrp(mrp):
         quat[ind, 3] = (2 - mrp_squared_plus_1) / mrp_squared_plus_1
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
     
 
 @cython.embedsignature(True)
