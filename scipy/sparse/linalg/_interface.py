@@ -51,10 +51,12 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse import issparse
 from scipy.sparse._sputils import asmatrix, is_pydata_spmatrix, isintlike, isshape
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ["LinearOperator", "aslinearoperator"]
 
 
+@xp_capabilities(np_only=True)
 class LinearOperator:
     """Common interface for performing matrix vector products.
 
@@ -177,7 +179,7 @@ class LinearOperator:
     >>> A @ np.ones(2)
     array([ 2.,  3.])
 
-    """
+    """  # numpydoc ignore=PR02
 
     # Necessary for right matmul with numpy arrays.
     __array_ufunc__ = None

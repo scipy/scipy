@@ -4460,7 +4460,6 @@ class TransformedDistribution(ContinuousDistribution):
                 or super()._overrides(method_name))
 
     def reset_cache(self):
-        self._dist.reset_cache()
         super().reset_cache()
 
     def _update_parameters(self, *, validation_policy=None, **params):
