@@ -471,7 +471,7 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
         If ``True``, return sparse matrix. Otherwise return sparse array.
 
         .. deprecated:: 1.18.0
-            The default value for `spmatrix` is changing to False in v1.19.
+            The default value for `spmatrix` is changing to False in v1.20.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. `A.sum(axis=0)`, it may not matter to you.
@@ -518,7 +518,7 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
             data = _get_matrix(f)
 
     if spmatrix is _NoValue:
-        msg = """The default value for `spmatrix` is changing to `False` in v1.19.
+        msg = """The default value for `spmatrix` is changing to `False` in v1.20.
             That means the default return type will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
