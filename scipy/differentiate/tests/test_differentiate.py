@@ -136,16 +136,18 @@ class TestDerivative:
                                 eim._EVALUEERR], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
-    def test_preserve_shape(self, xp):
+    @pytest.mark.parametrize('batch_shape', [(), (2,), (2, 3)])
+    def test_preserve_shape(self, xp, batch_shape):
         # Test `preserve_shape` option
-        def f(x):
+        def f(x, p):
+            assert x.shape[:-1] == p.shape[:-1] == batch_shape
             out = [x, xp.sin(3*x), x+xp.sin(10*x), xp.sin(20*x)*(x-1)**2]
             return xp.stack(out)
 
-        x = xp.asarray(0.)
-        ref = xp.asarray([xp.asarray(1), 3*xp.cos(3*x), 1+10*xp.cos(10*x),
-                          20*xp.cos(20*x)*(x-1)**2 + 2*xp.sin(20*x)*(x-1)])
-        res = derivative(f, x, preserve_shape=True)
+        x = xp.zeros(batch_shape)
+        ref = xp.stack([xp.ones_like(x), 3*xp.cos(3*x), 1+10*xp.cos(10*x),
+                        20*xp.cos(20*x)*(x-1)**2 + 2*xp.sin(20*x)*(x-1)])
+        res = derivative(f, x, args=(xp.asarray(2.),), preserve_shape=True)
         xp_assert_close(res.df, ref)
 
     def test_convergence(self, xp):

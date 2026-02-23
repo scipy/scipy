@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
-                                   is_numpy, make_xp_test_case)
+                                   is_numpy, make_xp_test_case, xp_default_dtype)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
 from scipy.integrate._tanhsinh import _pair_cache
@@ -346,17 +346,23 @@ class TestTanhSinh:
         ref_flags = xp.asarray([0, -2, -3], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
-    def test_preserve_shape(self, xp):
+    @pytest.mark.parametrize('batch_shape', [(), (2,), (2, 3)])
+    def test_preserve_shape(self, xp, batch_shape):
         # Test `preserve_shape` option
         def f(x, xp):
-            return xp.stack([xp.stack([x, xp.sin(10 * x)]),
-                             xp.stack([xp.cos(30 * x), x * xp.sin(100 * x)])])
+            return xp.stack([x, xp.sin(10 * x), xp.cos(30 * x), x * xp.sin(100 * x)])
 
         ref = quad_vec(lambda x: f(x, np), 0, 1)
-        res = _tanhsinh(lambda x: f(x, xp), xp.asarray(0), xp.asarray(1),
-                        preserve_shape=True)
-        dtype = xp.asarray(0.).dtype
-        xp_assert_close(res.integral, xp.asarray(ref[0], dtype=dtype))
+        ref = xp.asarray(ref[0], dtype=xp_default_dtype(xp))
+        ref = xp.moveaxis(xp.broadcast_to(ref, (*batch_shape, *ref.shape)), -1, 0)
+
+        def g(x, p):  # p is unused; just want to test its shape
+            assert x.shape[:-1] == p.shape[:-1] == batch_shape
+            return f(x, xp)
+        res = _tanhsinh(g, xp.zeros(batch_shape), xp.ones(batch_shape),
+                        args=(xp.asarray(2),), preserve_shape=True)
+
+        xp_assert_close(res.integral, ref)
 
     def test_convergence(self, xp):
         # demonstrate that number of accurate digits doubles each iteration
