@@ -115,7 +115,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     >>> from scipy import linalg
     >>> from scipy import sparse
     >>> rng = np.random.default_rng()
-    >>> shape, density, sketch_n_rows = 15000, 100, 0.01, 200
+    >>> *shape, density, sketch_n_rows = 15000, 100, 0.01, 200
     >>> A = sparse.random_array(shape, density=density, format='csc')
     >>> B = sparse.random_array(shape, density=density, format='csr')
     >>> C = sparse.random_array(shape, density=density, format='coo')
