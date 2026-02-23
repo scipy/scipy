@@ -890,9 +890,9 @@ class TestFFTConvolve:
         expected = xp.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
-        a = xp.asarray(np.tile(a, [2, 1, 3, 1, 1]))
-        b = xp.asarray(np.tile(b, [2, 1, 1, 4, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 3, 4, 1]))
+        a = xp.tile(a, (2, 1, 3, 1, 1))
+        b = xp.tile(b, (2, 1, 1, 4, 1))
+        expected = xp.tile(expected, (2, 1, 3, 4, 1))
 
         out = fftconvolve(a, b, 'full', axes=axes)
         xp_assert_close(out, expected, rtol=1e-10, atol=1e-10)
