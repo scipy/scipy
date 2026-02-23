@@ -405,6 +405,7 @@ Information Theory functions
 
    entr         -- Elementwise function for computing entropy.
    rel_entr     -- Elementwise function for computing relative entropy.
+   js_div       -- Elementwise function for computing Jensen-Shannon divergence.
    kl_div       -- Elementwise function for computing Kullback-Leibler divergence.
    huber        -- Huber loss function.
    pseudo_huber -- Pseudo-Huber loss function.
