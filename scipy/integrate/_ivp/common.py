@@ -1,7 +1,7 @@
 from itertools import groupby
 from warnings import warn
 import numpy as np
-from scipy.sparse import find, coo_matrix
+from scipy.sparse import find, coo_array
 
 
 EPS = np.finfo(float).eps
@@ -395,7 +395,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     df = f_new - f[:, None]
 
     i, j, _ = find(structure)
-    diff = coo_matrix((df[i, groups[j]], (i, j)), shape=(n, n)).tocsc()
+    diff = coo_array((df[i, groups[j]], (i, j)), shape=(n, n)).tocsc()
     max_ind = np.array(abs(diff).argmax(axis=0)).ravel()
     r = np.arange(n)
     max_diff = np.asarray(np.abs(diff[max_ind, r])).ravel()
@@ -422,8 +422,8 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
         f_new = fun(t, y[:, None] + h_vecs)
         df = f_new - f[:, None]
         i, j, _ = find(structure[:, ind])
-        diff_new = coo_matrix((df[i, groups_map[groups[ind[j]]]],
-                               (i, j)), shape=(n, ind.shape[0])).tocsc()
+        diff_new = coo_array((df[i, groups_map[groups[ind[j]]]],
+                              (i, j)), shape=(n, ind.shape[0])).tocsc()
 
         max_ind_new = np.array(abs(diff_new).argmax(axis=0)).ravel()
         r = np.arange(ind.shape[0])

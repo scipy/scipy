@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from scipy.sparse import csc_matrix, issparse, eye
+from scipy.sparse import issparse, eye_array
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
@@ -218,24 +218,24 @@ class Radau(OdeSolver):
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
-    jac : {None, array_like, sparse_matrix, callable}, optional
+    jac : {None, array_like, sparse matrix or array, callable}, optional
         Jacobian matrix of the right-hand side of the system with respect to
         y, required by this method. The Jacobian matrix has shape (n, n) and
         its element (i, j) is equal to ``d f_i / d y_j``.
         There are three ways to define the Jacobian:
 
-        * If array_like or sparse_matrix, the Jacobian is assumed to
-          be constant.
+        * If array_like or sparse_matrix or sparse_array, the Jacobian is
+          assumed to be constant.
         * If callable, the Jacobian is assumed to depend on both
           t and y; it will be called as ``jac(t, y)`` as necessary.
           For the 'Radau' and 'BDF' methods, the return value might be a
-          sparse matrix.
+          sparse matrix or array.
         * If None (default), the Jacobian will be approximated by
           finite differences.
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
-    jac_sparsity : {None, array_like, sparse matrix}, optional
+    jac_sparsity : {None, array_like, sparse matrix or array}, optional
         Defines a sparsity structure of the Jacobian matrix for a
         finite-difference approximation. Its shape must be (n, n). This argument
         is ignored if `jac` is not `None`. If the Jacobian has only few non-zero
@@ -325,7 +325,7 @@ class Radau(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            I = eye(self.n, format='csc')
+            I = eye_array(self.n, format='csc')
         else:
             def lu(A):
                 self.nlu += 1
@@ -352,7 +352,7 @@ class Radau(OdeSolver):
         if jac is None:
             if sparsity is not None:
                 if issparse(sparsity):
-                    sparsity = csc_matrix(sparsity)
+                    sparsity = sparsity.tocsc()
                 groups = group_columns(sparsity)
                 sparsity = (sparsity, groups)
 
@@ -367,11 +367,12 @@ class Radau(OdeSolver):
             J = jac(t0, y0)
             self.njev = 1
             if issparse(J):
-                J = csc_matrix(J)
+                J = J.tocsc()
+                csc_constructor = J.__class__
 
                 def jac_wrapped(t, y, _=None):
                     self.njev += 1
-                    return csc_matrix(jac(t, y), dtype=float)
+                    return csc_constructor(jac(t, y), dtype=float)
 
             else:
                 J = np.asarray(J, dtype=float)
@@ -385,7 +386,7 @@ class Radau(OdeSolver):
                                  f" but actually has {J.shape}.")
         else:
             if issparse(jac):
-                J = csc_matrix(jac)
+                J = jac.tocsc()
             else:
                 J = np.asarray(jac, dtype=float)
 
