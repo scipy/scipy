@@ -238,11 +238,13 @@ def matrix_transpose(A):
     >>> array.T.toarray()
     array([[[1, 5],
             [3, 7]],
+    <BLANKLINE>
            [[2, 6],
             [4, 8]]])
     >>> matrix_transpose(array).toarray()
     array([[[1, 3],
             [2, 4]],
+    <BLANKLINE>
            [[5, 7],
             [6, 8]]])
     """
