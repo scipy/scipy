@@ -683,13 +683,14 @@ class dok_array(_dok_base, sparray):
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-        Number of nonzero elements
-    size
-    T
-
     format : str
-    Sparse storage format of the array (e.g. 'dok').
+        Three letter code for the format of the array storage, e.g. 'dok'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : dok_array
+        The transpose of the array
 
     Notes
     -----
@@ -739,10 +740,14 @@ class dok_matrix(spmatrix, _dok_base):
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-        Number of nonzero elements
-    size
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'dok'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : dok_matrix
+        The transpose of the matrix
 
     Notes
     -----

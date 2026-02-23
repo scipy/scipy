@@ -54,18 +54,12 @@ Overview and big picture
 
 -  Checking the sparse type and format:
 
-   - ``issparse(A)`` returns ``True`` for any sparse array or matrix.
-
-- To check the storage format of a sparse *array*, use the ``format`` attribute::
-
-      >>> from scipy.sparse import csr_array
-      >>> A = csr_array([[1, 0], [0, 1]])
-      >>> A.format
-      'csr'
-
-- The ``isspmatrix*`` helpers (e.g. ``isspmatrix_csr``) are specific to the legacy
-  ``spmatrix`` API and should be avoided when working with sparse arrays.  
-  Use ``issparse(A) and A.format == 'csr'`` instead.
+   -  ``issparse(A)`` returns ``True`` for any sparse array/matrix.
+   -  ``isspmatrix(M)`` returns ``True`` for any sparse matrix.
+      A future proof idiom is ``issparse(A) and not isinstance(A, sparray)``
+   -  The ``isspmatrix*`` helpers (e.g. ``isspmatrix_csr``) are specific to
+      the legacy spmatrix API and should be avoided.
+      Use ``issparse(A) and A.format == 'csr'`` instead.
 
 -  Handling your software package API with sparse input/output:
 
