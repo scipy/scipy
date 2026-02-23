@@ -928,4 +928,5 @@ class TestBracketMinimum:
         bracket = _bracket_minimum(f, a, args=(p,), preserve_shape=True)
         res = find_minimum(f, (bracket.xl, bracket.xm, bracket.xr), args=(p,),
                            preserve_shape=True)
-        xp_assert_close(res.x, ref, atol=1e-8)
+        atol = 1e-5 if ref.dtype == xp.float32 else 1e-8
+        xp_assert_close(res.x, ref, atol=atol)
