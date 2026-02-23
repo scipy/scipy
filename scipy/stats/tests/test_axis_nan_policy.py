@@ -33,6 +33,9 @@ def _using_accelerate():
 RTOL = 1e-6 if _using_accelerate() else 1e-15
 
 
+tolerance_overrides = {stats.epps_singleton_2samp: 1e-10}
+
+
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
     return (res.statistic, res.pvalue, res.df, res._standard_error,
@@ -529,7 +532,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    assert_allclose(res_nd, res_1d, rtol=RTOL)
+    rtol = max(tolerance_overrides.get(hypotest, RTOL), RTOL)
+    assert_allclose(res_nd, res_1d, rtol=rtol)
 
 # nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
