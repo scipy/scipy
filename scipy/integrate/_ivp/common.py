@@ -299,11 +299,11 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         Factor to use for computing the step size. Pass None for the very
         evaluation, then use the value returned from this function.
     sparsity : tuple (structure, groups) or None
-        Sparsity structure of the Jacobian, `structure` must be csc_matrix.
+        Sparsity structure of the Jacobian, `structure` must be csc_matrix or csc_array.
 
     Returns
     -------
-    J : ndarray or csc_matrix, shape (n, n)
+    J : ndarray or csc_matrix or csc_array, shape (n, n)
         Jacobian matrix.
     factor : ndarray, shape (n,)
         Suggested `factor` for the next evaluation.
