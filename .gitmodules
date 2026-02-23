@@ -15,7 +15,7 @@
 	url = https://github.com/boostorg/math.git
 
 [submodule "subprojects/cobyqa"]
-	path = subprojects/cobyqa/cobyqa
+	path = subprojects/cobyqa
 	url = https://github.com/cobyqa/cobyqa.git
 
 [submodule "subprojects/highs"]

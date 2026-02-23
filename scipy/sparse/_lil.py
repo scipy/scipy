@@ -13,7 +13,7 @@ from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       check_shape, check_reshape_kwargs)
+                       check_shape)
 from . import _csparsetools
 
 
@@ -323,9 +323,8 @@ class _lil_base(_spbase, IndexMixin):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def reshape(self, *args, **kwargs):
-        shape = check_shape(args, self.shape)
-        order, copy = check_reshape_kwargs(kwargs)
+    def reshape(self, *shape, order="C", copy=False):
+        shape = check_shape(shape, self.shape)
 
         # Return early if reshape is not required
         if shape == self.shape:

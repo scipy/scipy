@@ -43,8 +43,8 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
     return shape(res), dt
 
 
-def fsolve(func, x0, args=(), fprime=None, full_output=0,
-           col_deriv=0, xtol=1.49012e-8, maxfev=0, band=None,
+def fsolve(func, x0, args=(), fprime=None, full_output=False,
+           col_deriv=False, xtol=1.49012e-8, maxfev=0, band=None,
            epsfcn=None, factor=100, diag=None):
     """
     Find the roots of a function.
@@ -192,7 +192,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
 
 def _root_hybr(func, x0, args=(), jac=None,
-               col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
+               col_deriv=False, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
                factor=100, diag=None, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
@@ -1018,7 +1018,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if ydata.size != 1 and n > ydata.size:
             raise TypeError(f"The number of func parameters={n} must not"
                             f" exceed the number of data points={ydata.size}")
-        res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
+        res = leastsq(func, p0, Dfun=jac, full_output=True, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
         ysize = len(infodict['fvec'])
         cost = np.sum(infodict['fvec'] ** 2)
@@ -1074,7 +1074,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         return popt, pcov
 
 
-def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
+def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=False):
     """Perform a simple check on the gradient for correctness.
 
     """
@@ -1088,7 +1088,7 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     ldfjac = m
     fjac = atleast_1d(Dfcn(x, *args))
     fjac = fjac.reshape((m, n))
-    if col_deriv == 0:
+    if not col_deriv:
         fjac = transpose(fjac)
 
     xp = zeros((n,), float)

@@ -121,7 +121,6 @@ print(incdir)
   endif
   pythran_dep = declare_dependency(
     include_directories: incdir_pythran,
-    dependencies: xsimd_dep,
   )
 else
   pythran_dep = []

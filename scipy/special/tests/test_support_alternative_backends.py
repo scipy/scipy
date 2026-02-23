@@ -394,3 +394,11 @@ def test_chdtr_gh21311(xp):
     ref = special.chdtr(v, x)
     res = special.chdtr(xp.asarray(v), xp.asarray(x))
     xp_assert_close(res, xp.asarray(ref))
+
+
+@make_xp_test_case(special.fdtrc)
+def test_mixed_arrays_and_python_scalars(xp):
+    # Tests that the delegation infrastructure respects NEP50.
+    res = special.fdtrc(1.1, 2., xp.asarray(1., dtype=xp.float32))
+    ref = xp.asarray(0.4349004, dtype=xp.float32)
+    xp_assert_close(res, ref)

@@ -320,14 +320,16 @@ class TestKMeans:
     def test_kmeans2_rank1_2(self, xp):
         data = xp.asarray(TESTDATA_2D)
         data1 = data[:, 0]
-        kmeans2(data1, 2, iter=1)
+        rng = np.random.default_rng(42)
+        kmeans2(data1, 2, iter=1, rng=rng)
 
     def test_kmeans2_high_dim(self, xp):
         # test kmeans2 when the number of dimensions exceeds the number
         # of input points
         data = xp.asarray(TESTDATA_2D)
         data = xp.reshape(data, (20, 20))[:10, :]
-        kmeans2(data, 2)
+        rng = np.random.default_rng(42)
+        kmeans2(data, 2, rng=rng)     
 
     def test_kmeans2_init(self, xp):
         rng = np.random.default_rng(12345678)
