@@ -1277,6 +1277,12 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     """
     p = np.asarray(p)
     q = np.asarray(q)
+   
+    # compute in float64-ish for stability
+    work_dtype = np.result_type(p.dtype, q.dtype, np.float64)
+    p = p.astype(work_dtype, copy=False)
+    q = q.astype(work_dtype, copy=False)
+
     p = p / np.sum(p, axis=axis, keepdims=True)
     q = q / np.sum(q, axis=axis, keepdims=True)
     m = (p + q) / 2.0
@@ -1286,7 +1292,8 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     right_sum = np.sum(right, axis=axis, keepdims=keepdims)
     js = left_sum + right_sum
     if base is not None:
-        js /= np.log(base)
+        js /= np.log(work_dtype.type(base))
+    js = np.clip(js, 0.0, None) # Jensen-Shannon divergence is >= 0; clamp tiny negative due to rounding.
     return np.sqrt(js / 2.0)
 
 
