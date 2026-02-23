@@ -211,23 +211,24 @@ def matrix_transpose(A):
     Parameters
     ----------
     A : sparse array
+        Input array.
 
     Returns
     -------
     sparse array
-        The matrix transpose of `A`
-
-    Notes
-    -----
-    This is equivalent to ``A.T`` for 2-D arrays, and interprets
-    greater dimensional `A` as a stack of 2-D arrays on which
-    to perform the transpose.
+        The matrix transpose of `A`.
 
     See Also
     --------
     coo_array.mT : equivalent attribute
     coo_array.T : full transposition reversing all dimensions
     numpy.matrix_transpose : equivalent function in NumPy
+
+    Notes
+    -----
+    This is equivalent to ``A.T`` for 2-D arrays, and interprets
+    greater dimensional `A` as a stack of 2-D arrays on which
+    to perform the transpose.
 
     Examples
     --------
