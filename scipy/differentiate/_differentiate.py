@@ -138,8 +138,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
           of *any* broadcastable shapes.
 
         - When ``preserve_shape=True``, `f` must accept arguments of shape
-          ``shape`` *or* ``shape + (n,)``, where ``(n,)`` is the number of
-          abscissae at which the function is being evaluated.
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
 
         In either case, for each scalar element ``xi[j]`` within ``xi``, the array
         returned by `f` must include the scalar ``f(xi[j])`` at the same index.
@@ -368,11 +368,11 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     >>> x = np.zeros(4)
     >>> res = derivative(f, x, preserve_shape=True)
     >>> shapes
-    [(4,), (4, 8), (4, 2), (4, 2), (4, 2), (4, 2)]
+    [(4, 1), (4, 8), (4, 2), (4, 2), (4, 2), (4, 2)]
 
-    Here, the shape of ``x`` is ``(4,)``. With ``preserve_shape=True``, the
-    function may be called with argument ``x`` of shape ``(4,)`` or ``(4, n)``,
-    and this is what we observe.
+    Here, the shape of input ``x`` is ``(4,)``. With ``preserve_shape=True``, the
+    callable ``f`` is always called with argument ``x`` of shape ``(4, n)``,
+    where ``n`` is any number of abscissae.
 
     """
     # TODO (followup):

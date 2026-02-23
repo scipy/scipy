@@ -115,8 +115,8 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
           of *any* broadcastable shapes.
 
         - When ``preserve_shape=True``, `f` must accept arguments of shape
-          ``shape`` *or* ``shape + (n,)``, where ``(n,)`` is the number of
-          abscissae at which the function is being evaluated.
+          ``shape + (n,)``, where ``n`` is the number of abscissae at which the
+          function is being evaluated.
 
         In either case, for each scalar element ``xi[j]`` within ``xi``, the array
         returned by `f` must include the scalar ``f(xi[j])`` at the same index.
@@ -320,11 +320,11 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     >>> a = np.zeros(4)
     >>> res = tanhsinh(f, a, 1, preserve_shape=True)
     >>> shapes
-    [(4,), (4, 66), (4, 64), (4, 128), (4, 256)]
+    [(4, 1), (4, 66), (4, 64), (4, 128), (4, 256)]
 
-    Here, the broadcasted shape of `a` and `b` is ``(4,)``. With
-    ``preserve_shape=True``, the function may be called with argument
-    ``x`` of shape ``(4,)`` or ``(4, n)``, and this is what we observe.
+    Here, the broadcasted shape of `a` and `b` is ``(4,)``, so with
+    ``preserve_shape=True``, the callable ``f`` is always called with argument
+    ``x`` of shape ``(4, n)``, where ``n`` is any number of abscissae.
 
     """
     maxfun = None  # unused right now
