@@ -247,7 +247,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
     
     @property
     def mT(self):
-        axes = None if self.ndim <= 2 else tuple(range(self.ndim - 2)) + (-1, -2)
+        if (n := self.ndim) < 2:
+            raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
+        axes = None if n == 2 else tuple(range(n - 2)) + (-1, -2)
         return self.transpose(axes=axes)
     
     mT.__doc__ = _spbase.mT.__doc__

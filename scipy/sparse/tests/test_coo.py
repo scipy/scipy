@@ -481,6 +481,11 @@ def test_nd_transpose(shape):
         trans_arr = matrix_transpose(arr)
         assert trans_arr.shape == exp_arr.shape
         assert_equal(trans_arr.toarray(), exp_arr)
+    else:
+        with pytest.raises(ValueError, match="2-dimensional"):
+            arr.mT
+        with pytest.raises(ValueError, match="2-dimensional"):
+            matrix_transpose(arr)
 
 
 @pytest.mark.parametrize(('shape', 'axis_perm'), [((3,), (0,)),

@@ -407,6 +407,9 @@ class _spbase(SparseABC):
         --------
         scipy.sparse.matrix_transpose : equivalent function
         """
+        if (n := self.ndim) < 2:
+            raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
+        assert self.ndim == 2
         return self.transpose()
 
     @property

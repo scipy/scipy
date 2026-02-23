@@ -2106,6 +2106,8 @@ class _TestCommon:
             assert_array_equal(a.toarray(), b)
             assert_array_equal(a.transpose().toarray(), dat)
             assert_array_equal(datsp.transpose(axes=(1, 0)).toarray(), b)
+            assert_array_equal(datsp.mT.toarray(), b)
+            assert_array_equal(matrix_transpose(datsp).toarray(), b)
             assert_equal(a.dtype, b.dtype)
 
         # See gh-5987

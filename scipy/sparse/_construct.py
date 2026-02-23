@@ -207,16 +207,16 @@ def permute_dims(A, axes=None, copy=False):
 
 def matrix_transpose(A):
     """Return the matrix transpose of `A`.
-    
+
     Parameters
     ----------
     A : sparse array
-    
+
     Returns
     -------
     sparse array
         The matrix transpose of `A`
-        
+
     Notes
     -----
     This is equivalent to ``A.T`` for 2-D arrays, and interprets
@@ -238,16 +238,13 @@ def matrix_transpose(A):
     >>> array.T.toarray()
     array([[[1, 5],
             [3, 7]],
-    
            [[2, 6],
             [4, 8]]])
     >>> matrix_transpose(array).toarray()
     array([[[1, 3],
             [2, 4]],
-    
            [[5, 7],
             [6, 8]]])
-
     """
     return A.mT
 
