@@ -118,7 +118,7 @@ def medazko_sparsity(n):
     cols = np.hstack(cols)
     rows = np.hstack(rows)
 
-    return csc_array((np.ones_like(cols), (cols, rows)))
+    return coo_array((np.ones_like(cols), (cols, rows)))
 
 
 def fun_complex(t, y):
