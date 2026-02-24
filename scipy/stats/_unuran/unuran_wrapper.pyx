@@ -652,8 +652,9 @@ cdef class Method:
 
 
 cdef class TransformedDensityRejection(Method):
-    r"""
-    TransformedDensityRejection(dist, *, mode=None, center=None, domain=None, c=-0.5, construction_points=30, use_dars=True, max_squeeze_hat_ratio=0.99, random_state=None)
+    # the first two lines are used to populate `__text_signature__`
+    r"""TransformedDensityRejection(dist, *, mode=None, center=None, domain=None, c=-0.5, construction_points=30, use_dars=True, max_squeeze_hat_ratio=0.99, random_state=None)
+--
 
     Transformed Density Rejection (TDR) Method.
 
@@ -988,8 +989,9 @@ cdef class TransformedDensityRejection(Method):
 
 
 cdef class SimpleRatioUniforms(Method):
-    r"""
-    SimpleRatioUniforms(dist, *, mode=None, pdf_area=1, domain=None, cdf_at_mode=None, random_state=None)
+    # the first two lines are used to populate `__text_signature__`
+    r"""SimpleRatioUniforms(dist, *, mode=None, pdf_area=1, domain=None, cdf_at_mode=None, random_state=None)
+--
 
     Simple Ratio-of-Uniforms (SROU) Method.
 
@@ -1173,8 +1175,8 @@ UError = namedtuple('UError', ['max_error', 'mean_absolute_error'])
 
 
 cdef class NumericalInversePolynomial(Method):
-    """
-    NumericalInversePolynomial(dist, *, mode=None, center=None, domain=None, order=5, u_resolution=1e-10, random_state=None)
+    # the first line is used to populate `__text_signature__`
+    """NumericalInversePolynomial(dist, *, mode=None, center=None, domain=None, order=5, u_resolution=1e-10, random_state=None)\n--
 
     Polynomial interpolation based INVersion of CDF (PINV).
 
@@ -1700,8 +1702,8 @@ cdef class NumericalInversePolynomial(Method):
 
 
 cdef class NumericalInverseHermite(Method):
-    """
-    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, random_state=None)
+    # the first line is used to populate `__text_signature__`
+    """NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, random_state=None)\n--
 
     Hermite interpolation based INVersion of CDF (HINV).
 
@@ -2193,8 +2195,9 @@ cdef class NumericalInverseHermite(Method):
 
 
 cdef class DiscreteAliasUrn(Method):
-    r"""
-    DiscreteAliasUrn(dist, *, domain=None, urn_factor=1, random_state=None)
+    # the first two lines are used to populate `__text_signature__`
+    r"""DiscreteAliasUrn(dist, *, domain=None, urn_factor=1, random_state=None)
+--
 
     Discrete Alias-Urn Method.
 
@@ -2434,8 +2437,9 @@ cdef class DiscreteAliasUrn(Method):
 
 
 cdef class DiscreteGuideTable(Method):
-    r"""
-    DiscreteGuideTable(dist, *, domain=None, guide_factor=1, random_state=None)
+    # the first two lines are used to populate `__text_signature__`
+    r"""DiscreteGuideTable(dist, *, domain=None, guide_factor=1, random_state=None)
+--
 
     Discrete Guide Table method.
 

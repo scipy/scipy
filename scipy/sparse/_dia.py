@@ -142,13 +142,13 @@ class _dia_base(_data_matrix):
     def sum(self, axis=None, dtype=None, out=None):
         axis = validateaxis(axis)
 
-        res_dtype = get_sum_dtype(self.dtype)
+        res_dtype = dtype if dtype is not None else get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
         ret = None
 
         if axis == (0,):
             mask = self._data_mask()
-            x = (self.data * mask).sum(axis=0)
+            x = (self.data * mask).sum(dtype=res_dtype, axis=0)
             if x.shape[0] == num_cols:
                 res = x
             else:
@@ -160,7 +160,8 @@ class _dia_base(_data_matrix):
             row_sums = np.zeros((num_rows, 1), dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
             dia_matvec(num_rows, num_cols, len(self.offsets),
-                       self.data.shape[1], self.offsets, self.data, one, row_sums)
+                       self.data.shape[1], self.offsets, 
+                       self.data.astype(res_dtype), one, row_sums)
 
             row_sums = self._ascontainer(row_sums)
 
@@ -524,19 +525,24 @@ class dia_array(_dia_base, sparray):
 
     Attributes
     ----------
+    data
+        DIA format data array of the array
+    offsets
+        DIA format offset array of the array
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        DIA format data array of the array
-    offsets
-        DIA format offset array of the array
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'dia'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : dia_array
+        The transpose of the array
 
     Notes
     -----
@@ -600,19 +606,24 @@ class dia_matrix(spmatrix, _dia_base):
 
     Attributes
     ----------
+    data
+        DIA format data array of the matrix
+    offsets
+        DIA format offset array of the matrix
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        DIA format data array of the matrix
-    offsets
-        DIA format offset array of the matrix
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'dia'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : dia_matrix
+        The transpose of the matrix
 
     Notes
     -----

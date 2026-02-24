@@ -16,7 +16,7 @@ from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
-from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._gcutils import assert_deallocated
 from scipy._lib._testutils import _run_concurrent_barrier
 
 from scipy.integrate import nquad
@@ -756,7 +756,6 @@ class TestInterp1D:
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
-    @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)

@@ -251,7 +251,7 @@ if use_system_libraries.contains('none')
 elif use_system_libraries.contains('all')
   all_system_libraries = true
 elif use_system_libraries.contains('auto')
-  auto_system_libraries = true 
+  auto_system_libraries = true
 endif
 
 if all_system_libraries or use_system_libraries.contains('boost.math')

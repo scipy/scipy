@@ -5,8 +5,6 @@ import warnings
 
 from numpy.testing import (assert_, assert_allclose, assert_equal)
 
-import pytest
-from platform import python_implementation
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -105,8 +103,6 @@ class TestLGMRES:
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
 
-    @pytest.mark.skipif(python_implementation() == 'PyPy',
-                        reason="Fails on PyPy CI runs. See #9507")
     def test_arnoldi(self):
         rng = np.random.default_rng(123)
 
