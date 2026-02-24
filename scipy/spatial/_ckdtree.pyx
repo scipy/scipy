@@ -1504,7 +1504,7 @@ cdef class cKDTree:
                    and will change to 'dok_array' in v1.20. The value
                    'dok_matrix' is available until that class is removed.
                    Unless you use * instead of @, ** for matrix power
-                   or depend on 2D shapes from e.g. `A.sum(axis=0)` it may
+                   or depend on 2D shapes from e.g. ``A.sum(axis=0)`` it may
                    not matter to you. See the sparray migration guide.
 
         Returns

@@ -11,6 +11,7 @@ import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
+from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
 
 import itertools
 
@@ -678,10 +679,27 @@ class sparse_distance_matrix_consistency:
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
             output_type='dok_array')
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
+        assert isinstance(r, dok_array)
+        # test return type 'dok_matrix'
+        r = self.T1.sparse_distance_matrix(self.T2, self.r,
+            output_type='dok_matrix')
+        assert_array_almost_equal(ref, r.toarray(), decimal=14)
+        assert isinstance(r, dok_matrix)
         # test return type 'coo_array'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
             output_type='coo_array')
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
+        assert isinstance(r, coo_array)
+        # test return type 'coo_matrix'
+        r = self.T1.sparse_distance_matrix(self.T2, self.r,
+            output_type='coo_matrix')
+        assert_array_almost_equal(ref, r.toarray(), decimal=14)
+        assert isinstance(r, coo_matrix)
+        # test default return type 'dok_matrix'
+        with pytest.warns(DeprecationWarning,
+                          match="The default value for output_type"):
+            r = self.T1.sparse_distance_matrix(self.T2, self.r)
+            assert isinstance(r, dok_matrix)
 
 
     def test_sparse_distance_matrix_output_type_deprecation(self):
