@@ -33,6 +33,20 @@ class spmatrix:
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
         super().__init__(*args, **kwargs)
 
+    def __init__(self, *args, **kwargs):
+        msg = f"""{self.__class__.__name__} is being replaced by {self.format}_array.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The spmatrix classes will be removed no earlier than v1.20.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+        super().__init__(*args, **kwargs)
+
     @property
     def _bsr_container(self):
         from ._bsr import bsr_matrix
