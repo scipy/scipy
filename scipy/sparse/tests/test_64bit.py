@@ -125,6 +125,7 @@ class Test64BitArray(RunAll64Bit):
         self._check_resiliency(cls, method_name)
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class Test64BitMatrix(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
     @pytest.mark.fail_slow(5)
@@ -133,6 +134,7 @@ class Test64BitMatrix(RunAll64Bit):
         self._check_resiliency(cls, method_name, assert_32bit=True)
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class Test64BitMatrixSameAsArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
@@ -180,6 +182,7 @@ class Test64BitArrayExtra(RunAll64Bit):
 
 # Extra: LIL and DOK classes. no direct get_index_dtype, but convert to classes that do
 @pytest.mark.xslow
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class Test64BitMatrixExtra(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
     @pytest.mark.fail_slow(5)
@@ -209,6 +212,7 @@ class Test64BitMatrixExtra(RunAll64Bit):
 
 
 @pytest.mark.thread_unsafe(reason="Fails in parallel for unknown reasons")
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class Test64BitTools:
     # classes that use get_index_dtype
     MAT_CLASSES = [

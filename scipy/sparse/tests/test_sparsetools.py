@@ -4,9 +4,9 @@ import gc
 import threading
 
 import numpy as np
-from numpy.testing import assert_equal, assert_, assert_allclose
-from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
-                          bsr_matrix, dia_matrix)
+from numpy.testing import assert_equal, assert_allclose
+from scipy.sparse import (_sparsetools, coo_array, csr_array, csc_array,
+                          bsr_array, dia_array)
 from scipy.sparse._sputils import supported_dtypes
 from scipy._lib._testutils import check_free_memory
 
@@ -33,7 +33,7 @@ def test_threads():
     niter = 100
 
     n = 20
-    a = csr_matrix(np.ones([n, n]))
+    a = csr_array(np.ones([n, n]))
     bres = []
 
     class Worker(threading.Thread):
@@ -53,7 +53,7 @@ def test_threads():
         thread.join()
 
     for b in bres:
-        assert_(np.all(b.toarray() == 2))
+        assert np.all(b.toarray() == 2)
 
 
 def test_regression_std_vector_dtypes():
@@ -61,10 +61,10 @@ def test_regression_std_vector_dtypes():
     # in sparsetools.cxx are complete.
     for dtype in supported_dtypes:
         ad = np.array([[1, 2], [3, 4]]).astype(dtype)
-        a = csr_matrix(ad, dtype=dtype)
+        a = csr_array(ad, dtype=dtype)
 
-        # getcol is one function using std::vector typemaps, and should not fail
-        assert_equal(a.getcol(0).toarray(), ad[:, :1])
+        # a[:,:1] uses functions with std::vector typemaps, and should not fail
+        assert_equal(a[:, :1].toarray(), ad[:, :1])
 
 
 @pytest.mark.slow
@@ -81,7 +81,7 @@ def test_nnz_overflow():
     col = np.zeros(nnz, dtype=np.int32)
     data = np.zeros(nnz, dtype=np.int8)
     data[-1] = 4
-    s = coo_matrix((data, (row, col)), shape=(1, 1), copy=False)
+    s = coo_array((data, (row, col)), shape=(1, 1), copy=False)
     # Sums nnz duplicates to produce a 1x1 array containing 4.
     d = s.toarray()
 
@@ -118,19 +118,19 @@ class TestInt32Overflow:
         gc.collect()
 
     @pytest.mark.fail_slow(2)  # keep in fast set, only non-slow test
-    def test_coo_todense(self):
-        # Check *_todense routines (cf. gh-2179)
+    def test_coo_toarray(self):
+        # Check *_toarray routines (cf. gh-2179)
         #
-        # All of them in the end call coo_matrix.todense
+        # All of them in the end call coo_array.toarray
 
         n = self.n
 
         i = np.array([0, n-1])
         j = np.array([0, n-1])
         data = np.array([1, 2], dtype=np.int8)
-        m = coo_matrix((data, (i, j)))
+        m = coo_array((data, (i, j)))
 
-        r = m.todense()
+        r = m.toarray()
         assert_equal(r[0,0], 1)
         assert_equal(r[-1,-1], 2)
         del r
@@ -144,10 +144,10 @@ class TestInt32Overflow:
         i = np.array([0, n-1])
         j = np.array([0, n-1])
         data = np.array([1, 2], dtype=np.int8)
-        m = coo_matrix((data, (i, j)))
+        m = coo_array((data, (i, j)))
 
         b = np.ones((n, n), dtype=np.int8)
-        for sptype in (csr_matrix, csc_matrix, bsr_matrix):
+        for sptype in (csr_array, csc_array, bsr_array):
             m2 = sptype(m)
             r = m2.dot(b)
             assert_equal(r[0,0], 1)
@@ -160,11 +160,11 @@ class TestInt32Overflow:
 
     @pytest.mark.slow
     def test_dia_matvec(self):
-        # Check: huge dia_matrix _matvec
+        # Check: huge dia_array _matvec
         n = self.n
         data = np.ones((n, n), dtype=np.int8)
         offsets = np.arange(n)
-        m = dia_matrix((data, offsets), shape=(n, n))
+        m = dia_array((data, offsets), shape=(n, n))
         v = np.ones(m.shape[1], dtype=np.int8)
         r = m.dot(v)
         assert_equal(r[0], int_to_int8(n))
@@ -181,7 +181,7 @@ class TestInt32Overflow:
     @pytest.mark.slow
     @pytest.mark.parametrize("op", _bsr_ops)
     def test_bsr_1_block(self, op):
-        # Check: huge bsr_matrix (1-block)
+        # Check: huge bsr_array (1-block)
         #
         # The point here is that indices inside a block may overflow.
 
@@ -190,7 +190,7 @@ class TestInt32Overflow:
             data = np.ones((1, n, n), dtype=np.int8)
             indptr = np.array([0, 1], dtype=np.int32)
             indices = np.array([0], dtype=np.int32)
-            m = bsr_matrix((data, indices, indptr), blocksize=(n, n), copy=False)
+            m = bsr_array((data, indices, indptr), blocksize=(n, n), copy=False)
             del data, indptr, indices
             return m
 
@@ -203,7 +203,7 @@ class TestInt32Overflow:
     @pytest.mark.slow
     @pytest.mark.parametrize("op", _bsr_ops)
     def test_bsr_n_block(self, op):
-        # Check: huge bsr_matrix (n-block)
+        # Check: huge bsr_array (n-block)
         #
         # The point here is that while indices within a block don't
         # overflow, accumulators across many block may.
@@ -213,7 +213,7 @@ class TestInt32Overflow:
             data = np.ones((n, n, 1), dtype=np.int8)
             indptr = np.array([0, n], dtype=np.int32)
             indices = np.arange(n, dtype=np.int32)
-            m = bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+            m = bsr_array((data, indices, indptr), blocksize=(n, 1), copy=False)
             del data, indptr, indices
             return m
 
@@ -262,12 +262,12 @@ class TestInt32Overflow:
         n = self.n
 
         # _bsr_matmat
-        m2 = bsr_matrix(np.ones((n, 2), dtype=np.int8), blocksize=(m.blocksize[1], 2))
+        m2 = bsr_array(np.ones((n, 2), dtype=np.int8), blocksize=(m.blocksize[1], 2))
         m.dot(m2)  # shouldn't SIGSEGV
         del m2
 
         # _bsr_matmat
-        m2 = bsr_matrix(np.ones((2, n), dtype=np.int8), blocksize=(2, m.blocksize[0]))
+        m2 = bsr_array(np.ones((2, n), dtype=np.int8), blocksize=(2, m.blocksize[0]))
         m2.dot(m)  # shouldn't SIGSEGV
 
 
@@ -283,14 +283,14 @@ def test_csr_matmat_int64_overflow():
     data = np.ones((n,), dtype=np.int8)
     indptr = np.arange(n+1, dtype=np.int64)
     indices = np.zeros(n, dtype=np.int64)
-    a = csr_matrix((data, indices, indptr))
+    a = csr_array((data, indices, indptr))
     b = a.T
 
     assert_raises(RuntimeError, a.dot, b)
 
 
 def test_upcast():
-    a0 = csr_matrix([[np.pi, np.pi*1j], [3, 4]], dtype=complex)
+    a0 = csr_array([[np.pi, np.pi*1j], [3, 4]], dtype=complex)
     b0 = np.array([256+1j, 2**32], dtype=complex)
 
     for a_dtype in supported_dtypes:
@@ -332,8 +332,8 @@ def test_endianness():
     d = np.ones((3,4))
     offsets = [-1,0,1]
 
-    a = dia_matrix((d.astype('<f8'), offsets), (4, 4))
-    b = dia_matrix((d.astype('>f8'), offsets), (4, 4))
+    a = dia_array((d.astype('<f8'), offsets), (4, 4))
+    b = dia_array((d.astype('>f8'), offsets), (4, 4))
     v = np.arange(4)
 
     assert_allclose(a.dot(v), [1, 3, 6, 5])
