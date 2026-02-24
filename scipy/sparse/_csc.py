@@ -5,6 +5,8 @@ __all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
 
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
@@ -172,6 +174,17 @@ def isspmatrix_csc(x):
     >>> isspmatrix_csc(coo_matrix([[5]]))
     False
     """
+    msg = """`isspmatrix_csc` is being replaced by `self.format == "csc" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_csc function will be removed no earlier than v1.20.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, csc_matrix)
 
 

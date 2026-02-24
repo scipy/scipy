@@ -5,6 +5,8 @@ __docformat__ = "restructuredtext en"
 __all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
+import os
+from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
@@ -317,6 +319,17 @@ def isspmatrix_csr(x):
     >>> isspmatrix_csr(coo_matrix([[5]]))
     False
     """
+    msg = """`isspmatrix_csr` is being replaced by `self.format == "csr" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_csr function will be removed no earlier than v1.20.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, csr_matrix)
 
 
