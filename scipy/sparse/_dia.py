@@ -5,6 +5,8 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
+import os
+from warnings import warn
 
 from .._lib._util import _prune_array, copy_if_needed
 from ._matrix import spmatrix
@@ -509,6 +511,17 @@ def isspmatrix_dia(x):
     >>> isspmatrix_dia(coo_matrix([[5]]))
     False
     """
+    msg = """`isspmatrix_dia` is being replaced by `self.format == "dia" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_dia function will be removed no earlier than v1.20.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, dia_matrix)
 
 
