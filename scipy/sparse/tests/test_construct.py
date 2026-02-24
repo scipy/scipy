@@ -38,6 +38,7 @@ def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, rng=None):
                                   rng=rng, data_sampler=data_sampler)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 class TestConstructUtils:
 
     @pytest.mark.parametrize("cls", [
@@ -904,6 +905,7 @@ def test_diags_array():
         construct.diags(np.arange(1.0, 5.0), 5, shape=(4, 4))
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
 def test_diags_int(func):
     d = [[3], [1, 2], [4]]
@@ -916,6 +918,7 @@ def test_diags_int(func):
     assert_array_equal(arr.toarray(), expected, strict=True)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
 def test_diags_int_to_float64(func):
     d = [[3], [1, 2], [4]]
