@@ -7,7 +7,10 @@ import scipy as sp
 from scipy.sparse import dok_array, dok_matrix
 
 
-pytestmark = pytest.mark.thread_unsafe
+pytestmark = [
+    pytest.mark.thread_unsafe,
+    pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
+]
 
 
 @pytest.fixture

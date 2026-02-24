@@ -204,6 +204,7 @@ def test_inv(B):
     npt.assert_allclose(C.todense(), np.linalg.inv(B.todense()))
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 @parametrize_square_sparrays
 def test_expm(B):
     if B.__class__.__name__[:3] != 'csc':
@@ -419,27 +420,32 @@ def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
             assert getattr(result, attr).dtype == expected_dtype
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_diags():
     m = scipy.sparse.diags([0.0, 1.0, 2.0])
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_eye():
     m = scipy.sparse.eye(3)
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_spdiags():
     m = scipy.sparse.spdiags([1.0, 2.0, 3.0], 0, 3, 3)
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_identity():
     m = scipy.sparse.identity(3)
     assert not isinstance(m, scipy.sparse.sparray)
 
 
 @pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_kron_dense():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]])
@@ -448,6 +454,7 @@ def test_default_is_matrix_kron_dense():
 
 
 @pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_kron_sparse():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]])
@@ -456,6 +463,7 @@ def test_default_is_matrix_kron_sparse():
 
 
 @pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_kronsum():
     m = scipy.sparse.kronsum(
         np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]])
@@ -463,17 +471,20 @@ def test_default_is_matrix_kronsum():
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_random():
     m = scipy.sparse.random(3, 3)
     assert not isinstance(m, scipy.sparse.sparray)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_rand():
     m = scipy.sparse.rand(3, 3)
     assert not isinstance(m, scipy.sparse.sparray)
 
 
 @pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_stacks(fn):
     """Same idea as `test_default_construction_fn_matrices`, but for the
     stacking creation functions."""
@@ -484,6 +495,7 @@ def test_default_is_matrix_stacks(fn):
 
 
 @pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_blocks_default_construction_fn_matrices():
     """Same idea as `test_default_construction_fn_matrices`, but block functions"""
     A = scipy.sparse.coo_matrix(np.eye(2))
@@ -522,6 +534,7 @@ def test_format_property():
             M.format = "qqq"
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_issparse():
     m = scipy.sparse.eye(3)
     a = scipy.sparse.csr_array(m)
@@ -537,6 +550,7 @@ def test_issparse():
     assert not scipy.sparse.issparse(m.todense())
 
 
+@pytest.mark.filterwarnings(f"ignore:.* is being repl:DeprecationWarning")
 def test_isspmatrix():
     m = scipy.sparse.eye(3)
     a = scipy.sparse.csr_array(m)
@@ -564,6 +578,8 @@ def test_isspmatrix():
         ("lil", scipy.sparse.isspmatrix_lil),
     ),
 )
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
+@pytest.mark.filterwarnings(f"ignore:.*spmatrix:DeprecationWarning")
 def test_isspmatrix_format(fmt, fn):
     m = scipy.sparse.eye(3, format=fmt)
     a = scipy.sparse.csr_array(m).asformat(fmt)

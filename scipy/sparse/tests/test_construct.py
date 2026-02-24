@@ -38,6 +38,7 @@ def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, rng=None):
                                   rng=rng, data_sampler=data_sampler)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 class TestConstructUtils:
 
     @pytest.mark.parametrize("cls", [
@@ -901,6 +902,7 @@ class TestConstructUtils:
         assert_equal(sparse_array.count_nonzero(),172)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 def test_deprecated_warnings_output_defaults_switch_from_spmatrix():
     A = B = np.array([[1, 0], [1, 0]])
     with pytest.deprecated_call(match=".*switching.*sparse array int"):
@@ -932,6 +934,7 @@ def test_diags_array():
         construct.diags(np.arange(1.0, 5.0), 5, shape=(4, 4))
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('func', (construct.diags_array, construct.diags))
 def test_diags_int(func):
     d = [[3], [1, 2], [4]]
