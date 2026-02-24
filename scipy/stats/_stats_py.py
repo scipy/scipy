@@ -4113,7 +4113,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = [_length_nonmasked(sample, axis=-1, xp=xp) for sample in samples]
+    lengths = [_count_nonmasked(sample, axis=-1, xp=xp) for sample in samples]
     means = xp.stack([_xp_mean(sample, axis=-1) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -10632,7 +10632,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     # _axis_nan_policy decorator ensures that `axis=-1`
     x, y = _share_masks(x, y, xp=xp)
-    n = _length_nonmasked(x, axis=-1, keepdims=False, xp=xp)
+    n = _count_nonmasked(x, axis=-1, keepdims=False, xp=xp)
     xmean = xp.mean(x, axis=-1, keepdims=True)
     ymean = xp.mean(y, axis=-1, keepdims=True)
 

@@ -3451,7 +3451,7 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
             # keepdims=True doesn't currently work for Dask
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    Nis = [_length_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+    Nis = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
            for sample in samples]
     Ycis = [func(sample) for sample in samples]
     Ntot = sum(Nis)
@@ -3869,8 +3869,8 @@ def wilcoxon_outputs(kwds):
                                 ("cupy", "no rankdata")],
                  cpu_only=True,  # null distribution is CPU only
                  extra_note=("``method='auto'`` is incompatible with JAX arrays. "
-                             "Only `method='asymptotic'`/`zero_method='zsplit'` is compatible "
-                             "with MArrays."))
+                             "Only `method='asymptotic'`/`zero_method='zsplit'` is "
+                             "compatible with MArrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
