@@ -9712,7 +9712,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> from scipy.stats import wasserstein_distance
 
     When no weights are provided, each value is treated as a single unit
-    mass at that location:
+    of probability mass at that location:
+
     >>> wasserstein_distance([0, 1, 3], [5, 6, 8])
     5.0
 
@@ -9720,7 +9721,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     (e.g. "shovelsful of dirt" in the Earth mover's distance analogy [2]_)
     at each location. Weights are normalized internally to sum to 1:
 
-    >>> wasserstein_distance([0, 1], [0, 1], [3, 1], [2, 2])
+    >>> wasserstein_distance([0, 1], [0, 1], u_weights=[3, 1], v_weights=[2, 2])
     0.25
     >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
