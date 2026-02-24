@@ -742,6 +742,18 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     --------
     eye_array : Sparse array of chosen shape with ones on a specified diagonal.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy as sp
+    >>> sp.sparse.eye(3).toarray()
+    array([[ 1.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  1.]])
+    >>> sp.sparse.eye(3, dtype=np.int8)
+    <DIAgonal sparse matrix of dtype 'int8'
+        with 3 stored elements (1 diagonals) and shape (3, 3)>
+
     """
     return _eye(m, n, k, dtype, format, False)
 
