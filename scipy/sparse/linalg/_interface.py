@@ -1146,16 +1146,26 @@ class IdentityOperator(LinearOperator):
         super().__init__(dtype, shape, xp)
 
     def _matvec(self, x):
-        return x
+        xp = self._xp
+        shape = np.broadcast_shapes(self.shape[:-1], x.shape)
+        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
 
     def _rmatvec(self, x):
-        return x
+        xp = self._xp
+        shape = np.broadcast_shapes((*self.shape[:-2], self.shape[-1]), x.shape)
+        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
 
     def _rmatmat(self, x):
-        return x
+        xp = self._xp
+        batch_shape = np.broadcast_shapes(self.shape[:-2], x.shape[:-2])
+        shape = (*batch_shape, self.shape[-1], x.shape[-1])
+        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
 
     def _matmat(self, x):
-        return x
+        xp = self._xp
+        batch_shape = np.broadcast_shapes(self.shape[:-2], x.shape[:-2])
+        shape = (*batch_shape, self.shape[-2], x.shape[-1])
+        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
 
     def _adjoint(self):
         return self
