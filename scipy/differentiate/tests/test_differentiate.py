@@ -439,6 +439,19 @@ class TestDerivative:
         assert np.all(res.success)
         xp_assert_close(res.df, 0, atol=atol)
 
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**p + c*x
+
+        x = xp.asarray(1.23, dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = derivative(f, x, args=(c,), kwargs={'p': p})
+        ref = p*x**(p-1.) + c
+        xp_assert_close(res.df, ref)
+
 
 class JacobianHessianTest:
     def test_iv(self, xp):

@@ -1687,22 +1687,26 @@ class coo_array(_coo_base, sparray):
 
     Attributes
     ----------
-    dtype : dtype
-        Data type of the sparse array
-    shape : tuple of integers
-        Shape of the sparse array
-    ndim : int
-        Number of dimensions of the sparse array
-    nnz
-    size
-    data
+    data : ndarray
         COO format data array of the sparse array
-    coords
+    coords : tuple of ndarray
         COO format tuple of index arrays
     has_canonical_format : bool
         Whether the matrix has sorted coordinates and no duplicates
-    format
-    T
+    dtype : dtype
+        Data type of the array
+    shape : tuple of integers
+        Shape of the array
+    ndim : int
+        Number of dimensions of the array
+    format : str
+        Three letter code for the format of the array storage, e.g. 'coo'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : coo_array
+        The transpose of the array
 
     Notes
     -----
@@ -1799,24 +1803,26 @@ class coo_matrix(spmatrix, _coo_base):
 
     Attributes
     ----------
+    data : ndarray
+        COO format data array of the sparse matrix
+    coords : tuple of ndarray
+        COO format tuple of index matrix
+    has_canonical_format : bool
+        Whether the matrix has sorted coordinates and no duplicates
     dtype : dtype
         Data type of the matrix
-    shape : 2-tuple
+    shape : tuple of integers
         Shape of the matrix
     ndim : int
-        Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        COO format data array of the matrix
-    row
-        COO format row index array of the matrix
-    col
-        COO format column index array of the matrix
-    has_canonical_format : bool
-        Whether the matrix has sorted indices and no duplicates
-    format
-    T
+        Number of dimensions of the matrix
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'coo'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : coo_matrix
+        The transpose of the matrix
 
     Notes
     -----

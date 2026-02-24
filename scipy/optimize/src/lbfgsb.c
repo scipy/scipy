@@ -2472,67 +2472,69 @@ lnsrlb(int n, double* l, double* u, int* nbd, double* x,
     //     **********
     int i, one_int = 1;
     double a1, a2, ftol = 1e-3, gtol = 0.9, xtol = 0.1;
-    if (*task_msg == FG_LNSRCH) { goto LINE556; }
 
-    *dnorm = dnrm2_(&n, d, &one_int);
-    *dtd = pow(*dnorm, 2.0);
+    if (*task_msg != FG_LNSRCH) {
 
-    // Determine the maximum step length.
-    *stpmx = 1.0e+10;
-    if (cnstnd)
-    {
-        if (iter == 0)
+        *dnorm = dnrm2_(&n, d, &one_int);
+        *dtd = pow(*dnorm, 2.0);
+
+        // Determine the maximum step length.
+        *stpmx = 1.0e+10;
+        if (cnstnd)
         {
-            *stpmx = 1.0;
-        } else {
-            for (i = 0; i < n; i++)
+            if (iter == 0)
             {
-                a1 = d[i];
-                if (nbd[i] != 0)
+                *stpmx = 1.0;
+            } else {
+                for (i = 0; i < n; i++)
                 {
-                    if ((a1 < 0.0) && (nbd[i] <= 2))
+                    a1 = d[i];
+                    if (nbd[i] != 0)
                     {
-                        a2 = l[i] - x[i];
-                        if (a2 >= 0.0)
+                        if ((a1 < 0.0) && (nbd[i] <= 2))
                         {
-                            *stpmx = 0.0;
-                        } else if (a1*(*stpmx) < a2) {
-                            *stpmx = a2 / a1;
-                        }
-                    } else if ((a1 > 0.0) && (nbd[i] >= 2)) {
-                        a2 = u[i] - x[i];
-                        if (a2 <= 0.0)
-                        {
-                            *stpmx = 0.0;
-                        } else if (a1*(*stpmx) > a2) {
-                            *stpmx = a2 / a1;
+                            a2 = l[i] - x[i];
+                            if (a2 >= 0.0)
+                            {
+                                *stpmx = 0.0;
+                            } else if (a1*(*stpmx) < a2) {
+                                *stpmx = a2 / a1;
+                            }
+                        } else if ((a1 > 0.0) && (nbd[i] >= 2)) {
+                            a2 = u[i] - x[i];
+                            if (a2 <= 0.0)
+                            {
+                                *stpmx = 0.0;
+                            } else if (a1*(*stpmx) > a2) {
+                                *stpmx = a2 / a1;
+                            }
                         }
                     }
                 }
+                // 43
             }
-            // 43
         }
+
+        if ((iter == 0) && (!(boxed)))
+        {
+            *stp = fmin(1.0 / (*dnorm), *stpmx);
+        } else {
+            *stp = 1.0;
+        }
+
+        for (i = 0; i < n; i++)
+        {
+            t[i] = x[i];
+            r[i] = g[i];
+        }
+
+        *fold = f;  // Later used in mainlb, see control flow after returning from this function.
+        *ifun = 0;
+        *iback = 0;
+        *temp_task = START;
+        *temp_taskmsg = NO_MSG;
     }
 
-    if ((iter == 0) && (!(boxed)))
-    {
-        *stp = fmin(1.0 / (*dnorm), *stpmx);
-    } else {
-        *stp = 1.0;
-    }
-
-    for (i = 0; i < n; i++)
-    {
-        t[i] = x[i];
-        r[i] = g[i];
-    }
-
-    *fold = f;  // Later used in mainlb, see control flow after returning from this function.
-    *ifun = 0;
-    *iback = 0;
-    *temp_task = START;
-    *temp_taskmsg = NO_MSG;
-LINE556:
     *gd = ddot_(&n, g, &one_int, d, &one_int);
     if (*ifun == 0)
     {

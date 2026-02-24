@@ -83,8 +83,8 @@ op_sym = {operator.eq: '==', operator.ge: '>=', operator.le: '<=',
 # via `scipy._lib._sparse.issparse`, without introducing
 # an import dependency on `scipy.sparse`.
 class _spbase(SparseABC):
-    """ This class provides a base class for all sparse arrays.  It
-    cannot be instantiated.  Most of the work is provided by subclasses.
+    """ This class provides a base class for all sparse array and matrix classes.
+    It cannot be instantiated.  Most of the work is provided by subclasses.
     """
 
     __array_priority__ = 10.1
@@ -1417,6 +1417,13 @@ class _spbase(SparseABC):
         # Mimic numpy's casting.
         res_dtype = get_sum_dtype(self.dtype)
 
+        if dtype is not None:
+            # Before casting to the requested dtype, canonicalize duplicates and zeros.
+            if hasattr(self, 'sum_duplicates'):
+                self.sum_duplicates()
+            temp = self.astype(dtype, copy=False).sum(axis=axis, dtype=None, out=out)
+            return temp.astype(dtype, copy=False)
+
         # Note: all valid 1D axis values are canonically `None`.
         if axis is None:
             if self.nnz == 0:
@@ -1649,7 +1656,11 @@ class _spbase(SparseABC):
 
 
 class sparray:
-    """A namespace class to separate sparray from spmatrix"""
+    """A namespace class to separate sparray from spmatrix.
+
+    This class serves as the namespace for SciPy sparse array types.
+    It cannot be instantiated and is designed as a mixin class.
+    """
 
     @classmethod
     def __class_getitem__(cls, arg, /):

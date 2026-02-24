@@ -3330,7 +3330,9 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+                 extra_note="Option ``center='trimmed'`` is incompatible with MArray."
+                 )
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3441,12 +3443,16 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
             return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
+        if is_marray(xp):
+            message = "`center='trimmed'` is incompatible with MArray."
+            raise ValueError(message)
 
         def func(x):
-            # keepdims=True doesn't currently work for lazy arrays
+            # keepdims=True doesn't currently work for Dask
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    Nis = [sample.shape[-1] for sample in samples]
+    Nis = [_length_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+           for sample in samples]
     Ycis = [func(sample) for sample in samples]
     Ntot = sum(Nis)
 
@@ -3467,9 +3473,12 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
+    dfd = xp.squeeze(dfd, axis=-1) if is_marray(xp) else dfd
     dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
-    return LeveneResult(W[()], pval[()])
+    W = W[()] if W.ndim == 0 else W
+    pval = pval[()] if pval.ndim == 0 else pval
+    return LeveneResult(W, pval)
 
 
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))

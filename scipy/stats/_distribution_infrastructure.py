@@ -9,14 +9,13 @@ import numpy as np
 from numpy import inf
 
 from scipy._lib._array_api import xp_capabilities, xp_promote
-from scipy._lib._util import _rng_spawn, _RichResult
+from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy._external import array_api_extra as xpx
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
-from scipy.optimize._bracket import _bracket_root, _bracket_minimum
-from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
+from scipy.optimize import elementwise
 from scipy.stats._probability_distribution import _ProbabilityDistribution
 from scipy.stats import qmc
 
@@ -1197,28 +1196,6 @@ def _fiinfo(x):
         return np.iinfo(x)
 
 
-def _kwargs2args(f, args=None, kwargs=None):
-    # Wraps a function that accepts a primary argument `x`, secondary
-    # arguments `args`, and secondary keyward arguments `kwargs` such that the
-    # wrapper accepts only `x` and `args`. The keyword arguments are extracted
-    # from `args` passed into the wrapper, and these are passed to the
-    # underlying function as `kwargs`.
-    # This is a temporary workaround until the scalar algorithms `_tanhsinh`,
-    # `_chandrupatla`, etc., support `kwargs` or can operate with compressing
-    # arguments to the callable.
-    args = args or []
-    kwargs = kwargs or {}
-    names = list(kwargs.keys())
-    n_args = len(args)
-
-    def wrapped(x, *args):
-        return f(x, *args[:n_args], **dict(zip(names, args[n_args:])))
-
-    args = tuple(args) + tuple(kwargs.values())
-
-    return wrapped, args
-
-
 def _logexpxmexpy(x, y):
     """ Compute the log of the difference of the exponentials of two arguments.
 
@@ -2033,75 +2010,43 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ## Algorithms
 
-    def _quadrature(self, integrand, limits=None, args=None,
-                    params=None, log=False):
-        # Performs numerical integration of an integrand between limits.
-        # Much of this should be added to `_tanhsinh`.
+    def _quadrature(self, integrand, limits=None, args=(), params=None, log=False):
+        # Performs numerical integration/summation between limits or over support.
         a, b = self._support(**params) if limits is None else limits
-        a, b = np.broadcast_arrays(a, b)
-        if not a.size:
-            # maybe need to figure out result type from a, b
-            return np.empty(a.shape, dtype=self._dtype)
-        args = [] if args is None else args
-        params = {} if params is None else params
-        f, args = _kwargs2args(integrand, args=args, kwargs=params)
-        args = np.broadcast_arrays(*args)
-        # If we know the median or mean, consider breaking up the interval
         rtol = None if _isnull(self.tol) else self.tol
+
         # For now, we ignore the status, but I want to return the error estimate
         if isinstance(self, ContinuousDistribution):
-            res = _tanhsinh(f, a, b, args=args, log=log, rtol=rtol)
-            return res.integral
+            return _tanhsinh(integrand, a, b, args=args, kwargs=params,
+                             log=log, rtol=rtol).integral
         else:
-            res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum
-            res = np.asarray(res)
-            # The result should be nan when parameters are nan, so need to special
-            # case this.
-            cond = np.isnan(params.popitem()[1]) if params else np.True_
-            cond = np.broadcast_to(cond, a.shape)
-            res[(a > b)] = -np.inf if log else 0  # fix in nsum? See gh-22321
-            res[cond] = np.nan
+            res = nsum(integrand, a, b, args=args, kwargs=params,
+                       log=log, tolerances=dict(rtol=rtol)).sum
 
-            return res[()]
+            # b > a -> sum is zero... unless the parameters are nan.
+            # (Resolving gh-22321 should fix this in nsum.)
+            cond = np.isnan(params.popitem()[1]) if params else np.True_
+            return np.where(cond, np.nan, res)[()]
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
         # Finds the argument of a function that produces the desired output.
-        # Much of this should be added to _bracket_root / _chandrupatla.
         xmin, xmax = self._support(**params) if bounds is None else bounds
-        params = {} if params is None else params
-
-        p, xmin, xmax = np.broadcast_arrays(p, xmin, xmax)
-        if not p.size:
-            # might need to figure out result type based on p
-            res = _RichResult()
-            empty = np.empty(p.shape, dtype=self._dtype)
-            res.xl, res.x, res.xr = empty, empty, empty
-            res.fl, res.fr = empty, empty
 
         def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
             return f(x, **kwargs) - _p
 
-        f3, args = _kwargs2args(f2, args=[p], kwargs=params)
-        # If we know the median or mean, should use it
-
-        # Any operations between 0d array and a scalar produces a scalar, so...
-        shape = xmin.shape
-        xmin, xmax = np.atleast_1d(xmin, xmax)
-
         xl0, xr0 = _guess_bracket(xmin, xmax)
-        xmin = xmin.reshape(shape)
-        xmax = xmax.reshape(shape)
-        xl0 = xl0.reshape(shape)
-        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
+        res = elementwise.bracket_root(f2, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
+                                       args=(p,), kwargs=params)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate.
 
         xrtol = None if _isnull(self.tol) else self.tol
         xatol = None if xatol is None else xatol
         tolerances = dict(xrtol=xrtol, xatol=xatol, fatol=0, frtol=0)
-        return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, **tolerances)
+        return elementwise.find_root(f2, res.bracket, args=(p,),
+                                     kwargs=params, tolerances=tolerances)
 
     ## Other
 
@@ -2146,7 +2091,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # params - a dictionary of distribution shape parameters passed by
     #          the public method.
     # Dispatch methods accept `params` rather than relying on the state of the
-    # object because iterative algorithms like `_tanhsinh` and `_chandrupatla`
+    # object because iterative algorithms like `tanhsinh` and `find_root`
     # need their callable to follow a strict elementwise protocol: each element
     # of the output is determined solely by the values of the inputs at the
     # corresponding location. The public methods do not satisfy this protocol
@@ -2319,21 +2264,24 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _mode_optimization(self, xatol=None, **params):
-        if not self._size:
-            return np.empty(self._shape, dtype=self._dtype)
-
         a, b = self._support(**params)
         m = self._median_dispatch(**params)
 
-        f, args = _kwargs2args(lambda x, **params: -self._pxf_dispatch(x, **params),
-                               args=(), kwargs=params)
-        res_b = _bracket_minimum(f, m, xmin=a, xmax=b, args=args)
-        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr,
-                                     args=args, xatol=xatol)
+        def f(x, **params):
+            return -self._pxf_dispatch(x, **params)
+
+        res_b = elementwise.bracket_minimum(f, m, xmin=a, xmax=b, kwargs=params)
+        res = elementwise.find_minimum(f, res_b.bracket, kwargs=params,
+                                       tolerances=dict(xatol=xatol))
         mode = np.asarray(res.x)
+
+        # bracket_minimum fails with status == -1 if the mode is at a boundary.
+        # We have to consider this as a special case; there's no way to include
+        # this logic in find_minimum; it has to treat the bracket as invalid.
         mode_at_boundary = res_b.status == -1
-        mode_at_left = mode_at_boundary & (res_b.fl <= res_b.fm)
-        mode_at_right = mode_at_boundary & (res_b.fr < res_b.fm)
+        fl, fm, fr = res_b.bracket
+        mode_at_left = mode_at_boundary & (fl <= fm)
+        mode_at_right = mode_at_boundary & (fr < fm)
         mode[mode_at_left] = a[mode_at_left]
         mode[mode_at_right] = b[mode_at_right]
         return mode[()]
@@ -3705,7 +3653,7 @@ class DiscreteDistribution(UnivariateDistribution):
         # F(floor(xr) - 1) < p (strictly) because floor(xr) - 1 < xl and F decreases
         # monotonically as the argument decreases. So we choose x = floor(xr), and
         # later we'll choose between x* = x and x* = x + 1.
-        x = np.asarray(np.floor(res.xr))
+        x = np.asarray(np.floor(res.bracket[-1]))
         # This is also suitable for case 2b. Because G is a *decreasing* function, we
         # know that G(xr) <= p (and G(xl) >= p), so G(floor(xr) + 1) <= p.
         # G(floor(xr)) *may* be <= p, but we can't know until we evaluate it.
@@ -3724,7 +3672,7 @@ class DiscreteDistribution(UnivariateDistribution):
         #    floor(res.x) + 1 is again the solution to the discrete problem.
         # Either way, we can choose x = res.x, and at the end we'll choose between
         # x* = x and x* = x + 1.
-        mask = res.fun == 0
+        mask = res.f_x == 0
         x[mask] = np.floor(res.x[mask])
 
         # For case 3, let xmin be the left endpoint of the support, and note that in
@@ -5299,8 +5247,8 @@ class Mixture(_ProbabilityDistribution):
         self._raise_if_method(method)
         a, b = self.support()
         def f(x): return -self.pdf(x)
-        res = _bracket_minimum(f, 1., xmin=a, xmax=b)
-        res = _chandrupatla_minimize(f, res.xl, res.xm, res.xr)
+        res = elementwise.bracket_minimum(f, 1., xmin=a, xmax=b)
+        res = elementwise.find_minimum(f, res.bracket)
         return res.x
 
     def median(self, *, method=None):
@@ -5402,8 +5350,9 @@ class Mixture(_ProbabilityDistribution):
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
         xl0, xr0 = _guess_bracket(xmin, xmax)
-        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
-        return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
+        res = elementwise.bracket_root(f, xl0=xl0, xr0=xr0,
+                                       xmin=xmin, xmax=xmax, args=(p,))
+        return elementwise.find_root(f, res.bracket, args=(p,)).x
 
     def icdf(self, p, /, *, method=None):
         self._raise_if_method(method)
