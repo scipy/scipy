@@ -555,7 +555,8 @@ class TestChandrupatlaMinimize:
         ref = xp.stack([xp.full(shape[1:], 0.), xp.full(shape[1:], 1.),
                         xp.full(shape[1:], 2.), xp.full(shape[1:], 3.)])
         res = find_minimum(f, (a, c, b), args=(xp.asarray(2.),), preserve_shape=True)
-        xp_assert_close(res.x, ref, atol=1e-8)
+        atol = 1e-5 if ref.dtype == xp.float32 else 1e-8
+        xp_assert_close(res.x, ref, atol=atol)
 
 
 @make_xp_test_case(find_root)
