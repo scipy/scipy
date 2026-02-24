@@ -11,7 +11,22 @@ Abstract linear operators
    :toctree: generated/
 
    LinearOperator -- abstract representation of a linear operator
+   MatrixLinearOperator -- LinearOperator wrapping a matrix
+   IdentityOperator -- LinearOperator representing the identity operator
    aslinearoperator -- convert an object to an abstract linear operator
+   
+.. autosummary::
+   :toctree: generated/
+   :hidden:
+   
+   priority
+   MinimalArrayProtocol
+   ArrayProtocol
+   MinimalMatrixProtocol
+   MatrixProtocol
+   AsLinearOperatorDunderProtocol
+   AsLinearOperatorProtocol
+   
 
 Matrix Operations
 -----------------
@@ -144,6 +159,8 @@ from ._special_sparse_arrays import *
 from . import isolve, dsolve, interface, eigen, matfuncs
 
 __all__ = [s for s in dir() if not s.startswith('_')]
+
+from ._interface import priority, MinimalArrayProtocol, ArrayProtocol, MinimalMatrixProtocol, MatrixProtocol, AsLinearOperatorDunderProtocol, AsLinearOperatorProtocol
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

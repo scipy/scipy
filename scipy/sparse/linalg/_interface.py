@@ -1,553 +1,474 @@
-"""Abstract linear algebra library.
-
-This module defines a class hierarchy that implements a kind of "lazy"
-matrix representation, called the ``LinearOperator``. It can be used to do
-linear algebra with extremely large sparse or structured matrices, without
-representing those explicitly in memory. Such matrices can be added,
-multiplied, transposed, etc.
-
-As a motivating example, suppose you want have a matrix where almost all of
-the elements have the value one. The standard sparse matrix representation
-skips the storage of zeros, but not ones. By contrast, a LinearOperator is
-able to represent such matrices efficiently. First, we need a compact way to
-represent an all-ones matrix::
-
-    >>> import numpy as np
-    >>> from scipy.sparse.linalg._interface import LinearOperator
-    >>> class Ones(LinearOperator):
-    ...     def __init__(self, shape):
-    ...         super().__init__(dtype=None, shape=shape)
-    ...     def _matvec(self, x):
-    ...         return np.repeat(x.sum(), self.shape[0])
-
-Instances of this class emulate ``np.ones(shape)``, but using a constant
-amount of storage, independent of ``shape``. The ``_matvec`` method specifies
-how this linear operator multiplies with (operates on) a vector. We can now
-add this operator to a sparse matrix that stores only offsets from one::
-
-    >>> from scipy.sparse.linalg._interface import aslinearoperator
-    >>> from scipy.sparse import csr_array
-    >>> offsets = csr_array([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
-    >>> A = aslinearoperator(offsets) + Ones(offsets.shape)
-    >>> A.dot([1, 2, 3])
-    array([13,  4, 15])
-
-The result is the same as that given by its dense, explicitly-stored
-counterpart::
-
-    >>> (np.ones(A.shape, A.dtype) + offsets.toarray()).dot([1, 2, 3])
-    array([13,  4, 15])
-
-Several algorithms in the ``scipy.sparse`` library are able to operate on
-``LinearOperator`` instances.
-"""
-
-import types
-import warnings
+from __future__ import annotations
 
 import numpy as np
 
-from scipy.sparse import issparse
-from scipy.sparse._sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
+from scipy.sparse import issparse, sparray
 
-__all__ = ['LinearOperator', 'aslinearoperator']
+from collections.abc import Callable
+from typing import Protocol, TypeVar
+from numbers import Number
+
+__all__ = ['LinearOperator', 'MatrixLinearOperator', 'IdentityOperator', 'aslinearoperator']
+
+def priority(func):
+    """Priority decorater to request ``NotImplemented``.
+    
+    Protocoll to provide interoperability between `LinearOperator` and unknown / custom classes.
+    
+    Consider the operation ``A @ B``, then python will first try to call ``A.__matmul__(B)``. Only if this returns ``NotImplemented``, python will then try to call ``B.__rmatmul__(A)``.
+    
+    If ``A`` is a `LinearOperator`, the object ``B`` might request a ``NotImplemented`` from ``A`` to take over the operation by adding the atribute ``__linop_priority__`` to ``B`` with a value higher than the ``__linop_priority__`` of ``A`` (which is 0.0 by default).
+    """
+    def priority_wrapper(self: LinearOperator, other):
+        if self.__linop_priority__ < getattr(other,  '__linop_priority__', -1.0):
+                return NotImplemented
+        return func(self, other)
+    return priority_wrapper
 
 
-class LinearOperator:
-    """Common interface for performing matrix vector products.
+##############################################################
+# Array Protocol
+##############################################################
 
-    Many iterative methods (e.g. `cg`, `gmres`) do not need to know the
-    individual entries of a matrix to solve a linear system ``A@x = b``.
-    Such solvers only require the computation of matrix vector
-    products, ``A@v`` where ``v`` is a dense vector.  This class serves as
-    an abstract interface between iterative solvers and matrix-like
-    objects.
-
-    To construct a concrete `LinearOperator`, either pass appropriate
-    callables to the constructor of this class, or subclass it.
-
-    A subclass must implement either one of the methods ``_matvec``
-    and ``_matmat``, and the attributes/properties ``shape`` (pair of
-    integers) and ``dtype`` (may be None). It may call the ``__init__``
-    on this class to have these attributes validated. Implementing
-    ``_matvec`` automatically implements ``_matmat`` (using a naive
-    algorithm) and vice-versa.
-
-    Optionally, a subclass may implement ``_rmatvec`` or ``_adjoint``
-    to implement the Hermitian adjoint (conjugate transpose). As with
-    ``_matvec`` and ``_matmat``, implementing either ``_rmatvec`` or
-    ``_adjoint`` implements the other automatically. Implementing
-    ``_adjoint`` is preferable; ``_rmatvec`` is mostly there for
-    backwards compatibility.
-
-    Parameters
-    ----------
-    shape : tuple
-        Matrix dimensions ``(M, N)``.
-    matvec : callable f(v)
-        Returns returns ``A @ v``.
-    rmatvec : callable f(v)
-        Returns ``A^H @ v``, where ``A^H`` is the conjugate transpose of ``A``.
-    matmat : callable f(V)
-        Returns ``A @ V``, where ``V`` is a dense matrix with dimensions ``(N, K)``.
-    dtype : dtype
-        Data type of the matrix.
-    rmatmat : callable f(V)
-        Returns ``A^H @ V``, where ``V`` is a dense matrix with dimensions ``(M, K)``.
-
+class MinimalArrayProtocol(Protocol):
+    """Minimal array protocol to ensure compatebility with the `LinearOperator` interface."""
+    ndim: int
+    shape: tuple[int, ...]
+    def transpose(self) -> MinimalArrayProtocol: ...
+    
+class ArrayProtocol(MinimalArrayProtocol):
+    """Array protocol to ensure compatebility with the `LinearOperator` interface.
+    
     Attributes
     ----------
-    args : tuple
-        For linear operators describing products etc. of other linear
-        operators, the operands of the binary operation.
     ndim : int
-        Number of dimensions (this is always 2)
+        Number of dimensions.
+    shape : tuple[int, ...]
+        Array dimensions.
+    """
+    
+    def transpose(self) -> ArrayProtocol:
+        """Transpose of the array.
+        
+        Returns
+        -------
+        T : `ArrayProtocol`
+            Transposed array.
+        """
+        ...
+    def conjugate(self) -> ArrayProtocol:
+        """Optional: Complex conjugate of the array.
+        
+        This method is only need in combination with complex-valued `LinearOperator` to provide default implementations for the
+        
+        1. hermitian adjoint (if the transposed is available), 
+        2. the transposed (if the hermitian adjoint is available) and
+        3. the complex conjugate.
+        
+        Thus, this method is not needed in combination with a real-valued `LinearOperator` or a complex-valued `LinearOperator` that does not use a default implementeation of the adjoint, transposed or complex conjugate. 
+        
+        Returns
+        -------
+        T : `ArrayProtocol`
+            Complex conjugate array.
+        """
+        ...
 
-    See Also
-    --------
-    aslinearoperator : Construct LinearOperators
+##############################################################
+# Basic Linear Operator Interface
+##############################################################
+
+Array = TypeVar('Array', bound=MinimalArrayProtocol)
+
+class LinearOperator[Array]:
+    """Abstract interface for performing matrix-free matrix-vector products.
+    
+    Many iterative algorithms in `scipy.sparse.linalg`, e.g. `cg`, `gmres`, `lsmr`, `eigs`, `svds`, etc.
+    do not need access to single matrix entries, but only require the evaluation of matrix-vector products
+    ``y = A @ x`` where ``x`` is a given dense vector (`numpy.ndarray`). This class serves as an abstract interface
+    between these iterative algorithms and matrix-like objects that define a matrix-vector product.
+    
+    Altough for all algorithms within `scipy.sparse.linalg`, take a `LinearOperator` as input, the user provided implementations must be compatible with `numpy.ndarray`, the interface itselfe is compatible with any array-like object that satisfy the `ArrayProtocol`, e.g. `numpy.ndarray`, `scipy.sparse.sparray` or custom objects, as long as the user provided implementations are compatible with that array-like object. For type annotations, the type of the compatible array-like objects of a `LinearOperator` can be denoted by ``LinearOperator[Array]`` where ``Array`` is the type of the array-like object, e.g. algorithms within `scipy.sparse.linalg` always require ``LinearOperator[np.ndarray]``.
+    
+    To construct a concrete `LinearOperator`, either pass appropriate callables to the constructor as described in the *Parameters* section below or subclass `LinearOperator`. A subclass representing a matrix ``A`` might implement the following attributes and methods:
+    
+    Mandatory:
+        - ``shape``: tuple of two positive integers ``(m,n)`` denoting the shape of ``A``
+        - ``dtype``: data type of ``A``
+        - ``_matmul``: matrix-vector product ``A @ x``
+    
+    Optional:
+        - Transpose: (implement one of the following)
+            - ``_tmatmul``: transposed matrix-vector product ``A.T @ x``
+            - ``_transpose``: transposed operator ``A.T``
+        - Hermitian adjoint: (implement one of the following)
+            - ``_ctmatmul``: hermitian adjoint matrix-vector product ``A.H @ x``
+            - ``_adjoint``: hermitian adjoint operator ``A.H``
+        - Complex conjugate: (implement one of the following)
+            - ``_cmatmul``: complex conjugate matrix-vector product ``A.C @ x``
+            - ``_conjugate``: complex conjugate operator ``A.C``
+            
+    For more informations, see *Notes* below.
+            
+    Parameters
+    ----------
+    shape : tuple[int, int]
+        matrix dimension ``(m,n)``
+    matmul : Callable func(x)
+        matrix-vector product, returning ``A @ x``
+    tmatmul : Callable func(x) | None, optional
+        transposed matrix-vector product, returning ``A.T @ x``
+    ctmatmul : Callable func(x) | None, optional
+        hermitian adjoint matrix-vector product, returning ``A.H @ x``
+    cmatmul : Callable func(x) | None, optional
+        complex conjugate matrix-vector product, returning ``A.C @ x``
+    dtype : np.dtype | None, optional
+        data type of the matrix, if ``None``, the data type is determined as described below
+        
+    Attributes
+    ----------
+    ndim : int
+        Number of dimensions (this is always 2).
+    shape : tuple[int, int]
+        Matrix dimension ``(m,n)``.
+    dtype : `numpy.dtype`
+        Data type of the matrix.
+    T : `LinearOperator`
+        Transposed linear operator.
+    H : `LinearOperator`
+        Hermitian adjoint linear operator.
+    C : `LinearOperator`
+        Complex conjugate linear operator.
+    
 
     Notes
     -----
-    The user-defined `matvec` function must properly handle the case
-    where ``v`` has shape ``(N,)`` as well as the ``(N,1)`` case.  The shape of
-    the return type is handled internally by `LinearOperator`.
+    
+    - All user provided implementations must properly handle the cases where ``x`` has shape ``(n,)`` (1D vector) and ``(n,k)`` (2D matrix).
 
-    It is highly recommended to explicitly specify the `dtype`, otherwise
-    it is determined automatically at the cost of a single matvec application
-    on ``int8`` zero vector using the promoted `dtype` of the output.
-    Python ``int`` could be difficult to automatically cast to numpy integers
-    in the definition of the `matvec` so the determination may be inaccurate.
-    It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
-    the same dtype of the output given an ``int8`` input as `matvec`.
-
-    LinearOperator instances can also be multiplied, added with each
-    other and exponentiated, all lazily: the result of these operations
-    is always a new, composite LinearOperator, that defers linear
-    operations to the original operators and combines the results.
-
-    More details regarding how to subclass a LinearOperator and several
-    examples of concrete LinearOperator instances can be found in the
-    external project `PyLops <https://pylops.readthedocs.io>`_.
-
-
-    Examples
+    - It is recommended to call ``super().__init__(shape, dtype=dtype)`` in the subclass constructor to have the mandatory attributes validated. If the `LinearOperator` is compatible with `numpy.ndarray`, ``dtype`` might be ``None``. In this case, the ``dtype`` is determined by applying ``_matmul`` to ``np.zeros(n, dtype=np.int8)`` and using the promoted ``dtype`` of the output (`np.int8` is the smallest `numpy.dtype`).
+    
+    - To enable all functionalities of the ``LinearOperator``, it is sufficient to either provide a implementation of the transposed (recommended) `or` the Hermitian adjoint, while the other is then available by a default implementation using ``A.H @ x = (A.T @ x.conjugate()).conjugate()`` and ``A.T @ x = (A.H @ x.conjugate()).conjugate()``, respectively. Similarly, the complex conjugate is always available by a default implementation using ``A.C @ x = (A @ x.conjugate()).conjugate()``. The user might replace the default implementation by providing implementations for the corresponding operation.
+    
+    - To avoid avoid the construction of the same object multiple times, the transposed, adjoint and conjugate are cached as attributes ``_T``, ``_H`` and ``_C``, respectively and are constructed only once. If the content of the `LinearOperator` changes dynamically, the user might need to clear the cached attributes by setting them to `None`.
+    
+    The `LinearOperator` interface supports the following operations, where ``A`` and ``B`` are `LinearOperator` objects, ``alpha`` is a scalar and ``x`` is an array-like object compatible with the `LinearOperator`:
+    
+    - matrix-vector product: ``A @ x`` and ``x @ A``, see :meth:`LinearOperator.__matmul__` and :meth:`LinearOperator.__rmatmul__`
+    - matrix-matrix product: ``A @ B`` and ``B @ A``, see :meth:`LinearOperator.__matmul__` and :meth:`LinearOperator.__rmatmul__`
+    - scalar multiplication: ``alpha * A`` and ``A * alpha``, see :meth:`LinearOperator.__mul__` and :meth:`LinearOperator.__rmul__`
+    - scalar division: ``A / alpha``, see :meth:`LinearOperator.__truediv__`
+    - addition: ``A + B`` and ``B + A``, see :meth:`LinearOperator.__add__` and :meth:`LinearOperator.__radd__`
+    - subtraction: ``A - B`` and ``B - A``, see :meth:`LinearOperator.__sub__` and :meth:`LinearOperator.__rsub__`
+    - negation: ``-A``, see :meth:`LinearOperator.__neg__`
+    - power: ``A ** p``, see :meth:`LinearOperator.__pow__`
+        
+    See Also
     --------
-    >>> import numpy as np
-    >>> from scipy.sparse.linalg import LinearOperator
-    >>> def mv(v):
-    ...     return np.array([2*v[0], 3*v[1]])
-    ...
-    >>> A = LinearOperator((2,2), matvec=mv)
-    >>> A
-    <2x2 _CustomLinearOperator with dtype=int8>
-    >>> A.matvec(np.ones(2))
-    array([ 2.,  3.])
-    >>> A @ np.ones(2)
-    array([ 2.,  3.])
+    MatrixLinearOperator : implicit construction of a `LinearOperator` from a matrix-like object
+    aslinearoperator : function to convert an object to a `LinearOperator`
+    
 
     """
-
-    ndim = 2
-    # Necessary for right matmul with numpy arrays.
-    __array_ufunc__ = None
-
-    # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
-
-    def __new__(cls, *args, **kwargs):
-        if cls is LinearOperator:
-            # Operate as _CustomLinearOperator factory.
-            return super().__new__(_CustomLinearOperator)
-        else:
-            obj = super().__new__(cls)
-
-            if (type(obj)._matvec == LinearOperator._matvec
-                    and type(obj)._matmat == LinearOperator._matmat):
-                warnings.warn("LinearOperator subclass should implement"
-                              " at least one of _matvec and _matmat.",
-                              category=RuntimeWarning, stacklevel=2)
-
-            return obj
-
-    def __init__(self, dtype, shape):
-        """Initialize this LinearOperator.
-
-        To be called by subclasses. ``dtype`` may be None; ``shape`` should
-        be convertible to a length-2 tuple.
-        """
-        if dtype is not None:
-            dtype = np.dtype(dtype)
-
-        shape = tuple(shape)
-        if not isshape(shape):
-            raise ValueError(f"invalid shape {shape!r} (must be 2-d)")
-
-        self.dtype = dtype
+    
+    ndim: int = 2
+    """Number of dimensions (this is always 2)."""
+    shape: tuple[int, int]
+    """Matrix dimension ``(m,n)``."""
+    dtype: np.dtype
+    """Data type of the matrix."""
+    
+    _T: LinearOperator[Array] | None = None
+    _H: LinearOperator[Array] | None = None
+    _C: LinearOperator[Array] | None = None
+    
+    __linop_priority__: float = 0.0
+    
+    def __init__(self, shape: tuple[int, int],
+                       matmul:   Callable[[Array], Array] | None = None, 
+                       tmatmul:  Callable[[Array], Array] | None = None,
+                       ctmatmul: Callable[[Array], Array] | None = None, 
+                       cmatmul:  Callable[[Array], Array] | None = None,
+                       dtype: np.dtype | None = None):
+        
+        if len(shape) != 2 or not all(isinstance(s, int) and s > 0 for s in shape):
+            raise ValueError(f'shape must be a tuple of two positive integers, got {shape}')
         self.shape = shape
+        
+        if matmul is not None:   self._matmul:   Callable[[Array], Array] = matmul
+        if tmatmul is not None:  self._tmatmul:  Callable[[Array], Array] = tmatmul
+        if ctmatmul is not None: self._ctmatmul: Callable[[Array], Array] = ctmatmul
+        if cmatmul is not None:  self._cmatmul:  Callable[[Array], Array] = cmatmul
+        
+        if '_matmul' not in self.__dict__ and type(self)._matmul == LinearOperator._matmul:
+            raise NotImplementedError("matmul is not defined. Please implement _matmul (subclassing LinearOperator) or provide the matmul argument (instanciating LinearOperator).")
+        
+        if dtype is None:
+            self.dtype = self._get_dtype()
+        else:
+            self.dtype = np.dtype(dtype)
+            
 
-    def _init_dtype(self):
-        """Determine the dtype by executing `matvec` on an `int8` test vector.
-
-        In `np.promote_types` hierarchy, the type `int8` is the smallest,
-        so we call `matvec` on `int8` and use the promoted dtype of the output
-        to set the default `dtype` of the `LinearOperator`.
-        We assume that `matmat`, `rmatvec`, and `rmatmat` would result in
-        the same dtype of the output given an `int8` input as `matvec`.
-
-        Called from subclasses at the end of the __init__ routine.
+    ##################################################
+    # Public API
+    ##################################################
+        
+    def matmul(self, other: Array | LinearOperator[Array] | AsLinearOperatorDunderProtocol[Array]) -> Array | LinearOperator[Array]:
+        """Matrix-vector or matrix-matrix product.
+        
+        Calculates ``y = self @ other`` where ``other`` is either
+        
+        1. an array-like object satisfying the `ArrayProtocol` (e.g. `numpy.ndarray` or `scipy.sparse.sparray`) which is compatible with this `LinearOperator`,
+        2. another `LinearOperator` or 
+        3. any object satisfying the `AsLinearOperatorDunderProtocol`.
+        
+        In the last two cases, ``y`` is a new `LinearOperator`, while in the first case, ``y`` is the result of the user-povided ``matmul`` implementation applied to ``other``.
+        
+        If ``self`` has shape ``(m,n)``, then ``other`` must have shape ``(n,)`` or ``(n,k)``, resulting in the output ``y`` having shape ``(m,)`` or ``(m,k)``, respectively.
+        
+        Parameters
+        ----------
+        other : `ArrayProtocol`, `LinearOperator`, `AsLinearOperatorDunderProtocol`
+            The array-like object or linear operator to be multiplied.
+            
+        Returns
+        -------
+        y : `ArrayProtocol`, `LinearOperator`
         """
-        if self.dtype is None:
-            v = np.zeros(self.shape[-1], dtype=np.int8)
-            try:
-                matvec_v = np.asarray(self.matvec(v))
-            except OverflowError:
-                # Python large `int` promoted to `np.int64`or `np.int32`
-                self.dtype = np.dtype(int)
+        
+        if hasattr(other, '__aslinearoperator__'):
+            other = aslinearoperator(other)
+        
+        if self.shape[1] != other.shape[0]:
+            raise ValueError(f'shapes {self.shape} and {other.shape} are not compatible')
+        
+        if isinstance(other, LinearOperator):
+            return _ProductLinearOperator[Array](self, other)
+        else:
+            return self._matmul(other)
+        
+    def transpose(self) -> LinearOperator[Array]:
+        """Transposed linear operator."""
+        if self._T is None: 
+            self._T = self._transpose()
+        return self._T
+    
+    def adjoint(self) -> LinearOperator[Array]:
+        """Hermitian adjoint linear operator."""
+        if self._H is None: 
+            if self.dtype.kind == 'c':
+                self._H = self._adjoint()
             else:
-                self.dtype = matvec_v.dtype
-
-    def _matmat(self, X):
-        """Default matrix-matrix multiplication handler.
-
-        Falls back on the user-defined _matvec method, so defining that will
-        define matrix multiplication (though in a very suboptimal way).
-        """
-
-        return np.hstack([self.matvec(col.reshape(-1,1)) for col in X.T])
-
-    def _matvec(self, x):
-        """Default matrix-vector multiplication handler.
-
-        If self is a linear operator of shape (M, N), then this method will
-        be called on a shape (N,) or (N, 1) ndarray, and should return a
-        shape (M,) or (M, 1) ndarray.
-
-        This default implementation falls back on _matmat, so defining that
-        will define matrix-vector multiplication as well.
-        """
-        return self.matmat(x.reshape(-1, 1))
-
-    def matvec(self, x):
-        """Matrix-vector multiplication.
-
-        Performs the operation y=A@x where A is an MxN linear
-        operator and x is a column vector or 1-d array.
-
-        Parameters
-        ----------
-        x : {matrix, ndarray}
-            An array with shape (N,) or (N,1).
-
-        Returns
-        -------
-        y : {matrix, ndarray}
-            A matrix or ndarray with shape (M,) or (M,1) depending
-            on the type and shape of the x argument.
-
-        Notes
-        -----
-        This matvec wraps the user-specified matvec routine or overridden
-        _matvec method to ensure that y has the correct shape and type.
-
-        """
-
-        x = np.asanyarray(x)
-
-        M,N = self.shape
-
-        if x.shape != (N,) and x.shape != (N,1):
-            raise ValueError('dimension mismatch')
-
-        y = self._matvec(x)
-
-        if isinstance(x, np.matrix):
-            y = asmatrix(y)
-        else:
-            y = np.asarray(y)
-
-        if x.ndim == 1:
-            y = y.reshape(M)
-        elif x.ndim == 2:
-            y = y.reshape(M,1)
-        else:
-            raise ValueError('invalid shape returned by user-defined matvec()')
-
-        return y
-
-    def rmatvec(self, x):
-        """Adjoint matrix-vector multiplication.
-
-        Performs the operation y = A^H @ x where A is an MxN linear
-        operator and x is a column vector or 1-d array.
-
-        Parameters
-        ----------
-        x : {matrix, ndarray}
-            An array with shape (M,) or (M,1).
-
-        Returns
-        -------
-        y : {matrix, ndarray}
-            A matrix or ndarray with shape (N,) or (N,1) depending
-            on the type and shape of the x argument.
-
-        Notes
-        -----
-        This rmatvec wraps the user-specified rmatvec routine or overridden
-        _rmatvec method to ensure that y has the correct shape and type.
-
-        """
-
-        x = np.asanyarray(x)
-
-        M,N = self.shape
-
-        if x.shape != (M,) and x.shape != (M,1):
-            raise ValueError('dimension mismatch')
-
-        y = self._rmatvec(x)
-
-        if isinstance(x, np.matrix):
-            y = asmatrix(y)
-        else:
-            y = np.asarray(y)
-
-        if x.ndim == 1:
-            y = y.reshape(N)
-        elif x.ndim == 2:
-            y = y.reshape(N,1)
-        else:
-            raise ValueError('invalid shape returned by user-defined rmatvec()')
-
-        return y
-
-    def _rmatvec(self, x):
-        """Default implementation of _rmatvec; defers to adjoint."""
-        if type(self)._adjoint == LinearOperator._adjoint:
-            # _adjoint not overridden, prevent infinite recursion
-            if (hasattr(self, "_rmatmat")
-                    and type(self)._rmatmat != LinearOperator._rmatmat):
-                # Try to use _rmatmat as a fallback
-                return self._rmatmat(x.reshape(-1, 1)).reshape(-1)
-            raise NotImplementedError
-        else:
-            return self.H.matvec(x)
-
-    def matmat(self, X):
-        """Matrix-matrix multiplication.
-
-        Performs the operation y=A@X where A is an MxN linear
-        operator and X dense N*K matrix or ndarray.
-
-        Parameters
-        ----------
-        X : {matrix, ndarray}
-            An array with shape (N,K).
-
-        Returns
-        -------
-        Y : {matrix, ndarray}
-            A matrix or ndarray with shape (M,K) depending on
-            the type of the X argument.
-
-        Notes
-        -----
-        This matmat wraps any user-specified matmat routine or overridden
-        _matmat method to ensure that y has the correct type.
-
-        """
-        if not (issparse(X) or is_pydata_spmatrix(X)):
-            X = np.asanyarray(X)
-
-        if X.ndim != 2:
-            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
-
-        if X.shape[0] != self.shape[1]:
-            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
-
-        try:
-            Y = self._matmat(X)
-        except Exception as e:
-            if issparse(X) or is_pydata_spmatrix(X):
-                raise TypeError(
-                    "Unable to multiply a LinearOperator with a sparse matrix."
-                    " Wrap the matrix in aslinearoperator first."
-                ) from e
-            raise
-
-        if isinstance(Y, np.matrix):
-            Y = asmatrix(Y)
-
-        return Y
-
-    def rmatmat(self, X):
-        """Adjoint matrix-matrix multiplication.
-
-        Performs the operation y = A^H @ x where A is an MxN linear
-        operator and x is a column vector or 1-d array, or 2-d array.
-        The default implementation defers to the adjoint.
-
-        Parameters
-        ----------
-        X : {matrix, ndarray}
-            A matrix or 2D array.
-
-        Returns
-        -------
-        Y : {matrix, ndarray}
-            A matrix or 2D array depending on the type of the input.
-
-        Notes
-        -----
-        This rmatmat wraps the user-specified rmatmat routine.
-
-        """
-        if not (issparse(X) or is_pydata_spmatrix(X)):
-            X = np.asanyarray(X)
-
-        if X.ndim != 2:
-            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
-
-        if X.shape[0] != self.shape[0]:
-            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
-
-        try:
-            Y = self._rmatmat(X)
-        except Exception as e:
-            if issparse(X) or is_pydata_spmatrix(X):
-                raise TypeError(
-                    "Unable to multiply a LinearOperator with a sparse matrix."
-                    " Wrap the matrix in aslinearoperator() first."
-                ) from e
-            raise
-
-        if isinstance(Y, np.matrix):
-            Y = asmatrix(Y)
-        return Y
-
-    def _rmatmat(self, X):
-        """Default implementation of _rmatmat defers to rmatvec or adjoint."""
-        if type(self)._adjoint == LinearOperator._adjoint:
-            return np.hstack([self.rmatvec(col.reshape(-1, 1)) for col in X.T])
-        else:
-            return self.H.matmat(X)
-
-    def __call__(self, x):
-        return self@x
-
-    def __mul__(self, x):
-        return self.dot(x)
-
-    def __truediv__(self, other):
-        if not np.isscalar(other):
-            raise ValueError("Can only divide a linear operator by a scalar.")
-
-        return _ScaledLinearOperator(self, 1.0/other)
-
-    def dot(self, x):
-        """Matrix-matrix or matrix-vector multiplication.
-
-        Parameters
-        ----------
-        x : array_like
-            1-d or 2-d array, representing a vector or matrix.
-
-        Returns
-        -------
-        Ax : array
-            1-d or 2-d array (depending on the shape of x) that represents
-            the result of applying this linear operator on x.
-
-        """
-        if isinstance(x, LinearOperator):
-            return _ProductLinearOperator(self, x)
-        elif np.isscalar(x):
-            return _ScaledLinearOperator(self, x)
-        else:
-            if not issparse(x) and not is_pydata_spmatrix(x):
-                # Sparse matrices shouldn't be converted to numpy arrays.
-                x = np.asarray(x)
-
-            if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
-                return self.matvec(x)
-            elif x.ndim == 2:
-                return self.matmat(x)
+                self._H = self.transpose()
+        return self._H
+    
+    def conjugate(self) -> LinearOperator[Array]:
+        """Complex conjugate linear operator."""
+        if self._C is None: 
+            if self.dtype.kind == 'c':
+                self._C = self._conjugate()
             else:
-                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
-
-    def __matmul__(self, other):
+                self._C = self
+        return self._C
+    
+    T: LinearOperator[Array] = property(transpose)
+    H: LinearOperator[Array] = property(adjoint)
+    C: LinearOperator[Array] = property(conjugate)
+    
+    ##################################################
+    # Operator overloads and dunder methods
+    ##################################################
+    
+    # @ operator
+    @priority
+    def __matmul__(self, other: Array | LinearOperator[Array]) -> Array | LinearOperator[Array]:
+        f"""{LinearOperator.matmul.__doc__}
+        
+        Notes
+        -----
+        Respects the priority protocol to request ``NotImplemented``, see :func:`priority`.
+        """
+        return self.matmul(other)
+        
+    def __rmatmul__(self, other: Array | LinearOperator[Array]) -> Array | LinearOperator[Array]:
+        """Right Matrix-vector or matrix-matrix product.
+        
+        Calculates ``y = other @ self`` where ``other`` is either
+        
+        1. an array-like object satisfying the `ArrayProtocol` (e.g. `numpy.ndarray` or `scipy.sparse.sparray`) which is compatible with this `LinearOperator`,
+        2. another `LinearOperator` or
+        3. any object satisfying the `AsLinearOperatorDunderProtocol`.
+        
+        In the last two cases, ``y`` is a new `LinearOperator`, while in the first case, ``y`` is a a array-like object.
+        
+        If ``self`` has shape ``(m,n)``, then ``other`` must have shape ``(m,)`` or ``(k,m)``, resulting in the output ``y`` having shape ``(n,)`` or ``(k,n)``, respectively.
+        
+        Parameters
+        ----------
+        other : `ArrayProtocol`, `LinearOperator`, `AsLinearOperatorDunderProtocol`
+            The array-like object or linear operator to be multiplied.
+            
+        Returns
+        -------
+        y : `ArrayProtocol`, `LinearOperator`
+        """
+        return self.matmul(other.transpose()).transpose()
+    
+    # * operator
+    def __mul__(self, other: Number) -> LinearOperator[Array]:
+        """Scalar multiplication.
+        
+        Calculates ``y = self * other`` where ``other`` is a scalar.
+        
+        Parameters
+        ----------
+        other : scalar
+            The scalar to be multiplied.
+            
+        Returns
+        -------
+        y : `LinearOperator`
+            The scaled linear operator.
+            
+        Notes
+        -----
+        Returns ``NotImplemented`` if ``other`` is not a scalar.
+        """
         if np.isscalar(other):
-            raise ValueError("Scalar operands are not allowed, "
-                             "use '*' instead")
-        return self.__mul__(other)
-
-    def __rmatmul__(self, other):
-        if np.isscalar(other):
-            raise ValueError("Scalar operands are not allowed, "
-                             "use '*' instead")
-        return self.__rmul__(other)
-
-    def __rmul__(self, x):
-        if np.isscalar(x):
-            return _ScaledLinearOperator(self, x)
+            return _ScaledLinearOperator[Array](self, other)
         else:
-            return self._rdot(x)
-
-    def _rdot(self, x):
-        """Matrix-matrix or matrix-vector multiplication from the right.
-
+            return NotImplemented
+        
+    def __rmul__(self, other: Number) -> LinearOperator[Array]:
+        """Right Scalar multiplication.
+        
+        Calculates ``y = other * self``.
+        
+        Same as :meth:`LinearOperator.__mul__` since scalar multiplication is commutative.
+        """
+        return _ScaledLinearOperator[Array](self, other)
+    
+    # / operator
+    def __truediv__(self, other: Number) -> LinearOperator[Array]:
+        """Scalar division.
+        
+        Calculates ``y = self / other``.
+        
+        Same as :meth:`LinearOperator.__mul__` with the reciprocal of the scalar, i.e. ``y = self / other`` is equivalent to ``y = self * (1/other)``.
+        """
+        if np.isscalar(other):
+            return _ScaledLinearOperator[Array](self, np.int8(1)/other)
+        else:
+            return NotImplemented
+    
+    # + operator    
+    @priority
+    def __add__(self, other: AsLinearOperatorProtocol[Array]) -> LinearOperator[Array]:
+        """Addition of two linear operators.
+        
+        Calculates ``y = self + other``.
+        
         Parameters
         ----------
-        x : array_like
-            1-d or 2-d array, representing a vector or matrix.
-
+        other : any object compatible with `aslinearoperator`
+            The linear operator to be added.
+            
         Returns
         -------
-        xA : array
-            1-d or 2-d array (depending on the shape of x) that represents
-            the result of applying this linear operator on x from the right.
-
+        y : `LinearOperator`
+        
         Notes
         -----
-        This is copied from dot to implement right multiplication.
+        Respects the priority protocol to request ``NotImplemented``, see :func:`priority`.
         """
-        if isinstance(x, LinearOperator):
-            return _ProductLinearOperator(x, self)
-        elif np.isscalar(x):
-            return _ScaledLinearOperator(self, x)
-        else:
-            if not issparse(x) and not is_pydata_spmatrix(x):
-                # Sparse matrices shouldn't be converted to numpy arrays.
-                x = np.asarray(x)
+        return _SumLinearOperator[Array](self, aslinearoperator(other))
+    
+    def __radd__(self, other: AsLinearOperatorProtocol[Array]) -> LinearOperator[Array]:
+        """Right addition of two linear operators.
+        
+        Calculates ``y = other + self``.
+        
+        Same as :meth:`LinearOperator.__add__` since addition is commutative.
+        """
+        return _SumLinearOperator[Array](aslinearoperator(other), self)
+    
+    # - operator
+    def __neg__(self) -> LinearOperator[Array]:
+        """Negation of a linear operator.
+        
+        Calculates ``y = -self``.
+        
+        Returns:
+        --------
+        y : `LinearOperator`
+            The negated linear operator.
+        """
+        return _ScaledLinearOperator[Array](self, np.int8(-1))
+    
+    @priority
+    def __sub__(self, other: AsLinearOperatorProtocol[Array]) -> LinearOperator[Array]:
+        """Subtraction of two linear operators.
+        
+        Calculates ``y = self - other``.
+        
+        Parameters
+        ----------
+        other : any object compatible with `aslinearoperator`
+            The linear operator to be subtracted.
+            
+        Returns
+        -------
+        y : `LinearOperator`
+        
+        Notes
+        -----
+        Respects the priority protocol to request ``NotImplemented``, see :func:`priority`.
+        """
+        return _SumLinearOperator[Array](self, -aslinearoperator(other))
+    
+    def __rsub__(self, other: AsLinearOperatorProtocol[Array]) -> LinearOperator[Array]:
+        """Right subtraction of two linear operators.
+        
+        Calculates ``y = other - self``.
+        
+        Same as :meth:`LinearOperator.__sub__` since subtraction is commutative.
+        """
+        
+        return _SumLinearOperator[Array](-self, aslinearoperator(other))
 
-            # We use transpose instead of rmatvec/rmatmat to avoid
-            # unnecessary complex conjugation if possible.
-            if x.ndim == 1 or x.ndim == 2 and x.shape[0] == 1:
-                return self.T.matvec(x.T).T
-            elif x.ndim == 2:
-                return self.T.matmat(x.T).T
+    # ** operator
+    def __pow__(self, other: int) -> LinearOperator[Array]:
+        """Power or matrix-exponential of a linear operator.
+        
+        Calculates ``y = self ** other`` where ``other`` is a positive integer.
+        
+        Parameters
+        ----------
+        other : int
+            The exponent to which the linear operator is raised. Must be a positive integer.
+            
+        Returns
+        -------
+        y : `LinearOperator`
+            The linear operator raised to the power of ``other``.
+        
+        Notes
+        -----
+        Returns ``NotImplemented`` if ``other`` is not a positive integer.
+        """
+        if np.isscalar(other):
+            if other < 0 or not np.issubdtype(type(other), np.integer):
+                raise ValueError(f'only positive integers supported, got {other}')
+            elif other == 0:
+                return IdentityOperator[Array](shape=self.shape, dtype=self.dtype)
+            elif other == 1:
+                return self
             else:
-                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
-
-    def __pow__(self, p):
-        if np.isscalar(p):
-            return _PowerLinearOperator(self, p)
+                return _ProductLinearOperator[Array](*[self for _ in range(other)])
         else:
             return NotImplemented
 
-    def __add__(self, x):
-        if isinstance(x, LinearOperator):
-            return _SumLinearOperator(self, x)
-        else:
-            return NotImplemented
-
-    def __neg__(self):
-        return _ScaledLinearOperator(self, -1)
-
-    def __sub__(self, x):
-        return self.__add__(-x)
-
+    # one-line representation
     def __repr__(self):
         M,N = self.shape
         if self.dtype is None:
@@ -556,381 +477,609 @@ class LinearOperator:
             dt = 'dtype=' + str(self.dtype)
 
         return f'<{M}x{N} {self.__class__.__name__} with {dt}>'
-
-    def adjoint(self):
-        """Hermitian adjoint.
-
-        Returns the Hermitian adjoint of self, aka the Hermitian
-        conjugate or Hermitian transpose. For a complex matrix, the
-        Hermitian adjoint is equal to the conjugate transpose.
-
-        Can be abbreviated self.H instead of self.adjoint().
-
+    
+    
+    ##################################################
+    # Internal API, might be overwritten by subclasses
+    ##################################################
+    
+    def _matmul(self, other: Array) -> Array:
+        """Matrix-vector or matrix-matrix product.
+        
+        This method must implement the action of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it must implement the matrix-vector or matrix-matrix product ``y = self @ other``.
+        
+        Parameters
+        ----------
+        other : `ArrayProtocol`
+            The array-like object to be multiplied. Must have shape ``(n,)`` or ``(n,k)`` if ``self`` has shape ``(m,n)``.
+            
         Returns
         -------
-        A_H : LinearOperator
-            Hermitian adjoint of self.
+        y : `ArrayProtocol`
+             The result of the matrix-vector or matrix-matrix product, having shape ``(m,)`` or ``(m,k)``, respectively.
         """
-        return self._adjoint()
-
-    H = property(adjoint)
-
-    def transpose(self):
-        """Transpose this linear operator.
-
-        Can be abbreviated self.T instead of self.transpose().
-
+        
+        # should not be reached if super().__init__ is called in subclass __init__
+        raise NotImplementedError("_matmul is not implemented, but this method is mandatory. Please implement _matmul or provide the matmul argument.")
+        
+    def _cmatmul(self, other: Array) -> Array:
+        """Complex conjugate matrix-vector or matrix-matrix product.
+        
+        This is the default implementation of the action of the complex conjugate of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it must implement the matrix-vector or matrix-matrix product ``y = self.C @ other``.
+        
+        Parameters
+        ----------
+        other : `ArrayProtocol`
+            The array-like object to be multiplied. Must have shape ``(n,)`` or ``(n,k)`` if ``self`` has shape ``(m,n)``.
+            
         Returns
         -------
-        A_T : LinearOperator
-            Transpose of the linear operator.
+        y : `ArrayProtocol`
+             The result of the complex conjugate matrix-vector or matrix-matrix product, having shape ``(m,)`` or ``(m,k)``, respectively.
         """
-        return self._transpose()
-
-    T = property(transpose)
-
-    def _adjoint(self):
-        """Default implementation of _adjoint; defers to rmatvec."""
-        return _AdjointLinearOperator(self)
-
-    def _transpose(self):
-        """ Default implementation of _transpose; defers to rmatvec + conj"""
-        return _TransposedLinearOperator(self)
-
-
-class _CustomLinearOperator(LinearOperator):
-    """Linear operator defined in terms of user-specified operations."""
-
-    def __init__(self, shape, matvec, rmatvec=None, matmat=None,
-                 dtype=None, rmatmat=None):
-        super().__init__(dtype, shape)
-
-        self.args = ()
-
-        self.__matvec_impl = matvec
-        self.__rmatvec_impl = rmatvec
-        self.__rmatmat_impl = rmatmat
-        self.__matmat_impl = matmat
-
-        self._init_dtype()
-
-    def _matmat(self, X):
-        if self.__matmat_impl is not None:
-            return self.__matmat_impl(X)
+        return self._matmul(other.conjugate()).conjugate()
+        
+    def _tmatmul(self, other: Array) -> Array:
+        """Transposed matrix-vector or matrix-matrix product.
+        
+        This is the default implementation of the action of the transpose of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it must implement the matrix-vector or matrix-matrix product ``y = self.T @ other``.
+        
+        Parameters
+        ----------
+        other : `ArrayProtocol`
+            The array-like object to be multiplied. Must have shape ``(m,)`` or ``(m,k)`` if ``self`` has shape ``(m,n)``.
+            
+        Returns
+        -------
+        y : `ArrayProtocol`
+             The result of the transposed matrix-vector or matrix-matrix product, having shape ``(n,)`` or ``(n,k)``, respectively.
+        """
+        # check if _ctmatmul was a) set as attribute in __init__or b) overwritten by subclass to avoid infinite recursion
+        if '_ctmatmul' in self.__dict__ or type(self)._ctmatmul != LinearOperator._ctmatmul:
+            return self._ctmatmul(other.conjugate()).conjugate()
         else:
-            return super()._matmat(X)
-
-    def _matvec(self, x):
-        return self.__matvec_impl(x)
-
-    def _rmatvec(self, x):
-        func = self.__rmatvec_impl
-        if func is None:
-            raise NotImplementedError("rmatvec is not defined")
-        return self.__rmatvec_impl(x)
-
-    def _rmatmat(self, X):
-        if self.__rmatmat_impl is not None:
-            return self.__rmatmat_impl(X)
+            AH = self.adjoint()
+            # check if adjoint is not the default implementation to avoid infinite recursion
+            if type(AH) is not (_AdjointLinearOperator, _TransposeLinearOperator):
+                return AH._matmul(other.conjugate()).conjugate()
+            else:
+                raise NotImplementedError("Please provide tmatmul or ctmatmul or overwrite _ctmatmul, _tmatmul, _transpose or _adjoint.")
+    
+    def _ctmatmul(self, other: Array) -> Array:
+        """Hermitian adjoint matrix-vector or matrix-matrix product.
+        
+        This is the default implementation of the action of the Hermitian adjoint (i.e. transpose and conjugate) of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it must implement the matrix-vector or matrix-matrix product ``y = self.H @ other``.
+        
+        Parameters
+        ----------
+        other : `ArrayProtocol`
+            The array-like object to be multiplied. Must have shape ``(m,)`` or ``(m,k)`` if ``self`` has shape ``(m,n)``.
+            
+        Returns
+        -------
+        y : `ArrayProtocol`
+             The result of the transposed matrix-vector or matrix-matrix product, having shape ``(n,)`` or ``(n,k)``, respectively.
+        """
+        # check if _tmatmul was a) set as attribute in __init__or b) overwritten by subclass to avoid infinite recursion
+        if '_tmatmul' in self.__dict__ or type(self)._tmatmul != LinearOperator._tmatmul:
+            return self._tmatmul(other.conjugate()).conjugate()
         else:
-            return super()._rmatmat(X)
-
-    def _adjoint(self):
-        return _CustomLinearOperator(shape=(self.shape[1], self.shape[0]),
-                                     matvec=self.__rmatvec_impl,
-                                     rmatvec=self.__matvec_impl,
-                                     matmat=self.__rmatmat_impl,
-                                     rmatmat=self.__matmat_impl,
-                                     dtype=self.dtype)
-
-
-class _AdjointLinearOperator(LinearOperator):
-    """Adjoint of arbitrary Linear Operator"""
-
-    def __init__(self, A):
-        shape = (A.shape[1], A.shape[0])
-        super().__init__(dtype=A.dtype, shape=shape)
-        self.A = A
-        self.args = (A,)
-
-    def _matvec(self, x):
-        return self.A._rmatvec(x)
-
-    def _rmatvec(self, x):
-        return self.A._matvec(x)
-
-    def _matmat(self, x):
-        return self.A._rmatmat(x)
-
-    def _rmatmat(self, x):
-        return self.A._matmat(x)
-
-class _TransposedLinearOperator(LinearOperator):
-    """Transposition of arbitrary Linear Operator"""
-
-    def __init__(self, A):
-        shape = (A.shape[1], A.shape[0])
-        super().__init__(dtype=A.dtype, shape=shape)
-        self.A = A
-        self.args = (A,)
-
-    def _matvec(self, x):
-        # NB. np.conj works also on sparse matrices
-        return np.conj(self.A._rmatvec(np.conj(x)))
-
-    def _rmatvec(self, x):
-        return np.conj(self.A._matvec(np.conj(x)))
-
-    def _matmat(self, x):
-        # NB. np.conj works also on sparse matrices
-        return np.conj(self.A._rmatmat(np.conj(x)))
-
-    def _rmatmat(self, x):
-        return np.conj(self.A._matmat(np.conj(x)))
-
-def _get_dtype(operators, dtypes=None):
-    if dtypes is None:
-        dtypes = []
-    for obj in operators:
-        if obj is not None and hasattr(obj, 'dtype'):
-            dtypes.append(obj.dtype)
-    return np.result_type(*dtypes)
+            AT = self.transpose()
+            # check if transposed is not the default implementation to avoid infinite recursion
+            if type(AT) is not _TransposeLinearOperator:
+                return AT._matmul(other.conjugate()).conjugate()
+            else:
+                raise NotImplementedError("Please provide tmatmul or ctmatmul or overwrite _ctmatmul, _tmatmul, _transpose or _adjoint.")
+            
+    def _transpose(self) -> LinearOperator[Array]:
+        """Assemble the transposed linear operator.
+        
+        This is the default implementation of the transposed linear operator ``self.T`` based on `_tmatmul`.
+        
+        Returns
+        -------
+        T : `LinearOperator`
+             The transposed linear operator.
+        """
+        return _TransposeLinearOperator[Array](self)
+    
+    def _adjoint(self) -> LinearOperator[Array]:
+        """Assemble the hermitian adjoint linear operator.
+        
+        This is the default implementation of the hermitian adjoint linear operator ``self.H`` based on `_ctmatmul`.
+        
+        Returns
+        -------
+        H : `LinearOperator`
+             The hermitian adjoint linear operator.
+        """
+        return _AdjointLinearOperator[Array](self)
+    
+    def _conjugate(self) -> LinearOperator[Array]:
+        """Assemble the complex conjugate linear operator.
+        
+        This is the default implementation of the complex conjugate linear operator ``self.conjugate()`` based on `_cmatmul`.
+        
+        Returns
+        -------
+        C : `LinearOperator`
+             The complex conjugate linear operator.
+        """
+        return _ConjugateLinearOperator[Array](self)
+    
+    def _get_dtype(self) -> np.dtype:
+        """Determine dtype if not provided in constructor."""
+        x = np.zeros(self.shape[-1], dtype=np.int8)
+        try:
+            Ax = self._matmul(x)
+        except OverflowError:
+            # Python large `int` promoted to `np.int64`or `np.int32`
+            self.dtype = np.dtype(int)
+        else:
+            self.dtype = np.dtype(Ax.dtype)
 
 
-class _SumLinearOperator(LinearOperator):
-    def __init__(self, A, B):
-        if not isinstance(A, LinearOperator) or \
-                not isinstance(B, LinearOperator):
-            raise ValueError('both operands have to be a LinearOperator')
-        if A.shape != B.shape:
-            raise ValueError(f'cannot add {A} and {B}: shape mismatch')
-        self.args = (A, B)
-        super().__init__(_get_dtype([A, B]), A.shape)
+##############################################################
+# Helper classes for default implementations
+##############################################################
 
-    def _matvec(self, x):
-        return self.args[0].matvec(x) + self.args[1].matvec(x)
+######################################
+# Adjoint, Transpose and Conjugate
 
-    def _rmatvec(self, x):
-        return self.args[0].rmatvec(x) + self.args[1].rmatvec(x)
+class _TransposeLinearOperator[Array](LinearOperator[Array]):
+    def __init__(self, linop: LinearOperator[Array]):
+        LinearOperator.__init__(self, shape=(linop.shape[1], linop.shape[0]), dtype=linop.dtype)
+        self._linop: LinearOperator[Array] = linop
+        
+    def _matmul(self, other: Array) -> Array:
+        return self._linop._tmatmul(other)
+        
+    def _transpose(self) -> LinearOperator[Array]:
+        return self._linop
+    def _adjoint(self) -> LinearOperator[Array]:
+        return self._linop.conjugate()
+    def _conjugate(self) -> LinearOperator[Array]:
+        return self._linop.adjoint()
 
-    def _rmatmat(self, x):
-        return self.args[0].rmatmat(x) + self.args[1].rmatmat(x)
+class _AdjointLinearOperator[Array](LinearOperator[Array]):
+    def __init__(self, linop: LinearOperator[Array]):
+        LinearOperator.__init__(self, shape=(linop.shape[1], linop.shape[0]), dtype=linop.dtype)
+        self._linop: LinearOperator[Array] = linop
+        
+    def _matmul(self, other: Array) -> Array:
+        return self._linop._ctmatmul(other)
+        
+    def _transpose(self) -> LinearOperator[Array]:
+        return self._linop.conjugate()
+    def _adjoint(self) -> LinearOperator[Array]:
+        return self._linop
+    def _conjugate(self) -> LinearOperator[Array]:
+        return self._linop.transpose()
+ 
+class _ConjugateLinearOperator[Array](LinearOperator[Array]):
+    def __init__(self, linop: LinearOperator[Array]):
+        LinearOperator.__init__(self, shape=linop.shape, dtype=linop.dtype)
+        self._linop: LinearOperator[Array] = linop
+        
+    def _matmul(self, other: Array) -> Array:
+        return self._linop._cmatmul(other)
+        
+    def _transpose(self) -> LinearOperator[Array]:
+        return self._linop.adjoint()
+    def _adjoint(self) -> LinearOperator[Array]:
+        return self._linop.transpose()
+    def _conjugate(self) -> LinearOperator[Array]:
+        return self._linop    
+    
+######################################
+# Product
+    
+class _ProductLinearOperator[Array](LinearOperator[Array]):
+    
+    def __init__(self, *A: AsLinearOperatorProtocol[Array]):
+        
+        if len(A) < 2:
+            raise ValueError(f'At least two linear operators required for product, got {len(A)}')
+        
+        A_ = []
+        for a in A:
+            if isinstance(a, _ProductLinearOperator):
+                A_.extend(a._A)
+            else:
+                A_.append(aslinearoperator(a))
+        A = A_
+        
+        for i in range(len(A) - 1):
+             if A[i].shape[1] != A[i+1].shape[0]:
+                raise ValueError(f'shapes {A[i].shape} and {A[i+1].shape} are not compatible for multiplication')
+            
+        shape = (A[0].shape[0], A[-1].shape[1])
+        dtype = np.result_type(*[a.dtype for a in A])
+        super().__init__(shape=shape, dtype=dtype)
+        self._A: list[LinearOperator[Array]] = A
+        
+    def _matmul(self, other: Array) -> Array:
+        result = other
+        for A in reversed(self._A): result = A._matmul(result)
+        return result
+    
+    def _tmatmul(self, other: Array) -> Array:
+        result = other
+        for A in self._A: result = A.transpose()._matmul(result)
+        return result
+    
+    def _ctmatmul(self, other: Array) -> Array:
+        result = other
+        for A in self._A: result = A.adjoint()._matmul(result)
+        return result
+    
+    def _cmatmul(self, other: Array) -> Array:
+        result = other
+        for A in reversed(self._A): result = A.conjugate()._matmul(result)
+        return result
 
-    def _matmat(self, x):
-        return self.args[0].matmat(x) + self.args[1].matmat(x)
+######################################
+# Scaled
 
-    def _adjoint(self):
-        A, B = self.args
-        return A.H + B.H
-
-
-class _ProductLinearOperator(LinearOperator):
-    def __init__(self, A, B):
-        if not isinstance(A, LinearOperator) or \
-                not isinstance(B, LinearOperator):
-            raise ValueError('both operands have to be a LinearOperator')
-        if A.shape[1] != B.shape[0]:
-            raise ValueError(f'cannot multiply {A} and {B}: shape mismatch')
-        super().__init__(_get_dtype([A, B]),
-                                                     (A.shape[0], B.shape[1]))
-        self.args = (A, B)
-
-    def _matvec(self, x):
-        return self.args[0].matvec(self.args[1].matvec(x))
-
-    def _rmatvec(self, x):
-        return self.args[1].rmatvec(self.args[0].rmatvec(x))
-
-    def _rmatmat(self, x):
-        return self.args[1].rmatmat(self.args[0].rmatmat(x))
-
-    def _matmat(self, x):
-        return self.args[0].matmat(self.args[1].matmat(x))
-
-    def _adjoint(self):
-        A, B = self.args
-        return B.H @ A.H
-
-
-class _ScaledLinearOperator(LinearOperator):
-    def __init__(self, A, alpha):
-        if not isinstance(A, LinearOperator):
-            raise ValueError('LinearOperator expected as A')
-        if not np.isscalar(alpha):
-            raise ValueError('scalar expected as alpha')
+class _ScaledLinearOperator[Array](LinearOperator[Array]):
+    
+    def __init__(self, A: AsLinearOperatorProtocol[Array], alpha: Number):
         if isinstance(A, _ScaledLinearOperator):
-            A, alpha_original = A.args
-            # Avoid in-place multiplication so that we don't accidentally mutate
-            # the original prefactor.
-            alpha = alpha * alpha_original
+            A = A._A
+            alpha = alpha * A._alpha
+        A = aslinearoperator(A)
+        if not np.isscalar(alpha):
+            raise TypeError(f'Scaling factor must be a number, got {type(alpha)}')
+        super().__init__(shape=A.shape, dtype=np.result_type(alpha, A.dtype))
+        self._A: LinearOperator[Array] = A
+        self._alpha: Number = alpha
+        
+    def _matmul(self, other: Array) -> Array:
+        return self._alpha * self._A._matmul(other)
+    
+    def _tmatmul(self, other: Array) -> Array:
+        return self._alpha * self._A.transpose()._matmul(other)
+    
+    def _ctmatmul(self, other: Array) -> Array:
+        return self._alpha.conjugate() * self._A.adjoint()._matmul(other)
+    
+    def _cmatmul(self, other: Array) -> Array:
+        return self._alpha.conjugate() * self._A.conjugate()._matmul(other)
 
-        dtype = _get_dtype([A], [type(alpha)])
-        super().__init__(dtype, A.shape)
-        self.args = (A, alpha)
-        # Note: args[1] is alpha (a scalar), so use `*` below, not `@`
+######################################
+# Sum
 
-    def _matvec(self, x):
-        return self.args[1] * self.args[0].matvec(x)
+class _SumLinearOperator[Array](LinearOperator[Array]):
+    
+    def __init__(self, *A: AsLinearOperatorProtocol[Array]):
+        if len(A) < 2:
+            raise ValueError(f'At least two linear operators required for addition, got {len(A)}')
+        
+        A_ = []
+        for a in A:
+            if isinstance(a, _SumLinearOperator):
+                A_.extend(a._A)
+            else:
+                A_.append(aslinearoperator(a))
+        A = A_
+        
+        shape = A[0].shape
+        for i in range(1, len(A)):
+             if A[i].shape != shape:
+                raise ValueError(f'shapes {A[i].shape} and {shape} are not compatible for addition')
+            
+        dtype = np.result_type(*[a.dtype for a in A])
+        super().__init__(shape=shape, dtype=dtype)
+        self._A: list[LinearOperator[Array]] = A
+        
+    def _matmul(self, other: Array) -> Array:
+        result = self._A[0]._matmul(other)
+        for A in self._A[1:]: result = result + A._matmul(other)
+        return result
+    
+    def _tmatmul(self, other: Array) -> Array:
+        result = self._A[0].transpose()._matmul(other)
+        for A in self._A[1:]: result = result + A.transpose()._matmul(other)
+        return result
+    
+    def _ctmatmul(self, other: Array) -> Array:
+        result = self._A[0].adjoint()._matmul(other)
+        for A in self._A[1:]: result = result + A.adjoint()._matmul(other)
+        return result
+    
+    def _cmatmul(self, other: Array) -> Array:
+        result = self._A[0].conjugate()._matmul(other)
+        for A in self._A[1:]: result = result + A.conjugate()._matmul(other)
+        return result
 
-    def _rmatvec(self, x):
-        return np.conj(self.args[1]) * self.args[0].rmatvec(x)
+##############################################################
+# Identity Operator
+##############################################################   
 
-    def _rmatmat(self, x):
-        return np.conj(self.args[1]) * self.args[0].rmatmat(x)
-
-    def _matmat(self, x):
-        return self.args[1] * self.args[0].matmat(x)
-
-    def _adjoint(self):
-        A, alpha = self.args
-        return A.H * np.conj(alpha)
-
-
-class _PowerLinearOperator(LinearOperator):
-    def __init__(self, A, p):
-        if not isinstance(A, LinearOperator):
-            raise ValueError('LinearOperator expected as A')
-        if A.shape[0] != A.shape[1]:
-            raise ValueError(f'square LinearOperator expected, got {A!r}')
-        if not isintlike(p) or p < 0:
-            raise ValueError('non-negative integer expected as p')
-
-        super().__init__(_get_dtype([A]), A.shape)
-        self.args = (A, p)
-
-    def _power(self, fun, x):
-        res = np.array(x, copy=True)
-        for i in range(self.args[1]):
-            res = fun(res)
-        return res
-
-    def _matvec(self, x):
-        return self._power(self.args[0].matvec, x)
-
-    def _rmatvec(self, x):
-        return self._power(self.args[0].rmatvec, x)
-
-    def _rmatmat(self, x):
-        return self._power(self.args[0].rmatmat, x)
-
-    def _matmat(self, x):
-        return self._power(self.args[0].matmat, x)
-
-    def _adjoint(self):
-        A, p = self.args
-        return A.H ** p
-
-
-class MatrixLinearOperator(LinearOperator):
-    def __init__(self, A):
-        super().__init__(A.dtype, A.shape)
-        self.A = A
-        self.__adj = None
-        self.args = (A,)
-
-    def _matmat(self, X):
-        return self.A.dot(X)
-
-    def _adjoint(self):
-        if self.__adj is None:
-            self.__adj = _AdjointMatrixOperator(self.A)
-        return self.__adj
-
-
-class _AdjointMatrixOperator(MatrixLinearOperator):
-    def __init__(self, adjoint_array):
-        self.A = adjoint_array.T.conj()
-        self.args = (adjoint_array,)
-        self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
-
-    @property
-    def dtype(self):
-        return self.args[0].dtype
-
-    def _adjoint(self):
-        return MatrixLinearOperator(self.args[0])
-
-
-class IdentityOperator(LinearOperator):
-    def __init__(self, shape, dtype=None):
-        super().__init__(dtype, shape)
-
-    def _matvec(self, x):
-        return x
-
-    def _rmatvec(self, x):
-        return x
-
-    def _rmatmat(self, x):
-        return x
-
-    def _matmat(self, x):
-        return x
-
-    def _adjoint(self):
-        return self
-
-
-def aslinearoperator(A):
-    """Return A as a LinearOperator.
-
-    See the LinearOperator documentation for additional information.
-
+class IdentityOperator[Array](LinearOperator[Array]):
+    """Identity operator.
+    
+    This is a subclass of `LinearOperator`, see the documentation there.
+    
     Parameters
     ----------
-    A : object
-        Object to convert to a `LinearOperator`. May be any one of the following types:
-        - ndarray
-        - matrix
-        - sparse array (e.g. csr_array, lil_array, etc.)
-        - `LinearOperator`
-        - An object with .shape and .matvec attributes
+    shape : tuple[int, int]
+        The shape of the identity operator, must be a tuple of two positive integers.
+    dtype : np.dtype, optional
+        The data type of the identity operator, if not provided, it is set to `numpy.int8` by default as the smallest possible data type.
+        
+    Attributes
+    ----------
+    ndim : int
+        Number of dimensions (this is always 2).
+    shape : tuple[int, int]
+        Matrix dimension ``(m,n)``.
+    dtype : `numpy.dtype`
+        Data type of the matrix.
+    T : `LinearOperator`
+        Transposed linear operator.
+    H : `LinearOperator`
+        Hermitian adjoint linear operator.
+    C : `LinearOperator`
+        Complex conjugate linear operator.
+        
+    See Also
+    --------
+    LinearOperator : base class for linear operators
+    MatrixLinearOperator : implicit construction of a `LinearOperator` from a matrix-like object
+    aslinearoperator : function to convert an object to a `LinearOperator`
+    """
+    def __init__(self, shape, dtype=np.int8):
+        super().__init__(dtype, shape)
 
+    def _matmul(self, other: Array) -> Array:
+        return other
+    
+    def _tmatmul(self, other: Array) -> Array:
+        return other
+    
+    def _ctmatmul(self, other: Array) -> Array:
+        return other
+    
+    def _cmatmul(self, other: Array) -> Array:
+        return other
+
+##############################################################
+# Matrix Protocol and MatrixLinearOperator
+##############################################################       
+
+######################################
+# Matrix protocol
+
+class MinimalMatrixProtocol[Array](Protocol):
+    """Minimal matrix protocol for implicit construction of a `LinearOperator` from a matrix-like object."""
+    
+    ndim: int = 2
+    shape: tuple[int, int]
+    dtype: np.dtype
+    
+    def __matmul__(self, other: Array) -> Array:
+        """Matrix-vector or matrix-matrix product.
+        
+        Calculates ``y = self @ other`` where ``other`` is an array-like object compatible with this matrix-like object, i.e. it must have shape ``(n,)`` or ``(n,k)`` if this matrix-like object has shape ``(m,n)``, resulting in the output ``y`` having shape ``(m,)`` or ``(m,k)``, respectively.
+        
+        Parameters
+        ----------
+        other : `ArrayProtocol`
+            The array-like object to be multiplied. Must have shape ``(n,)`` or ``(n,k)`` if this matrix-like object has shape ``(m,n)``.
+            
+        Returns
+        -------
+        y : `ArrayProtocol`
+            The result of the matrix-vector or matrix-matrix product, having shape ``(m,)`` or ``(m,k)``, respectively.
+        """
+        ...
+    
+    def transpose(self) -> MinimalMatrixProtocol[Array]: ...
+    
+class MatrixProtocol[Array](MinimalMatrixProtocol[Array]):
+    """Matrix protocol for implicit construction of a `LinearOperator` from a matrix-like object.
+    
+    Attributes
+    ----------
+    ndim : int
+        Number of dimensions (this is always 2).
+    shape : tuple[int, int]
+        Matrix dimension ``(m,n)``.
+    dtype : `numpy.dtype`
+        Data type of the matrix.
+    """
+    
+    def transpose(self) -> MatrixProtocol[Array]:
+        """Transposed matrix-like object.
+        
+        Returns
+        -------
+        T : `MatrixProtocol`
+            The transposed matrix-like object.
+        """
+        ...
+    
+    def conjugate(self) -> MatrixProtocol[Array]:
+        """Optional: Complex conjugate matrix-like object.
+        
+        If this method is not present, the default implementations of the hermitian adjoint and complex conjugate are used as discribed in the `LinearOperator` class.
+        
+        Returns
+        -------
+        C : `MatrixProtocol`
+            The complex conjugate matrix-like object.
+        """
+        ...
+
+######################################
+# MatrixLinearOperator
+
+class MatrixLinearOperator[Array](LinearOperator[Array]):
+    """Linear operator implicitly defined by a matrix-like object.
+    
+    This is a subclass of `LinearOperator`, see the documentation there.
+    
+    Parameters
+    ----------
+    M : `MatrixProtocol`
+        The matrix-like object defining this linear operator. Must satisfy the `MatrixProtocol`.
+        
+    Attributes
+    ----------
+    ndim : int
+        Number of dimensions (this is always 2).
+    shape : tuple[int, int]
+        Matrix dimension ``(m,n)``.
+    dtype : `numpy.dtype`
+        Data type of the matrix.
+    T : `LinearOperator`
+        Transposed linear operator.
+    H : `LinearOperator`
+        Hermitian adjoint linear operator.
+    C : `LinearOperator`
+        Complex conjugate linear operator.
+        
+    See Also
+    --------
+    LinearOperator : base class for linear operators
+    aslinearoperator : function to convert an object to a `LinearOperator`
+    """
+    
+    _MT: MinimalMatrixProtocol[Array] | None = None
+    _MH: MatrixProtocol[Array] | False | None = None
+    _MC: MatrixProtocol[Array] | False | None = None
+    
+    def __init__(self, M: MinimalMatrixProtocol[Array]):
+        
+        if not all(hasattr(M, attr) for attr in ['ndim', 'shape', 'dtype', '__matmul__', 'transpose']):
+            raise TypeError(f'Object of type {type(M)} does not satisfy the matrix protocol, missing one of ndim, shape, dtype, __matmul__ or transpose.')
+        
+        if M.ndim != 2:
+            raise ValueError(f'matrix must be 2D but got ndim = {M.ndim}')
+        
+        super().__init__(shape=M.shape, dtype=M.dtype)
+        self._M: MinimalMatrixProtocol[Array] = M
+        
+    def _M_transpose(self) -> MinimalMatrixProtocol[Array]:
+        if self._MT is None:
+            self._MT = self._M.transpose()
+        return self._MT
+    
+    def _M_adjoint(self) -> MatrixProtocol[Array] | False:
+        if self._MH is None:
+            MC = self._M_conjugate()
+            if MC is not False and hasattr(MC, 'transpose'):
+                self._MH = MC.transpose()
+            else:
+                self._MH = False
+        return self._MH
+    
+    def _M_conjugate(self) -> MatrixProtocol[Array] | False:
+        if self._MC is None:
+            if hasattr(self._M, 'conjugate'):
+                self._MC = self._M.conjugate()
+            else:
+                self._MC = False
+        return self._MC
+    
+    def _matmul(self, x: Array) -> Array:
+        return self._M @ x
+    
+    def _tmatmul(self, x: Array) -> Array:
+        return self._M_transpose() @ x
+    
+    def _ctmatmul(self, x: Array) -> Array:
+        MH = self._M_adjoint()
+        return super()._ctmatmul(x) if MH is False else MH @ x
+        
+    def _cmatmul(self, x: Array) -> Array:
+        MC = self._M_conjugate()
+        return super()._cmatmul(x) if MC is False else MC @ x
+
+
+##############################################################
+# Conversion functionality: aslinearoperator
+##############################################################
+
+######################################
+# Conversion protocols
+
+class AsLinearOperatorDunderProtocol[Array](Protocol):
+    """Protocol for objects that provide an explicit instruction how to convert them  to a `LinearOperator` via the `aslinearoperator` function.
+    """
+    
+    def __aslinearoperator__(self) -> LinearOperator[Array]:
+        """Convert this object to a `LinearOperator`.
+        
+        Returns
+        -------
+        linop : `LinearOperator`
+            The linear operator representation of this object.
+        """
+        ...
+    
+
+type AsLinearOperatorProtocol[Array] =  LinearOperator[Array] | MinimalMatrixProtocol[Array] | AsLinearOperatorDunderProtocol[Array]
+"""All objects that can be converted to a `LinearOperator` via the `aslinearoperator` function, namely `LinearOperator`, `MatrixProtocol` and `AsLinearOperatorDunderProtocol`."""
+
+######################################
+# aslinearoperator
+
+def aslinearoperator[Array](A: AsLinearOperatorProtocol[Array]) -> LinearOperator[Array]:
+    """Convert an object to a `LinearOperator`.
+    
+    Parameters
+    ----------
+    A : `LinearOperator`, `AsLinearOperatorDunderProtocol`, `MatrixProtocol`
+        The object to be converted to a `LinearOperator`. Can be a
+        
+        - `LinearOperator`: no conversion needed
+        - explicit conversion: any object that satisfies the `AsLinearOperatorDunderProtocol`, i.e. that implements the ``__aslinearoperator__()`` method
+        - implicit conversion: any matrix-like object that satisfies the `MatrixProtocol`, e.g. `numpy.ndarray` or `scipy.sparse.sparray`.
+        
     Returns
     -------
-    B : LinearOperator
-        A `LinearOperator` corresponding with `A`
-
-    Notes
-    -----
-    If 'A' has no .dtype attribute, the data type is determined by calling
-    :func:`LinearOperator.matvec()` - set the .dtype attribute to prevent this
-    call upon the linear operator creation.
-
-    Examples
+    linop : `LinearOperator`
+        The linear operator representation of the input object. If the input was a `numpy.ndarray` or `scipy.sparse.sparray`, the output is a `LinearOperator` compatible with arrays of type `numpy.ndarray` and `scipy.sparse.sparray`, i.e. ``LinearOperator[np.ndarray | sp.sparse.sparray]``.
+        
+    See Also
     --------
-    >>> import numpy as np
-    >>> from scipy.sparse.linalg import aslinearoperator
-    >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
-    >>> aslinearoperator(M)
-    <2x3 MatrixLinearOperator with dtype=int32>
+    LinearOperator : base class for linear operators
+    MatrixLinearOperator : implicit construction of a `LinearOperator` from a matrix-like object
     """
+    
     if isinstance(A, LinearOperator):
         return A
-
-    elif isinstance(A, np.ndarray) or isinstance(A, np.matrix):
-        if A.ndim > 2:
-            raise ValueError('array must have ndim <= 2')
-        A = np.atleast_2d(np.asarray(A))
-        return MatrixLinearOperator(A)
-
-    elif issparse(A) or is_pydata_spmatrix(A):
-        return MatrixLinearOperator(A)
-
+    
+    if hasattr(A, '__aslinearoperator__'):
+        linop = A.__aslinearoperator__()
+        if not isinstance(linop, LinearOperator):
+            raise TypeError(f'__aslinearoperator__() did not return a LinearOperator, got {type(linop)}')
+        return linop
+    
+    if isinstance(A, np.ndarray | np.matrix) or issparse(A):
+        return MatrixLinearOperator[np.ndarray | sparray](A)
+    
     else:
-        if hasattr(A, 'shape') and hasattr(A, 'matvec'):
-            rmatvec = None
-            rmatmat = None
-            dtype = None
+        try:
+            return MatrixLinearOperator(A)
+        except TypeError as e:
+            if str(e).startswith('Object of type') and 'does not satisfy the matrix protocol' in str(e):
+                raise TypeError(f'type {type(A)} not understood, expected {LinearOperator|np.ndarray|sparray|AsLinearOperatorDunderProtocol|MinimalMatrixProtocol}') from e
+            else:
+                raise
 
-            if hasattr(A, 'rmatvec'):
-                rmatvec = A.rmatvec
-            if hasattr(A, 'rmatmat'):
-                rmatmat = A.rmatmat
-            if hasattr(A, 'dtype'):
-                dtype = A.dtype
-            return LinearOperator(A.shape, A.matvec, rmatvec=rmatvec,
-                                  rmatmat=rmatmat, dtype=dtype)
 
-        else:
-            raise TypeError('type not understood')
+if __name__ == '__main__':
+    
+    A = np.array([[1+ 1j, 2], [3, 4]])
+    A_linop = aslinearoperator(A)
+    
+    
+    
+    x = np.array([1, 1])
+    assert np.allclose(A_linop @ x, A @ x)
+    assert np.allclose(A_linop.T @ x, A.T @ x)
+    assert np.allclose(A_linop.H @ x, A.conjugate().T @ x)
+    assert np.allclose(A_linop.C @ x, A.conjugate() @ x)
