@@ -8,16 +8,23 @@ from collections.abc import Callable
 from typing import Protocol, TypeVar
 from numbers import Number
 
+#ToDo:
+# - tests
+# - examples
+# - backwards compatibility with old LinearOperator (provide some utility to make it easier to manually upgrade)
+# - fixing appearence of operators in the docs
+# - fixing doc of AsLinearOperatorDunderProtocol as __aslinearoperator__ does not show up in the docs
+
 __all__ = ['LinearOperator', 'MatrixLinearOperator', 'IdentityOperator', 'aslinearoperator']
 
 def priority(func):
-    """Priority decorater to request ``NotImplemented``.
+    """Priority decorator to request ``NotImplemented``.
     
-    Protocoll to provide interoperability between `LinearOperator` and unknown / custom classes.
+    Protocol to provide interoperability between `LinearOperator` and unknown / custom classes.
     
-    Consider the operation ``A @ B``, then python will first try to call ``A.__matmul__(B)``. Only if this returns ``NotImplemented``, python will then try to call ``B.__rmatmul__(A)``.
+    Consider the operation ``A @ B``, then Python will first try to call ``A.__matmul__(B)``. Only if this returns ``NotImplemented``, Python will then try to call ``B.__rmatmul__(A)``.
     
-    If ``A`` is a `LinearOperator`, the object ``B`` might request a ``NotImplemented`` from ``A`` to take over the operation by adding the atribute ``__linop_priority__`` to ``B`` with a value higher than the ``__linop_priority__`` of ``A`` (which is 0.0 by default).
+    If ``A`` is a `LinearOperator`, the object ``B`` might request a ``NotImplemented`` from ``A`` to take over the operation by adding the attribute ``__linop_priority__`` to ``B`` with a value higher than the ``__linop_priority__`` of ``A`` (which is 0.0 by default).
     """
     def priority_wrapper(self: LinearOperator, other):
         if self.__linop_priority__ < getattr(other,  '__linop_priority__', -1.0):
@@ -31,13 +38,13 @@ def priority(func):
 ##############################################################
 
 class MinimalArrayProtocol(Protocol):
-    """Minimal array protocol to ensure compatebility with the `LinearOperator` interface."""
+    """Minimal array protocol to ensure compatibility with the `LinearOperator` interface."""
     ndim: int
     shape: tuple[int, ...]
     def transpose(self) -> MinimalArrayProtocol: ...
     
 class ArrayProtocol(MinimalArrayProtocol):
-    """Array protocol to ensure compatebility with the `LinearOperator` interface.
+    """Array protocol to ensure compatibility with the `LinearOperator` interface.
     
     Attributes
     ----------
@@ -59,13 +66,13 @@ class ArrayProtocol(MinimalArrayProtocol):
     def conjugate(self) -> ArrayProtocol:
         """Optional: Complex conjugate of the array.
         
-        This method is only need in combination with complex-valued `LinearOperator` to provide default implementations for the
+        This method is only needed in combination with complex-valued `LinearOperator` to provide default implementations for the
         
-        1. hermitian adjoint (if the transposed is available), 
-        2. the transposed (if the hermitian adjoint is available) and
+        1. Hermitian adjoint (if the transpose is available), 
+        2. the transpose (if the Hermitian adjoint is available) and
         3. the complex conjugate.
         
-        Thus, this method is not needed in combination with a real-valued `LinearOperator` or a complex-valued `LinearOperator` that does not use a default implementeation of the adjoint, transposed or complex conjugate. 
+        Thus, this method is not needed in combination with a real-valued `LinearOperator` or a complex-valued `LinearOperator` that does not use a default implementation of the adjoint, transpose or complex conjugate. 
         
         Returns
         -------
@@ -84,11 +91,11 @@ class LinearOperator[Array]:
     """Abstract interface for performing matrix-free matrix-vector products.
     
     Many iterative algorithms in `scipy.sparse.linalg`, e.g. `cg`, `gmres`, `lsmr`, `eigs`, `svds`, etc.
-    do not need access to single matrix entries, but only require the evaluation of matrix-vector products
+    do not need access to individual matrix entries, but only require the evaluation of matrix-vector products
     ``y = A @ x`` where ``x`` is a given dense vector (`numpy.ndarray`). This class serves as an abstract interface
     between these iterative algorithms and matrix-like objects that define a matrix-vector product.
     
-    Altough for all algorithms within `scipy.sparse.linalg`, take a `LinearOperator` as input, the user provided implementations must be compatible with `numpy.ndarray`, the interface itselfe is compatible with any array-like object that satisfy the `ArrayProtocol`, e.g. `numpy.ndarray`, `scipy.sparse.sparray` or custom objects, as long as the user provided implementations are compatible with that array-like object. For type annotations, the type of the compatible array-like objects of a `LinearOperator` can be denoted by ``LinearOperator[Array]`` where ``Array`` is the type of the array-like object, e.g. algorithms within `scipy.sparse.linalg` always require ``LinearOperator[np.ndarray]``.
+    Although all algorithms within `scipy.sparse.linalg` take a `LinearOperator` as input and the user-provided implementations must be compatible with `numpy.ndarray`, the interface itself is compatible with any array-like object that satisfies the `ArrayProtocol`, e.g. `numpy.ndarray`, `scipy.sparse.sparray` or custom objects, as long as the user-provided implementations are compatible with that array-like object. For type annotations, the type of the compatible array-like objects of a `LinearOperator` can be denoted by ``LinearOperator[Array]`` where ``Array`` is the type of the array-like object, e.g. algorithms within `scipy.sparse.linalg` always require ``LinearOperator[np.ndarray]``.
     
     To construct a concrete `LinearOperator`, either pass appropriate callables to the constructor as described in the *Parameters* section below or subclass `LinearOperator`. A subclass representing a matrix ``A`` might implement the following attributes and methods:
     
@@ -99,16 +106,16 @@ class LinearOperator[Array]:
     
     Optional:
         - Transpose: (implement one of the following)
-            - ``_tmatmul``: transposed matrix-vector product ``A.T @ x``
-            - ``_transpose``: transposed operator ``A.T``
+            - ``_tmatmul``: transpose matrix-vector product ``A.T @ x``
+            - ``_transpose``: transpose operator ``A.T``
         - Hermitian adjoint: (implement one of the following)
-            - ``_ctmatmul``: hermitian adjoint matrix-vector product ``A.H @ x``
-            - ``_adjoint``: hermitian adjoint operator ``A.H``
+            - ``_ctmatmul``: Hermitian adjoint matrix-vector product ``A.H @ x``
+            - ``_adjoint``: Hermitian adjoint operator ``A.H``
         - Complex conjugate: (implement one of the following)
             - ``_cmatmul``: complex conjugate matrix-vector product ``A.C @ x``
             - ``_conjugate``: complex conjugate operator ``A.C``
             
-    For more informations, see *Notes* below.
+    For more information, see *Notes* below.
             
     Parameters
     ----------
@@ -117,9 +124,9 @@ class LinearOperator[Array]:
     matmul : Callable func(x)
         matrix-vector product, returning ``A @ x``
     tmatmul : Callable func(x) | None, optional
-        transposed matrix-vector product, returning ``A.T @ x``
+        transpose matrix-vector product, returning ``A.T @ x``
     ctmatmul : Callable func(x) | None, optional
-        hermitian adjoint matrix-vector product, returning ``A.H @ x``
+        Hermitian adjoint matrix-vector product, returning ``A.H @ x``
     cmatmul : Callable func(x) | None, optional
         complex conjugate matrix-vector product, returning ``A.C @ x``
     dtype : np.dtype | None, optional
@@ -134,7 +141,7 @@ class LinearOperator[Array]:
     dtype : `numpy.dtype`
         Data type of the matrix.
     T : `LinearOperator`
-        Transposed linear operator.
+        Transpose linear operator.
     H : `LinearOperator`
         Hermitian adjoint linear operator.
     C : `LinearOperator`
@@ -144,13 +151,13 @@ class LinearOperator[Array]:
     Notes
     -----
     
-    - All user provided implementations must properly handle the cases where ``x`` has shape ``(n,)`` (1D vector) and ``(n,k)`` (2D matrix).
+    - All user-provided implementations must properly handle the cases where ``x`` has shape ``(n,)`` (1D vector) and ``(n,k)`` (2D matrix).
 
-    - It is recommended to call ``super().__init__(shape, dtype=dtype)`` in the subclass constructor to have the mandatory attributes validated. If the `LinearOperator` is compatible with `numpy.ndarray`, ``dtype`` might be ``None``. In this case, the ``dtype`` is determined by applying ``_matmul`` to ``np.zeros(n, dtype=np.int8)`` and using the promoted ``dtype`` of the output (`np.int8` is the smallest `numpy.dtype`).
+    - It is recommended to call ``super().__init__(shape, dtype=dtype)`` in the subclass constructor to have the mandatory attributes validated. If the `LinearOperator` is compatible with `numpy.ndarray`, ``dtype`` might be ``None``. In this case, the ``dtype`` is determined by applying ``_matmul`` to ``np.zeros(n, dtype=np.int8)`` and using the promoted ``dtype`` of the output (`numpy.int8` is the smallest `numpy.dtype`).
     
-    - To enable all functionalities of the ``LinearOperator``, it is sufficient to either provide a implementation of the transposed (recommended) `or` the Hermitian adjoint, while the other is then available by a default implementation using ``A.H @ x = (A.T @ x.conjugate()).conjugate()`` and ``A.T @ x = (A.H @ x.conjugate()).conjugate()``, respectively. Similarly, the complex conjugate is always available by a default implementation using ``A.C @ x = (A @ x.conjugate()).conjugate()``. The user might replace the default implementation by providing implementations for the corresponding operation.
+    - To enable all functionalities of the ``LinearOperator``, it is sufficient to either provide an implementation of the transpose (recommended) `or` the Hermitian adjoint, while the other is then available by a default implementation using ``A.H @ x = (A.T @ x.conjugate()).conjugate()`` and ``A.T @ x = (A.H @ x.conjugate()).conjugate()``, respectively. Similarly, the complex conjugate is always available by a default implementation using ``A.C @ x = (A @ x.conjugate()).conjugate()``. The user might replace the default implementation by providing implementations for the corresponding operation.
     
-    - To avoid avoid the construction of the same object multiple times, the transposed, adjoint and conjugate are cached as attributes ``_T``, ``_H`` and ``_C``, respectively and are constructed only once. If the content of the `LinearOperator` changes dynamically, the user might need to clear the cached attributes by setting them to `None`.
+    - To avoid constructing the same object multiple times, the transpose, adjoint and conjugate are cached as attributes ``_T``, ``_H`` and ``_C``, respectively and are constructed only once. If the content of the `LinearOperator` changes dynamically, the user might need to clear the cached attributes by setting them to `None`.
     
     The `LinearOperator` interface supports the following operations, where ``A`` and ``B`` are `LinearOperator` objects, ``alpha`` is a scalar and ``x`` is an array-like object compatible with the `LinearOperator`:
     
@@ -201,7 +208,7 @@ class LinearOperator[Array]:
         if cmatmul is not None:  self._cmatmul:  Callable[[Array], Array] = cmatmul
         
         if '_matmul' not in self.__dict__ and type(self)._matmul == LinearOperator._matmul:
-            raise NotImplementedError("matmul is not defined. Please implement _matmul (subclassing LinearOperator) or provide the matmul argument (instanciating LinearOperator).")
+            raise NotImplementedError("matmul is not defined. Please implement _matmul (subclassing LinearOperator) or provide the matmul argument (instantiating LinearOperator).")
         
         if dtype is None:
             self.dtype = self._get_dtype()
@@ -222,7 +229,7 @@ class LinearOperator[Array]:
         2. another `LinearOperator` or 
         3. any object satisfying the `AsLinearOperatorDunderProtocol`.
         
-        In the last two cases, ``y`` is a new `LinearOperator`, while in the first case, ``y`` is the result of the user-povided ``matmul`` implementation applied to ``other``.
+        In the last two cases, ``y`` is a new `LinearOperator`, while in the first case, ``y`` is the result of the user-provided ``matmul`` implementation applied to ``other``.
         
         If ``self`` has shape ``(m,n)``, then ``other`` must have shape ``(n,)`` or ``(n,k)``, resulting in the output ``y`` having shape ``(m,)`` or ``(m,k)``, respectively.
         
@@ -248,7 +255,7 @@ class LinearOperator[Array]:
             return self._matmul(other)
         
     def transpose(self) -> LinearOperator[Array]:
-        """Transposed linear operator."""
+        """Transpose linear operator."""
         if self._T is None: 
             self._T = self._transpose()
         return self._T
@@ -299,7 +306,7 @@ class LinearOperator[Array]:
         2. another `LinearOperator` or
         3. any object satisfying the `AsLinearOperatorDunderProtocol`.
         
-        In the last two cases, ``y`` is a new `LinearOperator`, while in the first case, ``y`` is a a array-like object.
+        In the last two cases, ``y`` is a new `LinearOperator`, while in the first case, ``y`` is an array-like object.
         
         If ``self`` has shape ``(m,n)``, then ``other`` must have shape ``(m,)`` or ``(k,m)``, resulting in the output ``y`` having shape ``(n,)`` or ``(k,n)``, respectively.
         
@@ -431,7 +438,14 @@ class LinearOperator[Array]:
         
         Calculates ``y = other - self``.
         
-        Same as :meth:`LinearOperator.__sub__` since subtraction is commutative.
+        Parameters
+        ----------
+        other : any object compatible with `aslinearoperator`
+            The linear operator from which to subtract.
+            
+        Returns
+        -------
+        y : `LinearOperator`
         """
         
         return _SumLinearOperator[Array](-self, aslinearoperator(other))
@@ -520,9 +534,9 @@ class LinearOperator[Array]:
         return self._matmul(other.conjugate()).conjugate()
         
     def _tmatmul(self, other: Array) -> Array:
-        """Transposed matrix-vector or matrix-matrix product.
+        """Transpose matrix-vector or matrix-matrix product.
         
-        This is the default implementation of the action of the transpose of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it must implement the matrix-vector or matrix-matrix product ``y = self.T @ other``.
+        This is the default implementation of the action of the transpose of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it implements the matrix-vector or matrix-matrix product ``y = self.T @ other``.
         
         Parameters
         ----------
@@ -534,7 +548,7 @@ class LinearOperator[Array]:
         y : `ArrayProtocol`
              The result of the transposed matrix-vector or matrix-matrix product, having shape ``(n,)`` or ``(n,k)``, respectively.
         """
-        # check if _ctmatmul was a) set as attribute in __init__or b) overwritten by subclass to avoid infinite recursion
+        # check if _ctmatmul was a) set as attribute in __init__ or b) overwritten by subclass to avoid infinite recursion
         if '_ctmatmul' in self.__dict__ or type(self)._ctmatmul != LinearOperator._ctmatmul:
             return self._ctmatmul(other.conjugate()).conjugate()
         else:
@@ -548,7 +562,7 @@ class LinearOperator[Array]:
     def _ctmatmul(self, other: Array) -> Array:
         """Hermitian adjoint matrix-vector or matrix-matrix product.
         
-        This is the default implementation of the action of the Hermitian adjoint (i.e. transpose and conjugate) of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it must implement the matrix-vector or matrix-matrix product ``y = self.H @ other``.
+        This is the default implementation of the action of the Hermitian adjoint (i.e. transpose and conjugate) of this `LinearOperator` on an array-like object ``other`` compatible with this `LinearOperator`, i.e. it implements the matrix-vector or matrix-matrix product ``y = self.H @ other``.
         
         Parameters
         ----------
@@ -558,9 +572,9 @@ class LinearOperator[Array]:
         Returns
         -------
         y : `ArrayProtocol`
-             The result of the transposed matrix-vector or matrix-matrix product, having shape ``(n,)`` or ``(n,k)``, respectively.
+             The result of the Hermitian adjoint matrix-vector or matrix-matrix product, having shape ``(n,)`` or ``(n,k)``, respectively.
         """
-        # check if _tmatmul was a) set as attribute in __init__or b) overwritten by subclass to avoid infinite recursion
+        # check if _tmatmul was a) set as attribute in __init__ or b) overwritten by subclass to avoid infinite recursion
         if '_tmatmul' in self.__dict__ or type(self)._tmatmul != LinearOperator._tmatmul:
             return self._tmatmul(other.conjugate()).conjugate()
         else:
@@ -572,26 +586,26 @@ class LinearOperator[Array]:
                 raise NotImplementedError("Please provide tmatmul or ctmatmul or overwrite _ctmatmul, _tmatmul, _transpose or _adjoint.")
             
     def _transpose(self) -> LinearOperator[Array]:
-        """Assemble the transposed linear operator.
+        """Assemble the transpose linear operator.
         
-        This is the default implementation of the transposed linear operator ``self.T`` based on `_tmatmul`.
+        This is the default implementation of the transpose linear operator ``self.T`` based on `_tmatmul`.
         
         Returns
         -------
         T : `LinearOperator`
-             The transposed linear operator.
+             The transpose linear operator.
         """
         return _TransposeLinearOperator[Array](self)
     
     def _adjoint(self) -> LinearOperator[Array]:
-        """Assemble the hermitian adjoint linear operator.
+        """Assemble the Hermitian adjoint linear operator.
         
-        This is the default implementation of the hermitian adjoint linear operator ``self.H`` based on `_ctmatmul`.
+        This is the default implementation of the Hermitian adjoint linear operator ``self.H`` based on `_ctmatmul`.
         
         Returns
         -------
         H : `LinearOperator`
-             The hermitian adjoint linear operator.
+             The Hermitian adjoint linear operator.
         """
         return _AdjointLinearOperator[Array](self)
     
@@ -806,7 +820,7 @@ class IdentityOperator[Array](LinearOperator[Array]):
     shape : tuple[int, int]
         The shape of the identity operator, must be a tuple of two positive integers.
     dtype : np.dtype, optional
-        The data type of the identity operator, if not provided, it is set to `numpy.int8` by default as the smallest possible data type.
+        The data type of the identity operator. If not provided, it is set to `numpy.int8` by default as the smallest possible data type.
         
     Attributes
     ----------
@@ -817,7 +831,7 @@ class IdentityOperator[Array](LinearOperator[Array]):
     dtype : `numpy.dtype`
         Data type of the matrix.
     T : `LinearOperator`
-        Transposed linear operator.
+        Transpose linear operator.
     H : `LinearOperator`
         Hermitian adjoint linear operator.
     C : `LinearOperator`
@@ -891,19 +905,19 @@ class MatrixProtocol[Array](MinimalMatrixProtocol[Array]):
     """
     
     def transpose(self) -> MatrixProtocol[Array]:
-        """Transposed matrix-like object.
+        """Transpose matrix-like object.
         
         Returns
         -------
         T : `MatrixProtocol`
-            The transposed matrix-like object.
+            The transpose matrix-like object.
         """
         ...
     
     def conjugate(self) -> MatrixProtocol[Array]:
         """Optional: Complex conjugate matrix-like object.
         
-        If this method is not present, the default implementations of the hermitian adjoint and complex conjugate are used as discribed in the `LinearOperator` class.
+        If this method is not present, the default implementations of the Hermitian adjoint and complex conjugate are used as described in the `LinearOperator` class.
         
         Returns
         -------
@@ -934,7 +948,7 @@ class MatrixLinearOperator[Array](LinearOperator[Array]):
     dtype : `numpy.dtype`
         Data type of the matrix.
     T : `LinearOperator`
-        Transposed linear operator.
+        Transpose linear operator.
     H : `LinearOperator`
         Hermitian adjoint linear operator.
     C : `LinearOperator`
@@ -1006,7 +1020,7 @@ class MatrixLinearOperator[Array](LinearOperator[Array]):
 # Conversion protocols
 
 class AsLinearOperatorDunderProtocol[Array](Protocol):
-    """Protocol for objects that provide an explicit instruction how to convert them  to a `LinearOperator` via the `aslinearoperator` function.
+    """Protocol for objects that provide an explicit instruction on how to convert them to a `LinearOperator` via the `aslinearoperator` function.
     """
     
     def __aslinearoperator__(self) -> LinearOperator[Array]:
@@ -1069,17 +1083,3 @@ def aslinearoperator[Array](A: AsLinearOperatorProtocol[Array]) -> LinearOperato
                 raise TypeError(f'type {type(A)} not understood, expected {LinearOperator|np.ndarray|sparray|AsLinearOperatorDunderProtocol|MinimalMatrixProtocol}') from e
             else:
                 raise
-
-
-if __name__ == '__main__':
-    
-    A = np.array([[1+ 1j, 2], [3, 4]])
-    A_linop = aslinearoperator(A)
-    
-    
-    
-    x = np.array([1, 1])
-    assert np.allclose(A_linop @ x, A @ x)
-    assert np.allclose(A_linop.T @ x, A.T @ x)
-    assert np.allclose(A_linop.H @ x, A.conjugate().T @ x)
-    assert np.allclose(A_linop.C @ x, A.conjugate() @ x)
