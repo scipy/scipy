@@ -1566,7 +1566,8 @@ cdef class cKDTree:
             you. See the spmatrix to sparray migration guide for details.
             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
             """
-            warn(msg, DeprecationWarning, stacklevel=2)
+            prefixes = (os.path.dirname(__file__),)
+            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
             output_type = 'dok_matrix'
 
         if output_type == 'dict':
