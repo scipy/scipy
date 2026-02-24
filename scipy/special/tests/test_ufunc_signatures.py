@@ -96,7 +96,7 @@ _multi_arg_public_ufuncs = [
 def test_nep50(ufunc):
     # Test that functions with multiple arguments respect nep50 promotion rules.
     rng = np.random.default_rng(1234)
-    # As in test_ufunc_signatures, filter out functions with integer arguments.
+    # As in test_ufunc_signatures, filter out signatures involving integers.
     types = set(sig for sig in ufunc.types
                 if not ("l" in sig or "i" in sig or "q" in sig or "p" in sig))
     for sig in types:
@@ -114,5 +114,6 @@ def test_nep50(ufunc):
         # Test that the output is an appropriately typed nan. This also implicitly
         # tests that ufuncs propagate nans correctly.
         assert_equal(
-            result, np.asarray([_get_nan_val(typecode) for typecode in output_types])
+            result, np.asarray([_get_nan_val(typecode) for typecode in output_types],
+            strict=True)
         )
