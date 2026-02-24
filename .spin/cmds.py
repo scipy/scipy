@@ -476,14 +476,16 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     '--submodule', '-s', default=None, metavar='MODULE_NAME',
     help="Submodule whose tests to run (cluster, constants, ...)")
 @meson.build_dir_option
+@meson.build_option
 @click.pass_context
-def refguide_check(ctx, build_dir=None, *args, **kwargs):
+def refguide_check(ctx, build: bool | None = None, build_dir=None, *args, **kwargs):
     """🔧 Run refguide check."""
-    click.secho(
+    if build:
+        click.secho(
             "Invoking `build` prior to running refguide-check:",
             bold=True, fg="bright_green"
         )
-    ctx.invoke(build)
+        ctx.invoke(build_cmd)
 
     build_dir = os.path.abspath(build_dir)
     root = Path(build_dir).parent
@@ -516,8 +518,11 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
 @click.option(
     '--verbose', '-v', default=False, is_flag=True, help="verbosity")
 @meson.build_dir_option
+@meson.build_option
 @click.pass_context
-def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs):
+def smoke_tutorials(
+    ctx, pytest_args, tests, verbose, build, build_dir, *args, **kwargs
+):
     """🔧 Run doctests of user-facing rst tutorials.
 
     To test all tutorials in the scipy doc/source/tutorial directory, use
@@ -541,11 +546,12 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
 
     """  # noqa: E501
 
-    click.secho(
-        "Invoking `build` prior to running tests for tutorials:",
-        bold=True, fg="bright_green"
-    )
-    ctx.invoke(build)
+    if build:
+        click.secho(
+            "Invoking `build` prior to running refguide-check:",
+            bold=True, fg="bright_green"
+        )
+        ctx.invoke(build_cmd)
 
     meson._set_pythonpath(build_dir)
 
@@ -824,6 +830,7 @@ def _dirty_git_working_dir():
 )
 @meson.build_option
 @meson.build_dir_option
+@meson.build_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
           commits, array_api_backend, build, build_dir=None, *args, **kwargs):

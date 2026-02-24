@@ -1,5 +1,10 @@
 version: 2.1
 
+orbs:
+  # https://circleci.com/developer/orbs/orb/prefix-dev/pixi
+  # check content of the orb when updating the version
+  pixi: prefix-dev/pixi@0.1.0
+
 # Aliases to reuse
 _defaults: &defaults
   docker:
@@ -27,14 +32,6 @@ commands:
               circleci-agent step halt;
             fi
 
-  apt-install:
-    steps:
-      - run:
-          name: Install apt packages
-          command: |
-            sudo apt-get update
-            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
-
   merge:
     steps:
       - run:
@@ -58,7 +55,8 @@ jobs:
       - check-skip
       - merge
 
-      - apt-install
+      - pixi/pixi_setup:
+          env: "bench"
 
       - run:
           name: update submodules
@@ -72,19 +70,8 @@ jobs:
               - deps_ccache
 
       - run:
-          name: setup Python venv
-          command: |
-            pip install numpy cython pybind11 pythran ninja meson
-            pip install -r requirements/doc.txt
-            # asv upper bound due to issue in gh-23611, remove when that is resolved
-            pip install mpmath gmpy2 "asv<0.6.5" pooch threadpoolctl spin marray
-            # extra benchmark deps
-            pip install pyfftw cffi pytest
-
-      - run:
           name: build SciPy
-          command: |
-            spin build -j2
+          command: pixi run build-bench
 
       - save_cache:
           key: deps_ccache-{{ .Branch }}
@@ -94,30 +81,28 @@ jobs:
 
       - run:
           name: ccache performance
-          command: |
-            ccache -s
+          command: pixi exec ccache -s
 
       - persist_to_workspace:
           root: ~/
           paths:
             - .
 
-# Build docs
-  build_docs:
+# Build docs and distribution-ready tree
+  build_docs_dist:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/
 
       - check-skip
-      - apt-install
-
+      - pixi/pixi_setup:
+          env: "docs"
+      
       - run:
           name: build docs
           no_output_timeout: 25m
-          command: |
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            spin docs -j2 2>&1 | tee sphinx_log.txt
+          command: pixi run --skip-deps docs doc-dist
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)
@@ -143,20 +128,27 @@ jobs:
           at: ~/
 
       - check-skip
-      - apt-install
+      - pixi/pixi_setup:
+          env: "bench"
+
+      - run:
+          working_directory: benchmarks
+          command: pixi run -e bench asv machine --machine CircleCI
 
       - run:
           name: run asv
           no_output_timeout: 30m
-          command: |
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            cd benchmarks
-            asv machine --machine CircleCI
-            export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
-            export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-            export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
-            asv --config asv.conf.json publish
+          # TODO: simplify via spin and Pixi tasks
+          # shell: /home/circleci/.pixi/bin/pixi run -e bench spin run /bin/bash -eo pipefail
+          # command: |
+          #   cd benchmarks
+          #   asv machine --machine CircleCI
+          #   export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
+          #   export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+          #   export OPENBLAS_NUM_THREADS=1
+          #   time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+          #   asv --config asv.conf.json publish
+          command: pixi run bench --quick -t '^((?!BenchGlobal|QuadraticAssignment).)*$'
 
       - store_artifacts:
           path: benchmarks/html
@@ -170,29 +162,27 @@ jobs:
           at: ~/
 
       - check-skip
-      - apt-install
+      - pixi/pixi_setup:
+          # add "smoke-docs" when pixi_setup can accept multiple envs
+          env: "docs"
 
       - run:
           name: refguide_check
           no_output_timeout: 25m
-          command: |
-            sudo apt-get install -y wamerican-small
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
-            spin refguide-check
+          command: pixi run --skip-deps refguide-check
 
       - run:
           name: smoke-docs
           no_output_timeout: 35m
-          command: |
-            pip install matplotlib hypothesis
-            pip install scipy-doctest
-            spin smoke-docs
+          command: pixi run --skip-deps smoke-docs
 
       - run:
           name: smoke-tutorials
           no_output_timeout: 10m
-          command: |
-            spin smoke-tutorials
+          command: | 
+            sudo apt-get update
+            sudo apt-get install -y wamerican-small
+            pixi run --skip-deps smoke-tutorials
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
@@ -235,7 +225,7 @@ workflows:
   default:
     jobs:
       - build_scipy
-      - build_docs:
+      - build_docs_dist:
           requires:
             - build_scipy
       - run_benchmarks:
@@ -246,7 +236,7 @@ workflows:
             - build_scipy
       - deploy:
           requires:
-            - build_docs
+            - build_docs_dist
           filters:
             branches:
               only: main
