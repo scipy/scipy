@@ -3,6 +3,13 @@ from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
+import warnings
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*_matrix is being replaced:DeprecationWarning",
+)
+
+warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
 
 
 def _check_csr_rowslice(i, sl, X, Xcsr):
