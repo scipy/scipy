@@ -37,7 +37,7 @@ from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 from scipy._lib._array_api import array_namespace
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 from numpy import inf, array, zeros
 

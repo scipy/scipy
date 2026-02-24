@@ -52,12 +52,7 @@ all_methods = [
     ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
-if (sys.implementation.name == 'pypy'
-        and sys.implementation.version < (7, 3, 10)):
-    # changed in PyPy for v7.3.10
-    floaterr = r"unsupported operand type for float\(\): 'list'"
-else:
-    floaterr = r"must be real number, not list"
+floaterr = r"must be real number, not list"
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
 # So, in case of an `UNURANError`, we do not validate the error message.

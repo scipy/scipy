@@ -106,7 +106,7 @@ class OdeSolver:
     ----------
     n : int
         Number of equations.
-    status : string
+    status : str
         Current status of the solver: 'running', 'finished' or 'failed'.
     t_bound : float
         Boundary time.
@@ -181,7 +181,7 @@ class OdeSolver:
 
         Returns
         -------
-        message : string or None
+        message : str or None
             Report from the solver. Typically a reason for a failure if
             `self.status` is 'failed' after the step was taken or None
             otherwise.

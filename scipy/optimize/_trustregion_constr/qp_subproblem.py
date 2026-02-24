@@ -90,7 +90,7 @@ def sphere_intersections(z, d, trust_radius,
         The line/segment ``x(t) = z + t*d`` is inside the ball for
         for ``ta <= t <= tb``.
     intersect : bool
-        When ``True``, there is a intersection between the line/segment
+        When ``True``, there is an intersection between the line/segment
         and the sphere. On the other hand, when ``False``, there is no
         intersection.
     """
@@ -180,7 +180,7 @@ def box_intersections(z, d, lb, ub,
         The line/segment ``x(t) = z + t*d`` is inside the box for
         for ``ta <= t <= tb``.
     intersect : bool
-        When ``True``, there is a intersection between the line (or segment)
+        When ``True``, there is an intersection between the line (or segment)
         and the rectangular box. On the other hand, when ``False``, there is no
         intersection.
     """
@@ -270,7 +270,7 @@ def box_sphere_intersections(z, d, lb, ub, trust_radius,
         The line/segment ``x(t) = z + t*d`` is inside the rectangular box and
         inside the ball for ``ta <= t <= tb``.
     intersect : bool
-        When ``True``, there is a intersection between the line (or segment)
+        When ``True``, there is an intersection between the line (or segment)
         and both constraints. On the other hand, when ``False``, there is no
         intersection.
     sphere_info : dict, optional
@@ -479,7 +479,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
     In the absence of spherical and box constraints, for sufficient
     iterations, the method returns a truly optimal result.
     In the presence of those constraints, the value returned is only
-    a inexpensive approximation of the optimal value.
+    an inexpensive approximation of the optimal value.
 
     References
     ----------

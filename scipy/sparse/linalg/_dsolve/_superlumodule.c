@@ -182,8 +182,8 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     SUPERLU_FREE((void*)perm_c);
     Destroy_SuperMatrix_Store((SuperMatrix*)&A);	/* holds just a pointer to the data */
     Destroy_SuperMatrix_Store((SuperMatrix*)&B);
-    Destroy_SuperNode_Matrix((SuperMatrix*)&L);
-    Destroy_CompCol_Matrix((SuperMatrix*)&U);
+    XDestroy_SuperNode_Matrix((SuperMatrix*)&L);
+    XDestroy_CompCol_Matrix((SuperMatrix*)&U);
     StatFree((SuperLUStat_t*)&stat);
 
     return Py_BuildValue("Ni", Py_X, info);
