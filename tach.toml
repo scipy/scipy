@@ -128,7 +128,7 @@ depends_on = ["scipy._lib", "scipy.sparse", "scipy.sparse.linalg"]
 
 [[modules]]
 path = "scipy.sparse.linalg"
-depends_on = ["scipy._lib", "scipy.linalg", "scipy.sparse"]
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.sparse", "scipy._external"]
 
 [[modules]]
 path = "scipy.spatial"

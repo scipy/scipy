@@ -14,8 +14,8 @@ from numpy.testing import assert_, assert_equal
 
 import numpy as np
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, make_xp_test_case, xp_assert_close, xp_assert_equal, xp_ravel,
-    is_numpy,
+    SCIPY_ARRAY_API, SCIPY_DEVICE, is_torch, make_xp_test_case, xp_assert_close,
+    xp_assert_equal, xp_ravel, is_numpy,
 )
 from scipy._external import array_api_extra as xpx
 import scipy.sparse as sparse
@@ -221,19 +221,22 @@ class TestLinearOperator:
             z = A@B
             assert len(z.args) == 2 and z.args[0] is A and z.args[1] is B
 
-        for matvecsC in get_matvecs(xp.asarray(self.C)):
+        for matvecsC in get_matvecs(_asarray(self.C)):
             C = interface.LinearOperator(**matvecsC, xp=xp)
-            X = xp.asarray([[1, 2], [3, 4]])
-            C_ = xp.asarray(self.C)
+            X = _asarray([[1, 2], [3, 4]])
+            C_ = _asarray(self.C)
 
             xp_assert_equal(C.rmatmat(X), (C_).T @ X)
             xp_assert_equal((C**2).rmatmat(X), (C_ @ C_).T @ X)
 
-            xp_assert_equal((C**2)@[1,1], xp.asarray([17,37]))
-            xp_assert_equal((C**2).rmatvec([1, 1]), xp.asarray([22, 32]))
-            xp_assert_equal((C**2).H.matvec([1, 1]), xp.asarray([22, 32]))
-            xp_assert_equal((C**2).adjoint().matvec([1, 1]), xp.asarray([22, 32]))
-            xp_assert_equal((C**2).matmat([[1],[1]]), xp.asarray([[17],[37]]))
+            xp_assert_equal((C**2)@_asarray([1,1]), _asarray([17,37]))
+            xp_assert_equal((C**2).rmatvec(_asarray([1, 1])), _asarray([22, 32]))
+            xp_assert_equal((C**2).H.matvec(_asarray([1, 1])), _asarray([22, 32]))
+            xp_assert_equal(
+                (C**2).adjoint().matvec(_asarray([1, 1])),
+                _asarray([22, 32]),
+            )
+            xp_assert_equal((C**2).matmat(_asarray([[1],[1]])), _asarray([[17],[37]]))
 
             assert isinstance(C**2, interface._PowerLinearOperator)
 
@@ -252,7 +255,7 @@ class TestLinearOperator:
         A = interface.LinearOperator(**D, xp=xp)
         B = xp.asarray([[1 + 1j, 2, 3],
                         [4, 5, 6],
-                        [7, 8, 9]])
+                        [7, 8, 9]], dtype=xp.complex128)
         b = B[0, ...]
 
         xp_assert_equal(operator.matmul(A, b), A * b)
@@ -812,6 +815,8 @@ class TestAsLinearOperator:
 
     @pytest.mark.parametrize("dtype", ["int64", "float64", "complex128"])
     def test_xp(self, dtype, xp):
+        if dtype == "int64" and is_torch(xp) and SCIPY_DEVICE != "cpu":
+            pytest.skip("\"addmm_cuda\" not implemented for 'Long'")
         dtype = getattr(xp, dtype)
         original = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
         for M, A_array in self.make_cases(original, dtype, xp=xp):
@@ -1014,7 +1019,7 @@ def test_determine_lo_dtype_for_int(xp):
 
 @make_xp_test_case(interface.LinearOperator)
 def test_adjoint_conjugate(xp):
-    X = xp.asarray([[1j]])
+    X = xp.asarray([[1j]], dtype=xp.complex128)
     A = interface.aslinearoperator(X)
 
     B = 1j * A
@@ -1036,7 +1041,7 @@ def test_ndim(xp):
 
 @make_xp_test_case(interface.LinearOperator)
 def test_transpose_noconjugate(xp):
-    X = xp.asarray([[1j]])
+    X = xp.asarray([[1j]], dtype=xp.complex128)
     A = interface.aslinearoperator(X)
 
     B = 1j * A
@@ -1062,12 +1067,12 @@ def test_transpose_multiplication(xp):
         def _matmat(self, other): return self.A @ other
         def _rmatmat(self, other): return self.A.mT @ other
 
-    A = MyMatrix(xp.asarray([[1, 2], [3, 4]]))
-    X = xp.asarray([1, 2])
+    A = MyMatrix(xp.asarray([[1, 2], [3, 4]], dtype=xp.complex128))
+    X = xp.asarray([1, 2], dtype=xp.complex128)
     X_T = X
-    B = xp.asarray([[10, 20], [30, 40]])
+    B = xp.asarray([[10, 20], [30, 40]], dtype=xp.complex128)
     X2 = xp.reshape(X, (-1, 1))
-    Y = xp.asarray([[1, 2], [3, 4]])
+    Y = xp.asarray([[1, 2], [3, 4]], dtype=xp.complex128)
 
     xp_assert_equal(A @ B, Y @ B)
     xp_assert_equal(B.T @ A, B.T @ Y)
