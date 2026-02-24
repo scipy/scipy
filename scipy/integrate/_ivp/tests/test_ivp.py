@@ -12,7 +12,7 @@ from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
-from scipy.sparse import csc_array, safely_cast_index_arrays
+from scipy.sparse import coo_array, csc_array, safely_cast_index_arrays
 
 
 def fun_zero(t, y):
