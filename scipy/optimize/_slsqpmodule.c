@@ -186,7 +186,7 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     // Some helper x macros to pack and unpack the SLSQP_vars struct and
     // the Python dictionary.
 
-    #define STRUCT_DOUBLE_FIELD_NAMES X(acc) X(alpha) X(f0) X(gs) X(h1) X(h2) X(h3) X(h4) X(t) X(t0) X(tol)
+    #define STRUCT_DOUBLE_FIELD_NAMES X(acc) X(alpha) X(f0) X(gs) X(h1) X(h2) X(h3) X(h4) X(t) X(t0) X(tol) X(optimality) X(constr_violation)
     #define STRUCT_INT_FIELD_NAMES X(exact) X(inconsistent) X(reset) X(iter) X(itermax) X(line) X(m) X(meq) X(mode) X(n)
     #define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_DOUBLE_FIELD_NAMES
 
