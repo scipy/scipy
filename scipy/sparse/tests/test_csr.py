@@ -5,6 +5,13 @@ from scipy._lib._testutils import check_free_memory
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
+import warnings
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*_matrix is being replaced:DeprecationWarning",
+)
+
+warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:.*_matrix is being replaced:DeprecationWarning",

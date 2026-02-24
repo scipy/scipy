@@ -38,6 +38,7 @@ def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, rng=None):
                                   rng=rng, data_sampler=data_sampler)
 
 
+@pytest.mark.filterwarnings(f"ignore:.*_matrix is being repl:DeprecationWarning")
 class TestConstructUtils:
 
     @pytest.mark.parametrize("cls", [
