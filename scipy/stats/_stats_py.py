@@ -2284,7 +2284,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
         cumulative_weights = xp.cumulative_sum(weights, include_initial=True)
         indices = xp.searchsorted(a, bin_edges, side='left')
         hist = xp.diff(xp.take_along_axis(cumulative_weights, indices, axis=-1))
-        hist = xpx.at(hist)[-1].add(xp.sum(weights[a == bin_edges[-1]]))
+        hist = xpx.at(hist)[-1].add(xp.sum(xp.where(a == bin_edges[-1], weights, 0.)))
 
     # fixed width for bins is assumed, as numpy's histogram gives
     # fixed width bins for int values for 'bins'
@@ -2292,7 +2292,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
     # calculate number of extra points
     # should this be *number* of extra points or should it be extra weight?
     # should it include NaNs?
-    binnedpoints = (np.sum(hist) if weights is None
+    binnedpoints = (xp.sum(hist) if weights is None
                     else xp.count_nonzero((bin_edges[0] <= a) & (a <= bin_edges[-1])))
     extrapoints = a.shape[0] - binnedpoints
 
@@ -2317,7 +2317,7 @@ CumfreqResult = namedtuple('CumfreqResult',
                             'extrapoints'))
 
 
-@xp_capabilities(np_only=True, skip_backends=[('dask.array', 'fails tests')])
+@xp_capabilities(skip_backends=[('dask.array', 'fails tests')])
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a cumulative frequency histogram, using the histogram function.
 
@@ -2400,7 +2400,7 @@ RelfreqResult = namedtuple('RelfreqResult',
                             'extrapoints'))
 
 
-@xp_capabilities(np_only=True, skip_backends=[('dask.array', 'fails tests')])
+@xp_capabilities(skip_backends=[('dask.array', 'fails tests')])
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a relative frequency histogram, using the histogram function.
 
