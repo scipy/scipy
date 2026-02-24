@@ -216,6 +216,40 @@ class TestSolveBanded:
         assert x.shape == (0, 0)
         assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    @pytest.mark.parametrize("nrhs", [(), (1,), (5,)])
+    @pytest.mark.parametrize("n", [5, 10])
+    @pytest.mark.parametrize("l_and_u", [(1, 1), (0, 2), (2, 0), (3, 4), (4, 3)])
+    def test_shape_dtype(self, l_and_u, n, nrhs, dtype):
+        rng = np.random.default_rng(seed=12345)
+        shape_b = (n,) + nrhs
+
+        if np.issubdtype(dtype, np.complexfloating):
+            a = rng.normal(size=(n, n)) + 1j * rng.normal(size=(n, n))
+        else:
+            a = rng.normal(size=(n, n))
+        a = a.astype(dtype)
+
+        b = rng.normal(size=shape_b).astype(dtype)
+
+        l, u = l_and_u
+        a = np.triu(a, k=-l)
+        a = np.tril(a, k=u)
+        ab = np.zeros((l + u + 1, n), dtype=a.dtype)
+        ab[u, :] = np.diag(a)
+        for i in range(l):
+            ab[u+i+1, :-i-1] = np.diag(a, k=-i-1)
+        for i in range(u):
+            ab[u-i-1, i+1:] = np.diag(a, k=i+1)
+
+        x = solve_banded(l_and_u, ab, b)
+
+        atol = 1e-4 if dtype in (np.float32, np.complex64) else 1e-12
+        assert x.dtype == a.dtype
+        assert x.shape == shape_b
+        assert_allclose(a @ x, b, atol=atol)
+
 
 class TestSolveHBanded:
 
