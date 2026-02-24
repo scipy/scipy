@@ -524,19 +524,24 @@ class dia_array(_dia_base, sparray):
 
     Attributes
     ----------
+    data
+        DIA format data array of the array
+    offsets
+        DIA format offset array of the array
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        DIA format data array of the array
-    offsets
-        DIA format offset array of the array
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'dia'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : dia_array
+        The transpose of the array
 
     Notes
     -----
@@ -600,19 +605,24 @@ class dia_matrix(spmatrix, _dia_base):
 
     Attributes
     ----------
+    data
+        DIA format data array of the matrix
+    offsets
+        DIA format offset array of the matrix
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        DIA format data array of the matrix
-    offsets
-        DIA format offset array of the matrix
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'dia'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : dia_matrix
+        The transpose of the matrix
 
     Notes
     -----
