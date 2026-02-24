@@ -80,7 +80,7 @@ jobs:
           environments: scipy-openblas
 
       - name: Test with scipy-openblas32
-        run: pixi run test-scipy-openblas
+        run: pixi run test-scipy-openblas-32
 
   test_accelerate:
     name: Accelerate, full, py3.14/npAny, spin
