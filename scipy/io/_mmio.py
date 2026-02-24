@@ -99,7 +99,7 @@ def mmread(source, *, spmatrix=_NoValue):
             The default value for `spmatrix` is changing to False in v1.20.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
-            on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+            on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Returns
@@ -582,7 +582,7 @@ class MMFile:
                 The default value for `spmatrix` is changing to False in v1.20.
                 That means the default return value will be a sparse array.
                 Unless you use * instead of @, ** for matrix power, or you depend
-                on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+                on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
                 See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
         Returns
@@ -603,13 +603,14 @@ class MMFile:
 
         if spmatrix is _NoValue:
             msg = """The default value for `spmatrix` is changing to `False` in v1.20.
-                That means the default return type will be a sparse array.
-                Unless you use * instead of @, ** for matrix power, or you depend
-                on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-                See the spmatrix to sparray migration guide for details.
-                https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-                """
-            warn(msg, DeprecationWarning, stacklevel=2)
+             That means the default return type will be a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             """
+            prefixes = (os.path.dirname(__file__),)
+            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
             spmatrix = True
 
         if spmatrix and isinstance(data, coo_array):

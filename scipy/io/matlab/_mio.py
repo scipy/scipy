@@ -3,6 +3,7 @@ Module for reading and writing matlab (TM) .mat files
 """
 # Authors: Travis Oliphant, Matthew Brett
 
+import os
 import warnings
 
 from contextlib import contextmanager
@@ -101,7 +102,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
             The default value for `spmatrix` is changing to False in v1.20.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
-            on 2D shapes from e.g. `A.sum(axis=0)`, it may not matter to you.
+            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     **kwargs
@@ -252,7 +253,8 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
     for name, var in list(matfile_dict.items()):
         if issparse(var):
             if spmatrix is _NoValue:
-                warnings.warn(warn_msg, DeprecationWarning, stacklevel=2)
+                prefixes = (os.path.dirname(__file__),)
+                warnings.warn(warn_msg, DeprecationWarning, skip_file_prefixes=prefixes)
                 spmatrix = True
             if spmatrix:
                 fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix

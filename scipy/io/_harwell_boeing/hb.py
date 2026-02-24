@@ -18,6 +18,7 @@ features are:
 # having reusable facilities to efficiently read/write fortran-formatted files
 # would be useful outside this module.
 
+import os
 import warnings
 
 import numpy as np
@@ -474,7 +475,7 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
             The default value for `spmatrix` is changing to False in v1.20.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
-            on 2D shapes from e.g. `A.sum(axis=0)`, it may not matter to you.
+            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Returns
@@ -525,7 +526,8 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
             See the spmatrix to sparray migration guide for details.
             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
             """
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        prefixes = (os.path.dirname(__file__),)
+        warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
         spmatrix = True
 
     if spmatrix:
