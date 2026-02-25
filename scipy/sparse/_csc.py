@@ -268,7 +268,7 @@ class csc_array(_csc_base, sparray):
            [0, 0, 5],
            [2, 3, 6]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class csc_matrix(spmatrix, _csc_base):

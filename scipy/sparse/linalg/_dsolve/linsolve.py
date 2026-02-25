@@ -474,6 +474,30 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         ``secondary``, ``dynamic``, ``interp``. (Default: ``basic,area``)
 
         See SuperLU documentation for details.
+    permc_spec : str, optional
+        How to permute the columns of the matrix for sparsity preservation.
+        (default: 'COLAMD')
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering
+
+    diag_pivot_thresh : float, optional
+        Threshold used for a diagonal entry to be an acceptable pivot.
+        See SuperLU user's guide for details [1]_
+    relax : int, optional
+        Expert option for customizing the degree of relaxing supernodes.
+        See SuperLU user's guide for details [1]_
+    panel_size : int, optional
+        Expert option for customizing the panel size.
+        See SuperLU user's guide for details [1]_
+    options : dict, optional
+        Dictionary containing additional expert options to SuperLU.
+        See SuperLU user guide [1]_ (section 2.4 on the 'Options' argument)
+        for more details. For example, you can specify
+        ``options=dict(Equil=False, IterRefine='SINGLE'))``
+        to turn equilibration off and perform a single iterative refinement.
 
     Returns
     -------
@@ -500,6 +524,10 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     to the full LU factors even for large `drop_tol`.
 
     This function uses the SuperLU library.
+
+    References
+    ----------
+    .. [1] SuperLU https://portal.nersc.gov/project/sparse/superlu/
 
     Examples
     --------

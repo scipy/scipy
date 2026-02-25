@@ -143,6 +143,11 @@ class DisjointSet:
 
     def add(self, x):
         """Add element `x` to disjoint set.
+
+        Parameters
+        ----------
+        x : hashable object
+            Element to add to the disjoint set.
         """
         if x in self._indices:
             return

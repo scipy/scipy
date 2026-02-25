@@ -579,6 +579,12 @@ legacy_functions = [
     "scipy.optimize.fmin_tnc",
     "scipy.optimize.fmin_ncg",
     "scipy.optimize.fmin_cobyla",
+    "scipy.optimize.anderson",
+    "scipy.optimize.broyden1",
+    "scipy.optimize.broyden2",
+    "scipy.optimize.diagbroyden",
+    "scipy.optimize.excitingmixing",
+    "scipy.optimize.linearmixing",
     "scipy.ndimage.sum",
     "scipy.signal.sosfreqz"
 ]

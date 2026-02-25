@@ -317,6 +317,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Duplicate entries will be summed together.
 
+        Parameters
+        ----------
+        copy : bool, optional
+            Unused.
+
         Returns
         -------
         csc array/matrix
@@ -354,6 +359,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
         """Convert this array/matrix to Compressed Sparse Row format.
 
         Duplicate entries will be summed together.
+
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant csr_array/matrix.
 
         Returns
         -------
@@ -1768,7 +1779,7 @@ class coo_array(_coo_base, sparray):
            [0, 0, 0, 0],
            [0, 0, 0, 1]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class coo_matrix(spmatrix, _coo_base):

@@ -151,6 +151,11 @@ class _lil_base(_spbase, IndexMixin):
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
 
+        Parameters
+        ----------
+        i : int
+            Row to return a copy of.
+
         Returns
         -------
         lil_array or lil_matrix
@@ -571,7 +576,7 @@ class lil_array(_lil_base, sparray):
         - The corresponding nonzero values are stored in similar
           fashion in ``self.data``.
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class lil_matrix(spmatrix, _lil_base):

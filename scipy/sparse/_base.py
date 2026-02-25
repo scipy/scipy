@@ -498,6 +498,11 @@ class _spbase(SparseABC):
     def multiply(self, other):
         """Element-wise multiplication by another array/matrix.
 
+        Parameters
+        ----------
+        other : sparse array or array_like
+            Array to multiply by.
+
         Returns
         -------
         sparse array/matrix
@@ -629,6 +634,11 @@ class _spbase(SparseABC):
     def dot(self, other):
         """Ordinary dot product.
 
+        Parameters
+        ----------
+        other : array_like (dense or sparse)
+            Array to take dot product with.
+
         Returns
         -------
         sparse array/matrix or ndarray
@@ -654,6 +664,14 @@ class _spbase(SparseABC):
 
     def power(self, n, dtype=None):
         """Element-wise power.
+
+        Parameters
+        ----------
+        n : scalar
+            `n` is a non-zero scalar (nonzero avoids dense ones creation)
+            If zero power is desired, special case it to use `numpy.ones`
+        dtype : dtype, optional
+            If `dtype` is not specified, the current dtype will be preserved.
 
         Returns
         -------
@@ -1280,8 +1298,11 @@ class _spbase(SparseABC):
     def tocsr(self, copy=False):
         """Convert this array/matrix to Compressed Sparse Row format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant csr_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant csr_array/matrix.
 
         Returns
         -------
@@ -1293,8 +1314,11 @@ class _spbase(SparseABC):
     def todok(self, copy=False):
         """Convert this array/matrix to Dictionary Of Keys format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant dok_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant dok_array/matrix.
 
         Returns
         -------
@@ -1306,8 +1330,11 @@ class _spbase(SparseABC):
     def tocoo(self, copy=False):
         """Convert this array/matrix to COOrdinate format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant coo_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant coo_array/matrix.
 
         Returns
         -------
@@ -1319,8 +1346,11 @@ class _spbase(SparseABC):
     def tolil(self, copy=False):
         """Convert this array/matrix to List of Lists format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant lil_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant lil_array/matrix.
 
         Returns
         -------
@@ -1332,8 +1362,11 @@ class _spbase(SparseABC):
     def todia(self, copy=False):
         """Convert this array/matrix to sparse DIAgonal format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant dia_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant dia_array/matrix.
 
         Returns
         -------
@@ -1345,11 +1378,14 @@ class _spbase(SparseABC):
     def tobsr(self, blocksize=None, copy=False):
         """Convert this array/matrix to Block Sparse Row format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant bsr_array/matrix.
-
-        When blocksize=(R, C) is provided, it will be used for construction of
-        the bsr_array/matrix.
+        Parameters
+        ----------
+        blocksize : tuple of ints, optional
+            When ``blocksize=(R, C)`` is provided, it will be used for construction of
+            the bsr_array/matrix.
+        copy : bool, option
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant bsr_array/matrix.
 
         Returns
         -------
@@ -1361,8 +1397,11 @@ class _spbase(SparseABC):
     def tocsc(self, copy=False):
         """Convert this array/matrix to Compressed Sparse Column format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant csc_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant csc_array/matrix.
 
         Returns
         -------
