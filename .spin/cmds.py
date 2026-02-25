@@ -123,7 +123,14 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                                         "Please also check CXXFLAGS and FFLAGS.")
 
     if asan:
-        meson_args = meson_args + ('-Db_sanitize=address,undefined', )
+        root = Path(__file__).parent.parent
+        asan_ignore_file = root.absolute() / 'tools' / 'asan-ignore.txt'
+        compiler_args = '-fsanitize=address -fno-omit-frame-pointer'
+        compiler_args += f' -fsanitize-ignorelist={asan_ignore_file}'
+        meson_args += (f'-Dc_args={compiler_args}', )
+        meson_args += (f'-Dcpp_args={compiler_args}', )
+        meson_args += ('-Dc_link_args=-fsanitize=address', )
+        meson_args += ('-Dcpp_link_args=-fsanitize=address', )
 
     if setup_args:
         meson_args = meson_args + tuple([str(arg) for arg in setup_args])
@@ -169,6 +176,10 @@ build_cmd = build
     help="Show timing for the given number of slowest tests"
 )
 @click.option(
+    '--no-capture', default=False, is_flag=True,
+    help="Pass `--capture=no` to pytest"
+)
+@click.option(
     '--submodule', '-s', default=None, metavar='MODULE_NAME',
     help="Submodule whose tests to run (cluster, constants, ...)")
 @click.option(
@@ -185,7 +196,7 @@ build_cmd = build
     )
 )
 @spin.util.extend_command(spin.cmds.meson.test, doc="")
-def test(*, parent_callback, pytest_args, tests, coverage,
+def test(*, parent_callback, pytest_args, tests, coverage, no_capture,
          durations, submodule, mode, array_api_backend, **kwargs):
     """🔧 Run tests
 
@@ -269,6 +280,9 @@ def test(*, parent_callback, pytest_args, tests, coverage,
 
     if durations:
         pytest_args += ('--durations', durations)
+    
+    if no_capture:
+        pytest_args += ('--capture=no',)
 
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
@@ -396,7 +410,7 @@ def mypy(ctx, build_dir):
         ) from e
 
     build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
+    root = Path(__file__).parent.parent
     config = os.path.join(root, "mypy.ini")
     check_path = PROJECT_MODULE
     install_dir = meson._get_site_packages(build_dir)
@@ -493,7 +507,7 @@ def refguide_check(ctx, build_dir, *args, **kwargs):
     ctx.invoke(build)
 
     build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
+    root = Path(__file__).parent.parent
     install_dir = meson._get_site_packages(build_dir)
 
     cmd = [f'{sys.executable}',
