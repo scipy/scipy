@@ -341,17 +341,16 @@ def test_directional_stats(xp, axis):
     assert not xp.any(res.mean_resultant_length.mask)
 
 
-@make_xp_test_case(stats.bartlett)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 # @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('fun, kwargs', [
-    (stats.bartlett, {}),
-    (stats.alexandergovern, {}),
-    (stats.levene, {'center': 'median'}),
-    (stats.levene, {'center': 'mean'}),
-    (stats.f_oneway, {'equal_var': True}),
-    (stats.f_oneway, {'equal_var': False}),
+    make_xp_pytest_param(stats.bartlett, {}),
+    make_xp_pytest_param(stats.alexandergovern, {}),
+    make_xp_pytest_param(stats.levene, {'center': 'median'}),
+    make_xp_pytest_param(stats.levene, {'center': 'mean'}),
+    make_xp_pytest_param(stats.f_oneway, {'equal_var': True}),
+    make_xp_pytest_param(stats.f_oneway, {'equal_var': False}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_k_sample_tests(fun, kwargs, axis, xp):
