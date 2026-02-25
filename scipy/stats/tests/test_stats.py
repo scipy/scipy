@@ -8815,6 +8815,13 @@ class TestQuantileTest:
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, p=2)
 
+        # should p == 0. / p == 1. be valid?
+        p = np.asarray([-1., 0., 1., 1.5, np.nan])
+        res = stats.quantile_test(x, p=p)
+        assert_equal(res.statistic, np.full_like(p, -1, dtype=int))
+        assert_equal(res.statistic_type, np.full_like(p, -1, dtype=int))
+        assert_equal(res.pvalue, np.full_like(p, np.nan))
+
         message = "`axis` must be an integer or None."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, axis=2.5)

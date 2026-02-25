@@ -9203,6 +9203,30 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
           than `q`.
         * 'greater': the quantile associated with the probability `p` is
           greater than `q`.
+    axis : int or None, default: 0
+        Axis along which the quantiles are computed.
+        ``None`` ravels `x`, `q`, and `p` before performing the calculation,
+        without checking whether the original shapes were compatible.
+        As in other `scipy.stats` functions, a positive integer `axis` is resolved
+        after prepending 1s to the shape of `x`, `q`, and `p` as needed until the arrays
+        have the same dimensionality. When providing `x`, `q`, and `p` with different
+        dimensionality, consider using negative `axis` integers for clarity.
+    keepdims : bool, optional
+        Consider the case in which `x` is 1-D and `p` and `q` are scalars: the quantile
+        is a reducing statistic, and the default behavior is to return a scalar.
+        If `keepdims` is set to True, the axis will not be reduced away, and the
+        result will be a 1-D array with one element.
+
+        The general case is more subtle, since multiple tests may be
+        requested for each axis-slice of `x`. For instance, if `x`, `q`, and `p`
+        are 1-D and ``p.size == q.size > 1``, no axis can be reduced away; there must be
+        an axis to contain the results. Therefore:
+
+        - By default, the axis will be reduced away if possible (i.e. if there is
+          exactly one element of `p` and `q` per axis-slice of `x`).
+        - If `keepdims` is set to True, the axis will not be reduced away.
+        - If `keepdims` is set to False, the axis will be reduced away
+          if possible, and an error will be raised otherwise.
 
     Returns
     -------
@@ -9211,10 +9235,10 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
 
         statistic : float
             One of two test statistics that may be used in the quantile test.
-            The first test statistic, ``T1``, is the proportion of samples in
+            The first test statistic, ``T1``, is the proportion of observations in
             `x` that are less than or equal to the hypothesized quantile
             `q`. The second test statistic, ``T2``, is the proportion of
-            samples in `x` that are strictly less than the hypothesized
+            observations in `x` that are strictly less than the hypothesized
             quantile `q`.
 
             When ``alternative = 'greater'``, ``T1`` is used to calculate the
@@ -9295,8 +9319,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     data, so the value is clipped into the interval :math:`[0, 1]`.
 
     The approach for confidence intervals is attributed to Thompson [2]_ and
-    later proven to be applicable to any set of i.i.d. samples [3]_. The
-    computation is based on the observation that the probability of a quantile
+    later proven to be applicable to any i.i.d. sample [3]_. The
+    procedure is based on the observation that the probability of a quantile
     :math:`q` to be larger than any observations :math:`x_m (1\leq m \leq N)`
     can be computed as
 
@@ -9323,25 +9347,25 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     Two-sided confidence intervals are not guaranteed to be optimal; i.e.,
     there may exist a tighter interval that may contain the quantile of
     interest with probability larger than the confidence level.
-    Without further assumption on the samples (e.g., the nature of the
+    Without further assumption on the sample (e.g., the nature of the
     underlying distribution), the one-sided intervals are optimally tight.
 
     References
     ----------
     .. [1] W. J. Conover. Practical Nonparametric Statistics, 3rd Ed. 1999.
     .. [2] W. R. Thompson, "On Confidence Ranges for the Median and Other
-       Expectation Distributions for Populations of Unknown Distribution
-       Form," The Annals of Mathematical Statistics, vol. 7, no. 3,
-       pp. 122-128, 1936, Accessed: Sep. 18, 2019. [Online]. Available:
-       https://www.jstor.org/stable/2957563.
+           Expectation Distributions for Populations of Unknown Distribution
+           Form," The Annals of Mathematical Statistics, vol. 7, no. 3,
+           pp. 122-128, 1936, Accessed: Sep. 18, 2019. [Online]. Available:
+           https://www.jstor.org/stable/2957563.
     .. [3] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
-       Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
-       159-170. :doi:`10.1002/0471722162.ch7`.
+           Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
+           159-170. :doi:`10.1002/0471722162.ch7`.
     .. [4] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
-       Confidence Intervals for Quantiles," R package,
-       https://cran.r-project.org/package=QuantileNPCI
+           Confidence Intervals for Quantiles," R package,
+           https://cran.r-project.org/package=QuantileNPCI
     .. [5] M. Mayer, "confintr: Confidence Intervals," R package,
-       https://cran.r-project.org/package=confintr
+           https://cran.r-project.org/package=confintr
 
 
     Examples
@@ -9442,7 +9466,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     >>> quantile_ci_contains_true_stat >= 950
     True
 
-    This works with any distribution and any quantile, as long as the samples
+    This works with any distribution and any quantile, as long as the observations
     are i.i.d.
     """
     # Implementation carefully follows [1] 3.2
