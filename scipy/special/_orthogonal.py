@@ -1568,12 +1568,12 @@ def roots_gegenbauer(n, alpha, mu=False):
 def gegenbauer(n, alpha, monic=False):
     r"""Gegenbauer (ultraspherical) polynomial.
 
-    Defined to be the solution of
+    Defined to be the solution of the second-order linear ordinary differential equation
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}
-          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}
-          + n(n + 2\alpha)C_n^{(\alpha)} = 0
+        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}(x)
+          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}(x)
+          + n(n + 2\alpha)C_n^{(\alpha)}(x) = 0
 
     for :math:`\alpha > -1/2`; :math:`C_n^{(\alpha)}` is a polynomial
     of degree :math:`n`.
@@ -1595,8 +1595,8 @@ def gegenbauer(n, alpha, monic=False):
 
     Notes
     -----
-    The polynomials :math:`C_n^{(\alpha)}` are orthogonal over
-    :math:`[-1,1]` with weight function :math:`(1 - x^2)^{(\alpha -
+    The polynomials :math:`C_n^{(\alpha)}` are orthogonal on
+    :math:`[-1,1]` with respect to the weight function :math:`(1 - x^2)^{(\alpha -
     1/2)}`.
 
     Examples
