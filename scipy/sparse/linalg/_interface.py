@@ -14,6 +14,7 @@ from numbers import Number
 # - backwards compatibility with old LinearOperator (provide some utility to make it easier to manually upgrade)
 # - fixing appearence of operators in the docs
 # - fixing doc of AsLinearOperatorDunderProtocol as __aslinearoperator__ does not show up in the docs
+# - fixing doc of MatrixProtocol as __matmul__ does not show up in the docs
 
 __all__ = ['LinearOperator', 'MatrixLinearOperator', 'IdentityOperator', 'aslinearoperator']
 
@@ -252,7 +253,16 @@ class LinearOperator[Array]:
         if isinstance(other, LinearOperator):
             return _ProductLinearOperator[Array](self, other)
         else:
-            return self._matmul(other)
+            result = self._matmul(other)
+
+            if result.ndim != other.ndim:
+                raise ValueError(f"format missmatch of user-provided implementation: input has {other.ndim} dimensions, but output has {result.ndim} dimensions")
+            
+            expected_shape = (*self.shape[:-1], *other.shape[1:])
+            if result.shape != expected_shape:
+                 raise ValueError(f"shape missmatch of user-provided implementation: expected output shape {expected_shape}, but got {result.shape}")
+            
+            return result
         
     def transpose(self) -> LinearOperator[Array]:
         """Transpose linear operator."""
@@ -470,6 +480,9 @@ class LinearOperator[Array]:
         -----
         Returns ``NotImplemented`` if ``other`` is not a positive integer.
         """
+        if self.shape[0] != self.shape[1]:
+            raise ValueError(f'Matrix-power is only defined for square linear operators, got shape {self.shape}')
+        
         if np.isscalar(other):
             if other < 0 or not np.issubdtype(type(other), np.integer):
                 raise ValueError(f'only positive integers supported, got {other}')
@@ -788,22 +801,22 @@ class _SumLinearOperator[Array](LinearOperator[Array]):
         
     def _matmul(self, other: Array) -> Array:
         result = self._A[0]._matmul(other)
-        for A in self._A[1:]: result = result + A._matmul(other)
+        for A in self._A[1:]: result += A._matmul(other)
         return result
     
     def _tmatmul(self, other: Array) -> Array:
         result = self._A[0].transpose()._matmul(other)
-        for A in self._A[1:]: result = result + A.transpose()._matmul(other)
+        for A in self._A[1:]: result += A.transpose()._matmul(other)
         return result
     
     def _ctmatmul(self, other: Array) -> Array:
         result = self._A[0].adjoint()._matmul(other)
-        for A in self._A[1:]: result = result + A.adjoint()._matmul(other)
+        for A in self._A[1:]: result += A.adjoint()._matmul(other)
         return result
     
     def _cmatmul(self, other: Array) -> Array:
         result = self._A[0].conjugate()._matmul(other)
-        for A in self._A[1:]: result = result + A.conjugate()._matmul(other)
+        for A in self._A[1:]: result += A.conjugate()._matmul(other)
         return result
 
 ##############################################################
