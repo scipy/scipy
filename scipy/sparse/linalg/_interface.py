@@ -71,6 +71,7 @@ __all__ = ["LinearOperator", "aslinearoperator"]
 @xp_capabilities(skip_backends=[
     ("jax.numpy", "TODO: test lazy backends"),
     ("dask.array", "TODO: test lazy backends"),
+    ("cupy", "TODO: waiting for scipy/scipy#24670"),
 ])
 class LinearOperator:
     """Common interface for performing matrix vector products.
