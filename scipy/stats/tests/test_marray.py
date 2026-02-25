@@ -49,14 +49,13 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="marray#99")
 @pytest.mark.parametrize('fun, kwargs', [
     make_xp_pytest_param(stats.gmean, {}),
     make_xp_pytest_param(stats.hmean, {}),
     make_xp_pytest_param(stats.pmean, {'p': 2}),
     make_xp_pytest_param(stats.expectile, {'alpha': 0.4})
 ])
-@pytest.mark.parametrize('axis', [0, 1])
+@pytest.mark.parametrize('axis', [0, 1, None])
 def test_xmean(fun, kwargs, axis, xp):
     mxp, marrays, narrays = get_arrays(2, xp=xp)
     res = fun(marrays[0], weights=marrays[1], axis=axis, **kwargs)
@@ -66,7 +65,6 @@ def test_xmean(fun, kwargs, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="marray#99")
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('keepdims', [False, True])
 @pytest.mark.uses_xp_capabilities(False, reason="private")
@@ -80,7 +78,6 @@ def test_xp_mean(axis, keepdims, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('fun, kwargs',
     [make_xp_pytest_param(stats.moment, {'order': 2}),
      make_xp_pytest_param(stats.skew, {}),
@@ -124,8 +121,7 @@ def test_several(fun, kwargs, axis, xp):
 @make_xp_test_case(stats.describe)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@pytest.mark.parametrize('axis', [0, 1])
+@pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('kwargs', [{}])
 def test_describe(axis, kwargs, xp):
     mxp, marrays, narrays = get_arrays(1, xp=xp)
@@ -135,14 +131,17 @@ def test_describe(axis, kwargs, xp):
     xp_assert_close(res.nobs.data, xp.asarray(ref.nobs))
     xp_assert_close(res.minmax[0].data, xp.asarray(ref.minmax[0].data))
     xp_assert_close(res.minmax[1].data, xp.asarray(ref.minmax[1].data))
-    xp_assert_close(res.variance.data, xp.asarray(ref.variance.data))
-    xp_assert_close(res.skewness.data, xp.asarray(ref.skewness.data))
-    xp_assert_close(res.kurtosis.data, xp.asarray(ref.kurtosis.data))
+    # copy reference arrays due to torch complaint about non-writeable buffer
+    xp_assert_close(res.variance.data,
+                    xp.asarray(np.asarray(ref.variance.data, copy=True)))
+    xp_assert_close(res.skewness.data,
+                    xp.asarray(np.asarray(ref.skewness.data, copy=True)))
+    xp_assert_close(res.kurtosis.data,
+                    xp.asarray(np.asarray(ref.kurtosis.data, copy=True)))
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.zscore),
                                  make_xp_pytest_param(stats.gzscore),
                                  make_xp_pytest_param(stats.zmap)])
@@ -158,8 +157,7 @@ def test_zscore(fun, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.ttest_1samp),
                                make_xp_pytest_param(stats.ttest_rel),
                                make_xp_pytest_param(stats.ttest_ind)])
@@ -182,8 +180,7 @@ def test_ttest(f, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.filterwarnings("ignore::scipy.stats._axis_nan_policy.SmallSampleWarning")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.skewtest),
                                make_xp_pytest_param(stats.kurtosistest),
@@ -197,7 +194,7 @@ def test_normality_tests(f, axis, xp):
     ref = f(*narrays, nan_policy='omit', axis=axis)
 
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
-    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue), atol=1e-16)
 
 
 def pd_nsamples(kwargs):
@@ -212,8 +209,8 @@ def power_divergence_ref(f_obs, f_exp=None, *,  ddof, lambda_, axis=0):
 @make_xp_test_case(stats.chisquare, stats.power_divergence)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+@skip_backend('torch', reason="Unexpected NaNs in output? Follow up on this.")
+# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('lambda_', ['pearson', 'log-likelihood', 'freeman-tukey',
                                      'mod-log-likelihood', 'neyman', 'cressie-read',
                                      'chisquare'])
@@ -255,8 +252,7 @@ def test_power_divergence_chisquare(lambda_, ddof, axis, xp):
 @make_xp_test_case(stats.combine_pvalues)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('method', ['fisher', 'pearson', 'mudholkar_george',
                                     'tippett', 'stouffer'])
 @pytest.mark.parametrize('axis', [0, 1, None])
@@ -284,8 +280,7 @@ def test_combine_pvalues(method, axis, xp):
 @make_xp_test_case(stats.ttest_ind_from_stats)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+# @skip_backend('cupy', reason="special functions won't work")
 def test_ttest_ind_from_stats(xp):
     shape = (10, 11)
     mxp, marrays, narrays = get_arrays(6, xp=xp, shape=shape)
@@ -324,16 +319,24 @@ def test_length_nonmasked_marray_iterable_axis_raises():
 @make_xp_test_case(stats.directional_stats)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")  # mdhaber/marray#120
-def test_directional_stats(xp):
-    mxp, marrays, narrays = get_arrays(1, shape=(100, 3), xp=xp)
-    res = stats.directional_stats(*marrays)
-    narrays[0] = narrays[0][~np.any(np.isnan(narrays[0]), axis=1)]
-    ref = stats.directional_stats(*narrays)
-    xp_assert_close(res.mean_direction.data, xp.asarray(ref.mean_direction))
-    xp_assert_close(res.mean_resultant_length.data,
-                    xp.asarray(ref.mean_resultant_length))
+@pytest.mark.parametrize('axis', [0, 1])
+def test_directional_stats(xp, axis):
+    mxp, marrays, narrays = get_arrays(1, shape=(19, 20, 3), xp=xp)
+    res = stats.directional_stats(*marrays, axis=axis)
+
+    x, = narrays
+    if axis == 0:
+        x = np.swapaxes(x, 0, 1)
+
+    for i in range(x.shape[0]):
+        xi = x[i]
+        xi = xi[~np.any(np.isnan(xi), axis=-1), :]
+        ref = stats.directional_stats(xi)
+        xp_assert_close(res.mean_direction.data[i, ...],
+                        xp.asarray(ref.mean_direction))
+        xp_assert_close(res.mean_resultant_length.data[i],
+                        xp.asarray(ref.mean_resultant_length)[()])
     assert not xp.any(res.mean_direction.mask)
     assert not xp.any(res.mean_resultant_length.mask)
 
@@ -341,8 +344,7 @@ def test_directional_stats(xp):
 @make_xp_test_case(stats.bartlett)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('fun, kwargs', [
     (stats.bartlett, {}),
     (stats.alexandergovern, {}),
@@ -362,8 +364,7 @@ def test_k_sample_tests(fun, kwargs, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.pearsonr),
                                make_xp_pytest_param(stats.pointbiserialr)])
 @pytest.mark.parametrize('axis', [0, 1, None])
@@ -397,8 +398,7 @@ def test_pearsonr(f, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@skip_backend('torch', reason="array-api-compat#242")
-@skip_backend('cupy', reason="special functions won't work")
+# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.linregress)])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_linregress(f, axis, xp):
