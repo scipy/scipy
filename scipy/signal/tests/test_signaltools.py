@@ -3452,7 +3452,6 @@ class TestHilbert2:
         xp_assert_equal(x1_a, x0_a)
 
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    @skip_xp_backends("cupy", reason="Bug in cupy implementation, see cupy#9396")
     def test_quadrant_values(self, shape, xp):
         """Compare desired and calculated values in Fourier space. """
         x_f = xp.ones(shape, dtype=xp.complex128)  # FFT of input signal
