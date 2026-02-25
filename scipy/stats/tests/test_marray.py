@@ -366,22 +366,33 @@ def test_k_sample_tests(fun, kwargs, axis, xp):
 @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.pearsonr),
                                make_xp_pytest_param(stats.pointbiserialr)])
-def test_pearsonr(f, xp):
-    mxp, marrays, narrays = get_arrays(2, shape=(25,), xp=xp)
-    res = f(*marrays)
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_pearsonr(f, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, xp=xp)
+    res = f(*marrays, axis=axis)
 
+    # `pearsonr` does not have `axis_nan_policy`, so do this manually
     x, y = narrays
-    mask = np.isnan(x) | np.isnan(y)
-    ref = f(x[~mask], y[~mask])
+    if axis == 0:
+        x, y = x.T, y.T
+    elif axis is None:
+        x, y = x.ravel()[np.newaxis, :], y.ravel()[np.newaxis, :]
 
-    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
-    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    for i in range(x.shape[0]):
+        xi, yi = x[i, ...], y[i, ...]
+        i = () if axis is None else i
 
-    if f == stats.pearsonr:
-        res_ci_low, res_ci_high = res.confidence_interval()
-        ref_ci_low, ref_ci_high = ref.confidence_interval()
-        xp_assert_close(res_ci_low.data, xp.asarray(ref_ci_low))
-        xp_assert_close(res_ci_high.data, xp.asarray(ref_ci_high))
+        mask = np.isnan(xi) | np.isnan(yi)
+        ref = f(xi[~mask], yi[~mask])
+
+        xp_assert_close(res.statistic.data[i], xp.asarray(ref.statistic)[()])
+        xp_assert_close(res.pvalue.data[i], xp.asarray(ref.pvalue)[()])
+
+        if f == stats.pearsonr:
+            res_ci_low, res_ci_high = res.confidence_interval()
+            ref_ci_low, ref_ci_high = ref.confidence_interval()
+            xp_assert_close(res_ci_low.data[i], xp.asarray(ref_ci_low)[()])
+            xp_assert_close(res_ci_high.data[i], xp.asarray(ref_ci_high)[()])
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
@@ -389,13 +400,11 @@ def test_pearsonr(f, xp):
 @skip_backend('torch', reason="array-api-compat#242")
 @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.linregress)])
-def test_linregress(f, xp):
-    mxp, marrays, narrays = get_arrays(2, shape=(25,), xp=xp)
-    res = f(*marrays)
-
-    x, y = narrays
-    mask = np.isnan(x) | np.isnan(y)
-    ref = f(x[~mask], y[~mask])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_linregress(f, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, seed=84912165484320, xp=xp)
+    res = f(*marrays, axis=axis)
+    ref = f(*narrays, nan_policy='omit', axis=axis)
 
     xp_assert_close(res.slope.data, xp.asarray(ref.slope))
     xp_assert_close(res.intercept.data, xp.asarray(ref.intercept))

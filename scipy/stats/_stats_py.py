@@ -4658,8 +4658,13 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     threshold = xp.finfo(dtype).eps ** 0.75
 
     # If an input is constant, the correlation coefficient is not defined.
-    const_x = xp.all(x == x[..., 0:1], axis=-1)
-    const_y = xp.all(y == y[..., 0:1], axis=-1)
+    if is_marray(xp):
+        # sort to ensure that we are comparing to a non-masked element
+        const_x = xp.all(x == xp.sort(x, axis=-1)[..., 0:1], axis=-1)
+        const_y = xp.all(y == xp.sort(y, axis=-1)[..., 0:1], axis=-1)
+    else:
+        const_x = xp.all(x == x[..., 0:1], axis=-1)
+        const_y = xp.all(y == y[..., 0:1], axis=-1)
     const_xy = const_x | const_y
 
     any_const_xy = xp.any(const_xy)
@@ -10664,9 +10669,13 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
         #        = mean( x^2 ) - mean(x)^2
         intercept_stderr = slope_stderr * xp.sqrt(ssxm + xmean**2)
 
-    return LinregressResult(slope=slope[()], intercept=intercept[()], rvalue=r[()],
-                            pvalue=prob[()], stderr=slope_stderr[()],
-                            intercept_stderr=intercept_stderr[()])
+    outputs = slope, intercept, r, prob, slope_stderr, intercept_stderr
+    outputs = (output[()] if output.ndim == 0 else output for output in outputs)
+    slope, intercept, r, prob, slope_stderr, intercept_stderr = outputs
+
+    return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
+                            pvalue=prob, stderr=slope_stderr,
+                            intercept_stderr=intercept_stderr)
 
 def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
     # pmean linearized as a function of p about p = 0; see gh-23407
