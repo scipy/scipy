@@ -334,7 +334,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "ellipe", ellipe);
 
     PyObject *ellipeinc = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::ellipeinc), static_cast<xsf::numpy::ff_f>(xsf::ellipeinc)}, "ellipeinc",
+        {static_cast<xsf::numpy::ff_f>(xsf::ellipeinc), static_cast<xsf::numpy::dd_d>(xsf::ellipeinc)}, "ellipeinc",
         ellipeinc_doc);
     PyModule_AddObjectRef(module, "ellipeinc", ellipeinc);
 
