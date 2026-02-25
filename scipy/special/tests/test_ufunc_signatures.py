@@ -87,8 +87,8 @@ skips = {
     "bdtri",
 }
 _multi_arg_public_ufuncs = [
-    ufunc for ufunc in _ufuncs if ufunc.nargs - ufunc.nout > 1 and ufunc.__name__ not in skips
-    and ufunc.__name__ in special.__all__
+    ufunc for ufunc in _ufuncs if ufunc.nargs - ufunc.nout > 1
+    and ufunc.__name__ not in skips and ufunc.__name__ in special.__all__
 ]
 
 
