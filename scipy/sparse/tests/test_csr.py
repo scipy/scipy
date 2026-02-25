@@ -118,11 +118,13 @@ def test_csr_bool_indexing():
 @pytest.mark.timeout(2)  # only slow when broken (conversion to 2d index arrays)
 @pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
 def test_fancy_indexing_broadcasts_without_making_dense_2d(cls):
-    I = np.arange(100_000).reshape((100_000, 1))
-    J = I.T
+    # Fixes Issue gh-24339
+    J = np.arange(100_000)
+    I = J.reshape((100_000, 1))
     S = cls((100_000, 100_000))
-    # testing nnz, but really testing indexing. Should blow up memory needs
-    assert S[I, J].nnz == 0
+    # checking nnz, but really testing indexing.
+    assert S[I, J].nnz == 0  # 1D row array for columns -> broadcasts to 2D
+    assert S[I, J.reshape(1, -1)].nnz == 0  # 2D row array as index for columns
 
 
 def test_csr_hstack_int64():

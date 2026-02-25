@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import warnings
 from scipy._lib._array_api import (
     xp_assert_equal,
+    array_namespace,
     is_numpy,
     is_lazy_array,
     xp_vector_norm,
@@ -642,6 +643,8 @@ def test_from_mrp_single_nd_input(xp, ndim: int):
     expected_quat = xp.reshape(expected_quat, (1,) * (ndim - 1) + (4,))
     result = Rotation.from_mrp(mrp)
     xp_assert_close(result.as_quat(), expected_quat, atol=1e-12)
+    # Regression test for gh-24555
+    assert isinstance(result._quat, type(array_namespace(mrp).empty(0)))
 
 
 def test_from_mrp_array_like():

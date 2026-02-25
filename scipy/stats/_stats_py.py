@@ -1051,7 +1051,7 @@ def _moment_tuple(x, n_out):
 # empty, there is no distinction between the `moment` function being called
 # with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')])
 @_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
@@ -1127,36 +1127,18 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
 
     """
     xp = array_namespace(a)
-    a, axis = _chk_asarray(a, axis, xp=xp)
+    a, center, order = xp_promote(a, center, order, force_floating=True, xp=xp)
 
-    a = xp_promote(a, force_floating=True, xp=xp)
-
-    order = xp.asarray(order, dtype=a.dtype, device=xp_device(a))
-    if xp_size(order) == 0:
-        # This is tested by `_moment_outputs`, which is run by the `_axis_nan_policy`
-        # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
-        # is a non-NumPy array, so we need to check again. When the decorator is
-        # updated for array API compatibility, we can remove this second check.
-        raise ValueError("`order` must be a scalar or a non-empty 1D array.")
-    if xp.any(order != xp.round(order)):
+    if not is_lazy_array(order) and xp.any(order != xp.round(order)):
         raise ValueError("All elements of `order` must be integral.")
-    order = order[()] if order.ndim == 0 else order
 
-    # for array_like order input, return a value for each.
+    # _axis_nan_policy decorator ensures that axis=-1
     if order.ndim > 0:
-        # Calculated the mean once at most, and only if it will be used
-        calculate_mean = center is None and xp.any(order > 1)
-        mean = xp.mean(a, axis=axis, keepdims=True) if calculate_mean else None
-        mmnt = []
-        for i in range(order.shape[0]):
-            order_i = order[i]
-            if center is None and order_i > 1:
-                mmnt.append(_moment(a, order_i, axis, mean=mean)[np.newaxis, ...])
-            else:
-                mmnt.append(_moment(a, order_i, axis, mean=center)[np.newaxis, ...])
-        return xp.concat(mmnt, axis=0)
+        order = xp.reshape(order, (-1,) + (1,)*a.ndim)
+        return _moment(a, order, axis=-1, center=center)
     else:
-        return _moment(a, order, axis, mean=center)
+        res = _moment(a, order, axis=-1, center=center)
+        return res[()] if res.ndim == 0 else res
 
 
 def _demean(a, mean, axis, *, xp, precision_warning=True):
@@ -1190,65 +1172,32 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     return a_zero_mean
 
 
-def _moment(a, order, axis, *, mean=None, xp=None):
+def _moment(a, order, axis, *, center=None, xp=None):
     """Vectorized calculation of raw moment about specified center
 
-    When `mean` is None, the mean is computed and used as the center;
+    When `center` is None, the mean is computed and used as the center;
     otherwise, the provided value is used as the center.
-
     """
     xp = array_namespace(a) if xp is None else xp
 
-    a = xp_promote(a, force_floating=True, xp=xp)
-    dtype = a.dtype
+    order = xp.asarray(order, dtype=a.dtype, device=xp_device(a))
+    order_0 = order == 0
+    order_1 = (order == 1) & (center is None)
+    center = xp.mean(a, axis=axis, keepdims=True) if center is None else center
+    a_zero_mean = _demean(a, center, axis, xp=xp)
+    res = xp.mean(a_zero_mean**order, axis=axis, keepdims=True)
+    if a.shape[-1] > 0 and (is_lazy_array(res)
+                                or xp.any(order_0) or xp.any(order_1)):
+        res = xp.where(order_0, xp.ones_like(res), res)
+        res = xp.where(order_1, xp.zeros_like(res), res)
 
-    # moment of empty array is the same regardless of order
-    if xp_size(a) == 0:
-        return xp.mean(a, axis=axis)
-
-    if order == 0 or (order == 1 and mean is None):
-        # By definition the zeroth moment is always 1, and the first *central*
-        # moment is 0.
-        shape = list(a.shape)
-        del shape[axis]
-
-        temp = (xp.ones(shape, dtype=dtype, device=xp_device(a)) if order == 0
-                else xp.zeros(shape, dtype=dtype, device=xp_device(a)))
-        return temp[()] if temp.ndim == 0 else temp
-
-    # Exponentiation by squares: form exponent sequence
-    n_list = [order]
-    current_n = order
-    while current_n > 2:
-        if current_n % 2:
-            current_n = (current_n - 1) / 2
-        else:
-            current_n /= 2
-        n_list.append(current_n)
-
-    # Starting point for exponentiation by squares
-    mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
-            else xp.asarray(mean, dtype=dtype))
-    mean = mean[()] if mean.ndim == 0 else mean
-    a_zero_mean = _demean(a, mean, axis, xp=xp)
-
-    if n_list[-1] == 1:
-        s = xp.asarray(a_zero_mean, copy=True)
-    else:
-        s = a_zero_mean**2
-
-    # Perform multiplications
-    for n in n_list[-2::-1]:
-        s = s**2
-        if n % 2:
-            s *= a_zero_mean
-    return xp.mean(s, axis=axis)
+    return xp.squeeze(res, axis=axis)
 
 
 def _var(x, axis=0, ddof=0, mean=None, xp=None):
     # Calculate variance of sample, warning if precision is lost
     xp = array_namespace(x) if xp is None else xp
-    var = _moment(x, 2, axis, mean=mean, xp=xp)
+    var = _moment(x, 2, axis, center=mean, xp=xp)
     if ddof != 0:
         n = _length_nonmasked(x, axis, xp=xp)
         n = xp.asarray(n, dtype=x.dtype, device=xp_device(x))
@@ -1342,8 +1291,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
-    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
-    m3 = _moment(a, 3, axis, mean=mean, xp=xp)
+    m2 = _moment(a, 2, axis, center=mean, xp=xp)
+    m3 = _moment(a, 3, axis, center=mean, xp=xp)
     with np.errstate(all='ignore'):
         eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
@@ -1450,8 +1399,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     n = _length_nonmasked(a, axis, xp=xp)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
-    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
-    m4 = _moment(a, 4, axis, mean=mean, xp=xp)
+    m2 = _moment(a, 2, axis, center=mean, xp=xp)
+    m4 = _moment(a, 4, axis, center=mean, xp=xp)
     with np.errstate(all='ignore'):
         zero = m2 <= (xp.finfo(m2.dtype).eps * mean_reduced)**2
         vals = xp.where(zero, xp.nan, m4 / m2**2.0)
@@ -1564,6 +1513,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)
+    v = v[()] if v.ndim == 0 else v
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
 
@@ -2518,7 +2468,7 @@ def obrientransform(*samples):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         Any number of arrays.
 
     Returns
@@ -3767,8 +3717,8 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
-# JAX JIT / Torch GPU need fdtrc
-@xp_capabilities(jax_jit=False, cpu_only=True, exceptions=['cupy'])
+# Torch GPU need fdtrc
+@xp_capabilities(cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -3780,7 +3730,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample measurements for each group.  There must be at least
         two arguments.  If the arrays are multidimensional, then all the
         dimensions of the array must be the same except for `axis`.
@@ -4050,7 +4000,6 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # calculate p value
     # ref.[4] p.334 eq.28
     prob = special.fdtrc(dfn, dfd, f)
-    prob = xp.asarray(prob, dtype=f.dtype)
 
     f, prob = (f[()], prob[()]) if f.ndim == 0 else (f, prob)
     return F_onewayResult(f, prob)
@@ -4077,7 +4026,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample measurements for each group.  There must be at least
         two samples, and each sample must contain at least two observations.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
@@ -4165,7 +4114,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = [sample.shape[-1] for sample in samples]
+    lengths = [_length_nonmasked(sample, axis=-1, xp=xp) for sample in samples]
     means = xp.stack([_xp_mean(sample, axis=-1) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -4192,9 +4141,12 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     t_stats = _demean(means, var_w, axis=0, xp=xp) / standard_errors
 
     # calculate parameters to be used in transformation
-    v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
-    # align along 0th axis, which corresponds with separate samples
-    v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
+    if is_marray(xp):
+        v = xp.stack(lengths) - 1
+    else:
+        v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
+        # align along 0th axis, which corresponds with separate samples
+        v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
     a = v - .5
     b = 48 * a**2
     c = (a * xp.log(1 + (t_stats ** 2)/v))**.5
@@ -5461,11 +5413,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @_axis_nan_policy_factory(_pack_CorrelationResult, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
-def pointbiserialr(x, y):
+def pointbiserialr(x, y, *, axis=0):
     r"""Calculate a point biserial correlation coefficient and its p-value.
 
     The point biserial correlation is used to measure the relationship
@@ -5483,6 +5435,9 @@ def pointbiserialr(x, y):
         Input array.
     y : array_like
         Input array.
+    axis : int or None, default: 0
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
 
     Returns
     -------
@@ -5553,7 +5508,7 @@ def pointbiserialr(x, y):
            [ 0.8660254,  1.       ]])
 
     """
-    rpb, prob = pearsonr(x, y)
+    rpb, prob = pearsonr(x, y, axis=axis)
     # create result object with alias for backward compatibility
     res = SignificanceResult(rpb, prob)
     res.correlation = rpb
@@ -8493,7 +8448,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
        Two or more arrays with the sample measurements can be given as
        arguments. Samples must be one-dimensional.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
@@ -8601,7 +8556,7 @@ def friedmanchisquare(*samples, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, sample3... : array_like
+    *samples : array_like
         Arrays of observations.  All of the arrays must have the same number
         of elements.  At least three samples must be given.
     axis : int or tuple of ints, default: 0
@@ -10757,7 +10712,8 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     TINY = 1.0e-20
 
     # _axis_nan_policy decorator ensures that `axis=-1`
-    n = x.shape[-1]
+    x, y = _share_masks(x, y, xp=xp)
+    n = _length_nonmasked(x, axis=-1, keepdims=False, xp=xp)
     xmean = xp.mean(x, axis=-1, keepdims=True)
     ymean = xp.mean(y, axis=-1, keepdims=True)
 
@@ -10786,7 +10742,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if n == 2:
+    if not is_marray(xp) and n == 2:
         # handle case when only two points are passed in
         one = xp.asarray(1.0, dtype=r.dtype)
         prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)

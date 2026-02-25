@@ -38,3 +38,5 @@ ecef3490da68a0c53ba543c618bab0c8e15dccee
 ceafa8e730887b81cf10d483ce375559ebd1de09
 # Clean-up for UP031, UP032 lint rules (gh-21029)
 d1b5af016e907e037136b7a38e485437165490f2
+# Style cleanup in `sparse.linalg._interface` (gh-23836)
+726243cb85d4368d58fb1f95dc1749fb3f3dbce8

@@ -495,19 +495,19 @@ class dlti(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Create an instance of the appropriate subclass."""
         if cls is dlti:
             N = len(system)
             if N == 2:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete, *system, **kwargs)
+                    TransferFunctionDiscrete, *system, dt=dt)
             elif N == 3:
                 return ZerosPolesGainDiscrete.__new__(ZerosPolesGainDiscrete,
-                                                      *system, **kwargs)
+                                                      *system, dt=dt)
             elif N == 4:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
-                                                  **kwargs)
+                                                  dt=dt)
             else:
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")
@@ -785,23 +785,19 @@ class TransferFunction(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Handle object conversion if input is an instance of lti."""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_tf()
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is TransferFunction:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return TransferFunctionContinuous.__new__(
-                    TransferFunctionContinuous,
-                    *system,
-                    **kwargs)
+                    TransferFunctionContinuous, *system)
             else:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete,
-                    *system,
-                    **kwargs)
+                    TransferFunctionDiscrete, *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1165,24 +1161,21 @@ class ZerosPolesGain(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Handle object conversion if input is an instance of `lti`"""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_zpk()
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is ZerosPolesGain:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return ZerosPolesGainContinuous.__new__(
                     ZerosPolesGainContinuous,
-                    *system,
-                    **kwargs)
+                    *system)
             else:
                 return ZerosPolesGainDiscrete.__new__(
                     ZerosPolesGainDiscrete,
-                    *system,
-                    **kwargs
-                    )
+                    *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1537,7 +1530,7 @@ class StateSpace(LinearTimeInvariant):
     __array_priority__ = 100.0
     __array_ufunc__ = None
 
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Create new StateSpace object and settle inheritance."""
         # Handle object conversion if input is an instance of `lti`
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
@@ -1545,12 +1538,12 @@ class StateSpace(LinearTimeInvariant):
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is StateSpace:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return StateSpaceContinuous.__new__(StateSpaceContinuous,
-                                                    *system, **kwargs)
+                                                    *system)
             else:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete,
-                                                  *system, **kwargs)
+                                                  *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1809,7 +1802,7 @@ class StateSpace(LinearTimeInvariant):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Additional keywords passed to `ss2zpk`
 
         Returns
@@ -1827,7 +1820,7 @@ class StateSpace(LinearTimeInvariant):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Additional keywords passed to `ss2zpk`
 
         Returns

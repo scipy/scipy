@@ -195,8 +195,11 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
 
     Parameters
     ----------
-    (c, lower) : tuple, (array, bool)
-        Cholesky factorization of a, as given by cho_factor
+    c_and_lower : tuple, (array, bool)
+        Cholesky factorization of an array, as given by cho_factor.
+        The first element of the
+        tuple is the matrix containing the Cholesky factor, and the second element is a
+        boolean flag indicating whether the factor is in the lower or upper triangle.
     b : array
         Right-hand side
     overwrite_b : bool, optional
@@ -351,9 +354,11 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
 
     Parameters
     ----------
-    (cb, lower) : tuple, (ndarray, bool)
-        `cb` is the Cholesky factorization of A, as given by cholesky_banded.
-        `lower` must be the same value that was given to cholesky_banded.
+    cb_and_lower : tuple, (ndarray, bool)
+        The first element of the tuple is the matrix containing the Cholesky factor,
+        as provided by `cholesky_banded`. The second element is a boolean flag
+        indicating whether the factor is in the lower triangle, as provided *to*
+        `cholesky_banded`.
     b : array_like
         Right-hand side
     overwrite_b : bool, optional

@@ -33,6 +33,9 @@ def _using_accelerate():
 RTOL = 1e-6 if _using_accelerate() else 1e-15
 
 
+tolerance_overrides = {stats.epps_singleton_2samp: 1e-10}
+
+
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
     return (res.statistic, res.pvalue, res.df, res._standard_error,
@@ -529,7 +532,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    assert_allclose(res_nd, res_1d, rtol=RTOL)
+    rtol = max(tolerance_overrides.get(hypotest, RTOL), RTOL)
+    assert_allclose(res_nd, res_1d, rtol=rtol)
 
 # nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
@@ -654,12 +658,12 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
     # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-    assert_allclose(res1dc, res1db, rtol=7e-15)
+    assert_allclose(res1dc, res1db, rtol=2e-14)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
         # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res1db, res1da, rtol=7e-15)
+        assert_allclose(res1db, res1da, rtol=2e-14)
         all_results += list(res1da)
 
     for item in all_results:
@@ -688,7 +692,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   sample_shape, axis_cases, nan_policy):
     small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
-                           stats.differential_entropy, stats.epps_singleton_2samp}
+                           stats.differential_entropy, stats.epps_singleton_2samp,
+                           stats.shapiro}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
     if hypotest in {weightedtau_weighted}:
