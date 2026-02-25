@@ -689,6 +689,8 @@ class dok_array(_dok_base, sparray):
         Number of values stored in the array
     T : dok_array
         The transpose of the array
+    mT : dok_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -746,6 +748,8 @@ class dok_matrix(spmatrix, _dok_base):
         Number of values stored in the matrix
     T : dok_matrix
         The transpose of the matrix
+    mT : dok_matrix
+        The matrix transpose
 
     Notes
     -----

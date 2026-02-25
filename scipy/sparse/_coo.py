@@ -1716,6 +1716,8 @@ class coo_array(_coo_base, sparray):
         Number of values stored in the array
     T : coo_array
         The transpose of the array
+    mT : coo_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -1832,6 +1834,8 @@ class coo_matrix(spmatrix, _coo_base):
         Number of values stored in the matrix
     T : coo_matrix
         The transpose of the matrix
+    mT : coo_matrix
+        The matrix transpose
 
     Notes
     -----

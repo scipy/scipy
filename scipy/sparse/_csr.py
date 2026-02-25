@@ -373,6 +373,8 @@ class csr_array(_csr_base, sparray):
         Number of values stored in the array
     T : csr_array
         The transpose of the array
+    mT : csr_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -503,6 +505,8 @@ class csr_matrix(spmatrix, _csr_base):
         Number of values stored in the matrix
     T : csr_matrix
         The transpose of the matrix
+    mT : csr_matrix
+        The matrix transpose
 
     Notes
     -----
