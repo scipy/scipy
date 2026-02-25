@@ -245,7 +245,8 @@ class TestLinearOperator:
         reason="https://github.com/data-apis/array-api-strict/issues/188",
     )
     def test_matmul(self, xp):
-        A_ = xp.asarray(self.A, dtype=xp.complex128)
+        _asarray = partial(xp.asarray, dtype=xp.complex128)
+        A_ = _asarray(self.A)
         D = {'shape': A_.shape,
              'dtype': xp.complex128,
              'matvec': lambda x: xp.reshape(A_ @ x, (A_.shape[0],)),
@@ -253,9 +254,9 @@ class TestLinearOperator:
              'rmatmat': lambda x: xp.conj(A_.T) @ x,
              'matmat': lambda x: A_ @ x}
         A = interface.LinearOperator(**D, xp=xp)
-        B = xp.asarray([[1 + 1j, 2, 3],
-                        [4, 5, 6],
-                        [7, 8, 9]], dtype=xp.complex128)
+        B = _asarray([[1 + 1j, 2, 3],
+                      [4, 5, 6],
+                      [7, 8, 9]])
         b = B[0, ...]
 
         xp_assert_equal(operator.matmul(A, b), A * b)
@@ -1060,6 +1061,7 @@ def test_transpose_noconjugate(xp):
 )
 @make_xp_test_case(interface.LinearOperator)
 def test_transpose_multiplication(xp):
+    _asarray = partial(xp.asarray, dtype=xp.complex128)
     class MyMatrix(interface.LinearOperator):
         def __init__(self, A):
             super().__init__(A.dtype, A.shape, xp=xp)
@@ -1067,12 +1069,12 @@ def test_transpose_multiplication(xp):
         def _matmat(self, other): return self.A @ other
         def _rmatmat(self, other): return self.A.mT @ other
 
-    A = MyMatrix(xp.asarray([[1, 2], [3, 4]], dtype=xp.complex128))
-    X = xp.asarray([1, 2], dtype=xp.complex128)
+    A = MyMatrix(_asarray([[1, 2], [3, 4]]))
+    X = _asarray([1, 2])
     X_T = X
-    B = xp.asarray([[10, 20], [30, 40]], dtype=xp.complex128)
+    B = _asarray([[10, 20], [30, 40]])
     X2 = xp.reshape(X, (-1, 1))
-    Y = xp.asarray([[1, 2], [3, 4]], dtype=xp.complex128)
+    Y = _asarray([[1, 2], [3, 4]])
 
     xp_assert_equal(A @ B, Y @ B)
     xp_assert_equal(B.T @ A, B.T @ Y)

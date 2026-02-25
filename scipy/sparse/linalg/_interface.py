@@ -554,7 +554,10 @@ class LinearOperator:
 
         return _ScaledLinearOperator(self, 1.0 / other, xp=self._xp)
 
-    def _check_matching_namespace(self, xp_x):
+    def _check_matching_namespace(self, x):
+        xp_x = getattr(x, "_xp", None)
+        if xp_x is None:
+            xp_x = array_namespace(x, self._xp.empty(0))
         if xp_x != self._xp:
             msg = (
                 f"Mismatched array namespaces."
@@ -609,14 +612,16 @@ class LinearOperator:
         when interacting with dense vectors and matrices.
 
         """
+        self._check_matching_namespace(x)
         if isinstance(x, LinearOperator):
-            self._check_matching_namespace(getattr(x, "_xp", np))
-            return _ProductLinearOperator(self, x, self._xp)
+            return _ProductLinearOperator(self, x, xp=self._xp)
         elif xp_isscalar(x):
-            self._check_matching_namespace(array_namespace(x, self._xp.empty(0)))
-            return _ScaledLinearOperator(self, x, self._xp)
+            return _ScaledLinearOperator(self, x, xp=self._xp)
         else:
             if not issparse(x) and not is_pydata_spmatrix(x):
+                # scipy.sparse arrays shouldn't be converted to numpy arrays
+                # pydata_sparse arrays do not require conversion
+                # (and should avoid hitting https://github.com/pydata/sparse/pull/918)
                 x = self._xp.asarray(x)
 
             N = self.shape[-1]
@@ -711,14 +716,16 @@ class LinearOperator:
             Method used by the ``@`` operator from the right
             which rejects scalar input before calling this method.
         """
+        self._check_matching_namespace(x)
         if isinstance(x, LinearOperator):
-            self._check_matching_namespace(getattr(x, "_xp", np))
-            return _ProductLinearOperator(x, self, self._xp)
+            return _ProductLinearOperator(x, self, xp=self._xp)
         elif xp_isscalar(x):
-            self._check_matching_namespace(array_namespace(x, self._xp.empty(0)))
-            return _ScaledLinearOperator(self, x, self._xp)
+            return _ScaledLinearOperator(self, x, xp=self._xp)
         else:
             if not issparse(x) and not is_pydata_spmatrix(x):
+                # scipy.sparse arrays shouldn't be converted to numpy arrays
+                # pydata_sparse arrays do not require conversion
+                # (and should avoid hitting https://github.com/pydata/sparse/pull/918)
                 x = self._xp.asarray(x)
 
             M = self.shape[-2]
@@ -752,9 +759,9 @@ class LinearOperator:
                 return mT(self.T.matmat(mT(x)))
 
     def __pow__(self, p):
+        self._check_matching_namespace(p)
         if xp_isscalar(p):
-            self._check_matching_namespace(array_namespace(p, self._xp.empty(0)))
-            return _PowerLinearOperator(self, p, self._xp)
+            return _PowerLinearOperator(self, p, xp=self._xp)
         else:
             return NotImplemented
 
@@ -764,8 +771,8 @@ class LinearOperator:
         The input must be a `LinearOperator`.
         A lazily summed linear operator is returned.
         """
+        self._check_matching_namespace(x)
         if isinstance(x, LinearOperator):
-            self._check_matching_namespace(getattr(x, "_xp", np))
             return _SumLinearOperator(self, x, xp=self._xp)
         else:
             return NotImplemented
@@ -841,12 +848,12 @@ class LinearOperator:
     def _adjoint(self):
         """Default implementation of `_adjoint`.
         Defers to adjoint functions, e.g. `_rmatvec` for `_matvec`."""
-        return _AdjointLinearOperator(self, self._xp)
+        return _AdjointLinearOperator(self, xp=self._xp)
 
     def _transpose(self):
         """Default implementation of `_transpose`.
         For `_matvec`, defers to `_rmatvec` + `np.conj`."""
-        return _TransposedLinearOperator(self, self._xp)
+        return _TransposedLinearOperator(self, xp=self._xp)
 
 
 class _CustomLinearOperator(LinearOperator):
@@ -1111,7 +1118,7 @@ class MatrixLinearOperator(LinearOperator):
 
     def _adjoint(self):
         if self.__adj is None:
-            self.__adj = _AdjointMatrixOperator(self.A, self._xp)
+            self.__adj = _AdjointMatrixOperator(self.A, xp=self._xp)
         return self.__adj
 
 
@@ -1131,7 +1138,7 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
         self.args = (A,)  # override to ensure `self.args[0]` is accurate
 
     def _adjoint(self):
-        return MatrixLinearOperator(self.args[0], self._xp)
+        return MatrixLinearOperator(self.args[0], xp=self._xp)
 
 
 class IdentityOperator(LinearOperator):
