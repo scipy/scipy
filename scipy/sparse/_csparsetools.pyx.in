@@ -366,8 +366,99 @@ def _lil_fancy_linear_set_{{PYIDX}}_{{PYVALUE}}(cnp.npy_intp M, cnp.npy_intp N,
 
 {{define_dispatch_map2('_LIL_FANCY_LINEAR_SET_DISPATCH', '_lil_fancy_linear_set', IDX_TYPES, VALUE_TYPES)}}
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef lil_clear_slice_block(cnp.npy_intp M, cnp.npy_intp N,
+                            object[:] rows,
+                            object[:] datas,
+                            cnp.npy_intp r0, cnp.npy_intp r1, cnp.npy_intp r_step,
+                            cnp.npy_intp c0, cnp.npy_intp c1, cnp.npy_intp c_step):
+    """
+    Clear a slice-selected block in a LIL matrix.
 
+    For each row r in [r0, r1), delete stored entries whose column index
+    is in range(c0, c1, c_step) (i.e., matches the slice semantics).
 
+    Assumes rows[r] is a sorted list of column indices (LIL invariant).
+
+    Notes
+    -----
+    - step == 1: fast path deletes contiguous interval [c0, c1)
+    - step > 1: deletes cols where (col - c0) % step == 0 within [c0, c1)
+    - step < 0: deletes cols where (c0 - col) % (-step) == 0 within (c1, c0]
+    """
+    cdef cnp.npy_intp r
+    cdef list row, data
+    cdef cnp.npy_intp lo, hi, k, col
+    cdef cnp.npy_intp step_abs
+
+    # sanity
+    if c_step == 0:
+        raise ValueError("slice step cannot be zero")
+
+    # empty row-range: nothing to do
+    if r1 <= r0:
+        return
+
+    # clamp row bounds defensively
+    if r0 < 0:
+        r0 = 0
+    if r1 > M:
+        r1 = M
+    if r1 <= r0:
+        return
+
+    # If slice is empty, nothing to do (mimic Python's range emptiness)
+    # For step > 0: empty if c1 <= c0
+    # For step < 0: empty if c1 >= c0
+    if c_step > 0:
+        if c1 <= c0:
+            return
+    else:
+        if c1 >= c0:
+            return
+
+    for r in range(r0, r1, r_step):
+        row = rows[r]
+        if len(row) == 0:
+            continue
+        data = datas[r]
+
+        if c_step == 1:
+            # contiguous interval delete: [c0, c1)
+            lo = bisect_left(row, c0)
+            hi = bisect_left(row, c1)
+            if lo != hi:
+                del row[lo:hi]
+                del data[lo:hi]
+            continue
+
+        if c_step > 0:
+            # candidates lie in [c0, c1)
+            lo = bisect_left(row, c0)
+            hi = bisect_left(row, c1)
+
+            # delete matching columns in reverse
+            for k in range(hi - 1, lo - 1, -1):
+                col = row[k]
+                if (col - c0) % c_step == 0:
+                    del row[k]
+                    del data[k]
+        else:
+            # step < 0: selected columns are range(c0, c1, c_step) decreasing,
+            # i.e. columns satisfying c1 < col <= c0 and (c0 - col) % abs(step) == 0
+            step_abs = -c_step
+
+            # candidates lie in (c1, c0]  -> use bisect_right for exclusivity at c1
+            lo = bisect_right(row, c1)   # first col > c1
+            hi = bisect_right(row, c0)   # first col > c0 (so last <= c0 is hi-1)
+
+            for k in range(hi - 1, lo - 1, -1):
+                col = row[k]
+                if (c0 - col) % step_abs == 0:
+                    del row[k]
+                    del data[k]
+                    
 def lil_get_row_ranges(cnp.npy_intp M, cnp.npy_intp N,
                        const obj_fused[:] rows, const obj_fused[:] datas,
                        object[:] new_rows, object[:] new_datas,

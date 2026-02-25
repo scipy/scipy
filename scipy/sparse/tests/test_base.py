@@ -5021,34 +5021,52 @@ class TestLIL(sparse_test_class(minmax=False)):
         a = self.lil_container(np.ones((3, 3)))
         a *= 2.
         a[0, :] = 0
-    
-    def test_lil_sparse_assignment_no_densify_memory_error(self):
-        # Issue #16601: Verify sparse assignment doesn't cause memory error
+        
+    def _run_assign_case(self, row_slice, col_slice, nrows, ncols, checks):
         rows = [0, 0, 4, 7]
         cols = [1, 0, 3, 3]
         vals = [2, 1, 3, 9]
-        m, n = int(1E4), int(1E8)
+        m, n = int(1e4), int(1e8)
         mat = sparse.csr_matrix((vals, (rows, cols)), shape=(m, n), dtype=np.float32)
-        
-        # Create a smaller sparse matrix to assign
+
         mini_rows = [0, 0, 2, 3]
-        mini_cols = [1, 0, 2, 2]
-        mini_vals = [2, 1, 3, 9]
-        mini_m, mini_n = int(5E3), int(1E7)
-        mini_mat = sparse.csr_matrix((mini_vals, (mini_rows, mini_cols)), 
-                                  shape=(mini_m, mini_n), dtype=np.float32)
-        
+        mini_cols = [0, 1, 2, 2]
+        mini_vals = [1, 2, 3, 9]
+        mini_mat = sparse.csr_matrix(
+            (mini_vals, (mini_rows, mini_cols)),
+            shape=(nrows, ncols),
+            dtype=np.float32,
+        )
+
         mat_lil = mat.tolil()
-        mini_lil = mini_mat.tolil()
-        mat_lil[1:mini_m+1, 10:mini_n+10] = mini_lil
-        
-        # verify a couple of sentinel values without densifying
-        v10 = mat_lil[1, 10]
-        v11 = mat_lil[1, 11]
+        mat_lil[row_slice, col_slice] = mini_mat.tolil()
 
-        assert v10 == 1
-        assert v11 == 2
+        for (r, c), expected in checks:
+            assert mat_lil[r, c] == expected
 
+    @pytest.mark.timeout(2)
+    def test_lil_sparse_assignment_no_densify_memory_error(self):
+        mini_m, mini_n = int(5e3), int(1e7)
+        self._run_assign_case(
+            slice(1, mini_m + 1),
+            slice(10, mini_n + 10),
+            mini_m,
+            mini_n,
+            [((1, 10), 1), ((1, 11), 2)],
+        )
+
+    @pytest.mark.timeout(2)
+    def test_lil_sparse_assignment_with_step_no_densify_memory_error(self):
+        mini_m, mini_n = int(5e3), int(1e7)
+        nrows = len(range(1, mini_m + 1, 2))
+        ncols = len(range(10, mini_n + 10, 3))
+        self._run_assign_case(
+            slice(1, mini_m + 1, 2),
+            slice(10, mini_n + 10, 3),
+            nrows,
+            ncols,
+            [((1, 10), 1), ((1, 13), 2)],
+        )        
 
 @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestLILMatrix(_MatrixMixin, TestLIL):

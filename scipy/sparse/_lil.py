@@ -274,8 +274,7 @@ class _lil_base(_spbase, IndexMixin):
         # the indexing result of self[row, col] is 1D, so the call to nonzero
         # is performed on a 1D sparse matrix, therefore nonzero rows are
         # irrelevant
-        result = self[row, col].nonzero()
-        nz_cols = result[-1]
+        nz_cols = self[row, col].nonzero()[-1]
         mapped_nnz_rows = row[nz_cols]
         mapped_nnz_cols = col[nz_cols]
         _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
@@ -299,7 +298,7 @@ class _lil_base(_spbase, IndexMixin):
             return
 
         # clear the block
-        self._clear_cells(row.flatten(), col.flatten())
+        self._clear_cells(row.reshape(-1), col.reshape(-1))
 
         # extract sparsity structure from x
         x_row_indices, x_col_indices = x.nonzero()
@@ -310,6 +309,35 @@ class _lil_base(_spbase, IndexMixin):
                                            self.rows, self.data, row, col,
                                            x.data)
 
+
+    def _set_sliceXslice_sparse(self, r0, r1, rstep, c0, c1, cstep, x):
+        nrows = len(range(r0, r1, rstep))
+        ncols = len(range(c0, c1, cstep))
+
+        if nrows <= 0 or ncols <= 0:
+            return  # empty block, nothing to do
+
+        # Clear the block
+        _csparsetools.lil_clear_slice_block(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    r0, r1,rstep, c0, c1, cstep)
+        
+        # Extract nnz structure from RHS and map to absolute indices
+        x_coo = x.tocoo()
+
+        if x.nnz == 0:
+            return
+
+        # Map relative nnz positions in the block to absolute matrix coordinates
+        target_rows = r0 + rstep * x_coo.row
+        target_cols = c0 + cstep * x_coo.col
+        vals = x_coo.data
+
+        # Insert only the nnz values
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                        self.rows, self.data,
+                                        target_rows, target_cols,
+                                        vals)
     
     def __setitem__(self, key, x):
         if isinstance(key, tuple) and len(key) == 2:
@@ -332,6 +360,18 @@ class _lil_base(_spbase, IndexMixin):
                 self.rows = x.rows
                 self.data = x.data
                 return
+            # Fast path for sparse*sparse assignment (by a slice)
+            if (isinstance(row, slice) and isinstance(col, slice) and issparse(x)):
+                # normalize slices
+                r0, r1, rstep = row.indices(self.shape[0])
+                c0, c1, cstep = col.indices(self.shape[1])
+                nrows = len(range(r0, r1, rstep))
+                ncols = len(range(c0, c1, cstep))
+
+                # ensure x has compatible shape
+                if x.shape == (nrows, ncols):
+                    return self._set_sliceXslice_sparse(r0, r1, rstep, c0, c1, cstep, x)
+
         # Everything else takes the normal path.
         IndexMixin.__setitem__(self, key, x)
 
