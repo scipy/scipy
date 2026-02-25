@@ -247,6 +247,11 @@ features = ["build-deps", "build-clang-22"]
 features = ["gha-update", "default-platforms"]
 no-default-feature = true
 
+[environments.asan]
+features = ["asan-build-deps", "run-deps", "test-deps", "asan"]
+solve-group = "asan"
+no-default-feature = true
+
 
 ### Default platforms ###
 
@@ -844,6 +849,67 @@ description = "Build SciPy with system libs (e.g. boost, qhull)"
 cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
+
+
+[feature.asan]
+platforms = ["osx-arm64", "linux-64"]
+# makes some packages solvable with dev Python
+channels = ["https://prefix.dev/sp-nightly-forge"]
+
+[feature.asan.dependencies]
+spin = "*"
+
+python_abi.git = "https://github.com/python/cpython"
+python_abi.subdirectory = "Tools/pixi-packages/asan"
+python_abi.rev = "55ea59e7dc35e1363b203ae4dd9cfc3a0ac0a844"  # v3.15.0a8
+
+python.git = "https://github.com/python/cpython"
+python.subdirectory = "Tools/pixi-packages/asan"
+python.rev = "55ea59e7dc35e1363b203ae4dd9cfc3a0ac0a844"  # v3.15.0a8
+
+numpy.git = "https://github.com/numpy/numpy"
+numpy.subdirectory = "pixi-packages/asan"
+numpy.rev = "947c91834a4f709e125a6a8ff7efca51d012d465"
+
+gmpy2 = { version = "*", channel = "https://prefix.dev/sp-nightly-forge" }
+
+[feature.asan-build-deps.dependencies]
+ccache = "*"
+pkg-config = "*"
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pythran = "*"
+pybind11 = "*"
+# needed at build-time as well as run-time
+numpy = "*"
+blas-devel = { version = "*", build = "*openblas" }
+
+[feature.asan-build-deps.target.linux.dependencies]
+clangxx = "*"
+
+[feature.asan.target.linux.activation.env]
+CC = "ccache $CONDA_PREFIX/bin/clang"
+CXX = "ccache $CONDA_PREFIX/bin/clang++"
+
+[feature.asan-build-deps.target.osx.dependencies]
+gxx_osx-arm64 = "*"
+
+[feature.asan.target.osx.activation.env]
+CC = "ccache $CC"
+CXX = "ccache $CXX"
+
+[feature.asan.tasks.build-asan]
+cmd = "spin build --asan --build-dir=build-asan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env.ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0"
+description = "Build SciPy, NumPy, and CPython with address sanitizer"
+
+[feature.asan.tasks.test-asan]
+cmd = "spin test --no-build --build-dir=build-asan --no-capture -m 'not fail_asan'"
+depends-on = "build-asan"
+env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0"
+description = "Test SciPy with address sanitizer"
 
 
 ### Alternative python versions ###
