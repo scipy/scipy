@@ -68,7 +68,7 @@ solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
 # tasks: test-strict, bench-strict
-features = ["run-deps", "test-deps", "bench-common", "array_api_strict", "array_api_strict-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "array_api_strict", "array_api_strict-tasks", "marray"]
 solve-group = "array-api-cpu"
 
 [environments.dask-cpu]
@@ -83,7 +83,7 @@ solve-group = "array-api-cpu"
 
 [environments.torch-cpu]
 # tasks: test-torch, test-torch-float32, bench-torch
-features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks", "marray"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-cpu]
@@ -98,7 +98,7 @@ features = ["build-deps", "build-cuda", "py-cuda"]
 
 [environments.cupy]
 # tasks: test-cupy, bench-cupy
-features = ["run-deps", "test-deps", "bench-common", "cuda13", "py-cuda", "cupy", "cupy-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "cuda13", "py-cuda", "cupy", "cupy-tasks", "marray"]
 solve-group = "cuda13"
 
 [environments.jax-cuda]
@@ -108,7 +108,7 @@ solve-group = "cuda12"
 
 [environments.torch-cuda]
 # tasks: test-torch-cuda, bench-torch-cuda
-features = ["run-deps", "test-deps", "bench-common", "cuda12", "py-cuda", "mkl", "torch-cuda", "torch-cuda-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "cuda12", "py-cuda", "mkl", "torch-cuda", "torch-cuda-tasks", "marray"]
 solve-group = "cuda12"
 
 [environments.build-accelerate-lp64]
