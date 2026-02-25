@@ -498,16 +498,19 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if (self.ndim == 2 and not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
-            res_dtype = get_sum_dtype(self.dtype)
-            ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
-
-            major_index, value = self._minor_reduce(np.add)
+            
+            res_dtype = get_sum_dtype(self.dtype) if dtype is None else dtype
+            self_to_reduce = self.astype(res_dtype, copy=False)
+            
+            # Fast path: reduce along minor axis
+            ret = np.zeros(len(self_to_reduce.indptr) - 1, dtype=res_dtype)
+            major_index, value = self_to_reduce._minor_reduce(np.add)
             ret[major_index] = value
-            ret = self._ascontainer(ret)
+            ret = self_to_reduce._ascontainer(ret)
             if axis % 2 == 1:
                 ret = ret.T
 
-            return ret.sum(axis=(), dtype=dtype, out=out)
+            return ret.sum(axis=(), dtype=res_dtype, out=out)
         else:
             return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 

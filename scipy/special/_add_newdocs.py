@@ -2307,7 +2307,7 @@ add_newdoc("eval_jacobi",
     .. math::
 
         P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2)
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - x)/2)
 
     where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree
@@ -2320,18 +2320,18 @@ add_newdoc("eval_jacobi",
         determined via the relation to the Gauss hypergeometric
         function.
     alpha : array_like
-        Parameter
+        Parameter.
     beta : array_like
-        Parameter
+        Parameter.
     x : array_like
-        Points at which to evaluate the polynomial
+        Points at which to evaluate the polynomial.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     P : scalar or ndarray
-        Values of the Jacobi polynomial
+        Values of the Jacobi polynomial.
 
     See Also
     --------
@@ -2403,17 +2403,18 @@ add_newdoc("eval_gegenbauer",
     r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
-    Evaluate Gegenbauer polynomial at a point.
+    Evaluate Gegenbauer (ultraspherical) polynomial at a point.
 
     The Gegenbauer polynomials can be defined via the Gauss
     hypergeometric function :math:`{}_2F_1` as
 
     .. math::
 
-        C_n^{(\alpha)} = \frac{(2\alpha)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
+        C_n^{(\alpha)}(x) = \frac{(2\alpha)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - x)/2).
 
-    When :math:`n` is an integer the result is a polynomial of degree
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
     :math:`n`. See 22.5.46 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
@@ -2423,16 +2424,16 @@ add_newdoc("eval_gegenbauer",
         determined via the relation to the Gauss hypergeometric
         function.
     alpha : array_like
-        Parameter
+        Parameter.
     x : array_like
-        Points at which to evaluate the Gegenbauer polynomial
+        Points at which to evaluate the Gegenbauer polynomial.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     C : scalar or ndarray
-        Values of the Gegenbauer polynomial
+        Values of the Gegenbauer polynomial.
 
     See Also
     --------
