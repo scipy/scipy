@@ -10,7 +10,6 @@
 import numpy as np
 import scipy.sparse
 from scipy._lib._util import copy_if_needed
-from scipy._lib.deprecation import _NoValue
 
 cimport numpy as np
 
@@ -18,7 +17,6 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
-from warnings import warn
 
 cimport cython
 import os
@@ -1476,7 +1474,7 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.0,
-                               output_type=_NoValue):
+                               output_type='dok_matrix'):
         """
         sparse_distance_matrix(self, other, max_distance, p=2.0)
 
@@ -1497,15 +1495,20 @@ cdef class cKDTree:
 
         output_type : str, optional
             Which container to use for output data. Options: 'dok_array',
-            'coo_array', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            'coo_array', 'dict', or 'ndarray'. Legacy options 'dok_matrix'
+            and 'coo_matrix' are still available and the Default: 'dok_matrix'.
 
-               .. deprecated:: 1.18.0
-                   The default value for output_type is deprecated
-                   and will change to 'dok_array' in v1.20. The value
-                   'dok_matrix' is available until that class is removed.
+               .. warning:: dok_matrix and coo_matrix are being replaced.
+
+                   All new code should use sparse array types 'dok_array'
+                   and 'coo_array'. The default value of `output_type` is
+                   still 'dok_matrix' but will be deprecated at 1.19.0 and
+                   changed to 'dok_array' at v1.21.0.  The values 'dok_matrix'
+                   and 'coo_matrix' will continue to work, but will go away
+                   when the sparse matrix classes are removed.
                    Unless you use * instead of @, ** for matrix power
-                   or depend on 2D shapes from e.g. ``A.sum(axis=0)`` it may
-                   not matter to you. See the sparray migration guide.
+                   or depend on 2D shapes from e.g. `A.sum(axis=0)` it makes
+                   sense to use the array interface.
 
         Returns
         -------
@@ -1558,17 +1561,6 @@ cdef class cKDTree:
         with nogil:
             sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
-
-        if output_type == _NoValue:
-            msg = """The default value for output_type is changing to 'dok_array'
-            in v1.20. Unless you use * instead of @, ** for matrix power
-            or depend on 2D shapes for e.g. A.sum(axis=1) it may not matter to
-            you. See the spmatrix to sparray migration guide for details.
-            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-            """
-            prefixes = (os.path.dirname(__file__),)
-            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            output_type = 'dok_matrix'
 
         if output_type == 'dict':
             return res.dict()

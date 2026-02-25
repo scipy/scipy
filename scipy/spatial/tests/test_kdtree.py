@@ -696,15 +696,8 @@ class sparse_distance_matrix_consistency:
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
         assert isinstance(r, coo_matrix)
         # test default return type 'dok_matrix'
-        with pytest.warns(DeprecationWarning,
-                          match="The default value for output_type"):
-            r = self.T1.sparse_distance_matrix(self.T2, self.r)
-            assert isinstance(r, dok_matrix)
-
-
-    def test_sparse_distance_matrix_output_type_deprecation(self):
-        with pytest.deprecated_call(match="The default value for output_type"):
-            self.T1.sparse_distance_matrix(self.T2, self.r)
+        r = self.T1.sparse_distance_matrix(self.T2, self.r)
+        assert isinstance(r, dok_matrix)
 
 
 @KDTreeTest
