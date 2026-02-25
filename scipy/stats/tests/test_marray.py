@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _length_nonmasked
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
 from scipy._lib._array_api import SCIPY_ARRAY_API
 from scipy.stats._stats_py import _xp_mean, _xp_var
@@ -157,7 +157,6 @@ def test_zscore(fun, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.ttest_1samp),
                                make_xp_pytest_param(stats.ttest_rel),
                                make_xp_pytest_param(stats.ttest_ind)])
@@ -180,7 +179,6 @@ def test_ttest(f, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.filterwarnings("ignore::scipy.stats._axis_nan_policy.SmallSampleWarning")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.skewtest),
                                make_xp_pytest_param(stats.kurtosistest),
@@ -210,7 +208,6 @@ def power_divergence_ref(f_obs, f_exp=None, *,  ddof, lambda_, axis=0):
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="Unexpected NaNs in output? Follow up on this.")
-# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('lambda_', ['pearson', 'log-likelihood', 'freeman-tukey',
                                      'mod-log-likelihood', 'neyman', 'cressie-read',
                                      'chisquare'])
@@ -252,7 +249,6 @@ def test_power_divergence_chisquare(lambda_, ddof, axis, xp):
 @make_xp_test_case(stats.combine_pvalues)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('method', ['fisher', 'pearson', 'mudholkar_george',
                                     'tippett', 'stouffer'])
 @pytest.mark.parametrize('axis', [0, 1, None])
@@ -280,7 +276,6 @@ def test_combine_pvalues(method, axis, xp):
 @make_xp_test_case(stats.ttest_ind_from_stats)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-# @skip_backend('cupy', reason="special functions won't work")
 def test_ttest_ind_from_stats(xp):
     shape = (10, 11)
     mxp, marrays, narrays = get_arrays(6, xp=xp, shape=shape)
@@ -313,7 +308,7 @@ def test_length_nonmasked_marray_iterable_axis_raises():
     # This test can be removed after support is added.
     with pytest.raises(NotImplementedError,
         match="`axis` must be an integer or None for use with `MArray`"):
-        _length_nonmasked(marr, axis=(0, 1), xp=xp)
+        _count_nonmasked(marr, axis=(0, 1), xp=xp)
 
 
 @make_xp_test_case(stats.directional_stats)
@@ -341,9 +336,41 @@ def test_directional_stats(xp, axis):
     assert not xp.any(res.mean_resultant_length.mask)
 
 
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun, kwargs', [
+    make_xp_pytest_param(stats.wilcoxon,
+                         {'method': 'asymptotic', 'zero_method': 'zsplit'}),
+])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_one_sample_tests(fun, kwargs, axis, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp, seed=84912165484322)
+    res = fun(*marrays, axis=axis, **kwargs)
+    ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun, kwargs', [
+    make_xp_pytest_param(stats.brunnermunzel, {}),
+    make_xp_pytest_param(stats.mannwhitneyu, {'method': 'asymptotic'}),
+    make_xp_pytest_param(stats.wilcoxon,
+                         {'method': 'asymptotic', 'zero_method': 'zsplit'}),
+    make_xp_pytest_param(stats.cramervonmises_2samp, {'method': 'exact'}),
+])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_two_sample_tests(fun, kwargs, axis, xp):
+    if fun == stats.cramervonmises_2samp and axis is None:
+        pytest.skip("Sample too large for exact method.")
+    mxp, marrays, narrays = get_arrays(2, xp=xp, seed=84912165484322)
+    res = fun(*marrays, axis=axis, **kwargs)
+    ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('fun, kwargs', [
     make_xp_pytest_param(stats.bartlett, {}),
     make_xp_pytest_param(stats.alexandergovern, {}),
@@ -351,6 +378,9 @@ def test_directional_stats(xp, axis):
     make_xp_pytest_param(stats.levene, {'center': 'mean'}),
     make_xp_pytest_param(stats.f_oneway, {'equal_var': True}),
     make_xp_pytest_param(stats.f_oneway, {'equal_var': False}),
+    make_xp_pytest_param(stats.kruskal, {}),
+    make_xp_pytest_param(stats.fligner, {'center': 'median'}),
+    make_xp_pytest_param(stats.fligner, {'center': 'mean'}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_k_sample_tests(fun, kwargs, axis, xp):
@@ -361,11 +391,26 @@ def test_k_sample_tests(fun, kwargs, axis, xp):
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
 
 
+@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
+@pytest.mark.parametrize('fun, kwargs', [
+    make_xp_pytest_param(stats.friedmanchisquare, {}),
+])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_k_sample_paired_tests(fun, kwargs, axis, xp):
+    mxp, marrays, narrays = get_arrays(3, shape=(8, 9), xp=xp)
+    res = fun(*marrays, axis=axis, **kwargs)
+    ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-# @skip_backend('cupy', reason="special functions won't work")
-@pytest.mark.parametrize('f', [make_xp_pytest_param(stats.pearsonr),
-                               make_xp_pytest_param(stats.pointbiserialr)])
+@pytest.mark.parametrize('f', [
+    make_xp_pytest_param(stats.pearsonr),
+    make_xp_pytest_param(stats.pointbiserialr),
+    make_xp_pytest_param(stats.spearmanrho),
+])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_pearsonr(f, axis, xp):
     mxp, marrays, narrays = get_arrays(2, xp=xp)
@@ -397,7 +442,6 @@ def test_pearsonr(f, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-# @skip_backend('cupy', reason="special functions won't work")
 @pytest.mark.parametrize('f', [make_xp_pytest_param(stats.linregress)])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_linregress(f, axis, xp):
@@ -425,9 +469,23 @@ def test_entropy(qk, axis, xp):
     xp_assert_close(res.data, xp.asarray(ref))
 
 
-@make_xp_test_case(stats.levene)
-def test_levene_center_trimmed(xp):
+@make_xp_test_case(stats.rankdata)
+@pytest.mark.parametrize('axis', [0, 1, None])
+@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
+def test_rankdata(axis, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp)
+    res = stats.rankdata(*marrays, axis=axis)
+    ref = stats.rankdata(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.data[~res.mask], xp.asarray(ref[~np.isnan(ref)]))
+    xp_assert_close(res.mask, xp.asarray(np.isnan(ref)))
+
+
+@pytest.mark.parametrize('f', [
+    make_xp_pytest_param(stats.levene),
+    make_xp_pytest_param(stats.fligner),
+])
+def test_center_trimmed(f, xp):
     mxp, marrays, narrays = get_arrays(3, xp=xp)
     message = "`center='trimmed'` is incompatible with MArray."
     with pytest.raises(ValueError, match=message):
-        stats.levene(*marrays, center='trimmed', axis=-1)
+        f(*marrays, center='trimmed', axis=-1)
