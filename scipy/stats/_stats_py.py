@@ -9204,7 +9204,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
         * 'greater': the quantile associated with the probability `p` is
           greater than `q`.
     axis : int or None, default: 0
-        Axis along which the quantiles are computed.
+        Axis of `x` along which the test is performed.
         ``None`` ravels `x`, `q`, and `p` before performing the calculation,
         without checking whether the original shapes were compatible.
         As in other `scipy.stats` functions, a positive integer `axis` is resolved
@@ -9212,8 +9212,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
         have the same dimensionality. When providing `x`, `q`, and `p` with different
         dimensionality, consider using negative `axis` integers for clarity.
     keepdims : bool, optional
-        Consider the case in which `x` is 1-D and `p` and `q` are scalars: the quantile
-        is a reducing statistic, and the default behavior is to return a scalar.
+        Consider the case in which `x` is 1-D and `p` and `q` are scalars: the test
+        computes a reducing statistic, and the default behavior is to return a scalar.
         If `keepdims` is set to True, the axis will not be reduced away, and the
         result will be a 1-D array with one element.
 
@@ -9320,7 +9320,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
 
     The approach for confidence intervals is attributed to Thompson [2]_ and
     later proven to be applicable to any i.i.d. sample [3]_. The
-    procedure is based on the observation that the probability of a quantile
+    computation is based on the observation that the probability of a quantile
     :math:`q` to be larger than any observations :math:`x_m (1\leq m \leq N)`
     can be computed as
 
@@ -9347,8 +9347,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     Two-sided confidence intervals are not guaranteed to be optimal; i.e.,
     there may exist a tighter interval that may contain the quantile of
     interest with probability larger than the confidence level.
-    Without further assumption on the sample (e.g., the nature of the
-    underlying distribution), the one-sided intervals are optimally tight.
+    Without further assumption on the nature of the
+    underlying distribution, the one-sided intervals are optimally tight.
 
     References
     ----------
