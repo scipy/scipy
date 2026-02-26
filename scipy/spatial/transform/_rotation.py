@@ -541,6 +541,12 @@ class Rotation:
             Object containing the rotations represented by the rotation
             matrices.
 
+        Notes
+        -----
+        This function was called from_dcm before.
+
+        .. versionadded:: 1.4.0
+
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
@@ -622,11 +628,6 @@ class Rotation:
         >>> r.shape
         (2, 3)
 
-        Notes
-        -----
-        This function was called from_dcm before.
-
-        .. versionadded:: 1.4.0
         """
         xp = array_namespace(matrix)
         matrix = _promote(matrix, xp=xp)
@@ -933,16 +934,16 @@ class Rotation:
         rotation : `Rotation` instance
             Object containing the rotations represented by input MRPs.
 
+        Notes
+        -----
+
+        .. versionadded:: 1.6.0
+
         References
         ----------
         .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
-
-        Notes
-        -----
-
-        .. versionadded:: 1.6.0
 
         Examples
         --------
@@ -1081,6 +1082,12 @@ class Rotation:
         matrix : ndarray, shape (..., 3)
             Shape depends on shape of inputs used for initialization.
 
+        Notes
+        -----
+        This function was called as_dcm before.
+
+        .. versionadded:: 1.4.0
+
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
@@ -1123,11 +1130,6 @@ class Rotation:
         >>> r.as_matrix().shape
         (2, 3, 3)
 
-        Notes
-        -----
-        This function was called as_dcm before.
-
-        .. versionadded:: 1.4.0
         """
         matrix = self._backend.as_matrix(self._quat)
         if self._single:
@@ -1443,6 +1445,11 @@ class Rotation:
         mrps : ndarray, shape (..., 3)
             Shape depends on shape of inputs used for initialization.
 
+        Notes
+        -----
+
+        .. versionadded:: 1.6.0
+
         References
         ----------
         .. [1] Shuster, M. D. "A Survey of Attitude Representations",
@@ -1479,10 +1486,6 @@ class Rotation:
         >>> r.as_mrp().shape
         (2, 3)
 
-        Notes
-        -----
-
-        .. versionadded:: 1.6.0
         """
         mrp = self._backend.as_mrp(self._quat)
         if self._single:
@@ -1506,6 +1509,10 @@ class Rotation:
         -------
         concatenated : `Rotation` instance
             The concatenated rotations.
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
 
         Examples
         --------
@@ -1534,9 +1541,6 @@ class Rotation:
         array([[0., 0., 1.],
                [0., 0., 2.]])
 
-        Notes
-        -----
-        .. versionadded:: 1.8.0
         """
         if isinstance(rotations, Rotation):
             return Rotation(rotations.as_quat(), normalize=False, copy=True)
