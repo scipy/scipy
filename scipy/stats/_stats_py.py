@@ -9068,14 +9068,14 @@ class QuantileTestResult:
         elif alternative == 'less':
             p = 1 - confidence_level
             low = xp.full(shape, -xp.inf)
-            high_index = bd.isf(p).astype(int)
+            high_index = xp.astype(bd.isf(p), xp.int64)
             valid_index = high_index < n
             high_index[~valid_index] = 0
             x_high = xp.take_along_axis(x, high_index, axis=-1)
             high = xp.where(valid_index, x_high, xp.nan)
         elif alternative == 'greater':
             p = 1 - confidence_level
-            low_index = (bd.ppf(p)).astype(int) - 1
+            low_index = xp.astype(bd.ppf(p), xp.int64) - 1
             valid_index = low_index >= 0
             low_index[~valid_index] = 0
             x_low = xp.take_along_axis(x, low_index, axis=-1)
@@ -9083,12 +9083,12 @@ class QuantileTestResult:
             high = xp.full(shape, xp.inf)
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
-            low_index = (bd.ppf(p)).astype(int) - 1
+            low_index =xp.astype(bd.ppf(p), xp.int64) - 1
             valid_index = low_index >= 0
             low_index[~valid_index] = 0
             x_low = xp.take_along_axis(x, low_index, axis=-1)
             low = xp.where(valid_index, x_low, xp.nan)
-            high_index = bd.isf(p).astype(int)
+            high_index = xp.astype(bd.isf(p), xp.int64)
             valid_index = high_index < n
             high_index[~valid_index] = 0
             x_high = xp.take_along_axis(x, high_index, axis=-1)
@@ -9183,11 +9183,11 @@ def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out, xp
 
     if not keepdims:
         res = xp.squeeze(res, axis=axis)
-    return res[()]
+    return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities()
-def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=None):
+@xp_capabilities(skip_backends=[("dask.array", "no `take_along_axis`")])
+def quantile_test(x, *, q=0.0, p=0.5, alternative='two-sided', axis=0, keepdims=None):
     r"""
     Perform a quantile test and compute a confidence interval of the quantile.
 
@@ -9497,6 +9497,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     if X.shape[-1] > 0:
         T1 = _xp_searchsorted(X, x_star, side='right', xp=xp)
         T2 = _xp_searchsorted(X, x_star, side='left', xp=xp)
+        T1, T2 = xp.astype(T1, dtype), xp.astype(T2, dtype)
     else:
         nan_out = xp.ones_like(nan_out)
         T = xp.zeros(x_star.shape, dtype=dtype)
@@ -9515,14 +9516,14 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
         # "is greater than *or equal to* the observed value of T2...using p=p*"
         pvalue = Y.sf(T2-1)  # Y.pmf(T2) + Y.sf(T2)
         statistic = xp.broadcast_to(T2, pvalue.shape)
-        statistic_type = xp.broadcast_to(2., pvalue.shape)
+        statistic_type = xp.full_like(statistic, 2.)
     # "H1: the p* population quantile is greater than x*"
     elif H1 == 'greater':
         # "The p-value is the probability that a binomial random variable Y "
         # "is less than or equal to the observed value of T1... using p = p*"
         pvalue = Y.cdf(T1)
         statistic = xp.broadcast_to(T1, pvalue.shape)
-        statistic_type = xp.broadcast_to(1., pvalue.shape)
+        statistic_type = xp.full_like(statistic, 1.)
     # "H1: x* is not the p*th population quantile"
     elif H1 == 'two-sided':
         # "The p-value is twice the smaller of the probabilities that a
@@ -9532,13 +9533,15 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
         # Note: both one-sided p-values can exceed 0.5 for the same data, so
         # `clip`
         p_min = xp.minimum(Y.cdf(T1), Y.sf(T2 - 1))
-        pvalue = xp.clip(2*p_min, 0, 1)
+        pvalue = xp.clip(2*p_min, 0., 1.)
         i2 = Y.cdf(T1) > Y.sf(T2 - 1)
         statistic = xp.where(i2, T2, T1)
-        statistic_type = xp.where(i2, 2, 1)
+        statistic_type = xp.where(i2, xp.full_like(T2, 2.), xp.full_like(T1, 1.))
 
     statistic = xp.astype(statistic, dtype)
     statistic_type = xp.astype(statistic_type, dtype)
+    pvalue = xp.astype(pvalue, dtype)
+    X = xp.astype(X, dtype)
 
     _statistic, _statistic_type, _pvalue = statistic, statistic_type, pvalue
     args = axis, axis_none, keepdims, ndim, nan_out, xp
@@ -9547,9 +9550,9 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     pvalue = _quantile_test_postprocess(pvalue, *args)
 
     return QuantileTestResult(
-        statistic=statistic[()],
-        statistic_type=statistic_type[()],
-        pvalue=pvalue[()],
+        statistic=statistic,
+        statistic_type=statistic_type,
+        pvalue=pvalue,
         _alternative=H1,
         _x=X,
         _p=p_star,
