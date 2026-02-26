@@ -864,9 +864,8 @@ class KDTree(cKDTree):
                types 'dok_array' or 'coo_array'. The default value of
                `output_type` will be deprecated at v1.19 and switch from
                'dok_matrix' to 'dok_array' in v1.21.
-               The values 'dok_matrix' and 'coo_matrix' will continue
-               to work, but will go away when the sparse matrix classes
-               are removed.
+               The values 'dok_matrix' and 'coo_matrix' continue
+               to work, but will go away eventually.
 
             .. versionadded:: 1.6.0
 
