@@ -104,19 +104,22 @@ We now plot these functions to get a sense of their behavior.
    ...
    >>> sum_of_sines = np.sin(6 * np.pi * grid_x / L) + np.sin(6 * np.pi * grid_y / L)
    >>> plt.subplot(131)
-   >>> plot_and_check_filled_image(sum_of_sines, "Sum of sines")
-   [0.0, 0.0]
+   <Axes: >
+   >>> np.array(plot_and_check_filled_image(sum_of_sines, "Sum of sines"))
+   array([0., 0.])
    >>> sine_of_sum = np.sin(6 * np.pi * (grid_x + grid_y) / L)
    >>> plt.subplot(132)
-   >>> plot_and_check_filled_image(sine_of_sum, "Sine of sum")
-   [3.9975178684405324e-16, 1.2843214533474938e-15]
+   <Axes: >
+   >>> np.array(plot_and_check_filled_image(sine_of_sum, "Sine of sum"))
+   array([3.99751787e-16, 1.28432145e-15])
    >>> laplace_solution = (
    ...     np.sin(6 * np.pi * grid_x / L) * np.cosh(6 * np.pi * (grid_y - L / 2) / L)
    ...     + np.sin(6 * np.pi * grid_y / L) * np.cosh(6 * np.pi * (grid_x - L / 2) / L)
    ... ) / np.cosh(3 * np.pi)
    >>> plt.subplot(133)
-   >>> plot_and_check_filled_image(laplace_solution, "Laplace solution")
-   [3.3966987236446485e-16, 3.606942688826195e-16]
+   <Axes: >
+   >>> np.array(plot_and_check_filled_image(laplace_solution, "Laplace solution"))
+   array([3.39669872e-16, 3.60694269e-16])
 
 The sum of the boundary conditions produces values up to :math:`\pm
 2`, while the others are bounded by :math:`\pm 1`, which is the same
@@ -162,7 +165,7 @@ every point.
    ...     ):
    ...         interpolator = interpolator_class((sparse_x, sparse_y), sparse_values)
    ...         values = interpolator(grid_x, grid_y)
-   ...         plt.subplot(3, 3, 3 * i + j + 1)
+   ...         ax = plt.subplot(3, 3, 3 * i + j + 1)
    ...         interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
    ...         results = plot_and_check_filled_image(values, f"{interpolator_name:s}\n1 pt. in {i+1:d}")
    ...         results.append(np.count_nonzero(np.isnan(values)))
@@ -221,16 +224,20 @@ also reduce the problem:
    ...     interpolator = interpolator_class((edge_x, edge_y), border_values)
    ...     multiplier = 3
    ...     values = interpolator(grid_x, grid_y, simplex_tolerance=multiplier)
-   ...     plt.subplot(1, 2, i+1)
+   ...     ax = plt.subplot(1, 2, i+1)
    ...     interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
    ...     results = plot_and_check_filled_image(values, f"{interpolator_name:s}\nmul = {multiplier}")
    ...     results.append(np.count_nonzero(np.isnan(values)))
    ...     full_results.append(results)
    ...
    >>> np.array(full_results).T
-   array([[ 0.00000000e+00,             0.0,             0.0],
-          [ 1.85457226e-05,             0.0, -2.78868936e-10],
-          [-5.66098094e-18,             0.0, -2.97769462e-09]])
+   array([[-1.40675962e-16, -1.42020373e-16],
+          [ 3.23940594e-15,  3.25139344e-15],
+          [ 0.00000000e+00,  0.00000000e+00]])
+
+   The rows give the mean and standard deviation of the errors for the
+   border points, while the columns are the interpolators, linear and
+   Clough-Tocher.
 
 ----------------------
 Radial basis functions
@@ -269,6 +276,7 @@ interpolator to get back to the desired density.
    ...         sparse_values
    ...     )
    ...     values = refiner(np.stack([grid_x, grid_y], -1))
+   ...     ax = plt.subplot(2, 2, i + 1)
    ...     results.append(plot_and_check_filled_image(values, kernel))
    ...
    >>> np.array(results)
@@ -352,14 +360,14 @@ able to produce the six extrema of the boundary conditions.
    ...         values = polygrid2d(
    ...             scaled_grid_x[:, 0], scaled_grid_y[0, :], coeffs.reshape(num_coeffs, num_coeffs)
    ...         )
-   ...         plt.subplot(2, 3, i * 2 + j + 1)
+   ...         ax = plt.subplot(2, 3, i * 2 + j + 1)
    ...         results.append(
    ...             plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}"))
    ...     full_results.append(results)
    >>> np.array(full_results).transpose(2, 0, 1)
-   array([[[ 1.21384384e-16, -2.66453526e-17],
-           [-9.43689571e-18, -6.65208629e-17],
-           [-1.01239908e-16, -5.92986308e-17]],
+   array([[[-5.92118946e-17,  1.18423789e-17],
+           [-2.37772764e-17,  1.51730480e-17],
+           [ 2.31527760e-17, -6.11605674e-17]],
    <BLANKLINE>
           [[ 4.07910892e-01,  4.07910892e-01],
            [ 2.40733605e-02,  2.40733605e-02],
@@ -409,15 +417,16 @@ produce results similar to that function.
    ...             scaled_grid_x[:, 0], scaled_grid_y[0, :],
    ...             coeffs.reshape(num_coeffs, num_coeffs) * coeff_multiplier[:, :]
    ...         )
+   ...         ax = plt.subplot(3, 2, 2 * i + j + 1)
    ...         results.append(
    ...             plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}")
    ...         )
    ...     full_results.append(results)
    ...
    >>> np.array(full_results).transpose(2, 0, 1)
-   array([[[-3.22704826e-16,  6.80936788e-17],
-           [ 3.42041210e-16, -2.64048043e-16],
-           [ 1.40563198e-16,  7.43054345e-17]],
+   array([[[-3.87837910e-16,  3.07901852e-16],
+           [ 3.92926432e-16, -1.73194792e-16],
+           [-1.33660444e-16, -3.65422391e-16]],
    <BLANKLINE>
           [[ 4.07910892e-01,  4.07910892e-01],
            [ 2.40733605e-02,  2.40733605e-02],
@@ -465,8 +474,8 @@ equation, as do, for example,
    >>> values = np.tensordot(
    ...     coeffs, laplace_polynomials(scaled_grid_x, scaled_grid_y), 1
    ... )
-   >>> plot_and_check_filled_image(values, "Laplace polynomial")
-   [-3.552713678800501e-17, 0.6628206575610528]
+   >>> np.array(plot_and_check_filled_image(values, "Laplace polynomial"))
+   array([-5.32907052e-17,  6.62820658e-01])
 
 --------------
 Other packages
