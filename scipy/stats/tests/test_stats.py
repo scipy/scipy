@@ -9044,7 +9044,7 @@ class TestQuantileTest:
 
         x_ = xp_copy(x)
         i_nan = xp.asarray(rng.random(x.shape) < 0.01)
-        x_[i_nan] = xp.nan
+        x_ = xpx.at(x_)[i_nan].set(xp.nan)
         i_nan_out = xp.any(i_nan, axis=-1)
         assert not xp.all(i_nan_out)
         res = stats.quantile_test(x_, q=q, p=p, axis=-1)
@@ -9065,8 +9065,8 @@ class TestQuantileTest:
         i_nan_p = xp.asarray(rng.random(p.shape) < 0.01)
         assert xp.any(i_nan_q)
         assert xp.any(i_nan_p)
-        q[xp.broadcast_to(i_nan_q, q.shape)] = xp.nan
-        p[xp.broadcast_to(i_nan_p, p.shape)] = xp.nan
+        q = xpx.at(q)[xp.broadcast_to(i_nan_q, q.shape)].set(xp.nan)
+        p = xpx.at(p)[xp.broadcast_to(i_nan_p, p.shape)].set(xp.nan)
 
         i_nan_out = xp.asarray(i_nan_q | i_nan_p)
         assert not xp.all(i_nan_out)

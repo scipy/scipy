@@ -9070,14 +9070,14 @@ class QuantileTestResult:
             low = xp.full(shape, -xp.inf)
             high_index = xp.astype(bd.isf(p), xp.int64)
             valid_index = high_index < n
-            high_index[~valid_index] = 0
+            high_index = xpx.at(high_index)[~valid_index].set(0)
             x_high = xp.take_along_axis(x, high_index, axis=-1)
             high = xp.where(valid_index, x_high, xp.nan)
         elif alternative == 'greater':
             p = 1 - confidence_level
             low_index = xp.astype(bd.ppf(p), xp.int64) - 1
             valid_index = low_index >= 0
-            low_index[~valid_index] = 0
+            low_index = xpx.at(low_index)[~valid_index].set(0)
             x_low = xp.take_along_axis(x, low_index, axis=-1)
             low = xp.where(valid_index, x_low, xp.nan)
             high = xp.full(shape, xp.inf)
@@ -9085,12 +9085,12 @@ class QuantileTestResult:
             p = (1 - confidence_level) / 2
             low_index =xp.astype(bd.ppf(p), xp.int64) - 1
             valid_index = low_index >= 0
-            low_index[~valid_index] = 0
+            low_index = xpx.at(low_index)[~valid_index].set(0)
             x_low = xp.take_along_axis(x, low_index, axis=-1)
             low = xp.where(valid_index, x_low, xp.nan)
             high_index = xp.astype(bd.isf(p), xp.int64)
             valid_index = high_index < n
-            high_index[~valid_index] = 0
+            high_index = xpx.at(high_index)[~valid_index].set(0)
             x_high = xp.take_along_axis(x, high_index, axis=-1)
             high = xp.where(valid_index, x_high, xp.nan)
 
@@ -9160,7 +9160,7 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
 
     nan_out = ((p >= 1) | (p <= 0) | xp.isnan(p) | xp.isnan(q)
                | xp.any(xp.isnan(x), axis=-1, keepdims=True))
-    if xp.any(nan_out):
+    if is_lazy_array(nan_out) or xp.any(nan_out):
         # These get NaN-ed out at the end. In the meantime, we want them
         # to pass through calculations without warnings or errors
         q = xpx.at(q, nan_out).set(0.0, copy=True)
@@ -9172,7 +9172,7 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
 def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out, xp):
     # Reshape per axis/keepdims
 
-    res[nan_out] = xp.nan
+    res = xpx.at(res)[nan_out].set(xp.nan)
 
     if axis_none and keepdims:
         shape = (1,)*(ndim - 1) + res.shape
