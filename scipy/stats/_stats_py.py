@@ -5522,7 +5522,7 @@ def pointbiserialr(x, y, *, axis=0):
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2)
 def kendalltau(x, y, *, nan_policy='propagate',
-               method='auto', variant='b', alternative='two-sided'):
+               method='auto', variant='b', alternative='two-sided', axis=None):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
@@ -5643,8 +5643,22 @@ def kendalltau(x, y, *, nan_policy='propagate',
     For a more detailed example, see :ref:`hypothesis_kendalltau`.
     """  # add documentation, then convert tests
     xp = array_namespace(x, y)
-    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
-    x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
+    if is_marray(xp):
+        mask_x, mask_y = np.asarray(x.mask), np.asarray(y.mask)
+        x, y = np.asarray(x.data).copy(), np.asarray(y.data).copy()
+        unmasked_nans = np.any(np.isnan(x[~mask_x])) | np.any(np.isnan(y[~mask_y]))
+        if unmasked_nans:
+            if nan_policy == 'propagate':
+                message = "`nan_policy='propagate'` is incompatible with MArray input."
+            elif nan_policy == 'raise':
+                message = "The input contains nan values."
+            raise ValueError(message)
+        nan_policy = 'omit'
+        x[mask_x], y[mask_y] = np.nan, np.nan
+    else:
+        x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method,
                       variant=variant, alternative=alternative)
     vals = res.statistic, res.pvalue, res.statistic
