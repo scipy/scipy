@@ -492,18 +492,18 @@ Other packages
 There are packages that will solve Laplace equation with given boundary conditions.
 
 Scikit-Image has an
-[``inpaint_biharmonic``](https://scikit-image.org/docs/stable/auto_examples/filters/plot_inpaint.html)
+`inpaint_biharmonic <https://scikit-image.org/docs/stable/auto_examples/filters/plot_inpaint.html>`__
 function that will solve also fill an image from the boundary
 conditions, in a manner related to the Laplace Equation.  Scikit-image
 also has a
-[``rolling_ball``](https://scikit-image.org/docs/stable/auto_examples/segmentation/plot_rolling_ball.html)
+`rolling_ball <https://scikit-image.org/docs/stable/auto_examples/segmentation/plot_rolling_ball.html>`__
 function to estimate the background from nearby values, though that
 function works better with several small things rather than one large
 one as assumed here.
 
-Statsmodels offers [regression
-functions](https://www.statsmodels.org/stable/regression.html) that
+Statsmodels offers `regression
+functions <https://www.statsmodels.org/stable/regression.html>`__ that
 hide the linear algebra and offer additional diagnostics.  The
-[``formula.ols``](https://www.statsmodels.org/stable/example_formulas.html)
+`formula.ols <https://www.statsmodels.org/stable/example_formulas.html>`__
 interface hides even more of the linear algebra, and can simplify the
 setup of the regression.
