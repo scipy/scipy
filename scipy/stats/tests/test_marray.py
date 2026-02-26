@@ -476,6 +476,20 @@ def test_rankdata(axis, xp):
     xp_assert_close(res.mask, xp.asarray(np.isnan(ref)))
 
 
+@make_xp_test_case(stats.obrientransform)
+@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
+@pytest.mark.parametrize('n_arrays', [1, 3])
+def test_obrientransform(dtype, n_arrays, xp):
+    # obrientransform is not yet vectorized
+    mxp, marrays, narrays = get_arrays(n_arrays, dtype=dtype, shape=(25,), xp=xp)
+    res = stats.obrientransform(*marrays)
+    ref = stats.obrientransform(*narrays, nan_policy='omit')
+    for res_i, ref_i in zip(res, ref):
+        xp_assert_close(res_i.data[~res_i.mask],
+                        xp.asarray(ref_i[~np.isnan(ref_i)], dtype=getattr(xp, dtype)))
+
+
 @pytest.mark.parametrize('f', [
     make_xp_pytest_param(stats.levene),
     make_xp_pytest_param(stats.fligner),
