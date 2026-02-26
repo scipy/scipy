@@ -18,19 +18,16 @@ also a 2-D array.
 scipy.linalg vs numpy.linalg
 ----------------------------
 
-.. TODO: replace numpy.linalg HTML link with `numpy.linalg` once NumPy updates doc
+:mod:`scipy.linalg` and
+`numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__
+overlap substantially, but neither is a strict superset of the other.
+``scipy.linalg`` includes many advanced routines and decomposition helpers,
+while some linear algebra functions are only available in ``numpy.linalg``.
 
-:mod:`scipy.linalg` contains all the functions in
-`numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__.
-plus some other more advanced ones not contained in ``numpy.linalg``.
-
-Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
-it is always compiled with BLAS/LAPACK support, while for NumPy this is
-optional. Therefore, the SciPy version might be faster depending on how
-NumPy was installed.
-
-Therefore, unless you don't want to add ``scipy`` as a dependency to
-your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.
+For identically named functions, behavior and available options may differ.
+In projects that already depend on SciPy, prefer ``scipy.linalg`` when you
+need SciPy-specific algorithms and options; for basic operations, either
+module can be appropriate.
 
 
 numpy.matrix vs 2-D numpy.ndarray
