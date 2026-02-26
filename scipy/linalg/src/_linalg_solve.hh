@@ -744,9 +744,10 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b - 1);
 
-    int16_t *kls_data = (int16_t *)PyArray_DATA(ap_kls);
-    int16_t *kus_data = (int16_t *)PyArray_DATA(ap_kus);
-    npy_intp *shape_kls = PyArray_SHAPE(ap_kls); // identical => only track one
+    // The invariant is that `kl` + `ku` + 1 == `ldab` => only track one
+    // Assume that this is checked on the python side.
+    CBLAS_INT *kls_data = (CBLAS_INT *)PyArray_DATA(ap_kls);
+    npy_intp *shape_kls = PyArray_SHAPE(ap_kls);
     npy_intp *strides_kls = PyArray_STRIDES(ap_kls);
 
     // Find the maximum number of bands to use for allocation of buffer
@@ -756,21 +757,14 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
         return (int)info;
     }
 
-    // find size of the buffer
+    // find size of the buffer by determining the required leading dimension
     npy_intp *kls = &ks[0];
     npy_intp *kus = &ks[outer_size];
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        npy_intp offset = 0;
-        npy_intp temp_idx = idx;
-
-        for (int i = ndim - 3; i >= 0; i--) {
-            offset += (temp_idx % shape_kls[i]) * strides_kls[i];
-            temp_idx /= shape_kls[i];
-        }
-
-        kls[idx] = (npy_intp)kls_data[offset / sizeof(int16_t)];
-        kus[idx] = (npy_intp)kus_data[offset / sizeof(int16_t)];
+        CBLAS_INT *idx_kl = compute_slice_ptr(idx, kls_data, ndim, shape_kls, strides_kls);
+        kls[idx] = (npy_intp)*idx_kl;
+        kus[idx] = shape[ndim-2] - kls[idx] - 1;
 
         if (2 * kls[idx] + kus[idx] + 1 > ldab_max) {
             ldab_max = 2 * kls[idx] + kus[idx] + 1;
