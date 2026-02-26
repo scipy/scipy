@@ -453,8 +453,10 @@ class LinearOperator:
         except Exception as e:
             if issparse(X) or is_pydata_spmatrix(X):
                 raise TypeError(
-                    "Unable to multiply a LinearOperator with a sparse matrix."
-                    " Wrap the matrix with `aslinearoperator` first."
+                    "Multipliying LinearOperator with a sparse matrix failed."
+                    " Try wrapping the matrix with `aslinearoperator` first,"
+                    " or ensuring the operator's `matmat` function"
+                    " supports sparse input."
                 ) from e
             raise
 
@@ -557,7 +559,7 @@ class LinearOperator:
     def _check_matching_namespace(self, x):
         xp_x = getattr(x, "_xp", None)
         if xp_x is None:
-            xp_x = array_namespace(x, self._xp.empty(0))
+            xp_x = array_namespace(x, self._xp.empty(0), sparse_ok=True)
         if xp_x != self._xp:
             msg = (
                 f"Mismatched array namespaces."
