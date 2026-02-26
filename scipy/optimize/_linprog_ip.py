@@ -157,7 +157,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
 
     Parameters
     ----------
-    As defined in [4], except:
+    As defined in [4], except Exception:
     sparse : bool
         True if the system to be solved is sparse. This is typically set
         True when the original ``A_ub`` and ``A_eq`` arrays are sparse.
