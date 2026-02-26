@@ -1538,251 +1538,174 @@ class TestCorrSpearmanr2:
 
 @make_xp_test_case(stats.kendalltau)
 class TestKendallTau:
-    @pytest.mark.thread_unsafe(reason="fails in parallel")
-    def test_kendalltau(self):
+    @pytest.mark.parametrize('x, y, statistic, pvalue', [
         # For the cases without ties, both variants should give the same
-        # result.
-        variants = ('b', 'c')
+        # result. Reference values result from R:
+        # cor.test(x, y, method="kendall", exact=1)
+        ([5, 2, 1, 3, 6, 4, 7, 8], [5, 2, 6, 3, 1, 8, 7, 4], 0.0, 1.0),
+        ([0, 5, 2, 1, 3, 6, 4, 7, 8], [5, 2, 0, 6, 3, 1, 8, 7, 4], 0.0, 1.0),
+        ([5, 2, 1, 3, 6, 4, 7], [5, 2, 6, 3, 1, 7, 4], -0.14285714286, 0.77261904762),
+        ([2, 1, 3, 6, 4, 7, 8], [2, 6, 3, 1, 8, 7, 4], 0.047619047619, 1.0),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+         1.0, 5.511463844797e-07),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 2, 1, 3, 4, 5, 6, 7, 8, 9],
+         0.9555555555555556, 5.511463844797e-06),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 2, 1, 3, 4, 6, 5, 7, 8, 9],
+         0.9111111111111111, 2.976190476190e-05),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+         -1.0, 5.511463844797e-07),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 7, 8, 6, 5, 4, 3, 2, 1, 0],
+         -0.9555555555555556, 5.511463844797e-06),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 7, 8, 6, 5, 3, 4, 2, 1, 0],
+         -0.9111111111111111, 2.976190476190e-05),
+    ])
+    @pytest.mark.parametrize('variant', ['b', 'c'])
+    def test_kendalltau_no_ties(self, x, y, statistic, pvalue, variant, xp):
+        res = stats.kendalltau(xp.asarray(x), xp.asarray(y), variant=variant)
+        xp_assert_close(res[0], xp.asarray(statistic))
+        xp_assert_close(res[1], xp.asarray(pvalue))
 
-        # case without ties, con-dis equal zero
-        x = [5, 2, 1, 3, 6, 4, 7, 8]
-        y = [5, 2, 6, 3, 1, 8, 7, 4]
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (0.0, 1.0)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # case without ties, con-dis equal zero
-        x = [0, 5, 2, 1, 3, 6, 4, 7, 8]
-        y = [5, 2, 0, 6, 3, 1, 8, 7, 4]
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (0.0, 1.0)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # case without ties, con-dis close to zero
-        x = [5, 2, 1, 3, 6, 4, 7]
-        y = [5, 2, 6, 3, 1, 7, 4]
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (-0.14285714286, 0.77261904762)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # case without ties, con-dis close to zero
-        x = [2, 1, 3, 6, 4, 7, 8]
-        y = [2, 6, 3, 1, 8, 7, 4]
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (0.047619047619, 1.0)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # simple case without ties
-        x = np.arange(10)
-        y = np.arange(10)
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (1.0, 5.511463844797e-07)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # swap a couple of values
-        b = y[1]
-        y[1] = y[2]
-        y[2] = b
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (0.9555555555555556, 5.511463844797e-06)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # swap a couple more
-        b = y[5]
-        y[5] = y[6]
-        y[6] = b
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (0.9111111111111111, 2.976190476190e-05)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # same in opposite direction
-        x = np.arange(10)
-        y = np.arange(10)[::-1]
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (-1.0, 5.511463844797e-07)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # swap a couple of values
-        b = y[1]
-        y[1] = y[2]
-        y[2] = b
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (-0.9555555555555556, 5.511463844797e-06)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
-        # swap a couple more
-        b = y[5]
-        y[5] = y[6]
-        y[6] = b
-        # Cross-check with exact result from R:
-        # cor.test(x,y,method="kendall",exact=1)
-        expected = (-0.9111111111111111, 2.976190476190e-05)
-        for taux in variants:
-            res = stats.kendalltau(x, y, variant=taux)
-            assert_approx_equal(res[0], expected[0])
-            assert_approx_equal(res[1], expected[1])
-
+    def test_kendalltau_ties(self, xp):
         # Check a case where variants are different
         # Example values found from Kendall (1970).
         # P-value is the same for the both variants
-        x = array([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
-        y = array([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
+        x = xp.asarray([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+        y = xp.asarray([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
         expected = 0.85895569
-        assert_approx_equal(stats.kendalltau(x, y, variant='b')[0], expected)
+        xp_assert_close(stats.kendalltau(x, y, variant='b')[0], xp.asarray(expected))
         expected = 0.825
-        assert_approx_equal(stats.kendalltau(x, y, variant='c')[0], expected)
-
-        # check exception in case of ties and method='exact' requested
-        y[2] = y[1]
-        assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
-
-        # check exception in case of invalid method keyword
-        assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
-
-        # check exception in case of invalid variant keyword
-        assert_raises(ValueError, stats.kendalltau, x, y, variant='rms')
+        xp_assert_close(stats.kendalltau(x, y, variant='c')[0], xp.asarray(expected))
 
         # tau-b with some ties
         # Cross-check with R:
-        # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
-        x1 = [12, 2, 1, 12, 2]
-        x2 = [1, 4, 7, 1, 0]
+        # cor.test(c(12, 2, 1, 12, 2), c(1, 4, 7, 1, 0), method="kendall", exact=FALSE)
+        x1 = xp.asarray([12, 2, 1, 12, 2])
+        x2 = xp.asarray([1, 4, 7, 1, 0])
         expected = (-0.47140452079103173, 0.28274545993277478)
         res = stats.kendalltau(x1, x2)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        assert_approx_equal(res[0], xp.asarray(expected[0]))
+        assert_approx_equal(res[1], xp.asarray(expected[1]))
 
-        # test for namedtuple attribute results
-        attributes = ('correlation', 'pvalue')
-        for taux in variants:
-            res = stats.kendalltau(x1, x2, variant=taux)
-            check_named_results(res, attributes)
-            assert_equal(res.correlation, res.statistic)
+        # this should result in 1 for tau-b but not tau-c
+        x = xp.asarray([1, 1, 2])
+        xp_assert_close(stats.kendalltau(x, x, variant='b')[0], xp.asarray(1.0))
+        xp_assert_close(stats.kendalltau(x, x, variant='c')[0], xp.asarray(0.88888888))
 
-        # with only ties in one or both inputs in tau-b or tau-c
-        for taux in variants:
-            assert_equal(stats.kendalltau([2, 2, 2], [2, 2, 2], variant=taux),
-                         (np.nan, np.nan))
-            assert_equal(stats.kendalltau([2, 0, 2], [2, 2, 2], variant=taux),
-                         (np.nan, np.nan))
-            assert_equal(stats.kendalltau([2, 2, 2], [2, 0, 2], variant=taux),
-                         (np.nan, np.nan))
+    def test_input_validation_edge_cases(self, xp):
+        x = xp.asarray([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+        y = xp.asarray([1, 2, 2, 4, 4, 4, 8, 8, 8, 10])
+
+        # check exception in case of ties and method='exact' requested
+        message = "Ties found; exact method cannot be used."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y, method='exact')
+
+        # check exception in case of invalid method keyword
+        message = "Unknown `method` 'banana' specified."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y, method='banana')
+
+        # check exception in case of invalid variant keyword
+        message = "Unknown `variant` 'rms' specified."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y, variant='rms')
 
         # empty arrays provided as input
-        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
-            assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
+        with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
+            res = stats.kendalltau(xp.asarray([]), xp.asarray([]))
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
+        # test too small
+        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+            tau, p_value = stats.kendalltau(xp.asarray([0]), xp.asarray([0]))
+        xp_assert_equal(tau, xp.asarray(np.nan))
+        xp_assert_equal(p_value, xp.asarray(np.nan))
+
+        # test unequal length inputs
+        x = np.arange(10.)
+        y = np.arange(20.)
+        message = "Array shapes are incompatible for broadcasting."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y)
+
+    @pytest.mark.parametrize('variant', ['b', 'c'])
+    def test_attributes(self, variant, xp):
+        x1 = xp.asarray([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+        x2 = xp.asarray([1, 2, 2, 4, 4, 4, 8, 8, 8, 10])
+        # test for namedtuple attribute results
+        attributes = ('correlation', 'pvalue')
+        res = stats.kendalltau(x1, x2, variant=variant)
+        check_named_results(res, attributes, xp=xp)
+        xp_assert_equal(res.correlation, res.statistic)
+
+    @pytest.mark.parametrize('x, y', [
+        ([2, 2, 2], [2, 2, 2]),
+        ([2, 0, 2], [2, 2, 2]),
+        ([2, 2, 2], [2, 0, 2]),
+    ])
+    @pytest.mark.parametrize('variant', ['b', 'c'])
+    def test_degenerate_input(self, x, y, variant, xp):
+        # with only ties in one or both inputs in tau-b or tau-c
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.kendalltau(x, y, variant=variant)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
+
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_large_arrays(self, dtype, xp):
         # check with larger arrays
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.RandomState(7546)
         x = np.array([rng.normal(loc=1, scale=1, size=500),
                       rng.normal(loc=1, scale=1, size=500)])
         corr = [[1.0, 0.3],
                 [0.3, 1.0]]
         x = np.dot(np.linalg.cholesky(corr), x)
+        x0 = xp.asarray(x[0], dtype=dtype)
+        x1 = xp.asarray(x[1], dtype=dtype)
         expected = (0.19291382765531062, 1.1337095377742629e-10)
-        res = stats.kendalltau(x[0], x[1])
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        res = stats.kendalltau(x0, x1)
+        xp_assert_close(res[0], xp.asarray(expected[0]))
+        xp_assert_close(res[1], xp.asarray(expected[1]))
 
-        # this should result in 1 for taub but not tau-c
-        assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0],
-                            1.0)
-        assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0],
-                            0.88888888)
-
+    def test_nan_policy(self, xp):
         # test nan_policy
         x = np.arange(10.)
         x[9] = np.nan
-        assert_array_equal(stats.kendalltau(x, x), (np.nan, np.nan))
-        assert_allclose(stats.kendalltau(x, x, nan_policy='omit'),
-                        (1.0, 5.5114638e-6), rtol=1e-06)
-        assert_allclose(stats.kendalltau(x, x, nan_policy='omit', method='asymptotic'),
-                        (1.0, 0.00017455009626808976), rtol=1e-06)
-        assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
-        assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
+        x = xp.asarray(x.tolist())
 
-        # test unequal length inputs
-        x = np.arange(10.)
-        y = np.arange(20.)
-        assert_raises(ValueError, stats.kendalltau, x, y)
+        res = stats.kendalltau(x, x)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-        # test all ties
-        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
-            tau, p_value = stats.kendalltau([0], [0])
-        assert_equal(np.nan, tau)
-        assert_equal(np.nan, p_value)
+        res = stats.kendalltau(x, x, nan_policy='omit')
+        xp_assert_close(res.statistic, xp.asarray(1.0))
+        xp_assert_close(res.pvalue, xp.asarray(5.5114638e-6), rtol=1e-06)
 
-        # Regression test for GitHub issue #6061 - Overflow on Windows
-        x = np.arange(2000, dtype=float)
-        x = np.ma.masked_greater(x, 1995)
-        y = np.arange(2000, dtype=float)
-        y = np.concatenate((y[1000:], y[:1000]))
-        assert_(np.isfinite(stats.mstats.kendalltau(x,y)[1]))
+        res = stats.kendalltau(x, x, nan_policy='omit', method='asymptotic')
+        xp_assert_close(res.statistic, xp.asarray(1.0))
+        xp_assert_close(res.pvalue, xp.asarray(0.00017455009626808976), rtol=1e-06)
 
-    def test_kendalltau_vs_mstats_basic(self):
-        rng = np.random.RandomState(42)
-        for s in range(3, 10):
-            a = []
-            # Generate rankings with ties
-            for i in range(s):
-                a += [i]*i
-            b = list(a)
-            rng.shuffle(a)
-            rng.shuffle(b)
-            expected = mstats_basic.kendalltau(a, b)
-            actual = stats.kendalltau(a, b)
-            assert_approx_equal(actual[0], expected[0])
-            assert_approx_equal(actual[1], expected[1])
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, x, nan_policy='raise')
 
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, x, nan_policy='foobar')
 
-    def test_kendalltau_nan_2nd_arg(self):
+    def test_kendalltau_nan_2nd_arg_gh6134(self, xp):
         # regression test for gh-6134: nans in the second arg were not handled
-        x = [1., 2., 3., 4.]
-        y = [np.nan, 2.4, 3.4, 3.4]
+        x = xp.asarray([1., 2., 3., 4.])
+        y = xp.asarray([np.nan, 2.4, 3.4, 3.4])
 
         r1 = stats.kendalltau(x, y, nan_policy='omit')
         r2 = stats.kendalltau(x[1:], y[1:])
-        assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
-
+        xp_assert_close(r1.statistic, r2.statistic, atol=1e-15)
 
     @pytest.mark.thread_unsafe(reason="fails in parallel")
-    def test_kendalltau_gh18139_overflow(self):
+    def test_kendalltau_gh18139_overflow(self, xp):
         # gh-18139 reported an overflow in `kendalltau` that appeared after
         # SciPy 0.15.1. Check that this particular overflow does not occur.
         # (Test would fail if warning were emitted.)
@@ -1790,23 +1713,24 @@ class TestKendallTau:
         random.seed(6272161)
         classes = [1, 2, 3, 4, 5, 6, 7]
         n_samples = 2 * 10 ** 5
-        x = random.choices(classes, k=n_samples)
-        y = random.choices(classes, k=n_samples)
+        x = xp.asarray(random.choices(classes, k=n_samples))
+        y = xp.asarray(random.choices(classes, k=n_samples))
         res = stats.kendalltau(x, y)
         # Reference value from SciPy 0.15.1
-        assert_allclose(res.statistic, 0.0011816493905730343)
+        xp_assert_close(res.statistic, xp.asarray(0.0011816493905730343))
         # Reference p-value from `permutation_test` w/ n_resamples=9999 (default).
         # Expected to be accurate to at least two digits.
-        assert_allclose(res.pvalue, 0.4894, atol=2e-3)
+        xp_assert_close(res.pvalue, xp.asarray(0.4894), atol=2e-3)
 
-    def test_kendall_tau_large(self):
+    def test_kendall_tau_large_nan_policy(self, xp):
         n = 172
         # Test omit policy
         x = np.arange(n + 1).astype(float)
         y = np.arange(n + 1).astype(float)
         y[-1] = np.nan
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
         _, pval = stats.kendalltau(x, y, method='exact', nan_policy='omit')
-        assert_equal(pval, 0.0)
+        xp_assert_equal(pval, xp.asarray(0.0))
 
 
 @make_xp_test_case(stats.kendalltau)

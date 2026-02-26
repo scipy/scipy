@@ -5520,7 +5520,7 @@ def pointbiserialr(x, y, *, axis=0):
     return res
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False)
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2)
 def kendalltau(x, y, *, nan_policy='propagate',
                method='auto', variant='b', alternative='two-sided'):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
@@ -5643,12 +5643,12 @@ def kendalltau(x, y, *, nan_policy='propagate',
     For a more detailed example, see :ref:`hypothesis_kendalltau`.
     """  # add documentation, then convert tests
     xp = array_namespace(x, y)
-    x, y = _asarray(x, subok=True), _asarray(y, subok=True)
+    x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method,
                       variant=variant, alternative=alternative)
-    return _pack_CorrelationResult(xp.asarray(res.statistic[()]),
-                                   xp.asarray(res.pvalue[()]),
-                                   xp.asarray(res.statistic[()]))
+    vals = res.statistic, res.pvalue, res.statistic
+    vals = (xp.asarray(val)[()] if val.ndim == 0 else xp.asarray(val) for val in vals)
+    return _pack_CorrelationResult(*vals)
 
 
 @_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
@@ -5712,8 +5712,8 @@ def _kendalltau(x, y, *, nan_policy='propagate',
         minclasses = min(len(set(x)), len(set(y)))
         tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
     else:
-        raise ValueError(f"Unknown variant of the method chosen: {variant}. "
-                         "variant must be 'b' or 'c'.")
+        raise ValueError(f"Unknown `variant` '{variant}' specified. "
+                         "`variant` must be 'b' or 'c'.")
 
     # Limit range to fix computational errors
     tau = np.minimum(1., max(-1., tau))
@@ -5721,7 +5721,7 @@ def _kendalltau(x, y, *, nan_policy='propagate',
     # The p-value calculation is the same for all variants since the p-value
     # depends only on con_minus_dis.
     if method == 'exact' and (xtie != 0 or ytie != 0):
-        raise ValueError("Ties found, exact method cannot be used.")
+        raise ValueError("Ties found; exact method cannot be used.")
 
     if method == 'auto':
         if (xtie == 0 and ytie == 0) and (size <= 33 or
@@ -5740,8 +5740,8 @@ def _kendalltau(x, y, *, nan_policy='propagate',
         z = con_minus_dis / np.sqrt(var)
         pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     else:
-        raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
-                         "'exact' or 'asymptotic'.")
+        raise ValueError(f"Unknown `method` '{method}' specified.  `method` must be"
+                         "'auto', 'exact' or 'asymptotic'.")
 
     # create result object with alias for backward compatibility
     res = SignificanceResult(tau[()], pvalue[()])
