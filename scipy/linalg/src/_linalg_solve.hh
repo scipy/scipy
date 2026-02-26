@@ -774,8 +774,10 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
 
-    // Data storage
-    T *buffer = (T *)malloc((n * nrhs + 3 * n + ldab_max * n) * sizeof(T));
+    // Temporary buffer. `overwrite_b` is only enabled when `b` has F-ordered slices.
+    // Therefore, it is possible to use `b` directly instead of requiring a buffer.
+    CBLAS_INT b_data_size = overwrite_b ? 0 : n * nrhs;
+    T *buffer = (T *)malloc((b_data_size + 3 * n + ldab_max * n) * sizeof(T));
 
     if (buffer == NULL) {
         free(ks);
@@ -783,9 +785,9 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
         return (int)info;
     }
 
-    T* b_data = &buffer[0];
-    T* work = &buffer[n * nrhs];
-    T* ab = &buffer[n * nrhs + 3 * n];
+    T* ab = &buffer[0];
+    T* work = &buffer[ldab_max * n];
+    T* b_data = &buffer[ldab_max * n + 3 * n];
 
     // Work and pivots
     CBLAS_INT *ipiv = (CBLAS_INT *)malloc(intn * sizeof(CBLAS_INT));
@@ -816,13 +818,18 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
     // -------------------------------------------------------------------
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr_ab = compute_slice_ptr(idx, ab_data, ndim, shape, strides);
-        T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
-
         CBLAS_INT ldab = 2 * kls[idx] + kus[idx] + 1;
-
-        // Use the "one pass copy" strategy.
         copy_banded(slice_ptr_ab, shape[ndim-2], shape[ndim-1], kls[idx], kus[idx], ldab, ab, strides[ndim-2], strides[ndim-1]);
-        copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+
+        // `overwrite_b` is only enabled when `b` is 2D and F-contiguous. Therefore, it is possible
+        // use the data of the array directly instead of having to transfer to a buffer. Similarly,
+        // the result then also does not have to be copied.
+        if (overwrite_b) {
+            b_data = bm_data;
+        } else {
+            T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
+            copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        }
 
         init_status(slice_status, idx, St::BANDED);
         solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work, irwork, kls[idx], kus[idx], slice_status);
@@ -834,7 +841,9 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
             vec_status.push_back(slice_status);
         }
 
-        copy_slice_F_to_C(&ret_data[idx * n * nrhs], b_data, n, nrhs);
+        if (!overwrite_b) {
+            copy_slice_F_to_C(&ret_data[idx * n * nrhs], b_data, n, nrhs);
+        }
     }
 
 free_exit_banded:
