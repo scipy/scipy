@@ -5521,8 +5521,8 @@ def pointbiserialr(x, y, *, axis=0):
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2)
-def kendalltau(x, y, *, nan_policy='propagate',
-               method='auto', variant='b', alternative='two-sided', axis=None):
+def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
+               alternative='two-sided', axis=None, keepdims=False):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
@@ -5575,6 +5575,10 @@ def kendalltau(x, y, *, nan_policy='propagate',
         The statistic of each axis-slice (e.g. row) of the input will appear in a
         corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
+    keepdims : bool, optional
+        If this is set to ``True``, the axes which are reduced are left
+        in the result as dimensions with length one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -5659,8 +5663,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
         x[mask_x], y[mask_y] = np.nan, np.nan
     else:
         x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
-    res = _kendalltau(x, y, nan_policy=nan_policy, method=method,
-                      variant=variant, alternative=alternative)
+    res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
+                      alternative=alternative, axis=axis, keepdims=keepdims)
     vals = res.statistic, res.pvalue, res.statistic
     vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
             else xp.asarray(val, dtype=dtype) for val in vals)
@@ -5670,8 +5674,7 @@ def kendalltau(x, y, *, nan_policy='propagate',
 @_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
-def _kendalltau(x, y, *, nan_policy='propagate',
-               method='auto', variant='b', alternative='two-sided'):
+def _kendalltau(x, y, *, method='auto', variant='b', alternative='two-sided'):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 

@@ -95,6 +95,12 @@ def yeojohnson_llf(data, lmb, axis=0, _no_deco=False, **kwargs):
     return stats.yeojohnson_llf(lmb, data, axis=axis, **kwargs)
 
 
+def kendalltau(*args, _no_deco=False, **kwargs):
+    if _no_deco:
+        return stats._stats_py._kendalltau(*args, _no_deco=_no_deco, **kwargs)
+    return stats.kendalltau(*args, **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -187,7 +193,7 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
-    (stats.kendalltau, tuple(), dict(), 2, 3, True,
+    (kendalltau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.weightedtau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
