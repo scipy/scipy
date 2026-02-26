@@ -9186,7 +9186,8 @@ def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out, xp
     return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities(skip_backends=[("dask.array", "no `take_along_axis`")])
+@xp_capabilities(skip_backends=[("dask.array", "no `take_along_axis`")], cpu_only=True,
+                 reason="binomial distribution ufuncs only available for NumPy")
 def quantile_test(x, *, q=0.0, p=0.5, alternative='two-sided', axis=0, keepdims=None):
     r"""
     Perform a quantile test and compute a confidence interval of the quantile.
