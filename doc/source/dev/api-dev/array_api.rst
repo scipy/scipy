@@ -1189,7 +1189,7 @@ Adding tests for class methods
 ``````````````````````````````
 
 To declare that a test is testing a particular method of a class,
-one can pass a tuple of the form ``Tuple[type, str]`` as an entry of
+one can pass a tuple of the form ``tuple[type, str]`` as an entry of
 ``funcs`` in ``make_xp_test_case`` and ``make_xp_pytest_marks`` or as
 the argument ``func`` of ``make_xp_pytest_param``. The tuple
 ``(A, "f")`` signifies that one is testing the method ``A.f`` of the
@@ -1216,7 +1216,7 @@ override was added in the ``method_capabilities`` kwarg of
 
 
 If the capabilities for ``(A, "f")`` have
-``jax_jit=True` (or if Dask is not in ``skip_backends``) then using
+``jax_jit=True`` (or if Dask is not in ``skip_backends``) then using
 ``@make_xp_test_case((A, "f"))`` or one of its equivalents
 will cause ``lazy_xp_function`` to be applied to ``(A, "f")``.
 (``lazy_xp_function`` will in this case replace ``A.f`` with
@@ -1248,7 +1248,7 @@ helped during the development phase:
 API Coverage
 ------------
 The below tables show the current state of alternative backend support across
-SciPy's modules. Public functions, function-like callables, and classes are are
+SciPy's modules. Public functions, function-like callables, and classes are
 included in the tables. Parts of the public API which are deemed out-of-scope
 are excluded from consideration when calculating coverage percentages. If a
 module or submodule contains no in-scope functions, it is excluded from the

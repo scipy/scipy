@@ -920,7 +920,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
 
     To allow use of ``make_xp_test_case`` with classes, elements of ``funcs`` may
     also be tuples of the form ``(cls, method_name)`` consisting of a ``type`` and
-    a string giving the name of a method. `lazy_xp_function` will be applied to the
+    a string giving the name of a method. ``lazy_xp_function`` will be applied to the
     method of interest. Capabilities for the method with name ``method_name`` can
     be specified in the ``method_capabilities`` kwarg in the application of
     ``xp_capabilities`` to ``cls``. If no ``method_capabilities`` entry is given
@@ -977,8 +977,8 @@ def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=
         See the Notes section of the docstring for ``make_xp_test_case`` for
         more info.
 
-        Note that if func is a tuple, than only the first entry is actually
-        used in the resulting pytets param, and the second entry is only
+        Note that if func is a tuple, then only the first entry is actually
+        used in the resulting pytest param, and the second entry is only
         used to specify capabilities for a particular given method and tell
         the testing infra to apply ``lazy_xp_function`` to that method.::
 
