@@ -136,10 +136,17 @@ static void dcsrch(
     double gtol, double xtol, double stpmin,
     double stpmax, int* task, int* task_msg, int* isave, double* dsave
 );
-static void dcstep (
+static void dcstep(
     double* stx, double* fx, double* dx, double* sty, double* fy, double* dy,
     double* stp, double fp, double dp, int* brackt,
     double stpmin, double stpmax
+);
+
+// Helper functions
+void inline save_vars(
+    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    double finit, double fx, double fy, double stx, double sty, double stmin,
+    double stmax, double width, double width1, int* isave, double* dsave
 );
 
 static double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
