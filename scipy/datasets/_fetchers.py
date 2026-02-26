@@ -48,10 +48,6 @@ def ascent():
     The image is derived from
     https://pixnio.com/people/accent-to-the-top
 
-    Parameters
-    ----------
-    None
-
     Returns
     -------
     ascent : ndarray

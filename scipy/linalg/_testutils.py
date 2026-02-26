@@ -6,6 +6,10 @@ class _FakeMatrix:
         self._data = data
         self.__array_interface__ = data.__array_interface__
 
+    @property
+    def shape(self):
+        return self._data.shape
+
 
 class _FakeMatrix2:
     def __init__(self, data):
@@ -15,6 +19,10 @@ class _FakeMatrix2:
         if copy:
             return self._data.copy()
         return self._data
+
+    @property
+    def shape(self):
+        return self._data.shape
 
 
 def _get_array(shape, dtype):

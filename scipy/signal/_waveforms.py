@@ -9,7 +9,7 @@ from numpy import asarray, zeros, pi, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
 from scipy._lib._array_api import array_namespace, xp_promote
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
@@ -150,7 +150,9 @@ def square(t, duty=0.5):
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
-    Return a Gaussian modulated sinusoid::
+    Return a Gaussian modulated sinusoid.
+
+    The formula for the returned signal is given by::
 
         exp(-a t^2) exp(1j*2*pi*fc*t)
 
@@ -161,7 +163,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     Parameters
     ----------
-    t : ndarray or the string 'cutoff'
+    t : ndarray or 'cutoff'
         Input array.
     fc : float, optional
         Center frequency (e.g. Hz).  Default is 1000.
@@ -184,11 +186,11 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     Returns
     -------
     yI : ndarray
-        Real part of signal.  Always returned.
+        Real part of signal. Always returned.
     yQ : ndarray
-        Imaginary part of signal.  Only returned if `retquad` is True.
+        Imaginary part of signal. Only returned if `retquad` is True.
     yenv : ndarray
-        Envelope of signal.  Only returned if `retenv` is True.
+        Envelope of signal. Only returned if `retenv` is True.
 
     Examples
     --------
@@ -202,7 +204,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     >>> i, q, e = signal.gausspulse(t, fc=5, retquad=True, retenv=True)
     >>> plt.plot(t, i, t, q, t, e, '--')
 
-    """
+    """ 
     if fc < 0:
         raise ValueError(f"Center frequency (fc={fc:.2f}) must be >=0.")
     if bw <= 0:

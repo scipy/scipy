@@ -1,7 +1,6 @@
 python_sources = [
   '__init__.py',
   'test__gcutils.py',
-  'test__pep440.py',
   'test__testutils.py',
   'test__util.py',
   'test_bunch.py',

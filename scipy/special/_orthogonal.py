@@ -1568,12 +1568,12 @@ def roots_gegenbauer(n, alpha, mu=False):
 def gegenbauer(n, alpha, monic=False):
     r"""Gegenbauer (ultraspherical) polynomial.
 
-    Defined to be the solution of
+    Defined to be the solution of the second-order linear ordinary differential equation
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}
-          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}
-          + n(n + 2\alpha)C_n^{(\alpha)} = 0
+        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}(x)
+          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}(x)
+          + n(n + 2\alpha)C_n^{(\alpha)}(x) = 0
 
     for :math:`\alpha > -1/2`; :math:`C_n^{(\alpha)}` is a polynomial
     of degree :math:`n`.
@@ -1595,8 +1595,8 @@ def gegenbauer(n, alpha, monic=False):
 
     Notes
     -----
-    The polynomials :math:`C_n^{(\alpha)}` are orthogonal over
-    :math:`[-1,1]` with weight function :math:`(1 - x^2)^{(\alpha -
+    The polynomials :math:`C_n^{(\alpha)}` are orthogonal on
+    :math:`[-1,1]` with respect to the weight function :math:`(1 - x^2)^{(\alpha -
     1/2)}`.
 
     Examples
@@ -2559,7 +2559,8 @@ def roots_sh_legendre(n, mu=False):
 
 
 def sh_legendre(n, monic=False):
-    r"""Shifted Legendre polynomial.
+    r"""
+    Shifted Legendre polynomial.
 
     Defined as :math:`P^*_n(x) = P_n(2x - 1)` for :math:`P_n` the nth
     Legendre polynomial.
@@ -2576,6 +2577,11 @@ def sh_legendre(n, monic=False):
     -------
     P : orthopoly1d
         Shifted Legendre polynomial.
+
+    See Also
+    --------
+    scipy.special.legendre
+    scipy.special.roots_sh_legendre
 
     Notes
     -----
@@ -2600,9 +2606,9 @@ def sh_legendre(n, monic=False):
     The polynomials :math:`P_n^*` satisfy a recurrence
     relation obtained by the change of variables
     :math:`t = 2x - 1` in the standard Legendre recurrence:
-    
+
     .. math::
-    
+
         (n+1) P_{n+1}^*(x) = (2n+1)(2x-1)\,P_n^*(x) - n\,P_{n-1}^*(x).
 
     This can be easily checked on :math:`[0, 1]`
@@ -2626,11 +2632,6 @@ def sh_legendre(n, monic=False):
     >>> y = sh_legendre(2)(x) * sh_legendre(3)(x)
     >>> np.isclose(trapezoid(y, x), 0.0, atol=1e-12)
     True
-
-    See Also
-    --------
-    scipy.special.legendre
-    scipy.special.roots_sh_legendre
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")

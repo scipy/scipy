@@ -443,7 +443,7 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
 
     Parameters
     ----------
-    input : ndarray
+    signal : ndarray
         The input signal.
     lamb : float
         Specifies the amount of smoothing in the transfer function.
@@ -484,7 +484,7 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
 
     Parameters
     ----------
-    input : ndarray
+    signal : ndarray
         The input signal.
     lamb : float
         Specifies the amount of smoothing in the transfer function.
@@ -709,7 +709,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
         fashion across the last axis.
     c0, z1 : scalar
         Parameters in the transfer function.
-    precision :
+    precision : float, optional
         Specifies the precision for calculating initial conditions
         of the recursive filter based on mirror-symmetric input.
 

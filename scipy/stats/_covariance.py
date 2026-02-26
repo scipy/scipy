@@ -11,7 +11,7 @@ __all__ = ["Covariance"]
 
 class Covariance:
     """
-    Representation of a covariance matrix
+    Representation of a covariance matrix.
 
     Calculations involving covariance matrices (e.g. data whitening,
     multivariate normal function evaluation) are often performed more
@@ -76,6 +76,11 @@ class Covariance:
         ----------
         diagonal : array_like
             The diagonal elements of a diagonal matrix.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing `diagonal`.
 
         Notes
         -----
@@ -144,6 +149,12 @@ class Covariance:
             cumulative distribution function of
             `scipy.stats.multivariate_normal`) by inverting `precision`.
 
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `precision`.
+
         Notes
         -----
         Let the covariance matrix be :math:`A`, its precision matrix be
@@ -194,12 +205,18 @@ class Covariance:
     @staticmethod
     def from_cholesky(cholesky):
         r"""
-        Representation of a covariance provided via the (lower) Cholesky factor
+        Representation of a covariance provided via the (lower) Cholesky factor.
 
         Parameters
         ----------
         cholesky : array_like
             The lower triangular Cholesky factor of the covariance matrix.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `cholesky`.
 
         Notes
         -----
@@ -252,7 +269,7 @@ class Covariance:
     @staticmethod
     def from_eigendecomposition(eigendecomposition):
         r"""
-        Representation of a covariance provided via eigendecomposition
+        Representation of a covariance provided via eigendecomposition.
 
         Parameters
         ----------
@@ -260,6 +277,12 @@ class Covariance:
             A sequence (nominally a tuple) containing the eigenvalue and
             eigenvector arrays as computed by `scipy.linalg.eigh` or
             `numpy.linalg.eigh`.
+
+        Returns
+        -------
+        Covariance
+            A `Covariance` object representing the covariance matrix
+            corresponding to `eigendecomposition`.
 
         Notes
         -----

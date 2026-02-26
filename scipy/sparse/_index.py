@@ -90,9 +90,9 @@ class IndexMixin:
                 res = self._get_arrayXslice(row, col)
             # arrayXarray preprocess
             elif (row.ndim == 2 and row.shape[1] == 1
-                and (col.ndim == 1 or col.shape[0] == 1)):
+                  and (col.ndim == 1 or col.shape[0] == 1)):
                 # outer indexing
-                res = self._get_columnXarray(row[:, 0], col.ravel())
+                res = self._get_columnXarray(row[:, 0], col.reshape(-1))
             else:
                 # inner indexing
                 row, col = _broadcast_arrays(row, col)
@@ -410,16 +410,14 @@ def _validate_indices(key, self_shape, self_format):
             array_indices.append(index_ndim)
             index_ndim += 1
     if len(array_indices) > 1:
-        idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
-        if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
-            shapes = " ".join(str(ix.shape) for ix in idx_arrays)
+        arr_shapes = [index[i].shape for i in array_indices]
+        try:
+            arr_shape = np.broadcast_shapes(*arr_shapes)
+        except ValueError:
+            shapes = " ".join(str(shp) for shp in arr_shapes)
             msg = (f'shape mismatch: indexing arrays could not be broadcast '
                    f'together with shapes {shapes}')
             raise IndexError(msg)
-        # replace array indices with broadcast versions
-        for i, arr in zip(array_indices, idx_arrays):
-            index[i] = arr
-        arr_shape = idx_arrays[0].shape
         # len(array_indices) implies arr_int_pos has at least one element
         # if arrays and ints not adjacent, move to front of shape
         if len(arr_int_pos) != (arr_int_pos[-1] - arr_int_pos[0] + 1):
@@ -444,7 +442,7 @@ def _asindices(idx, length, format):
     except (ValueError, TypeError, MemoryError) as e:
         raise IndexError('invalid index') from e
 
-    if format != "coo" and ix.ndim not in (1, 2):
+    if format != "coo" and ix.ndim not in (1, 2) or format == "coo" and ix.ndim == 0:
         raise IndexError(f'Index dimension must be 1 or 2. Got {ix.ndim}')
 
     # LIL routines handle bounds-checking for us, so don't do it here.

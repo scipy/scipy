@@ -65,7 +65,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     x : ndarray
         The argument that minimises `f`.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'COBYLA' `method` in particular.
@@ -228,9 +228,9 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     Modernization and Amelioration", https://www.libprima.net,
     :doi:`10.5281/zenodo.8052654`
     """
-    from .._lib.pyprima import minimize
-    from .._lib.pyprima.common.infos import SMALL_TR_RADIUS, FTARGET_ACHIEVED
-    from .._lib.pyprima.common.message import get_info_string
+    from .._external.pyprima import minimize
+    from .._external.pyprima.common.infos import SMALL_TR_RADIUS, FTARGET_ACHIEVED
+    from .._external.pyprima.common.message import get_info_string
     _check_unknown_options(unknown_options)
     rhoend = tol
     iprint = disp if disp is not None else 0

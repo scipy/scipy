@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
     xp_promote,
     xp_float_to_complex,
 )
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 

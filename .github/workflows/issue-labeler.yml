@@ -16,7 +16,7 @@ jobs:
     - uses: github/issue-labeler@c1b0f9f52a63158c4adc09425e858e87b32e9685 # v3.4
       if: github.repository == 'scipy/scipy'
       with:
-        configuration-path: .github/labeler.yml
+        configuration-path: .github/label-title.yml
         include-title: 1
         include-body: 0
         enable-versioned-regex: 0
