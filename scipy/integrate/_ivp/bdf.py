@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from scipy.sparse import issparse, eye_array
+from scipy.sparse import issparse, eye_array, safely_cast_index_arrays
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
@@ -115,24 +115,24 @@ class BDF(OdeSolver):
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
-    jac : {None, array_like, sparse matrix or array, callable}, optional
+    jac : {None, array_like, sparse array or matrix, callable}, optional
         Jacobian matrix of the right-hand side of the system with respect to y,
         required by this method. The Jacobian matrix has shape (n, n) and its
         element (i, j) is equal to ``d f_i / d y_j``.
         There are three ways to define the Jacobian:
 
-        * If array_like or sparse_matrix or sparse_array, the Jacobian is
+        * If array_like or sparse_array or sparse_matrix, the Jacobian is
           assumed to be constant.
         * If callable, the Jacobian is assumed to depend on both
           t and y; it will be called as ``jac(t, y)`` as necessary.
-          For the 'Radau' and 'BDF' methods, the return value might be a
-          sparse matrix or sparse array.
+          For the 'Radau' and 'BDF' methods, the return value can be a
+          sparse array or sparse matrix.
         * If None (default), the Jacobian will be approximated by
           finite differences.
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
-    jac_sparsity : {None, array_like, sparse matrix or array}, optional
+    jac_sparsity : {None, array_like, sparse array or matrix}, optional
         Defines a sparsity structure of the Jacobian matrix for a
         finite-difference approximation. Its shape must be (n, n). This argument
         is ignored if `jac` is not `None`. If the Jacobian has only few non-zero
@@ -278,7 +278,7 @@ class BDF(OdeSolver):
             J = jac(t0, y0)
             self.njev += 1
             if issparse(J):
-                J = J.tocsc().astype(y0.dtype)
+                J = J.tocsc().astype(y0.dtype, copy=False)
                 csc_constructor = J.__class__
 
                 def jac_wrapped(t, y):
@@ -296,7 +296,7 @@ class BDF(OdeSolver):
                                  f" but actually has {J.shape}.")
         else:
             if issparse(jac):
-                J = jac.tocsc().astype(y0.dtype)
+                J = jac.tocsc().astype(y0.dtype, copy=False)
             else:
                 J = np.asarray(jac, dtype=y0.dtype)
 
