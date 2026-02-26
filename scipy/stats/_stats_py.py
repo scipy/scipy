@@ -2478,16 +2478,15 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-@xp_capabilities(extra_note=("When `SCIPY_ARRAY_API=1, `obrientransform` returns a "
-                             "tuple of arrays."))
-
+@xp_capabilities()
 def obrientransform(*samples, nan_policy='propagate'):
     """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
     Each array in ``*samples`` is one level of a factor.
-    If `f_oneway` is run on the transformed data and found significant,
-    the variances are unequal.  From Maxwell and Delaney [1]_, p.112.
+    Significant results of `f_oneway` on the transformed data suggest that the,
+    variances of the underlying distributions are unequal.
+    See Maxwell and Delaney [1]_, p.112.
 
     Parameters
     ----------
@@ -2504,12 +2503,8 @@ def obrientransform(*samples, nan_policy='propagate'):
 
     Returns
     -------
-    obrientransform : ndarray
-        Transformed data for use in an ANOVA.  The first dimension
-        of the result corresponds to the sequence of transformed
-        arrays.  If the arrays given are all 1-D of the same length,
-        the return value is a 2-D array; otherwise it is a 1-D array
-        of type object, with each element being an ndarray.
+    obrientransform : tuple of arrays
+        Transformed arrays for use in ANOVA.
 
     Raises
     ------
@@ -2546,22 +2541,6 @@ def obrientransform(*samples, nan_policy='propagate'):
     that the variances are different.
 
     """
-    # Decided to split the implementations for two reasons:
-    # - The original returns an object array in some circumstances; the SCIPY_ARRAY_API
-    #   version can't do that. Branching based on the environment variable allows
-    #   us to move forward while the old behavior is deprecated.
-    # - The separate, new SCIPY_ARRAY_API implementation can be tested against the
-    #   original.
-    if SCIPY_ARRAY_API:
-        return _xp_obrientransform(*samples, nan_policy=nan_policy)
-    else:
-        message =  ("Beginning in SciPy 1.20.0, `obrientransform` will return a tuple "
-                    "of arrays rather than a 2-D array or 1-D object array of arrays.")
-        warnings.warn(message, FutureWarning, stacklevel=2)
-        return _obrientransform(*samples, nan_policy=nan_policy)
-
-
-def _xp_obrientransform(*samples, nan_policy):
     xp = array_namespace(*samples)
     n_samples = len(samples)
     samples = xp_promote(*samples, force_floating=True, xp=xp)
@@ -2580,6 +2559,8 @@ def _xp_obrientransform_one_sample(a, *, xp, nan_policy):
 
 
 def _obrientransform(*samples, nan_policy):
+    # This is the original version of `obrientransform`. It is currently
+    # used only for testing.
     TINY = np.sqrt(np.finfo(float).eps)
 
     # `arrays` will hold the transformed arguments.
