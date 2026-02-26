@@ -480,12 +480,21 @@ def _mode_result(mode, count):
         count = xp.asarray(0, dtype=count.dtype)[()] if i else count
     else:
         count = xpx.at(count)[i].set(0)
+    if is_numpy(xp) and mode.ndim > 0:
+        # When a) xp is NumPy, b) array is multidimensional, c) NaNs are present,
+        # and d) nan_policy='omit', `_axis_nan_policy` decorator uses
+        # `np.apply_along_axis` to compute mode/count along each axis-slice separately.
+        # The result is a single array with the result dtype of `mode` and `count`.
+        # We need to change `count` back to an integer.
+        count = xp.astype(count, xp.asarray(0).dtype)
     return ModeResult(mode, count)
 
 
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
-                 jax_jit=False)  # would delegate, but jax-ml/jax#34486
+                 jax_jit=False,  # would delegate, but jax-ml/jax#34486
+                 extra_note=("`MArray`s are supported, but values must be real numbers "
+                             "that cast safely to floating point."))
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -565,7 +574,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         NaN = _get_nan(a, xp=xp)
         return ModeResult(*xp.asarray([NaN, 0], dtype=NaN.dtype))
 
-    if a.ndim == 1:
+    if a.ndim == 1 and not is_marray(xp):
         vals, cnts = xp.unique_counts(a)
         # in contrast with np.unique, `unique_counts` treats all NaNs as distinct,
         # but we have always grouped them. Replace `cnts` corresponding with NaNs
@@ -581,9 +590,20 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
 
     # `axis` is always -1 after the `_axis_nan_policy` decorator
     y = xp.sort(a, axis=-1)
+
     # Get boolean array of elements that are different from the previous element
-    i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
-                  (y[..., :-1] != y[..., 1:]) & ~xp.isnan(y[..., :-1])], axis=-1)
+    if is_marray(xp):
+        # Treat masked elements as NaNs and *don't* count NaNs as equal. Two downsides:
+        # - integer arrays are converted to floating point, so some very large distinct
+        #   integers will no longer be distinct.
+        # - NaNs in the original data *will* be treated as distinct.
+        y_data = xp_promote(y.data, force_floating=True, xp=y._xp)
+        y_data = y._xp.where(y.mask, y._xp.nan, y_data)
+        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
+                      (y_data[..., :-1] != y_data[..., 1:])], axis=-1)
+    else:
+        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
+                      (y[..., :-1] != y[..., 1:]) & ~xp.isnan(y[..., :-1])], axis=-1)
     # Get linear integer indices of these elements in a raveled array
     indices = xp.arange(xp_size(y), device=xp_device(y))[xp_ravel(i)]
     # The difference between integer indices is the number of repeats

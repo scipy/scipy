@@ -21,13 +21,15 @@ pytestmark = [
 
 skip_backend = pytest.mark.skip_xp_backends
 
-def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=84912165484321):
+def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), all_unique=True,
+               seed=84912165484321):
     mxp = marray._get_namespace(xp)
     rng = np.random.default_rng(seed)
 
     datas, masks = [], []
     for i in range(n_arrays):
-        data = rng.random(size=shape)
+        data = (rng.random(size=shape) if all_unique
+                else rng.integers(np.min(shape) // 2, size=shape))
         if dtype.startswith('complex'):
             data = 10*data * 10j*rng.standard_normal(size=shape)
         data = data.astype(dtype)
@@ -113,6 +115,18 @@ def test_several(fun, kwargs, axis, xp):
     res = fun(marrays[0], **kwargs)
     ref = fun(narrays[0], nan_policy='omit', **kwargs)
     xp_assert_close(res.data, xp.asarray(ref))
+
+
+@make_xp_test_case(stats.mode)
+@pytest.mark.parametrize('dtype', ['int32', 'float64'])
+@pytest.mark.parametrize('shape', [10, (7, 8)])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_mode(dtype, shape, axis, xp):
+    mxp, marrays, narrays = get_arrays(1, shape=shape, all_unique=False, xp=xp)
+    res = stats.mode(mxp.astype(marrays[0], getattr(mxp, dtype)))
+    ref = stats.mode(*narrays, nan_policy='omit')
+    xp_assert_close(res.mode.data, xp.asarray(ref.mode.astype(dtype)))
+    xp_assert_close(res.count.data, xp.asarray(ref.count))
 
 
 @make_xp_test_case(stats.describe)
