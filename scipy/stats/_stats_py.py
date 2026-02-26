@@ -5643,11 +5643,13 @@ def kendalltau(x, y, *, nan_policy='propagate',
     For a more detailed example, see :ref:`hypothesis_kendalltau`.
     """  # add documentation, then convert tests
     xp = array_namespace(x, y)
+    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
     x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method,
                       variant=variant, alternative=alternative)
     vals = res.statistic, res.pvalue, res.statistic
-    vals = (xp.asarray(val)[()] if val.ndim == 0 else xp.asarray(val) for val in vals)
+    vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype) for val in vals)
     return _pack_CorrelationResult(*vals)
 
 
