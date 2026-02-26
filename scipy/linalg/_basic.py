@@ -10,7 +10,7 @@ import numpy as np
 from scipy._lib._util import _apply_over_batch
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
-    _ensure_aligned_and_native, _ensure_dtype_cdsz,
+    _ensure_aligned_and_native, _ensure_dtype_cdsz, HAS_ILP64
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -494,9 +494,10 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     ab1 = np.broadcast_to(ab1, batch_shape + ab1.shape[-2:])
     b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
-    # Convert to `int16` to have a known type at receiver side.
-    nlower = np.broadcast_to(nlower, batch_shape).astype(np.int16)
-    nupper = np.broadcast_to(nupper, batch_shape).astype(np.int16)
+    # Convert to the same size as `CBLAS_INT` on C side
+    dtype = np.int64 if HAS_ILP64 else np.int32
+    nlower = np.broadcast_to(nlower, batch_shape).astype(dtype)
+    nupper = np.broadcast_to(nupper, batch_shape).astype(dtype)
 
     if not np.all(nlower + nupper == ab1.shape[-2] - 1):
         raise ValueError("Sum of l and u should be equal to number of rows of ab")

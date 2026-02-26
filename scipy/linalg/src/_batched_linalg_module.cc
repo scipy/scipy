@@ -238,8 +238,14 @@ _linalg_solve_banded(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    if (!(PyArray_TYPE(ap_kls) == NPY_INT16) || !PyArray_ISALIGNED(ap_kls)) {
-        PyErr_SetString(PyExc_TypeError, "Expected bounds to be integers.");
+    int bounds_typenum = sizeof(CBLAS_INT) == sizeof(NPY_INT32) ? NPY_INT32 : NPY_INT64;
+
+    if (!(PyArray_TYPE(ap_kls) == bounds_typenum) || !PyArray_ISALIGNED(ap_kls)) {
+        PyErr_SetString(PyExc_TypeError, "Expected lower bounds to be CBLAS_INT.");
+        return NULL;
+    }
+    if (!(PyArray_TYPE(ap_kus) == bounds_typenum) || !PyArray_ISALIGNED(ap_kus)) {
+        PyErr_SetString(PyExc_TypeError, "Expected upper bounds to be CBLAS_INT.");
         return NULL;
     }
 
