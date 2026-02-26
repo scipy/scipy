@@ -250,6 +250,41 @@ class TestSolveBanded:
         assert x.shape == shape_b
         assert_allclose(a @ x, b, atol=atol)
 
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("order_b", ["C", "F"])
+    @pytest.mark.parametrize("dtype_b", [int, float])
+    @pytest.mark.parametrize("nrhs", [1, 2])
+    def test_overwrite(self, nrhs, dtype_b, order_b, overwrite_b_kw):
+        rng = np.random.default_rng(seed=12345)
+        n = 10
+        l, u = 2, 1
+
+        a = rng.normal(size=(n, n))
+        a = np.triu(a, k=-l)
+        a = np.tril(a, k=u)
+        ab = np.zeros((l + u + 1, n))
+        ab[u, :] = np.diag(a)
+        for i in range(l):
+            ab[u+i+1, :-i-1] = np.diag(a, k=-i-1)
+        for i in range(u):
+            ab[u-i-1, i+1:] = np.diag(a, k=i+1)
+
+        b = rng.normal(size=(n, nrhs))
+        b = b.astype(dtype_b, order=order_b)
+
+        b_ref = b.copy()
+
+        # Check if the solution itself is correct
+        x = solve_banded((l, u), ab, b, **overwrite_b_kw)
+        assert_allclose(a @ x, b_ref, atol=1e-12)
+
+        # Validate in-place operation
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags["F_CONTIGUOUS"]
+
+        assert np.shares_memory(x, b) == b_inplace
+        assert np.all(b == b_ref) != b_inplace
+
 
 class TestSolveHBanded:
 

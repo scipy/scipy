@@ -492,11 +492,18 @@ _linalg_solve_banded(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Allocate the output
-    ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum);
-    if(!ap_x) {
-        PyErr_NoMemory();
-        return NULL;
+    // If `overwrite_b` is enabled, the conditions for which are checked at the python side, it is
+    // possible to reuse `ap_b`. If it is disabled, allocate a new array for the output.
+    if (!overwrite_b) {
+        ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum);
+        if(!ap_x) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    } else {
+        // Reuse the input
+        ap_x = ap_b;
+        Py_INCREF(ap_b);
     }
 
     void *buf = PyArray_DATA(ap_x);
