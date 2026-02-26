@@ -229,7 +229,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
 
     Returns
     -------
-    J : csc_matrix or csc_array, shape (n * m + k, n * m + k)
+    J : csc_array, shape (n * m + k, n * m + k)
         Jacobian of the collocation system in a sparse form.
 
     References
@@ -377,7 +377,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
     jac : callable
         Function computing the Jacobian of the whole system (including
         collocation and boundary condition residuals). It is supposed to
-        return csc_matrix or csc_array.
+        return csc_array or csc_matrix.
     y : ndarray, shape (n, m)
         Initial guess for the function values at the mesh nodes.
     p : ndarray, shape (k,)
