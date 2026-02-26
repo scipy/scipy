@@ -167,7 +167,9 @@ every point.
    ...         values = interpolator(grid_x, grid_y)
    ...         ax = plt.subplot(3, 3, 3 * i + j + 1)
    ...         interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
-   ...         results = plot_and_check_filled_image(values, f"{interpolator_name:s}\n1 pt. in {i+1:d}")
+   ...         results = plot_and_check_filled_image(
+   ...             values, f"{interpolator_name:s}\n1 pt. in {i+1:d}"
+   ...         )
    ...         results.append(np.count_nonzero(np.isnan(values)))
    ...         sparse_results.append(results)
    ...     full_results.append(sparse_results)
@@ -226,7 +228,7 @@ also reduce the problem:
    ...     values = interpolator(grid_x, grid_y, simplex_tolerance=multiplier)
    ...     ax = plt.subplot(1, 2, i+1)
    ...     interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
-   ...     results = plot_and_check_filled_image(values, f"{interpolator_name:s}\nmul = {multiplier}")
+   ...     results = plot_and_check_filled_image(values, interpolator_name)
    ...     results.append(np.count_nonzero(np.isnan(values)))
    ...     full_results.append(results)
    ...
@@ -358,11 +360,15 @@ able to produce the six extrema of the boundary conditions.
    ...             rtol=np.finfo(poly_edge_values.dtype).eps * L * num_coeffs
    ...         ) @ (poly_edge_values @ border_values)
    ...         values = polygrid2d(
-   ...             scaled_grid_x[:, 0], scaled_grid_y[0, :], coeffs.reshape(num_coeffs, num_coeffs)
+   ...             scaled_grid_x[:, 0], scaled_grid_y[0, :],
+   ...             coeffs.reshape(num_coeffs, num_coeffs)
    ...         )
    ...         ax = plt.subplot(2, 3, i * 2 + j + 1)
    ...         results.append(
-   ...             plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}"))
+   ...             plot_and_check_filled_image(
+   ...                 values, f"{poly_family:s} degree {num_coeffs - 1:d}"
+   ...             )
+   ...         )
    ...     full_results.append(results)
    >>> np.array(full_results).transpose(2, 0, 1)
    array([[[-5.92118946e-17,  1.18423789e-17],
@@ -419,7 +425,9 @@ produce results similar to that function.
    ...         )
    ...         ax = plt.subplot(3, 2, 2 * i + j + 1)
    ...         results.append(
-   ...             plot_and_check_filled_image(values, f"{poly_family:s} degree {num_coeffs - 1:d}")
+   ...             plot_and_check_filled_image(
+   ...                 values, f"{poly_family:s} degree {num_coeffs - 1:d}"
+   ...             )
    ...         )
    ...     full_results.append(results)
    ...
