@@ -1476,7 +1476,7 @@ cdef class cKDTree:
                                np.float64_t p=2.0,
                                output_type='dok_matrix'):
         """
-        sparse_distance_matrix(self, other, max_distance, p=2.0)
+        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
 
         Compute a sparse distance matrix
 
@@ -1486,37 +1486,36 @@ cdef class cKDTree:
         Parameters
         ----------
         other : cKDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
-
         output_type : str, optional
-            Which container to use for output data. Options: 'dok_array',
-            'coo_array', 'dict', or 'ndarray'. Legacy options 'dok_matrix'
-            and 'coo_matrix' are still available and the Default: 'dok_matrix'.
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
+            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
+            Default: ``'dok_matrix'``.
 
-               .. warning:: dok_matrix and coo_matrix are being replaced.
+            .. warning:: dok_matrix and coo_matrix are being replaced.
 
-                   All new code should use sparse array types 'dok_array'
-                   and 'coo_array'. The default value of `output_type` is
-                   still 'dok_matrix' but will be deprecated at 1.19.0 and
-                   changed to 'dok_array' at v1.21.0.  The values 'dok_matrix'
-                   and 'coo_matrix' will continue to work, but will go away
-                   when the sparse matrix classes are removed.
-                   Unless you use * instead of @, ** for matrix power
-                   or depend on 2D shapes from e.g. `A.sum(axis=0)` it makes
-                   sense to use the array interface.
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' will continue
+               to work, but will go away when the sparse matrix classes
+               are removed.
 
         Returns
         -------
         result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------

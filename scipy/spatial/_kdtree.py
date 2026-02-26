@@ -848,7 +848,7 @@ class KDTree(cKDTree):
             The other `KDTree` to compute distances against.
         max_distance : positive float
             Maximum distance within which neighbors are returned. Distances above this
-            values are returned as zero.
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
@@ -858,17 +858,15 @@ class KDTree(cKDTree):
             Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
             Default: ``'dok_matrix'``.
 
-               .. warning:: dok_matrix and coo_matrix are being replaced.
+            .. warning:: dok_matrix and coo_matrix are being replaced.
 
-                   All new code should use sparse array types 'dok_array'
-                   and 'coo_array'. The default value of `output_type` is
-                   still 'dok_matrix' but will be deprecated at 1.19.0 and
-                   changed to 'dok_array' at v1.21.0.  The values 'dok_matrix'
-'                  and 'coo_matrix' will continue to work, but will go away
-                   when the sparse matrix classes are removed.
-                   Unless you use * instead of @, ** for matrix power
-                   or depend on 2D shapes from e.g. `A.sum(axis=0)` it makes
-                   sense to use the array interface.
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' will continue
+               to work, but will go away when the sparse matrix classes
+               are removed.
 
             .. versionadded:: 1.6.0
 
