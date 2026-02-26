@@ -528,7 +528,11 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         return b2
 
     overwrite_ab = (overwrite_ab or _datacopied(ab1, ab))
-    overwrite_b = (overwrite_b or _datacopied(b1, b))
+    overwrite_b = (
+        (overwrite_b or _datacopied(b1, b)) and
+        b1.ndim <= 2 and
+        b1.flags["F_CONTIGUOUS"]
+    )
 
     # hand of to lower level routine
     x, err_lst = _batched_linalg._solve_banded(ab1, b1, nlower, nupper,
