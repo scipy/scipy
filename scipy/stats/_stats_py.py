@@ -2484,7 +2484,7 @@ def obrientransform(*samples, nan_policy='propagate'):
 
     Used to test for homogeneity of variance prior to running one-way stats.
     Each array in ``*samples`` is one level of a factor.
-    Significant results of `f_oneway` on the transformed data suggest that the,
+    Significant results of `f_oneway` on the transformed data suggest that the
     variances of the underlying distributions are unequal.
     See Maxwell and Delaney [1]_, p.112.
 

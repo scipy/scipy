@@ -41,10 +41,12 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes, xp_result_type, is_cupy, is_jax)
+                                   xp_swapaxes, xp_result_type, is_cupy, is_jax,
+                                   xp_copy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
+
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -6768,10 +6770,7 @@ class TestObrientransform:
         ref = _obrientransform(x, nan_policy=nan_policy)
         xp_assert_close(res[0], xp.asarray(ref[0].tolist(), dtype=dtype))
 
-        if SCIPY_ARRAY_API:
-            assert isinstance(res, tuple)
-        else:
-            assert isinstance(res, np.ndarray)
+        assert isinstance(res, tuple)
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
