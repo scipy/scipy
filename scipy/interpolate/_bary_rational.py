@@ -635,10 +635,10 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
     Parameters
     ----------
-    x : 1D array_like, shape (n,)
+    points : 1D array_like, shape (n,)
         1-D array containing values of the independent variable. Values may be real or
         complex but must be finite.
-    y : array_like, shape (n, ...)
+    values : array_like, shape (n, ...)
         Array containing values of the dependent variable. Infinite and NaN values
         of `y` and corresponding values of `x` will be discarded.
     d : int, default: 3

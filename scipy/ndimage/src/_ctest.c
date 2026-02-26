@@ -158,33 +158,36 @@ static PyMethodDef _CTestMethods[] = {
 };
 
 
+static int
+_ctest_module_exec(PyObject *module)
+{
+    (void)module;  /* unused */
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot _ctest_slots[] = {
+    {Py_mod_exec, _ctest_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 /* Initialize the module */
 static struct PyModuleDef _ctest = {
-    PyModuleDef_HEAD_INIT,
-    "_ctest",
-    NULL,
-    -1,
-    _CTestMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_ctest",
+    .m_size = 0,
+    .m_methods = _CTestMethods,
+    .m_slots = _ctest_slots,
 };
 
 
 PyMODINIT_FUNC
 PyInit__ctest(void)
 {
-    PyObject *module;
-
-    module = PyModule_Create(&_ctest);
-    if (module == NULL) {
-        return module;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&_ctest);
 }

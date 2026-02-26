@@ -25,9 +25,9 @@ try:
 except ImportError:
     cython = None
 else:
-    from scipy._lib import _pep440
+    from scipy._external.packaging_version import version
     required_version = '3.0.8'
-    if _pep440.parse(cython_version) < _pep440.Version(required_version):
+    if version.parse(cython_version) < version.Version(required_version):
         # too old or wrong cython, skip Cython API tests
         cython = None
 

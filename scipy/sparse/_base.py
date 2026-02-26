@@ -5,7 +5,7 @@ import math
 import numpy as np
 import operator
 
-from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
+from ._sputils import (asmatrix, check_shape,
                        get_sum_dtype, isdense, isscalarlike, _todata,
                        matrix, validateaxis, getdtype, is_pydata_spmatrix)
 from scipy._lib._sparse import SparseABC, issparse
@@ -83,8 +83,8 @@ op_sym = {operator.eq: '==', operator.ge: '>=', operator.le: '<=',
 # via `scipy._lib._sparse.issparse`, without introducing
 # an import dependency on `scipy.sparse`.
 class _spbase(SparseABC):
-    """ This class provides a base class for all sparse arrays.  It
-    cannot be instantiated.  Most of the work is provided by subclasses.
+    """ This class provides a base class for all sparse array and matrix classes.
+    It cannot be instantiated.  Most of the work is provided by subclasses.
     """
 
     __array_priority__ = 10.1
@@ -150,14 +150,15 @@ class _spbase(SparseABC):
     def shape(self):
         return self._shape
 
-    def reshape(self, *args, **kwargs):
+    def reshape(self, *shape, order="C", copy=False):
         """reshape(self, shape, order='C', copy=False)
 
         Gives a new shape to a sparse array/matrix without changing its data.
 
         Parameters
         ----------
-        shape : tuple of ints
+        *shape : int
+            Integers specifying the new shape.
             The new shape should be compatible with the original shape.
         order : {'C', 'F'}, optional
             Read the elements using this index order. 'C' means to read and
@@ -183,8 +184,7 @@ class _spbase(SparseABC):
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
         # Don't restrict ndim on this first call. That happens in constructor
-        shape = check_shape(args, self.shape, allow_nd=range(1, 65))
-        order, copy = check_reshape_kwargs(kwargs)
+        shape = check_shape(shape, self.shape, allow_nd=range(1, 65))
         if shape == self.shape:
             if copy:
                 return self.copy()
@@ -193,8 +193,8 @@ class _spbase(SparseABC):
 
         return self.tocoo(copy=copy).reshape(shape, order=order, copy=False)
 
-    def resize(self, shape):
-        """Resize the array/matrix in-place to dimensions given by ``shape``
+    def resize(self, *shape):
+        """Resize the array/matrix in-place to dimensions given by ``shape``.
 
         Any elements that lie within the new shape will remain at the same
         indices, while non-zero elements lying outside the new shape are
@@ -202,7 +202,7 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        shape : (int, int)
+        *shape : int
             number of rows and columns in the new array/matrix
 
         Notes
@@ -225,7 +225,7 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        dtype : string or numpy dtype
+        dtype : str or numpy dtype
             Typecode or data-type to which to cast the data.
         casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
             Controls what kind of data casting may occur.
@@ -240,6 +240,11 @@ class _spbase(SparseABC):
             If `copy` is `False`, the result might share some memory with this
             array/matrix. If `copy` is `True`, it is guaranteed that the result and
             this array/matrix do not share any memory.
+
+        Returns
+        -------
+        array/matrix
+            This array/matrix with data type `dtype`.
         """
 
         dtype = getdtype(dtype)
@@ -290,9 +295,11 @@ class _spbase(SparseABC):
         return self.maxprint
 
     def count_nonzero(self, axis=None):
-        """Number of non-zero entries, equivalent to
+        """Number of non-zero entries.
 
-        np.count_nonzero(a.toarray(), axis=axis)
+        This is equivalent to::
+
+            np.count_nonzero(a.toarray(), axis=axis)
 
         Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
@@ -355,7 +362,7 @@ class _spbase(SparseABC):
         axis : {-2, -1, 0, 1, None} optional
             Report stored values for the whole array, or along a specified axis.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero entries
         """
@@ -366,7 +373,7 @@ class _spbase(SparseABC):
     def nnz(self) -> int:
         """Number of stored values, including explicit zeros.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero entries
         """
@@ -376,7 +383,7 @@ class _spbase(SparseABC):
     def size(self) -> int:
         """Number of stored values.
 
-        See also
+        See Also
         --------
         count_nonzero : Number of non-zero values.
         """
@@ -461,7 +468,8 @@ class _spbase(SparseABC):
 
         Returns
         -------
-        A : This array/matrix in the passed format.
+        A : array/matrix
+            This array/matrix in the passed format.
         """
         if format is None or format == self.format:
             if copy:
@@ -488,7 +496,13 @@ class _spbase(SparseABC):
     ####################################################################
 
     def multiply(self, other):
-        """Element-wise multiplication by another array/matrix."""
+        """Element-wise multiplication by another array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix
+            Result of element-wise multiplication.
+        """
         if isscalarlike(other):
             return self._mul_scalar(other)
 
@@ -577,15 +591,41 @@ class _spbase(SparseABC):
             raise ValueError("Operands not compatible.")
 
     def maximum(self, other):
-        """Element-wise maximum between this and another array/matrix."""
+        """Element-wise maximum between this and another array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix or ndarray
+            Result of element-wise minimum. The type depends on `other`:
+
+            - If `other` is a scalar, the result is a sparse array/matrix.
+            - If `other` is an ndarray, the result is an ndarray.
+        """
         return self._maximum_minimum(other, np.maximum)
 
     def minimum(self, other):
-        """Element-wise minimum between this and another array/matrix."""
+        """Element-wise minimum between this and another array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix or ndarray
+            Result of element-wise minimum. The type depends on `other`:
+
+            - If `other` is a scalar, the result is a sparse array/matrix.
+            - If `other` is an ndarray, the result is an ndarray.
+        """
         return self._maximum_minimum(other, np.minimum)
 
     def dot(self, other):
-        """Ordinary dot product
+        """Ordinary dot product.
+
+        Returns
+        -------
+        sparse array/matrix or ndarray
+            Result of dot product. The type depends on `other`:
+
+            - If `other` is a scalar, the result is a sparse array/matrix.
+            - If `other` is an ndarray, the result is an ndarray.
 
         Examples
         --------
@@ -603,7 +643,13 @@ class _spbase(SparseABC):
             return self @ other
 
     def power(self, n, dtype=None):
-        """Element-wise power."""
+        """Element-wise power.
+
+        Returns
+        -------
+        csr array/matrix
+            Result of raising all elements to the power `n`.
+        """
         return self.tocsr().power(n, dtype=dtype)
 
     def _broadcast_to(self, shape, copy=False):
@@ -1027,16 +1073,17 @@ class _spbase(SparseABC):
 
         Returns
         -------
-        p : `self` with the dimensions reversed.
+        p : sparse array/matrix
+            The transpose of the array/matrix.
+
+        See Also
+        --------
+        numpy.transpose : NumPy's implementation of 'transpose' for ndarrays
 
         Notes
         -----
         If `self` is a `csr_array` or a `csc_array`, then this will return a
         `csc_array` or a `csr_array`, respectively.
-
-        See Also
-        --------
-        numpy.transpose : NumPy's implementation of 'transpose' for ndarrays
         """
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 
@@ -1053,8 +1100,8 @@ class _spbase(SparseABC):
 
         Returns
         -------
-        A : The element-wise complex conjugate.
-
+        A : sparse array/matrix
+            The element-wise complex conjugate.
         """
         if np.issubdtype(self.dtype, np.complexfloating):
             return self.tocsr(copy=copy).conjugate(copy=False)
@@ -1077,8 +1124,12 @@ class _spbase(SparseABC):
     def nonzero(self):
         """Nonzero indices of the array/matrix.
 
-        Returns a tuple of arrays (row,col) containing the indices
-        of the non-zero elements of the array.
+        Returns
+        -------
+        row : ndarray
+            Row indices of non-zero elements.
+        col : ndarray
+            Column indices of non-zero elements.
 
         Examples
         --------
@@ -1221,6 +1272,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant csr_array/matrix.
+
+        Returns
+        -------
+        csr array/matrix
+            The converted array/matrix in CSR format.
         """
         return self.tocoo(copy=copy).tocsr(copy=False)
 
@@ -1229,6 +1285,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant dok_array/matrix.
+
+        Returns
+        -------
+        dok array/matrix
+            The converted array/matrix in DOK format.
         """
         return self.tocoo(copy=copy).todok(copy=False)
 
@@ -1237,6 +1298,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant coo_array/matrix.
+
+        Returns
+        -------
+        coo array/matrix
+            The converted array/matrix in COO format.
         """
         return self.tocsr(copy=False).tocoo(copy=copy)
 
@@ -1245,6 +1311,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant lil_array/matrix.
+
+        Returns
+        -------
+        lil array/matrix
+            The converted array/matrix in LIL format.
         """
         return self.tocsr(copy=False).tolil(copy=copy)
 
@@ -1253,6 +1324,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant dia_array/matrix.
+
+        Returns
+        -------
+        dia array/matrix
+            The converted array/matrix in DIA format.
         """
         return self.tocoo(copy=copy).todia(copy=False)
 
@@ -1264,6 +1340,11 @@ class _spbase(SparseABC):
 
         When blocksize=(R, C) is provided, it will be used for construction of
         the bsr_array/matrix.
+
+        Returns
+        -------
+        bsr array/matrix
+            The converted array/matrix in BSR format.
         """
         return self.tocsr(copy=False).tobsr(blocksize=blocksize, copy=copy)
 
@@ -1272,6 +1353,11 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant csc_array/matrix.
+
+        Returns
+        -------
+        csc array/matrix
+            The converted array/matrix in CSC format.
         """
         return self.tocsr(copy=copy).tocsc(copy=False)
 
@@ -1280,6 +1366,11 @@ class _spbase(SparseABC):
 
         No data/indices will be shared between the returned value and current
         array/matrix.
+
+        Returns
+        -------
+        sparse array/matrix
+            A copy of this array/matrix.
         """
         return self.__class__(self, copy=True)
 
@@ -1326,16 +1417,23 @@ class _spbase(SparseABC):
         # Mimic numpy's casting.
         res_dtype = get_sum_dtype(self.dtype)
 
+        if dtype is not None:
+            # Before casting to the requested dtype, canonicalize duplicates and zeros.
+            if hasattr(self, 'sum_duplicates'):
+                self.sum_duplicates()
+            temp = self.astype(dtype, copy=False).sum(axis=axis, dtype=None, out=out)
+            return temp.astype(dtype, copy=False)
+
         # Note: all valid 1D axis values are canonically `None`.
         if axis is None:
             if self.nnz == 0:
                 return np.sum(self._ascontainer([0]), dtype=dtype or res_dtype, out=out)
             return np.sum(self._ascontainer(_todata(self)), dtype=dtype, out=out)
-        elif isspmatrix(self):
+        elif isinstance(self, sparray):
+            new_shape = tuple(self.shape[i] for i in range(self.ndim) if i not in axis)
+        else:
             # Ensure spmatrix sums stay 2D
             new_shape = (1, self.shape[1]) if axis == (0,) else (self.shape[0], 1)
-        else:
-            new_shape = tuple(self.shape[i] for i in range(self.ndim) if i not in axis)
 
         if out is None:
             # create out array with desired dtype
@@ -1391,6 +1489,7 @@ class _spbase(SparseABC):
         Returns
         -------
         m : np.matrix
+            Mean along the specified axis.
 
         See Also
         --------
@@ -1427,7 +1526,12 @@ class _spbase(SparseABC):
 
             .. versionadded:: 1.0
 
-        See also
+        Returns
+        -------
+        d : ndarray
+            The specified diagonal of the array/matrix.
+
+        See Also
         --------
         numpy.diagonal : Equivalent numpy function.
 
@@ -1451,6 +1555,10 @@ class _spbase(SparseABC):
             Which diagonal to get, corresponding to elements a[i, i+offset].
             Default: 0 (the main diagonal).
 
+        Returns
+        -------
+        scalar
+            The sum of the specified diagonal of the array/matrix.
         """
         return self.diagonal(k=offset).sum()
 
@@ -1548,7 +1656,11 @@ class _spbase(SparseABC):
 
 
 class sparray:
-    """A namespace class to separate sparray from spmatrix"""
+    """A namespace class to separate sparray from spmatrix.
+
+    This class serves as the namespace for SciPy sparse array types.
+    It cannot be instantiated and is designed as a mixin class.
+    """
 
     @classmethod
     def __class_getitem__(cls, arg, /):

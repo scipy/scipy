@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import warnings
 from scipy._lib._array_api import (
     xp_assert_equal,
+    array_namespace,
     is_numpy,
     is_lazy_array,
     xp_vector_norm,
@@ -23,7 +24,7 @@ from scipy._lib._array_api import (
     make_xp_pytest_marks,
     xp_device_type,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 import pickle
 import copy
@@ -638,6 +639,8 @@ def test_from_mrp_single_nd_input(xp, ndim: int):
     expected_quat = xp.reshape(expected_quat, (1,) * (ndim - 1) + (4,))
     result = Rotation.from_mrp(mrp)
     xp_assert_close(result.as_quat(), expected_quat, atol=1e-12)
+    # Regression test for gh-24555
+    assert isinstance(result._quat, type(array_namespace(mrp).empty(0)))
 
 
 def test_from_mrp_array_like():
@@ -2490,6 +2493,8 @@ def test_pow(xp, ndim: int):
         # Test accuracy
         q = p ** n
         q_identity = xp.asarray([0., 0, 0, 1])
+        # Regression test for gh-24436 
+        assert isinstance(q._quat, type(q_identity))
         r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
         for _ in range(abs(n)):
             if n > 0:
@@ -3178,3 +3183,9 @@ def test_rotation_shape(xp, ndim: int):
     quat = xp.ones(shape + (4,))
     r = Rotation.from_quat(quat)
     assert r.shape == shape, f"Got {r.shape}, expected {shape}"
+
+
+def test_non_writeable():
+    q = np.array([0, 0, 0, 1.0])
+    q.flags.writeable = False
+    Rotation.from_quat(q)  # Regression test against gh-24354, should not raise

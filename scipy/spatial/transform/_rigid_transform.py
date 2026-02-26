@@ -17,8 +17,8 @@ from scipy.spatial.transform import Rotation
 from scipy.spatial.transform._rotation import _promote
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy.spatial.transform._rigid_transform_xp as xp_backend
-import scipy._lib.array_api_extra as xpx
-from scipy._lib.array_api_compat import device
+import scipy._external.array_api_extra as xpx
+from scipy._external.array_api_compat import device
 from scipy._lib._array_api import xp_promote
 from scipy._lib._util import broadcastable
 
@@ -95,7 +95,8 @@ rigid_transform_extra_note = (
     extra_note=rigid_transform_extra_note,
 )
 class RigidTransform:
-    """Rigid transform in 3 dimensions.
+    """
+    Rigid transform in 3 dimensions.
 
     This class provides an interface to initialize from and represent rigid
     transforms (rotation and translation) in 3D space. In different fields,
@@ -157,6 +158,10 @@ class RigidTransform:
     inv
     identity
 
+    Notes
+    -----
+    .. versionadded:: 1.16.0
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
@@ -168,10 +173,6 @@ class RigidTransform:
     .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
            ugly", June 9, 2014.
            https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
-
-    Notes
-    -----
-    .. versionadded:: 1.16.0
 
     Examples
     --------
@@ -470,6 +471,7 @@ class RigidTransform:
         Returns
         -------
         transform : `RigidTransform` instance
+            Object containing the rigid transform represented by the input matrix.
 
         Notes
         -----
@@ -544,6 +546,7 @@ class RigidTransform:
         Returns
         -------
         transform : `RigidTransform` instance
+            Object containing the rigid transform represented by the input rotation.
 
         Examples
         --------
@@ -613,6 +616,7 @@ class RigidTransform:
         Returns
         -------
         transform : `RigidTransform` instance
+            Object containing the rigid transform represented by the input translation.
 
         Examples
         --------

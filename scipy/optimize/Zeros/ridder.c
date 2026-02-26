@@ -21,11 +21,14 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     double dm,dn,xm,xn=0.0,fn,fm,fa,fb,tol;
     solver_stats->error_num = INPROGRESS;
+    solver_stats->funcalls = 0;
 
     tol = xtol + rtol*MIN(fabs(xa), fabs(xb));
+    solver_stats->funcalls++;
     fa = (*f)(xa, func_data_param);
+    solver_stats->funcalls++;
     fb = (*f)(xb, func_data_param);
-    solver_stats->funcalls = 2;
+    
     if (fa == 0) {
         solver_stats->error_num = CONVERGED;
         return xa;
@@ -42,13 +45,30 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     solver_stats->iterations=0;
     for (i=0; i<iter; i++) {
         solver_stats->iterations++;
+        
         dm = 0.5*(xb - xa);
         xm = xa + dm;
+        solver_stats->funcalls++;
         fm = (*f)(xm, func_data_param);
-        dn = SIGN(fb - fa)*dm*fm/sqrt(fm*fm - fa*fb);
-        xn = xm - SIGN(dn) * MIN(fabs(dn), fabs(dm) - .5*tol);
+        
+        /* * If the midpoint lands exactly on the root, exit immediately.
+         * This prevents potential issues with ratio calculation if fm is 0.
+         */
+        if (fm == 0.0) {
+            solver_stats->error_num = CONVERGED;
+            return xm;
+        }
+
+        /* * Implementing the equation from Ridders' paper to avoid underflow.
+         * We normalize by fa to avoid underflow in intermediate terms (fm*fm).
+         */
+        double ratio = fm / fa;
+        dn = dm * ratio / sqrt(ratio * ratio - fb / fa);
+
+        xn = xm + SIGN(dn) * MIN(fabs(dn), fabs(dm) - .5*tol);
+        solver_stats->funcalls++;
         fn = (*f)(xn, func_data_param);
-        solver_stats->funcalls += 2;
+        
         if (signbit(fn) != signbit(fm)) {
             xa = xn; fa = fn; xb = xm; fb = fm;
         }

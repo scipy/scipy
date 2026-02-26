@@ -308,7 +308,7 @@ def convert_temperature(
 @xp_capabilities()
 def lambda2nu(lambda_: "npt.ArrayLike") -> Any:
     """
-    Convert wavelength to optical frequency
+    Convert wavelength to optical frequency.
 
     Parameters
     ----------
