@@ -976,7 +976,7 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute derivatives of real-order modified Bessel function Kv(z)
+    """Compute derivatives of real-order modified Bessel function Kv(z).
 
     Kv(z) is the modified Bessel function of the second kind.
     Derivative is calculated with respect to `z`.
@@ -3014,7 +3014,7 @@ def factorial(n, exact=False, extend="zero"):
         integer arithmetic, otherwise approximate using the gamma function
         (faster, but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the factorial (see below).
@@ -3075,7 +3075,7 @@ def factorial2(n, exact=False, extend="zero"):
         integer arithmetic, otherwise use above approximation (faster,
         but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the double factorial. This also enables passing
@@ -3135,7 +3135,7 @@ def factorialk(n, k, exact=False, extend="zero"):
         integer arithmetic, otherwise use an approximation (faster,
         but yields floats instead of integers)
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0`` are
         handled - by default they are 0, but it is possible to opt into the complex
         extension of the multifactorial. This enables passing complex values,

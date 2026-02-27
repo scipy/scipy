@@ -13,6 +13,7 @@ the organization section.
    :caption: Contributing Information
 
    conduct/code_of_conduct
+   conduct/ai_policy
    hacking
    dev_quickstart
    contributor/development_workflow

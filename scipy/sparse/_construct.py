@@ -35,7 +35,7 @@ def expand_dims(A, /, *, axis=0):
     Parameters
     ----------
     A : sparse array
-
+        Input array.
     axis : int
         Position in the expanded axes where the new axis (or axes) is placed.
         For a dimension ``N`` array, a valid axis is an integer on the
@@ -47,7 +47,7 @@ def expand_dims(A, /, *, axis=0):
     Returns
     -------
     out : sparse array
-        A expanded copy output in COO format with the same dtype as `A`.
+        An expanded copy output in COO format with the same dtype as `A`.
 
     Raises
     ------
@@ -87,6 +87,7 @@ def swapaxes(A, axis1, axis2):
     Parameters
     ----------
     A : sparse array
+        Input array.
     axis1 : int
         First axis.
     axis2 : int
@@ -133,6 +134,7 @@ def permute_dims(A, axes=None, copy=False):
     Parameters
     ----------
     A : sparse array
+        Input array.
     axes : tuple or list of ints, optional
         If specified, it must be a tuple or list which contains a permutation
         of ``[0, 1, ..., N-1]`` where ``N`` is ``A.ndim``. The ith
@@ -529,7 +531,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
 
 
 def identity(n, dtype='d', format=None):
-    """Identity matrix in sparse format
+    """Identity matrix in sparse format.
 
     Returns an identity matrix with shape ``(n, n)`` using a given
     sparse format and dtype. This differs from `eye_array` in
@@ -710,7 +712,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
 
 def kron(A, B, format=None):
-    """Sparse representation of the Kronecker product of `A` and `B`
+    """Sparse representation of the Kronecker product of `A` and `B`.
 
     Computes the Kronecker product, a composite sparse array
     made of blocks consisting of the second input array multiplied
@@ -825,7 +827,7 @@ def kron(A, B, format=None):
 
 
 def kronsum(A, B, format=None):
-    """Kronecker sum of square sparse matrices `A` and `B`
+    """Kronecker sum of square sparse matrices `A` and `B`.
 
     Kronecker sum of two sparse matrices is a sum of two Kronecker
     products ``kron(I_n,A) + kron(B,I_m)`` where `A` has shape ``(m, m)``
@@ -995,11 +997,11 @@ def _stack_along_minor_axis(blocks, axis):
 
 def hstack(blocks, format=None, dtype=None):
     """
-    Stack sparse matrices horizontally (column wise)
+    Stack sparse matrices horizontally (column wise).
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse matrices with compatible shapes
     format : str
         sparse format of the result (e.g., "csr")
@@ -1042,11 +1044,11 @@ def hstack(blocks, format=None, dtype=None):
 
 def vstack(blocks, format=None, dtype=None):
     """
-    Stack sparse arrays vertically (row wise)
+    Stack sparse arrays vertically (row wise).
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse arrays with compatible shapes
     format : str, optional
         sparse format of the result (e.g., "csr")
@@ -1090,7 +1092,7 @@ def vstack(blocks, format=None, dtype=None):
 
 def bmat(blocks, format=None, dtype=None):
     """
-    Build a sparse array or matrix from sparse sub-blocks
+    Build a sparse array or matrix from sparse sub-blocks.
 
     Note: `block_array` is preferred over ``bmat``. They are the same function
     except that ``bmat`` returns a deprecated sparse matrix when none of the
@@ -1154,7 +1156,7 @@ def bmat(blocks, format=None, dtype=None):
 
 def block_array(blocks, *, format=None, dtype=None):
     """
-    Build a sparse array from sparse sub-blocks
+    Build a sparse array from sparse sub-blocks.
 
     Parameters
     ----------
@@ -1381,7 +1383,7 @@ def block_diag(mats, format=None, dtype=None):
 @_transition_to_rng("random_state")
 def random_array(shape, *, density=0.01, format='coo', dtype=None,
                  rng=None, data_sampler=None):
-    """Return a sparse array of uniformly random numbers in [0, 1)
+    """Return a sparse array of uniformly random numbers in [0, 1).
 
     Returns a sparse array with the given shape and density
     where values are generated uniformly randomly in the range [0, 1).

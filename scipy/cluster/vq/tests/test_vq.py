@@ -13,7 +13,7 @@ from scipy.cluster.vq import ClusterError, kmeans, kmeans2, vq, whiten
 from scipy.cluster.vq._vq_impl import _py_vq, _krandinit, _vq
 from scipy.sparse._sputils import matrix
 
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, eager_warns, is_lazy_array, make_xp_test_case,
     xp_copy, xp_assert_close, xp_assert_equal
@@ -320,14 +320,16 @@ class TestKMeans:
     def test_kmeans2_rank1_2(self, xp):
         data = xp.asarray(TESTDATA_2D)
         data1 = data[:, 0]
-        kmeans2(data1, 2, iter=1)
+        rng = np.random.default_rng(42)
+        kmeans2(data1, 2, iter=1, rng=rng)
 
     def test_kmeans2_high_dim(self, xp):
         # test kmeans2 when the number of dimensions exceeds the number
         # of input points
         data = xp.asarray(TESTDATA_2D)
         data = xp.reshape(data, (20, 20))[:10, :]
-        kmeans2(data, 2)
+        rng = np.random.default_rng(42)
+        kmeans2(data, 2, rng=rng)     
 
     def test_kmeans2_init(self, xp):
         rng = np.random.default_rng(12345678)

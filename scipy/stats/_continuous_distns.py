@@ -21,7 +21,7 @@ import scipy.special as sc
 
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import xp_promote
 
 from . import _stats
@@ -2213,21 +2213,43 @@ class exponnorm_gen(rv_continuous):
         return np.exp(self._logpdf(x, K))
 
     def _logpdf(self, x, K):
-        invK = 1.0 / K
-        exparg = invK * (0.5 * invK - x)
-        return exparg + _norm_logcdf(x - invK) - np.log(K)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def logpdf_erfcx(x, K, u):
+            erfcx_term = np.log(sc.erfcx(u))
+            return -np.log(2) - 0.5 * (x ** 2) - np.log(K) + erfcx_term
+        def logpdf_default(x, K, u):
+            invK = 1.0 / K
+            exparg = invK * (-x + 0.5 * invK)
+            return exparg + _norm_logcdf(x - invK) - np.log(K)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
+        return xpx.apply_where(
+            use_erfcx, (x, K, u), logpdf_erfcx, logpdf_default)
 
     def _cdf(self, x, K):
-        invK = 1.0 / K
-        expval = invK * (0.5 * invK - x)
-        logprod = expval + _norm_logcdf(x - invK)
-        return _norm_cdf(x) - np.exp(logprod)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def cdf_erfcx(x, K, u):
+            return _norm_cdf(x) - 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u)
+        def cdf_default(x, K, u):
+            invK = 1.0 / K
+            expval = invK * (0.5 * invK - x)
+            logprod = expval + _norm_logcdf(x - invK)
+            return _norm_cdf(x) - np.exp(logprod)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
+        return xpx.apply_where(
+            use_erfcx, (x, K, u), cdf_erfcx, cdf_default)
 
     def _sf(self, x, K):
-        invK = 1.0 / K
-        expval = invK * (0.5 * invK - x)
-        logprod = expval + _norm_logcdf(x - invK)
-        return _norm_cdf(-x) + np.exp(logprod)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def sf_erfcx(x, K, u):
+            return _norm_cdf(-x) + 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u)
+        def sf_default(x, K, u):
+            invK = 1.0 / K
+            expval = invK * (0.5 * invK - x)
+            logprod = expval + _norm_logcdf(x - invK)
+            return _norm_cdf(-x) + np.exp(logprod)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
+        return xpx.apply_where(
+            use_erfcx, (x, K, u), sf_erfcx, sf_default)
 
     def _stats(self, K):
         K2 = K * K
@@ -2235,7 +2257,6 @@ class exponnorm_gen(rv_continuous):
         skw = 2 * K**3 * opK2**(-1.5)
         krt = 6.0 * K2 * K2 * opK2**(-2)
         return K, opK2, skw, krt
-
 
 exponnorm = exponnorm_gen(name='exponnorm')
 
@@ -3871,8 +3892,9 @@ class gengamma_gen(rv_continuous):
 
     def _logpdf(self, x, a, c):
         return xpx.apply_where(
-            (x != 0) | (c > 0), (x, c),
-            lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)),
+            (x != 0) | (c > 0), (x, c, a),
+            lambda x, c, a: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
+                             - x**c - sc.gammaln(a)),
             fill_value=-np.inf)
 
     def _cdf(self, x, a, c):
@@ -11622,7 +11644,7 @@ halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 class crystalball_gen(rv_continuous):
     r"""
-    Crystalball distribution
+    Crystalball distribution.
 
     %(before_notes)s
 
@@ -11807,7 +11829,7 @@ def _argus_phi(chi):
 
 class argus_gen(rv_continuous):
     r"""
-    Argus distribution
+    Argus distribution.
 
     %(before_notes)s
 

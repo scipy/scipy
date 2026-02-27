@@ -1863,13 +1863,13 @@ def mannwhitneyu(x,y, use_continuity=True):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-def kruskal(*args):
+def kruskal(*samples):
     """
     Compute the Kruskal-Wallis H-test for independent samples
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
        Two or more arrays with the sample measurements can be given as
        arguments.
 
@@ -1906,7 +1906,7 @@ def kruskal(*args):
     because the returned p-value is less than the critical value of 5%.
 
     """
-    output = argstoarray(*args)
+    output = argstoarray(*samples)
     ranks = ma.masked_equal(rankdata(output, use_missing=False), 0)
     sumrk = ranks.sum(-1)
     ngrp = ranks.count(-1)
@@ -3763,7 +3763,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     statistic : float
         The Brunner-Munzer W statistic.
     pvalue : float
-        p-value assuming an t distribution. One-sided or
+        p-value assuming a t distribution. One-sided or
         two-sided, depending on the choice of `alternative` and `distribution`.
 
     See Also

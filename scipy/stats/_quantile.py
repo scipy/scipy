@@ -7,11 +7,11 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_promote,
     xp_device,
-    _length_nonmasked,
+    _count_nonmasked,
     is_torch,
     is_lazy_array,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
@@ -101,7 +101,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     n_zero_weight = (n_zero_weight if n_zero_weight is None
                      else xp.moveaxis(n_zero_weight, axis, -1))
 
-    n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
+    n = _count_nonmasked(y, -1, xp=xp, keepdims=True)
     n = n if n_zero_weight is None else n - n_zero_weight
 
     # Ideally this code will always be run for lazy arrays, but JAX JIT is having

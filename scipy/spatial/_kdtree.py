@@ -110,7 +110,13 @@ class Rectangle:
         return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
-        """Total volume."""
+        """Compute the total volume of the hyperrectangle.
+
+        Returns
+        -------
+        vol : float
+            Volume of the hyperrectangle.
+        """
         return np.prod(self.maxes-self.mins)
 
     def split(self, d, split):
@@ -127,6 +133,12 @@ class Rectangle:
         split : float
             Position along axis `d` to split at.
 
+        Returns
+        -------
+        less : Rectangle
+            Rectangle with `d`-th axis less than `split`.
+        greater : Rectangle
+            Rectangle with `d`-th axis greater than `split`.
         """
         mid = np.copy(self.maxes)
         mid[d] = split
@@ -148,6 +160,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Minimum distance.
         """
         return minkowski_distance(
             0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
@@ -165,6 +181,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Maximum distance.
         """
         return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
 
@@ -179,6 +199,10 @@ class Rectangle:
         p : float
             Input.
 
+        Returns
+        -------
+        dist : float
+            Minimum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0,
@@ -198,6 +222,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : float
+            Maximum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
@@ -413,7 +441,7 @@ class KDTree(cKDTree):
                shape ``tuple``, containing lists of distances. This behavior
                has been removed, use `query_ball_point` instead.
 
-        i : integer or array of integers
+        i : int or array of integers
             The index of each neighbor in ``self.data``.
             ``i`` is the same shape as d.
             Missing neighbors are indicated with ``self.n``.
@@ -626,7 +654,7 @@ class KDTree(cKDTree):
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : string, optional
+        output_type : str, optional
             Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
             .. versionadded:: 1.6.0
@@ -817,16 +845,16 @@ class KDTree(cKDTree):
         Parameters
         ----------
         other : KDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            values are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
-
-        output_type : string, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+        output_type : str, optional
+            Which container to use for output data. Options: ``'dok_matrix'``,
+            ``'coo_matrix'``, ``'dict'``, or ``'ndarray'``. Default: ``'dok_matrix'``.
 
             .. versionadded:: 1.6.0
 
@@ -834,9 +862,9 @@ class KDTree(cKDTree):
         -------
         result : dok_matrix, coo_matrix, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------

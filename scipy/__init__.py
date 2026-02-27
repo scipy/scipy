@@ -114,6 +114,12 @@ submodules = [
     'stats'
 ]
 
+# Handle `_without-fortran` build option
+import os
+if not os.path.exists('odr'):
+    submodules.remove('odr')
+del os
+
 __all__ = submodules + [
     'LowLevelCallable',
     'test',

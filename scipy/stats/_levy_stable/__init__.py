@@ -10,7 +10,7 @@ from scipy import integrate
 from scipy.integrate._quadrature import _builtincoeffs
 from scipy import interpolate
 from scipy.interpolate import RectBivariateSpline
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import scipy.special as sc
 from .._distn_infrastructure import rv_continuous, _ShapeInfo, rv_continuous_frozen
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
@@ -281,7 +281,14 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
             for exp_height in [100, 10, 5]
             # exp_height = 1 is handled by peak
         ]
-        intg_points = [0, peak] + tail_points
+        # Symmetry is used to ensure x > zeta as above. Integration 
+        # becomes numerically unstable so let `quad` handle 
+        # integration points
+        if beta != -1:
+            intg_points = [0, peak] + tail_points
+        else:
+            intg_points = None
+
         intg, *ret = integrate.quad(
             integrand,
             -xi,

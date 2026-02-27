@@ -508,7 +508,6 @@ class TestConvolve2d:
 @make_xp_test_case(fftconvolve)
 class TestFFTConvolve:
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -523,14 +522,13 @@ class TestFFTConvolve:
 
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_real_axes(self, axes, xp):
         a = xp.asarray([1, 2, 3])
         expected = xp.asarray([1, 4, 10, 12, 9.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -556,8 +554,8 @@ class TestFFTConvolve:
         a = xp.asarray([1 + 1j, 2 + 2j, 3 + 3j])
         expected = xp.asarray([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -605,8 +603,8 @@ class TestFFTConvolve:
                           [8, 26, 56, 54, 36],
                           [16, 40, 73, 60, 36]])
 
-        a = xp.asarray(np.tile(a, [2, 1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+        a = xp.tile(a, (2, 1, 1))
+        expected = xp.tile(expected, (2, 1, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -659,8 +657,8 @@ class TestFFTConvolve:
             [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
             ])
 
-        a = xp.asarray(np.tile(a, [2, 1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+        a = xp.tile(a, (2, 1, 1))
+        expected = xp.tile(expected, (2, 1, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -668,7 +666,6 @@ class TestFFTConvolve:
         out = fftconvolve(a, a, axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real_same_mode(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -692,7 +689,6 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
     def test_real_same_mode_axes(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -700,10 +696,10 @@ class TestFFTConvolve:
         expected_1 = xp.asarray([35., 41., 47.])
         expected_2 = xp.asarray([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected_1 = xp.asarray(np.tile(expected_1, [2, 1]))
-        expected_2 = xp.asarray(np.tile(expected_2, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected_1 = xp.tile(expected_1, (2, 1))
+        expected_2 = xp.tile(expected_2, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -714,7 +710,6 @@ class TestFFTConvolve:
         out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_valid_mode_real(self, axes, xp):
         # See gh-5897
@@ -738,7 +733,6 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'valid', axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, [1]])
     def test_valid_mode_real_axes(self, axes, xp):
         # See gh-5897
@@ -746,9 +740,9 @@ class TestFFTConvolve:
         b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -784,9 +778,9 @@ class TestFFTConvolve:
         b = xp.asarray([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
         expected = xp.asarray([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -798,16 +792,15 @@ class TestFFTConvolve:
         xp_assert_close(out, expected, atol=1.5e-6)
 
     @skip_xp_backends("jax.numpy", reason="mapped axes must have same shape")
-    @skip_xp_backends("torch", reason="dtypes do not match")
     def test_valid_mode_ignore_nonaxes(self, xp):
         # See gh-5897
         a = xp.asarray([3, 2, 1])
         b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (1, 1))
+        expected = xp.tile(expected, (2, 1))
 
         out = fftconvolve(a, b, 'valid', axes=1)
         xp_assert_close(out, expected, atol=1.5e-6)
@@ -897,9 +890,9 @@ class TestFFTConvolve:
         expected = xp.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
-        a = xp.asarray(np.tile(a, [2, 1, 3, 1, 1]))
-        b = xp.asarray(np.tile(b, [2, 1, 1, 4, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 3, 4, 1]))
+        a = xp.tile(a, (2, 1, 3, 1, 1))
+        b = xp.tile(b, (2, 1, 1, 4, 1))
+        expected = xp.tile(expected, (2, 1, 3, 4, 1))
 
         out = fftconvolve(a, b, 'full', axes=axes)
         xp_assert_close(out, expected, rtol=1e-10, atol=1e-10)
