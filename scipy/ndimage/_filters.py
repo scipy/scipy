@@ -1426,7 +1426,11 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     W is the `weights` kernel,
     j is the N-D spatial index over :math:`W`,
     I is the `input` and k is the coordinate of the center of
-    W, specified by `origin` in the input parameters.
+    W, shifted by `origin`. For each axis ``d``,
+    :math:`k_d = \\left\\lfloor \\frac{W_d}{2} \\right\\rfloor + \\mathrm{origin}_d`,
+    where :math:`W_d` is the size of the kernel along axis ``d`` and
+    :math:`\\mathrm{origin}_d` is the corresponding value of `origin`
+    (or the scalar `origin` value, when `origin` is an int).
 
     Examples
     --------
