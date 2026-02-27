@@ -3,11 +3,15 @@ Module for reading and writing matlab (TM) .mat files
 """
 # Authors: Travis Oliphant, Matthew Brett
 
+import os
+import warnings
+
 from contextlib import contextmanager
 
 from ._miobase import _get_matfile_version, docfiller
 from ._mio4 import MatFile4Reader, MatFile4Writer
 from ._mio5 import MatFile5Reader, MatFile5Writer
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['loadmat', 'savemat', 'whosmat']
 
@@ -75,7 +79,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         raise TypeError(f'Did not recognize version {mjv}')
 
 
-def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwargs):
     """
     Load MATLAB file.
 
@@ -93,6 +97,14 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
         If ``True``, return sparse matrix. Otherwise return sparse array.
         Format is `COO` for MatFile 4 and `CSC` for MatFile 5.
         Only relevant for sparse variables.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v1.20.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     **kwargs
         The following aditional keyword arguments can be passed:
 
@@ -228,12 +240,27 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
-    if spmatrix:
-        from scipy.sparse import issparse, coo_matrix, csc_matrix
-        for name, var in list(matfile_dict.items()):
-            if issparse(var):
+
+    warn_msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+        That means the default return type will be a sparse array.
+        Unless you use * instead of @, ** for matrix power, or you depend
+        on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+        See the spmatrix to sparray migration guide for details.
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+        """
+
+    from scipy.sparse import issparse, coo_matrix, csc_matrix, coo_array, csc_array
+    for name, var in list(matfile_dict.items()):
+        if issparse(var):
+            if spmatrix is _NoValue:
+                prefixes = (os.path.dirname(__file__),)
+                warnings.warn(warn_msg, DeprecationWarning, skip_file_prefixes=prefixes)
+                spmatrix = True
+            if spmatrix:
                 fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
-                matfile_dict[name] = fmt_matrix(var)
+            else:
+                fmt_matrix = coo_array if var.format == "coo" else csc_array
+            matfile_dict[name] = fmt_matrix(var)
 
     if mdict is not None:
         mdict.update(matfile_dict)
