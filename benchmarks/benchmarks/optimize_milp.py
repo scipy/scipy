@@ -48,18 +48,15 @@ class MilpMiplibBenchmarks(Benchmark):
         self.integrality = integrality
 
     def time_milp(self, prob):
-        # TODO: fix this benchmark (timing out in Aug. 2023); see gh-19389
-        # res = milp(c=self.c, constraints=self.constraints, bounds=self.bounds,
-        #           integrality=self.integrality)
-        # assert res.success
-        pass
+        res = milp(c=self.c, constraints=self.constraints,
+                   bounds=self.bounds, integrality=self.integrality,
+                   options={"time_limit": 30})
+        assert res.success
 
 
 class MilpMagicSquare(Benchmark):
 
-    # TODO: look at 5,6 - timing out and disabled in Apr'24 (5) and Aug'23 (6)
-    #       see gh-19389 for details
-    params = [[3, 4]]
+    params = [[3, 4, 5]]
     param_names = ['size']
 
     def setup(self, n):
