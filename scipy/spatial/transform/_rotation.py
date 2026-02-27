@@ -1568,7 +1568,9 @@ class Rotation:
               expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
-        ``self.as_matrix() @ vectors``.
+        ``self.as_matrix() @ vectors`` if each vector is represented as a
+        column vector. In terms of the row-vector representation in this
+        function, it is equivalent to ``vectors @ self.as_matrix().T``.
 
         Parameters
         ----------
@@ -1603,6 +1605,8 @@ class Rotation:
                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
         >>> r.apply(vector)
         array([2.22044605e-16, 1.00000000e+00, 0.00000000e+00])
+        >>> np.allclose(r.apply(vector), vector @ r.as_matrix().T)
+        True
         >>> r.apply(vector).shape
         (3,)
 
@@ -1619,6 +1623,8 @@ class Rotation:
         >>> r.apply(vectors)
         array([[ 0.70710678,  0.70710678,  0.        ],
                [-0.70710678,  2.12132034,  3.        ]])
+        >>> np.allclose(r.apply(vectors), vectors @ r.as_matrix().T)
+        True
         >>> r.apply(vectors).shape
         (2, 3)
 
