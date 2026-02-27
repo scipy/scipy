@@ -9083,7 +9083,7 @@ class QuantileTestResult:
             high = xp.full(shape, xp.inf)
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
-            low_index =xp.astype(bd.ppf(p), xp.int64) - 1
+            low_index = xp.astype(bd.ppf(p), xp.int64) - 1
             valid_index = low_index >= 0
             low_index = xpx.at(low_index)[~valid_index].set(0)
             x_low = xp.take_along_axis(x, low_index, axis=-1)
