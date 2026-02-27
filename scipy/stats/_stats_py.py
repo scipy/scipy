@@ -5645,7 +5645,7 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
     0.2827454599327748
 
     For a more detailed example, see :ref:`hypothesis_kendalltau`.
-    """  # add documentation, then convert tests
+    """
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
     dtype = x.dtype
