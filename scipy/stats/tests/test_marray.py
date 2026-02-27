@@ -365,6 +365,27 @@ def test_two_sample_tests(fun, kwargs, axis, xp):
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
 
 
+@make_xp_test_case(stats.kendalltau)
+class TestKendallTau:
+    @pytest.mark.parametrize('axis', [0, 1, None])
+    def test_omit_masked_elements(self, axis, xp):
+        mxp, marrays, narrays = get_arrays(2, xp=xp, seed=84912165484322)
+        res = stats.kendalltau(*marrays, axis=axis)
+        ref = stats.kendalltau(*narrays, nan_policy='omit', axis=axis)
+        xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+    @pytest.mark.parametrize('nan_policy, message', [
+        ('propagate', "`nan_policy='propagate'` is incompatible with MArray input."),
+        ('raise', 'The input contains nan values.')
+    ])
+    def test_input_validation(self, nan_policy, message, xp):
+        mxp = marray._get_namespace(xp)
+        x = mxp.asarray([1, 2, 3, xp.nan])
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, x, nan_policy=nan_policy)
+
+
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun, kwargs', [
