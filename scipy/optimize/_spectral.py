@@ -21,36 +21,41 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     Options
     -------
     ftol : float, optional
-        Relative norm tolerance.
+        Relative norm tolerance. Default is 1e-8.
     fatol : float, optional
         Absolute norm tolerance.
         Algorithm terminates when ``||func(x)|| < fatol + ftol ||func(x_0)||``.
+        Default is 1e-300.
     fnorm : callable, optional
         Norm to use in the convergence check. If None, 2-norm is used.
+        Default is None.
     maxfev : int, optional
-        Maximum number of function evaluations.
+        Maximum number of function evaluations. Default is 1000.
     disp : bool, optional
-        Whether to print convergence process to stdout.
+        Whether to print convergence process to stdout. Default is False.
+    callback : callable, optional
+        Optional callback function. Called on each iteration as ``callback(x, F)``
+        where `x` is the current iterate and `F` is the current residual.
+        Default is None.
     eta_strategy : callable, optional
         Choice of the ``eta_k`` parameter, which gives slack for growth
         of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
         `k` the iteration number, `x` the current iterate and `F` the current
         residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
-        Default: ``||F||**2 / (1 + k)**2``.
+        Default is None, which uses ``||F||**2 / (1 + k)**2``.
     sigma_eps : float, optional
         The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
-        Default: 1e-10
+        Default is 1e-10.
     sigma_0 : float, optional
-        Initial spectral coefficient.
-        Default: 1.0
+        Initial spectral coefficient. Default is 1.0.
     M : int, optional
         Number of iterates to include in the nonmonotonic line search.
-        Default: 10
-    line_search : {'cruz', 'cheng'}
+        Default is 10.
+    line_search : {'cruz', 'cheng'}, optional
         Type of line search to employ. 'cruz' is the original one defined in
         [Martinez & Raydan. Math. Comp. 75, 1429 (2006)], 'cheng' is
         a modified search defined in [Cheng & Li. IMA J. Numer. Anal. 29, 814 (2009)].
-        Default: 'cruz'
+        Default is 'cruz'.
 
     References
     ----------

@@ -42,6 +42,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to the objective function and its Jacobian.
+        Default is () (empty tuple).
     method : str, optional
         Type of solver. Should be one of
 
@@ -56,22 +57,25 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
         - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
 
+        Default is 'hybr'.
     jac : bool or callable, optional
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         value of Jacobian along with the objective function. If False, the
         Jacobian will be estimated numerically.
         `jac` can also be a callable returning the Jacobian of `fun`. In
         this case, it must accept the same arguments as `fun`.
+        Default is None.
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
-        options.
+        options. Default is None.
     callback : function, optional
         Optional callback function. It is called on every iteration as
         ``callback(x, f)`` where `x` is the current solution and `f`
         the corresponding residual. For all methods but 'hybr' and 'lm'.
+        Default is None.
     options : dict, optional
         A dictionary of solver options. E.g., `xtol` or `maxiter`, see
-        :obj:`show_options()` for details.
+        :obj:`show_options()` for details. Default is None.
 
     Returns
     -------
@@ -286,29 +290,33 @@ def _root_leastsq(fun, x0, args=(), jac=None,
 
     Options
     -------
-    col_deriv : bool
+    col_deriv : bool, optional
         non-zero to specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
-    ftol : float
-        Relative error desired in the sum of squares.
-    xtol : float
-        Relative error desired in the approximate solution.
-    gtol : float
+        Default is 0 (False).
+    ftol : float, optional
+        Relative error desired in the sum of squares. Default is 1.49012e-08.
+    xtol : float, optional
+        Relative error desired in the approximate solution. Default is 1.49012e-08.
+    gtol : float, optional
         Orthogonality desired between the function vector and the columns
-        of the Jacobian.
-    maxiter : int
+        of the Jacobian. Default is 0.0.
+    maxiter : int, optional
         The maximum number of calls to the function. If zero, then
         100*(N+1) is the maximum where N is the number of elements in x0.
-    eps : float
+        Default is 0.
+    eps : float, optional
         A suitable step length for the forward-difference approximation of
         the Jacobian (for Dfun=None). If `eps` is less than the machine
         precision, it is assumed that the relative errors in the functions
-        are of the order of the machine precision.
-    factor : float
+        are of the order of the machine precision. Default is 0.0.
+    factor : float, optional
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
-    diag : sequence
+        Default is 100.
+    diag : sequence, optional
         N positive entries that serve as a scale factors for the variables.
+        Default is None.
     """
     nfev = 0
     def _wrapped_fun(*fargs):
