@@ -3,7 +3,7 @@ import math
 from scipy import stats, special
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
-                                   is_numpy, _share_masks)
+                                   is_numpy, _share_masks, _count_nonmasked, is_marray)
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
@@ -629,6 +629,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     y, x = xp_promote(y, x, force_floating=True, xp=xp)
     x = xp.arange(y.shape[-1], dtype=y.dtype) if x is None else x
     y, x = xp.broadcast_arrays(y, x)
+    x, y = _share_masks(x, y, xp=xp)
 
     if x.shape[-1] < 2 or y.shape[-1] < 2:  # only needed by test_axis_nan_policy
         raise ValueError("`x` and `y` must have length at least 2.")
@@ -649,10 +650,20 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
             deltax = xp.reshape(deltax, (*i.shape[:-2], -1))
             deltay = xp.reshape(deltay, (*i.shape[:-2], -1))
 
-    deltax = xpx.at(deltax)[deltax == 0].set(xp.nan)
+    # Use `.data` to avoid indexing with masked indices. If masked elements of deltax=0,
+    # they can safely be set to xp.nan, too - they're masked, after all.
+    deltax0 = (deltax.data == 0) if is_marray(xp) else (deltax == 0)
+    deltax = xpx.at(deltax)[deltax0].set(xp.nan)
     slopes = deltay / deltax
 
-    def nanmedian(x, axis): return stats.quantile(x, 0.5, axis=axis, nan_policy='omit')
+    if is_marray(xp):
+        def nanmedian(x, axis):  # use mask to ignore NaNs
+            x_nans_masked = xp.asarray(x.data, mask=x.mask | x._xp.isnan(x.data))
+            return stats.quantile(x_nans_masked, 0.5, axis=axis)
+    else:
+        def nanmedian(x, axis):  # use nan_policy to ignore NaNs
+            return stats.quantile(x, 0.5, axis=axis, nan_policy='omit')
+
     def median(x, axis): return stats.quantile(x, 0.5, axis=axis)
 
     # `theilslopes` is median of all slopes. Indexing with `i` above has already raveled
@@ -691,7 +702,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     _, nyreps = _rankdata(y, method='min', return_ties=True)
     nt = xp.count_nonzero(xp.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
     nt = xp.asarray(nt, dtype=y.dtype)
-    ny = y.shape[-1]                                                    # n in Sen 1968
+    ny = _count_nonmasked(y, keepdims=True, axis=-1)                    # n in Sen 1968
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (
         ny * (ny-1) * (2*ny+5)
