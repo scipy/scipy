@@ -7,6 +7,7 @@ static PyObject* slsqp_error;
 
 #include <math.h>
 #include "src/slsqp.h"
+#include "npy_cblas.h"
 
 // A simple destructor for buffer attached to a NumPy array via a capsule.
 static void
@@ -19,7 +20,8 @@ capsule_destructor(PyObject *capsule) {
 static PyObject*
 nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
-    int maxiter, info = 0;
+    Py_ssize_t maxiter;
+    int info = 0;
     PyArrayObject* ap_A=NULL;
     PyArrayObject* ap_b=NULL;
     double* buffer;
@@ -27,7 +29,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Get the input array
     if (!PyArg_ParseTuple(args,
-                         ("O!O!i"),
+                         ("O!O!n"),
                          &PyArray_Type, (PyObject **)&ap_A,
                          &PyArray_Type, (PyObject **)&ap_b,
                          &maxiter)
@@ -81,7 +83,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     {
         PYERR(slsqp_error, "Memory allocation failed.");
     }
-    int *indices = malloc(n*sizeof(int));
+    CBLAS_INT *indices = malloc(n*sizeof(CBLAS_INT));
     if (indices == NULL)
     {
         free(buffer);
@@ -102,18 +104,18 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     double* restrict data_b = (double *)PyArray_DATA(ap_b);
 
     // Copy the data from the numpy array
-    for (int j = 0; j < n; j++) {
-        for (int i = 0; i < m; i++) {
+    for (npy_intp j = 0; j < n; j++) {
+        for (npy_intp i = 0; i < m; i++) {
             a[i + j*m] = data_A[(j*strides[1] + i*strides[0])/sizeof(double)];
         }
     }
-    for (int i = 0; i < m; i++)
+    for (npy_intp i = 0; i < m; i++)
     {
         b[i] = data_b[(i * rc_stride)/sizeof(double)];
     }
 
     // Call nnls
-    __nnls((int)m, (int)n, a, b, x, w, zz, indices, maxiter, &rnorm, &info);
+    __nnls((CBLAS_INT)m, (CBLAS_INT)n, a, b, x, w, zz, indices, maxiter, &rnorm, &info);
     // x is the first n elements of buffer, shrink buffer to n elements
     free(indices);
     double* mem_ret = realloc(buffer, n*sizeof(double));
