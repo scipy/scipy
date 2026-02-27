@@ -64,14 +64,13 @@ py3.extension_module('_zeros',
 )
 
 
-# TODO: link to ILP64 LAPACK
 py3.extension_module('_lbfgsb',
   [
     '_lbfgsbmodule.c',
     'src/lbfgsb.c',
   ],
   include_directories: 'src/',
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [lapack_dep, np_dep],
   include_directories: ['../_build_utils/src'],
   link_args: version_link_args,
   install: true,

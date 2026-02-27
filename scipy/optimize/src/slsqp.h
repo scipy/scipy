@@ -1,10 +1,11 @@
 #ifndef __SLSQPLIB_H
 #define __SLSQPLIB_H
 
+#include "blaslapack_declarations.h"
+#include "nnls.h"
+
 #include <math.h>
 #include <stdint.h>
-#include "nnls.h"
-#include "blaslapack_declarations.h"
 
 
 // The SLSQP_vars struct holds the state of the algorithm and passed to Python and back such that it is thread-safe.
