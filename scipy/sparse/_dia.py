@@ -546,10 +546,17 @@ class dia_array(_dia_base, sparray):
 
     Notes
     -----
-
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
     Sparse arrays with DIAgonal storage do not support slicing.
+
+    The ``data`` array has shape ``(len(offsets), max(shape))``.
+    Sub-diagonals (negative offsets) are left-aligned, while
+    super-diagonals (positive offsets) are right-aligned within
+    each row of ``data``. Columns of ``data`` correspond to columns
+    of the sparse array. The format of ``data`` is consistent with
+    the BLAS/LAPACK general band format when ``offsets`` is a
+    decreasing range.
 
     Examples
     --------
@@ -628,9 +635,19 @@ class dia_matrix(spmatrix, _dia_base):
     Notes
     -----
 
+    Notes
+    -----
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
     Sparse matrices with DIAgonal storage do not support slicing.
+
+    The ``data`` array has shape ``(len(offsets), max(shape))``.
+    Sub-diagonals (negative offsets) are left-aligned, while
+    super-diagonals (positive offsets) are right-aligned within
+    each row of ``data``. Columns of ``data`` correspond to columns
+    of the sparse matrix. The format of ``data`` is consistent with
+    the BLAS/LAPACK general band format when ``offsets`` is a
+    decreasing range.
 
     Examples
     --------
