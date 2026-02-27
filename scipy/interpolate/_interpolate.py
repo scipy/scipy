@@ -502,7 +502,7 @@ class interp1d(_Interpolator1D):
             ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
             + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
             )
-        
+
         return y_new
 
     def _call_nearest(self, x_new):
@@ -605,6 +605,7 @@ class _PPolyBase:
 
         self._c = np.asarray(c)
         self._x = np.ascontiguousarray(x, dtype=np.float64)
+        self._deprecate_dtypes(self._c.dtype, np.asarray(x).dtype)
 
         if extrapolate is None:
             extrapolate = True
@@ -646,6 +647,21 @@ class _PPolyBase:
 
         dtype = self._get_dtype(self._c.dtype)
         self._c = np.ascontiguousarray(self._c, dtype=dtype)
+
+    def _deprecate_dtypes(self, *args):
+        """
+        A temporary helper for deprecating non-LAPACK dtypes.
+        """
+        for dtype in args:
+            if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
+                msg = (f"Interpolations with arguments of dtype={dtype} "
+                       f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
+                        "removed in SciPy 1.20.0. Please cast inputs to one of "
+                        "np.float{32,64} or np.complex{64,128} manually."
+                       )
+                import warnings
+                warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+                return
 
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
@@ -724,6 +740,7 @@ class _PPolyBase:
 
         c = np.asarray(c)
         x = np.asarray(x)
+        self._deprecate_dtypes(c.dtype, x.dtype)
 
         if c.ndim < 2:
             raise ValueError("invalid dimensions for c")
@@ -777,11 +794,11 @@ class _PPolyBase:
         if action == 'append':
             c2[k2-self._c.shape[0]:, :self._c.shape[1]] = self._c
             c2[k2-c.shape[0]:, self._c.shape[1]:] = c
-            self._x = np.r_[self._x, x]
+            self._x = np.ascontiguousarray(np.r_[self._x, x], dtype=np.float64)
         elif action == 'prepend':
             c2[k2-self._c.shape[0]:, :c.shape[1]] = c
             c2[k2-c.shape[0]:, c.shape[1]:] = self._c
-            self._x = np.r_[x, self._x]
+            self._x = np.ascontiguousarray(np.r_[x, self._x], dtype=np.float64)
 
         self._c = c2
 
@@ -1945,6 +1962,7 @@ class NdPPoly:
     def __init__(self, c, x, extrapolate=None):
         self.x = tuple(np.ascontiguousarray(v, dtype=np.float64) for v in x)
         self.c = np.asarray(c)
+        self._deprecate_dtypes(self.c.dtype, *[np.asarray(v).dtype for v in x])
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = bool(extrapolate)
@@ -1982,6 +2000,21 @@ class NdPPoly:
             extrapolate = True
         self.extrapolate = extrapolate
         return self
+
+    def _deprecate_dtypes(self, *args):
+        """
+        A temporary helper for deprecating non-LAPACK dtypes.
+        """
+        for dtype in args:
+            if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
+                msg = (f"Interpolations with arguments of dtype={dtype} "
+                       f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
+                        "removed in SciPy 1.20.0. Please cast inputs to one of "
+                        "np.float{32,64} or np.complex{64,128} manually."
+                       )
+                import warnings
+                warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+                return
 
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \

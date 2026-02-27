@@ -20,6 +20,22 @@ __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
 
 
+def _deprecate_dtypes(*args):
+    """
+    A temporary helper for deprecating non-LAPACK dtypes.
+    """
+    for dtype in args:
+        if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
+            msg = (f"Interpolations with arguments of dtype={dtype} "
+                   f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
+                    "removed in SciPy 1.20.0. Please cast inputs to one of "
+                    "np.float{32,64} or np.complex{64,128} manually."
+                   )
+            import warnings
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+            return
+
+
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
     if np.issubdtype(dtype, np.complexfloating):
@@ -34,6 +50,7 @@ def _as_float_array(x, check_finite=False):
     NB: Upcasts half- and single-precision floats to double precision.
     """
     x = np.ascontiguousarray(x)
+    _deprecate_dtypes(x.dtype)
     dtyp = _get_dtype(x.dtype)
     x = x.astype(dtyp, copy=False)
     if check_finite and not np.isfinite(x).all():
@@ -225,6 +242,7 @@ class BSpline:
         self.k = operator.index(k)
         self._c = np.asarray(c)
         self._t = np.ascontiguousarray(t, dtype=np.float64)
+        _deprecate_dtypes(self._c.dtype, np.asarray(t).dtype)
 
         if extrapolate == 'periodic':
             self.extrapolate = extrapolate
@@ -363,11 +381,11 @@ class BSpline:
         xp = array_namespace(t)
         t = np.asarray(t)
         k = t.shape[0] - 2
-        
+
         if k < 0:
             raise ValueError("BSpline.basis_element requires at least 2 knots")
 
-        
+
         t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
