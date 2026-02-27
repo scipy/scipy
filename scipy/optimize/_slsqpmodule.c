@@ -20,8 +20,8 @@ capsule_destructor(PyObject *capsule) {
 static PyObject*
 nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
-    Py_ssize_t maxiter;
-    int info = 0;
+    int64_t maxiter;
+    int64_t info = 0;
     PyArrayObject* ap_A=NULL;
     PyArrayObject* ap_b=NULL;
     double* buffer;
@@ -144,7 +144,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArray_SetBaseObject((PyArrayObject *)ap_ret, capsule);
 
     // Return the result
-    return Py_BuildValue("Ndi", PyArray_Return(ap_ret), rnorm, info);
+    return Py_BuildValue("Ndn", PyArray_Return(ap_ret), rnorm, (Py_ssize_t)info);
 
 }
 
@@ -210,15 +210,17 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     #define X(name) \
         PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
         if (!name##_obj) { PYERR(slsqp_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
+        Vars.name = (int64_t)PyLong_AsSsize_t(name##_obj);
         STRUCT_INT_FIELD_NAMES
     #undef X
+
+    int tcode = sizeof(CBLAS_INT) == sizeof(npy_int32) ? NPY_INT32 : NPY_INT64;
 
     // Basic error checks for the numpy arrays.
     if ((PyArray_TYPE(ap_C) != NPY_FLOAT64) || (PyArray_TYPE(ap_d) != NPY_FLOAT64) ||
         (PyArray_TYPE(ap_gradx) != NPY_FLOAT64) || (PyArray_TYPE(ap_sol) != NPY_FLOAT64) ||
         (PyArray_TYPE(ap_xl) != NPY_FLOAT64) || (PyArray_TYPE(ap_xu) != NPY_FLOAT64) ||
-        (PyArray_TYPE(ap_buffer) != NPY_FLOAT64) || (PyArray_TYPE(ap_indices) != NPY_INT32))
+        (PyArray_TYPE(ap_buffer) != NPY_FLOAT64) || (PyArray_TYPE(ap_indices) != tcode))
     {
         PYERR(slsqp_error, "All inputs to slsqp must be of type numpy.float64, "
                            "except \"indices\" which must be of numpy.int32.");
@@ -239,9 +241,9 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     int ndim_xu = PyArray_NDIM(ap_xu);
 
     if (ndim_sol != 1) { PYERR(slsqp_error, "Input array sol must be 1D."); }
-    if ((int)shape_sol[0] != Vars.n) { PYERR(slsqp_error, "Input array \"sol\" must have at least n elements."); }
+    if ((Py_ssize_t)shape_sol[0] != Vars.n) { PYERR(slsqp_error, "Input array \"sol\" must have at least n elements."); }
     if (ndim_mult != 1) { PYERR(slsqp_error, "Input array \"mult\" must be 1D."); }
-    if ((int)shape_mult[0] != 2*Vars.n + Vars.m + 2) { PYERR(slsqp_error, "Input array \"mult\" must have m + 2*n + 2 elements."); }
+    if ((Py_ssize_t)shape_mult[0] != 2*Vars.n + Vars.m + 2) { PYERR(slsqp_error, "Input array \"mult\" must have m + 2*n + 2 elements."); }
     if (ndim_C != 2) { PYERR(slsqp_error, "Input array \"C\" must be 2D."); }
     if (ndim_d != 1) { PYERR(slsqp_error, "Input array d must be 1D."); }
     if (ndim_gradx != 1) { PYERR(slsqp_error, "Input array gradx must be 1D."); }
@@ -256,7 +258,7 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     double* restrict xl_data = (double*)PyArray_DATA(ap_xl);
     double* restrict xu_data = (double*)PyArray_DATA(ap_xu);
     double* buffer_data = (double*)PyArray_DATA(ap_buffer);
-    int* indices_data = (int*)PyArray_DATA(ap_indices);
+    CBLAS_INT* indices_data = (CBLAS_INT*)PyArray_DATA(ap_indices);
 
     __slsqp_body(&Vars, &funx, gradx_data, C_data, d_data, sol_data, mult_data, xl_data, xu_data, buffer_data, indices_data);
 
@@ -265,8 +267,8 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     // is 1 or -1.
     if ((Vars.mode == 1) || (Vars.mode == -1))
     {
-        int n = Vars.n;
-        for (int i = 0; i < n; i++)
+        Py_ssize_t n = Vars.n;
+        for (Py_ssize_t i = 0; i < n; i++)
         {
             if ((!isnan(xl_data[i])) && (sol_data[i] < xl_data[i])) { sol_data[i] = xl_data[i]; }
             else if ((!isnan(xu_data[i])) && (sol_data[i] > xu_data[i])) { sol_data[i] = xu_data[i]; }
@@ -288,7 +290,7 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
     #define X(name) do { \
-            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
+            PyObject* tmp_##name = PyLong_FromSsize_t((Py_ssize_t)Vars.name); \
             if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
                 Py_XDECREF(tmp_##name); \
                 PYERR(slsqp_error, "Setting '" #name "' failed."); \

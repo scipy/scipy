@@ -1,10 +1,9 @@
-#include "Python.h"
 #include "nnls.h"
 
 void
 __nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restrict b,
        double* restrict x, double* restrict w, double* restrict zz,
-       CBLAS_INT* restrict indices, const Py_ssize_t maxiter, double* rnorm, int* info)
+       CBLAS_INT* restrict indices, const int64_t maxiter, double* rnorm, int64_t* info)
 {
     CBLAS_INT i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
     CBLAS_INT j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
