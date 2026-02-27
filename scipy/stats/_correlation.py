@@ -1,7 +1,7 @@
 import numpy as np
 import math
 from scipy import stats, special
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
                                    is_numpy, _share_masks)
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,

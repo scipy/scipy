@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from scipy.conftest import skip_xp_invalid_arg
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_jax,
                                    eager_warns, xp_result_type, is_array_api_strict)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
