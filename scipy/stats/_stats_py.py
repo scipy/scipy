@@ -73,7 +73,6 @@ from scipy._lib._array_api import (
     is_cupy,
     is_jax,
     is_marray,
-    SCIPY_ARRAY_API,
     xp_size,
     xp_vector_norm,
     xp_promote,
