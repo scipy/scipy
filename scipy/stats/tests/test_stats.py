@@ -9113,7 +9113,7 @@ class TestQuantileTest:
         xp_assert_equal(res_low, ref_low)
         xp_assert_equal(res_high, ref_high)
 
-    @pytest.mark.filterwarnings("ignore:torch.searchsorted(): boundary:UserWarning")
+    @pytest.mark.filterwarnings("ignore:torch:UserWarning")
     @pytest.mark.parametrize("x_shape, qp_shape, axis, keepdims, res_shape", [
         ((1, 3), (1,), None, False, ()),
         ((1, 3), (1,), None, True, (1, 1)),
