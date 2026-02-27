@@ -55,7 +55,7 @@ These are the basic steps:
 
 
        # user-defined callback
-       cdef double f(double x, void *args) noexcept:
+       cdef double f(double x, void *args) noexcept Exception:
            cdef test_params *myargs = <test_params *> args
            return myargs.C0 - math.exp(-(x - myargs.C1))
 
