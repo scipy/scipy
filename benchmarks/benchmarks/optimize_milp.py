@@ -50,13 +50,14 @@ class MilpMiplibBenchmarks(Benchmark):
     def time_milp(self, prob):
         res = milp(c=self.c, constraints=self.constraints,
                    bounds=self.bounds, integrality=self.integrality,
-                   options={"time_limit": 30})
+                   options={"time_limit": 10})
         assert res.success
 
 
 class MilpMagicSquare(Benchmark):
 
-    params = [[3, 4, 5]]
+    # size 5 still times out in CI; see gh-19389
+    params = [[3, 4]]
     param_names = ['size']
 
     def setup(self, n):
