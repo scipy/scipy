@@ -10,6 +10,15 @@
 #include "util.h"
 #include "dense.h"
 
+template <class I, class T>
+struct csr_array {
+    const I n_row;
+    const I n_col;
+    I *indptr;
+    I *indices;
+    T *data;
+};
+
 /*
  * Extract k-th diagonal of CSR matrix A
  *
@@ -689,32 +698,31 @@ void csr_matmat(const I n_row,
  *
  */
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_general(const I n_row, const I n_col,
-                           const I Ap[], const I Aj[], const T Ax[],
-                           const I Bp[], const I Bj[], const T Bx[],
-                                 I Cp[],       I Cj[],       T2 Cx[],
+void csr_binop_csr_general(csr_array<const I, const T> A,
+                           csr_array<const I, const T> B,
+                           csr_array<I, T2> C,
                            const binary_op& op)
 {
     //Method that works for duplicate and/or unsorted indices
 
-    std::vector<I>  next(n_col,-1);
-    std::vector<T> A_row(n_col, 0);
-    std::vector<T> B_row(n_col, 0);
+    std::vector<I>  next(C.n_col,-1);
+    std::vector<T> A_row(C.n_col, 0);
+    std::vector<T> B_row(C.n_col, 0);
 
     I nnz = 0;
-    Cp[0] = 0;
+    C.indptr[0] = 0;
 
-    for(I i = 0; i < n_row; i++){
+    for(I i = 0; i < C.n_row; i++){
         I head   = -2;
         I length =  0;
 
         //add a row of A to A_row
-        I i_start = Ap[i];
-        I i_end   = Ap[i+1];
+        I i_start = A.indptr[i];
+        I i_end   = A.indptr[i+1];
         for(I jj = i_start; jj < i_end; jj++){
-            I j = Aj[jj];
+            I j = A.indices[jj];
 
-            A_row[j] += Ax[jj];
+            A_row[j] += A.data[jj];
 
             if(next[j] == -1){
                 next[j] = head;
@@ -724,12 +732,12 @@ void csr_binop_csr_general(const I n_row, const I n_col,
         }
 
         //add a row of B to B_row
-        i_start = Bp[i];
-        i_end   = Bp[i+1];
+        i_start = B.indptr[i];
+        i_end   = B.indptr[i+1];
         for(I jj = i_start; jj < i_end; jj++){
-            I j = Bj[jj];
+            I j = B.indices[jj];
 
-            B_row[j] += Bx[jj];
+            B_row[j] += B.data[jj];
 
             if(next[j] == -1){
                 next[j] = head;
@@ -745,8 +753,8 @@ void csr_binop_csr_general(const I n_row, const I n_col,
             T result = op(A_row[head], B_row[head]);
 
             if(result != 0){
-                Cj[nnz] = head;
-                Cx[nnz] = result;
+                C.indices[nnz] = head;
+                C.data[nnz] = result;
                 nnz++;
             }
 
@@ -758,7 +766,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
             B_row[temp] =  0;
         }
 
-        Cp[i + 1] = nnz;
+        C.indptr[i + 1] = nnz;
     }
 }
 
@@ -773,57 +781,56 @@ void csr_binop_csr_general(const I n_row, const I n_col,
  * Refer to csr_binop_csr() for additional information
  *
  * Note:
- *   Input:  A and B column indices are assumed to be in sorted order
- *   Output: C column indices will be in sorted order
- *           Cx will not contain any zero entries
+ *   Input:  A.indices and B.indices are assumed to be in sorted order
+ *   Output: C.indices will be in sorted order
+ *           C.data will not contain any zero entries
  *
  */
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_canonical(const I n_row, const I n_col,
-                             const I Ap[], const I Aj[], const T Ax[],
-                             const I Bp[], const I Bj[], const T Bx[],
-                                   I Cp[],       I Cj[],       T2 Cx[],
+void csr_binop_csr_canonical(csr_array<const I, const T> A,
+                             csr_array<const I, const T> B,
+                             csr_array<I,T2> C,
                              const binary_op& op)
 {
     //Method that works for canonical CSR matrices
 
-    Cp[0] = 0;
+    C.indptr[0] = 0;
     I nnz = 0;
 
-    for(I i = 0; i < n_row; i++){
-        I A_pos = Ap[i];
-        I B_pos = Bp[i];
-        I A_end = Ap[i+1];
-        I B_end = Bp[i+1];
+    for(I i = 0; i < C.n_row; i++){
+        I A_pos = A.indptr[i];
+        I B_pos = B.indptr[i];
+        I A_end = A.indptr[i+1];
+        I B_end = B.indptr[i+1];
 
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
-            I A_j = Aj[A_pos];
-            I B_j = Bj[B_pos];
+            I A_j = A.indices[A_pos];
+            I B_j = B.indices[B_pos];
 
             if(A_j == B_j){
-                T result = op(Ax[A_pos],Bx[B_pos]);
+                T result = op(A.data[A_pos],B.data[B_pos]);
                 if(result != 0){
-                    Cj[nnz] = A_j;
-                    Cx[nnz] = result;
+                    C.indices[nnz] = A_j;
+                    C.data[nnz] = result;
                     nnz++;
                 }
                 A_pos++;
                 B_pos++;
             } else if (A_j < B_j) {
-                T result = op(Ax[A_pos],0);
+                T result = op(A.data[A_pos],0);
                 if (result != 0){
-                    Cj[nnz] = A_j;
-                    Cx[nnz] = result;
+                    C.indices[nnz] = A_j;
+                    C.data[nnz] = result;
                     nnz++;
                 }
                 A_pos++;
             } else {
                 //B_j < A_j
-                T result = op(0,Bx[B_pos]);
+                T result = op(0,B.data[B_pos]);
                 if (result != 0){
-                    Cj[nnz] = B_j;
-                    Cx[nnz] = result;
+                    C.indices[nnz] = B_j;
+                    C.data[nnz] = result;
                     nnz++;
                 }
                 B_pos++;
@@ -832,25 +839,25 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 
         //tail
         while(A_pos < A_end){
-            T result = op(Ax[A_pos],0);
+            T result = op(A.data[A_pos],0);
             if (result != 0){
-                Cj[nnz] = Aj[A_pos];
-                Cx[nnz] = result;
+                C.indices[nnz] = A.indices[A_pos];
+                C.data[nnz] = result;
                 nnz++;
             }
             A_pos++;
         }
         while(B_pos < B_end){
-            T result = op(0,Bx[B_pos]);
+            T result = op(0,B.data[B_pos]);
             if (result != 0){
-                Cj[nnz] = Bj[B_pos];
-                Cx[nnz] = result;
+                C.indices[nnz] = B.indices[B_pos];
+                C.data[nnz] = result;
                 nnz++;
             }
             B_pos++;
         }
 
-        Cp[i+1] = nnz;
+        C.indptr[i+1] = nnz;
     }
 }
 
@@ -900,10 +907,13 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
+    csr_array<const I, const T> A = {n_row, n_col, Ap, Aj, Ax};
+    csr_array<const I, const T> B = {n_row, n_col, Bp, Bj, Bx};
+    csr_array<I,T2> C = {n_row, n_col, Cp, Cj, Cx};
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
-        csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_binop_csr_canonical(A, B, C, op);
     else
-        csr_binop_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_binop_csr_general(A, B, C, op);
 }
 
 /* element-wise binary operations*/

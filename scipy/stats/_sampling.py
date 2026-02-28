@@ -815,20 +815,20 @@ class FastGeneratorInversion:
 
         Parameters
         ----------
-        u : array_like
+        q : array_like
             Array with probabilities.
 
         Returns
         -------
         ppf : array_like
-            Quantiles corresponding to the values in `u`.
+            Quantiles corresponding to the values in `q`.
 
         Notes
         -----
         The evaluation of the PPF is very fast but it may have a large
         relative error in the far tails. The numerical precision of the PPF
-        is controlled by the u-error, that is,
-        ``max |u - CDF(PPF(u))|`` where the max is taken over points in
+        is controlled by the q-error, that is,
+        ``max |q - CDF(PPF(q))|`` where the max is taken over points in
         the interval [0,1], see `evaluate_error`.
 
         Note that this PPF is designed to generate random samples.

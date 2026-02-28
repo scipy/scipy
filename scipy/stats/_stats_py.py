@@ -57,6 +57,7 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,)
 from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_shapes,
+                               _broadcast_arrays,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
                                too_small_nd_not_omit, too_small_nd_omit)
@@ -78,13 +79,13 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_capabilities,
     xp_ravel,
-    _length_nonmasked,
+    _count_nonmasked,
     _share_masks,
     xp_swapaxes,
     xp_device,
 )
 import scipy._external.array_api_extra as xpx
-
+from scipy.stats._quantile import _xp_searchsorted
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -479,12 +480,21 @@ def _mode_result(mode, count):
         count = xp.asarray(0, dtype=count.dtype)[()] if i else count
     else:
         count = xpx.at(count)[i].set(0)
+    if is_numpy(xp) and mode.ndim > 0:
+        # When a) xp is NumPy, b) array is multidimensional, c) NaNs are present,
+        # and d) nan_policy='omit', `_axis_nan_policy` decorator uses
+        # `np.apply_along_axis` to compute mode/count along each axis-slice separately.
+        # The result is a single array with the result dtype of `mode` and `count`.
+        # We need to change `count` back to an integer.
+        count = xp.astype(count, xp.asarray(0).dtype)
     return ModeResult(mode, count)
 
 
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
-                 jax_jit=False)  # would delegate, but jax-ml/jax#34486
+                 jax_jit=False,  # would delegate, but jax-ml/jax#34486
+                 extra_note=("`MArray`s are supported, but values must be real numbers "
+                             "that cast safely to floating point."))
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -564,7 +574,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         NaN = _get_nan(a, xp=xp)
         return ModeResult(*xp.asarray([NaN, 0], dtype=NaN.dtype))
 
-    if a.ndim == 1:
+    if a.ndim == 1 and not is_marray(xp):
         vals, cnts = xp.unique_counts(a)
         # in contrast with np.unique, `unique_counts` treats all NaNs as distinct,
         # but we have always grouped them. Replace `cnts` corresponding with NaNs
@@ -580,9 +590,20 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
 
     # `axis` is always -1 after the `_axis_nan_policy` decorator
     y = xp.sort(a, axis=-1)
+
     # Get boolean array of elements that are different from the previous element
-    i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
-                  (y[..., :-1] != y[..., 1:]) & ~xp.isnan(y[..., :-1])], axis=-1)
+    if is_marray(xp):
+        # Treat masked elements as NaNs and *don't* count NaNs as equal. Two downsides:
+        # - integer arrays are converted to floating point, so some very large distinct
+        #   integers will no longer be distinct.
+        # - NaNs in the original data *will* be treated as distinct.
+        y_data = xp_promote(y.data, force_floating=True, xp=y._xp)
+        y_data = y._xp.where(y.mask, y._xp.nan, y_data)
+        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
+                      (y_data[..., :-1] != y_data[..., 1:])], axis=-1)
+    else:
+        i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
+                      (y[..., :-1] != y[..., 1:]) & ~xp.isnan(y[..., :-1])], axis=-1)
     # Get linear integer indices of these elements in a raveled array
     indices = xp.arange(xp_size(y), device=xp_device(y))[xp_ravel(i)]
     # The difference between integer indices is the number of repeats
@@ -1157,7 +1178,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
         rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
                           keepdims=True) / xp.abs(mean)
 
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
     with np.errstate(invalid='ignore'):
         device = {'device': xp_device(a)}
         precision_loss = xp.any(xp.asarray(rel_diff < eps, **device)
@@ -1198,7 +1219,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, center=mean, xp=xp)
     if ddof != 0:
-        n = _length_nonmasked(x, axis, xp=xp)
+        n = _count_nonmasked(x, axis, xp=xp)
         n = xp.asarray(n, dtype=x.dtype, device=xp_device(x))
         var *= (n / (n-ddof))  # to avoid error on division by zero
     return var
@@ -1286,7 +1307,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
@@ -1395,7 +1416,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, center=mean, xp=xp)
@@ -1506,7 +1527,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         raise ValueError("The input must not be empty.")
 
     # use xp.astype when data-apis/array-api-compat#226 is resolved
-    n = xp.asarray(_length_nonmasked(a, axis, xp=xp), dtype=xp.int64,
+    n = xp.asarray(_count_nonmasked(a, axis, xp=xp), dtype=xp.int64,
                    device=xp_device(a))
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
@@ -1629,7 +1650,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     b2 = skew(a, axis, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
+    n = xp.asarray(_count_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 8).set(xp.nan)
 
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -1731,7 +1752,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
+    n = xp.asarray(_count_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 5).set(xp.nan)
 
     E = 3.0*(n-1) / (n+1)
@@ -1907,7 +1928,7 @@ def jarque_bera(x, *, axis=None):
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(x, axis), dtype=mu.dtype, device=xp_device(x))
+    n = xp.asarray(_count_nonmasked(x, axis), dtype=mu.dtype, device=xp_device(x))
     statistic = n / 6 * (s**2 + k**2 / 4)
 
     chi2 = _SimpleChi2(xp.asarray(2., dtype=mu.dtype, device=xp_device(x)))
@@ -2467,7 +2488,7 @@ def obrientransform(*samples):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         Any number of arrays.
 
     Returns
@@ -2607,7 +2628,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         a = xp.reshape(a, (-1,))
         axis = 0
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    n = _length_nonmasked(a, axis, xp=xp)
+    n = _count_nonmasked(a, axis, xp=xp)
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
@@ -3729,7 +3750,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample measurements for each group.  There must be at least
         two arguments.  If the arrays are multidimensional, then all the
         dimensions of the array must be the same except for `axis`.
@@ -3880,7 +3901,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     # axis is guaranteed to be -1 by the _axis_nan_policy decorator
     alldata = xp.concat(samples, axis=-1)
-    bign = _length_nonmasked(alldata, axis=-1, xp=xp)
+    bign = _count_nonmasked(alldata, axis=-1, xp=xp)
 
     # Check if the inputs are too small (for testing _axis_nan_policy decorator)
     if _f_oneway_is_too_small(samples):
@@ -3926,7 +3947,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         ssbn = 0
         for sample in samples:
             smo_ss = xp.sum(sample - offset, axis=-1)**2.
-            ssbn = ssbn + smo_ss / _length_nonmasked(sample, axis=-1, xp=xp)
+            ssbn = ssbn + smo_ss / _count_nonmasked(sample, axis=-1, xp=xp)
 
         # Naming: variables ending in bn/b are for "between treatments", wn/w are
         # for "within treatments"
@@ -3947,7 +3968,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         y_t = xp.stack([xp.mean(sample, axis=-1) for sample in samples])
         # "... of $n_t$ observations..."
         if is_marray(xp):
-            n_t = xp.stack([_length_nonmasked(sample, axis=-1, xp=xp)
+            n_t = xp.stack([_count_nonmasked(sample, axis=-1, xp=xp)
                             for sample in samples])
             n_t = xp.asarray(n_t, dtype=n_t.dtype)
         else:
@@ -4025,7 +4046,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample measurements for each group.  There must be at least
         two samples, and each sample must contain at least two observations.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
@@ -4113,7 +4134,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = [sample.shape[-1] for sample in samples]
+    lengths = [_count_nonmasked(sample, axis=-1, xp=xp) for sample in samples]
     means = xp.stack([_xp_mean(sample, axis=-1) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -4140,9 +4161,12 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     t_stats = _demean(means, var_w, axis=0, xp=xp) / standard_errors
 
     # calculate parameters to be used in transformation
-    v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
-    # align along 0th axis, which corresponds with separate samples
-    v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
+    if is_marray(xp):
+        v = xp.stack(lengths) - 1
+    else:
+        v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
+        # align along 0th axis, which corresponds with separate samples
+        v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
     a = v - .5
     b = 48 * a**2
     c = (a * xp.log(1 + (t_stats ** 2)/v))**.5
@@ -4641,7 +4665,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`x` and `y` must have length at least 2.')
 
     x, y = _share_masks(x, y, xp=xp)
-    n = xp.asarray(_length_nonmasked(x, axis=axis), dtype=x.dtype)
+    n = xp.asarray(_count_nonmasked(x, axis=axis), dtype=x.dtype)
 
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
@@ -4655,8 +4679,13 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     threshold = xp.finfo(dtype).eps ** 0.75
 
     # If an input is constant, the correlation coefficient is not defined.
-    const_x = xp.all(x == x[..., 0:1], axis=-1)
-    const_y = xp.all(y == y[..., 0:1], axis=-1)
+    if is_marray(xp):
+        # sort to ensure that we are comparing to a non-masked element
+        const_x = xp.all(x == xp.sort(x, axis=-1)[..., 0:1], axis=-1)
+        const_y = xp.all(y == xp.sort(y, axis=-1)[..., 0:1], axis=-1)
+    else:
+        const_x = xp.all(x == x[..., 0:1], axis=-1)
+        const_y = xp.all(y == y[..., 0:1], axis=-1)
     const_xy = const_x | const_y
 
     any_const_xy = xp.any(const_xy)
@@ -5511,12 +5540,9 @@ def pointbiserialr(x, y, *, axis=0):
     return res
 
 
-@xp_capabilities(np_only=True)
-@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
-                          result_to_tuple=_unpack_CorrelationResult, paired=True,
-                          too_small=1, n_outputs=3)
-def kendalltau(x, y, *, nan_policy='propagate',
-               method='auto', variant='b', alternative='two-sided'):
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2)
+def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
+               alternative='two-sided', axis=None, keepdims=False):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
@@ -5564,6 +5590,15 @@ def kendalltau(x, y, *, nan_policy='propagate',
         * 'two-sided': the rank correlation is nonzero
         * 'less': the rank correlation is negative (less than zero)
         * 'greater': the rank correlation is positive (greater than zero)
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    keepdims : bool, optional
+        If this is set to ``True``, the axes which are reduced are left
+        in the result as dimensions with length one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -5631,6 +5666,35 @@ def kendalltau(x, y, *, nan_policy='propagate',
 
     For a more detailed example, see :ref:`hypothesis_kendalltau`.
     """
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
+    if is_marray(xp):
+        mask_x, mask_y = np.asarray(x.mask), np.asarray(y.mask)
+        x, y = np.asarray(x.data).copy(), np.asarray(y.data).copy()
+        unmasked_nans = np.any(np.isnan(x[~mask_x])) | np.any(np.isnan(y[~mask_y]))
+        if unmasked_nans:
+            if nan_policy == 'propagate':
+                message = "`nan_policy='propagate'` is incompatible with MArray input."
+            elif nan_policy == 'raise':
+                message = "The input contains nan values."
+            raise ValueError(message)
+        nan_policy = 'omit'
+        x[mask_x], y[mask_y] = np.nan, np.nan
+    else:
+        x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
+    res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
+                      alternative=alternative, axis=axis, keepdims=keepdims)
+    vals = res.statistic, res.pvalue, res.statistic
+    vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype) for val in vals)
+    return _pack_CorrelationResult(*vals)
+
+
+@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
+                          result_to_tuple=_unpack_CorrelationResult, paired=True,
+                          too_small=1, n_outputs=3)
+def _kendalltau(x, y, *, method='auto', variant='b', alternative='two-sided'):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
@@ -5687,8 +5751,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
         minclasses = min(len(set(x)), len(set(y)))
         tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
     else:
-        raise ValueError(f"Unknown variant of the method chosen: {variant}. "
-                         "variant must be 'b' or 'c'.")
+        raise ValueError(f"Unknown `variant` '{variant}' specified. "
+                         "`variant` must be 'b' or 'c'.")
 
     # Limit range to fix computational errors
     tau = np.minimum(1., max(-1., tau))
@@ -5696,7 +5760,7 @@ def kendalltau(x, y, *, nan_policy='propagate',
     # The p-value calculation is the same for all variants since the p-value
     # depends only on con_minus_dis.
     if method == 'exact' and (xtie != 0 or ytie != 0):
-        raise ValueError("Ties found, exact method cannot be used.")
+        raise ValueError("Ties found; exact method cannot be used.")
 
     if method == 'auto':
         if (xtie == 0 and ytie == 0) and (size <= 33 or
@@ -5715,8 +5779,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
         z = con_minus_dis / np.sqrt(var)
         pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     else:
-        raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
-                         "'exact' or 'asymptotic'.")
+        raise ValueError(f"Unknown `method` '{method}' specified.  `method` must be"
+                         "'auto', 'exact' or 'asymptotic'.")
 
     # create result object with alias for backward compatibility
     res = SignificanceResult(tau[()], pvalue[()])
@@ -6175,7 +6239,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
     a, popmean = xp_promote(a, popmean, force_floating=True, xp=xp)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = _length_nonmasked(a, axis)
+    n = _count_nonmasked(a, axis)
     df = n - 1
 
     if a.shape[axis] == 0:
@@ -6711,8 +6775,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
     alternative_nums = {"less": -1, "two-sided": 0, "greater": 1}
 
-    n1 = _length_nonmasked(a, axis)
-    n2 = _length_nonmasked(b, axis)
+    n1 = _count_nonmasked(a, axis)
+    n2 = _count_nonmasked(b, axis)
 
     if trim == 0:
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -7190,7 +7254,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
     stat = xp.sum(terms, axis=axis)
 
-    num_obs = xp.asarray(_length_nonmasked(terms, axis), device=xp_device(terms),
+    num_obs = xp.asarray(_count_nonmasked(terms, axis), device=xp_device(terms),
                          dtype=f_obs.dtype)
 
     df = num_obs - 1 - ddof
@@ -8444,7 +8508,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
        Two or more arrays with the sample measurements can be given as
        arguments. Samples must be one-dimensional.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
@@ -8511,18 +8575,20 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    n = [sample.shape[-1] for sample in samples]
-    totaln = sum(n)
-    if any(n) < 1:  # Only needed for `test_axis_nan_policy`
+    lengths = [sample.shape[-1] for sample in samples]
+    if any(lengths) < 1:  # Only needed for `test_axis_nan_policy`
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
+              for sample in samples]
+    totaln = sum(counts)
     ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
-    # Compute sum^2/n for each group and sum
-    j = list(itertools.accumulate(n, initial=0))
-    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+    # Compute sum^2/count for each group and sum
+    j = list(itertools.accumulate(lengths, initial=0))
+    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / counts[i]
                for i in range(num_groups))
 
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
@@ -8552,7 +8618,7 @@ def friedmanchisquare(*samples, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, sample3... : array_like
+    *samples : array_like
         Arrays of observations.  All of the arrays must have the same number
         of elements.  At least three samples must be given.
     axis : int or tuple of ints, default: 0
@@ -8609,6 +8675,7 @@ def friedmanchisquare(*samples, axis=0):
     xp = array_namespace(*samples)
     samples = xp_promote(*samples, force_floating=True, xp=xp)
     dtype = samples[0].dtype
+    samples = _share_masks(*samples, xp=xp)  # paired-sample test
 
     n = samples[0].shape[-1]
     if n == 0:  # only for `test_axis_nan_policy`; user doesn't see this
@@ -8623,10 +8690,11 @@ def friedmanchisquare(*samples, axis=0):
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
-    c = 1 - ties / (k*(k*k - 1)*n)
+    count = xp.asarray(_count_nonmasked(samples[0], axis=-1), dtype=ties.dtype)
+    c = 1 - ties / (k*(k*k - 1)*count)
 
     ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
-    statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
+    statistic = (12.0 / (k*count*(k+1)) * ssbn - 3*count*(k+1)) / c
 
     chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
@@ -8725,14 +8793,15 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    xp = array_namespace(x, y)
-    nx = x.shape[-1]
-    ny = y.shape[-1]
-
     # _axis_nan_policy decorator ensures we can work along the last axis
+    xp = array_namespace(x, y)
+    length_x = x.shape[-1]
+    nx = _count_nonmasked(x, axis=-1)
+    ny = _count_nonmasked(y, axis=-1)
+
     rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
-    rankcx = rankc[..., 0:nx]
-    rankcy = rankc[..., nx:nx+ny]
+    rankcx = rankc[..., :length_x]
+    rankcy = rankc[..., length_x:]
     rankcx_mean = xp.mean(rankcx, axis=-1, keepdims=True)
     rankcy_mean = xp.mean(rankcy, axis=-1, keepdims=True)
     rankx = rankdata(x, axis=-1)
@@ -8912,7 +8981,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
 
-    n = _length_nonmasked(pvalues, axis)
+    n = _count_nonmasked(pvalues, axis)
     n = xp.asarray(n, dtype=pvalues.dtype, device=xp_device(pvalues))
 
     if method == 'fisher':
@@ -8992,6 +9061,15 @@ class QuantileTestResult:
     _alternative: list[str] = field(repr=False)
     _x : np.ndarray = field(repr=False)
     _p : float = field(repr=False)
+    _statistic : float = field(repr=False)
+    _statistic_type : int = field(repr=False)
+    _pvalue : float = field(repr=False)
+    _axis : int = field(repr=False)
+    _axis_none : bool = field(repr=False)
+    _keepdims : bool = field(repr=False)
+    _ndim : int = field(repr=False)
+    _nan_out : bool = field(repr=False)
+
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -9028,64 +9106,138 @@ class QuantileTestResult:
 
         alternative = self._alternative
         p = self._p
-        x = np.sort(self._x)
-        n = len(x)
+        x = np.sort(self._x, axis=-1)
+        n = x.shape[-1]
         bd = stats.binom(n, p)
+        shape = p.shape
 
         if confidence_level <= 0 or confidence_level >= 1:
             message = "`confidence_level` must be a number between 0 and 1."
             raise ValueError(message)
 
-        low_index = np.nan
-        high_index = np.nan
-
-        if alternative == 'less':
+        if n == 0:
+            zeros = np.zeros(p.shape, dtype=x.dtype)
+            low, high = zeros, zeros
+        elif alternative == 'less':
             p = 1 - confidence_level
-            low = -np.inf
-            high_index = int(bd.isf(p))
-            high = x[high_index] if high_index < n else np.nan
+            low = np.full(shape, -np.inf)
+            high_index = bd.isf(p).astype(int)
+            valid_index = high_index < n
+            high_index[~valid_index] = 0
+            x_high = np.take_along_axis(x, high_index, axis=-1)
+            high = np.where(valid_index, x_high, np.nan)
         elif alternative == 'greater':
             p = 1 - confidence_level
-            low_index = int(bd.ppf(p)) - 1
-            low = x[low_index] if low_index >= 0 else np.nan
-            high = np.inf
+            low_index = (bd.ppf(p)).astype(int) - 1
+            valid_index = low_index >= 0
+            low_index[~valid_index] = 0
+            x_low = np.take_along_axis(x, low_index, axis=-1)
+            low = np.where(valid_index, x_low, np.nan)
+            high = np.full(shape, np.inf)
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
-            low_index = int(bd.ppf(p)) - 1
-            low = x[low_index] if low_index >= 0 else np.nan
-            high_index = int(bd.isf(p))
-            high = x[high_index] if high_index < n else np.nan
+            low_index = (bd.ppf(p)).astype(int) - 1
+            valid_index = low_index >= 0
+            low_index[~valid_index] = 0
+            x_low = np.take_along_axis(x, low_index, axis=-1)
+            low = np.where(valid_index, x_low, np.nan)
+            high_index = bd.isf(p).astype(int)
+            valid_index = high_index < n
+            high_index[~valid_index] = 0
+            x_high = np.take_along_axis(x, high_index, axis=-1)
+            high = np.where(valid_index, x_high, np.nan)
 
+        args = self._axis, self._axis_none, self._keepdims, self._ndim, self._nan_out
+        low = _quantile_test_postprocess(low, *args)
+        high = _quantile_test_postprocess(high, *args)
         return ConfidenceInterval(low, high)
 
 
-def quantile_test_iv(x, q, p, alternative):
+def quantile_test_iv(x, q, p, alternative, axis, keepdims):
 
     x = np.atleast_1d(x)
-    message = '`x` must be a one-dimensional array of numbers.'
-    if x.ndim != 1 or not np.issubdtype(x.dtype, np.number):
+    message = '`x` must be an array of numbers.'
+    if not np.issubdtype(x.dtype, np.number):
         raise ValueError(message)
 
     q = np.array(q)[()]
-    message = "`q` must be a scalar."
-    if q.ndim != 0 or not np.issubdtype(q.dtype, np.number):
+    message = "`q` must be a scalar or array of numbers."
+    if not np.issubdtype(q.dtype, np.number):
         raise ValueError(message)
 
     p = np.array(p)[()]
-    message = "`p` must be a float strictly between 0 and 1."
-    if p.ndim != 0 or p >= 1 or p <= 0:
+    message = "`p` must be a scalar or array of floats."
+    if not np.issubdtype(p.dtype, np.inexact):
         raise ValueError(message)
+
+    axis_none = axis is None
+    ndim = max(x.ndim, p.ndim)
+    if axis_none:
+        x = np.ravel(x)
+        q = np.ravel(q)
+        p = np.ravel(p)
+        axis = 0
+    elif np.iterable(axis) or int(axis) != axis:
+        message = "`axis` must be an integer or None."
+        raise ValueError(message)
+    elif (axis >= ndim) or (axis < -ndim):
+        message = "`axis` is not compatible with the shapes of the inputs."
+        raise ValueError(message)
+    axis = int(axis)
 
     alternatives = {'two-sided', 'less', 'greater'}
     message = f"`alternative` must be one of {alternatives}"
     if alternative not in alternatives:
         raise ValueError(message)
 
-    return x, q, p, alternative
+    if keepdims not in {None, True, False}:
+        message = "If specified, `keepdims` must be True or False."
+        raise ValueError(message)
+
+    x = np.sort(x, axis=axis)
+    q, p = np.broadcast_arrays(q, p)  # length along axis matters for q and p
+    x, q, p = _broadcast_arrays((x, q, p), axis=axis)
+
+    if (keepdims is False) and (p.shape[axis] != 1):
+        message = ("`keepdims` may be False only if `p` and `q` are scalars or the "
+                   "length of `p` and `q` along `axis` is 1.")
+        raise ValueError(message)
+    keepdims = (p.shape[axis] != 1) if keepdims is None else keepdims
+
+    x = np.moveaxis(x, axis, -1)
+    q = np.moveaxis(q, axis, -1)
+    p = np.moveaxis(p, axis, -1)
+
+    nan_out = ((p >= 1) | (p <= 0) | np.isnan(p) | np.isnan(q)
+               | np.any(np.isnan(x), axis=-1, keepdims=True))
+    if np.any(nan_out):
+        # These get NaN-ed out at the end. In the meantime, we want them
+        # to pass through calculations without warnings or errors
+        q = xpx.at(q, nan_out).set(0, copy=True)
+        p = xpx.at(p, nan_out).set(0.5, copy=True)
+
+    return x, q, p, alternative, axis, keepdims, axis_none, ndim, nan_out
+
+
+def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out):
+    # Reshape per axis/keepdims
+
+    res[nan_out] = -1 if np.issubdtype(res.dtype, np.integer) else np.nan
+
+    if axis_none and keepdims:
+        shape = (1,)*(ndim - 1) + res.shape
+        res = np.reshape(res, shape)
+        axis = -1
+
+    res = np.moveaxis(res, -1, axis)
+
+    if not keepdims:
+        res = np.squeeze(res, axis=axis)
+    return res[()]
 
 
 @xp_capabilities(np_only=True)
-def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
+def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=None):
     r"""
     Perform a quantile test and compute a confidence interval of the quantile.
 
@@ -9116,6 +9268,30 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
           than `q`.
         * 'greater': the quantile associated with the probability `p` is
           greater than `q`.
+    axis : int or None, default: 0
+        Axis of `x` along which the test is performed.
+        ``None`` ravels `x`, `q`, and `p` before performing the calculation,
+        without checking whether the original shapes were compatible.
+        As in other `scipy.stats` functions, a positive integer `axis` is resolved
+        after prepending 1s to the shape of `x`, `q`, and `p` as needed until the arrays
+        have the same dimensionality. When providing `x`, `q`, and `p` with different
+        dimensionality, consider using negative `axis` integers for clarity.
+    keepdims : bool, optional
+        Consider the case in which `x` is 1-D and `p` and `q` are scalars: the test
+        computes a reducing statistic, and the default behavior is to return a scalar.
+        If `keepdims` is set to True, the axis will not be reduced away, and the
+        result will be a 1-D array with one element.
+
+        The general case is more subtle, since multiple tests may be
+        requested for each axis-slice of `x`. For instance, if `x`, `q`, and `p`
+        are 1-D and ``p.size == q.size > 1``, no axis can be reduced away; there must be
+        an axis to contain the results. Therefore:
+
+        - By default, the axis will be reduced away if possible (i.e. if there is
+          exactly one element of `p` and `q` per axis-slice of `x`).
+        - If `keepdims` is set to True, the axis will not be reduced away.
+        - If `keepdims` is set to False, the axis will be reduced away
+          if possible, and an error will be raised otherwise.
 
     Returns
     -------
@@ -9124,10 +9300,10 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 
         statistic : float
             One of two test statistics that may be used in the quantile test.
-            The first test statistic, ``T1``, is the proportion of samples in
+            The first test statistic, ``T1``, is the proportion of observations in
             `x` that are less than or equal to the hypothesized quantile
             `q`. The second test statistic, ``T2``, is the proportion of
-            samples in `x` that are strictly less than the hypothesized
+            observations in `x` that are strictly less than the hypothesized
             quantile `q`.
 
             When ``alternative = 'greater'``, ``T1`` is used to calculate the
@@ -9208,7 +9384,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     data, so the value is clipped into the interval :math:`[0, 1]`.
 
     The approach for confidence intervals is attributed to Thompson [2]_ and
-    later proven to be applicable to any set of i.i.d. samples [3]_. The
+    later proven to be applicable to any i.i.d. sample [3]_. The
     computation is based on the observation that the probability of a quantile
     :math:`q` to be larger than any observations :math:`x_m (1\leq m \leq N)`
     can be computed as
@@ -9236,25 +9412,25 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     Two-sided confidence intervals are not guaranteed to be optimal; i.e.,
     there may exist a tighter interval that may contain the quantile of
     interest with probability larger than the confidence level.
-    Without further assumption on the samples (e.g., the nature of the
-    underlying distribution), the one-sided intervals are optimally tight.
+    Without further assumption on the nature of the
+    underlying distribution, the one-sided intervals are optimally tight.
 
     References
     ----------
     .. [1] W. J. Conover. Practical Nonparametric Statistics, 3rd Ed. 1999.
     .. [2] W. R. Thompson, "On Confidence Ranges for the Median and Other
-       Expectation Distributions for Populations of Unknown Distribution
-       Form," The Annals of Mathematical Statistics, vol. 7, no. 3,
-       pp. 122-128, 1936, Accessed: Sep. 18, 2019. [Online]. Available:
-       https://www.jstor.org/stable/2957563.
+           Expectation Distributions for Populations of Unknown Distribution
+           Form," The Annals of Mathematical Statistics, vol. 7, no. 3,
+           pp. 122-128, 1936, Accessed: Sep. 18, 2019. [Online]. Available:
+           https://www.jstor.org/stable/2957563.
     .. [3] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
-       Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
-       159-170. :doi:`10.1002/0471722162.ch7`.
+           Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
+           159-170. :doi:`10.1002/0471722162.ch7`.
     .. [4] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
-       Confidence Intervals for Quantiles," R package,
-       https://cran.r-project.org/package=QuantileNPCI
+           Confidence Intervals for Quantiles," R package,
+           https://cran.r-project.org/package=QuantileNPCI
     .. [5] M. Mayer, "confintr: Confidence Intervals," R package,
-       https://cran.r-project.org/package=confintr
+           https://cran.r-project.org/package=confintr
 
 
     Examples
@@ -9355,26 +9531,33 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     >>> quantile_ci_contains_true_stat >= 950
     True
 
-    This works with any distribution and any quantile, as long as the samples
+    This works with any distribution and any quantile, as long as the observations
     are i.i.d.
     """
     # Implementation carefully follows [1] 3.2
     # "H0: the p*th quantile of X is x*"
     # To facilitate comparison with [1], we'll use variable names that
     # best match Conover's notation
-    X, x_star, p_star, H1 = quantile_test_iv(x, q, p, alternative)
+    X, x_star, p_star, H1, axis, keepdims, axis_none, ndim, nan_out = quantile_test_iv(
+        x, q, p, alternative, axis, keepdims)
+    # `axis` is the original `axis`; the working axis is -1.
 
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
     # "let T2 equal the number of observations less than x*."
-    T1 = np.count_nonzero(X <= x_star)
-    T2 = np.count_nonzero(X < x_star)
+    if X.shape[-1] > 0:
+        T1 = _xp_searchsorted(X, x_star, side='right')
+        T2 = _xp_searchsorted(X, x_star, side='left')
+    else:
+        nan_out = np.ones_like(nan_out)
+        T = np.zeros(x_star.shape, dtype=np.int64)
+        T1, T2 = T, T
 
     # "The null distribution of the test statistics T1 and T2 is "
     # "the binomial distribution, with parameters n = sample size, and "
     # "p = p* as given in the null hypothesis.... Y has the binomial "
     # "distribution with parameters n and p*."
-    n = len(X)
+    n = X.shape[-1]
     Y = stats.binom(n=n, p=p_star)
 
     # "H1: the p* population quantile is less than x*"
@@ -9382,15 +9565,15 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         # "The p-value is the probability that a binomial random variable Y "
         # "is greater than *or equal to* the observed value of T2...using p=p*"
         pvalue = Y.sf(T2-1)  # Y.pmf(T2) + Y.sf(T2)
-        statistic = T2
-        statistic_type = 2
+        statistic = np.full(pvalue.shape, T2)
+        statistic_type = np.full(pvalue.shape, 2)
     # "H1: the p* population quantile is greater than x*"
     elif H1 == 'greater':
         # "The p-value is the probability that a binomial random variable Y "
         # "is less than or equal to the observed value of T1... using p = p*"
         pvalue = Y.cdf(T1)
-        statistic = T1
-        statistic_type = 1
+        statistic = np.full(pvalue.shape, T1)
+        statistic_type = np.full(pvalue.shape, 1)
     # "H1: x* is not the p*th population quantile"
     elif H1 == 'two-sided':
         # "The p-value is twice the smaller of the probabilities that a
@@ -9399,21 +9582,33 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         # using p=p*."
         # Note: both one-sided p-values can exceed 0.5 for the same data, so
         # `clip`
-        pvalues = [Y.cdf(T1), Y.sf(T2 - 1)]  # [greater, less]
-        sorted_idx = np.argsort(pvalues)
-        pvalue = np.clip(2*pvalues[sorted_idx[0]], 0, 1)
-        if sorted_idx[0]:
-            statistic, statistic_type = T2, 2
-        else:
-            statistic, statistic_type = T1, 1
+        p_min = np.minimum(Y.cdf(T1), Y.sf(T2 - 1))
+        pvalue = np.clip(2*p_min, 0, 1)
+        i2 = Y.cdf(T1) > Y.sf(T2 - 1)
+        statistic = np.where(i2, T2, T1)
+        statistic_type = np.where(i2, 2, 1)
+
+    _statistic, _statistic_type, _pvalue = statistic, statistic_type, pvalue
+    args = axis, axis_none, keepdims, ndim, nan_out
+    statistic = _quantile_test_postprocess(statistic, *args)
+    statistic_type = _quantile_test_postprocess(statistic_type, *args)
+    pvalue = _quantile_test_postprocess(pvalue, *args)
 
     return QuantileTestResult(
-        statistic=statistic,
-        statistic_type=statistic_type,
-        pvalue=pvalue,
+        statistic=statistic[()],
+        statistic_type=statistic_type[()],
+        pvalue=pvalue[()],
         _alternative=H1,
         _x=X,
-        _p=p_star
+        _p=p_star,
+        _statistic=statistic,
+        _statistic_type=_statistic_type,
+        _pvalue=_pvalue,
+        _axis=axis,
+        _axis_none=axis_none,
+        _keepdims=keepdims,
+        _ndim=ndim,
+        _nan_out=nan_out,
     )
 
 
@@ -10094,6 +10289,23 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
             out.append(t)
         return out[0] if len(out) == 1 else tuple(out)
 
+    if is_marray(xp):
+        data, mask = x.data, x.mask
+        uxp = array_namespace(data)
+        data = uxp.where(mask, uxp.nan, data)
+        # TODO: have `_rankdata` always return three items, but allow them
+        #       to be `None` if they are not needed by the calling function.
+        #       Arguments controlling the number of outputs is a pain.
+        ranks, sorted, ties = _rankdata(data, method, True, True, xp=uxp)
+        out = [xp.asarray(ranks, mask=mask)]
+        if return_sorted or return_ties:
+            mask_sorted = uxp.isnan(sorted)
+        if return_sorted:
+            out.append(xp.asarray(sorted, mask=mask_sorted))
+        if return_ties:
+            out.append(xp.asarray(ties, mask=mask_sorted))
+        return out[0] if len(out) == 1 else tuple(out)
+
     shape = x.shape
 
     # Get sort order
@@ -10606,7 +10818,8 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     TINY = 1.0e-20
 
     # _axis_nan_policy decorator ensures that `axis=-1`
-    n = x.shape[-1]
+    x, y = _share_masks(x, y, xp=xp)
+    n = _count_nonmasked(x, axis=-1, keepdims=False, xp=xp)
     xmean = xp.mean(x, axis=-1, keepdims=True)
     ymean = xp.mean(y, axis=-1, keepdims=True)
 
@@ -10635,7 +10848,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if n == 2:
+    if not is_marray(xp) and n == 2:
         # handle case when only two points are passed in
         one = xp.asarray(1.0, dtype=r.dtype)
         prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
@@ -10660,9 +10873,13 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
         #        = mean( x^2 ) - mean(x)^2
         intercept_stderr = slope_stderr * xp.sqrt(ssxm + xmean**2)
 
-    return LinregressResult(slope=slope[()], intercept=intercept[()], rvalue=r[()],
-                            pvalue=prob[()], stderr=slope_stderr[()],
-                            intercept_stderr=intercept_stderr[()])
+    outputs = slope, intercept, r, prob, slope_stderr, intercept_stderr
+    outputs = (output[()] if output.ndim == 0 else output for output in outputs)
+    slope, intercept, r, prob, slope_stderr, intercept_stderr = outputs
+
+    return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
+                            pvalue=prob, stderr=slope_stderr,
+                            intercept_stderr=intercept_stderr)
 
 def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
     # pmean linearized as a function of p about p = 0; see gh-23407
@@ -10845,7 +11062,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        n = _length_nonmasked(x, axis, xp=xp)
+        n = _count_nonmasked(x, axis, xp=xp)
         # Or two lines with ternaries : )
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]
