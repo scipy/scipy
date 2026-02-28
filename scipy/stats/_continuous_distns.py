@@ -5973,6 +5973,10 @@ class landau_gen(rv_continuous):
     the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
     methods. [1]_
 
+    See Also
+    --------
+    :ref:`continuous-landau` : Extended example, demonstrating use in a particle physics context.
+
     References
     ----------
     .. [1] Landau, L. (1944). "On the energy loss of fast particles by
