@@ -104,7 +104,7 @@ depends_on = ["scipy._lib", "scipy.linalg"]
 
 [[modules]]
 path = "scipy.optimize"
-depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.blas", "scipy.linalg.interpolative", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.special", "scipy.stats.qmc", "scipy._external"]
+depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.blas", "scipy.linalg.interpolative", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.special", "scipy.stats.qmc", "scipy._external", "scipy.linalg.lapack"]
 
 [[modules]]
 path = "scipy.optimize.elementwise"
