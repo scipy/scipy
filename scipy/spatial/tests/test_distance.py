@@ -2107,27 +2107,28 @@ def test_jensenshannon():
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
     
-    # Regression test: proportional vectors normalize to identical distributions.
-    # Jensen-Shannon distance must be finite (not NaN) and ~0.
-    for dtype, atol in [(np.float64, 1e-12), (np.float32, 1e-6)]:
-        p = np.full(10, 0.34, dtype=dtype)
-        q = np.full(10, 0.42, dtype=dtype)
-        d = jensenshannon(p, q)
-        assert np.isfinite(d)
-        assert_allclose(d, 0.0, atol=atol, rtol=0)
+def test_gh_20083():
+    # This is the ticket case in the original issue report gh-20083
+    c1 = np.array([0.027501475, 0.055202297], dtype=np.float32)
+    c2 = np.array([0.027537677, 0.055334348], dtype=np.float32)
+    d = jensenshannon(c1, c2)
+    assert_(np.isfinite(d))
 
-        p = np.full(3, 0.1, dtype=dtype)
-        q = np.full(3, 0.32, dtype=dtype)
-        d = jensenshannon(p, q)
-        assert np.isfinite(d)
-        assert_allclose(d, 0.0, atol=atol, rtol=0)
-
-        p = np.full(21, 0.29, dtype=dtype)
-        q = np.full(21, 0.09, dtype=dtype)
-        d = jensenshannon(p, q)
-        assert np.isfinite(d)
-        assert_allclose(d, 0.0, atol=atol, rtol=0)
-
+@pytest.mark.parametrize(
+    "dtype, atol",
+    [(np.float64, 1e-12), (np.float32, 1e-6)],
+)
+@pytest.mark.parametrize(
+    "n, a, b",
+    [(10, 0.34, 0.42), (3, 0.10, 0.32), (21, 0.29, 0.09)],
+)
+def test_gh_20083_proportional_vectors(dtype, atol, n, a, b):
+    # This is the enhanced test case for proportional vectors with different precisions
+    p = np.full(n, a, dtype=dtype)
+    q = np.full(n, b, dtype=dtype)
+    d = jensenshannon(p, q)
+    assert_(np.isfinite(d))
+    assert_allclose(d, 0.0, atol=atol, rtol=0)
 
 def test_gh_17703():
     arr_1 = np.array([1, 0, 0])
