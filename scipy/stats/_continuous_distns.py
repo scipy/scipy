@@ -5975,7 +5975,7 @@ class landau_gen(rv_continuous):
 
     See Also
     --------
-    :ref:`continuous-landau` : Extended example, demonstrating use in a particle physics context.
+    :ref:`landau_muon_silicon` : Extended example, demonstrating use in a particle physics context.
 
     References
     ----------
