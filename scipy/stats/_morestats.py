@@ -391,7 +391,7 @@ def kstatvar(data, n=2, *, axis=None):
     >>> import numpy as np
     >>> from scipy.stats import kstatvar
     
-    Compute the variance of the first k-statistic (``n=1``):
+    Compute the variance of the sample mean (first k-statistic):
     
     >>> data = np.arange(1, 10)
     >>> kstatvar(data, n=1)
