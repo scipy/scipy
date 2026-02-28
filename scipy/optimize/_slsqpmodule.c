@@ -22,6 +22,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     int64_t maxiter;
     int64_t info = 0;
+    Py_ssize_t maxiter_input;
     PyArrayObject* ap_A=NULL;
     PyArrayObject* ap_b=NULL;
     double* buffer;
@@ -32,11 +33,13 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
                          ("O!O!n"),
                          &PyArray_Type, (PyObject **)&ap_A,
                          &PyArray_Type, (PyObject **)&ap_b,
-                         &maxiter)
+                         &maxiter_input)
         )
     {
         return NULL;
     }
+
+    maxiter = (int64_t)maxiter_input;
 
     // Check for dtype compatibility
     if ((PyArray_TYPE(ap_A) != NPY_FLOAT64) || (PyArray_TYPE(ap_b) != NPY_FLOAT64))
