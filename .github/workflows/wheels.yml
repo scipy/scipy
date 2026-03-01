@@ -81,15 +81,8 @@ jobs:
         - [ macos-15-intel, macosx, x86_64, accelerate, "14.0" ]
         - [windows-2025, win, AMD64, "", ""]
         - [windows-11-arm, win, ARM64, "", ""]
-        python: [["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314"], ["cp314t", "cp314"]]
+        python: [["cp312", "3.12"]]
         # python[0] is used to specify the python versions made by cibuildwheel
-
-    env:
-      IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
-      # upload to staging if it's a push to a maintenance branch and the last
-      # commit message contains '[wheel build]'
-      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/maintenance') && contains(needs.get_commit_message.outputs.message, '1') }}
-      IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout scipy
