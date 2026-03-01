@@ -4,8 +4,6 @@ PROJECT_DIR="$1"
 PLATFORM=$(uname -m)
 echo $PLATFORM
 
-# Update license
-cat $PROJECT_DIR/tools/wheels/LICENSE_osx.txt >> $PROJECT_DIR/LICENSE.txt
 
 #########################################################################################
 # Install GFortran + OpenBLAS
