@@ -19,6 +19,6 @@ Implementation: `scipy.stats.landau`
 An example usage of this function is :ref:`landau_energy_loss`.
 
 .. toctree::
-    :maxdepth: 1
-    :hidden:
-    landau_energy_loss.md
+   :hidden:
+
+   landau_energy_loss.md
