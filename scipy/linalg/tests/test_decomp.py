@@ -1260,6 +1260,52 @@ class TestSVD_GESDD:
 
         assert s.dtype == s0.dtype
 
+    @pytest.mark.parametrize("dtyp", [int, float, complex])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("full_matrices", [True, False])
+    @pytest.mark.parametrize("mn", [(3, 5), (5, 3)])
+    def test_overwrite(self, dtyp, order, ndim, overwrite_a, full_matrices, mn):
+        m, n = mn
+        a = np.arange(m*n).reshape(m, n)
+        a = a.astype(dtype=dtyp, order=order)
+
+        if ndim == 3:
+            a = np.stack([a, 2*a])
+
+        a_ref = a.copy()
+
+        u, s, vh = svd(
+            a,
+            lapack_driver=self.lapack_driver,
+            full_matrices=full_matrices,
+            overwrite_a=overwrite_a,
+            compute_uv=True
+        )
+
+        # check that the result is correct
+        if full_matrices:
+            diag_s = diagsvd(s, m, n)
+        else:
+            if ndim == 2:
+                diag_s = np.diag(s)
+            else:
+                diag_s = np.stack([np.diag(x) for x in s])
+
+        assert_allclose(u @ diag_s @ vh, a_ref, atol=1e-12)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and
+            (a.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace
+
+
 class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
