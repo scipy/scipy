@@ -14,11 +14,11 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. notebooklite:: landau_muon_silicon.md
+.. notebooklite:: landau_energy_loss.md
    :new_tab: True
 ```
 
-(landau_muon_silicon)=
+(landau_energy_loss)=
 
 +++
 

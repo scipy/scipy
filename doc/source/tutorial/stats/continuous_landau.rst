@@ -16,4 +16,9 @@ The differential entropy is 2.37263644000448182, and the moments are undefined.
 
 Implementation: `scipy.stats.landau`
 
-An example usage of this function is :ref:`landau_muon_silicon`.
+An example usage of this function is :ref:`landau_energy_loss`.
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    landau_energy_loss.md
