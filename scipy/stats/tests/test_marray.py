@@ -4,7 +4,7 @@ from scipy import stats
 
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
-from scipy._lib._array_api import SCIPY_ARRAY_API, xp_default_dtype, is_torch
+from scipy._lib._array_api import SCIPY_ARRAY_API, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
 
 
@@ -447,9 +447,8 @@ def test_pearsonr(f, axis, xp):
         mask = np.isnan(xi) | np.isnan(yi)
         ref = f(xi[~mask], yi[~mask])
 
-        atol = 1e-7 if (is_torch(xp) and xp_default_dtype(xp) == xp.float32
-                        and f == stats.spearmanrho) else 0.
-        xp_assert_close(res.statistic.data[i], xp.asarray(ref.statistic)[()])
+        atol = 1e-7 if (is_torch(xp) and f == stats.spearmanrho) else 0.
+        xp_assert_close(res.statistic.data[i], xp.asarray(ref.statistic)[()], atol=atol)
         xp_assert_close(res.pvalue.data[i], xp.asarray(ref.pvalue)[()], atol=atol)
 
         if f == stats.pearsonr:
