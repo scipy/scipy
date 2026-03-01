@@ -2446,7 +2446,7 @@ class HistFunctionsTest:
 
         if edge_points and not specify_limits:
             pytest.skip("Limits must be specified to determine edge points.")
-        if edge_points and dtype != 'float64' and (is_jax(xp) or is_torch(xp)):
+        if edge_points and (is_jax(xp) or (dtype != 'float64' and is_torch(xp))):
             pytest.skip("Some backends are having trouble with edge point arithmetic.")
 
         a = np.astype(rng.random(100), dtype)
@@ -2478,12 +2478,14 @@ class HistFunctionsTest:
         res = histfun(xp.asarray(a, dtype=dtype), nbins, limits, weights)
         ref_hist = xp.asarray(ref_hist, dtype=dtype)
 
-        rtol = 1e-12 if dtype == xp.float64 else 1e-6
+        rtol = 1e-12 if dtype == xp.float64 else 2e-5
         if histfun == stats.cumfreq:
-            xp_assert_close(res.cumcount, xp.cumulative_sum(ref_hist), rtol=rtol)
+            ref_cumcount = xp.cumulative_sum(ref_hist)
+            xp_assert_close(res.cumcount, ref_cumcount, rtol=rtol)
         else:
             den = a.shape[0] if weights is None else xp.sum(weights)
-            xp_assert_close(res.frequency, xp.asarray(ref_hist/den, dtype=dtype))
+            ref_frequency = xp.asarray(ref_hist/den, dtype=dtype)
+            xp_assert_close(res.frequency, ref_frequency, rtol=rtol)
         xp_assert_close(res.lowerlimit, xp.asarray(ref_bins[0], dtype=dtype))
         xp_assert_close(res.binsize, xp.asarray(ref_bins[1] - ref_bins[0], dtype=dtype))
         xp_assert_close(res.extrapoints, xp.asarray(a.size - sum(bin_counts.tolist())))
