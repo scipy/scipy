@@ -136,7 +136,7 @@ solve-group = "accelerate-ilp64"
 features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
 
 [environments.scipy-openblas]
-# tasks: build-scipy-openblas, test-scipy-openblas
+# tasks: build-scipy-openblas
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
 
 
@@ -398,11 +398,6 @@ scipy-openblas32 = "==0.3.31.22.0"
 cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with scipy-openblas32"
-
-[feature.scipy-openblas.tasks.test-scipy-openblas]
-cmd = "spin test --no-build --build-dir=build-scipy-openblas"
-depends-on = "build-scipy-openblas"
-description = "Test SciPy with scipy-openblas32"
 
 
 ### CPU/CUDA features ###

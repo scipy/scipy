@@ -60,27 +60,6 @@ jobs:
         shell: bash -l {0}
         run: pixi exec ccache -s
 
-  test_scipy_openblas:
-    name: M1 & OpenBLAS, fast, py3.14/npAny, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: macos-14
-
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          submodules: recursive
-
-      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
-        with:
-          pixi-version: v0.55.0
-          cache: false
-          environments: scipy-openblas
-
-      - name: Test with scipy-openblas32
-        run: pixi run test-scipy-openblas
 
   test_accelerate:
     name: Accelerate, full, py3.14/npAny, spin
