@@ -4335,18 +4335,21 @@ def _make_distribution_custom(dist):
 # components rather than all built into `ContinuousDistribution`.
 
 def _shift_scale_distribution_function_2arg(func):
-    def wrapped(self, x, y, *args, loc, scale, sign, **kwargs):
+    def wrapped(self, x, y, *args, loc, scale, sign, method=None, **kwargs):
         item = func.__name__
 
         f = getattr(self._dist, item)
 
-        # Obviously it's possible to get away with half of the work here.
-        # Let's focus on correct results first and optimize later.
         xt = self._transform(x, loc, scale)
         yt = self._transform(y, loc, scale)
-        fxy = f(xt, yt, *args, **kwargs)
-        fyx = f(yt, xt, *args, **kwargs)
-        return np.real_if_close(np.where(sign, fxy, fyx))[()]
+        res = xpx.apply_where(
+            sign,
+            (xt, yt, *args),
+            lambda xt, yt, *args, **kwargs: f(xt, yt, *args, method=method, **kwargs),
+            lambda xt, yt, *args, **kwargs: f(yt, xt, *args, method=method, **kwargs),
+            kwargs=kwargs
+        )
+        return res[()]
 
     return wrapped
 
@@ -4356,18 +4359,21 @@ def _shift_scale_distribution_function(func):
              '_cdf_dispatch': '_ccdf_dispatch',
              '_logccdf_dispatch': '_logcdf_dispatch',
              '_ccdf_dispatch': '_cdf_dispatch'}
-    def wrapped(self, x, *args, loc, scale, sign, **kwargs):
+    def wrapped(self, x, *args, loc, scale, sign, method=None, **kwargs):
         item = func.__name__
 
         f = getattr(self._dist, item)
         cf = getattr(self._dist, citem[item])
 
-        # Obviously it's possible to get away with half of the work here.
-        # Let's focus on correct results first and optimize later.
         xt = self._transform(x, loc, scale)
-        fx = f(xt, *args, **kwargs)
-        cfx = cf(xt, *args, **kwargs)
-        return np.where(sign, fx, cfx)[()]
+        res = xpx.apply_where(
+            sign,
+            (xt, *args),
+            lambda xt, *args, **kwargs: f(xt, *args, method=method, **kwargs),
+            lambda xt, *args, **kwargs: cf(xt, *args, method=method, **kwargs),
+            kwargs=kwargs
+        )
+        return res[()]
 
     return wrapped
 
@@ -4376,17 +4382,20 @@ def _shift_scale_inverse_function(func):
              '_icdf_dispatch': '_iccdf_dispatch',
              '_ilogccdf_dispatch': '_ilogcdf_dispatch',
              '_iccdf_dispatch': '_icdf_dispatch'}
-    def wrapped(self, p, *args, loc, scale, sign, **kwargs):
+    def wrapped(self, p, *args, loc, scale, sign, method=None, **kwargs):
         item = func.__name__
 
         f = getattr(self._dist, item)
         cf = getattr(self._dist, citem[item])
 
-        # Obviously it's possible to get away with half of the work here.
-        # Let's focus on correct results first and optimize later.
-        fx =  self._itransform(f(p, *args, **kwargs), loc, scale)
-        cfx = self._itransform(cf(p, *args, **kwargs), loc, scale)
-        return np.where(sign, fx, cfx)[()]
+        res = xpx.apply_where(
+            sign,
+            (p, *args),
+            lambda p, *args, **kwargs: f(p, *args, method=method, **kwargs),
+            lambda p, *args, **kwargs: cf(p, *args, method=method, **kwargs),
+            kwargs=kwargs
+        )
+        return self._itransform(res, loc, scale)[()]
 
     return wrapped
 

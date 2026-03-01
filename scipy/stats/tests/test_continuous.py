@@ -1556,6 +1556,7 @@ class TestTransforms:
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
         loc = dist.loc
+        # negative scale tested in test_abs_finite_support, test_reciprocal, etc.
         scale = dist.scale
         dist0 = StandardNormal()
         dist_ref = stats.norm(loc=loc, scale=scale)
