@@ -5951,6 +5951,10 @@ class landau_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    :ref:`landau_muon_silicon` : Extended example, demonstrating use in a particle physics context.
+
     Notes
     -----
     The probability density function for `landau` ([1]_, [2]_) is:
@@ -5972,10 +5976,6 @@ class landau_gen(rv_continuous):
     This distribution uses routines from the Boost Math C++ library for
     the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
     methods. [1]_
-
-    See Also
-    --------
-    :ref:`landau_muon_silicon` : Extended example, demonstrating use in a particle physics context.
 
     References
     ----------

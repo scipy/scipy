@@ -49,10 +49,14 @@ from scipy import stats
 def landau_energy_loss(E, E_mpv, xi):
     """Landau energy loss PDF
 
-    Args:
-        E: Energy loss variable
-        E_mpv: Most probable energy loss
-        xi: Width parameter
+    Parameters
+    ----------
+    E : float or array_like
+        Energy loss random variate
+    E_mpv : float
+        Most probable energy loss parameter
+    xi : float
+        Width parameter
     """
     landau_loc = E_mpv + xi * (1 - np.euler_gamma - 0.20005183774398613)
     return stats.landau.pdf(
@@ -85,7 +89,6 @@ lmax = loss(E_mpv)
 lo_halfmax = root_scalar(lambda E: loss(E) - lmax / 2, bracket=(0.4, E_mpv))
 hi_halfmax = root_scalar(lambda E: loss(E) - lmax / 2, bracket=(E_mpv, 1.0))
 fwhm = hi_halfmax.root - lo_halfmax.root
-
 
 fig, ax = plt.subplots(1, 1)
 ax.plot(evals, dist_scipy, label="Landau")
