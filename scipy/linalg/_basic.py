@@ -491,8 +491,9 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         raise ValueError(f"Incompatible shapes: {ab1.shape} and {b1.shape}")
 
     batch_shape = np.broadcast_shapes(ab1.shape[:-2], b1.shape[:-2])
-    ab1 = np.broadcast_to(ab1, batch_shape + ab1.shape[-2:])
-    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+    if ab1.ndim > 2 or b1.ndim > 2:
+        ab1 = np.broadcast_to(ab1, batch_shape + ab1.shape[-2:])
+        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
     # Convert to the same size as `CBLAS_INT` on C side
     dtype = np.int64 if HAS_ILP64 else np.int32
@@ -530,7 +531,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     overwrite_ab = (overwrite_ab or _datacopied(ab1, ab))
     overwrite_b = (
         (overwrite_b or _datacopied(b1, b)) and
-        b1.ndim <= 2 and
+        (b1.ndim <= 2) and
         b1.flags["F_CONTIGUOUS"]
     )
 
