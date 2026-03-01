@@ -2,12 +2,15 @@
 # Released under the scipy license
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
            'Rectangle', 'KDTree']
 
 
+@xp_capabilities()
 def minkowski_distance_p(x, y, p=2.0):
     """Compute the pth power of the L**p distance between two arrays.
 
@@ -39,27 +42,22 @@ def minkowski_distance_p(x, y, p=2.0):
     array([2., 1.])
 
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    # Find smallest common datatype with float64 (return type of this
-    # function) - addresses #10262.
-    # Don't just cast to float64 for complex input case.
-    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype),
-                                       'float64')
+    xp = array_namespace(x, y)
+    x = xp.asarray(x)
+    y = xp.asarray(y)
 
     # Make sure x and y are NumPy arrays of correct datatype.
-    x = x.astype(common_datatype)
-    y = y.astype(common_datatype)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
 
-    if p == np.inf:
-        return np.amax(np.abs(y-x), axis=-1)
+    if p == xp.inf:
+        return xp.max(xp.abs(y-x), axis=-1)
     elif p == 1:
-        return np.sum(np.abs(y-x), axis=-1)
+        return xp.sum(xp.abs(y-x), axis=-1)
     else:
-        return np.sum(np.abs(y-x)**p, axis=-1)
+        return xp.sum(xp.abs(y-x)**p, axis=-1)
 
 
+@xp_capabilities()
 def minkowski_distance(x, y, p=2.0):
     """Compute the L**p distance between two arrays.
 
@@ -87,9 +85,10 @@ def minkowski_distance(x, y, p=2.0):
     array([ 1.41421356,  1.        ])
 
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-    if p == np.inf or p == 1:
+    xp = array_namespace(x, y)
+    x = xp.asarray(x)
+    y = xp.asarray(y)
+    if p == xp.inf or p == 1:
         return minkowski_distance_p(x, y, p)
     else:
         return minkowski_distance_p(x, y, p)**(1./p)

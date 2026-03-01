@@ -10,7 +10,8 @@ import pytest
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
-from scipy.spatial import minkowski_distance
+from scipy.spatial import minkowski_distance, minkowski_distance_p
+from scipy._lib._array_api import xp_assert_close, make_xp_test_case
 
 import itertools
 
@@ -564,23 +565,41 @@ class Test_rectangle:
         assert_array_equal(greater.mins, [0.1, 0])
 
 
-def test_distance_l2():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], 2), np.sqrt(2))
+@make_xp_test_case(minkowski_distance_p)
+class TestMinkowskiDistanceP:
+    def test_distance_l2(self, xp):
+        res = minkowski_distance_p(xp.asarray([0, 0]), xp.asarray([1, 1]), 2)
+        xp_assert_close(res, xp.asarray(2.)[()])
+
+    def test_distance_l1(self, xp):
+        res = minkowski_distance_p(xp.asarray([0, 0]), xp.asarray([1, 1]), 1)
+        xp_assert_close(res, xp.asarray(2.)[()])
+
+    def test_distance_linf(self, xp):
+        res = minkowski_distance_p(xp.asarray([0, 0]), xp.asarray([1, 1]), xp.inf)
+        xp_assert_close(res, xp.asarray(1.)[()])
 
 
-def test_distance_l1():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], 1), 2)
+@make_xp_test_case(minkowski_distance)
+class TestMinkowskiDistance:
+    def test_distance_l2(self, xp):
+        res = minkowski_distance(xp.asarray([0, 0]), xp.asarray([1, 1]), 2)
+        xp_assert_close(res, xp.sqrt(xp.asarray(2.)))
 
+    def test_distance_l1(self, xp):
+        res = minkowski_distance(xp.asarray([0, 0]), xp.asarray([1, 1]), 1)
+        xp_assert_close(res, xp.asarray(2.)[()])
 
-def test_distance_linf():
-    assert_almost_equal(minkowski_distance([0, 0], [1, 1], np.inf), 1)
+    def test_distance_linf(self, xp):
+        res = minkowski_distance(xp.asarray([0, 0]), xp.asarray([1, 1]), xp.inf)
+        xp_assert_close(res, xp.asarray(1.)[()])
 
-
-def test_distance_vectorization():
-    np.random.seed(1234)
-    x = np.random.randn(10, 1, 3)
-    y = np.random.randn(1, 7, 3)
-    assert_equal(minkowski_distance(x, y).shape, (10, 7))
+    def test_distance_vectorization(self, xp):
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal((10, 1, 3))
+        y = rng.standard_normal((1, 7, 3))
+        res = minkowski_distance(xp.asarray(x), xp.asarray(y))
+        assert res.shape == (10, 7)
 
 
 class count_neighbors_consistency:
