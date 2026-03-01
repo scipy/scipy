@@ -525,8 +525,10 @@
         }
     },
     "nbdtrik": {
-        "_cdflib_wrappers.pxd": {
-            "nbdtrik": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "nbdtrik_float": "fff->f",
+            "nbdtrik_double": "ddd->d"
+        }
     },
     "nbdtrin": {
         "boost_special_functions.h++": {
