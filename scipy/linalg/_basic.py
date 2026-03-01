@@ -514,15 +514,11 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
             x = x[..., 0]
         return x
 
-    if ab_is_scalar:
-        if ab1.item() == 0:
-            raise LinAlgError("A singular matrix was detected")
-
-        out = b1 / ab1
-        return out[..., 0] if b_is_1D else out
-
     # Edge case
     if ab1.shape[-1] == 1:
+        if ab1[nupper, 0] == 0:
+            raise LinAlgError("A singular matrix was detected")
+
         b2 = np.array(b1, copy=(not overwrite_b))
         # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
         # will pass u = l = 0 and `a1` will be 1x1. However, the rest of the
