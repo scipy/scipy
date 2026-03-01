@@ -212,6 +212,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     const char *lapack_driver = NULL;
     int compute_uv = 1;
     int full_matrices = 1;
+    int overwrite_a = 0;
     PyArrayObject *ap_S = NULL, *ap_U = NULL, *ap_Vh = NULL;
     PyObject *ret_lst;
 
@@ -219,7 +220,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     SliceStatusVec vec_status;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!s|pp", &PyArray_Type, (PyObject **)&ap_Am,  &lapack_driver, &compute_uv, &full_matrices)) {
+    if (!PyArg_ParseTuple(args, "O!s|ppp", &PyArray_Type, (PyObject **)&ap_Am,  &lapack_driver, &compute_uv, &full_matrices, &overwrite_a)) {
         return NULL;
     }
 
@@ -294,16 +295,16 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _svd<float>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<float>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _svd<double>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<double>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _svd<npy_complex64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<npy_complex64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _svd<npy_complex128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<npy_complex128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
