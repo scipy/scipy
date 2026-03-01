@@ -399,6 +399,10 @@ cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with scipy-openblas32"
 
+[feature.scipy-openblas.tasks.test-scipy-openblas]
+cmd = "spin test --no-build --build-dir=build-scipy-openblas"
+depends-on = "build-scipy-openblas"
+description = "Test SciPy with scipy-openblas32"
 
 ### CPU/CUDA features ###
 
