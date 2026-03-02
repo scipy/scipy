@@ -13,10 +13,15 @@ if [[ $PLATFORM == "x86_64" ]]; then
   #sudo ln -s $GFORTRAN /usr/local/bin/gfortran
   # same version of gfortran as the openblas-libs
   # https://github.com/MacPython/gfortran-install.git
-  curl -L https://github.com/isuruf/gcc/releases/download/gcc-11.3.0-2/gfortran-darwin-x86_64-native.tar.gz -o gfortran.tar.gz
+  curl -L https://github.com/isuruf/gcc/releases/download/gcc-15.2.0/gfortran-darwin-x86_64-native.tar.gz -o gfortran.tar.gz
+  KNOWN_SHA256="fb03c1f37bf0258ada6e3e41698e3ad416fff4dad448fd746e01d8ccf1efdc0f  gfortran.tar.gz"
+fi
+if [[ $PLATFORM == "arm64" ]]; then
+  curl -L https://github.com/isuruf/gcc/releases/download/gcc-15.2.0/gfortran-darwin-arm64-native.tar.gz
+  KNOWN_SHA256="999a91eef894d32f99e3b641520bef9f475055067f301f0f1947b8b716b5922a  gfortran.tar.gz"
+fi
 
   GFORTRAN_SHA256=$(shasum -a 256 gfortran.tar.gz)
-  KNOWN_SHA256="981367dd0ad4335613e91bbee453d60b6669f5d7e976d18c7bdb7f1966f26ae4  gfortran.tar.gz"
   if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
       echo sha256 mismatch
       exit 1
@@ -39,23 +44,6 @@ if [[ $PLATFORM == "x86_64" ]]; then
   # environment (so it mirrors what is done in the conda-forge compiler
   # activation scripts)
   export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
-fi
-
-
-if [[ $PLATFORM == "arm64" ]]; then
-  curl -L https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg -o gfortran.dmg
-  GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-  KNOWN_SHA256="e2e32f491303a00092921baebac7ffb7ae98de4ca82ebbe9e6a866dd8501acdf  gfortran.dmg"
-
-  if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
-      echo sha256 mismatch
-      exit 1
-  fi
-
-  hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
-  sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-  type -p gfortran
-fi
 
 # Install OpenBLAS
 python -m pip install -r requirements/openblas.txt

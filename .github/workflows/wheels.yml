@@ -98,24 +98,12 @@ jobs:
         run: |
           if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
-            # Always use preinstalled gfortran for Accelerate builds
-            ln -s $(which gfortran-13) gfortran
-            export PATH=$PWD:$PATH
-            echo "PATH=$PATH" >> "$GITHUB_ENV"
-            LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
           fi
-          #          XCODE_VER='16.0'
-          #          CIBW="sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app"
-          #          echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
-          # setting SDKROOT necessary when using the gfortran compiler
-          # installed in cibw_before_build_macos.sh
-          # sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app
+
           CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
             SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
             PKG_CONFIG_PATH=${{ github.workspace }}"
           echo "CIBW_ENVIRONMENT=$CIBW" >> "$GITHUB_ENV"
-
-          echo "REPAIR_PATH=$LIB_PATH" >> "$GITHUB_ENV"
 
           PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gfortran --print-file-name libgfortran.dylib))"
           # remove libgfortran from location used for linking (if any), to
