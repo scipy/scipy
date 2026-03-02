@@ -7,10 +7,14 @@ from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree  # type: ignore[attr-defined]
 from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, RBFInterpolator,
-    _get_backend
+    _get_backend, _monomial_powers,
     )
-from scipy.interpolate import _rbfinterp_pythran
 from scipy._lib._testutils import _run_concurrent_barrier
+
+try:
+    from scipy.interpolate import _rbfinterp_pythran
+except ImportError:
+    from scipy.interpolate import _rbfinterp_pythran_src as _rbfinterp_pythran
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -19,7 +23,7 @@ def _vandermonde(x, degree, xp=np):
     # Returns a matrix of monomials that span polynomials with the specified
     # degree evaluated at x.
     backend = _get_backend(xp)
-    powers = backend._monomial_powers(x.shape[1], degree, xp)
+    powers = _monomial_powers(x.shape[1], degree, xp)
     return backend.polynomial_matrix(x, powers, xp)
 
 
@@ -55,7 +59,7 @@ def _is_conditionally_positive_definite(kernel, m):
         seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
-            A = _rbfinterp_pythran._kernel_matrix(x, kernel)
+            A = _rbfinterp_pythran.kernel_matrix_at_centers(x, kernel, np)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
