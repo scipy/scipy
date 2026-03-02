@@ -161,7 +161,7 @@ trlib_int_t trlib_leftmost_irreducible(
         if (*iter_pr % 10 == 1) {
             TRLIB_PRINTLN_1("%6s%8s%14s%14s%14s%14s%14s%6s%6s", "  it  ", " action ", "     low      ", "   leftmost   ", "      up      ", "   dleftmost  ", "      prlp    ", " nneg ", "  br  ")
         }
-        TRLIB_PRINTLN_1("%6ld%8s%14e%14e%14e", *iter_pr, "  entry ", low, *leftmost, up)
+        TRLIB_PRINTLN_1("%6" CBLAS_INT_FMT "%8s%14e%14e%14e", *iter_pr, "  entry ", low, *leftmost, up)
 
         // compute pivot and derivative of LDL^T factorization of T - leftmost I
         continue_outer_loop = 0;
@@ -207,7 +207,7 @@ trlib_int_t trlib_leftmost_irreducible(
         }
 
         if (continue_outer_loop) {
-            TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14s%14e%6ld%6ld", "", " bisecp ", low, *leftmost, up, "", prlp, n_neg_piv, jj)
+            TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14s%14e%6" CBLAS_INT_FMT "%6" CBLAS_INT_FMT, "", " bisecp ", low, *leftmost, up, "", prlp, n_neg_piv, jj)
             continue;
         }
 
@@ -219,7 +219,7 @@ trlib_int_t trlib_leftmost_irreducible(
 
         // test if bracket interval is small or last pivot has converged to zero
         if (up-low <= tol_abs * fmax(1.0, fmax(fabs(low), fabs(up))) || fabs(prlp) <= tol_abs) {
-            TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14s%14e%6ld%6ld", "", "  conv  ", low, *leftmost, up, "", prlp, n_neg_piv, jj)
+            TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14s%14e%6" CBLAS_INT_FMT "%6" CBLAS_INT_FMT, "", "  conv  ", low, *leftmost, up, "", prlp, n_neg_piv, jj)
             TRLIB_RETURN(TRLIB_LMR_CONV)
         }
 
@@ -280,11 +280,11 @@ trlib_int_t trlib_leftmost_irreducible(
             }
         }
         if ( verbose > 0 ) {
-            if ( model_type == 0 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6ld%6ld", "", " bisecs ", low, *leftmost, up, .5*(up-low), prlp, n_neg_piv, jj) }
-            if ( model_type == 1 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6ld%6ld", "", "  piv 1 ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
-            if ( model_type == 2 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6ld%6ld", "", " lpiv q ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
-            if ( model_type == 3 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6ld%6ld", "", " lpiv 1 ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
-            if ( model_type == 4 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6ld%6ld", "", " lpiv 2 ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
+            if ( model_type == 0 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6" CBLAS_INT_FMT "%6" CBLAS_INT_FMT, "", " bisecs ", low, *leftmost, up, .5*(up-low), prlp, n_neg_piv, jj) }
+            if ( model_type == 1 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6" CBLAS_INT_FMT "%6" CBLAS_INT_FMT, "", "  piv 1 ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
+            if ( model_type == 2 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6" CBLAS_INT_FMT "%6" CBLAS_INT_FMT, "", " lpiv q ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
+            if ( model_type == 3 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6" CBLAS_INT_FMT "%6" CBLAS_INT_FMT, "", " lpiv 1 ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
+            if ( model_type == 4 ) { TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14e%14e%6" CBLAS_INT_FMT "%6" CBLAS_INT_FMT, "", " lpiv 2 ", low, *leftmost, up, dleftmost, prlp, n_neg_piv, jj) }
         }
 
     }

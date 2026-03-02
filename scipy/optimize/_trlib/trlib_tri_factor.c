@@ -170,7 +170,7 @@ trlib_int_t trlib_tri_factor_min(
                         TRLIB_DPTTRS(&n0, &inc, diag_fac0, offdiag_fac0, sol0, &n0, &info_fac) // sol0 <-- T0^-1 sol0
                         if (info_fac != 0) { TRLIB_PRINTLN_2("Failure on computing h\u2080 in safeguarded initialization iteration") TRLIB_RETURN(TRLIB_TTR_FAIL_LINSOLVE) }
                         TRLIB_DNRM2(norm_sol0, &n0, sol0, &inc)
-                        TRLIB_PRINTLN_2(" %2ld%14e%14e%14e%3s%14e", jj, pert_low, lam_pert, pert_up, " +", norm_sol0 - radius)
+                        TRLIB_PRINTLN_2(" %2" CBLAS_INT_FMT "%14e%14e%14e%3s%14e", jj, pert_low, lam_pert, pert_up, " +", norm_sol0 - radius)
                         if(norm_sol0 >= radius) {
                             break;
                         }
@@ -180,7 +180,7 @@ trlib_int_t trlib_tri_factor_min(
                         }
                     }
                     else {
-                        TRLIB_PRINTLN_2(" %2ld%14e%14e%14e%3s", jj, pert_low, lam_pert, pert_up, " -")
+                        TRLIB_PRINTLN_2(" %2" CBLAS_INT_FMT "%14e%14e%14e%3s", jj, pert_low, lam_pert, pert_up, " -")
                         pert_low = lam_pert; // as factorization fails, it provides a upper bound
                         // now increase perturbation, either by bisection if there is a useful upper bound,
                         // otherwise by a small increment
@@ -285,7 +285,7 @@ trlib_int_t trlib_tri_factor_min(
                 if (unicode) { TRLIB_PRINTLN_1("%6s%14s%14s%14s", " iter ", "       \u03bb      ", "      d\u03bb      ", " \u2016h\u2080(\u03bb)\u2016-radius") }
                 else { TRLIB_PRINTLN_1("%6s%14s%14s%14s", " iter ", "     lam      ", "     dlam     ", "  tr resdidual") }
             }
-            TRLIB_PRINTLN_1("%6ld%14e%14e%14e", *iter_newton, *lam0, dlam, norm_sol0-radius)
+            TRLIB_PRINTLN_1("%6" CBLAS_INT_FMT "%14e%14e%14e", *iter_newton, *lam0, dlam, norm_sol0-radius)
 
             // test for convergence
             if (norm_sol0 - radius <= tol_rel * radius) {
@@ -309,7 +309,7 @@ trlib_int_t trlib_tri_factor_min(
                     *leftmost, 10, TRLIB_EPS_POW_5, ones,
                     diag_fac, offdiag_fac, sol,
                     verbose-2, unicode, " EI", fout, eigen_timing, &ferr, &berr, &jj); // can safely overwrite ferr, berr, jj with results. only interesting: eigenvector
-            if (*sub_fail != 0 && *sub_fail != -1) { TRLIB_PRINTLN_2("Failure in eigenvector computation: %ld", *sub_fail) TRLIB_RETURN(TRLIB_TTR_FAIL_EIG) }
+            if (*sub_fail != 0 && *sub_fail != -1) { TRLIB_PRINTLN_2("Failure in eigenvector computation: %" CBLAS_INT_FMT "", *sub_fail) TRLIB_RETURN(TRLIB_TTR_FAIL_EIG) }
             if (*sub_fail == -1) { TRLIB_PRINTLN_2("In eigenvector computation itmax reached, continue with approximate eigenvector") }
             // compute solution as linear combination of h0 and eigenvector
             // ||h0 + t*eig||^2 = ||h_0||^2 + t * <h0, eig> + t^2 = radius^2
@@ -354,7 +354,7 @@ trlib_int_t trlib_tri_factor_min(
         *sub_fail = trlib_leftmost(nirblk, irblk, diag, offdiag, 0, leftmost[nirblk-1], 1000, TRLIB_EPS_POW_75, verbose-2, unicode, " LM ", fout, leftmost_timing, ileftmost, leftmost);
         *warm_leftmost = 1;
     }
-    TRLIB_PRINTLN_1("    leftmost = %e (block %ld)", leftmost[*ileftmost], *ileftmost)
+    TRLIB_PRINTLN_1("    leftmost = %e (block %" CBLAS_INT_FMT ")", leftmost[*ileftmost], *ileftmost)
     if(*lam0 >= -leftmost[*ileftmost]) {
         if (unicode) { TRLIB_PRINTLN_1("  \u03bb\u2080 \u2265 -leftmost \u21d2 \u03bb = \u03bb\u2080, exit: h\u2080(\u03bb\u2080)") }
         else { TRLIB_PRINTLN_1("  lam0 >= -leftmost => lam = lam0, exit: h0(lam0)") }
@@ -518,7 +518,7 @@ trlib_int_t trlib_tri_factor_get_regularization(
     TRLIB_DNRM2(*norm_sol, &n, sol, &inc)
 
     jj = 0;
-    TRLIB_PRINTLN_2("%ld\t Reg %e\t Reg/Norm %e\t lb %e ub %e", jj, *lam, *lam/(*norm_sol), sigma_l, sigma_u);
+    TRLIB_PRINTLN_2("%" CBLAS_INT_FMT "\t Reg %e\t Reg/Norm %e\t lb %e ub %e", jj, *lam, *lam/(*norm_sol), sigma_l, sigma_u);
 
     // check if accetable
     if( *norm_sol * sigma_l <= *lam && *lam <= *norm_sol * sigma_u ) {
@@ -570,7 +570,7 @@ trlib_int_t trlib_tri_factor_get_regularization(
             TRLIB_DNRM2(*norm_sol, &n, sol, &inc)
 
             jj++;
-            TRLIB_PRINTLN_2("%ld\t Reg %e\t Reg/Norm %e\t lb %e ub %e", jj, *lam, *lam/(*norm_sol), sigma_l, sigma_u);
+            TRLIB_PRINTLN_2("%" CBLAS_INT_FMT "\t Reg %e\t Reg/Norm %e\t lb %e ub %e", jj, *lam, *lam/(*norm_sol), sigma_l, sigma_u);
 
             // check if accetable
             if( *norm_sol * sigma_l <= *lam && *lam <= *norm_sol * sigma_u ) {
