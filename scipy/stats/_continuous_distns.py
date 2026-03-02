@@ -5491,6 +5491,23 @@ class geninvgauss_gen(rv_continuous):
 geninvgauss = geninvgauss_gen(a=0.0, name="geninvgauss")
 
 
+@np.vectorize(otypes=[np.float64])
+def _norminvgauss_quadrature(x, y, a, b):
+    # gh-23196 reported that the norminvgauss CDF would drop to zero in the far right
+    # tail. The SF had a similar problem, dropping to zero at the far left.
+    # This fixes the bug by using 1 - SF to compute the CDF in the right tail and
+    # 1 - CDF to compute the SF in the left tail. The mean is guaranteed to be beyond
+    # the median, so there is no loss of precision due to subtractive cancellation.
+    mean = b / np.sqrt((a + b) * (a - b))
+    if np.isneginf(x) and y > abs(mean):
+        return 1 - integrate.quad(norminvgauss._pdf, y, np.inf, args=(a, b))[0]
+    if np.isposinf(y) and x < -abs(mean):
+        return 1 - integrate.quad(norminvgauss._pdf, -np.inf, x, args=(a, b))[0]
+    else:
+        res = integrate.quad(norminvgauss._pdf, x, y, args=(a, b))[0]
+    return np.clip(res, 0, 1)
+
+
 class norminvgauss_gen(rv_continuous):
     r"""A Normal Inverse Gaussian continuous random variable.
 
@@ -5561,23 +5578,16 @@ class norminvgauss_gen(rv_continuous):
         return super()._fitstart(data, args=(1, 0.5))
 
     def _pdf(self, x, a, b):
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt((a + b) * (a - b))
         fac1 = a / np.pi
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
+    def _cdf(self, x, a, b):
+        return _norminvgauss_quadrature(-np.inf, x, a, b)
+
     def _sf(self, x, a, b):
-        if np.isscalar(x):
-            # If x is a scalar, then so are a and b.
-            return integrate.quad(self._pdf, x, np.inf, args=(a, b))[0]
-        else:
-            a = np.atleast_1d(a)
-            b = np.atleast_1d(b)
-            result = []
-            for (x0, a0, b0) in zip(x, a, b):
-                result.append(integrate.quad(self._pdf, x0, np.inf,
-                                             args=(a0, b0))[0])
-            return np.array(result)
+        return _norminvgauss_quadrature(x, np.inf, a, b)
 
     def _isf(self, q, a, b):
         def _isf_scalar(q, a, b):
@@ -5624,13 +5634,13 @@ class norminvgauss_gen(rv_continuous):
     def _rvs(self, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
         # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt((a + b) * (a - b))
         ig = invgauss.rvs(mu=1/gamma, size=size, random_state=random_state)
         return b * ig + np.sqrt(ig) * norm.rvs(size=size,
                                                random_state=random_state)
 
     def _stats(self, a, b):
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt((a + b) * (a - b))
         mean = b / gamma
         variance = a**2 / gamma**3
         skewness = 3.0 * b / (a * np.sqrt(gamma))
