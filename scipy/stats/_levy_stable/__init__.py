@@ -286,12 +286,12 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
         # Symmetry is used to ensure x > zeta as above. Integration 
         # becomes numerically unstable so let `quad` handle 
         # integration points
-        if beta != -1:
+        if np.abs(beta) != 1:
             intg_points = [0, peak] + tail_points
         else:
             intg_points = None
 
-        if (beta == -1) and (alpha <= 1.1) and (parameterization == "S1"):
+        if (np.abs(beta) == 1) and (1 <= alpha <= 1.05) and (parameterization == "S1"):
             res = integrate.tanhsinh(
                 integrand,
                 -xi,
