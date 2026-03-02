@@ -100,6 +100,9 @@ jobs:
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
           fi
 
+          export PATH=/usr/local/lib:/usr/local/bin:$PATH
+          echo "PATH=$PATH" >> "$GITHUB_ENV"
+          
           CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
             SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
             PKG_CONFIG_PATH=${{ github.workspace }}"

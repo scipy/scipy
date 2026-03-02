@@ -30,6 +30,9 @@ fi
   fi
 
   sudo mkdir -p /opt/
+  # the following directories may not exist on a default image
+  sudo mkdir -p /usr/local/bin
+  sudo mkdir -p /usr/local/lib
   # places gfortran in /opt/gfortran-darwin-x86_64-native. There's then
   # bin, lib, include, libexec underneath that.
   sudo tar -xv -C /opt -f gfortran.tar.gz
