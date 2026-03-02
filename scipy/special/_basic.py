@@ -2494,10 +2494,8 @@ def pro_cv_seq(m, n, c):
 
     Parameters
     ----------
-    m : int
-        Mode parameter, ``m>=0``.
-    n : int
-        Mode parameter, ``m>=0``.
+    m, n : int
+        Non-negative mode parameters.
     c : float
         Spheroidal parameter.
 
@@ -2532,10 +2530,8 @@ def obl_cv_seq(m, n, c):
 
     Parameters
     ----------
-    m : int
-        Mode parameter, ``m>=0``.
-    n : int
-        Mode parameter, ``m>=0``.
+    m, n : int
+        Non-negative mode parameters.
     c : float
         Spheroidal parameter.
 

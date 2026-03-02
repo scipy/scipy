@@ -42,7 +42,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
         Default: ``numpy``
     device : any
         optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+        supported device specifications in ``xp``.
 
     Returns
     -------

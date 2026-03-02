@@ -67,11 +67,11 @@ class _dok_base(_spbase, IndexMixin, dict):
         Parameters
         ----------
         val : dict, dok_array, iterable of 2-tuples
-                The values to update in the dok_array. If a dict or dok_array is
-                provided, the keys and values will be taken from it. If an iterable
-                of 2-tuples is provided, each tuple should contain a key and a value.
-                Keys of the input must be sequences of nonnegative integers less than
-                the shape for each axis.
+            The values to update in the dok_array. If a dict or dok_array is
+            provided, the keys and values will be taken from it. If an iterable
+            of 2-tuples is provided, each tuple should contain a key and a value.
+            Keys of the input must be sequences of nonnegative integers less than
+            the shape for each axis.
         """
         if isinstance(val, dict):
             inputs = val.items()
