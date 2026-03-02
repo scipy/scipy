@@ -143,7 +143,7 @@ static void dcstep(
 );
 
 // Helper functions
-void inline save_vars(
+static inline void save_vars(
     int brackt, int stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
     double stmax, double width, double width1, int* isave, double* dsave
@@ -3392,7 +3392,7 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     return;
 }
 
-void inline save_vars(
+static inline void save_vars(
     int brackt, int stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
     double stmax, double width, double width1, int* isave, double* dsave) {
