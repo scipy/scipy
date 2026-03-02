@@ -5974,6 +5974,10 @@ class landau_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    :ref:`landau_energy_loss` : Extended example, demonstrating use in a particle physics context.
+
     Notes
     -----
     The probability density function for `landau` ([1]_, [2]_) is:
