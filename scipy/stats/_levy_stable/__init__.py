@@ -291,7 +291,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
         else:
             intg_points = None
 
-        if (np.abs(beta) == 1) and (1 <= alpha <= 1.05) and (parameterization == "S1"):
+        if (np.abs(beta) == 1) and (1 < alpha <= 1.05) and (parameterization == "S1"):
             res = integrate.tanhsinh(
                 integrand,
                 -xi,
