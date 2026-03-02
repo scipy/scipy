@@ -18,9 +18,9 @@ from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
-                       check_shape, check_reshape_kwargs, isscalarlike,
+                       check_shape, isscalarlike,
                        isintlike, isdense)
-from ._index import _validate_indices
+from ._index import _validate_indices, _broadcast_arrays
 
 import operator
 
@@ -127,9 +127,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         new_col = np.asarray(new_col, dtype=self.coords[-1].dtype)
         self.coords = self.coords[:-1] + (new_col,)
 
-    def reshape(self, *args, **kwargs):
-        shape = check_shape(args, self.shape, allow_nd=self._allow_nd)
-        order, copy = check_reshape_kwargs(kwargs)
+    def reshape(self, *shape, order="C", copy=False):
+        shape = check_shape(shape, self.shape, allow_nd=self._allow_nd)
 
         # Return early if reshape is not required
         if shape == self.shape:
@@ -577,6 +576,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # handle array indices
         if arr_indices:
+            arr_indices = _broadcast_arrays(*arr_indices)
             arr_shape = arr_indices[0].shape  # already broadcast in validate_indices
             # There are three dimensions required to check array indices against coords
             # Their lengths are described as:
@@ -632,6 +632,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
             for j in none_pos[::-1]:
                 new_shape.pop(j)
             new_shape = tuple(new_shape)
+
+        # broadcast arrays
+        if arr_int_pos:
+            index = list(index)
+            arr_pos = {i: arr for i in arr_int_pos if not isintlike(arr := index[i])}
+            arr_indices = _broadcast_arrays(*arr_pos.values())
+            for i, arr in zip(arr_pos, arr_indices):
+                index[i] = arr
 
         # get coords and data from x
         if issparse(x):
@@ -1194,9 +1202,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Parameters
         ----------
-        a, b : array_like
-            Tensors to "dot".
-
+        other : array_like
+            Tensor to "dot".
         axes : int or (2,) array_like
             * integer_like
               If an int N, sum over the last N axes of `a` and the first N axes
@@ -1680,22 +1687,26 @@ class coo_array(_coo_base, sparray):
 
     Attributes
     ----------
-    dtype : dtype
-        Data type of the sparse array
-    shape : tuple of integers
-        Shape of the sparse array
-    ndim : int
-        Number of dimensions of the sparse array
-    nnz
-    size
-    data
+    data : ndarray
         COO format data array of the sparse array
-    coords
+    coords : tuple of ndarray
         COO format tuple of index arrays
     has_canonical_format : bool
         Whether the matrix has sorted coordinates and no duplicates
-    format
-    T
+    dtype : dtype
+        Data type of the array
+    shape : tuple of integers
+        Shape of the array
+    ndim : int
+        Number of dimensions of the array
+    format : str
+        Three letter code for the format of the array storage, e.g. 'coo'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : coo_array
+        The transpose of the array
 
     Notes
     -----
@@ -1792,24 +1803,26 @@ class coo_matrix(spmatrix, _coo_base):
 
     Attributes
     ----------
+    data : ndarray
+        COO format data array of the sparse matrix
+    coords : tuple of ndarray
+        COO format tuple of index matrix
+    has_canonical_format : bool
+        Whether the matrix has sorted coordinates and no duplicates
     dtype : dtype
         Data type of the matrix
-    shape : 2-tuple
+    shape : tuple of integers
         Shape of the matrix
     ndim : int
-        Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        COO format data array of the matrix
-    row
-        COO format row index array of the matrix
-    col
-        COO format column index array of the matrix
-    has_canonical_format : bool
-        Whether the matrix has sorted indices and no duplicates
-    format
-    T
+        Number of dimensions of the matrix
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'coo'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : coo_matrix
+        The transpose of the matrix
 
     Notes
     -----

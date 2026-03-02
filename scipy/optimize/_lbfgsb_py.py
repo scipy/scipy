@@ -34,12 +34,13 @@ Functions
 ## Modifications by Travis Oliphant and Enthought, Inc. for inclusion in SciPy
 
 import numpy as np
-from numpy import array, asarray, float64, zeros
+from numpy import asarray, array, zeros   # noqa: F401
 from . import _lbfgsb
 from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
                         _wrap_callback, _check_unknown_options,
                         _prepare_scalar_function)
 from ._constraints import old_bound_to_new
+from scipy.linalg.lapack import HAS_ILP64
 
 from scipy.sparse.linalg import LinearOperator
 
@@ -334,7 +335,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
     pgtol = gtol
     factr = ftol / np.finfo(float).eps
 
-    x0 = asarray(x0).ravel()
+    x0 = np.asarray(x0).ravel()
     n, = x0.shape
 
     # historically old-style bounds were/are expected by lbfgsb.
@@ -365,9 +366,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
 
     func_and_grad = sf.fun_and_grad
 
-    nbd = zeros(n, np.int32)
-    low_bnd = zeros(n, float64)
-    upper_bnd = zeros(n, float64)
+    int_dtype = np.int64 if HAS_ILP64 else np.int32
+
+    nbd = np.zeros(n, dtype=int_dtype)
+    low_bnd = np.zeros(n, dtype=np.float64)
+    upper_bnd = np.zeros(n, dtype=np.float64)
     bounds_map = {(-np.inf, np.inf): 0,
                   (1, np.inf): 1,
                   (1, 1): 2,
@@ -387,16 +390,16 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
     if not maxls > 0:
         raise ValueError('maxls must be positive.')
 
-    x = array(x0, dtype=np.float64)
-    f = array(0.0, dtype=np.float64)
-    g = zeros((n,), dtype=np.float64)
-    wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
-    iwa = zeros(3*n, dtype=np.int32)
-    task = zeros(2, dtype=np.int32)
-    ln_task = zeros(2, dtype=np.int32)
-    lsave = zeros(4, dtype=np.int32)
-    isave = zeros(44, dtype=np.int32)
-    dsave = zeros(29, dtype=float64)
+    x = np.array(x0, dtype=np.float64)
+    f = np.array(0.0, dtype=np.float64)
+    g = np.zeros((n,), dtype=np.float64)
+    wa = np.zeros(2*m*n + 5*n + 11*m*m + 8*m, np.float64)
+    iwa = np.zeros(3*n, dtype=int_dtype)
+    task = np.zeros(2, dtype=int_dtype)
+    ln_task = np.zeros(2, dtype=int_dtype)
+    lsave = np.zeros(4, dtype=int_dtype)
+    isave = np.zeros(44, dtype=int_dtype)
+    dsave = np.zeros(29, dtype=np.float64)
 
     n_iterations = 0
 

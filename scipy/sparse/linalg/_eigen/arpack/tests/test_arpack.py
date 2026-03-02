@@ -16,7 +16,7 @@ from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
                                               ArpackNoConvergence)
 
 
-from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._gcutils import assert_deallocated
 
 
 # precision for tests
@@ -522,7 +522,6 @@ def test_ticket_1459_arpack_crash():
         evals, evecs = eigs(A, k, v0=v0)
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_linearoperator_deallocation():
     # Check that the linear operators used by the Arpack wrappers are
     # deallocatable by reference counting -- they are big objects, so
@@ -706,3 +705,13 @@ def test_gh24358(dtype):
     # ARPACK can sometimes pick up the conjugate
     assert_allclose(np.abs(w.imag), 0.5173365219668336, atol=atol, rtol=0.0)
     assert_allclose(A @ z, w * z, atol=atol, rtol=0.0)
+
+
+@pytest.mark.parametrize("func", [eigs, eigsh])
+def test_nD(func):
+    """Check that >2-D operators are rejected cleanly."""
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    with pytest.raises(ValueError, match="expected 2-D"):
+        func(A)
