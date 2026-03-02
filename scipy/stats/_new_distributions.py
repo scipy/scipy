@@ -335,14 +335,8 @@ class _LogUniform(ContinuousDistribution):
         kwargs.update(dict(a=a, b=b, log_a=log_a, log_b=log_b))
         return kwargs
 
-    # def _logpdf_formula(self, x, *, log_a, log_b, **kwargs):
-    #     return -np.log(x) - np.log(log_b - log_a)
-
     def _pdf_formula(self, x, *, log_a, log_b, **kwargs):
         return ((log_b - log_a)*x)**-1
-
-    # def _cdf_formula(self, x, *, log_a, log_b, **kwargs):
-    #     return (np.log(x) - log_a)/(log_b - log_a)
 
     def _moment_raw_formula(self, order, log_a, log_b, **kwargs):
         if order == 0:

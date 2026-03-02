@@ -3,11 +3,15 @@ Module for reading and writing matlab (TM) .mat files
 """
 # Authors: Travis Oliphant, Matthew Brett
 
+import os
+import warnings
+
 from contextlib import contextmanager
 
 from ._miobase import _get_matfile_version, docfiller
 from ._mio4 import MatFile4Reader, MatFile4Writer
 from ._mio5 import MatFile5Reader, MatFile5Writer
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['loadmat', 'savemat', 'whosmat']
 
@@ -49,17 +53,9 @@ def _open_file(file_like, appendmat, mode='rb'):
             ) from e
 
 
-@docfiller
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
     """
     Create reader for matlab .mat format files.
-
-    Parameters
-    ----------
-    %(file_arg)s
-    %(append_arg)s
-    %(load_args)s
-    %(struct_arg)s
 
     Returns
     -------
@@ -83,70 +79,80 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         raise TypeError(f'Did not recognize version {mjv}')
 
 
-@docfiller
-def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwargs):
     """
     Load MATLAB file.
 
     Parameters
     ----------
     file_name : str
-       Name of the mat file (do not need .mat extension if
-       appendmat==True). Can also pass open file-like object.
+        Name of the mat file (do not need .mat extension if
+        appendmat==True). Can also pass open file-like object.
     mdict : dict, optional
         Dictionary in which to insert matfile variables.
     appendmat : bool, optional
-       True to append the .mat extension to the end of the given
-       filename, if not already present. Default is True.
+        True to append the .mat extension to the end of the given
+        filename, if not already present. Default is True.
     spmatrix : bool, optional (default: True)
         If ``True``, return sparse matrix. Otherwise return sparse array.
         Format is `COO` for MatFile 4 and `CSC` for MatFile 5.
         Only relevant for sparse variables.
-    byte_order : str or None, optional
-       None by default, implying byte order guessed from mat
-       file. Otherwise can be one of ('native', '=', 'little', '<',
-       'BIG', '>').
-    mat_dtype : bool, optional
-       If True, return arrays in same dtype as would be loaded into
-       MATLAB (instead of the dtype with which they are saved).
-    squeeze_me : bool, optional
-       Whether to squeeze unit matrix dimensions or not.
-    chars_as_strings : bool, optional
-       Whether to convert char arrays to string arrays.
-    matlab_compatible : bool, optional
-       Returns matrices as would be loaded by MATLAB (implies
-       squeeze_me=False, chars_as_strings=False, mat_dtype=True,
-       struct_as_record=True).
-    struct_as_record : bool, optional
-       Whether to load MATLAB structs as NumPy record arrays, or as
-       old-style NumPy arrays with dtype=object. Setting this flag to
-       False replicates the behavior of scipy version 0.7.x (returning
-       NumPy object arrays). The default setting is True, because it
-       allows easier round-trip load and save of MATLAB files.
-    verify_compressed_data_integrity : bool, optional
-        Whether the length of compressed sequences in the MATLAB file
-        should be checked, to ensure that they are not longer than we expect.
-        It is advisable to enable this (the default) because overlong
-        compressed sequences in MATLAB files generally indicate that the
-        files have experienced some sort of corruption.
-    variable_names : None or sequence
-        If None (the default) - read all variables in file. Otherwise,
-        `variable_names` should be a sequence of strings, giving names of the
-        MATLAB variables to read from the file. The reader will skip any
-        variable with a name not in this sequence, possibly saving some read
-        processing.
-    simplify_cells : False, optional
-        If True, return a simplified dict structure (which is useful if the mat
-        file contains cell arrays). Note that this only affects the structure
-        of the result and not its contents (which is identical for both output
-        structures). If True, this automatically sets `struct_as_record` to
-        False and `squeeze_me` to True, which is required to simplify cells.
-    uint16_codec : str, optional
-        The codec to use for decoding characters, which are stored as uint16
-        values. The default uses the system encoding, but this can be manually
-        set to other values such as 'ascii', 'latin1', and 'utf-8'. This
-        parameter is relevant only for files stored as v6 and above, and not
-        for files stored as v4.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v1.20.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
+    **kwargs
+        The following aditional keyword arguments can be passed:
+
+        byte_order : str or None, optional
+            None by default, implying byte order guessed from mat
+            file. Otherwise can be one of ('native', '=', 'little', '<',
+            'BIG', '>').
+        mat_dtype : bool, optional
+            If True, return arrays in same dtype as would be loaded into
+            MATLAB (instead of the dtype with which they are saved).
+        squeeze_me : bool, optional
+            Whether to squeeze unit matrix dimensions or not.
+        chars_as_strings : bool, optional
+            Whether to convert char arrays to string arrays.
+        matlab_compatible : bool, optional
+            Returns matrices as would be loaded by MATLAB (implies
+            squeeze_me=False, chars_as_strings=False, mat_dtype=True,
+            struct_as_record=True).
+        struct_as_record : bool, optional
+            Whether to load MATLAB structs as NumPy record arrays, or as
+            old-style NumPy arrays with dtype=object. Setting this flag to
+            False replicates the behavior of scipy version 0.7.x (returning
+            NumPy object arrays). The default setting is True, because it
+            allows easier round-trip load and save of MATLAB files.
+        verify_compressed_data_integrity : bool, optional
+            Whether the length of compressed sequences in the MATLAB file
+            should be checked, to ensure that they are not longer than we expect.
+            It is advisable to enable this (the default) because overlong
+            compressed sequences in MATLAB files generally indicate that the
+            files have experienced some sort of corruption.
+        variable_names : None or sequence
+            If None (the default) - read all variables in file. Otherwise,
+            `variable_names` should be a sequence of strings, giving names of the
+            MATLAB variables to read from the file. The reader will skip any
+            variable with a name not in this sequence, possibly saving some read
+            processing.
+        simplify_cells : False, optional
+            If True, return a simplified dict structure (which is useful if the mat
+            file contains cell arrays). Note that this only affects the structure
+            of the result and not its contents (which is identical for both output
+            structures). If True, this automatically sets `struct_as_record` to
+            False and `squeeze_me` to True, which is required to simplify cells.
+        uint16_codec : str, optional
+            The codec to use for decoding characters, which are stored as uint16
+            values. The default uses the system encoding, but this can be manually
+            set to other values such as 'ascii', 'latin1', and 'utf-8'. This
+            parameter is relevant only for files stored as v6 and above, and not
+            for files stored as v4.
 
     Returns
     -------
@@ -234,12 +240,27 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
-    if spmatrix:
-        from scipy.sparse import issparse, coo_matrix, csc_matrix
-        for name, var in list(matfile_dict.items()):
-            if issparse(var):
+
+    warn_msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+        That means the default return type will be a sparse array.
+        Unless you use * instead of @, ** for matrix power, or you depend
+        on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+        See the spmatrix to sparray migration guide for details.
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+        """
+
+    from scipy.sparse import issparse, coo_matrix, csc_matrix, coo_array, csc_array
+    for name, var in list(matfile_dict.items()):
+        if issparse(var):
+            if spmatrix is _NoValue:
+                prefixes = (os.path.dirname(__file__),)
+                warnings.warn(warn_msg, DeprecationWarning, skip_file_prefixes=prefixes)
+                spmatrix = True
+            if spmatrix:
                 fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
-                matfile_dict[name] = fmt_matrix(var)
+            else:
+                fmt_matrix = coo_array if var.format == "coo" else csc_array
+            matfile_dict[name] = fmt_matrix(var)
 
     if mdict is not None:
         mdict.update(matfile_dict)
@@ -249,7 +270,6 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     return mdict
 
 
-@docfiller
 def savemat(file_name, mdict,
             appendmat=True,
             format='5',
@@ -370,7 +390,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     >>> whosmat(f)
     [('a', (2, 3), 'int32'), ('b', (1, 5), 'double')]
 
-    """
+    """  # numpydoc ignore=PR02
     with _open_file_context(file_name, appendmat) as f:
         ML, file_opened = mat_reader_factory(f, **kwargs)
         variables = ML.list_variables()

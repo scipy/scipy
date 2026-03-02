@@ -656,3 +656,27 @@ jobs:
         export OMP_NUM_THREADS=2
         cd ..
         pytest --pyargs scipy -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0
+
+  #################################################################################
+  test_without_fortran:
+    name: No Fortran, fast, py3.14/npAny, spin
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.63.2
+          cache: false
+
+      - name: Build SciPy
+        run: pixi run build --setup-args=-D_without-fortran=true
+
+      - name: Test SciPy
+        run: pixi run test

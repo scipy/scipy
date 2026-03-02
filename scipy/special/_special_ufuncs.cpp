@@ -247,7 +247,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "_lambertw", _lambertw);
 
     PyObject *_scaled_exp1 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::scaled_exp1), static_cast<xsf::numpy::f_f>(xsf::scaled_exp1)},
+	{static_cast<xsf::numpy::f_f>(xsf::scaled_exp1), static_cast<xsf::numpy::d_d>(xsf::scaled_exp1)},
         "_scaled_exp1", scaled_exp1_doc);
     PyModule_AddObjectRef(module, "_scaled_exp1", _scaled_exp1);
 
@@ -292,16 +292,16 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "berp", berp);
 
     PyObject *besselpoly = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ddd_d>(xsf::besselpoly), static_cast<xsf::numpy::fff_f>(xsf::besselpoly)},
+	{static_cast<xsf::numpy::fff_f>(xsf::besselpoly), static_cast<xsf::numpy::ddd_d>(xsf::besselpoly)},
         "besselpoly", besselpoly_doc);
     PyModule_AddObjectRef(module, "besselpoly", besselpoly);
 
     PyObject *beta = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::beta), static_cast<xsf::numpy::ff_f>(xsf::beta)}, "beta", beta_doc);
+	{static_cast<xsf::numpy::ff_f>(xsf::beta), static_cast<xsf::numpy::dd_d>(xsf::beta)}, "beta", beta_doc);
     PyModule_AddObjectRef(module, "beta", beta);
 
     PyObject *betaln = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::betaln), static_cast<xsf::numpy::ff_f>(xsf::betaln)}, "betaln", betaln_doc);
+	{static_cast<xsf::numpy::ff_f>(xsf::betaln), static_cast<xsf::numpy::dd_d>(xsf::betaln)}, "betaln", betaln_doc);
     PyModule_AddObjectRef(module, "betaln", betaln);
 
     PyObject *binom = xsf::numpy::ufunc(
@@ -309,46 +309,46 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "binom", binom);
 
     PyObject *cbrt = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cbrt), static_cast<xsf::numpy::f_f>(xsf::cbrt)}, "cbrt", cbrt_doc);
+	{static_cast<xsf::numpy::f_f>(xsf::cbrt), static_cast<xsf::numpy::d_d>(xsf::cbrt)}, "cbrt", cbrt_doc);
     PyModule_AddObjectRef(module, "cbrt", cbrt);
 
     PyObject *cosdg = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cosdg), static_cast<xsf::numpy::f_f>(xsf::cosdg)}, "cosdg", cosdg_doc);
+	{static_cast<xsf::numpy::f_f>(xsf::cosdg), static_cast<xsf::numpy::d_d>(xsf::cosdg)}, "cosdg", cosdg_doc);
     PyModule_AddObjectRef(module, "cosdg", cosdg);
 
     PyObject *cosm1 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cosm1), static_cast<xsf::numpy::f_f>(xsf::cosm1)}, "cosm1", cosm1_doc);
+	{static_cast<xsf::numpy::f_f>(xsf::cosm1), static_cast<xsf::numpy::d_d>(xsf::cosm1)}, "cosm1", cosm1_doc);
     PyModule_AddObjectRef(module, "cosm1", cosm1);
 
     PyObject *cotdg = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cotdg), static_cast<xsf::numpy::f_f>(xsf::cotdg)}, "cotdg", cotdg_doc);
+	{static_cast<xsf::numpy::f_f>(xsf::cotdg), static_cast<xsf::numpy::d_d>(xsf::cotdg)}, "cotdg", cotdg_doc);
     PyModule_AddObjectRef(module, "cotdg", cotdg);
 
     PyObject *ellipj = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_dddd>(xsf::ellipj), static_cast<xsf::numpy::ff_ffff>(xsf::ellipj)}, 4, "ellipj",
+	{static_cast<xsf::numpy::ff_ffff>(xsf::ellipj), static_cast<xsf::numpy::dd_dddd>(xsf::ellipj)}, 4, "ellipj",
         ellipj_doc);
     PyModule_AddObjectRef(module, "ellipj", ellipj);
 
     PyObject *ellipe = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::ellipe), static_cast<xsf::numpy::f_f>(xsf::ellipe)}, "ellipe", ellipe_doc);
+	{static_cast<xsf::numpy::f_f>(xsf::ellipe), static_cast<xsf::numpy::d_d>(xsf::ellipe)}, "ellipe", ellipe_doc);
     PyModule_AddObjectRef(module, "ellipe", ellipe);
 
     PyObject *ellipeinc = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::ellipeinc), static_cast<xsf::numpy::ff_f>(xsf::ellipeinc)}, "ellipeinc",
+        {static_cast<xsf::numpy::ff_f>(xsf::ellipeinc), static_cast<xsf::numpy::dd_d>(xsf::ellipeinc)}, "ellipeinc",
         ellipeinc_doc);
     PyModule_AddObjectRef(module, "ellipeinc", ellipeinc);
 
     PyObject *ellipk = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::ellipk), static_cast<xsf::numpy::f_f>(xsf::ellipk)}, "ellipk", ellipk_doc);
+	{static_cast<xsf::numpy::f_f>(xsf::ellipk), static_cast<xsf::numpy::d_d>(xsf::ellipk)}, "ellipk", ellipk_doc);
     PyModule_AddObjectRef(module, "ellipk", ellipk);
 
     PyObject *ellipkinc = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::ellipkinc), static_cast<xsf::numpy::ff_f>(xsf::ellipkinc)}, "ellipkinc",
+	{static_cast<xsf::numpy::ff_f>(xsf::ellipkinc), static_cast<xsf::numpy::dd_d>(xsf::ellipkinc)}, "ellipkinc",
         ellipkinc_doc);
     PyModule_AddObjectRef(module, "ellipkinc", ellipkinc);
 
     PyObject *ellipkm1 =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::ellipkm1), static_cast<xsf::numpy::f_f>(xsf::ellipkm1)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ellipkm1), static_cast<xsf::numpy::d_d>(xsf::ellipkm1)},
                           "ellipkm1", ellipkm1_doc);
     PyModule_AddObjectRef(module, "ellipkm1", ellipkm1);
 
@@ -365,124 +365,124 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "expi", expi);
 
     PyObject *expit =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::expit), static_cast<xsf::numpy::f_f>(xsf::expit),
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::expit), static_cast<xsf::numpy::d_d>(xsf::expit),
                            static_cast<xsf::numpy::g_g>(xsf::expit)},
                           "expit", expit_doc);
     PyModule_AddObjectRef(module, "expit", expit);
 
     PyObject *exprel = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::exprel), static_cast<xsf::numpy::f_f>(xsf::exprel)}, "exprel", exprel_doc);
+        {static_cast<xsf::numpy::f_f>(xsf::exprel), static_cast<xsf::numpy::d_d>(xsf::exprel)}, "exprel", exprel_doc);
     PyModule_AddObjectRef(module, "exprel", exprel);
 
     PyObject *expm1 =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::expm1), static_cast<xsf::numpy::f_f>(xsf::expm1),
-                           static_cast<xsf::numpy::D_D>(xsf::expm1), static_cast<xsf::numpy::F_F>(xsf::expm1)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::expm1), static_cast<xsf::numpy::d_d>(xsf::expm1),
+                           static_cast<xsf::numpy::F_F>(xsf::expm1), static_cast<xsf::numpy::D_D>(xsf::expm1)},
                           "expm1", expm1_doc);
     PyModule_AddObjectRef(module, "expm1", expm1);
 
     PyObject *exp2 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::exp2), static_cast<xsf::numpy::f_f>(xsf::exp2)}, "exp2", exp2_doc);
+        {static_cast<xsf::numpy::f_f>(xsf::exp2), static_cast<xsf::numpy::d_d>(xsf::exp2)}, "exp2", exp2_doc);
     PyModule_AddObjectRef(module, "exp2", exp2);
 
     PyObject *exp10 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::exp10), static_cast<xsf::numpy::f_f>(xsf::exp10)}, "exp10", exp10_doc);
+        {static_cast<xsf::numpy::f_f>(xsf::exp10), static_cast<xsf::numpy::d_d>(xsf::exp10)}, "exp10", exp10_doc);
     PyModule_AddObjectRef(module, "exp10", exp10);
 
-    PyObject *erf = xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erf), static_cast<xsf::numpy::f_f>(xsf::erf),
-                                       static_cast<xsf::numpy::D_D>(xsf::erf), static_cast<xsf::numpy::F_F>(xsf::erf)},
+    PyObject *erf = xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::erf), static_cast<xsf::numpy::d_d>(xsf::erf),
+                                       static_cast<xsf::numpy::F_F>(xsf::erf), static_cast<xsf::numpy::D_D>(xsf::erf)},
                                       "erf", erf_doc);
     PyModule_AddObjectRef(module, "erf", erf);
 
     PyObject *erfc =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfc), static_cast<xsf::numpy::f_f>(xsf::erfc),
-                           static_cast<xsf::numpy::D_D>(xsf::erfc), static_cast<xsf::numpy::F_F>(xsf::erfc)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::erfc), static_cast<xsf::numpy::d_d>(xsf::erfc),
+                           static_cast<xsf::numpy::F_F>(xsf::erfc), static_cast<xsf::numpy::D_D>(xsf::erfc)},
                           "erfc", erfc_doc);
     PyModule_AddObjectRef(module, "erfc", erfc);
 
     PyObject *erfcx =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfcx), static_cast<xsf::numpy::f_f>(xsf::erfcx),
-                           static_cast<xsf::numpy::D_D>(xsf::erfcx), static_cast<xsf::numpy::F_F>(xsf::erfcx)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::erfcx), static_cast<xsf::numpy::d_d>(xsf::erfcx),
+                           static_cast<xsf::numpy::F_F>(xsf::erfcx), static_cast<xsf::numpy::D_D>(xsf::erfcx)},
                           "erfcx", erfcx_doc);
     PyModule_AddObjectRef(module, "erfcx", erfcx);
 
     PyObject *erfi =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfi), static_cast<xsf::numpy::f_f>(xsf::erfi),
-                           static_cast<xsf::numpy::D_D>(xsf::erfi), static_cast<xsf::numpy::F_F>(xsf::erfi)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::erfi), static_cast<xsf::numpy::d_d>(xsf::erfi),
+                           static_cast<xsf::numpy::F_F>(xsf::erfi), static_cast<xsf::numpy::D_D>(xsf::erfi)},
                           "erfi", erfi_doc);
     PyModule_AddObjectRef(module, "erfi", erfi);
 
     PyObject *voigt_profile = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ddd_d>(xsf::voigt_profile), static_cast<xsf::numpy::fff_f>(xsf::voigt_profile)},
+        {static_cast<xsf::numpy::fff_f>(xsf::voigt_profile), static_cast<xsf::numpy::ddd_d>(xsf::voigt_profile)},
         "voigt_profile", voigt_profile_doc);
     PyModule_AddObjectRef(module, "voigt_profile", voigt_profile);
 
     PyObject *wofz = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::D_D>(xsf::wofz), static_cast<xsf::numpy::F_F>(xsf::wofz)}, "wofz", wofz_doc);
+        {static_cast<xsf::numpy::F_F>(xsf::wofz), static_cast<xsf::numpy::D_D>(xsf::wofz)}, "wofz", wofz_doc);
     PyModule_AddObjectRef(module, "wofz", wofz);
 
     PyObject *dawsn =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::dawsn), static_cast<xsf::numpy::f_f>(xsf::dawsn),
-                           static_cast<xsf::numpy::D_D>(xsf::dawsn), static_cast<xsf::numpy::F_F>(xsf::dawsn)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::dawsn), static_cast<xsf::numpy::d_d>(xsf::dawsn),
+                           static_cast<xsf::numpy::F_F>(xsf::dawsn), static_cast<xsf::numpy::D_D>(xsf::dawsn)},
                           "dawsn", dawsn_doc);
     PyModule_AddObjectRef(module, "dawsn", dawsn);
 
     PyObject *ndtr =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::ndtr), static_cast<xsf::numpy::f_f>(xsf::ndtr),
-                           static_cast<xsf::numpy::D_D>(xsf::ndtr), static_cast<xsf::numpy::F_F>(xsf::ndtr)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ndtr), static_cast<xsf::numpy::d_d>(xsf::ndtr),
+                           static_cast<xsf::numpy::F_F>(xsf::ndtr), static_cast<xsf::numpy::D_D>(xsf::ndtr)},
                           "ndtr", ndtr_doc);
     PyModule_AddObjectRef(module, "ndtr", ndtr);
 
     PyObject *log_ndtr =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log_ndtr), static_cast<xsf::numpy::f_f>(xsf::log_ndtr),
-                           static_cast<xsf::numpy::D_D>(xsf::log_ndtr), static_cast<xsf::numpy::F_F>(xsf::log_ndtr)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::log_ndtr), static_cast<xsf::numpy::d_d>(xsf::log_ndtr),
+                           static_cast<xsf::numpy::F_F>(xsf::log_ndtr), static_cast<xsf::numpy::D_D>(xsf::log_ndtr)},
                           "log_ndtr", log_ndtr_doc);
     PyModule_AddObjectRef(module, "log_ndtr", log_ndtr);
 
     PyObject *fresnel =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_dd>(xsf::fresnel), static_cast<xsf::numpy::f_ff>(xsf::fresnel),
-                           static_cast<xsf::numpy::D_DD>(xsf::fresnel), static_cast<xsf::numpy::F_FF>(xsf::fresnel)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_ff>(xsf::fresnel), static_cast<xsf::numpy::d_dd>(xsf::fresnel),
+                           static_cast<xsf::numpy::F_FF>(xsf::fresnel), static_cast<xsf::numpy::D_DD>(xsf::fresnel)},
                           2, "fresnel", fresnel_doc);
     PyModule_AddObjectRef(module, "fresnel", fresnel);
 
     PyObject *gamma =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::gamma), static_cast<xsf::numpy::D_D>(xsf::gamma),
-                           static_cast<xsf::numpy::f_f>(xsf::gamma), static_cast<xsf::numpy::F_F>(xsf::gamma)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::gamma), static_cast<xsf::numpy::d_d>(xsf::gamma),
+                           static_cast<xsf::numpy::F_F>(xsf::gamma), static_cast<xsf::numpy::D_D>(xsf::gamma)},
                           "gamma", gamma_doc);
     PyModule_AddObjectRef(module, "gamma", gamma);
 
     PyObject *gammainc =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::gammainc), static_cast<xsf::numpy::ff_f>(xsf::gammainc)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::gammainc), static_cast<xsf::numpy::dd_d>(xsf::gammainc)},
                           "gammainc", gammainc_doc);
     PyModule_AddObjectRef(module, "gammainc", gammainc);
 
     PyObject *gammaincinv = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::gammaincinv), static_cast<xsf::numpy::ff_f>(xsf::gammaincinv)},
+        {static_cast<xsf::numpy::ff_f>(xsf::gammaincinv), static_cast<xsf::numpy::dd_d>(xsf::gammaincinv)},
         "gammaincinv", gammaincinv_doc);
     PyModule_AddObjectRef(module, "gammaincinv", gammaincinv);
 
     PyObject *gammaincc = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::gammaincc), static_cast<xsf::numpy::ff_f>(xsf::gammaincc)}, "gammaincc",
+        {static_cast<xsf::numpy::ff_f>(xsf::gammaincc), static_cast<xsf::numpy::dd_d>(xsf::gammaincc)}, "gammaincc",
         gammaincc_doc);
     PyModule_AddObjectRef(module, "gammaincc", gammaincc);
 
     PyObject *gammainccinv = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::gammainccinv), static_cast<xsf::numpy::ff_f>(xsf::gammainccinv)},
+        {static_cast<xsf::numpy::ff_f>(xsf::gammainccinv), static_cast<xsf::numpy::dd_d>(xsf::gammainccinv)},
         "gammainccinv", gammainccinv_doc);
     PyModule_AddObjectRef(module, "gammainccinv", gammainccinv);
 
     PyObject *gammaln =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::gammaln), static_cast<xsf::numpy::f_f>(xsf::gammaln)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::gammaln), static_cast<xsf::numpy::d_d>(xsf::gammaln)},
                           "gammaln", gammaln_doc);
     PyModule_AddObjectRef(module, "gammaln", gammaln);
 
     PyObject *gammasgn =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::gammasgn), static_cast<xsf::numpy::f_f>(xsf::gammasgn)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::gammasgn), static_cast<xsf::numpy::d_d>(xsf::gammasgn)},
                           "gammasgn", gammasgn_doc);
     PyModule_AddObjectRef(module, "gammasgn", gammasgn);
 
     PyObject *hyp2f1 =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dddd_d>(xsf::hyp2f1), static_cast<xsf::numpy::dddD_D>(xsf::hyp2f1),
-                           static_cast<xsf::numpy::ffff_f>(xsf::hyp2f1), static_cast<xsf::numpy::fffF_F>(xsf::hyp2f1)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::hyp2f1), static_cast<xsf::numpy::dddd_d>(xsf::hyp2f1),
+                           static_cast<xsf::numpy::fffF_F>(xsf::hyp2f1), static_cast<xsf::numpy::dddD_D>(xsf::hyp2f1)},
                           "hyp2f1", hyp2f1_doc);
     PyModule_AddObjectRef(module, "hyp2f1", hyp2f1);
 
@@ -547,22 +547,22 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "itstruve0", itstruve0);
 
     PyObject *i0 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i0), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i0)}, "i0",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i0), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i0)}, "i0",
         i0_doc);
     PyModule_AddObjectRef(module, "i0", i0);
 
     PyObject *i0e = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i0e), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i0e)}, "i0e",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i0e), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i0e)}, "i0e",
         i0e_doc);
     PyModule_AddObjectRef(module, "i0e", i0e);
 
     PyObject *i1 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i1), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i1)}, "i1",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i1), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i1)}, "i1",
         i1_doc);
     PyModule_AddObjectRef(module, "i1", i1);
 
     PyObject *i1e = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i1e), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i1e)}, "i1e",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_i1e), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_i1e)}, "i1e",
         i1e_doc);
     PyModule_AddObjectRef(module, "i1e", i1e);
 
@@ -573,12 +573,12 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "iv", iv);
 
     PyObject *iv_ratio =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::iv_ratio), static_cast<xsf::numpy::ff_f>(xsf::iv_ratio)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::iv_ratio), static_cast<xsf::numpy::dd_d>(xsf::iv_ratio)},
                           "_iv_ratio", iv_ratio_doc);
     PyModule_AddObjectRef(module, "_iv_ratio", iv_ratio);
 
     PyObject *iv_ratio_c = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c), static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c)}, "_iv_ratio_c",
+        {static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c), static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c)}, "_iv_ratio_c",
         iv_ratio_c_doc);
     PyModule_AddObjectRef(module, "_iv_ratio_c", iv_ratio_c);
 
@@ -589,12 +589,12 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "ive", ive);
 
     PyObject *j0 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_j0), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_j0)}, "j0",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_j0), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_j0)}, "j0",
         j0_doc);
     PyModule_AddObjectRef(module, "j0", j0);
 
     PyObject *j1 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_j1), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_j1)}, "j1",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_j1), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_j1)}, "j1",
         j1_doc);
     PyModule_AddObjectRef(module, "j1", j1);
 
@@ -632,22 +632,22 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "kerp", kerp);
 
     PyObject *k0 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k0), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k0)}, "k0",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k0), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k0)}, "k0",
         k0_doc);
     PyModule_AddObjectRef(module, "k0", k0);
 
     PyObject *k0e = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k0e), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k0e)}, "k0e",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k0e), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k0e)}, "k0e",
         k0e_doc);
     PyModule_AddObjectRef(module, "k0e", k0e);
 
     PyObject *k1 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k1), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k1)}, "k1",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k1), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k1)}, "k1",
         k1_doc);
     PyModule_AddObjectRef(module, "k1", k1);
 
     PyObject *k1e = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k1e), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k1e)}, "k1e",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_k1e), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_k1e)}, "k1e",
         k1e_doc);
     PyModule_AddObjectRef(module, "k1e", k1e);
 
@@ -664,41 +664,41 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "kve", kve);
 
     PyObject *log1p =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log1p), static_cast<xsf::numpy::f_f>(xsf::log1p),
-                           static_cast<xsf::numpy::D_D>(xsf::log1p), static_cast<xsf::numpy::F_F>(xsf::log1p)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::log1p), static_cast<xsf::numpy::d_d>(xsf::log1p),
+                           static_cast<xsf::numpy::F_F>(xsf::log1p), static_cast<xsf::numpy::D_D>(xsf::log1p)},
                           "log1p", log1p_doc);
     PyModule_AddObjectRef(module, "log1p", log1p);
 
     PyObject *_log1mexp =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log1mexp), static_cast<xsf::numpy::f_f>(xsf::log1mexp)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::log1mexp), static_cast<xsf::numpy::d_d>(xsf::log1mexp)},
                           "_log1mexp", _log1mexp_doc);
     PyModule_AddObjectRef(module, "_log1mexp", _log1mexp);
 
     PyObject *_log1pmx =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log1pmx), static_cast<xsf::numpy::f_f>(xsf::log1pmx)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::log1pmx), static_cast<xsf::numpy::d_d>(xsf::log1pmx)},
                           "_log1pmx", _log1pmx_doc);
     PyModule_AddObjectRef(module, "_log1pmx", _log1pmx);
 
     PyObject *xlogy =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::xlogy), static_cast<xsf::numpy::ff_f>(xsf::xlogy),
-                           static_cast<xsf::numpy::DD_D>(xsf::xlogy), static_cast<xsf::numpy::FF_F>(xsf::xlogy)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::xlogy), static_cast<xsf::numpy::dd_d>(xsf::xlogy),
+                           static_cast<xsf::numpy::FF_F>(xsf::xlogy), static_cast<xsf::numpy::DD_D>(xsf::xlogy)},
                           "xlogy", xlogy_doc);
     PyModule_AddObjectRef(module, "xlogy", xlogy);
 
     PyObject *xlog1py =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::xlog1py), static_cast<xsf::numpy::ff_f>(xsf::xlog1py),
-                           static_cast<xsf::numpy::DD_D>(xsf::xlog1py), static_cast<xsf::numpy::FF_F>(xsf::xlog1py)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::xlog1py), static_cast<xsf::numpy::dd_d>(xsf::xlog1py),
+                           static_cast<xsf::numpy::FF_F>(xsf::xlog1py), static_cast<xsf::numpy::DD_D>(xsf::xlog1py)},
                           "xlog1py", xlog1py_doc);
     PyModule_AddObjectRef(module, "xlog1py", xlog1py);
 
     PyObject *log_expit =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log_expit), static_cast<xsf::numpy::f_f>(xsf::log_expit),
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::log_expit), static_cast<xsf::numpy::d_d>(xsf::log_expit),
                            static_cast<xsf::numpy::g_g>(xsf::log_expit)},
                           "log_expit", log_expit_doc);
     PyModule_AddObjectRef(module, "log_expit", log_expit);
 
-    PyObject *log_wright_bessel = xsf::numpy::ufunc({static_cast<xsf::numpy::ddd_d>(xsf::log_wright_bessel),
-                                                     static_cast<xsf::numpy::fff_f>(xsf::log_wright_bessel)},
+    PyObject *log_wright_bessel = xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(xsf::log_wright_bessel),
+                                                     static_cast<xsf::numpy::ddd_d>(xsf::log_wright_bessel)},
                                                     "log_wright_bessel", log_wright_bessel_doc);
     PyModule_AddObjectRef(module, "log_wright_bessel", log_wright_bessel);
 
@@ -709,120 +709,120 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "logit", logit);
 
     PyObject *loggamma =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::loggamma), static_cast<xsf::numpy::D_D>(xsf::loggamma),
-                           static_cast<xsf::numpy::f_f>(xsf::loggamma), static_cast<xsf::numpy::F_F>(xsf::loggamma)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::loggamma), static_cast<xsf::numpy::d_d>(xsf::loggamma),
+                           static_cast<xsf::numpy::F_F>(xsf::loggamma), static_cast<xsf::numpy::D_D>(xsf::loggamma)},
                           "loggamma", loggamma_doc);
     PyModule_AddObjectRef(module, "loggamma", loggamma);
 
     PyObject *legendre_p = Py_BuildValue(
         "(N, N, N)",
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            static_cast<xsf::numpy::autodiff0_id_d>(xsf::legendre_p),
-                            static_cast<xsf::numpy::autodiff0_if_f>(xsf::legendre_p)},
+                            static_cast<xsf::numpy::autodiff0_if_f>(xsf::legendre_p),
+                            static_cast<xsf::numpy::autodiff0_id_d>(xsf::legendre_p)},
                            "legendre_p", nullptr, "(),()->(1)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            static_cast<xsf::numpy::autodiff1_id_d>(xsf::legendre_p),
-                            static_cast<xsf::numpy::autodiff1_if_f>(xsf::legendre_p)},
+                            static_cast<xsf::numpy::autodiff1_if_f>(xsf::legendre_p),
+                            static_cast<xsf::numpy::autodiff1_id_d>(xsf::legendre_p)},
                            "legendre_p", nullptr, "(),()->(2)", [](const npy_intp *dims, npy_intp *new_dims) {}),
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            static_cast<xsf::numpy::autodiff2_id_d>(xsf::legendre_p),
-                            static_cast<xsf::numpy::autodiff2_if_f>(xsf::legendre_p)},
+                            static_cast<xsf::numpy::autodiff2_if_f>(xsf::legendre_p),
+                            static_cast<xsf::numpy::autodiff2_id_d>(xsf::legendre_p)},
                            "legendre_p", nullptr, "(),()->(3)", [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(module, "legendre_p", legendre_p);
 
     PyObject *assoc_legendre_p = Py_BuildValue(
         "{(O, i): N, (O, i): N, (O, i): N, (O, i): N, (O, i): N,(O, i): N}", Py_True, 0,
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
+		            [](int n, int m, xsf::dual<float, 0> z, int branch_cut) {
+                                return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
+                            },
                             [](int n, int m, xsf::dual<double, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
-                            [](int n, int m, xsf::dual<float, 0> z, int branch_cut) {
+		            [](int n, int m, xsf::dual<xsf::numpy::cfloat, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
                             [](int n, int m, xsf::dual<xsf::numpy::cdouble, 0> z, int branch_cut) {
-                                return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
-                            },
-                            [](int n, int m, xsf::dual<xsf::numpy::cfloat, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             }},
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(1)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_True, 1,
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            [](int n, int m, xsf::dual<double, 1> z, int branch_cut) {
-                                return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
-                            },
                             [](int n, int m, xsf::dual<float, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
-                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 1> z, int branch_cut) {
+                            [](int n, int m, xsf::dual<double, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
                             [](int n, int m, xsf::dual<xsf::numpy::cfloat, 1> z, int branch_cut) {
+                                return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
+                            },
+                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             }},
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(2)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_True, 2,
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            [](int n, int m, xsf::dual<double, 2> z, int branch_cut) {
-                                return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
-                            },
                             [](int n, int m, xsf::dual<float, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
-                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 2> z, int branch_cut) {
+                            [](int n, int m, xsf::dual<double, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             },
                             [](int n, int m, xsf::dual<xsf::numpy::cfloat, 2> z, int branch_cut) {
+                                return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
+                            },
+                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_norm, n, m, z, branch_cut);
                             }},
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(3)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 0,
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            [](int n, int m, xsf::dual<double, 0> z, int branch_cut) {
-                                return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
-                            },
                             [](int n, int m, xsf::dual<float, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
-                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 0> z, int branch_cut) {
+                            [](int n, int m, xsf::dual<double, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
                             [](int n, int m, xsf::dual<xsf::numpy::cfloat, 0> z, int branch_cut) {
+                                return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
+                            },
+                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 0> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             }},
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(1)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 1,
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            [](int n, int m, xsf::dual<double, 1> z, int branch_cut) {
-                                return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
-                            },
                             [](int n, int m, xsf::dual<float, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
-                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 1> z, int branch_cut) {
+                            [](int n, int m, xsf::dual<double, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
                             [](int n, int m, xsf::dual<xsf::numpy::cfloat, 1> z, int branch_cut) {
+                                return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
+                            },
+                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 1> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             }},
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(2)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}),
         Py_False, 2,
         xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                            [](int n, int m, xsf::dual<double, 2> z, int branch_cut) {
-                                return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
-                            },
                             [](int n, int m, xsf::dual<float, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
-                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 2> z, int branch_cut) {
+                            [](int n, int m, xsf::dual<double, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             },
                             [](int n, int m, xsf::dual<xsf::numpy::cfloat, 2> z, int branch_cut) {
+                                return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
+                            },
+                            [](int n, int m, xsf::dual<xsf::numpy::cdouble, 2> z, int branch_cut) {
                                 return xsf::assoc_legendre_p(xsf::assoc_legendre_unnorm, n, m, z, branch_cut);
                             }},
                            1, "assoc_legendre_p", nullptr, "(),(),(),()->(3)",
@@ -880,7 +880,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "modfresnelp", modfresnelp);
 
     PyObject *modstruve =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::struve_l), static_cast<xsf::numpy::ff_f>(xsf::struve_l)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::struve_l), static_cast<xsf::numpy::dd_d>(xsf::struve_l)},
                           "modstruve", struve_l_doc);
     PyModule_AddObjectRef(module, "modstruve", modstruve);
 
@@ -967,77 +967,77 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "pro_rad2_cv", pro_rad2_cv);
 
     PyObject *psi =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::digamma), static_cast<xsf::numpy::D_D>(xsf::digamma),
-                           static_cast<xsf::numpy::f_f>(xsf::digamma), static_cast<xsf::numpy::F_F>(xsf::digamma)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::digamma), static_cast<xsf::numpy::d_d>(xsf::digamma),
+                           static_cast<xsf::numpy::F_F>(xsf::digamma), static_cast<xsf::numpy::D_D>(xsf::digamma)},
                           "psi", psi_doc);
     PyModule_AddObjectRef(module, "psi", psi);
 
     PyObject *radian =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ddd_d>(xsf::radian), static_cast<xsf::numpy::fff_f>(xsf::radian)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(xsf::radian), static_cast<xsf::numpy::ddd_d>(xsf::radian)},
                           "radian", radian_doc);
     PyModule_AddObjectRef(module, "radian", radian);
 
     PyObject *rgamma =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::rgamma), static_cast<xsf::numpy::D_D>(xsf::rgamma),
-                           static_cast<xsf::numpy::f_f>(xsf::rgamma), static_cast<xsf::numpy::F_F>(xsf::rgamma)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::rgamma), static_cast<xsf::numpy::d_d>(xsf::rgamma),
+                           static_cast<xsf::numpy::F_F>(xsf::rgamma), static_cast<xsf::numpy::D_D>(xsf::rgamma)},
                           "rgamma", rgamma_doc);
     PyModule_AddObjectRef(module, "rgamma", rgamma);
 
     PyObject *_riemann_zeta = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta),
-         static_cast<xsf::numpy::f_f>(xsf::riemann_zeta), static_cast<xsf::numpy::F_F>(xsf::riemann_zeta)},
+        {static_cast<xsf::numpy::f_f>(xsf::riemann_zeta), static_cast<xsf::numpy::d_d>(xsf::riemann_zeta),
+         static_cast<xsf::numpy::F_F>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta)},
         "_riemann_zeta", _riemann_zeta_doc);
     PyModule_AddObjectRef(module, "_riemann_zeta", _riemann_zeta);
 
     PyObject *sindg = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::sindg), static_cast<xsf::numpy::f_f>(xsf::sindg)}, "sindg", sindg_doc);
+        {static_cast<xsf::numpy::f_f>(xsf::sindg), static_cast<xsf::numpy::d_d>(xsf::sindg)}, "sindg", sindg_doc);
     PyModule_AddObjectRef(module, "sindg", sindg);
 
     PyObject *_spherical_jn = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_j), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_j),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_j), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_j)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_j), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_j),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_j), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_j)},
         "_spherical_jn", spherical_jn_doc);
     PyModule_AddObjectRef(module, "_spherical_jn", _spherical_jn);
 
     PyObject *_spherical_jn_d = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_j_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_j_jac),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_j_jac), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_j_jac)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_j_jac), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_j_jac),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_j_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_j_jac)},
         "_spherical_jn_d", spherical_jn_d_doc);
     PyModule_AddObjectRef(module, "_spherical_jn_d", _spherical_jn_d);
 
     PyObject *_spherical_yn = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_y), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_y),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_y), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_y)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_y), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_y),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_y), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_y)},
         "_spherical_yn", spherical_yn_doc);
     PyModule_AddObjectRef(module, "_spherical_yn", _spherical_yn);
 
     PyObject *_spherical_yn_d = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_y_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_y_jac),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_y_jac), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_y_jac)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_y_jac), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_y_jac),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_y_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_y_jac)},
         "_spherical_yn_d", spherical_yn_d_doc);
     PyModule_AddObjectRef(module, "_spherical_yn_d", _spherical_yn_d);
 
     PyObject *_spherical_in = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_i), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_i),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_i), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_i)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_i), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_i),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_i), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_i)},
         "_spherical_in", spherical_in_doc);
     PyModule_AddObjectRef(module, "_spherical_in", _spherical_in);
 
     PyObject *_spherical_in_d = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_i_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_i_jac),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_i_jac), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_i_jac)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_i_jac), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_i_jac),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_i_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_i_jac)},
         "_spherical_in_d", spherical_in_d_doc);
     PyModule_AddObjectRef(module, "_spherical_in_d", _spherical_in_d);
 
     PyObject *_spherical_kn = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_k), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_k),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_k), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_k)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_k), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_k),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_k), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_k)},
         "_spherical_kn", spherical_kn_doc);
     PyModule_AddObjectRef(module, "_spherical_kn", _spherical_kn);
 
     PyObject *_spherical_kn_d = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_k_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_k_jac),
-         static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_k_jac), static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_k_jac)},
+        {static_cast<xsf::numpy::lf_f>(xsf::sph_bessel_k_jac), static_cast<xsf::numpy::ld_d>(xsf::sph_bessel_k_jac),
+         static_cast<xsf::numpy::lF_F>(xsf::sph_bessel_k_jac), static_cast<xsf::numpy::lD_D>(xsf::sph_bessel_k_jac)},
         "_spherical_kn_d", spherical_kn_d_doc);
     PyModule_AddObjectRef(module, "_spherical_kn_d", _spherical_kn_d);
 
@@ -1061,43 +1061,43 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *sph_harm_y =
         Py_BuildValue("(N, N, N)",
                       xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                                          static_cast<xsf::numpy::autodiff00_iidd_D>(xsf::sph_harm_y),
-                                          static_cast<xsf::numpy::autodiff00_iiff_F>(xsf::sph_harm_y)},
+                                          static_cast<xsf::numpy::autodiff00_iiff_F>(xsf::sph_harm_y),
+                                          static_cast<xsf::numpy::autodiff00_iidd_D>(xsf::sph_harm_y)},
                                          "sph_harm_y", nullptr, "(),(),(),()->(1,1)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {}),
                       xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                                          static_cast<xsf::numpy::autodiff11_iidd_D>(xsf::sph_harm_y),
-                                          static_cast<xsf::numpy::autodiff11_iiff_F>(xsf::sph_harm_y)},
+                                          static_cast<xsf::numpy::autodiff11_iiff_F>(xsf::sph_harm_y),
+                                          static_cast<xsf::numpy::autodiff11_iidd_D>(xsf::sph_harm_y)},
                                          "sph_harm_y", nullptr, "(),(),(),()->(2,2)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {}),
                       xsf::numpy::gufunc({xsf::numpy::compose{xsf::numpy::autodiff(), xsf::numpy::use_long_long_int()},
-                                          static_cast<xsf::numpy::autodiff22_iidd_D>(xsf::sph_harm_y),
-                                          static_cast<xsf::numpy::autodiff22_iiff_F>(xsf::sph_harm_y)},
+                                          static_cast<xsf::numpy::autodiff22_iiff_F>(xsf::sph_harm_y),
+                                          static_cast<xsf::numpy::autodiff22_iidd_D>(xsf::sph_harm_y)},
                                          "sph_harm_y", nullptr, "(),(),(),()->(3,3)",
                                          [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(module, "sph_harm_y", sph_harm_y);
 
     PyObject *struve =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(xsf::struve_h), static_cast<xsf::numpy::ff_f>(xsf::struve_h)},
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::struve_h), static_cast<xsf::numpy::dd_d>(xsf::struve_h)},
                           "struve", struve_h_doc);
     PyModule_AddObjectRef(module, "struve", struve);
 
     PyObject *tandg = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::tandg), static_cast<xsf::numpy::f_f>(xsf::tandg)}, "tandg", tandg_doc);
+        {static_cast<xsf::numpy::f_f>(xsf::tandg), static_cast<xsf::numpy::d_d>(xsf::tandg)}, "tandg", tandg_doc);
     PyModule_AddObjectRef(module, "tandg", tandg);
 
     PyObject *wright_bessel = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ddd_d>(xsf::wright_bessel), static_cast<xsf::numpy::fff_f>(xsf::wright_bessel)},
+        {static_cast<xsf::numpy::fff_f>(xsf::wright_bessel), static_cast<xsf::numpy::ddd_d>(xsf::wright_bessel)},
         "wright_bessel", wright_bessel_doc);
     PyModule_AddObjectRef(module, "wright_bessel", wright_bessel);
 
     PyObject *y0 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_y0), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_y0)}, "y0",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_y0), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_y0)}, "y0",
         y0_doc);
     PyModule_AddObjectRef(module, "y0", y0);
 
     PyObject *y1 = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_y1), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_y1)}, "y1",
+        {static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_y1), static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_y1)}, "y1",
         y1_doc);
     PyModule_AddObjectRef(module, "y1", y1);
 
@@ -1114,7 +1114,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "yve", yve);
 
     PyObject *zetac = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::zetac), static_cast<xsf::numpy::f_f>(xsf::zetac)}, "zetac", zetac_doc);
+        {static_cast<xsf::numpy::f_f>(xsf::zetac), static_cast<xsf::numpy::d_d>(xsf::zetac)}, "zetac", zetac_doc);
     PyModule_AddObjectRef(module, "zetac", zetac);
 
     return 0;

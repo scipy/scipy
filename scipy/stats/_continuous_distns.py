@@ -2213,21 +2213,43 @@ class exponnorm_gen(rv_continuous):
         return np.exp(self._logpdf(x, K))
 
     def _logpdf(self, x, K):
-        invK = 1.0 / K
-        exparg = invK * (0.5 * invK - x)
-        return exparg + _norm_logcdf(x - invK) - np.log(K)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def logpdf_erfcx(x, K, u):
+            erfcx_term = np.log(sc.erfcx(u))
+            return -np.log(2) - 0.5 * (x ** 2) - np.log(K) + erfcx_term
+        def logpdf_default(x, K, u):
+            invK = 1.0 / K
+            exparg = invK * (-x + 0.5 * invK)
+            return exparg + _norm_logcdf(x - invK) - np.log(K)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
+        return xpx.apply_where(
+            use_erfcx, (x, K, u), logpdf_erfcx, logpdf_default)
 
     def _cdf(self, x, K):
-        invK = 1.0 / K
-        expval = invK * (0.5 * invK - x)
-        logprod = expval + _norm_logcdf(x - invK)
-        return _norm_cdf(x) - np.exp(logprod)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def cdf_erfcx(x, K, u):
+            return _norm_cdf(x) - 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u)
+        def cdf_default(x, K, u):
+            invK = 1.0 / K
+            expval = invK * (0.5 * invK - x)
+            logprod = expval + _norm_logcdf(x - invK)
+            return _norm_cdf(x) - np.exp(logprod)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
+        return xpx.apply_where(
+            use_erfcx, (x, K, u), cdf_erfcx, cdf_default)
 
     def _sf(self, x, K):
-        invK = 1.0 / K
-        expval = invK * (0.5 * invK - x)
-        logprod = expval + _norm_logcdf(x - invK)
-        return _norm_cdf(-x) + np.exp(logprod)
+        u = (-x + 1.0 / K) / np.sqrt(2)
+        def sf_erfcx(x, K, u):
+            return _norm_cdf(-x) + 0.5 * np.exp(-0.5 * x ** 2) * sc.erfcx(u)
+        def sf_default(x, K, u):
+            invK = 1.0 / K
+            expval = invK * (0.5 * invK - x)
+            logprod = expval + _norm_logcdf(x - invK)
+            return _norm_cdf(-x) + np.exp(logprod)
+        use_erfcx = np.logical_and(u >= 0, K < 1)
+        return xpx.apply_where(
+            use_erfcx, (x, K, u), sf_erfcx, sf_default)
 
     def _stats(self, K):
         K2 = K * K
@@ -2235,7 +2257,6 @@ class exponnorm_gen(rv_continuous):
         skw = 2 * K**3 * opK2**(-1.5)
         krt = 6.0 * K2 * K2 * opK2**(-2)
         return K, opK2, skw, krt
-
 
 exponnorm = exponnorm_gen(name='exponnorm')
 
@@ -3377,6 +3398,7 @@ class genextreme_gen(rv_continuous):
         return [_ShapeInfo("c", False, (-np.inf, np.inf), (False, False))]
 
     def _get_support(self, c):
+        c = np.asarray(c)
         _b = np.where(c > 0, 1.0 / np.maximum(c, _XMIN), np.inf)
         _a = np.where(c < 0, 1.0 / np.minimum(c, -_XMIN), -np.inf)
         return _a, _b
@@ -3493,6 +3515,7 @@ class genextreme_gen(rv_continuous):
 
     def _munp(self, n, c):
         k = np.arange(0, n+1)
+        k = np.reshape(k, (-1,) + (1,)*c.ndim)
         vals = 1.0/c**n * np.sum(
             sc.comb(n, k) * (-1)**k * sc.gamma(c*k + 1),
             axis=0)
@@ -3871,8 +3894,9 @@ class gengamma_gen(rv_continuous):
 
     def _logpdf(self, x, a, c):
         return xpx.apply_where(
-            (x != 0) | (c > 0), (x, c),
-            lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)),
+            (x != 0) | (c > 0), (x, c, a),
+            lambda x, c, a: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
+                             - x**c - sc.gammaln(a)),
             fill_value=-np.inf)
 
     def _cdf(self, x, a, c):
@@ -5949,6 +5973,10 @@ class landau_gen(rv_continuous):
     r"""A Landau continuous random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    :ref:`landau_energy_loss` : Extended example, demonstrating use in a particle physics context.
 
     Notes
     -----
@@ -8070,8 +8098,6 @@ class t_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
-        if df == np.inf:
-            return norm._entropy()
 
         def regular(df):
             half = df/2
@@ -10866,9 +10892,12 @@ class tukeylambda_gen(rv_continuous):
         return 0, _tlvar(lam), 0, _tlkurt(lam)
 
     def _entropy(self, lam):
-        def integ(p):
-            return np.log(pow(p, lam-1)+pow(1-p, lam-1))
-        return integrate.quad(integ, 0, 1)[0]
+        @np.vectorize
+        def entropy_1d(lam):
+            def integ(p):
+                return np.log(pow(p, lam - 1) + pow(1 - p, lam - 1))
+            return integrate.quad(integ, 0, 1)[0]
+        return entropy_1d(lam)
 
 
 tukeylambda = tukeylambda_gen(name='tukeylambda')

@@ -398,8 +398,7 @@ cdef class _Qhull:
         # Note: this is direct copypaste from __dealloc__(), keep it
         # in sync with that.  The code must be written directly in
         # __dealloc__, because otherwise the generated C code tries to
-        # call PyObject_GetAttrStr(self, "close") which on Pypy
-        # crashes.
+        # call PyObject_GetAttrStr(self, "close") which resuscitates self
 
         cdef int curlong, totlong
 

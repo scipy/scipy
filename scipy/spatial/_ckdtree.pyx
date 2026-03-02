@@ -171,7 +171,7 @@ cdef class coo_entries:
         if self.buf != NULL:
             del self.buf
 
-    # The methods ndarray, dict, coo_matrix, and dok_matrix must only
+    # The methods ndarray, dict, coo_array, and dok_array must only
     # be called after the buffer is filled with coo_entry data. This
     # is because std::vector can reallocate its internal buffer when
     # push_back is called.
@@ -218,6 +218,15 @@ cdef class coo_entries:
             return res_dict
         else:
             return {}
+
+    def coo_array(coo_entries self, m, n):
+        res_arr = self.ndarray()
+        return scipy.sparse.coo_array(
+                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
+                                       shape=(m, n))
+
+    def dok_array(coo_entries self, m, n):
+        return self.coo_array(m,n).todok()
 
     def coo_matrix(coo_entries self, m, n):
         res_arr = self.ndarray()
@@ -402,9 +411,7 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
 # ==================
 
 cdef class cKDTree:
-    """
-    cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True, boxsize=None)
+    """cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True, boxsize=None)\n--
 
     kd-tree for quick nearest-neighbor lookup.
 
@@ -1469,7 +1476,7 @@ cdef class cKDTree:
                                np.float64_t p=2.0,
                                output_type='dok_matrix'):
         """
-        sparse_distance_matrix(self, other, max_distance, p=2.0)
+        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
 
         Compute a sparse distance matrix
 
@@ -1479,24 +1486,35 @@ cdef class cKDTree:
         Parameters
         ----------
         other : cKDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
-
         output_type : str, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
+            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
+            Default: ``'dok_matrix'``.
+
+            .. warning:: dok_matrix and coo_matrix are being replaced.
+
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' continue
+               to work, but will go away eventually.
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------
@@ -1507,9 +1525,9 @@ cdef class cKDTree:
         >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
-        >>> kd_tree1 = cKDTree(points1)
-        >>> kd_tree2 = cKDTree(points2)
-        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> kdtree1 = cKDTree(points1)
+        >>> kdtree2 = cKDTree(points2)
+        >>> sdm = kdtree1.sparse_distance_matrix(kdtree2, 0.3, output_type="dok_array")
         >>> sdm.toarray()
         array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
            [0.        , 0.        , 0.        , 0.        , 0.        ],
@@ -1546,10 +1564,14 @@ cdef class cKDTree:
             return res.dict()
         elif output_type == 'ndarray':
             return res.ndarray()
-        elif output_type == 'coo_matrix':
-            return res.coo_matrix(self.n, other.n)
         elif output_type == 'dok_matrix':
             return res.dok_matrix(self.n, other.n)
+        elif output_type == 'dok_array':
+            return res.dok_array(self.n, other.n)
+        elif output_type == 'coo_matrix':
+            return res.coo_matrix(self.n, other.n)
+        elif output_type == 'coo_array':
+            return res.coo_array(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
 
