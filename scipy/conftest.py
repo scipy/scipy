@@ -515,8 +515,7 @@ def devices(xp):
         devices = xp.__array_namespace_info__().devices()
         # open an issue about this - cannot branch based on `any`/`all`?
         return (device for device in devices if device.type != 'meta')
-
-    return xp.__array_namespace_info__().devices() + (None,)
+    return tuple(xp.__array_namespace_info__().devices()) + (None,)
 
 
 if hypothesis_available:
