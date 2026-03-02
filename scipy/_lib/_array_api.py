@@ -691,6 +691,8 @@ def _make_sphinx_capabilities(
     allow_dask_compute=False, jax_jit=True,
     # list of tuples [(module name, reason), ...]
     warnings = (),
+    # Whether the function supports MArrays that wrap one of the supported backends
+    marray=None,
     # unused in documentation
     reason=None,
     method_capabilities=None,
@@ -734,6 +736,11 @@ def _make_sphinx_capabilities(
         backend = capabilities[module]
         backend.warnings.append(warning)
 
+    # MArrays are either supported or not. If supported, they work with all combinations
+    # of device + backend that are supported by the function and MArray itself. This is
+    # indicated with an extra note after the backend table.
+    capabilities.update({'marray': marray})
+
     return capabilities
 
 
@@ -751,6 +758,11 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         See :ref:`dev-arrayapi` for more information.
         """
         return textwrap.dedent(note)
+
+    marray_note = (f"`{fun_name}` also accepts "
+        "`MArrays <https://mdhaber.github.io/marray/tutorial.html>`__ "
+        "backed by the backends indicated above; masked values will be treated as "
+        "though they were not present." if capabilities.get("marray", False) else "")
 
     # Note: deliberately not documenting array-api-strict
     note = f"""
@@ -772,6 +784,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
+    {marray_note or ""}
     {extra_note or ""}
     See :ref:`dev-arrayapi` for more information.
     """
@@ -801,6 +814,8 @@ def xp_capabilities(
     # specific capabilities for use when when xp_capabilities is
     # applied to a class with varying capabilities per method
     method_capabilities=None,
+    # Whether the function supports MArrays that wrap one of the supported backends
+    marray=False,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -841,6 +856,7 @@ def xp_capabilities(
             warnings=(),
             allow_dask_compute=False,
             jax_jit=True,
+            marray=False,
         ) | capabilities
 
     capabilities = dict(
@@ -855,6 +871,7 @@ def xp_capabilities(
         jax_jit=jax_jit,
         warnings=warnings,
         method_capabilities=method_capabilities,
+        marray=marray,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 

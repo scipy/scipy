@@ -493,8 +493,9 @@ def _mode_result(mode, count):
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
                  jax_jit=False,  # would delegate, but jax-ml/jax#34486
-                 extra_note=("`MArray`s are supported, but values must be real numbers "
-                             "that cast safely to floating point."))
+                 extra_note=("Values in `MArrays` must be real numbers "
+                             "that cast safely to floating point."),
+                 marray=True)
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -1071,7 +1072,8 @@ def _moment_tuple(x, n_out):
 # empty, there is no distinction between the `moment` function being called
 # with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
-@xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')])
+@xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')],
+                 marray=True)
 @_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
