@@ -183,6 +183,7 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     quad_eps = kwds.get("quad_eps", _QUAD_EPS)
     x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.005)
     alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
+    paramterization = kwds.get("parameterization")
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     x0, alpha, beta = _nolan_round_difficult_input(
@@ -216,12 +217,12 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return 1 / (1 + x0 ** 2) / np.pi
 
     return _pdf_single_value_piecewise_post_rounding_Z0(
-        x0, alpha, beta, quad_eps, x_tol_near_zeta
+        x0, alpha, beta, quad_eps, x_tol_near_zeta, paramterization
     )
 
 
 def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
-                                                 x_tol_near_zeta):
+                                                 x_tol_near_zeta, parameterization):
     """Calculate pdf using Nolan's methods as detailed in [NO]."""
 
     _nolan = Nolan(alpha, beta, x0)
@@ -244,7 +245,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
         )
     elif x0 < zeta:
         return _pdf_single_value_piecewise_post_rounding_Z0(
-            -x0, alpha, -beta, quad_eps, x_tol_near_zeta
+            -x0, alpha, -beta, quad_eps, x_tol_near_zeta, parameterization
         )
 
     # following Nolan, we may now assume
@@ -290,7 +291,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
         else:
             intg_points = None
 
-        if (beta == -1) and (alpha <= 1.1):
+        if (beta == -1) and (alpha <= 1.1) and (parameterization == "S1"):
             res = integrate.tanhsinh(
                 integrand,
                 -xi,
@@ -954,6 +955,7 @@ class levy_stable_gen(rv_continuous):
             "quad_eps": self.quad_eps,
             "piecewise_x_tol_near_zeta": self.piecewise_x_tol_near_zeta,
             "piecewise_alpha_tol_near_one": self.piecewise_alpha_tol_near_one,
+            "parameterization": self._parameterization(),
         }
 
         fft_grid_spacing = self.pdf_fft_grid_spacing
