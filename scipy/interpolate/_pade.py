@@ -2,9 +2,11 @@ import warnings
 
 from numpy import zeros, asarray, eye, poly1d, hstack, r_
 from scipy import linalg
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ["pade"]
 
+@xp_capabilities(out_of_scope=True)
 def pade(an, m, n=None):
     """
     Return Pade approximation to a polynomial as the ratio of two polynomials.

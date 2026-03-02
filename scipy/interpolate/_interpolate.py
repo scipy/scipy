@@ -20,6 +20,7 @@ from ._interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 
+@xp_capabilities(out_of_scope=True)
 def lagrange(x, w):
     r"""
     Return a Lagrange interpolating polynomial.

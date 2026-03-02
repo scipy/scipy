@@ -647,6 +647,10 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabOpaque.strides',
         'scipy.io.matlab.MatlabFunction.strides',
         'scipy.io.matlab.MatlabFunction.dtype'
+        # deprecated
+        'scipy.interpolate.lagrange',
+        'scipy.interpolate.approximate_taylor_polynomial',
+        'scipy.interpolate.pade'
     ])
 
     # help pytest collection a bit: these names are either private

@@ -5,6 +5,7 @@ import numpy as np
 from scipy.special import factorial
 from scipy._lib._util import (_asarray_validated, float_factorial, check_random_state,
                               _transition_to_rng)
+from scipy._lib._array_api import xp_capabilities
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate",
@@ -459,6 +460,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
         return P.derivatives(x, der=np.amax(der)+1)[der]
 
 
+@xp_capabilities(out_of_scope=True)
 def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     """
     Estimate the Taylor polynomial of f at x by polynomial fitting.
