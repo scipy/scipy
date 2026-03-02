@@ -17,7 +17,7 @@ if [[ $PLATFORM == "x86_64" ]]; then
   KNOWN_SHA256="fb03c1f37bf0258ada6e3e41698e3ad416fff4dad448fd746e01d8ccf1efdc0f  gfortran.tar.gz"
 fi
 if [[ $PLATFORM == "arm64" ]]; then
-  curl -L https://github.com/isuruf/gcc/releases/download/gcc-15.2.0/gfortran-darwin-arm64-native.tar.gz
+  curl -L https://github.com/isuruf/gcc/releases/download/gcc-15.2.0/gfortran-darwin-arm64-native.tar.gz -o gfortran.tar.gz
   KNOWN_SHA256="999a91eef894d32f99e3b641520bef9f475055067f301f0f1947b8b716b5922a  gfortran.tar.gz"
 fi
 
