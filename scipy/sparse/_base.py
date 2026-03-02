@@ -636,7 +636,7 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        other : array_like (dense or sparse)
+        other : array_like or sparse array
             Array to take dot product with.
 
         Returns

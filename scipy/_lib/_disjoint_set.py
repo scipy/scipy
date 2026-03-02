@@ -10,7 +10,7 @@ class DisjointSet:
 
     Parameters
     ----------
-    elements : sequence
+    elements : sequence of hashable objects
         Elements of the disjoint set.
 
     Attributes

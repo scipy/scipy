@@ -92,7 +92,7 @@ class Rotation:
 
     Parameters
     ----------
-    quat : array_like
+    quat : array_like, shape (..., 4)
         Quaternion representing the rotation.
     normalize : bool, optional
         If True, orthonormalize the rotation matrix using singular value

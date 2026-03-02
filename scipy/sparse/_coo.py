@@ -1081,7 +1081,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Parameters
         ----------
-        other : array_like (dense or sparse)
+        other : array_like or sparse array
             Second array
 
         Returns
