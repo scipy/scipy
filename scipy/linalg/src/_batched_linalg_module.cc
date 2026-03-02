@@ -666,6 +666,8 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_vl = NULL;
     int compute_vl=0;
     int compute_vr=1;
+    int overwrite_a=0;
+    int overwrite_b=0;
 
     int info = 0;
     SliceStatusVec vec_status;
@@ -677,9 +679,10 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyObject *beta_ret = NULL;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!pp|O!",
+    if (!PyArg_ParseTuple(args, "O!pppp|O!",
             &PyArray_Type, (PyObject **)&ap_Am,
             &compute_vl, &compute_vr,
+            &overwrite_a, &overwrite_b,
             &PyArray_Type, (PyObject **)&ap_Bm)
     ) {
         return NULL;
@@ -747,16 +750,16 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
