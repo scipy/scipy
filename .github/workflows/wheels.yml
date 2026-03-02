@@ -99,8 +99,8 @@ jobs:
           if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
           fi
-          if [[ ${{ matrix.buildplat[2] }} == 'arm64' ]]; then
-            # use preinstalled gfortran for arm64 builds
+          if [[ ${{ matrix.buildplat[2] }} == 'arm64' && ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
+            # use preinstalled gfortran for arm64+accelerate builds
             ln -s $(which gfortran-13) gfortran
             export PATH=$PWD:$PATH
             echo "PATH=$PATH" >> "$GITHUB_ENV"
