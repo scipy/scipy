@@ -15,10 +15,12 @@ if [[ $PLATFORM == "x86_64" ]]; then
   # https://github.com/MacPython/gfortran-install.git
   curl -L https://github.com/isuruf/gcc/releases/download/gcc-15.2.0/gfortran-darwin-x86_64-native.tar.gz -o gfortran.tar.gz
   KNOWN_SHA256="fb03c1f37bf0258ada6e3e41698e3ad416fff4dad448fd746e01d8ccf1efdc0f  gfortran.tar.gz"
+  GFORTRAN_LOC=/opt/gfortran-darwin-x86_64-native
 fi
 if [[ $PLATFORM == "arm64" ]]; then
   curl -L https://github.com/isuruf/gcc/releases/download/gcc-15.2.0/gfortran-darwin-arm64-native.tar.gz -o gfortran.tar.gz
   KNOWN_SHA256="999a91eef894d32f99e3b641520bef9f475055067f301f0f1947b8b716b5922a  gfortran.tar.gz"
+  GFORTRAN_LOC=/opt/gfortran-darwin-arm64-native
 fi
 
   GFORTRAN_SHA256=$(shasum -a 256 gfortran.tar.gz)
@@ -34,9 +36,9 @@ fi
 
   # Link these into /usr/local so that there's no need to add rpath or -L
   for f in libgfortran.dylib libgfortran.5.dylib libgcc_s.1.dylib libgcc_s.1.1.dylib libquadmath.dylib libquadmath.0.dylib; do
-    ln -sf /opt/gfortran-darwin-x86_64-native/lib/$f /usr/local/lib/$f
+    ln -sf $GFORTRAN_LOC/lib/$f /usr/local/lib/$f
   done
-  ln -sf /opt/gfortran-darwin-x86_64-native/bin/gfortran /usr/local/bin/gfortran
+  ln -sf $GFORTRAN_LOC/bin/gfortran /usr/local/bin/gfortran
 
   # Set SDKROOT env variable if not set
   # This step is required whenever the gfortran compilers sourced from
