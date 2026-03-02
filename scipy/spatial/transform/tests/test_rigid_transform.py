@@ -733,6 +733,19 @@ def test_apply_array_like():
     xp_assert_close(tf.apply(vec), expected, atol=1e-12)
 
 
+def test_apply_matrix_equivalence():
+    """Test documented equivalence for single transform: apply(vector) == translation + vector @ rotation.as_matrix().T."""
+    t = np.array([1.0, 2.0, 3.0])
+    r = Rotation.from_rotvec([0, 0, 1])
+    tf = RigidTransform.from_components(t, r)
+    # Single vector (3,)
+    v = np.array([1.0, 0.0, 0.0])
+    xp_assert_close(tf.apply(v), t + v @ r.as_matrix().T)
+    # Multiple vectors (P, 3)
+    arr = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
+    xp_assert_close(tf.apply(arr), t + arr @ r.as_matrix().T)
+
+
 @make_xp_test_case(RigidTransform.apply)
 def test_inverse_apply(xp):
     atol = 1e-12
