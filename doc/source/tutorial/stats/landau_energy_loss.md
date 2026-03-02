@@ -38,7 +38,7 @@ see [^4], Section 34.2.9.
 In typical use in the context of energy loss in matter, the Landau distribution
 is parameterized by its most probable energy loss value `E_mpv` and a width
 parameter `xi` ({math}`\Delta_p` and {math}`\xi`, respectively, in Ref. [^4],
-Eqn. 34.12) The `loc` and `scale` parameters of the implementation in
+Eqn. 34.12). The `loc` and `scale` parameters of the implementation in
 {func}`scipy.stats.landau` are related to these parameters as demonstrated
 below:
 
