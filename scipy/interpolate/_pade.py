@@ -1,3 +1,5 @@
+import warnings
+
 from numpy import zeros, asarray, eye, poly1d, hstack, r_
 from scipy import linalg
 
@@ -6,6 +8,10 @@ __all__ = ["pade"]
 def pade(an, m, n=None):
     """
     Return Pade approximation to a polynomial as the ratio of two polynomials.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        `mpmath.pade` instead.
 
     Parameters
     ----------
@@ -42,6 +48,9 @@ def pade(an, m, n=None):
     2.7179487179487181
 
     """
+    msg = ("`pade` is deprecated and will be removed in SciPy 1.20.0. Use "
+           "`mpmath.pade` instead.")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     an = asarray(an)
     if n is None:
         n = len(an) - 1 - m

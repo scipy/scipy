@@ -2,6 +2,7 @@ __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 from math import prod
 from types import GenericAlias
+import warnings
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -28,6 +29,10 @@ def lagrange(x, w):
 
     Warning: This implementation is numerically unstable. Do not expect to
     be able to use more than about 20 points even if they are chosen optimally.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        `scipy.interpolate.BarycentricInterpolator` instead.
 
     Parameters
     ----------
@@ -92,7 +97,9 @@ def lagrange(x, w):
     >>> plt.show()
 
     """
-
+    msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
+           "`scipy.interpolate.BarycentricInterpolator` instead.")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     M = len(x)
     p = poly1d(0.0)
     for j in range(M):

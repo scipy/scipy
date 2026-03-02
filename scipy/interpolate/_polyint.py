@@ -463,6 +463,9 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     """
     Estimate the Taylor polynomial of f at x by polynomial fitting.
 
+    .. deprecated:: 1.18.0
+        This function is deprecated and will be removed in SciPy 1.20.0.
+
     Parameters
     ----------
     f : callable
@@ -518,6 +521,9 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     >>> plt.show()
 
     """
+    msg = ("`approximate_taylor_polynomial` is deprecated and will be removed in "
+           "SciPy 1.20.0.")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     if order is None:
         order = degree
 
