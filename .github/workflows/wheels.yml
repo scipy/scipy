@@ -31,6 +31,7 @@ jobs:
       ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
       ${{ matrix.buildplat[4] }}
     runs-on: ${{ matrix.buildplat[0] }}
+    if: (github.repository == 'scipy/scipy' || github.repository == '')
 
     strategy:
       # Ensure that a wheel builder finishes even if another fails
