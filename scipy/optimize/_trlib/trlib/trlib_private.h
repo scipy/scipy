@@ -12,18 +12,18 @@
 #include <time.h>
 
 // blas
-void daxpy_(trlib_int_t *n, trlib_flt_t *alpha, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
-void dscal_(trlib_int_t *n, trlib_flt_t *alpha, trlib_flt_t *x, trlib_int_t *incx);
-void dcopy_(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
-trlib_flt_t dnrm2_(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx);
-trlib_flt_t ddot_(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
+void BLAS_FUNC(daxpy)(trlib_int_t *n, trlib_flt_t *alpha, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
+void BLAS_FUNC(dscal)(trlib_int_t *n, trlib_flt_t *alpha, trlib_flt_t *x, trlib_int_t *incx);
+void BLAS_FUNC(dcopy)(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
+trlib_flt_t BLAS_FUNC(dnrm2)(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx);
+trlib_flt_t BLAS_FUNC(ddot)(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
 
 // lapack
-void dpttrf_(trlib_int_t *n, trlib_flt_t *d, trlib_flt_t *e, trlib_int_t *info);
-void dpttrs_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *d, trlib_flt_t *e, trlib_flt_t *b, trlib_int_t *ldb, trlib_int_t *info);
-void dptrfs_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *d, trlib_flt_t *e, trlib_flt_t *df, trlib_flt_t *ef, trlib_flt_t *b, trlib_int_t *ldb, trlib_flt_t *x, trlib_int_t *ldx, trlib_flt_t *ferr, trlib_flt_t *berr, trlib_flt_t *work, trlib_int_t *info);
-void dlagtm_(char *trans, trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *alpha, trlib_flt_t *dl, trlib_flt_t *d, trlib_flt_t *du, trlib_flt_t *x, trlib_int_t *ldx, trlib_flt_t *beta, trlib_flt_t *b, trlib_int_t *ldb);
-void dgtsv_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *dl, trlib_flt_t *d, trlib_flt_t *du, trlib_flt_t *b, trlib_int_t *ldb, trlib_int_t *info);
+void BLAS_FUNC(dpttrf)(trlib_int_t *n, trlib_flt_t *d, trlib_flt_t *e, trlib_int_t *info);
+void BLAS_FUNC(dpttrs)(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *d, trlib_flt_t *e, trlib_flt_t *b, trlib_int_t *ldb, trlib_int_t *info);
+void BLAS_FUNC(dptrfs)(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *d, trlib_flt_t *e, trlib_flt_t *df, trlib_flt_t *ef, trlib_flt_t *b, trlib_int_t *ldb, trlib_flt_t *x, trlib_int_t *ldx, trlib_flt_t *ferr, trlib_flt_t *berr, trlib_flt_t *work, trlib_int_t *info);
+void BLAS_FUNC(dlagtm)(char *trans, trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *alpha, trlib_flt_t *dl, trlib_flt_t *d, trlib_flt_t *du, trlib_flt_t *x, trlib_int_t *ldx, trlib_flt_t *beta, trlib_flt_t *b, trlib_int_t *ldb);
+void BLAS_FUNC(dgtsv)(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *dl, trlib_flt_t *d, trlib_flt_t *du, trlib_flt_t *b, trlib_int_t *ldb, trlib_int_t *info);
 
 #if TRLIB_MEASURE_TIME
     #define TRLIB_TIC(X) { clock_gettime(CLOCK_MONOTONIC, &X); }

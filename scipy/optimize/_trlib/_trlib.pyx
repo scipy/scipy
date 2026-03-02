@@ -1,7 +1,12 @@
 from scipy.optimize._trustregion import BaseQuadraticSubproblem
 import numpy as np
+from scipy.linalg.lapack import HAS_ILP64
 from . cimport ctrlib
 cimport numpy as np
+
+cdef extern from 'trlib/trlib_types.h':
+    ctypedef long trlib_int_t
+
 
 from scipy._lib.messagestream cimport MessageStream
 
@@ -16,7 +21,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         self.tol_rel_b = tol_rel_b
         self.disp = disp
         self.itmax = int(min(1e9/self.jac.shape[0], 2*self.jac.shape[0]))
-        cdef long itmax, iwork_size, fwork_size, h_pointer
+        cdef trlib_int_t itmax, iwork_size, fwork_size, h_pointer
         itmax = self.itmax
         ctrlib.trlib_krylov_memory_size(itmax, &iwork_size, &fwork_size,
                                         &h_pointer)
@@ -27,7 +32,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         if fwork_view.shape[0] > 0:
             fwork_ptr = &fwork_view[0]
         ctrlib.trlib_krylov_prepare_memory(itmax, fwork_ptr)
-        self.iwork = np.zeros([iwork_size], dtype=np.dtype("long"))
+        self.iwork = np.zeros([iwork_size], dtype=np.int64 if HAS_ILP64 else np.int32)
         self.s  = np.empty(self.jac.shape)
         self.g  = np.empty(self.jac.shape)
         self.v  = np.empty(self.jac.shape)
@@ -36,44 +41,44 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         self.Hp = np.empty(self.jac.shape)
         self.Q  = np.empty([self.itmax+1, self.jac.shape[0]])
         self.timing = np.zeros([ctrlib.trlib_krylov_timing_size()],
-                               dtype=np.dtype("long"))
+                               dtype=np.int64 if HAS_ILP64 else np.int32)
         self.init = ctrlib._TRLIB_CLS_INIT
 
     def solve(self, double trust_radius):
 
-        cdef long equality = 0
-        cdef long itmax_lanczos = 100
+        cdef trlib_int_t equality = 0
+        cdef trlib_int_t itmax_lanczos = 100
         cdef double tol_r_i = self.tol_rel_i
         cdef double tol_a_i =  0.0 
         cdef double tol_r_b = self.tol_rel_b
         cdef double tol_a_b =  0.0 
         cdef double zero = 2e-16
         cdef double obj_lb = -1e20
-        cdef long ctl_invariant = 0
-        cdef long convexify = 1
-        cdef long earlyterm = 1
+        cdef trlib_int_t ctl_invariant = 0
+        cdef trlib_int_t convexify = 1
+        cdef trlib_int_t earlyterm = 1
         cdef double g_dot_g = 0.0
         cdef double v_dot_g = 0.0
         cdef double p_dot_Hp = 0.0
-        cdef long refine = 1
-        cdef long verbose = 0
-        cdef long unicode = 1
-        cdef long ret = 0
-        cdef long action = 0
-        cdef long it = 0
-        cdef long ityp = 0
-        cdef long itmax = self.itmax
-        cdef long init  = self.init
+        cdef trlib_int_t refine = 1
+        cdef trlib_int_t verbose = 0
+        cdef trlib_int_t unicode = 1
+        cdef trlib_int_t ret = 0
+        cdef trlib_int_t action = 0
+        cdef trlib_int_t it = 0
+        cdef trlib_int_t ityp = 0
+        cdef trlib_int_t itmax = self.itmax
+        cdef trlib_int_t init  = self.init
         cdef double flt1 = 0.0
         cdef double flt2 = 0.0
         cdef double flt3 = 0.0
         prefix = b""
-        cdef long   [:] iwork_view  = self.iwork
+        cdef trlib_int_t   [:] iwork_view  = self.iwork
         cdef double [:] fwork_view  = self.fwork
-        cdef long   [:] timing_view = self.timing
-        cdef long   *iwork_ptr = NULL
+        cdef trlib_int_t   [:] timing_view = self.timing
+        cdef trlib_int_t   *iwork_ptr = NULL
         cdef double *fwork_ptr = NULL
-        cdef long   *timing_ptr = NULL
+        cdef trlib_int_t   *timing_ptr = NULL
 
         if self.disp:
             verbose = 2

@@ -25,7 +25,8 @@
 #ifndef TRLIB_TYPES_H
 #define TRLIB_TYPES_H
 
-typedef long trlib_int_t;
+#include "npy_cblas.h"
+typedef CBLAS_INT trlib_int_t;
 typedef double trlib_flt_t;
 
 #define TRLIB_EPS            ((trlib_flt_t)2.2204460492503131e-16)
