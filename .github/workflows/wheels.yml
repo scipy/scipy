@@ -99,14 +99,20 @@ jobs:
           if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
           fi
-
-          export PATH=/usr/local/lib:/usr/local/bin:$PATH
-          echo "PATH=$PATH" >> "$GITHUB_ENV"
+          if [[ ${{ matrix.buildplat[2] }} == 'arm64' ]]; then
+            # use preinstalled gfortran for arm64 builds
+            ln -s $(which gfortran-13) gfortran
+            export PATH=$PWD:$PATH
+            echo "PATH=$PATH" >> "$GITHUB_ENV"
+            LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
+          fi
           
           CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
             SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
             PKG_CONFIG_PATH=${{ github.workspace }}"
           echo "CIBW_ENVIRONMENT=$CIBW" >> "$GITHUB_ENV"
+          
+          echo "REPAIR_PATH=$LIB_PATH" >> "$GITHUB_ENV"
 
           PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gfortran --print-file-name libgfortran.dylib))"
           # remove libgfortran from location used for linking (if any), to
