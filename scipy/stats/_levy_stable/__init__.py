@@ -256,6 +256,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
     if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
         return 0.0
 
+    @np.vectorize
     def integrand(theta):
         # limit any numerical issues leading to g_1 < 0 near theta limits
         g_1 = g(theta)
@@ -288,6 +289,18 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
             intg_points = [0, peak] + tail_points
         else:
             intg_points = None
+
+        if (beta == -1) and (alpha <= 1.1):
+            res = integrate.tanhsinh(
+                integrand,
+                -xi,
+                np.pi / 2,
+                log=False,
+                minlevel=100,
+                atol=0,
+                rtol=quad_eps
+            )
+            return c2 * res.integral
 
         intg, *ret = integrate.quad(
             integrand,
