@@ -39,9 +39,9 @@ fi
 
   # Link these into /usr/local so that there's no need to add rpath or -L
   for f in libgfortran.dylib libgfortran.5.dylib libgcc_s.1.dylib libgcc_s.1.1.dylib libquadmath.dylib libquadmath.0.dylib; do
-    ln -sf $GFORTRAN_LOC/lib/$f /usr/local/lib/$f
+    sudo ln -sf $GFORTRAN_LOC/lib/$f /usr/local/lib/$f
   done
-  ln -sf $GFORTRAN_LOC/bin/gfortran /usr/local/bin/gfortran
+  sudo ln -sf $GFORTRAN_LOC/bin/gfortran /usr/local/bin/gfortran
 
   # Set SDKROOT env variable if not set
   # This step is required whenever the gfortran compilers sourced from
