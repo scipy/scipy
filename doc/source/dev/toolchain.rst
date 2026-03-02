@@ -149,8 +149,8 @@ Currently, SciPy wheels are being built as follows:
 =========================   ==============================   ====================================   =============================
  Linux x86                   ``ubuntu-22.04``                 GCC 10.2.1                             ``cibuildwheel``
  Linux arm                   ``docker-builder-arm64``         GCC 11.3.0                             ``cibuildwheel``
- OSX x86_64 (OpenBLAS)       ``macos-12``                     Apple clang 13.1.6/gfortran 11.3.0     ``cibuildwheel``
- OSX x86_64 (Accelerate)     ``macos-13``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
+ OSX x86_64 (OpenBLAS)       ``macos-15-intel``               Apple clang 13.1.6/gfortran 15.2.0     ``cibuildwheel``
+ OSX x86_64 (Accelerate)     ``macos-15-intel``               Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
  OSX arm64 (OpenBLAS)        ``macos-14``                     Apple clang 15.0.0/gfortran 12.1.0     ``cibuildwheel``
  OSX arm64 (Accelerate)      ``macos-14``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
  Windows                     ``windows-2019``                 GCC 10.3.0 (`rtools`_)                 ``cibuildwheel``
