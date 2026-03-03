@@ -143,6 +143,7 @@ test-requires = [
     "pooch",
     "hypothesis",
 ]
+before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
@@ -150,11 +151,12 @@ manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 musllinux-x86_64-image = "musllinux_1_2"
 musllinux-aarch64-image = "musllinux_1_2"
-before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
 
 [tool.cibuildwheel.linux.environment]
-# /project will be the $PWD equivalent inside the docker used to build the wheel
-PKG_CONFIG_PATH = "/project/"
+# RUNNER_OS is a GitHub Actions specific env var; define it here so it's
+# defined when running cibuildwheel locally
+RUNNER_OS="Linux"
+PKG_CONFIG_PATH = "/project/.openblas"
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
