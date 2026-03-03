@@ -155,6 +155,7 @@ class TestLinearOperator:
             z = 2*A
             assert len(z.args) == 2
             if not is_lazy_array(xp.empty(0)):
+                # lazy_xp_function breaks object identity
                 assert z.args[0] is A and z.args[1] == 2
 
             array_object = type(xp.empty(0))
@@ -185,6 +186,7 @@ class TestLinearOperator:
             assert isinstance(A/2j, interface._ScaledLinearOperator)
 
             if not is_lazy_array(xp.empty(0)):
+                # lazy_xp_function breaks object identity
                 assert ((A * 3) / 3).args[0] is A  # check for simplification
 
             # Test that prefactor is of _ScaledLinearOperator is not mutated
@@ -238,6 +240,7 @@ class TestLinearOperator:
             z = A@B
             assert len(z.args) == 2
             if not is_lazy_array(xp.empty(0)):
+                # lazy_xp_function breaks object identity
                 assert z.args[0] is A and z.args[1] is B
 
         for matvecsC in get_matvecs(_asarray(self.C)):
@@ -1114,7 +1117,9 @@ def test_sparse_matmat_exception():
     xp_assert_equal((A @ B).matvec(np.ones(2)), np.ones(2))
 
 
-@pytest.mark.skip_xp_backends(np_only=True) # remaining reference with JAX
+@pytest.mark.skip_xp_backends(
+    "jax.numpy", reason="remaining reference (due to lazy_xp_function?)"
+)
 def test_MatrixLinearOperator_refcycle(xp):
     # gh-10634
     # Test that MatrixLinearOperator can be automatically garbage collected
