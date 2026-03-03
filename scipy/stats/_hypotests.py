@@ -103,6 +103,40 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
+    Examples
+    --------
+    Test whether two samples differ in distribution. We use a fixed seed
+    so that the results are reproducible.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(12345)
+
+    We generate two samples from the same distribution and test the null
+    hypothesis that they come from the same distribution.
+
+    >>> x = rng.standard_normal(50)
+    >>> y = rng.standard_normal(50)
+    >>> res = stats.epps_singleton_2samp(x, y)
+    >>> res.statistic, res.pvalue
+    (4.086976727527479, 0.39436278543312975)
+
+    The large p-value indicates that we cannot reject the null hypothesis
+    that the two samples come from the same distribution.
+
+    Now we generate samples from two different distributions, normal and
+    logistic, which differ in their tails.
+
+    >>> x2 = rng.standard_normal(50)
+    >>> y2 = rng.logistic(size=50)
+    >>> res2 = stats.epps_singleton_2samp(x2, y2)
+    >>> res2.statistic, res2.pvalue
+    (11.607524536460803, 0.020521410272551506)
+
+    The small p-value indicates that we can reject the null hypothesis
+    that both samples come from the same distribution at common
+    significance levels (e.g. ``alpha=0.05``).
+
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
