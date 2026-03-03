@@ -351,6 +351,19 @@ and PyTorch with the
 on ARM Mac. We are open to expanding and improving ``float32``-only
 support in cases where this is feasible and there is sufficient user interest.
 
+It is therefore recommended that those using SciPy with the JAX backend set the X64 flag by one
+of the means JAX provides since the default ``float32``-only configuration is not
+currently tested.
+
+Though not directly related to default dtypes, it may be useful to know that JAX defaults to using
+`TensorFloat32 <https://github.com/jax-ml/jax/issues/4873>`_
+precision for matrix multiplication of ``float32`` arrays on GPUs that support TensorFloat32.
+The half-precision mantissas used in this format can cause accuracy issues in scientific applications.
+SciPy sets `jax_default_matmul_precision <https://docs.jax.dev/en/latest/_autosummary/jax.default_matmul_precision.html>`_ to
+``"float32"`` in its JAX GPU tests and we recommend this configuration for users
+of the JAX backend. This configuration option does not affect matrix multiplications of ``float64``
+arrays when the X64 flag is enabled.
+
 
 Array creation functions without array inputs
 `````````````````````````````````````````````

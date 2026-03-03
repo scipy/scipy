@@ -247,6 +247,10 @@ if SCIPY_ARRAY_API:
                    pytest.mark.thread_unsafe]))
 
         jax.config.update("jax_enable_x64", True)
+        # Make sure JAX won't default to less accurate TensorFloat32 precision
+        # in matmuls with float32 inputs on GPUs that support this floating
+        # point format.
+        jax.config.update("jax_default_matmul_precision", "float32")
         jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('jax.numpy')
