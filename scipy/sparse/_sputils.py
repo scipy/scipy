@@ -369,14 +369,14 @@ def isintlike(x) -> bool:
     return True
 
 
-def isshape(x, nonneg=False, *, allow_nd=(2,)) -> bool:
+def isshape(x, nonneg=False, *, allow_nd=(2,), check_nd=True) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
     Shapes of length in the tuple allow_nd are allowed.
     """
     ndim = len(x)
-    if ndim not in allow_nd:
+    if check_nd and ndim not in allow_nd:
         return False
 
     for d in x:
@@ -536,23 +536,6 @@ def broadcast_shapes(*shapes):
                     raise ValueError("shapes cannot be broadcast to a single shape.")
                 out[i] = x
     return (*out,)
-
-
-def check_reshape_kwargs(kwargs):
-    """Unpack keyword arguments for reshape function.
-
-    This is useful because keyword arguments after star arguments are not
-    allowed in Python 2, but star keyword arguments are. This function unpacks
-    'order' and 'copy' from the star keyword arguments (with defaults) and
-    throws an error for any remaining.
-    """
-
-    order = kwargs.pop('order', 'C')
-    copy = kwargs.pop('copy', False)
-    if kwargs:  # Some unused kwargs remain
-        raise TypeError("reshape() got unexpected keywords arguments: "
-                        f"{', '.join(kwargs.keys())}")
-    return order, copy
 
 
 def is_pydata_spmatrix(m) -> bool:

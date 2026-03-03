@@ -37,16 +37,20 @@ class _ArrayClsInfo(enum.Enum):
 
 
 @lru_cache(100)
-def _validate_array_cls(cls: type) -> _ArrayClsInfo:
+def _validate_array_cls(cls: type, sparse_ok=False) -> _ArrayClsInfo:
     if issubclass(cls, list | tuple):
         return _ArrayClsInfo.array_like
 
     # this comes from `_util._asarray_validated`
     if issubclass(cls, SparseABC):
-        msg = ('Sparse arrays/matrices are not supported by this function. '
-                'Perhaps one of the `scipy.sparse.linalg` functions '
-                'would work instead.')
-        raise ValueError(msg)
+        if not sparse_ok:
+            msg = ('Sparse arrays/matrices are not supported by this function. '
+                    'Perhaps one of the `scipy.sparse.linalg` functions '
+                    'would work instead.')
+            raise ValueError(msg)
+        # `scipy.sparse` arrays are treated as compatible with NumPy
+        # and assumed incompatible with other namespaces
+        return _ArrayClsInfo.numpy
 
     if issubclass(cls, np.ma.MaskedArray):
         raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
@@ -66,13 +70,16 @@ def _validate_array_cls(cls: type) -> _ArrayClsInfo:
     return _ArrayClsInfo.unknown
 
 
-def array_namespace(*arrays: Array) -> ModuleType:
+def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
     """Get the array API compatible namespace for the arrays xs.
 
     Parameters
     ----------
     *arrays : sequence of array_like
         Arrays used to infer the common namespace.
+    sparse_ok : bool
+        ``True`` if `scipy.sparse` arrays should be accepted where the
+        namespace would otherwise be NumPy. Default: ``False``.
 
     Returns
     -------
@@ -110,7 +117,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
     api_arrays = []
 
     for array in arrays:
-        arr_info = _validate_array_cls(type(array))
+        arr_info = _validate_array_cls(type(array), sparse_ok=sparse_ok)
         if arr_info is _ArrayClsInfo.skip:
             pass
 

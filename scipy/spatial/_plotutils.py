@@ -145,18 +145,21 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Diagram to plot
     ax : matplotlib.axes.Axes instance, optional
         Axes to plot on
-    show_points : bool, optional
-        Add the Voronoi points to the plot.
-    show_vertices : bool, optional
-        Add the Voronoi vertices to the plot.
-    line_colors : str, optional
-        Specifies the line color for polygon boundaries
-    line_width : float, optional
-        Specifies the line width for polygon boundaries
-    line_alpha : float, optional
-        Specifies the line alpha for polygon boundaries
-    point_size : float, optional
-        Specifies the size of points
+    **kw
+        The following options may be passed as keyword arguments:
+
+        show_points : bool, optional
+            Add the Voronoi points to the plot.
+        show_vertices : bool, optional
+            Add the Voronoi vertices to the plot.
+        line_colors : str, optional
+            Specifies the line color for polygon boundaries
+        line_width : float, optional
+            Specifies the line width for polygon boundaries
+        line_alpha : float, optional
+            Specifies the line alpha for polygon boundaries
+        point_size : float, optional
+            Specifies the size of points
 
     Returns
     -------

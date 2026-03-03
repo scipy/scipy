@@ -22,7 +22,8 @@ static void convert_strides(npy_intp *instrides, npy_intp *convstrides, int size
 }
 
 
-static char doc_FIRsepsym2d[] = "out = sepfir2d(input, hrow, hcol)\n"
+static char doc_FIRsepsym2d[] = "sepfir2d(input, hrow, hcol)\n"
+"--\n"  // needed to populate `__text_signature__`
 "\n"
 "    Convolve with a 2-D separable FIR filter.\n"
 "\n"

@@ -6,7 +6,8 @@ from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace, xp_promote, xp_size, is_jax
+from scipy._lib._array_api import (array_namespace, xp_promote, xp_size, is_jax,
+                                   is_marray, _count_nonmasked)
 import scipy._external.array_api_extra as xpx
 
 
@@ -115,6 +116,11 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
                    "either 'asymptotic' or an instance of `stats.PermutationMethod`.")
         raise ValueError(message)
 
+    if is_marray(xp) and (method != "asymptotic" or zero_method != 'zsplit'):
+        message = ("Only `method='asymptotic'`/`zero_method='zsplit'` is compatible "
+                   "with MArrays.")
+        raise ValueError(message)
+
     # For small samples, we decide later whether to perform an exact test or a
     # permutation test. The reason is that the presence of ties is not
     # known at the input validation stage.
@@ -137,8 +143,8 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox', *, xp):
         d = xpx.at(d)[i_zeros].set(xp.nan, copy=True)
 
     i_nan = xp.isnan(d)
-    n_nan = xp.count_nonzero(i_nan, axis=-1)
-    count = xp.astype(d.shape[-1] - n_nan, dtype)
+    n_nan = xp.astype(xp.count_nonzero(i_nan, axis=-1), dtype)
+    count = _count_nonmasked(d, axis=-1) - n_nan
 
     r, t = _rankdata(xp.abs(d), 'average', return_ties=True, xp=xp)
     r, t = xp.astype(r, dtype, copy=False), xp.astype(t, dtype, copy=False)

@@ -399,7 +399,7 @@ free_exit_banded:
 
 template<typename T>
 int
-_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, SliceStatusVec& vec_status)
+_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
@@ -460,16 +460,49 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // gecon needs lwork of at least 4*n
     lwork = (4*n > lwork ? 4*n : lwork);
 
-    T* buffer = (T *)malloc((2*n*n + n*nrhs + 2*n + lwork)*sizeof(T));
+    CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
+    CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
+    CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
+    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork; 
+
+    T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
-    // Chop the buffer into parts
-    T* data = &buffer[0];
-    T* scratch = &buffer[n*n];
+    /*
+     * Chop the buffer into parts:
+     *
+     *    size_a     size_a    size_b     2n     lwork
+     * |----------|---------|----------|------|---------|
+     * ^          ^         ^          ^      ^
+     * scratch    data      data_b     work2  work
+     *
+     * - scrach & data are for A (lhs)
+     * - data_b is for b (rhs)
+     * - work2 is for the tridiag solver, trcon's work array
+     * - work is for all other LAPACK functions
+     *
+     */
 
-    T *data_b = &buffer[2*n*n];
-    T *work2 = &buffer[2*n*n + n*nrhs]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
-    T* work = &buffer[2*n*n + n*nrhs + 2*n];
+    T *scratch = NULL, *data = NULL;
+    if (overwrite_a) {
+        data = (T *)Am_data;
+    }
+    else {
+        scratch = &buffer[0];
+        data = &buffer[buf_size_a];
+    }
+
+    T *data_b = NULL;
+    if(overwrite_b) {
+        // work in-place
+        data_b = ret_data;
+    }
+    else {
+        data_b = &buffer[2*buf_size_a];
+    }
+
+    T *work2 = &buffer[2*buf_size_a + buf_size_b]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
+    T* work = &buffer[2*buf_size_a + buf_size_b + 2*n];
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
@@ -511,14 +544,19 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     // Main loop to traverse the slices
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        // copy the slice
         T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-        swap_cf(scratch, data, n, n, n);
 
-        // copy the r.h.s, too;
-        T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
-        copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        if (!overwrite_a) {
+            // copy the slice
+            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+            swap_cf(scratch, data, n, n, n);
+        }
+
+        if (!overwrite_b) {
+            // copy the r.h.s, too;
+            T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
+            copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        }
 
         // detect the structure if not given
         slice_structure = structure;
@@ -634,8 +672,10 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             }
         }
 
-        // Swap back to the C order
-        copy_slice_F_to_C(&ret_data[idx*n*nrhs], data_b, n, nrhs);
+        if (!overwrite_b) {
+            // Swap back to the C order
+            copy_slice_F_to_C(&ret_data[idx*n*nrhs], data_b, n, nrhs);
+        }
     }
 
 free_exit:
