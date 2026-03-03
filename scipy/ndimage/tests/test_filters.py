@@ -498,6 +498,9 @@ class TestNdimageFilters:
 
     @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate_mode_sequence(self, xp):
+        if is_cupy(xp):
+            pytest.xfail("multiple modes work in CuPy 14")
+
         kernel = xp.ones((2, 2))
         array = xp.ones((3, 3), dtype=xp.float64)
         with assert_raises(RuntimeError):
@@ -1707,6 +1710,9 @@ class TestNdimageFilters:
 
     @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter07(self, xp):
+        if is_cupy(xp):
+            pytest.xfail("multiple modes work in CuPy 14")
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
                             [5, 8, 3, 7, 1]])
@@ -1715,6 +1721,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[2, 2, 1, 1, 1],
                                               [2, 3, 1, 3, 1],
                                               [5, 5, 3, 3, 1]]), output)
+
         with assert_raises(RuntimeError):
             ndimage.minimum_filter(array, footprint=footprint,
                                    mode=['reflect', 'constant'])
@@ -1798,6 +1805,9 @@ class TestNdimageFilters:
 
     @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter07(self, xp):
+        if is_cupy(xp):
+            pytest.xfail("multiple modes work in CuPy 14")
+
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
                             [5, 8, 3, 7, 1]])
@@ -1983,6 +1993,17 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
         output = ndimage.median_filter(array, size=(2, 3))
         xp_assert_equal(expected, output)
+
+    @make_xp_test_case(
+        ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
+    )
+    def test_rank08_1(self, xp):
+        if is_cupy(xp):
+            pytest.xfail("multiple modes work in CuPy 14")
+
+        array = xp.asarray([[3, 2, 5, 1, 4],
+                            [5, 8, 3, 7, 1],
+                            [5, 6, 9, 3, 5]])
 
         # non-separable: does not allow mode sequence
         with assert_raises(RuntimeError):
@@ -2544,6 +2565,8 @@ def test_multiple_modes(xp, filter_func, args, kwargs):
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
+    if is_cupy(xp) and filter_func.__name__ in ['prewitt', 'sobel']:
+        pytest.xfail("https://github.com/cupy/cupy/issues/9760")
 
     mode1 = 'reflect'
     mode2 = ['reflect', 'reflect']
@@ -2594,6 +2617,9 @@ def test_multiple_modes_sequentially(xp):
 @make_xp_test_case(ndimage.prewitt)
 def test_multiple_modes_prewitt(xp):
     # Test prewitt filter for multiple extrapolation modes
+    if is_cupy(xp):
+        pytest.xfail("https://github.com/cupy/cupy/issues/9760")
+
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
@@ -2611,6 +2637,9 @@ def test_multiple_modes_prewitt(xp):
 @make_xp_test_case(ndimage.sobel)
 def test_multiple_modes_sobel(xp):
     # Test sobel filter for multiple extrapolation modes
+    if is_cupy(xp):
+        pytest.xfail("https://github.com/cupy/cupy/issues/9760")
+
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
                       [0., 0., 0.]])
