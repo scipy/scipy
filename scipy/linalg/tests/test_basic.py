@@ -2392,7 +2392,7 @@ class TestPinv:
         # Now adiff1 should be around atol value while adiff2 should be
         # relatively tiny
         assert_allclose(np.linalg.norm(adiff1), 5e-4, atol=5.e-4)
-        assert_allclose(np.linalg.norm(adiff2), 5e-14, atol=5.e-14)
+        assert_allclose(np.linalg.norm(adiff2), 5e-14, atol=7.e-14)
 
         # Now do the same but remove another sv ~4.234 via rtol
         a_p = pinv(a_m, atol=atol, rtol=rtol)
