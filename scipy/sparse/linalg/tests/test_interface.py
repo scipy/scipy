@@ -683,7 +683,8 @@ class TestAsLinearOperator:
         class RmatvecRmatmat(Rmatvec, Rmatmat): pass
 
         if xp:
-            cases.append((original, original))
+            cases.append((original, original, True))
+            cases.append((interface.MatrixLinearOperator(original), original, True))
 
             for Mat in [Matvec, Matmat, MatvecMatmat]:
                 cases.append((Mat(dtype), original, False))
@@ -691,15 +692,17 @@ class TestAsLinearOperator:
                     class MatRmat(Mat, Rmat): pass
                     cases.append((MatRmat(dtype), original, True))
             
-            cases.append((interface.aslinearoperator(original.T).T, original))
+            cases.append((interface.aslinearoperator(original.T).T, original, True))
             cases.append((
                 interface.aslinearoperator(original.T).H,
                 xp.conj(original),
+                True,
             ))
             cases.append((
                 interface.aslinearoperator(original.T).adjoint(),
-                xp.conj(original)),
-            )
+                xp.conj(original),
+                True,
+            ))
 
             return cases
         
