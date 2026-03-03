@@ -97,6 +97,20 @@ jobs:
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
         run: |
+          # gfortran status for macOS
+          # -------------------------
+          # accelerate + arm64: we can use the preinstalled (homebrew) gfortran present on the GH
+          #   image. This is compatible back to macOS-14. From time to time the homebrew binary and
+          #   GH images are updated, which may limit the oldest mac version we can target. At this
+          #   point we have to resort to other builds.
+          # accelerate + x86_64: uses build from https://github.com/isuruf/gcc/releases/. The 15.2.0
+          #   build is back compatible to macOS 14.
+          # openblas + arm64: We ideally want this back compatible to macOS-12. The build at
+          #   https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg
+          #   satisfies those requirements.
+          # openblas + x86_64: We ideally want this back compatible to macOS-12. The 15.2.0 build at
+          #   https://github.com/isuruf/gcc/releases/ satisfies this.
+          
           if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
           fi
