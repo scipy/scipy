@@ -668,16 +668,16 @@ class TestAsLinearOperator:
 
         class Matvec(_Base):
             def matvec(self, x):
-                return mv(x, self.dtype)
+                return mv(x)
         class Rmatvec(_Base):
             def rmatvec(self,x):
-                return rmv(x, self.dtype)
+                return rmv(x)
         class Matmat(_Base):
             def matmat(self, x):
-                return mm(x, self.dtype)
+                return mm(x)
         class Rmatmat(_Base):
             def rmatmat(self, x):
-                return rmm(x, self.dtype)
+                return rmm(x)
             
         class MatvecMatmat(Matvec, Matmat): pass
         class RmatvecRmatmat(Rmatvec, Rmatmat): pass
@@ -819,7 +819,7 @@ class TestAsLinearOperator:
             pytest.skip("\"addmm_cuda\" not implemented for 'Long'")
         dtype = getattr(xp, dtype)
         original = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
-        for M, A_array in self.make_cases(original, dtype, xp=xp):
+        for M, A_array, _ in self.make_cases(original, dtype, xp=xp):
             A = interface.aslinearoperator(M)
 
             xs = [xp.asarray([1, 2, 3]),
