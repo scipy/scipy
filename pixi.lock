@@ -2175,13 +2175,13 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/cuda-cudart-static_linux-64-13.1.80-h376f20c_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/cuda-cudart_linux-64-13.1.80-h376f20c_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/cuda-nvrtc-13.1.80-hecca717_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/cuda-pathfinder-1.4.0-pyhc364b38_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/cuda-version-13.1-h2ff5cdb_3.conda
-      - conda: https://prefix.dev/conda-forge/linux-64/cupy-13.6.0-py313h727d180_2.conda
-      - conda: https://prefix.dev/conda-forge/linux-64/cupy-core-13.6.0-py313h0630d88_2.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/cupy-14.0.1-py313h7122472_0.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/cupy-core-14.0.1-py313h75444f8_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/distlib-0.4.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/exceptiongroup-1.3.1-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/execnet-2.1.2-pyhd8ed1ab_0.conda
-      - conda: https://prefix.dev/conda-forge/linux-64/fastrlock-0.8.3-py313h5d5ffb9_2.conda
       - conda: https://prefix.dev/conda-forge/noarch/filelock-3.20.3-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/gmp-6.3.0-hac33072_2.conda
       - conda: https://prefix.dev/conda-forge/linux-64/gmpy2-2.2.1-py313h86d8783_2.conda
@@ -8454,6 +8454,17 @@ packages:
   license: LicenseRef-NVIDIA-End-User-License-Agreement
   size: 24246736
   timestamp: 1753975332907
+- conda: https://prefix.dev/conda-forge/noarch/cuda-pathfinder-1.4.0-pyhc364b38_0.conda
+  sha256: edf16fdfbcce5bbb445118fd8d070dda8afe36b4b437a94f472fde153bc38151
+  md5: 2d13e524da66b60e6e7d5c6585729ea8
+  depends:
+  - python >=3.10
+  - cuda-version >=12.0,<14
+  - python
+  license: Apache-2.0
+  license_family: APACHE
+  size: 39327
+  timestamp: 1772059437166
 - conda: https://prefix.dev/conda-forge/noarch/cuda-version-12.9-h4f385c5_3.conda
   sha256: 5f5f428031933f117ff9f7fcc650e6ea1b3fef5936cf84aa24af79167513b656
   md5: b6d5d7f1c171cbd228ea06b556cfa859
@@ -8486,14 +8497,14 @@ packages:
   license: LicenseRef-cuDNN-Software-License-Agreement
   size: 19646
   timestamp: 1762823905292
-- conda: https://prefix.dev/conda-forge/linux-64/cupy-13.6.0-py313h727d180_2.conda
-  sha256: 0cf7e5f9461b144320ff2d30f1e7d74c7990e69aa15ec8211cc117f1214a9985
-  md5: 9a9af89f20555cbb1892f81d096b937d
+- conda: https://prefix.dev/conda-forge/linux-64/cupy-14.0.1-py313h7122472_0.conda
+  sha256: 15d283040f1c038aae6874fabb1f3ab421fe0e44a16e9fab82d0be2a24e13ab1
+  md5: f35ca8c4a4a18dc8ea2f8e9d396a8206
   depends:
   - cuda-cudart-dev_linux-64
   - cuda-nvrtc
   - cuda-version >=13,<14.0a0
-  - cupy-core 13.6.0 py313h0630d88_2
+  - cupy-core 14.0.1 py313h75444f8_0
   - libcublas
   - libcufft
   - libcurand
@@ -8503,37 +8514,38 @@ packages:
   - python_abi 3.13.* *_cp313
   license: MIT
   license_family: MIT
-  size: 359195
-  timestamp: 1757731600945
-- conda: https://prefix.dev/conda-forge/linux-64/cupy-core-13.6.0-py313h0630d88_2.conda
-  sha256: 82c950c3118d81368ad0dee224ab946c963b57ccad34911cacdcc52fc046d792
-  md5: a2a6a0df7ef6e9ae482bae698cfd7476
+  size: 385178
+  timestamp: 1771604711937
+- conda: https://prefix.dev/conda-forge/linux-64/cupy-core-14.0.1-py313h75444f8_0.conda
+  sha256: fe9ff6f2082acfab05aab1463455cbc5a27b734974146d671ab1a2675c2d7715
+  md5: 3dff057b457d1a19263750d69a117f0a
   depends:
   - __glibc >=2.28,<3.0.a0
-  - fastrlock >=0.8.3,<0.9.0a0
+  - cuda-pathfinder >=1.3.3,<2.0a0
   - libgcc >=14
   - libstdcxx >=14
-  - numpy >=1.22
+  - numpy >=1.23,<3
+  - numpy >=2.0
   - python >=3.13,<3.14.0a0
   - python_abi 3.13.* *_cp313
   constrains:
-  - libcusolver >=12,<13.0a0
-  - cuda-nvrtc >=13,<14.0a0
-  - cupy >=13.6.0,<13.7.0a0
-  - libcublas >=13,<14.0a0
-  - __cuda >=13.0
   - libcufft >=12,<13.0a0
-  - optuna ~=3.0
-  - nccl >=2.27.7.1,<3.0a0
-  - cutensor >=2.3.1.0,<3.0a0
   - libcurand >=10,<11.0a0
-  - scipy >=1.7,<1.17
-  - cuda-version >=13,<14.0a0
+  - libcusolver >=12,<13.0a0
   - libcusparse >=12,<13.0a0
+  - cutensor >=2.5.0.2,<3.0a0
+  - nccl >=2.29.3.1,<3.0a0
+  - libcublas >=13,<14.0a0
+  - scipy >=1.10,<1.17
+  - cupy >=14.0.1,<14.1.0a0
+  - optuna ~=3.0
+  - __cuda >=13.0
+  - cuda-nvrtc >=13,<14.0a0
+  - cuda-version >=13,<14.0a0
   license: MIT
   license_family: MIT
-  size: 31734692
-  timestamp: 1757731531047
+  size: 33845732
+  timestamp: 1771604638130
 - conda: https://prefix.dev/conda-forge/linux-64/cxx-compiler-1.11.0-hfcd1e18_0.conda
   sha256: 3fcc97ae3e89c150401a50a4de58794ffc67b1ed0e1851468fcc376980201e25
   md5: 5da8c935dca9186673987f79cef0b2a5
@@ -8921,19 +8933,6 @@ packages:
   license_family: MIT
   size: 30753
   timestamp: 1756729456476
-- conda: https://prefix.dev/conda-forge/linux-64/fastrlock-0.8.3-py313h5d5ffb9_2.conda
-  sha256: 30498ed45133f457fd9ed14d5fac6512347f05d11fe1ed89842c7dfdb516f78f
-  md5: 9bcbd351966dc56a24fc0c368da5ad99
-  depends:
-  - python
-  - __glibc >=2.17,<3.0.a0
-  - libstdcxx >=14
-  - libgcc >=14
-  - python_abi 3.13.* *_cp313
-  license: MIT
-  license_family: MIT
-  size: 41201
-  timestamp: 1756729160955
 - conda: https://prefix.dev/conda-forge/noarch/filelock-3.20.0-pyhd8ed1ab_0.conda
   sha256: 19025a4078ff3940d97eb0da29983d5e0deac9c3e09b0eabf897daeaf9d1114e
   md5: 66b8b26023b8efdf8fcb23bac4b6325d
