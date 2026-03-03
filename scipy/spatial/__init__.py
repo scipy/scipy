@@ -41,6 +41,7 @@ Delaunay triangulation, convex hulls, and Voronoi diagrams
    Voronoi     -- compute a Voronoi diagram hull from input points
    SphericalVoronoi -- compute a Voronoi diagram from input points on the surface of a sphere
    HalfspaceIntersection -- compute the intersection points of input halfspaces
+   AlphaShapes    -- compute Alpha shapes of input points
 
 Plotting helpers
 ================
@@ -112,6 +113,7 @@ from ._kdtree import *
 from ._ckdtree import *  # type: ignore[import-not-found]
 from ._qhull import *
 from ._spherical_voronoi import SphericalVoronoi
+from ._alpha_shapes import AlphaShapes
 from ._plotutils import *
 from ._procrustes import procrustes
 from ._geometric_slerp import geometric_slerp
