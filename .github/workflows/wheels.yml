@@ -26,12 +26,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+
   build_wheels:
     name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
       ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
       ${{ matrix.buildplat[4] }}
     runs-on: ${{ matrix.buildplat[0] }}
-    if: (github.repository == 'scipy/scipy' || github.repository == '')
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
 
     strategy:
       # Ensure that a wheel builder finishes even if another fails
@@ -47,10 +54,10 @@ jobs:
         - [ubuntu-22.04, musllinux, x86_64, "", ""]
         - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
         - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
+        - [macos-15-intel, macosx, x86_64, openblas, "10.14" ]
+        - [macos-15-intel, macosx, x86_64, accelerate, "14.0" ]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [ macos-15-intel, macosx, x86_64, openblas, "10.14" ]
-        - [ macos-15-intel, macosx, x86_64, accelerate, "14.0" ]
         - [windows-2025, win, AMD64, "", ""]
         - [windows-11-arm, win, ARM64, "", ""]
         python: [["cp312", "3.12"]]
@@ -108,7 +115,7 @@ jobs:
           # openblas + arm64: We ideally want this back compatible to macOS-12. The build at
           #   https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg
           #   satisfies those requirements.
-          # openblas + x86_64: We ideally want this back compatible to macOS-12. The 15.2.0 build at
+          # openblas + x86_64: This can be made back compatible to macOS-10.14. The 15.2.0 build at
           #   https://github.com/isuruf/gcc/releases/ satisfies this.
           
           if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
