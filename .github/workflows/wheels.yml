@@ -101,23 +101,35 @@ jobs:
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         uses: ./.github/windows_arm64_steps
 
+      # gfortran status for macOS
+      # -------------------------
+      # - arm64,  accelerate, >=14.0
+      #     The easiest of them all (sort of). However, if you wish to target 14 you
+      #     can only build on macos-14 with the system compiler. If you try building on
+      #     macos-15 there are libraries with a minimum target of 15. Presumably when
+      #     the macos-14 is dropped we'll need to customise the compiler a bit.
+      #     In addition, we can't use Accelerate for < 14 because the library had bugs.
+      #     This means OpenBLAS has to be used.
+      # - x86_64, accelerate, >=14.0
+      #     x86_64 is only available on the macos-15-intel image.
+      #     Uses build from https://github.com/isuruf/gcc/releases/. The 15.2.0
+      #     build is back compatible to macOS 14.
+      # - x86_64, openblas, "10.14"
+      #     x86_64 is only available on the macos-15-intel image.
+      #     This can be made back compatible to macOS-10.14. The 15.2.0 build at
+      #     https://github.com/isuruf/gcc/releases/ satisfies this.
+      # - arm64, openblas, "12.3"
+      #     We ideally want this back compatible to macOS-12. The build at
+      #     https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg
+      #     satisfies those requirements.
+      #     MACOS_DEPLOYMENT_TARGET has to be set to 12.3 (there's some reason why we
+      #     don't support <12.3)
+      #     OpenBLAS is also complicated because the `delocate` step tries
+      #     to copy two libgfortran libraries into the wheel, and falls over. This
+      #     necessitates using install_name_tool on the scipy_openblas32 dylibs.
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
-        run: |
-          # gfortran status for macOS
-          # -------------------------
-          # accelerate + arm64: we can use the preinstalled (homebrew) gfortran present on the GH
-          #   image. This is compatible back to macOS-14. From time to time the homebrew binary and
-          #   GH images are updated, which may limit the oldest mac version we can target. At this
-          #   point we have to resort to other builds.
-          # accelerate + x86_64: uses build from https://github.com/isuruf/gcc/releases/. The 15.2.0
-          #   build is back compatible to macOS 14.
-          # openblas + arm64: We ideally want this back compatible to macOS-12. The build at
-          #   https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg
-          #   satisfies those requirements.
-          # openblas + x86_64: This can be made back compatible to macOS-10.14. The 15.2.0 build at
-          #   https://github.com/isuruf/gcc/releases/ satisfies this.
-          
+        run: |        
           if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
           fi
