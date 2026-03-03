@@ -1,5 +1,6 @@
 import numpy as np
-from numpy.testing import assert_equal, assert_array_almost_equal
+from numpy.testing import assert_allclose, assert_equal, assert_array_almost_equal
+import pytest
 from scipy.sparse import bsr_array, csgraph, csr_array
 
 
@@ -118,33 +119,32 @@ def test_int64_indices_directed():
     assert_array_almost_equal(labels, [1, 0])
 
 
-def test_bsr_blocksize_connected_components():
-    graphs = [
-        np.array([[1, 0, 1, 0],
-                  [0, 1, 0, 0],
-                  [0, 0, 1, 0],
-                  [0, 0, 0, 1]]),
-        np.array([[1, 0, 0, 0],
-                  [0, 1, 0, 0],
-                  [0, 0, 1, 0],
-                  [0, 0, 0, 1]]),
-        np.array([[1, 0, 0, 0],
-                  [0, 1, 0, 0],
-                  [0, 0, 0, 0],
-                  [0, 0, 0, 0]]),
-    ]
+# regression test for gh-23142
+@pytest.mark.parametrize("graph", [
+    np.array([[1, 0, 1, 0],
+              [0, 1, 0, 0],
+              [0, 0, 1, 0],
+              [0, 0, 0, 1]]),
+    np.array([[1, 0, 0, 0],
+              [0, 1, 0, 0],
+              [0, 0, 1, 0],
+              [0, 0, 0, 1]]),
+    np.array([[1, 0, 0, 0],
+              [0, 1, 0, 0],
+              [0, 0, 0, 0],
+              [0, 0, 0, 0]]),
+])
+def test_bsr_blocksize_connected_components(graph):
+    reference_graph = bsr_array(graph, blocksize=(1, 1)).astype(bool)
+    sparse_graph = bsr_array(graph, blocksize=(2, 2)).astype(bool)
 
-    for graph in graphs:
-        reference_graph = bsr_array(graph, blocksize=(1, 1)).astype(bool)
-        sparse_graph = bsr_array(graph, blocksize=(2, 2)).astype(bool)
+    n_expected, lbl_expected = csgraph.connected_components(
+        reference_graph, directed=False, return_labels=True, connection="weak"
+    )
+    n_actual, lbl_actual = csgraph.connected_components(
+        sparse_graph, directed=False, return_labels=True, connection="weak"
+    )
 
-        n_expected, lbl_expected = csgraph.connected_components(
-            reference_graph, directed=False, return_labels=True, connection="weak"
-        )
-        n_actual, lbl_actual = csgraph.connected_components(
-            sparse_graph, directed=False, return_labels=True, connection="weak"
-        )
-
-        assert_equal(n_actual, n_expected)
-        assert_array_almost_equal(lbl_actual, lbl_expected)
+    assert_equal(n_actual, n_expected)
+    assert_allclose(lbl_actual, lbl_expected)
 
