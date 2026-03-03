@@ -7445,12 +7445,14 @@ def _compute_d(cdfvals, x, sign, xp=None):
         The location at which the maximum is reached.
     """
     xp = array_namespace(cdfvals, x) if xp is None else xp
-    n = cdfvals.shape[-1]
-    D = (xp.arange(1.0, n + 1, dtype=x.dtype) / n - cdfvals if sign == +1
-         else (cdfvals - xp.arange(0.0, n, dtype=x.dtype)/n))
+    length = cdfvals.shape[-1]
+    n = _count_nonmasked(cdfvals, axis=-1, keepdims=True)
+    D = (xp.arange(1.0, length + 1, dtype=x.dtype) / n - cdfvals if sign == +1
+         else (cdfvals - xp.arange(0.0, length, dtype=x.dtype) / n))
     amax = xp.argmax(D, axis=-1, keepdims=True)
     loc_max = xp.squeeze(xp.take_along_axis(x, amax, axis=-1), axis=-1)
     D = xp.squeeze(xp.take_along_axis(D, amax, axis=-1), axis=-1)
+    D = D.data if is_marray(xp) else D
     return D[()] if D.ndim == 0 else D, loc_max[()] if loc_max.ndim == 0 else loc_max
 
 
@@ -7614,10 +7616,18 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError(f"Unexpected value {alternative=}")
 
-    N = x.shape[-1]
+    N = _count_nonmasked(x, axis=-1, xp=xp)
+    # Here and below, we currently have to do some unmasking/re-masking of masked arrays
+    # because stats distributions don't work with MArrays natively. The dance for
+    # CDF evaluation below will probably have to stay if we want to continue to accept
+    # distribution cdf methods, but the rest of the conversions can be removed when
+    # the null distribution functions are replaced with scipy.special versions that
+    # handle the unmasking/re-masking.
+    N = N.data if is_marray(xp) else N
     x = xp.sort(x, axis=-1)
     x = xp_promote(x, force_floating=True, xp=xp)
-    cdfvals = cdf(x, *args)
+    cdfvals = cdf(x.data if is_marray(xp) else x, *args)
+    cdfvals = xp.asarray(cdfvals, mask=x.mask) if is_marray(xp) else cdfvals
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
     ones = ones[()] if ones.ndim == 0 else ones
 
@@ -7625,6 +7635,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
         Dplus, d_location = _compute_d(cdfvals, x, +1)
         pvalue = xp.asarray(distributions.ksone.sf(Dplus, N), dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
         return KstestResult(Dplus, pvalue,
                             statistic_location=d_location,
                             statistic_sign=ones)
@@ -7633,6 +7644,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
         Dminus, d_location = _compute_d(cdfvals, x, -1)
         pvalue = xp.asarray(distributions.ksone.sf(Dminus, N), dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
         return KstestResult(Dminus, pvalue,
                             statistic_location=d_location,
                             statistic_sign=-ones)
@@ -7647,6 +7659,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if D.ndim == 0:
         D, d_location, d_sign = D[()], d_location[()], d_sign[()]
 
+    D = D.data if is_marray(xp) else D
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
@@ -7657,6 +7670,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
         # mode == 'approx'
         prob = 2 * distributions.ksone.sf(D, N)
     prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
+    D = xp.asarray(D) if is_marray(xp) else D
     return KstestResult(D, prob,
                         statistic_location=d_location,
                         statistic_sign=d_sign)
