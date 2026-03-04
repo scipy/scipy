@@ -38,7 +38,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'andyfaff/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
 
     strategy:
       # Ensure that a wheel builder finishes even if another fails
