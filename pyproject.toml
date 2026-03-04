@@ -158,9 +158,6 @@ musllinux-aarch64-image = "musllinux_1_2"
 RUNNER_OS="Linux"
 PKG_CONFIG_PATH = "/project/.openblas"
 
-[tool.cibuildwheel.macos]
-before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-
 [tool.cibuildwheel.macos.environment]
 PKG_CONFIG_PATH = "{project}"
 
