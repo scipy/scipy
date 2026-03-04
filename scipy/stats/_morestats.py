@@ -397,7 +397,7 @@ def kstatvar(data, n=2, *, axis=None):
     >>> kstatvar(data, n=1)
     np.float64(0.8333333333333334)
     
-    Compute the variance of the unbiased variance estimator (second k-statistic)
+    Compute the variance of the unbiased variance estimator (second k-statistic):
     
     >>> kstatvar(data, n=2)
     np.float64(5.25)
