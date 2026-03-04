@@ -86,6 +86,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gpu-ccache
 
+      - name: Define default CuPy cache path
+        run: |
+          # We don't want to change the directory, and $HOME isn't available in
+          # `env:` above
+          echo "CUPY_CACHE_DIR=$HOME/.cupy/kernel_cache" >> $GITHUB_ENV
+
+      - name: Cache CuPy kernels
+        uses: cirruslabs/cache@v4 #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        with:
+          path: ${{ env.CUPY_CACHE_DIR }}
+          # Same as for ccache above
+          key: ${{ runner.os }}-gpu-cupy-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-cupy
+
       - name: run nvidia-smi
         run: nvidia-smi
 
@@ -108,8 +123,8 @@ jobs:
       - name: Run PyTorch GPU tests
         run: pixi run --skip-deps test-torch-cuda -v
 
-      - name: Run JAX GPU tests
-        run: pixi run --skip-deps test-jax-cuda -v
-
       - name: Run CuPy tests
         run: pixi run --skip-deps test-cupy -v
+
+      - name: Run JAX GPU tests
+        run: pixi run --skip-deps test-jax-cuda -v
