@@ -80,17 +80,6 @@ jobs:
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
 
-      - name: windows - set PKG_CONFIG_PATH
-        if: ${{ matrix.buildplat[1] == 'win' }}
-        run: |
-          $CIBW = "${{ github.workspace }}/.openblas"
-          # pkgconfig needs a complete path, and not just "./openblas since the
-          # build is run in a tmp dir (?)
-          # It seems somewhere in the env passing, `\` is not
-          # passed through, so convert it to '/'
-          $CIBW = $CIBW.replace("\","/")
-          echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$CIBW" >> $env:GITHUB_ENV
-
       - name: Set environment variables for ARM64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         run: |
@@ -102,6 +91,17 @@ jobs:
       - name: Set up Flang and pkgconf for ARM64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         uses: ./.github/windows_arm64_steps
+
+      - name: windows - set PKG_CONFIG_PATH
+        if: ${{ matrix.buildplat[1] == 'win' }}
+        run: |
+          $CIBW = "${{ github.workspace }}/.openblas"
+          # pkgconfig needs a complete path, and not just "./openblas since the
+          # build is run in a tmp dir (?)
+          # It seems somewhere in the env passing, `\` is not
+          # passed through, so convert it to '/'
+          $CIBW = $CIBW.replace("\","/")
+          echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$CIBW" >> $env:GITHUB_ENV
 
       # gfortran status for macOS
       # -------------------------
