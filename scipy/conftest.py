@@ -646,7 +646,7 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabOpaque.dtype',
         'scipy.io.matlab.MatlabOpaque.strides',
         'scipy.io.matlab.MatlabFunction.strides',
-        'scipy.io.matlab.MatlabFunction.dtype'
+        'scipy.io.matlab.MatlabFunction.dtype',
         # deprecated
         'scipy.interpolate.lagrange',
         'scipy.interpolate.approximate_taylor_polynomial',

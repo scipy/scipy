@@ -1,4 +1,5 @@
 import warnings
+import os
 
 from numpy import zeros, asarray, eye, poly1d, hstack, r_
 from scipy import linalg
@@ -50,9 +51,10 @@ def pade(an, m, n=None):
     2.7179487179487181
 
     """
+    _warn_skips = (os.path.dirname(__file__),)
     msg = ("`pade` is deprecated and will be removed in SciPy 1.20.0. Use "
            "`mpmath.pade` instead.")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     an = asarray(an)
     if n is None:
         n = len(an) - 1 - m

@@ -1,5 +1,5 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
-
+import os
 from math import prod
 from types import GenericAlias
 import warnings
@@ -98,9 +98,10 @@ def lagrange(x, w):
     >>> plt.show()
 
     """
+    _warn_skips = (os.path.dirname(__file__),)
     msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
            "`scipy.interpolate.BarycentricInterpolator` instead.")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     M = len(x)
     p = poly1d(0.0)
     for j in range(M):
