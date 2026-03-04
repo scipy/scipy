@@ -96,7 +96,7 @@ jobs:
           spin test -j4 --mode full -- --durations=25 --timeout=60
 
   #############################################################################
-    fast_spin_arm64:
+  fast_spin_arm64:
     name: fast, py3.12/npAny, spin (Win-ARM64), no pythran
     runs-on: windows-11-arm
     needs: get_commit_message
