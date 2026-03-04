@@ -162,7 +162,6 @@ PKG_CONFIG_PATH = "/project/.openblas"
 PKG_CONFIG_PATH = "{project}"
 
 [tool.cibuildwheel.windows]
-before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
 repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
 
 [tool.cibuildwheel.windows.environment]
