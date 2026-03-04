@@ -1,7 +1,9 @@
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
-if is_mingw and ff.get_id() != 'gcc'
-  error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+if not get_option('_without-fortran')
+  if is_mingw and ff.get_id() != 'gcc'
+    error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+  endif
 endif
 
 cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
@@ -594,51 +596,54 @@ cpp_args_pythran += [
   _cpp_Wno_int_in_bool_context,
 ]
 
-# Fortran warning flags
-_fflag_Wno_argument_mismatch = ff.get_supported_arguments('-Wno-argument-mismatch')
-_fflag_Wno_conversion = ff.get_supported_arguments('-Wno-conversion')
-_fflag_Wno_intrinsic_shadow = ff.get_supported_arguments('-Wno-intrinsic-shadow')
-_fflag_Wno_maybe_uninitialized = ff.get_supported_arguments('-Wno-maybe-uninitialized')
-_fflag_Wno_surprising = ff.get_supported_arguments('-Wno-surprising')
-_fflag_Wno_uninitialized = ff.get_supported_arguments('-Wno-uninitialized')
-_fflag_Wno_unused_dummy_argument = ff.get_supported_arguments('-Wno-unused-dummy-argument')
-_fflag_Wno_unused_label = ff.get_supported_arguments('-Wno-unused-label')
-_fflag_Wno_unused_variable = ff.get_supported_arguments('-Wno-unused-variable')
-_fflag_Wno_tabs = ff.get_supported_arguments('-Wno-tabs')
-# The default list of warnings to ignore from Fortran code. There is a lot of
-# old, vendored code that is very bad and we want to compile it silently (at
-# least with GCC and Clang)
-fortran_ignore_warnings = ff.get_supported_arguments(
- _fflag_Wno_argument_mismatch,
- _fflag_Wno_conversion,
- _fflag_Wno_maybe_uninitialized,
- _fflag_Wno_unused_dummy_argument,
- _fflag_Wno_unused_label,
- _fflag_Wno_unused_variable,
- _fflag_Wno_tabs,
-)
+if not get_option('_without-fortran')
+  # Fortran warning flags
+  _fflag_Wno_argument_mismatch = ff.get_supported_arguments('-Wno-argument-mismatch')
+  _fflag_Wno_conversion = ff.get_supported_arguments('-Wno-conversion')
+  _fflag_Wno_intrinsic_shadow = ff.get_supported_arguments('-Wno-intrinsic-shadow')
+  _fflag_Wno_maybe_uninitialized = ff.get_supported_arguments('-Wno-maybe-uninitialized')
+  _fflag_Wno_surprising = ff.get_supported_arguments('-Wno-surprising')
+  _fflag_Wno_uninitialized = ff.get_supported_arguments('-Wno-uninitialized')
+  _fflag_Wno_unused_dummy_argument = ff.get_supported_arguments('-Wno-unused-dummy-argument')
+  _fflag_Wno_unused_label = ff.get_supported_arguments('-Wno-unused-label')
+  _fflag_Wno_unused_variable = ff.get_supported_arguments('-Wno-unused-variable')
+  _fflag_Wno_tabs = ff.get_supported_arguments('-Wno-tabs')
+  # The default list of warnings to ignore from Fortran code. There is a lot of
+  # old, vendored code that is very bad and we want to compile it silently (at
+  # least with GCC and Clang)
+  fortran_ignore_warnings = ff.get_supported_arguments(
+   _fflag_Wno_argument_mismatch,
+   _fflag_Wno_conversion,
+   _fflag_Wno_maybe_uninitialized,
+   _fflag_Wno_unused_dummy_argument,
+   _fflag_Wno_unused_label,
+   _fflag_Wno_unused_variable,
+   _fflag_Wno_tabs,
+  )
 
-# Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
-# code uses preprocessor statements, add this compile flag to it.
+  # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
+  # code uses preprocessor statements, add this compile flag to it.
 
-# Gfortran does run the preprocessor for .F files, and PROPACK is the only
-# component which needs the preprocessor (unless we need symbol renaming for
-# blas_symbol_suffix).
-_fflag_preprocess = []
-_gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
-if ff.has_multi_arguments(_gfortran_preprocess)
-  _fflag_preprocess = _gfortran_preprocess
-else
-  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
+  # Gfortran does run the preprocessor for .F files, and PROPACK is the only
+  # component which needs the preprocessor (unless we need symbol renaming for
+  # blas_symbol_suffix).
+  _fflag_preprocess = []
+  _gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
+  if ff.has_multi_arguments(_gfortran_preprocess)
+    _fflag_preprocess = _gfortran_preprocess
+  else
+    _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
+  endif
+  if use_ilp64
+    _fflag_ilp64 = []
+    # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
+    # default, all other known compilers use `-i8`
+    _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
+  endif
 endif
 
-_fflag_ilp64 = []
 f2py_ilp64_opts = []
 if use_ilp64
-  # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
-  # default, all other known compilers use `-i8`
-  _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
-
   # Write out a mapping file for f2py for defaulting to ILP64
   conf_data = configuration_data()
   if cc.sizeof('long') == 8
@@ -713,8 +718,12 @@ compilers = {
   'C': cc,
   'CPP': cpp,
   'CYTHON': meson.get_compiler('cython'),
-  'FORTRAN': meson.get_compiler('fortran')
 }
+if get_option('_without-fortran')
+  compilers += {'FORTRAN': meson.get_compiler('c')}
+else
+  compilers += {'FORTRAN': meson.get_compiler('fortran')}
+endif
 
 machines = {
   'HOST': host_machine,
@@ -729,14 +738,19 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
-  conf_data.set(name + '_COMP_ARGS', ', '.join(
-      get_option(name.to_lower() + '_args')
+  if get_option('_without-fortran') and name == 'FORTRAN'
+    conf_data.set('FORTRAN_COMP_ARGS', 'n/a')
+    conf_data.set('FORTRAN_COMP_LINK_ARGS', 'n/a')
+  else
+    conf_data.set(name + '_COMP_ARGS', ', '.join(
+        get_option(name.to_lower() + '_args')
+      )
     )
-  )
-  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
-      get_option(name.to_lower() + '_link_args')
+    conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+        get_option(name.to_lower() + '_link_args')
+      )
     )
-  )
+  endif
 endforeach
 # Add `pythran` information if present
 if use_pythran
@@ -844,6 +858,8 @@ subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')
-subdir('odr')
+if not get_option('_without-fortran')
+  subdir('odr')
+endif
 subdir('datasets')
 subdir('misc')

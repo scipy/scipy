@@ -51,13 +51,13 @@ jobs:
         shell: powershell
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
       - name: cache install
         id: cache-install
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
               C:\Program Files (x86)\Intel\oneAPI\compiler
@@ -76,7 +76,7 @@ jobs:
           tools/install_intel_oneAPI_windows.bat %WINDOWS_HPC_URL%
 
       - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
         with:
           python-version: 3.12
           channels: conda-forge

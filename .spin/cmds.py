@@ -982,7 +982,7 @@ def _cpu_count_affinity(os_cpu_count):
         except NotImplementedError:
             pass
 
-    # On PyPy and possibly other platforms, os.sched_getaffinity does not exist
+    # On some platforms, os.sched_getaffinity does not exist
     # or raises NotImplementedError, let's try with the psutil if installed.
     try:
         import psutil
@@ -996,10 +996,10 @@ def _cpu_count_affinity(os_cpu_count):
             sys.platform == "linux"
             and os.environ.get("LOKY_MAX_CPU_COUNT") is None
         ):
-            # PyPy does not implement os.sched_getaffinity on Linux which
-            # can cause severe oversubscription problems. Better warn the
-            # user in this particularly pathological case which can wreck
-            # havoc, typically on CI workers.
+            # On Linux no cpu_affinity can cause severe oversubscription
+            # problems. Better warn the user in this particularly
+            # pathological case which can wreck havoc, typically on CI
+            # workers.
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
                 "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT.",

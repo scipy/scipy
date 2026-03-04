@@ -33,6 +33,9 @@ def _using_accelerate():
 RTOL = 1e-6 if _using_accelerate() else 1e-15
 
 
+tolerance_overrides = {stats.epps_singleton_2samp: 1e-10}
+
+
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
     return (res.statistic, res.pvalue, res.df, res._standard_error,
@@ -90,6 +93,12 @@ def yeojohnson_llf(data, lmb, axis=0, _no_deco=False, **kwargs):
     if _no_deco:
         return stats._morestats._yeojohnson_llf(data, lmb=lmb, axis=axis)
     return stats.yeojohnson_llf(lmb, data, axis=axis, **kwargs)
+
+
+def kendalltau(*args, _no_deco=False, **kwargs):
+    if _no_deco:
+        return stats._stats_py._kendalltau(*args, _no_deco=_no_deco, **kwargs)
+    return stats.kendalltau(*args, **kwargs)
 
 
 axis_nan_policy_cases = [
@@ -184,7 +193,7 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
-    (stats.kendalltau, tuple(), dict(), 2, 3, True,
+    (kendalltau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.weightedtau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
@@ -529,7 +538,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    assert_allclose(res_nd, res_1d, rtol=RTOL)
+    rtol = max(tolerance_overrides.get(hypotest, RTOL), RTOL)
+    assert_allclose(res_nd, res_1d, rtol=rtol)
 
 # nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases

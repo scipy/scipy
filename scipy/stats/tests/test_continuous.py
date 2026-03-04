@@ -19,7 +19,7 @@ from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support, Mixture)
+    _generate_domain_support, Mixture, _logexpxmexpy)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats._new_distributions import DiscreteDistribution
 from scipy.stats import Normal, Logistic, Uniform, Binomial
@@ -1021,6 +1021,12 @@ class TestAttributes:
         cached_mean = dist.mean(method='cache')
         assert_equal(cached_mean, mean)
 
+        # cache is not cleared when used in a TransformedDistribution
+        dist2 = stats.exp(dist)
+        assert_equal(dist.mean(method='cache'), cached_mean)
+        dist2.reset_cache()
+        assert_equal(dist.mean(method='cache'), cached_mean)
+
         # cache is overridden by latest evaluation
         quadrature_mean = dist.mean(method='quadrature')
         cached_mean = dist.mean(method='cache')
@@ -1153,7 +1159,8 @@ class TestMakeDistribution:
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance
                          'johnsonsb', 'ksone', 'kstwo',  # tolerance
                          'nchypergeom_wallenius'}  # tolerance
-        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang',  # tolerance
+                        'dlaplace'}  # slight tolerance issue, but only for array shape
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
@@ -1163,6 +1170,7 @@ class TestMakeDistribution:
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
         rng = np.random.default_rng(7548723590230982)
         CustomDistribution = stats.make_distribution(dist)
+        params = {key: np.asarray([val, val]) for key, val in params.items()}
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
@@ -1202,10 +1210,11 @@ class TestMakeDistribution:
             # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
             # new infrastructure. Adjust reference values accordingly.
             a, _ = Y.support()
+            a, p = np.broadcast_arrays(a, p)
             ref_ppf = Y.ppf(p)
-            ref_ppf[p == 0] = a
+            ref_ppf[p == 0] = a[p == 0]
             ref_isf = Y.isf(p)
-            ref_isf[p == 1] = a
+            ref_isf[p == 1] = a[p == 1]
 
             assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
             assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
@@ -1223,7 +1232,7 @@ class TestMakeDistribution:
                 # of the support, and the new infrastructure is slow there (for now).
                 seed = 845298245687345
                 assert_allclose(X.sample(shape=10, rng=seed),
-                                Y.rvs(size=10,
+                                Y.rvs(size=p.shape,
                                       random_state=np.random.default_rng(seed)),
                                 rtol=rtol)
 
@@ -2242,3 +2251,23 @@ def test_zipfian_distribution_wrapper():
     zdist = Zipfian(a=0.75, n=15)
     # This should not generate any warnings.
     assert_equal(zdist.cdf(15), 1.0)
+
+
+class Test_logexpxmexpy:
+    # Regression tests for some cases that the simplest version of `_logexpmexpy`
+    # did not originally handle correctly.
+
+    def test_x_equals_y(self):
+        # Test x - x == 0 in log-space
+        x = np.asarray(2.)
+        assert_equal(_logexpxmexpy(x, x), -np.inf)
+
+    def test_y_neg_inf(self):
+        # Test x - 0 == x in log-space
+        x, y = np.asarray(2.), np.asarray(-inf)
+        assert_equal(_logexpxmexpy(x, y), x)
+
+    def test_nan(self):
+        # operations involving NaNs should not produce warnings
+        x = np.asarray(np.nan)
+        assert_equal(_logexpxmexpy(x, x), x)

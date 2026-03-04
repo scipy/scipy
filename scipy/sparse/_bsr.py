@@ -225,9 +225,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
     def count_nonzero(self, axis=None):
         if axis is not None:
-            raise NotImplementedError(
-                "count_nonzero over axis is not implemented for BSR format."
-            )
+            return self.tocsr().count_nonzero(axis=axis)
         return np.count_nonzero(self._deduped_data())
 
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
@@ -696,26 +694,32 @@ class bsr_array(_bsr_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        BSR format data array of the array
+    indices : ndarray
+        BSR format index array of the array
+    indptr : ndarray
+        BSR format index pointer array of the array
+    blocksize : 2-tuple of integers
+        Block size (R, C)
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        BSR format data array of the array
-    indices
-        BSR format index array of the array
-    indptr
-        BSR format index pointer array of the array
-    blocksize
-        Block size
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'bsr'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : bsr_array
+        The transpose of the array
 
     Notes
     -----
@@ -807,26 +811,32 @@ class bsr_matrix(spmatrix, _bsr_base):
 
     Attributes
     ----------
+    data : ndarray
+        BSR format data array of the matrix
+    indices : ndarray
+        BSR format index array of the matrix
+    indptr : ndarray
+        BSR format index pointer array of the matrix
+    blocksize : 2-tuple of integers
+        Block size (R, C)
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        BSR format data array of the matrix
-    indices
-        BSR format index array of the matrix
-    indptr
-        BSR format index pointer array of the matrix
-    blocksize
-        Block size
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'bsr'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : bsr_matrix
+        The transpose of the matrix
 
     Notes
     -----

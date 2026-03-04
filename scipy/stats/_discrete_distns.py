@@ -66,7 +66,9 @@ class binom_gen(rv_discrete):
                 _ShapeInfo("p", False, (0, 1), (True, True))]
 
     def _rvs(self, n, p, size=None, random_state=None):
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _argcheck(self, n, p):
         return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
@@ -114,11 +116,6 @@ class binom_gen(rv_discrete):
             t2 = 6.0/n
             g2 = t1 - t2
         return mu, var, g1, g2
-
-    def _entropy(self, n, p):
-        k = np.r_[0:n + 1]
-        vals = self._pmf(k, n, p)
-        return np.sum(entr(vals), axis=0)
 
 
 binom = binom_gen(name='binom')
@@ -235,7 +232,9 @@ class betabinom_gen(rv_discrete):
 
     def _rvs(self, n, a, b, size=None, random_state=None):
         p = random_state.beta(a, b, size)
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _get_support(self, n, a, b):
         return 0, n

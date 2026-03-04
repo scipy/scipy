@@ -13,10 +13,6 @@ else
     exit 1
 fi
 
-printenv
-# Update license
-cat $PROJECT_DIR/tools/wheels/LICENSE_linux.txt >> $PROJECT_DIR/LICENSE.txt
-
 # Not needed anymore, but leave commented out in case we need to start pulling
 # in a dev version of some dependency again.
 #FREE_THREADED_BUILD="$(python -c"import sysconfig; print(bool(sysconfig.get_config_var('Py_GIL_DISABLED')))")"

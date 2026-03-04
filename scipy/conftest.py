@@ -193,7 +193,7 @@ if SCIPY_ARRAY_API:
         if version.parse(array_api_strict.__version__) < version.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
-            api_version='2024.12'
+            api_version='2025.12'
         )
     except ImportError:
         pass
@@ -247,6 +247,10 @@ if SCIPY_ARRAY_API:
                    pytest.mark.thread_unsafe]))
 
         jax.config.update("jax_enable_x64", True)
+        # Make sure JAX won't default to less accurate TensorFloat32 precision
+        # in matmuls with float32 inputs on GPUs that support this floating
+        # point format.
+        jax.config.update("jax_default_matmul_precision", "float32")
         jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('jax.numpy')
@@ -515,8 +519,7 @@ def devices(xp):
         devices = xp.__array_namespace_info__().devices()
         # open an issue about this - cannot branch based on `any`/`all`?
         return (device for device in devices if device.type != 'meta')
-
-    return xp.__array_namespace_info__().devices() + [None]
+    return tuple(xp.__array_namespace_info__().devices()) + (None,)
 
 
 if hypothesis_available:
