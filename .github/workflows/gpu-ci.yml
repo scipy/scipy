@@ -123,8 +123,8 @@ jobs:
       - name: Run PyTorch GPU tests
         run: pixi run --skip-deps test-torch-cuda -v
 
-      - name: Run JAX GPU tests
-        run: pixi run --skip-deps test-jax-cuda -v
-
       - name: Run CuPy tests
         run: pixi run --skip-deps test-cupy -v
+
+      - name: Run JAX GPU tests
+        run: pixi run --skip-deps test-jax-cuda -v
