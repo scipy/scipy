@@ -68,9 +68,7 @@ from scipy.sparse._sputils import asmatrix, is_pydata_spmatrix, isintlike, issha
 __all__ = ["LinearOperator", "aslinearoperator"]
 
 
-@xp_capabilities(skip_backends=[
-    ("cupy", "TODO: waiting for scipy/scipy#24670"),
-])
+@xp_capabilities()
 class LinearOperator:
     """Common interface for performing matrix vector products.
 
