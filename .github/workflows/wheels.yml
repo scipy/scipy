@@ -83,11 +83,13 @@ jobs:
       - name: windows - set PKG_CONFIG_PATH
         if: ${{ matrix.buildplat[1] == 'win' }}
         run: |
-          $env:CIBW = "${{ github.workspace }}"
+          $CIBW = "${{ github.workspace }}/.openblas"
+          # pkgconfig needs a complete path, and not just "./openblas since the
+          # build is run in a tmp dir (?)
           # It seems somewhere in the env passing, `\` is not
           # passed through, so convert it to '/'
-          $env:CIBW=$env:CIBW.replace("\","/")
-          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
+          $CIBW = $CIBW.replace("\","/")
+          echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$CIBW" >> $env:GITHUB_ENV
 
       - name: Set environment variables for ARM64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
