@@ -8026,38 +8026,45 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     n2 = data2.shape[-1]
     if min(n1, n2) == 0:
         raise ValueError('Data passed to ks_2samp must not be empty')
-    n = n1 + n2
 
     data_all = xp.concat((data1, data2), axis=-1)
     batch_shape = data_all.shape[:-1]
 
-    # Previously, this part of the code was just:
-    # cdf1 = _xp_searchsorted(data1, data_all, side='right') / n1
-    # cdf2 = _xp_searchsorted(data2, data_all, side='right') / n2
-    # cddiffs = cdf1 - cdf2
-    # but the switch from `xp.searchsorted` to `_xp_searchsorted` would come with a
-    # pretty steep performance hit. When `xp.searchsorted` is vectorized, we can
-    # probably use that. In the meantime, the following algorithm is typically faster.
+    if is_marray(xp):
+        # Previously, we used this algorithm for all backends:
+        dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
+        n1 = xp.astype(_count_nonmasked(data1, axis=-1), dtype)
+        n2 = xp.astype(_count_nonmasked(data2, axis=-1), dtype)
+        data_all = xp.sort(data_all, axis=-1)
+        cdf1 = xp.astype(_xp_searchsorted(data1, data_all, side='right'), dtype)
+        cdf2 = xp.astype(_xp_searchsorted(data2, data_all, side='right'), dtype)
+        cddiffs = cdf1/n1[..., xp.newaxis] - cdf2/n2[..., xp.newaxis]
+        # but the switch from `xp.searchsorted` to `_xp_searchsorted` would come with a
+        # pretty steep performance hit, so the algorithm below is faster.
+        # When `xp.searchsorted` is vectorized, we can revert.
+    else:
+        n = n1 + n2
 
-    # We want the ECDF of each sample evaluated at *all* the points in the pooled
-    # sample. The values each ECDF can assume are given by:
-    cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
-    cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
-    # Now we "just" need to know how many times each of these values *will* be assumed
-    # when we evaluate the ECDFs at all points in the pooled sample.
-    # These counts are given by the differences between consecutive ("min" or "max")
-    # ranks corresponding with the observations in the (sorted) samples.
-    ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
-    ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
-    one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype, device=xp_device(ranks))
-    cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
-    cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
-    # Repeat isn't vectorized - in general, this would produce a ragged array. However,
-    # In our case, the sum of repeats for each slice is the same, so we can do a
-    # vectorized repeat by raveling, repeating, then restoring the shape.
-    cdf1 = xp.repeat(xp_ravel(cdf1_vals), xp_ravel(cdf1_counts), axis=-1)
-    cdf2 = xp.repeat(xp_ravel(cdf2_vals), xp_ravel(cdf2_counts), axis=-1)
-    cddiffs = xp.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
+        # We want the ECDF of each sample evaluated at *all* the points in the pooled
+        # sample. The values each ECDF can assume are given by:
+        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
+        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+        # Now we "just" need to know how many times each of these values *will* be
+        # assumed when we evaluate the ECDFs at all points in the pooled sample.
+        # These counts are given by the differences between consecutive ("min" or "max")
+        # ranks corresponding with the observations in the (sorted) samples.
+        ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)
+        ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
+        one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
+                      device=xp_device(ranks))
+        cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
+        cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
+        # Repeat isn't vectorized - in general, this would produce a ragged array.
+        # However, in our case, the sum of repeats for each slice is the same, so we can
+        # do a vectorized repeat by raveling, repeating, then restoring the shape.
+        cdf1 = xp.repeat(xp_ravel(cdf1_vals), xp_ravel(cdf1_counts), axis=-1)
+        cdf2 = xp.repeat(xp_ravel(cdf2_vals), xp_ravel(cdf2_counts), axis=-1)
+        cddiffs = xp.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
 
     # Identify the location of the statistic
     argminS = xp.argmin(cddiffs, axis=-1, keepdims=True)
@@ -8081,16 +8088,20 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     d_location = xp.where(selector, loc_minS, loc_maxS)
     one = xp.asarray(1, dtype=xp.int8)
     d_sign = xp.where(selector, -one, one)
+
+    if is_marray(xp):
+        d = d.data  # converted to NumPy below
+        n1, n2 = np.asarray(n1.data, dtype=int), np.asarray(n2.data, dtype=int)
     prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
     dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
     prob = xp.asarray(prob, dtype=dtype)
-    d = xp.astype(d, dtype, copy=False)
+    d = xp.asarray(d, dtype=dtype)
     if d.ndim == 0:
         d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
     return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
 
 
-@np.vectorize(excluded={1, 2, 3, 4, 5}, otypes=[np.float64])
+@np.vectorize(excluded={3, 4, 5}, otypes=[np.float64])
 def _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative):
     # math.gcd used to return an `int`, but now that these return arrays, NumPy can
     # return an int32. Unless we want the pythranized functions to be compiled for
