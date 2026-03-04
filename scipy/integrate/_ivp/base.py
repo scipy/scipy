@@ -285,8 +285,6 @@ class OdeSolver:
         raise NotImplementedError
 
 
-
-
 class DenseOutput:
     """Base class for local interpolant over step made by an ODE solver.
 
