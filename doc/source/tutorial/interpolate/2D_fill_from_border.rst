@@ -103,6 +103,7 @@ We now plot these functions to get a sense of their behavior.
    ...     return [error_mean, error_std]
    ...
    >>> sum_of_sines = np.sin(6 * np.pi * grid_x / L) + np.sin(6 * np.pi * grid_y / L)
+   >>> fig, axes = plt.subplots(1, 3, constrained_layout=True, sharex=True, sharey=True)
    >>> plt.subplot(131)
    <Axes: >
    >>> np.array(plot_and_check_filled_image(sum_of_sines, "Sum of sines"))
@@ -152,6 +153,7 @@ every point.
    ...     NearestNDInterpolator, LinearNDInterpolator, CloughTocher2DInterpolator
    ... )
    >>> full_results = []
+   >>> fig, axes = plt.subplots(3, 3, constrained_layout=True, sharex=True, sharey=True)
    >>> for i in range(3):
    ...     sparse_mask = np.zeros_like(grid_x, dtype=bool)
    ...     sparse_mask[::i+1, ::i+1] = True
@@ -168,7 +170,7 @@ every point.
    ...         ax = plt.subplot(3, 3, 3 * i + j + 1)
    ...         interpolator_name = interpolator_class.__name__.split("D")[0][:-1]
    ...         results = plot_and_check_filled_image(
-   ...             values, f"{interpolator_name:s}\n1 pt. in {i+1:d}"
+   ...             values, f"{interpolator_name:s}: 1/{i+1:d}"
    ...         )
    ...         results.append(np.count_nonzero(np.isnan(values)))
    ...         sparse_results.append(results)
@@ -220,6 +222,7 @@ also reduce the problem:
    :context: close-figs
 
    >>> full_results = []
+   >>> fig, axes = plt.subplots(1, 2, constrained_layout=True, sharex=True, sharey=True)
    >>> for i, interpolator_class in enumerate(
    ...     [LinearNDInterpolator, CloughTocher2DInterpolator]
    ... ):
@@ -263,6 +266,7 @@ interpolator to get back to the desired density.
 
    >>> from scipy.interpolate import RBFInterpolator, RegularGridInterpolator
    >>> results = []
+   >>> fig, axes = plt.subplots(2, 2, constrained_layout=True, sharex=True, sharey=True)
    >>> for i, kernel in enumerate(["linear", "thin_plate_spline", "cubic", "quintic"]):
    ...     rbf_interpolator = RBFInterpolator(
    ...         np.column_stack([edge_x, edge_y]), border_values, kernel=kernel
@@ -345,6 +349,7 @@ able to produce the six extrema of the boundary conditions.
    pseudo-inverse to avoid problems from the duplication.
 
    >>> full_results = []
+   >>> fig, axes = plt.subplots(2, 3, constrained_layout=True, sharex=True, sharey=True)
    >>> for i, num_coeffs in enumerate([8, 12, 16]):
    ...     results = []
    ...     for j, (polyval2d, polygrid2d) in enumerate(
@@ -363,7 +368,7 @@ able to produce the six extrema of the boundary conditions.
    ...             scaled_grid_x[:, 0], scaled_grid_y[0, :],
    ...             coeffs.reshape(num_coeffs, num_coeffs)
    ...         )
-   ...         ax = plt.subplot(2, 3, i * 2 + j + 1)
+   ...         plt.sca(axes[j, i])
    ...         results.append(
    ...             plot_and_check_filled_image(
    ...                 values, f"{poly_family:s} degree {num_coeffs - 1:d}"
@@ -402,6 +407,7 @@ produce results similar to that function.
    :context: close-figs
 
    >>> full_results = []
+   >>> fig, axes = plt.subplots(2, 3, constrained_layout=True, sharex=True, sharey=True)
    >>> for i, num_coeffs in enumerate([8, 12, 16]):
    ...     results = []
    ...     for j, (polyval2d, polygrid2d) in enumerate(
@@ -423,7 +429,7 @@ produce results similar to that function.
    ...             scaled_grid_x[:, 0], scaled_grid_y[0, :],
    ...             coeffs.reshape(num_coeffs, num_coeffs) * coeff_multiplier[:, :]
    ...         )
-   ...         ax = plt.subplot(3, 2, 2 * i + j + 1)
+   ...         plt.sca(axes[j, i])
    ...         results.append(
    ...             plot_and_check_filled_image(
    ...                 values, f"{poly_family:s} degree {num_coeffs - 1:d}"
