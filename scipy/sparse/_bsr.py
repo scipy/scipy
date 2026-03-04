@@ -720,6 +720,8 @@ class bsr_array(_bsr_base, sparray):
         Number of values stored in the array
     T : bsr_array
         The transpose of the array
+    mT : bsr_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -837,6 +839,8 @@ class bsr_matrix(spmatrix, _bsr_base):
         Number of values stored in the matrix
     T : bsr_matrix
         The transpose of the matrix
+    mT : bsr_matrix
+        The matrix transpose
 
     Notes
     -----

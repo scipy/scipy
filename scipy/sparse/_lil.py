@@ -544,6 +544,8 @@ class lil_array(_lil_base, sparray):
         Number of values stored in the array
     T : lil_array
         The transpose of the array
+    mT : lil_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -613,6 +615,8 @@ class lil_matrix(spmatrix, _lil_base):
     size : int
         Number of values stored in the matrix
     T : lil_matrix
+        The transpose of the matrix
+    mT : lil_array
         The transpose of the matrix
 
     Notes

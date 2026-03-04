@@ -543,6 +543,8 @@ class dia_array(_dia_base, sparray):
         Number of values stored in the array
     T : dia_array
         The transpose of the array
+    mT : dia_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -624,6 +626,8 @@ class dia_matrix(spmatrix, _dia_base):
         Number of values stored in the matrix
     T : dia_matrix
         The transpose of the matrix
+    mT : dia_matrix
+        The matrix transpose
 
     Notes
     -----

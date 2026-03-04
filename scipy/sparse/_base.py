@@ -398,6 +398,19 @@ class _spbase(SparseABC):
     def T(self):
         """Transpose."""
         return self.transpose()
+    
+    @property
+    def mT(self):
+        """Matrix transpose.
+        
+        See Also
+        --------
+        scipy.sparse.matrix_transpose : equivalent function
+        """
+        if (n := self.ndim) < 2:
+            raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
+        assert n == 2
+        return self.transpose()
 
     @property
     def real(self):

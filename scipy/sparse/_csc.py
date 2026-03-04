@@ -229,6 +229,8 @@ class csc_array(_csc_base, sparray):
         Number of values stored in the array
     T : csc_array
         The transpose of the array
+    mT : csc_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -331,6 +333,8 @@ class csc_matrix(spmatrix, _csc_base):
         Number of values stored in the matrix
     T : csc_matrix
         The transpose of the matrix
+    mT : csc_matrix
+        The matrix transpose
 
     Notes
     -----

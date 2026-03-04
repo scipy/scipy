@@ -244,6 +244,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               shape=permuted_shape, copy=copy)
 
     transpose.__doc__ = _spbase.transpose.__doc__
+    
+    @property
+    def mT(self):
+        if (n := self.ndim) < 2:
+            raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
+        axes = None if n == 2 else tuple(range(n - 2)) + (-1, -2)
+        return self.transpose(axes=axes)
+    
+    mT.__doc__ = _spbase.mT.__doc__
 
     def resize(self, *shape) -> None:
         shape = check_shape(shape, allow_nd=self._allow_nd)
@@ -1707,6 +1716,8 @@ class coo_array(_coo_base, sparray):
         Number of values stored in the array
     T : coo_array
         The transpose of the array
+    mT : coo_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -1823,6 +1834,8 @@ class coo_matrix(spmatrix, _coo_base):
         Number of values stored in the matrix
     T : coo_matrix
         The transpose of the matrix
+    mT : coo_matrix
+        The matrix transpose
 
     Notes
     -----
