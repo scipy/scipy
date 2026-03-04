@@ -578,7 +578,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         p_{q_{a}} = \\min{\\{1,\\left[1-(1-q_{a}) \\beta \\Delta E \\right]^{ \\
         \\frac{1}{1-q_{a}}}\\}}
 
-    Where :math:`q_{a}` is a acceptance parameter. For :math:`q_{a}<1`, zero
+    Where :math:`q_{a}` is an acceptance parameter. For :math:`q_{a}<1`, zero
     acceptance probability is assigned to the cases where
 
     .. math::

@@ -1,5 +1,5 @@
 """
-Functions for acting on a axis of an array.
+Functions for acting on an axis of an array.
 """
 import numpy as np
 

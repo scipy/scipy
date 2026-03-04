@@ -3530,7 +3530,7 @@ genextreme = genextreme_gen(name='genextreme')
 
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
 
-## gamma(a, loc, scale)  with a an integer is the Erlang distribution
+## gamma(a, loc, scale)  with integer a is the Erlang distribution
 ## gamma(1, loc, scale)  is the Exponential distribution
 ## gamma(df/2, 0, 2) is the chi2 distribution with df degrees of freedom.
 

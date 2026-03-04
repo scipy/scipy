@@ -187,7 +187,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
 
     The Wynn epsilon table extrapolation is not used (QUADPACK uses it
     for infinite intervals). This is because the algorithm here is
-    supposed to work on vector-valued functions, in an user-specified
+    supposed to work on vector-valued functions, in a user-specified
     norm, and the extension of the epsilon algorithm to this case does
     not appear to be widely agreed. For max-norm, using elementwise
     Wynn epsilon could be possible, but we do not do this here with

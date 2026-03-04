@@ -938,7 +938,7 @@ def dft(n, scale=None):
 def fiedler(a):
     """Returns a symmetric Fiedler matrix.
 
-    Given an sequence of numbers `a`, Fiedler matrices have the structure
+    Given a sequence of numbers `a`, Fiedler matrices have the structure
     ``F[i, j] = np.abs(a[i] - a[j])``, and hence zero diagonals and nonnegative
     entries. A Fiedler matrix has a dominant positive eigenvalue and other
     eigenvalues are negative. Although not valid generally, for certain inputs,

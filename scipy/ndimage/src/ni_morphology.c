@@ -132,7 +132,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
 
     NPY_BEGIN_THREADS;
 
-    /* get data pointers an size: */
+    /* get data pointers and size: */
     pi = (void *)PyArray_DATA(input);
     po = (void *)PyArray_DATA(output);
     size = PyArray_SIZE(input);

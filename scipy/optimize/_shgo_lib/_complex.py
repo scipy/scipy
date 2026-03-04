@@ -274,7 +274,7 @@ class Complex:
                         yield a_vu.x
 
                 # Try to connect aN lower source of previous a + b
-                # operation with a aN vertex
+                # operation with an aN vertex
                 ab_Cc = copy.copy(ab_C)
 
                 for vp in ab_Cc:
@@ -612,7 +612,7 @@ class Complex:
                 cCcx = [x[:] for x in Ccx[:i + 1]]
                 cCux = [x[:] for x in Cux[:i + 1]]
                 # Try to connect aN lower source of previous a + b
-                # operation with a aN vertex
+                # operation with an aN vertex
                 ab_Cc = copy.copy(ab_C)  # NOTE: We append ab_C in the
                 # (VL, VC, VU) for-loop, but we use the copy of the list in the
                 # ab_Cc for-loop.
