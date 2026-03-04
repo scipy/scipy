@@ -675,3 +675,102 @@ def test_fewer_points_than_dimensions_gh17436():
     message = "Number of dimensions is greater than number of samples..."
     with pytest.raises(ValueError, match=message):
         stats.gaussian_kde(rvs)
+
+
+def test_kde_sheather_jones_basic():
+    # Test that bw_method='sheather-jones' produces a KDE without error and that the
+    # bandwidth is a positive finite number.
+    rng = np.random.default_rng(42)
+    xn = rng.normal(0, 1, 200)
+    gkde = stats.gaussian_kde(xn, bw_method='sheather-jones')
+    assert np.isfinite(gkde.factor)
+    assert gkde.factor > 0
+
+    # Verify that the KDE integrates to approximately 1
+    xs = np.linspace(-5, 5, 1000)
+    integral = np.trapezoid(gkde(xs), xs)
+    assert_almost_equal(integral, 1.0, decimal=2)
+
+
+def test_kde_sheather_jones_string_accepted():
+    # Verify 'sheather-jones' is accepted in both constructor and set_bandwidth
+    x1 = np.array([-7, -5, 1, 4, 5.])
+    kde = stats.gaussian_kde(x1, bw_method='sheather-jones')
+    assert np.isfinite(kde.factor)
+
+    # Also accepted via set_bandwidth
+    kde2 = stats.gaussian_kde(x1)
+    kde2.set_bandwidth(bw_method='sheather-jones')
+    assert np.isfinite(kde2.factor)
+
+
+def test_kde_sheather_jones_1d_only():
+    # Verify that 'sheather-jones' raises ValueError for multivariate data
+    rng = np.random.default_rng(42)
+    xn_2d = rng.normal(size=(2, 50))
+    message = "Sheather-Jones bandwidth selection is only supported"
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(xn_2d, bw_method='sheather-jones')
+
+
+def test_kde_sheather_jones_weighted_raises():
+    # Verify that 'sheather-jones' raises NotImplementedError for weighted data
+    rng = np.random.default_rng(42)
+    xn = rng.normal(0, 1, 50)
+    wn = rng.random(50)
+    message = "Sheather-Jones bandwidth selection is not implemented"
+    with pytest.raises(NotImplementedError, match=message):
+        stats.gaussian_kde(xn, bw_method='sheather-jones', weights=wn)
+
+
+def test_kde_sheather_jones_small_dataset():
+    # Verify no numerical issues with a small dataset
+    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
+    kde = stats.gaussian_kde(x, bw_method='sheather-jones')
+    assert np.isfinite(kde.factor)
+    assert kde.factor > 0
+
+
+def test_kde_sheather_jones_set_bandwidth():
+    # Verify that switching to SJ via set_bandwidth after construction works
+    rng = np.random.default_rng(42)
+    xn = rng.normal(0, 1, 100)
+
+    kde = stats.gaussian_kde(xn)
+    scott_factor = kde.factor
+
+    kde.set_bandwidth(bw_method='sheather-jones')
+    sj_factor = kde.factor
+
+    # SJ factor should be different from Scott's
+    assert sj_factor != scott_factor
+    assert np.isfinite(sj_factor)
+    assert sj_factor > 0
+
+
+def test_kde_sheather_jones_vs_scott():
+    # Verify that SJ bandwidth differs from Scott's rule and produces
+    # a reasonable KDE for standard normal data
+    rng = np.random.default_rng(12345)
+    xn = rng.normal(0, 1, 500)
+
+    kde_scott = stats.gaussian_kde(xn, bw_method='scott')
+    kde_sj = stats.gaussian_kde(xn, bw_method='sheather-jones')
+
+    # Bandwidths should differ
+    assert kde_scott.factor != kde_sj.factor
+
+    # Both should produce a valid KDE that integrates to ~1
+    xs = np.linspace(-5, 5, 1000)
+    for kde in [kde_scott, kde_sj]:
+        integral = np.trapezoid(kde(xs), xs)
+        assert_almost_equal(integral, 1.0, decimal=2)
+
+
+def test_kde_sheather_jones_error_message():
+    # Verify the error message for invalid bw_method strings includes
+    # 'sheather-jones'
+    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    message = "'sheather-jones'"
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(x, bw_method='wrongstring')
