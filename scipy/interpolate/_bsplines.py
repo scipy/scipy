@@ -201,8 +201,12 @@ class BSpline:
     >>> ax.plot(xx, [bspline(x, t, c ,k) for x in xx], 'r-', lw=3, label='naive')
     >>> ax.plot(xx, spl(xx), 'b-', lw=4, alpha=0.7, label='BSpline')
     >>> ax.grid(True)
-    >>> ax.legend(loc='best')
+    >>> ax.legend(loc='best') 
     >>> plt.show()
+    
+    See Also
+    --------
+    :doc:`/tutorial/interpolate/extrapolation_examples`
 
 
     References
