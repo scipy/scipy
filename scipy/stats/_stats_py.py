@@ -8035,7 +8035,6 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
         n1 = xp.astype(_count_nonmasked(data1, axis=-1), dtype)
         n2 = xp.astype(_count_nonmasked(data2, axis=-1), dtype)
-        data_all = xp.sort(data_all, axis=-1)
         cdf1 = xp.astype(_xp_searchsorted(data1, data_all, side='right'), dtype)
         cdf2 = xp.astype(_xp_searchsorted(data2, data_all, side='right'), dtype)
         cddiffs = cdf1/n1[..., xp.newaxis] - cdf2/n2[..., xp.newaxis]
