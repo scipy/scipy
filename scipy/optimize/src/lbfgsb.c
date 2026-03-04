@@ -136,10 +136,17 @@ static void dcsrch(
     double gtol, double xtol, double stpmin,
     double stpmax, CBLAS_INT* task, CBLAS_INT* task_msg, CBLAS_INT* isave, double* dsave
 );
-static void dcstep (
+static void dcstep(
     double* stx, double* fx, double* dx, double* sty, double* fy, double* dy,
     double* stp, double fp, double dp, CBLAS_INT* brackt,
     double stpmin, double stpmax
+);
+
+// Helper functions
+static inline void save_vars(
+    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    double finit, double fx, double fy, double stx, double sty, double stmin,
+    double stmax, double width, double width1, int* isave, double* dsave
 );
 
 static double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
@@ -3252,8 +3259,9 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
 
         *task = FG;
         *task_msg = NO_MSG;
-        goto SAVEVARS;
-
+        save_vars(brackt, stage, ginit, gtest, gx, gy, finit, fx, fy, stx, sty, stmin,
+                  stmax, width, width1, isave, dsave);
+        return;
     } else {
         // Restore local variables.
         if (isave[0] == 1) {
@@ -3310,7 +3318,9 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     // Test for termination.
     if ((*task == WARNING) || (*task == CONVERGENCE))
     {
-        goto SAVEVARS;
+        save_vars(brackt, stage, ginit, gtest, gx, gy, finit, fx, fy, stx, sty, stmin,
+                  stmax, width, width1, isave, dsave);
+        return;
     }
 
     // A modified function is used to predict the step during the first stage if
@@ -3377,8 +3387,15 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     // Obtain another function and derivative.
     *task = FG;
     *task_msg = NO_MSG;
+    save_vars(brackt, stage, ginit, gtest, gx, gy, finit, fx, fy, stx, sty, stmin,
+              stmax, width, width1, isave, dsave);
+    return;
+}
 
-SAVEVARS:
+static inline void save_vars(
+    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    double finit, double fx, double fy, double stx, double sty, double stmin,
+    double stmax, double width, double width1, int* isave, double* dsave) {
     if (brackt)
     {
         isave[0] = 1;
