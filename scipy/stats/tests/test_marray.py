@@ -346,15 +346,16 @@ def test_one_sample_tests(fun, kwargs, axis, xp):
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
 
 
-@make_xp_test_case(stats.ks_1samp)
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@pytest.mark.parametrize('method', ['exact', 'asymptotic'])  # auto == exact
+@pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.ks_1samp),
+                                 make_xp_pytest_param(stats.kstest)])
+@pytest.mark.parametrize('method', ['exact', 'approx', 'asymptotic'])  # auto == exact
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_ks_1samp(method, alternative, axis, xp):
+def test_ks_1samp(fun, method, alternative, axis, xp):
     mxp, marrays, narrays = get_arrays(1, xp=xp, seed=84912165484322)
     kwargs = dict(method=method, alternative=alternative, axis=axis)
-    res = stats.ks_1samp(*marrays, stats.norm.cdf, **kwargs)
+    res = fun(*marrays, stats.norm.cdf, **kwargs)
     ref = stats.ks_1samp(*narrays, stats.norm.cdf, nan_policy='omit', **kwargs)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
@@ -384,13 +385,15 @@ def test_two_sample_tests(fun, kwargs, axis, xp):
 
 @make_xp_test_case(stats.ks_2samp)
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.ks_2samp),
+                                 make_xp_pytest_param(stats.kstest)])
 @pytest.mark.parametrize('method', ['exact', 'asymp', 'auto'])  # auto == exact
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_ks_2samp(method, alternative, axis, xp):
+def test_ks_2samp(fun, method, alternative, axis, xp):
     mxp, marrays, narrays = get_arrays(2, xp=xp, seed=84912165484322)
     kwargs = dict(method=method, alternative=alternative, axis=axis)
-    res = stats.ks_2samp(*marrays, **kwargs)
+    res = fun(*marrays, **kwargs)
     ref = stats.ks_2samp(*narrays, nan_policy='omit', **kwargs)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))

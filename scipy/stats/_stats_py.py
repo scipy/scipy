@@ -7616,6 +7616,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError(f"Unexpected value {alternative=}")
 
+    x = xp.sort(x, axis=-1)
+    x = xp_promote(x, force_floating=True, xp=xp)
     N = _count_nonmasked(x, axis=-1, xp=xp)
     # Here and below, we currently have to do some unmasking/re-masking of masked arrays
     # because stats distributions don't work with MArrays natively. The dance for
@@ -7624,8 +7626,6 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     # the null distribution functions are replaced with scipy.special versions that
     # handle the unmasking/re-masking.
     N = N.data if is_marray(xp) else N
-    x = xp.sort(x, axis=-1)
-    x = xp_promote(x, force_floating=True, xp=xp)
     cdfvals = cdf(x.data if is_marray(xp) else x, *args)
     cdfvals = xp.asarray(cdfvals, mask=x.mask) if is_marray(xp) else cdfvals
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
@@ -7665,7 +7665,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if mode == 'exact':
         prob = distributions.kstwo.sf(D, N)
     elif mode == 'asymp':
-        prob = distributions.kstwobign.sf(D * math.sqrt(N))
+        prob = distributions.kstwobign.sf(D * N**0.5)
     else:
         # mode == 'approx'
         prob = 2 * distributions.ksone.sf(D, N)
