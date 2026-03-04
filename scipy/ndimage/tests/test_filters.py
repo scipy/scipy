@@ -4,6 +4,7 @@ import itertools
 import re
 import contextlib
 import warnings
+import importlib
 
 import numpy as np
 import pytest
@@ -35,6 +36,11 @@ uses_output_dtype = skip_xp_backends(
     np_only=True, exceptions=["cupy"],
     reason="output=dtype is numpy-specific"
 )
+
+try:
+    CUPY_VERSION = importlib.metadata.version('cupy')
+except ImportError:
+    CUPY_VERSION = None
 
 
 def uses_output_array(f):
@@ -498,7 +504,7 @@ class TestNdimageFilters:
 
     @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate_mode_sequence(self, xp):
-        if is_cupy(xp):
+        if is_cupy(xp) and CUPY_VERSION and CUPY_VERSION >= "14":
             pytest.xfail("multiple modes work in CuPy 14")
 
         kernel = xp.ones((2, 2))
@@ -1710,7 +1716,7 @@ class TestNdimageFilters:
 
     @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter07(self, xp):
-        if is_cupy(xp):
+        if is_cupy(xp) and CUPY_VERSION and CUPY_VERSION >= "14":
             pytest.xfail("multiple modes work in CuPy 14")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1805,7 +1811,7 @@ class TestNdimageFilters:
 
     @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter07(self, xp):
-        if is_cupy(xp):
+        if is_cupy(xp) and CUPY_VERSION and CUPY_VERSION >= "14":
             pytest.xfail("multiple modes work in CuPy 14")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1998,7 +2004,7 @@ class TestNdimageFilters:
         ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
     )
     def test_rank08_1(self, xp):
-        if is_cupy(xp):
+        if is_cupy(xp) and CUPY_VERSION and CUPY_VERSION >= "14":
             pytest.xfail("multiple modes work in CuPy 14")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
