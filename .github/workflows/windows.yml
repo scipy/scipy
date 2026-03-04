@@ -127,7 +127,7 @@ jobs:
         run: |
           set -xe
           python -m pip install -r requirements/openblas.txt
-          bash tools/wheels/cibw_before_build_win.sh .
+          python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > $PROJECT_DIR/scipy-openblas.pc
           echo "PKG_CONFIG_PATH=${{ github.workspace }}" >> $GITHUB_ENV
 
       - name: pip-packages

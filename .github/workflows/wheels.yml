@@ -32,7 +32,7 @@ jobs:
 
   build_wheels:
     name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
-      ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+      ${{ matrix.buildplat[2] }} ${{ÏC matrix.buildplat[3] }}
       ${{ matrix.buildplat[4] }}
     runs-on: ${{ matrix.buildplat[0] }}
     needs: get_commit_message
