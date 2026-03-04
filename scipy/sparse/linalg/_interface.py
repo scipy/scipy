@@ -1161,6 +1161,7 @@ class IdentityOperator(LinearOperator):
         return self
 
 
+@xp_capabilities()
 def aslinearoperator(A):
     """Return `A` as a `LinearOperator`.
 
