@@ -760,7 +760,7 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
         ifun, iword, nfree, nact, ileave, nenter,
         theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
         lsave, isave, dsave
-    )
+    );
     return;
 
 LINE111:
@@ -933,7 +933,7 @@ LINE666:
             ifun, iword, nfree, nact, ileave, nenter,
             theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
             lsave, isave, dsave
-        )
+        );
         return;
     } else {
         // Calculate and print out the quantities related to the new X.
@@ -948,7 +948,7 @@ LINE666:
             ifun, iword, nfree, nact, ileave, nenter,
             theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
             lsave, isave, dsave
-        )
+        );
         return;
     }
 
@@ -1047,7 +1047,7 @@ LINE999:
         ifun, iword, nfree, nact, ileave, nenter,
         theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
         lsave, isave, dsave
-    )
+    );
     return;
 }
 
