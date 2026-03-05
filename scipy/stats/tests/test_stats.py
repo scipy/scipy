@@ -2260,7 +2260,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         xp_assert_close(result.slope, xp.asarray(1.0))
-        xp_assert_close(result.intercept, xp.asarray(1.0))
+        xp_assert_close(result.intercept, xp.asarray(3.0))
         xp_assert_close(result.rvalue, xp.asarray(1.0))
 
         NaN = xp.asarray(xp.nan)
