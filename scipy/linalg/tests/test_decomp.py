@@ -527,20 +527,20 @@ class TestEig:
         # see if the memory was reused
         a_inplace = (
             overwrite_a and
-            (a.dtype != int) and
-            (a.ndim == 2) and
+            (a.dtype != int) and (a.dtype == np.result_type(a, b)) and
+            (a.ndim == 2) and (b.ndim == 2) and
             a.flags['F_CONTIGUOUS']
         )
 
         b_inplace = (
             overwrite_b and
-            (b.dtype != int) and
-            (b.ndim == 2) and
+            (b.dtype != int) and (b.dtype == np.result_type(a, b)) and
+            (a.ndim == 2) and (b.ndim == 2) and
             b.flags['F_CONTIGUOUS']
         )
 
-        assert (a == a_ref).all() != a_inplace
-        assert (b == b_ref).all() != b_inplace
+        assert (a == a_ref).all() != a_inplace, 'A'
+        assert (b == b_ref).all() != b_inplace, 'B'
 
 
 class TestEigBanded:
