@@ -121,7 +121,6 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     if (buf == NULL) { free(rwork); return -103; }
 
     // partition the workspace
-//    T *data=NULL, *work=NULL;
     T *work = &buf[0];
     T *wr = &buf[lwork];
 
@@ -272,33 +271,63 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     lwork = _calc_lwork(tmp);
     if (lwork < 0) { free(rwork); return -102; }
 
-    // allocate
-    npy_intp bufsize = n*n + n*n + lwork + n + n;
+    /*
+     * Allocate memory and chop the buffer into parts
+     *
+     *     lwork        n        n        n/0      n*n/0    n*n/0    n*n/0   n*n/0
+     * |-----------|---------|-------|----------|---------|-------|--------|--------|
+     * ^           ^         ^       ^          ^         ^       ^        ^
+     * work        alphar    beta    alphai     data_A    data_B  buf_vl   buf_vr
+     *
+     * Here
+     *   - A_size & B_size are n*n if overwrite_{a,b} is False (and =0 otherwise)
+     *   - alphar & beta are eigenvalues, size `n` (always allocated)
+     *   - alphai is the imaginary part of eigenvalues, size `n` if real, 0 otherwise
+     *     (s- and d-ggev have both in `alphar` and `alphai` arguments, while c- and
+     *     z-geev only have `alphar`)
+     *   - `buf_vl` and `buf_vr` hold eigenvectors if requested via `compute_{vl,vr}`.
+     *
+     * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
+     */
     npy_intp alphai_size = sp_type_traits<T>::is_complex ? 0 : n ;
-    bufsize += alphai_size;
-
+    npy_intp A_size = overwrite_a ? 0 : n*n;
+    npy_intp B_size = overwrite_b ? 0 : n*n;
     npy_intp vl_size = compute_vl ? ldvl*n : 0;
     npy_intp vr_size = compute_vr ? ldvr*n : 0;
-    bufsize += vl_size + vr_size;
+
+    npy_intp bufsize = lwork + n + n + alphai_size + A_size + B_size  + vl_size + vr_size;
 
     T *buf = (T *)malloc(bufsize*sizeof(T));
     if (buf == NULL) { free(rwork); return -103; }
 
-    // partition the workspace
-    T *data_A = &buf[0];
-    T *data_B = &buf[n*n];
-    T *work = &buf[2*n*n];
-    T *alphar = &buf[2*n*n + lwork];
-    T *beta = &buf[2*n*n + lwork + n];
+    T *work = &buf[0];
+    T *alphar = &buf[lwork];
+    T *beta = &buf[lwork + n];
 
     T *alphai = NULL;
-    if(alphai_size > 0) { alphai = &buf[2*n*n + lwork + 2*n ]; }
+    if(alphai_size > 0) { alphai = &buf[lwork + 2*n]; }
+
+    T *data_A = NULL;
+    if (overwrite_a) {
+        // work in-place (2D only, ensured at the python call site)
+        data_A = (T *)Am_data;
+    } else {
+        data_A = &buf[lwork + 2*n + alphai_size];
+    }
+
+    T *data_B = NULL;
+    if (overwrite_b) {
+        // work in-place (2D only, ensured at the python call site)
+        data_B = (T *)Bm_data;
+    } else {
+        data_B = &buf[lwork + 2*n + alphai_size + A_size];
+    }
 
     T *buf_vl = NULL;
-    if(vl_size > 0) { buf_vl = &buf[2*n*n + lwork + 2*n + alphai_size]; }
+    if(vl_size > 0) { buf_vl = &buf[lwork + 2*n + alphai_size + A_size + B_size]; }
 
     T *buf_vr = NULL;
-    if(vr_size > 0) { buf_vr = &buf[2*n*n + lwork + 2*n + alphai_size + vl_size]; }
+    if(vr_size > 0) { buf_vr = &buf[lwork + 2*n + alphai_size + vl_size + A_size + B_size]; }
 
 
     // --------------------------------------------------------------------
@@ -307,12 +336,20 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         init_status(slice_status, idx, St::GENERAL);
 
-        // copy the slice to `data` in F order
-        T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides_A);
-        copy_slice_F(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1]);
+        if (!overwrite_a) {
+            // copy the slice to `data` in F order
+            T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides_A);
+            copy_slice_F(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1]);
+        }
+        // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
+        // will need to adjust the data pointer here, too.
 
-        T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
-        copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
+        if (!overwrite_b) {
+            T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
+            copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
+        }
+        // same deal as with overwrite_a
+
 
         // compute eigenvalues for the slice
         call_ggev(&jobvl, &jobvr, &intn, data_A, &lda, data_B, &ldb, alphar, alphai, beta, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
