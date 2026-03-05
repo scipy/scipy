@@ -98,7 +98,16 @@ def _initialize(func, xs, args, kwargs=None,
     xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
     xs, args = xas[:nx], xas[nx:]
     xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
-    fs = [xp.asarray(func(x, *args)) for x in xs]
+    # When preserve_shape=True, the user needs to be able to easily predict the shape
+    # of the array passed to their callable. In particular, the arguments should always
+    # have the same number of dimensions. Calls to `func` in the loop will have an extra
+    # dimension, so we need to add an extra dimension in the call here, too.
+    if preserve_shape:
+        fs = [(xp.asarray(func(x[..., xp.newaxis],
+                               *(arg[..., xp.newaxis] for arg in args))))[..., 0]
+              for x in xs]
+    else:
+        fs = [xp.asarray(func(x, *args)) for x in xs]
     shape = xs[0].shape
     fshape = fs[0].shape
 
@@ -106,7 +115,7 @@ def _initialize(func, xs, args, kwargs=None,
         # bind original shape/func now to avoid late-binding gotcha
         def func(x, *args, shape=shape, func=func,  **kwargs):
             i = (0,)*(len(fshape) - len(shape))
-            return func(x[i], *args, **kwargs)
+            return func(x[i], *(arg[i] for arg in args), **kwargs)
         shape = np.broadcast_shapes(fshape, shape)  # just shapes; use of NumPy OK
         xs = [xp.broadcast_to(x, shape) for x in xs]
         args = [xp.broadcast_to(arg, shape) for arg in args]
@@ -249,9 +258,11 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
             work.args = args
 
         x_shape = x.shape
+        args = work.args
         if preserve_shape:
             x = xp.reshape(x, (shape + (-1,)))
-        f = func(x, *work.args)
+            args = [xp.reshape(arg, (shape + (-1,))) for arg in work.args]
+        f = func(x, *args)
         f = xp.asarray(f, dtype=dtype)
         if preserve_shape:
             x = xp.reshape(x, x_shape)
