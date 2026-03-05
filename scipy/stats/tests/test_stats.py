@@ -2319,6 +2319,21 @@ class TestRegression:
         xp_assert_close(result.slope, xp.asarray(poly[0]))
         xp_assert_close(result.intercept, xp.asarray(poly[1]))
 
+    def test_linregress_two_points_nan_inference():
+        # Test for  gh-24684
+        x = np.array([0., 1.])
+        y = np.array([0., 1.])
+
+        res = stats.linregress(x, y)
+
+        assert np.isnan(res.pvalue)
+        assert np.isnan(res.stderr)
+        assert np.isnan(res.intercept_stderr)
+
+        # Point estimates should still be correct
+        assert res.slope == 1
+        assert res.intercept == 0
+
     def test_empty_input(self, xp):
         with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
             res = stats.linregress(xp.asarray([]), xp.asarray([]))

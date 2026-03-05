@@ -10874,10 +10874,10 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     intercept = ymean - slope*xmean
     if not is_marray(xp) and n == 2:
         # handle case when only two points are passed in
-        one = xp.asarray(1.0, dtype=r.dtype)
-        prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
-        slope_stderr = xp.zeros_like(r)
-        intercept_stderr = xp.zeros_like(r)
+        # p-value and standard errors are undefined for n=2 (0 degrees of freedom)
+        prob = xp.full_like(r, NaN)
+        slope_stderr = xp.full_like(r, NaN)
+        intercept_stderr = xp.full_like(r, NaN)
     else:
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
