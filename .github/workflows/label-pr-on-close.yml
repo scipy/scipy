@@ -3,6 +3,8 @@ on:
   pull_request_target:
     types: [closed]
 
+permissions: {}
+
 jobs:
   label_pull_request:
     name: "Label PR on Close"
