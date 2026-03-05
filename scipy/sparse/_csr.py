@@ -450,7 +450,7 @@ class csr_array(_csr_base, sparray):
     array([[2, 1, 0, 0],
            [0, 1, 1, 1]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class csr_matrix(spmatrix, _csr_base):

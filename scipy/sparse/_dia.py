@@ -584,7 +584,7 @@ class dia_array(_dia_base, sparray):
            [0., 0., 0., ..., 2., 1., 0.],
            [0., 0., 0., ..., 1., 2., 1.],
            [0., 0., 0., ..., 0., 1., 2.]])
-    """
+    """  # numpydoc ignore=PR01
 
 
 class dia_matrix(spmatrix, _dia_base):
