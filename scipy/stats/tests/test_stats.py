@@ -2259,12 +2259,14 @@ class TestRegression:
         y = xp.arange(3, 5)
         result = stats.linregress(x, y)
 
-        # Non-horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(0.0))
+        xp_assert_close(result.slope, xp.asarray(1.0))
+        xp_assert_close(result.intercept, xp.asarray(1.0))
+        xp_assert_close(result.rvalue, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_regress_two_inputs_horizontal_line(self, xp):
         # Regress a horizontal line formed by two points.
@@ -2273,11 +2275,14 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(1.0))
+        xp_assert_close(result.slope, xp.asarray(0.0))
+        xp_assert_close(result.intercept, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.rvalue, NaN)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_nist_norris(self, xp):
         # If this causes a lint failure in the future, please note the history of
