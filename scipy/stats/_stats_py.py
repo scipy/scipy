@@ -10862,22 +10862,29 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
-    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
+
+    nan_scalar = float("nan")
+    
     r = xpx.apply_where(
         ~degenerate,
         (ssxym, ssxm, ssym),
         lambda ssxym, ssxm, ssym: xp.clip(ssxym / xp.sqrt(ssxm * ssym), -1.0, 1.0),
-        lambda ssxym, ssxm, ssym: xp.where(ssxym==0, NaN, 0.0)
+        lambda ssxym, ssxm, ssym: xp.where(
+            ssxym==0,
+            xp.full_like(ssxym, nan_scalar, dtype=ssxym.dtype),
+            xp.zeros_like(ssxym),
+        ),
     )
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
+    
     if not is_marray(xp) and n == 2:
         # handle case when only two points are passed in
         # p-value and standard errors are undefined for n=2 (0 degrees of freedom)
-        prob = xp.full_like(r, NaN)
-        slope_stderr = xp.full_like(r, NaN)
-        intercept_stderr = xp.full_like(r, NaN)
+        prob = xp.full_like(slope, nan_scalar, dtype=slope.dtype)
+        slope_stderr = xp.full_like(slope, nan_scalar, dtype=slope.dtype)
+        intercept_stderr = xp.full_like(slope, nan_scalar, dtype=slope.dtype)
     else:
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up

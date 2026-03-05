@@ -2337,8 +2337,8 @@ class TestRegression:
         xp_assert_equal(res.intercept_stderr, NaN)
 
         # Point estimates should still be correct
-        assert res.slope == 1
-        assert res.intercept == 0
+        xp_assert_close(res.slope, xp.asarray(1.0))
+        xp_assert_close(res.intercept, xp.asarray(0.0))
 
     def test_empty_input(self, xp):
         with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
