@@ -678,13 +678,26 @@ def test_fewer_points_than_dimensions_gh17436():
 
 
 def test_kde_sheather_jones_basic():
-    # Test that bw_method='sheather-jones' produces a KDE without error and that the
-    # bandwidth is a positive finite number.
+    # Test that bw_method='sheather-jones' produces a KDE without error and that
+    # the bandwidth is a positive finite number.
     rng = np.random.default_rng(42)
     xn = rng.normal(0, 1, 200)
     gkde = stats.gaussian_kde(xn, bw_method='sheather-jones')
     assert np.isfinite(gkde.factor)
     assert gkde.factor > 0
+
+    # Verify value against {locfit} silverman pilot bandwidth from R
+    h = gkde.factor * np.std(xn, ddof=1)
+    
+    # locfit from R result (using silverman as initial bandwidth)
+    # Note: locfit uses a slightly different definition of pilot bandwidth due
+    # to binned approximations
+    expected_h_locfit = 0.3251302
+    assert_allclose(h, expected_h_locfit, rtol=1e-2)
+    
+    # Exact closed-form analytical solution from original R code
+    expected_h_exact = 0.3254563
+    assert_allclose(h, expected_h_exact, rtol=1e-5)
 
     # Verify that the KDE integrates to approximately 1
     xs = np.linspace(-5, 5, 1000)
@@ -724,12 +737,27 @@ def test_kde_sheather_jones_weighted_raises():
 
 
 def test_kde_sheather_jones_small_dataset():
-    # Verify no numerical issues with a small dataset
-    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
+    # Verify value against {locfit} silverman pilot bandwidth from R
+    x = np.array([
+        50, 31, 32, 21, 33, 30, 26, 29, 53, 54,
+        30, 34, 57, 59, 51, 32, 31, 31, 33, 32,
+        27, 50, 41, 29, 51, 41, 43, 22, 57, 38,
+        60, 28, 22, 28, 45, 33, 35, 46, 27, 56,
+        26, 37, 48, 54, 40, 25, 29, 22, 31, 24,
+    ])
     kde = stats.gaussian_kde(x, bw_method='sheather-jones')
-    assert np.isfinite(kde.factor)
-    assert kde.factor > 0
+    
+    # R locfit sj method returns absolute bandwidth (h), so we compare against 
+    # kde.factor * np.std(x, ddof=1)
+    h = kde.factor * np.std(x, ddof=1)
+    
+    # locfit from R result (using silverman as initial bandwidth)
+    expected_h = 4.288694
+    assert_allclose(h, expected_h, rtol=1e-2)
 
+    # Exact closed-form analytical solution from original R code
+    expected_h_exact = 4.306058
+    assert_allclose(h, expected_h_exact, rtol=1e-5)
 
 def test_kde_sheather_jones_set_bandwidth():
     # Verify that switching to SJ via set_bandwidth after construction works
@@ -746,26 +774,6 @@ def test_kde_sheather_jones_set_bandwidth():
     assert sj_factor != scott_factor
     assert np.isfinite(sj_factor)
     assert sj_factor > 0
-
-
-def test_kde_sheather_jones_vs_scott():
-    # Verify that SJ bandwidth differs from Scott's rule and produces
-    # a reasonable KDE for standard normal data
-    rng = np.random.default_rng(12345)
-    xn = rng.normal(0, 1, 500)
-
-    kde_scott = stats.gaussian_kde(xn, bw_method='scott')
-    kde_sj = stats.gaussian_kde(xn, bw_method='sheather-jones')
-
-    # Bandwidths should differ
-    assert kde_scott.factor != kde_sj.factor
-
-    # Both should produce a valid KDE that integrates to ~1
-    xs = np.linspace(-5, 5, 1000)
-    for kde in [kde_scott, kde_sj]:
-        integral = np.trapezoid(kde(xs), xs)
-        assert_allclose(integral, 1.0, atol=1e-2)
-
 
 def test_kde_sheather_jones_error_message():
     # Verify the error message for invalid bw_method strings includes
