@@ -75,17 +75,17 @@ jobs:
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_CPPKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL "" a585655669cee57a0965eba46d96b1081d9ab86e3e4b421505ebec651b41564b  # 2025.0.1.27
       - name: Install oneAPI Fortran kit
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_FORTRANKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_FORTRANKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_FORTRANKIT_URL "" ff9eb5a639c0fcc3d386f5798cc4259103842d783f34c08da27155431215ed0c  # 2025.0.1.27
       - name: Install oneAPI HPC kit
         if: steps.cache-install.outputs.cache-hit != 'true'
         run: |
           printenv LINUX_HPCKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL "" 941a4d4ccc05cfb60f5edbe7c2c5e34197cce561c12d565cd8c6fefe6b752fb6  # 2025.0.1.47
 
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0

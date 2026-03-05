@@ -602,6 +602,12 @@ jobs:
         run: |
           sudo apt-get -y update
           wget https://apt.llvm.org/llvm.sh
+          expected_hash="d2ccd623e05645d96d85df09d9898a0ae7ba6ec917ae64731f0c1e49573b6426"
+          file_hash=$(sha256sum llvm.sh | cut -d ' ' -f 1)
+          if [ "$file_hash" != "$expected_hash" ]; then
+            echo "Checksum verification failed for llvm.sh. The downloaded file may be corrupted or tampered with."
+            exit 1
+          fi
           chmod u+x llvm.sh
           sudo ./llvm.sh 17
           sudo apt install -y libopenblas-dev liblapack-dev
