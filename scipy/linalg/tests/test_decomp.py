@@ -470,6 +470,78 @@ class TestEig:
                 else:
                     assert_allclose(res[i, j], ref)
 
+    @pytest.mark.parametrize("dtyp", [int, float, complex])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    def test_overwrite_reg(self, dtyp, order, ndim, overwrite_a):
+        n = 3
+        a = np.arange(n*n).reshape(n, n)
+        a = a.astype(dtype=dtyp, order=order)
+
+        if ndim == 3:
+            a = np.stack([a, 2*a])
+
+        a_ref = a.copy()
+
+        w, v = eig(a, overwrite_a=overwrite_a)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and
+            (a.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace
+
+    @pytest.mark.parametrize("dtyp_a", [int, float, complex])
+    @pytest.mark.parametrize("dtyp_b", [int, float, complex])
+    @pytest.mark.parametrize("order_a", ["C", "F"])
+    @pytest.mark.parametrize("order_b", ["C", "F"])
+    @pytest.mark.parametrize("ndim_a", [2, 3])
+    @pytest.mark.parametrize("ndim_b", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("overwrite_b", [True, False])
+    def test_overwrite_gen(
+        self, dtyp_a, dtyp_b, order_a, order_b, ndim_a, ndim_b, overwrite_a, overwrite_b
+    ):
+        n = 3
+        a = np.arange(n*n).reshape(n, n)
+        a = a.astype(dtype=dtyp_a, order=order_a)
+
+        b = np.arange(n*n).reshape(n, n)
+        b = b.astype(dtype=dtyp_b, order=order_b)
+
+        if ndim_a == 3:
+            a = np.stack([a, 2*a])
+        if ndim_b == 3:
+            b = np.stack([b, 2*b])
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        w, v = eig(a, b, overwrite_a=overwrite_a, overwrite_b=overwrite_b)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and
+            (a.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        b_inplace = (
+            overwrite_b and
+            (b.dtype != int) and
+            (b.ndim == 2) and
+            b.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace
+        assert (b == b_ref).all() != b_inplace
+
 
 class TestEigBanded:
     def setup_method(self):
