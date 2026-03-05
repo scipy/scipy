@@ -139,6 +139,10 @@ features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "sy
 # tasks: build-scipy-openblas, test-scipy-openblas
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
 
+[environments.vendoring]
+# tasks: vendor-uarray
+features = ["vendoring"]
+
 
 ### Default dependencies (included in all environments) ###
 
@@ -653,3 +657,14 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.py312.dependencies]
 python = "3.12.*"
+
+
+[feature.vendoring]
+platforms = ["linux-64", "osx-arm64"]
+
+[feature.vendoring.dependencies]
+uv = "*"
+tar = "*"
+
+[feature.vendoring.tasks]
+vendor-uarray = "./tools/vendoring/vendor_uarray.sh"

@@ -110,6 +110,7 @@ def test_warning_calls_filters(warning_calls):
     allowed_filters = (
         os.path.join('datasets', '_fetchers.py'),
         os.path.join('datasets', '__init__.py'),
+        os.path.join('fft', '_backend.py'), # TODO: open an issue
         os.path.join('optimize', '_optimize.py'),
         os.path.join('optimize', '_constraints.py'),
         os.path.join('optimize', '_nnls.py'),

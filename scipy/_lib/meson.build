@@ -116,5 +116,4 @@ py3.install_sources(
   subdir: 'scipy/_lib'
 )
 
-subdir('_uarray')
 subdir('tests')

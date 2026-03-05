@@ -1,3 +1,5 @@
+import warnings
+
 import scipy._lib.uarray as ua
 from scipy._lib._array_api import xp_capabilities
 from . import _basic_backend
@@ -170,7 +172,13 @@ def set_backend(backend, coerce=False, only=False):
     array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
-    return ua.set_backend(backend, coerce=coerce, only=only)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=".*uarray.skip_backend.*",
+            category=DeprecationWarning,
+        )
+        return ua.set_backend(backend, coerce=coerce, only=only)
 
 
 @xp_capabilities(out_of_scope=True)

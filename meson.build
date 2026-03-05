@@ -245,6 +245,8 @@ unuran = subproject('unuran')
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
+uarray = subproject('uarray')
+
 # System libraries / subprojects
 
 use_system_libraries = get_option('use-system-libraries')

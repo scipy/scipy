@@ -1,0 +1,131 @@
+[build-system]
+requires = ["meson-python", "versioningit"]
+build-backend = "mesonpy"
+
+[project]
+name = "uarray"
+dynamic = ["version"]
+description = "Array interface object for Python with pluggable backends and a multiple-dispatch mechanism for defining down-stream functions"
+readme = "README.md"
+dependencies = []
+maintainers = [{ name = "Hameer Abbasi", email = "habbasi@openteams.com" }]
+requires-python = ">=3.11"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+keywords = ["uarray", "scipy", "multiple-dispatch"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Documentation = "https://uarray.org/"
+Source = "https://github.com/Quansight-Labs/uarray/"
+Repository = "https://github.com/Quansight-Labs/uarray.git"
+"Issue Tracker" = "https://github.com/Quansight-Labs/uarray/issues"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+]
+tests = [
+    "pytest>=3.5",
+    "pytest-flake8",
+    "pytest-cov",
+    "mypy>=0.930",
+]
+optional = []
+all = [
+    "uarray[docs]",
+    "uarray[tests]",
+    "uarray[optional]",
+]
+
+[tool.mypy]
+show_error_codes = true
+no_implicit_reexport = true
+disallow_any_unimported = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+disallow_any_unimported = false
+
+[tool.cibuildwheel]
+build = "{cp3{11..14}-*,cp3{13..14}t-*}"
+build-frontend = "build"
+enable = ["cpython-freethreading"]
+before-test = "pip install -r {project}/requirements/tests.txt"
+test-command = "pytest --pyargs uarray"
+
+[tool.cibuildwheel.windows]
+config-settings = { setup-args = ["--vsenv"] }
+
+[[tool.cibuildwheel.overrides]]
+select = "*-macosx_*"
+inherit.environment = "append"
+environment.MACOSX_DEPLOYMENT_TARGET = "10.15"
+
+# Pixi #
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+preview = ["pixi-build"]
+
+# uarray package definition #
+[tool.pixi.package]
+version = "0.0.1"
+
+[tool.versioningit.write]
+file = "src/uarray/_version.py"
+
+# Taken from https://github.com/jwodder/versioningit?tab=readme-ov-file#example-configurations
+# (setuptools_scm version)
+[tool.versioningit.next-version]
+method = "smallest"
+
+[tool.versioningit.format]
+distance = "{next_version}.dev{distance}+{vcs}{rev}"
+dirty = "{base_version}+d{build_date:%Y%m%d}"
+distance-dirty = "{next_version}.dev{distance}+{vcs}{rev}.d{build_date:%Y%m%d}"
+
+[tool.pixi.package.build.backend]
+name = "pixi-build-python"
+version = "*"
+
+[tool.pixi.package.host-dependencies]
+meson-python = "*"
+versioningit = "*"
+uv = "*" # interfaces with meson-python instead of pip
+
+# workspace environments #
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+all = { features = ["all", "docs", "tests", "optional"], solve-group = "default" }
+docs = { features = ["docs"], solve-group = "default" }
+optional = { features = ["optional"], solve-group = "default" }
+tests = { features = ["tests"], solve-group = "default" }
+
+# default feature definition #
+
+[tool.pixi.dependencies]
+uarray = { path = "." }
+
+[tool.pixi.dev]
+# this pulls in uarray's host and run dependencies
+uarray = { path = "." }
+
+[tool.pixi.feature.tests.tasks]
+tests = "pytest -v"

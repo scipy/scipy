@@ -25,7 +25,6 @@ Parts of the codebase to watch out for:
 - `Cython/Tempita`_, at ``scipy/_build_utils/tempita``
 - `fast_matrix_market`_, at ``scipy/io/_fast_matrix_market``
 - `numpydoc/docscrape`_, at ``scipy/_lib/_docscrape.py``
-- `uarray`_, at ``scipy/_lib/_uarray``
 - `scipy-mathjax`_, at ``doc/source/_static/scipy-mathjax``
 
 .. _SuperLU: https://github.com/xiaoyeli/superlu
@@ -34,7 +33,6 @@ Parts of the codebase to watch out for:
 .. _`Cython/Tempita`: https://github.com/cython/cython/tree/master/Cython/Tempita
 .. _`fast_matrix_market`: https://github.com/alugowski/fast_matrix_market
 .. _`numpydoc/docscrape`: https://github.com/numpy/numpydoc/
-.. _`uarray`: https://github.com/Quansight-Labs/uarray
 .. _`scipy-mathjax`: https://github.com/scipy/scipy-mathjax
 
 Please refer to https://github.com/scipy/scipy/issues/21232 for further details and
