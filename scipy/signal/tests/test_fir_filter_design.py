@@ -764,16 +764,15 @@ class TestMinimumPhase:
 
     @pytest.mark.parametrize("N", (963, 964))
     @pytest.mark.parametrize("dtype", ("float32", "float64"))
-    def test_nyquist(self, N, dtype):
-        fc = 10
+    def test_nyquist(self, N, dtype, xp):
+        fc = xp.asarray(10)
         fs = 100
         h = firwin(N, fc, window="hann", pass_zero="lowpass", scale=False, fs=fs)
-        xp = array_namespace(h)
         xp_dtype = getattr(xp, dtype)
-        h = h.astype(xp_dtype)
+        h = xp.astype(h, xp_dtype)
         h_min_sig = minimum_phase(h, method="homomorphic", n_fft=N, half=False)
-        H_mag = np.abs(rfft(h, N))
-        H_min_mag = np.abs(rfft(h_min_sig, N))
+        H_mag = xp.abs(rfft(h, N))
+        H_min_mag = xp.abs(rfft(h_min_sig, N))
         error = H_mag - H_min_mag
         atol = dict(float32=1e-5, float64=1e-13)[dtype]
         xp_assert_close(error, xp.zeros_like(error), atol=atol)
