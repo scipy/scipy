@@ -510,7 +510,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
 
 
 @xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
-                                ("jax.numpy", "test failures; worth investigating")])
+                                ("jax.numpy", "quantile needs lazy nan_policy")])
 @_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -558,14 +558,14 @@ def siegelslopes(y, x=None, method='hierarchical', *, axis=None):
     Notes
     -----
     With ``n = len(y)``, compute ``m_j`` as the median of
-    the slopes from the point ``(x[j], y[j])`` to all other `n-1` points.
+    the slopes of the lines from the point ``(x[j], y[j])`` to all other ``n-1`` points.
     ``slope`` is then the median of all slopes ``m_j``.
     Two ways are given to estimate the intercept in [1]_ which can be chosen
     via the parameter ``method``.
     The hierarchical approach uses the estimated slope ``slope``
     and computes ``intercept`` as the median of ``y - slope*x``.
     The other approach estimates the intercept separately as follows: for
-    each point ``(x[j], y[j])``, compute the intercepts of all the `n-1`
+    each point ``(x[j], y[j])``, compute the intercepts of all the ``n-1``
     lines through the remaining points and take the median ``i_j``.
     ``intercept`` is the median of the ``i_j``.
 
