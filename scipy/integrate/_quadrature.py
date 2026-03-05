@@ -1035,7 +1035,7 @@ def newton_cotes(rn, equal=0):
             rn = np.arange(N+1)
         elif np.all(np.diff(rn) == 1):
             equal = 1
-    except Exception:
+    except TypeError:
         N = rn
         rn = np.arange(N+1)
         equal = 1
