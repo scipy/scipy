@@ -1533,28 +1533,13 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
     tsum = 0.0;
     *nseg = 1;
 
-    // If there are no breakpoints, locate the GCP and return.
-    // TODO: Add condition in the following while loop to only enter when nbreak >= 0.
-    //       Then this if/else is not needed anymore.
-    if (nbreak == -1) {
-        if (dtm <= 0.0) { dtm = 0.0; }
-        tsum = tsum + dtm;
-        // Move free variables (i.e. the ones w/o breakpoints) and the variables
-        // whose breakpoints haven't been reached.
-        BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
-
-        // Update c = c + dtm*p = W'(x^c - x)
-        // which will be used in computing r = Z'(B(x^c - x) + g).
-        if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
-
-        return;
-    }
     nleft = nbreak;
     iter = 0;
     tj = 0.0;
 
     // ------------------- the beginning of the loop -------------------------
-    while (1)
+    // If there are no breakpoints, we skip the loop, locate the GCP and return.
+    while (nbreak > -1)
     {
         // Find the next smallest breakpoint;
         // compute dt = t(nleft) - t(nleft + 1).
