@@ -65,6 +65,7 @@ class Case:
 
 
 class SingleTest:
+    # case with a specific solver
     def __init__(self, A, b, solver, casename, convergence=True):
         self.A = A
         self.b = b
