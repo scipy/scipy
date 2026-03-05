@@ -2324,7 +2324,7 @@ class TestRegression:
         xp_assert_close(result.slope, xp.asarray(poly[0]))
         xp_assert_close(result.intercept, xp.asarray(poly[1]))
 
-    def test_linregress_two_points_nan_inference(xp):
+    def test_linregress_two_points_nan_inference(self, xp):
         # Test for  gh-24684
         x = xp.asarray([0., 1.])
         y = xp.asarray([0., 1.])
