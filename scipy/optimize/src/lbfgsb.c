@@ -1533,14 +1533,13 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
     tsum = 0.0;
     *nseg = 1;
 
-    // If there are no breakpoints, locate the GCP and return.
-    if (nbreak == -1) { goto LINE888; }
     nleft = nbreak;
     iter = 0;
     tj = 0.0;
 
     // ------------------- the beginning of the loop -------------------------
-    while (1)
+    // If there are no breakpoints, we skip the loop, locate the GCP and return.
+    while (nbreak > -1)
     {
         // Find the next smallest breakpoint;
         // compute dt = t(nleft) - t(nleft + 1).
@@ -1572,7 +1571,19 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
         dt = tj - tj0;
 
         // If a minimizer is within this interval, locate the GCP and return.
-        if (dtm < dt) { goto LINE888; }
+        if (dtm < dt) {
+            if (dtm <= 0.0) { dtm = 0.0; }
+            tsum = tsum + dtm;
+            // Move free variables (i.e. the ones w/o breakpoints) and the variables
+            // whose breakpoints haven't been reached.
+            BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
+
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+
+            return;
+        }
 
         // Otherwise fix one variable and reset the corresponding component
         // of d to zero.
@@ -1593,7 +1604,10 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
         if (nleft == -1 && nbreak == n) {
             // All n variables are fixed, return with xcp as GCP.
             dtm = dt;
-            goto LINE999;
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+            return;
         }
 
         // Update the derivative information.
@@ -1649,18 +1663,14 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
 
     // ------------------- the end of the loop -------------------------------
 
-LINE888:
     if (dtm <= 0.0) { dtm = 0.0; }
     tsum = tsum + dtm;
-
     // Move free variables (i.e. the ones w/o breakpoints) and the variables
     // whose breakpoints haven't been reached.
     BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
 
-LINE999:
     // Update c = c + dtm*p = W'(x^c - x)
     // which will be used in computing r = Z'(B(x^c - x) + g).
-
     if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
 
     return;
