@@ -22,6 +22,7 @@ from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
                                          gcrotmk, gmres, lgmres,
                                          minres, qmr, tfqmr)
+from scipy.sparse.linalg._interface import IdentityOperator
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -78,13 +79,29 @@ class SingleTest:
         return f"<{self.name}>"
 
 
-def xp_case(case, xp):
+def xp_case(case, xp, batch_A, batch_b):
     sparse = issparse(case.A) or issparse(case.b)
     if not sparse:
+        A = xp.asarray(case.A)
+        if batch_A:
+            A_shape = batch_A + case.A.shape
+            batch_array = xp.reshape(
+                xp.arange(np.prod(A_shape), dtype=A.dtype),
+                A_shape,
+            )
+            A = A * batch_array
+        b = xp.asarray(case.b)
+        if batch_b:
+            b_shape = batch_b + case.b.shape
+            batch_array = xp.reshape(
+                xp.arange(np.prod(b_shape), dtype=b.dtype),
+                b_shape,
+            )
+            b = b * batch_array
         case = types.SimpleNamespace(
             name=case.name,
-            A=xp.asarray(case.A),
-            b=xp.asarray(case.b),
+            A=A,
+            b=b,
             convergence=case.convergence,
             solver=case.solver,
             casename=case.casename,
@@ -255,8 +272,15 @@ def case(request):
     """
     return request.param
 
-def test_maxiter(case, xp):
-    case = xp_case(case, xp)
+
+@pytest.mark.skip_xp_backends(
+    "torch",
+    reason="https://github.com/data-apis/array-api-compat/issues/404"
+)
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_maxiter(case, xp, batch_A, batch_b):
+    case = xp_case(case, xp, batch_A, batch_b)
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
     A = case.A
@@ -271,7 +295,8 @@ def test_maxiter(case, xp):
         if x.ndim == 0:
             residuals.append(xp_vector_norm(b - case.A * x))
         else:
-            residuals.append(xp_vector_norm(b - case.A @ x))
+            Ax = xp.squeeze(case.A @ x[..., xp.newaxis], axis=-1)
+            residuals.append(xp_vector_norm(b - Ax, axis=-1))
 
     if case.solver == gmres:
         with pytest.warns(DeprecationWarning, match=CB_TYPE_FILTER):
@@ -283,10 +308,16 @@ def test_maxiter(case, xp):
     assert info == 1
 
 
-def test_convergence(case, xp):
+@pytest.mark.skip_xp_backends(
+    "torch",
+    reason="https://github.com/data-apis/array-api-compat/issues/404"
+)
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_convergence(case, xp, batch_A, batch_b):
     if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
         pytest.skip("Struggles to converge with single precision on some platforms")
-    case = xp_case(case, xp)
+    case = xp_case(case, xp, batch_A, batch_b)
     A = case.A
 
     if A.dtype in (xp.float64, xp.complex128):
@@ -300,17 +331,22 @@ def test_convergence(case, xp):
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
 
     xp_assert_equal(x0, 0 * b)  # ensure that x0 is not overwritten
+    Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
     if case.convergence:
         assert info == 0
-        assert xp_vector_norm(A @ x - b) <= xp_vector_norm(b) * rtol
+        assert xp.all(
+            xp_vector_norm(Ax - b, axis=-1) <= xp_vector_norm(b, axis=-1) * rtol
+        )
     else:
         assert info != 0
-        assert xp_vector_norm(A @ x - b) <= xp_vector_norm(b)
+        assert xp.all(xp_vector_norm(Ax - b, axis=-1) <= xp_vector_norm(b, axis=-1))
 
 
-def test_precond_dummy(case, xp):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_precond_dummy(case, xp, batch_A, batch_b):
     dtype = case.A.dtype
-    case = xp_case(case, xp)
+    case = xp_case(case, xp, batch_A, batch_b)
     if (case.solver is cgs) and ("pd-F" in case.name):
         pytest.skip("Struggles to converge with single precision")
     if (case.solver is tfqmr) and ("poisson2d-F" in case.name):
@@ -320,45 +356,36 @@ def test_precond_dummy(case, xp):
 
     rtol = 1e-8 if np.finfo(dtype).eps < 1e-8 else 1.2e-3
 
-    def identity(b, which=None):
-        """trivial preconditioner"""
-        return b
-
     A = case.A
-
-    M, N = A.shape
-    # Ensure the diagonal elements of A are non-zero before calculating
-    # 1.0 / xp.linalg.diagonal(A)
-    diagOfA = xp.linalg.diagonal(A) if not is_numpy(xp) else A.diagonal()
-    if xp.count_nonzero(diagOfA) == diagOfA.shape[0]:
-        dia_array(([1.0 / diagOfA], [0]), shape=(M, N))
 
     b = case.b
     x0 = 0 * b
 
-    precond = LinearOperator(A.shape, identity, rmatvec=identity)
+    precond = IdentityOperator(shape=A.shape, xp=xp)
 
     if case.solver is qmr:
         x, info = case.solver(A, b, M1=precond, M2=precond, x0=x0, rtol=rtol)
     else:
         x, info = case.solver(A, b, M=precond, x0=x0, rtol=rtol)
     assert info == 0
-    assert xp_vector_norm(A @ x - b) <= xp_vector_norm(b) * rtol
+    Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
+    assert xp.all(xp_vector_norm(Ax - b, axis=-1) <= xp_vector_norm(b, axis=-1) * rtol)
 
     A = aslinearoperator(A)
-    A.psolve = identity
-    A.rpsolve = identity
 
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
     assert info == 0
-    assert xp_vector_norm(A @ x - b) <= xp_vector_norm(b) * rtol
+    Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
+    assert xp.all(xp_vector_norm(Ax - b, axis=-1) <= xp_vector_norm(b, axis=-1) * rtol)
 
 
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
 @pytest.mark.fail_slow(10)
-def test_precond_inverse(case, xp):
+def test_precond_inverse(case, xp, batch_A, batch_b):
     if case.casename not in ('poisson1d', 'poisson2d'):
         pytest.skip("specific to poisson1d and poisson2d cases")
-    case = xp_case(case, xp)
+    case = xp_case(case, xp, batch_A, batch_b)
     for solver in _SOLVERS:
         if solver is qmr:
             continue
@@ -400,13 +427,17 @@ def test_precond_inverse(case, xp):
         x, info = solver(A, b, M=precond, x0=x0, rtol=rtol)
 
         assert info == 0
-        assert xp_vector_norm(case.A @ x - b) <= xp_vector_norm(b) * rtol
+        Ax = xp.squeeze(case.A @ x[..., xp.newaxis], axis=-1)
+        assert xp_vector_norm(Ax - b, axis=-1) <= xp_vector_norm(b, axis=-1) * rtol
 
         # Solution should be nearly instant
         assert matvec_count[0] <= 3
 
 
-def test_atol(solver, xp):
+@pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_atol(solver, xp, batch_A, batch_b):
     # TODO: minres / tfqmr. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
     if solver in (minres, tfqmr):
@@ -421,30 +452,32 @@ def test_atol(solver, xp):
     # b = 1e3*np.random.rand(10)
 
     rng = np.random.default_rng(168441431005389)
-    A = rng.uniform(size=[10, 10])
+    A = rng.uniform(size=(*batch_A, 10, 10))
     A = xp.asarray(A)
-    A = A @ A.T + 10*xp.eye(10)
-    b = 1e3 * rng.uniform(size=10)
+    A = A @ A.mT + 10*xp.eye(10)
+    b = 1e3 * rng.uniform(size=(*batch_b, 10))
     b = xp.asarray(b)
 
-    b_norm = xp_vector_norm(b)
+    b_norm = xp_vector_norm(b, axis=-1)
 
     tols = np.r_[0, np.logspace(-9, 2, 7), np.inf]
 
     # Check effect of badly scaled preconditioners
-    M0 = rng.standard_normal(size=(10, 10))
+    M0 = rng.standard_normal(size=(*batch_A, 10, 10))
     M0 = xp.asarray(M0)
-    M0 = M0 @ M0.T
+    M0 = M0 @ M0.mT
     Ms = [None, 1e-6 * M0, 1e6 * M0]
 
     for M, rtol, atol in itertools.product(Ms, tols, tols):
+        rtol = float(rtol)
+        atol = float(atol)
         if rtol == 0 and atol == 0:
             continue
 
         if solver is qmr:
             if M is not None:
                 M = aslinearoperator(M)
-                M2 = aslinearoperator(xp.eye(10))
+                M2 = aslinearoperator(xp.tile(xp.eye(10), (*batch_A, 1, 1)))
             else:
                 M2 = None
             x, info = solver(A, b, M1=M, M2=M2, rtol=rtol, atol=atol)
@@ -452,45 +485,54 @@ def test_atol(solver, xp):
             x, info = solver(A, b, M=M, rtol=rtol, atol=atol)
 
         assert info == 0
-        residual = A @ x - b
-        err = xp_vector_norm(residual)
+        Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
+        residual = Ax - b
+        err = xp_vector_norm(residual, axis=-1)
         atol2 = rtol * b_norm
         # Added 1.00025 fudge factor because of `err` exceeding `atol` just
         # very slightly on s390x (see gh-17839)
-        assert err <= 1.00025 * max(atol, atol2)
+        atol = xp.asarray(atol)
+        atol2 = xp.asarray(atol2)
+        assert xp.all(err <= 1.00025 * xp.maximum(atol, atol2))
 
 
-def test_zero_rhs(solver, xp):
+@pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_zero_rhs(solver, xp, batch_A, batch_b):
     rng = np.random.default_rng(1684414984100503)
-    A = xp.asarray(rng.random(size=[10, 10]))
-    A = A @ A.T + 10 * xp.eye(10)
+    A = xp.asarray(rng.random(size=(*batch_A, 10, 10)))
+    A = A @ A.mT + 10 * xp.eye(10)
 
-    b = xp.zeros(10, dtype=A.dtype)
+    b = xp.zeros((*batch_b, 10), dtype=A.dtype)
     tols = np.r_[np.logspace(-10, 2, 7)]
 
+    expected = xp.broadcast_to(b, (*np.broadcast_shapes(batch_A, batch_b), 10))
     for tol in tols:
+        tol = float(tol)
         x, info = solver(A, b, rtol=tol)
         assert info == 0
-        xp_assert_close(x, b, atol=1e-15)
+        xp_assert_close(x, expected, atol=1e-15)
 
-        x, info = solver(A, b, rtol=tol, x0=xp.ones(10))
+        x, info = solver(A, b, rtol=tol, x0=xp.ones((*batch_b, 10)))
         assert info == 0
-        xp_assert_close(x, b, atol=tol)
+        xp_assert_close(x, expected, atol=tol)
 
         if solver is not minres:
-            x, info = solver(A, b, rtol=tol, atol=0, x0=xp.ones(10))
+            x, info = solver(A, b, rtol=tol, atol=0.0, x0=xp.ones((*batch_b, 10)))
             if info == 0:
-                xp_assert_close(x, b)
+                xp_assert_close(x, expected)
 
             x, info = solver(A, b, rtol=tol, atol=tol)
             assert info == 0
-            xp_assert_close(x, b, atol=1e-300)
+            xp_assert_close(x, expected, atol=1e-300)
 
-            x, info = solver(A, b, rtol=tol, atol=0)
+            x, info = solver(A, b, rtol=tol, atol=0.0)
             assert info == 0
-            xp_assert_close(x, b, atol=1e-300)
+            xp_assert_close(x, expected, atol=1e-300)
 
 
+# unbatched test
 @pytest.mark.xfail(reason="see gh-18697")
 def test_maxiter_worsening(solver, xp):
     if solver not in (gmres, lgmres, qmr):
@@ -521,45 +563,54 @@ def test_maxiter_worsening(solver, xp):
     slack_tol = 9
 
     for maxiter in range(1, 20):
-        x, info = solver(A, v, maxiter=maxiter, rtol=1e-8, atol=0)
-
-        if info == 0:
-            assert xp_vector_norm(A @ x - v) <= 1e-8 * xp_vector_norm(v)
-
+        x, info = solver(A, v, maxiter=maxiter, rtol=1e-8, atol=0.0)
+        
         error = xp_vector_norm(A @ x - v)
+        if info == 0:
+            assert error <= 1e-8 * xp_vector_norm(v)
         best_error = xp.min(best_error, error)
 
         # Check with slack
         assert error <= slack_tol * best_error
 
 
-def test_x0_working(solver, xp):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_x0_working(solver, xp, batch_A, batch_b):
     # Easy problem
     rng = np.random.default_rng(1685363802304750)
     n = 10
-    A = rng.random(size=[n, n])
-    A = A @ A.T
-    b = rng.random(n)
-    x0 = rng.random(n)
+    A = rng.random(size=(*batch_A, n, n))
+    A = A @ A.mT
+    b = rng.random((*batch_b, n))
+    x0 = rng.random((*batch_b, n))
     A, b, x0 = (xp.asarray(arr) for arr in [A, b, x0])
 
     if solver is minres:
         kw = dict(rtol=1e-6)
     else:
-        kw = dict(atol=0, rtol=1e-6)
+        kw = dict(atol=0.0, rtol=1e-6)
 
     x, info = solver(A, b, **kw)
     assert info == 0
-    assert xp_vector_norm(A @ x - b) <= 1e-6 * xp_vector_norm(b)
+    Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
+    assert xp.all(xp_vector_norm(Ax - b, axis=-1) <= 1e-6 * xp_vector_norm(b, axis=-1))
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert xp_vector_norm(A @ x - b) <= 1e-5*xp_vector_norm(b)
+    Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
+    assert xp.all(xp_vector_norm(Ax - b, axis=-1) <= 1e-5*xp_vector_norm(b, axis=-1))
 
 
-def test_x0_equals_Mb(case, xp):
+@pytest.mark.skip_xp_backends(
+    "torch",
+    reason="https://github.com/data-apis/array-api-compat/issues/404"
+)
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_x0_equals_Mb(case, xp, batch_A, batch_b):
     dtype = case.A.dtype
-    case = xp_case(case, xp)
+    case = xp_case(case, xp, batch_A, batch_b)
     if (case.solver is cgs) and ("pd-F" in case.name):
         pytest.skip("Struggles to converge with single precision")
     if (case.solver is bicgstab) and (case.name == 'nonsymposdef-bicgstab'):
@@ -576,27 +627,33 @@ def test_x0_equals_Mb(case, xp):
 
     assert x0 == 'Mb'  # ensure that x0 is not overwritten
     assert info == 0
-    assert xp_vector_norm(A @ x - b) <= rtol * xp_vector_norm(b)
+    Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
+    assert xp.all(xp_vector_norm(Ax - b, axis=-1) <= rtol * xp_vector_norm(b, axis=-1))
 
 
-def test_x0_solves_problem_exactly(solver, xp):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_x0_solves_problem_exactly(solver, xp, batch_A, batch_b):
     # See gh-19948
-    mat = xp.eye(2)
-    rhs = xp.asarray([-1., -1.])
+    mat = xp.tile(xp.eye(2), (*batch_A, 1, 1))
+    rhs = xp.tile(xp.asarray([-1., -1.]), (*batch_b, 1))
 
     sol, info = solver(mat, rhs, x0=rhs)
-    xp_assert_close(sol, rhs)
+    expected = xp.broadcast_to(rhs, (*np.broadcast_shapes(batch_A, batch_b), 2))
+    xp_assert_close(sol, expected)
     assert info == 0
 
 
-def test_show(case, capsys, xp):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_show(case, capsys, xp, batch_A, batch_b):
     if case.solver != tfqmr:
         pytest.skip("tfqmr specific test")
     if "poisson2d-F" in case.name:
         pytest.skip("Hits divide-by-zero with single precision")
     if "pd-F" in case.name:
         pytest.skip("Struggles to converge with single precision on some platforms")
-    case = xp_case(case, xp)
+    case = xp_case(case, xp, batch_A, batch_b)
     def cb(x):
         pass
 
@@ -623,30 +680,34 @@ def test_show(case, capsys, xp):
     assert err == ""
 
 
-def test_positional_error(solver, xp):
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_positional_error(solver, xp, batch_A, batch_b):
     # from test_x0_working
     rng = np.random.default_rng(1685363802304750)
     n = 10
-    A = rng.random(size=[n, n])
-    A = A @ A.T
-    b = rng.random(n)
-    x0 = rng.random(n)
+    A = rng.random(size=(*batch_A, n, n))
+    A = A @ A.mT
+    b = rng.random((*batch_b, n))
+    x0 = rng.random((*batch_b, n))
     A, b, x0 = (xp.asarray(arr) for arr in [A, b, x0])
     with pytest.raises(TypeError):
         solver(A, b, x0, 1e-5)
 
 
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
 @pytest.mark.parametrize("atol", ["legacy", None, -1])
-def test_invalid_atol(solver, atol, xp):
+def test_invalid_atol(solver, atol, xp, batch_A, batch_b):
     if solver == minres:
         pytest.skip("minres has no `atol` argument")
     # from test_x0_working
     rng = np.random.default_rng(1685363802304750)
     n = 10
-    A = rng.random(size=[n, n])
-    A = A @ A.T
-    b = rng.random(n)
-    x0 = rng.random(n)
+    A = rng.random(size=(*batch_A, n, n))
+    A = A @ A.mT
+    b = rng.random((*batch_b, n))
+    x0 = rng.random((*batch_b, n))
     A, b, x0 = (xp.asarray(arr) for arr in [A, b, x0])
     with pytest.raises(ValueError):
         solver(A, b, x0, atol=atol)
@@ -761,7 +822,7 @@ class TestGMRES:
         b = ones(2)
         x, info = gmres(A, b, rtol=1e-5)
         assert xp_vector_norm(A @ x - b) <= 1e-5 * xp_vector_norm(b)
-        assert_allclose(x, b, atol=0, rtol=1e-8)
+        assert_allclose(x, b, atol=0.0, rtol=1e-8)
 
         rndm = np.random.RandomState(12345)
         A = rndm.rand(30, 30)
@@ -771,7 +832,7 @@ class TestGMRES:
 
         A = eye(2)
         b = 1e-10 * ones(2)
-        x, info = gmres(A, b, rtol=1e-8, atol=0)
+        x, info = gmres(A, b, rtol=1e-8, atol=0.0)
         assert xp_vector_norm(A @ x - b) <= 1e-8 * xp_vector_norm(b)
 
     def test_defective_precond_breakdown(self):
@@ -783,7 +844,7 @@ class TestGMRES:
         x = np.array([1, 0, 0])
         A = np.diag([2, 3, 4])
 
-        x, info = gmres(A, b, x0=x, M=M, rtol=1e-15, atol=0)
+        x, info = gmres(A, b, x0=x, M=M, rtol=1e-15, atol=0.0)
 
         # Should not return nans, nor terminate with false success
         assert not np.isnan(x).any()
@@ -827,28 +888,28 @@ class TestGMRES:
 
         # 2 iterations is not enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=pr_norm_cb,
                         maxiter=2, restart=50)
         assert info == 2
         assert cb_count[0] == 2
 
         # With `callback_type` specified, no warning should be raised
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=pr_norm_cb,
                         maxiter=2, restart=50, callback_type='legacy')
         assert info == 2
         assert cb_count[0] == 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=pr_norm_cb,
                         maxiter=2, restart=50, callback_type='pr_norm')
         assert info == 0
         assert cb_count[0] > 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=x_cb, maxiter=2,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=x_cb, maxiter=2,
                         restart=50, callback_type='x')
         assert info == 0
         assert cb_count[0] == 1
@@ -868,7 +929,7 @@ class TestGMRES:
             prev_r[0] = r
             count[0] += 1
 
-        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=x_cb, maxiter=20,
+        x, info = gmres(A, b, rtol=1e-6, atol=0.0, callback=x_cb, maxiter=20,
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20
@@ -878,7 +939,7 @@ def test_nD(solver, xp):
     """Check that >2-D operators are rejected cleanly."""
     def id(x):
         return x
-    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=xp.float64)
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=xp.float64, xp=xp)
     b = xp.ones((2, 2))
     with pytest.raises(ValueError, match="expected 2-D"):
         solver(A, b)
