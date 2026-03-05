@@ -80,15 +80,6 @@ jobs:
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
 
-      - name: windows - set PKG_CONFIG_PATH
-        if: ${{ matrix.buildplat[1] == 'win' }}
-        run: |
-          $env:CIBW = "${{ github.workspace }}"
-          # It seems somewhere in the env passing, `\` is not
-          # passed through, so convert it to '/'
-          $env:CIBW=$env:CIBW.replace("\","/")
-          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
-
       - name: Set environment variables for ARM64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         run: |
@@ -101,63 +92,74 @@ jobs:
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         uses: ./.github/windows_arm64_steps
 
+      - name: windows - set PKG_CONFIG_PATH
+        if: ${{ matrix.buildplat[1] == 'win' }}
+        run: |
+          $CIBW = "${{ github.workspace }}/.openblas"
+          # pkgconfig needs a complete path, and not just "./openblas since the
+          # build is run in a tmp dir (?)
+          # It seems somewhere in the env passing, `\` is not
+          # passed through, so convert it to '/'
+          $CIBW = $CIBW.replace("\","/")
+          echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$CIBW" >> $env:GITHUB_ENV
+
+      # gfortran status for macOS
+      # -------------------------
+      # - arm64,  accelerate, >=14.0
+      #     The easiest of them all (sort of). However, if you wish to target 14 you
+      #     can only build on macos-14 with the system compiler. If you try building on
+      #     macos-15 there are libraries with a minimum target of 15. Presumably when
+      #     the macos-14 is dropped we'll need to customise the compiler a bit.
+      #     In addition, we can't use Accelerate for < 14 because the library had bugs.
+      #     This means OpenBLAS has to be used.
+      # - x86_64, accelerate, >=14.0
+      #     x86_64 is only available on the macos-15-intel image.
+      #     Uses build from https://github.com/isuruf/gcc/releases/. The 15.2.0
+      #     build is back compatible to macOS 14.
+      # - x86_64, openblas, "10.14"
+      #     x86_64 is only available on the macos-15-intel image.
+      #     This can be made back compatible to macOS-10.14. The 15.2.0 build at
+      #     https://github.com/isuruf/gcc/releases/ satisfies this.
+      # - arm64, openblas, "12.3"
+      #     We ideally want this back compatible to macOS-12. The build at
+      #     https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg
+      #     satisfies those requirements.
+      #     MACOS_DEPLOYMENT_TARGET has to be set to 12.3 (there's some reason why we
+      #     don't support <12.3)
+      #     OpenBLAS is also complicated because the `delocate` step tries
+      #     to copy two libgfortran libraries into the wheel, and falls over. This
+      #     necessitates using install_name_tool on the scipy_openblas32 dylibs.
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
-        run: |
-          # gfortran status for macOS
-          # -------------------------
-          # accelerate + arm64: we can use the preinstalled (homebrew) gfortran present on the GH
-          #   image. This is compatible back to macOS-14. From time to time the homebrew binary and
-          #   GH images are updated, which may limit the oldest mac version we can target. At this
-          #   point we have to resort to other builds.
-          # accelerate + x86_64: uses build from https://github.com/isuruf/gcc/releases/. The 15.2.0
-          #   build is back compatible to macOS 14.
-          # openblas + arm64: We ideally want this back compatible to macOS-12. The build at
-          #   https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg
-          #   satisfies those requirements.
-          # openblas + x86_64: This can be made back compatible to macOS-10.14. The 15.2.0 build at
-          #   https://github.com/isuruf/gcc/releases/ satisfies this.
-          
-          if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
+        run: |        
+          if [[ ${{ matrix.buildplat[3] }} == "accelerate" ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
+
+            # Builds with Accelerate only target macOS>=14.0
+            CIBW_ENV="CIBW_ENVIRONMENT_MACOS=MACOSX_DEPLOYMENT_TARGET=14.0 INSTALL_OPENBLAS=false"
+
+            if [[ ${{ matrix.buildplat[2] }} == "arm64" ]]; then          
+              # use preinstalled gfortran for Accelerate builds
+              ln -s $(which gfortran-13) gfortran
+              export PATH=$PWD:$PATH
+              echo "PATH=$PATH" >> "$GITHUB_ENV"
+              CIBW_ENV+=" INSTALL_GFORTRAN=false"
+            else
+              # x64_64. Can't use preinstalled fortran because it targets macOS15
+              # Setting INSTALL_GFORTRAN=true causes the cibw_before_build script to install gfortran
+              CIBW_ENV+=" INSTALL_GFORTRAN=true"
+              CIBW_ENV+=" SDKROOT=$(xcrun --sdk macosx --show-sdk-path)"
+            fi
+          else
+            CIBW_ENV="CIBW_ENVIRONMENT_MACOS=PKG_CONFIG_PATH=$PWD/.openblas \
+              MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }} \
+              SDKROOT=$(xcrun --sdk macosx --show-sdk-path) \
+              INSTALL_GFORTRAN=true"
           fi
-          if [[ ${{ matrix.buildplat[2] }} == 'arm64' && ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
-            # use preinstalled gfortran for arm64+accelerate builds
-            ln -s $(which gfortran-13) gfortran
-            export PATH=$PWD:$PATH
-            echo "PATH=$PATH" >> "$GITHUB_ENV"
-            LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
-          fi
-          
-          CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
-            SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
-            PKG_CONFIG_PATH=${{ github.workspace }}"
-          echo "CIBW_ENVIRONMENT=$CIBW" >> "$GITHUB_ENV"
-          
-          echo "REPAIR_PATH=$LIB_PATH" >> "$GITHUB_ENV"
+          echo "$CIBW_ENV" >> "$GITHUB_ENV"
 
           PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gfortran --print-file-name libgfortran.dylib))"
-          # remove libgfortran from location used for linking (if any), to
-          # check wheel has bundled things correctly and all tests pass without
-          # needing installed gfortran
-          POSTFIX=" sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
-                    sudo rm -rf /usr/local/gfortran/lib"
-          CIBW="$PREFIX delocate-listdeps -d {wheel} && echo "-----------" &&\
-            $PREFIX delocate-wheel -v $EXCLUDE --require-archs \
-            {delocate_archs} -w {dest_dir} {wheel} && echo "-----------" &&\
-            delocate-listdeps -d {dest_dir}/*.whl && echo "-----------" &&\
-            $POSTFIX"
-
-          # macos-arm64-openblas wheels that target macos-12 need a
-          # MACOS_DEPLOYMENT_TARGET of 12.3 otherwise delocate complains.
-          # Unclear of cause, possibly build tool related.
-          # This results in wheels that have 12_3 in their name. Since Python
-          # has no concept of minor OS versions in packaging land rename the
-          # wheel back to 12.
-          if [[ ${{ matrix.buildplat[0] }} == 'macos-14' && ${{ matrix.buildplat[4] }} == '12.3' ]]; then
-            CIBW+=" && echo \$(ls {dest_dir}) && \
-            mv {dest_dir}/*.whl \$(find {dest_dir} -type f -name '*.whl' | sed 's/12_3/12_0/')"
-          fi
+          CIBW="$PREFIX delocate-wheel -v $EXCLUDE --require-archs {delocate_archs} -w {dest_dir} {wheel}"
           echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
 
 
