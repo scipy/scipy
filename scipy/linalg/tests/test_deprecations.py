@@ -59,8 +59,8 @@ _skip_dict = {
     'solve_continuous_lyapunov': 'M',
     'solve_discrete_lyapunov': 'mM' + 'e',
     'solve_lyapunov' : 'M',
-    'solve_sylvester' : 'M',
-    'solve_discrete_are': 'M',
+    'solve_sylvester' : 'mM',
+    'solve_discrete_are': 'mM',
     'matmul_toeplitz': 'mM',
     'solve_toeplitz': 'mM',
 }
@@ -128,6 +128,11 @@ def _patch_args(func_name, args):
     return args
 
 
+@pytest.mark.skip_xp_backends(np_only=True)
+@pytest.mark.filterwarnings(
+    "ignore:attempting to conjugate non-numeric dtype:DeprecationWarning"
+)
+@pytest.mark.filterwarnings("ignore:overflow encountered in dot:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:logm result may be inaccurate:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:overflow encountered in multiply:RuntimeWarning")
 @pytest.mark.parametrize("func_name", _objs.keys())

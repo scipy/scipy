@@ -1144,7 +1144,8 @@ def _apply_over_batch(*argdefs):
                 core_shapes.append(shape[-ndim:] if ndim > 0 else ())
 
             # complain on dtypes
-            _deprecate_dtypes(f.__name__, *arrays)
+            if is_numpy(xp):
+                _deprecate_dtypes(f.__name__, *arrays)
 
             # Early exit if call is not batched
             if not any(batch_shapes):
