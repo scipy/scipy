@@ -750,8 +750,20 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
 
-    // Temporary buffer. `overwrite_b` is only enabled when `b` has F-ordered slices.
-    // Therefore, it is possible to use `b` directly instead of requiring a buffer.
+    /*
+     * Chop the buffer up into parts:
+     *   ldab_max * n    3 * n     b_data_size
+     * |--------------|----------|--------------|
+     * ^              ^          ^
+     * ab             work       b_data
+     *
+     * - `ab` is for the "padded" banded storage buffer
+     * - `work` is the temporary work buffer for `gbcon`, size = 3 * n
+     * - `b_data` is a buffer for `b`, if `overwrite_b` is enabled no need for the buffer (size = 0)
+     *
+     * NB. `overwrite_ab` can not trivially be enabled since the array always has to be
+     * "padded" with a set of zeros, meaning the buffer should be larger than the input array.
+     */
     CBLAS_INT b_data_size = overwrite_b ? 0 : n * nrhs;
     T *buffer = (T *)malloc((b_data_size + 3 * n + ldab_max * n) * sizeof(T));
 
@@ -763,7 +775,13 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
 
     T* ab = &buffer[0];
     T* work = &buffer[ldab_max * n];
-    T* b_data = &buffer[ldab_max * n + 3 * n];
+
+    T *b_data = NULL;
+    if (!overwrite_b) {
+        b_data = &buffer[ldab_max * n + 3 * n];
+    } else {
+        b_data = bm_data;
+    }
 
     // Work and pivots
     CBLAS_INT *ipiv = (CBLAS_INT *)malloc(intn * sizeof(CBLAS_INT));
@@ -800,9 +818,7 @@ _solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObj
         // `overwrite_b` is only enabled when `b` is 2D and F-contiguous. Therefore, it is possible
         // use the data of the array directly instead of having to transfer to a buffer. Similarly,
         // the result then also does not have to be copied.
-        if (overwrite_b) {
-            b_data = bm_data;
-        } else {
+        if (!overwrite_b) {
             T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
             copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
         }
