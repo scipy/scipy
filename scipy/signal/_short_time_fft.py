@@ -1011,6 +1011,11 @@ class ShortTimeFFT:
 
         This method is called, if the initializer parameter `scale_to` is set.
 
+        Parameters
+        ----------
+        scaling : {'magnitude', 'psd'}
+            The scaling type to which the window is scaled.
+
         See Also
         --------
         fac_magnitude: Scaling factor for to  a magnitude spectrum.

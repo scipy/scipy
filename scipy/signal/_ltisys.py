@@ -395,12 +395,33 @@ class lti(LinearTimeInvariant):
     def to_discrete(self, dt, method='zoh', alpha=None):
         """Return a discretized version of the current system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: dlti
             Discrete version of the current system.
+
+        See Also
+        --------
+        cont2discrete
         """
         raise NotImplementedError('to_discrete is not implemented for this '
                                   'system class.')
@@ -1015,11 +1036,32 @@ class TransferFunctionContinuous(TransferFunction, lti):
         """
         Returns the discretized `TransferFunction` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `StateSpace`
+
+        See Also
+        --------
+        cont2discrete
         """
         return TransferFunction(*cont2discrete((self.num, self.den),
                                                dt,
@@ -1346,11 +1388,32 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
         """
         Returns the discretized `ZerosPolesGain` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `ZerosPolesGain`
+
+        See Also
+        --------
+        cont2discrete
         """
         return ZerosPolesGain(
             *cont2discrete((self.zeros, self.poles, self.gain),
@@ -1905,11 +1968,32 @@ class StateSpaceContinuous(StateSpace, lti):
         """
         Returns the discretized `StateSpace` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `StateSpace`
+
+        See Also
+        --------
+        cont2discrete
         """
         return StateSpace(*cont2discrete((self.A, self.B, self.C, self.D),
                                          dt,

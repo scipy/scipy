@@ -69,8 +69,6 @@ __all__ = ["LinearOperator", "aslinearoperator"]
 
 
 @xp_capabilities(skip_backends=[
-    ("jax.numpy", "TODO: test lazy backends"),
-    ("dask.array", "TODO: test lazy backends"),
     ("cupy", "TODO: waiting for scipy/scipy#24670"),
 ])
 class LinearOperator:
@@ -195,7 +193,7 @@ class LinearOperator:
     >>> A @ np.ones(2)
     array([ 2.,  3.])
 
-    """  # numpydoc ignore=PR02
+    """  # numpydoc ignore=PR01,PR02
 
     # Necessary for right matmul with numpy arrays.
     __array_ufunc__ = None
@@ -1163,6 +1161,7 @@ class IdentityOperator(LinearOperator):
         return self
 
 
+@xp_capabilities()
 def aslinearoperator(A):
     """Return `A` as a `LinearOperator`.
 

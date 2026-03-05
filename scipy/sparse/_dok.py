@@ -61,10 +61,17 @@ class _dok_base(_spbase, IndexMixin, dict):
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
     def update(self, val):
-        """Update values from a dict, sparse dok or iterable of 2-tuples like .items().
+        """Update values from a dict, sparse dok or iterable of 2-tuples like
+        ``.items()``.
 
-        Keys of the input must be sequences of nonnegative integers less than the shape
-        for each axis.
+        Parameters
+        ----------
+        val : dict, dok_array, iterable of 2-tuples
+            The values to update in the dok_array. If a dict or dok_array is
+            provided, the keys and values will be taken from it. If an iterable
+            of 2-tuples is provided, each tuple should contain a key and a value.
+            Keys of the input must be sequences of nonnegative integers less than
+            the shape for each axis.
         """
         if isinstance(val, dict):
             inputs = val.items()
@@ -689,6 +696,8 @@ class dok_array(_dok_base, sparray):
         Number of values stored in the array
     T : dok_array
         The transpose of the array
+    mT : dok_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -709,7 +718,7 @@ class dok_array(_dok_base, sparray):
     ...     for j in range(5):
     ...         S[i, j] = i + j    # Update element
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class dok_matrix(spmatrix, _dok_base):
@@ -746,6 +755,8 @@ class dok_matrix(spmatrix, _dok_base):
         Number of values stored in the matrix
     T : dok_matrix
         The transpose of the matrix
+    mT : dok_matrix
+        The matrix transpose
 
     Notes
     -----

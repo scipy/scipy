@@ -133,6 +133,11 @@ class _lil_base(_spbase, IndexMixin):
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
 
+        Parameters
+        ----------
+        i : int
+            Row to return view of.
+
         Returns
         -------
         lil_array or lil_matrix
@@ -145,6 +150,11 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
+
+        Parameters
+        ----------
+        i : int
+            Row to return a copy of.
 
         Returns
         -------
@@ -544,6 +554,8 @@ class lil_array(_lil_base, sparray):
         Number of values stored in the array
     T : lil_array
         The transpose of the array
+    mT : lil_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -571,7 +583,7 @@ class lil_array(_lil_base, sparray):
         - The corresponding nonzero values are stored in similar
           fashion in ``self.data``.
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class lil_matrix(spmatrix, _lil_base):
@@ -613,6 +625,8 @@ class lil_matrix(spmatrix, _lil_base):
     size : int
         Number of values stored in the matrix
     T : lil_matrix
+        The transpose of the matrix
+    mT : lil_array
         The transpose of the matrix
 
     Notes
