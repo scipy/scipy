@@ -15,6 +15,7 @@ from scipy._lib._array_api import (
     is_numpy, make_xp_pytest_param, make_xp_pytest_marks,
     xp_assert_close, xp_vector_norm, xp_assert_equal,
 )
+from scipy._lib._sparse import issparse
 from scipy.sparse import dia_array, csr_array, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
@@ -46,7 +47,7 @@ def solver(request):
 
 
 class Case:
-    def __init__(self, name, A, b=None, skip=None, nonconvergence=None, dense=False):
+    def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
         self.A = A
         if b is None:
@@ -61,25 +62,24 @@ class Case:
             self.nonconvergence = []
         else:
             self.nonconvergence = nonconvergence
-        self.dense = dense
 
 
 class SingleTest:
-    def __init__(self, A, b, solver, casename, convergence=True, dense=False):
+    def __init__(self, A, b, solver, casename, convergence=True):
         self.A = A
         self.b = b
         self.solver = solver
         self.casename = casename
         self.name = casename + '-' + solver.__name__
         self.convergence = convergence
-        self.dense = dense
 
     def __repr__(self):
         return f"<{self.name}>"
 
 
 def xp_case(case, xp):
-    if case.dense:
+    sparse = issparse(case.A) or issparse(case.b)
+    if not sparse:
         case = types.SimpleNamespace(
             name=case.name,
             A=xp.asarray(case.A),
@@ -141,54 +141,54 @@ class IterativeParams:
         # Random real-valued
         rng = np.random.RandomState(1234)
         data = rng.rand(4, 4)
-        self.cases.append(Case("rand", data, dense=True,
+        self.cases.append(Case("rand", data,
                                skip=posdef_solvers + sym_solvers))
-        self.cases.append(Case("rand-F", data.astype('f'), dense=True,
+        self.cases.append(Case("rand-F", data.astype('f'),
                                skip=posdef_solvers + sym_solvers))
 
         # Random symmetric real-valued
         rng = np.random.RandomState(1234)
         data = rng.rand(4, 4)
         data = data + data.T
-        self.cases.append(Case("rand-sym", data, skip=posdef_solvers, dense=True))
+        self.cases.append(Case("rand-sym", data, skip=posdef_solvers))
         self.cases.append(Case("rand-sym-F", data.astype('f'),
-                               skip=posdef_solvers, dense=True))
+                               skip=posdef_solvers))
 
         # Random pos-def symmetric real
         np.random.seed(1234)
         data = np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
-        self.cases.append(Case("rand-sym-pd", data, dense=True))
+        self.cases.append(Case("rand-sym-pd", data))
         # note: minres fails for single precision
         self.cases.append(Case("rand-sym-pd-F", data.astype('f'),
-                               skip=[minres], dense=True))
+                               skip=[minres]))
 
         # Random complex-valued
         rng = np.random.RandomState(1234)
         data = rng.rand(4, 4) + 1j * rng.rand(4, 4)
         skip_cmplx = posdef_solvers + sym_solvers + real_solvers
-        self.cases.append(Case("rand-cmplx", data, skip=skip_cmplx, dense=True))
+        self.cases.append(Case("rand-cmplx", data, skip=skip_cmplx))
         self.cases.append(Case("rand-cmplx-F", data.astype('F'),
-                               skip=skip_cmplx, dense=True))
+                               skip=skip_cmplx))
 
         # Random hermitian complex-valued
         rng = np.random.RandomState(1234)
         data = rng.rand(4, 4) + 1j * rng.rand(4, 4)
         data = data + data.T.conj()
-        self.cases.append(Case("rand-cmplx-herm", data, dense=True,
+        self.cases.append(Case("rand-cmplx-herm", data,
                                skip=posdef_solvers + real_solvers))
         self.cases.append(Case("rand-cmplx-herm-F", data.astype('F'),
-                               skip=posdef_solvers + real_solvers, dense=True))
+                               skip=posdef_solvers + real_solvers))
 
         # Random pos-def hermitian complex-valued
         rng = np.random.RandomState(1234)
         data = rng.rand(9, 9) + 1j * rng.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case(
-            "rand-cmplx-sym-pd", data, skip=real_solvers, dense=True)
+            "rand-cmplx-sym-pd", data, skip=real_solvers)
         )
         self.cases.append(Case("rand-cmplx-sym-pd-F", data.astype('F'),
-                               skip=real_solvers, dense=True))
+                               skip=real_solvers))
 
         # Non-symmetric and Positive Definite
         #
@@ -217,7 +217,7 @@ class IterativeParams:
                       [0, 0, 0, 0, -1, 0, -0, -0, -0, -0, -1]], dtype=float)
         b = np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype=float)
         assert (A == A.T).all()
-        self.cases.append(Case("sym-nonpd", A, b, dense=True,
+        self.cases.append(Case("sym-nonpd", A, b,
                                skip=posdef_solvers,
                                nonconvergence=[cgs, bicg, bicgstab, qmr, tfqmr]
                                )
@@ -232,10 +232,10 @@ class IterativeParams:
                     continue
                 if solver in case.nonconvergence:
                     tests += [SingleTest(case.A, case.b, solver, case.name,
-                                         convergence=False, dense=case.dense)]
+                                         convergence=False)]
                 else:
                     tests += [
-                        SingleTest(case.A, case.b, solver, case.name, dense=case.dense)
+                        SingleTest(case.A, case.b, solver, case.name)
                     ]
         return tests
 
