@@ -109,10 +109,9 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
      *
      * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
      */
-    npy_intp data_size= overwrite_a ? 0 : n*n ;
-    npy_intp bufsize = data_size + lwork + n;
-    npy_intp wi_size = type_traits<T>::is_complex ? 0 : n ;
-    bufsize += wi_size;
+    npy_intp data_size = overwrite_a ? 0 : n*n;
+    npy_intp wi_size = type_traits<T>::is_complex ? 0 : n;
+    npy_intp bufsize = data_size + wi_size + lwork + n;
 
     npy_intp vl_size = compute_vl ? ldvl*n : 0;
     npy_intp vr_size = compute_vr ? ldvr*n : 0;
@@ -154,7 +153,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
             copy_slice_F(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
         }
-        // NB: overwrite_a is for 2D only; if it is ever generalized to ndim>2,
+        // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
         // will need to adjust the data pointer here, too.
 
         // compute eigenvalues for the slice
