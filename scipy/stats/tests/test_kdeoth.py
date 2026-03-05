@@ -689,7 +689,7 @@ def test_kde_sheather_jones_basic():
     # Verify that the KDE integrates to approximately 1
     xs = np.linspace(-5, 5, 1000)
     integral = np.trapezoid(gkde(xs), xs)
-    assert_almost_equal(integral, 1.0, decimal=2)
+    assert_allclose(integral, 1.0, atol=1e-2)
 
 
 def test_kde_sheather_jones_string_accepted():
@@ -764,7 +764,7 @@ def test_kde_sheather_jones_vs_scott():
     xs = np.linspace(-5, 5, 1000)
     for kde in [kde_scott, kde_sj]:
         integral = np.trapezoid(kde(xs), xs)
-        assert_almost_equal(integral, 1.0, decimal=2)
+        assert_allclose(integral, 1.0, atol=1e-2)
 
 
 def test_kde_sheather_jones_error_message():
