@@ -146,7 +146,7 @@ def _unpack_CorrelationResult(res, _):
 
 
 # note that `weights` are paired with `x`
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -233,7 +233,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return xp.exp(_xp_mean(log_a, axis=axis, weights=weights))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -332,7 +332,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         return 1.0 / _xp_mean(1.0 / a, axis=axis, weights=weights)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -659,7 +659,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     return a, mask
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -716,7 +716,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     return mean[()] if mean.ndim == 0 else mean
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -776,7 +776,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         return _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -840,7 +840,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -903,7 +903,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -956,7 +956,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return tvar(a, limits, inclusive, axis, ddof, _no_deco=True)**0.5
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -1227,7 +1227,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     return var
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1328,7 +1328,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals[()] if vals.ndim == 0 else vals
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1442,7 +1442,7 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
@@ -1568,7 +1568,7 @@ def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
@@ -1674,7 +1674,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(KurtosistestResult, n_samples=1, too_small=4)
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether a dataset has normal kurtosis.
@@ -1785,7 +1785,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(NormaltestResult, n_samples=1, too_small=7)
 def normaltest(a, axis=0, nan_policy='propagate'):
     r"""Test whether a sample differs from a normal distribution.
@@ -1863,7 +1863,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(statistic, pvalue)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
     r"""Perform the Jarque-Bera goodness of fit test on sample data.
@@ -2569,7 +2569,7 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, too_small=1
 )
@@ -2651,7 +2651,7 @@ def _isconst(x):
         return (y[0] == y).all(keepdims=True)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -2737,7 +2737,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the geometric standard score.
@@ -2832,7 +2832,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the relative z-scores.
@@ -2913,7 +2913,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     return z
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     r"""
     Calculate the geometric standard deviation of an array.
@@ -3038,7 +3038,8 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 _scale_conversions = {'normal': float(special.erfinv(0.5) * 2.0 * math.sqrt(2.0))}
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)')])
+@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)')],
+                 marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3208,7 +3209,8 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')])
+@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')],
+                 marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
 )
@@ -3740,7 +3742,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
 
 
 # Torch GPU need fdtrc
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True)
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -4033,7 +4035,7 @@ class AlexanderGovernResult:
     pvalue: float
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
     result_to_tuple=lambda x, _: (x.statistic, x.pvalue),
@@ -4367,7 +4369,7 @@ class PearsonRResult(PearsonRResultBase):
 
 
 # Missing special.betainc on torch
-@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -5440,7 +5442,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True)
 @_axis_nan_policy_factory(_pack_CorrelationResult, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
@@ -5542,7 +5544,8 @@ def pointbiserialr(x, y, *, axis=0):
     return res
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2)
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2,
+                 marray=True)
 def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
                alternative='two-sided', axis=None, keepdims=False):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
@@ -6078,7 +6081,7 @@ def unpack_TtestResult(res, _):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6368,7 +6371,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True, alternative="two-sided"):
     r"""
@@ -6509,7 +6512,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
@@ -6896,7 +6899,7 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
@@ -7023,7 +7026,7 @@ def _pd_nsamples(kwargs):
     return 2 if kwargs.get('f_exp', None) is not None else 1
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -7270,7 +7273,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
@@ -7470,7 +7473,7 @@ def _KstestResult_to_tuple(res, _):
 
 
 # JAX JIT / Torch GPU / CuPy need null distribution
-@xp_capabilities(cpu_only=True, jax_jit=False,
+@xp_capabilities(cpu_only=True, jax_jit=False, marray=True,
                  skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
@@ -7843,7 +7846,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
                                 ('dask.array', 'no rankdata')],
-                 jax_jit=False, cpu_only=True)  # null distribution is NumPy-only
+                 jax_jit=False, cpu_only=True,  # null distribution is NumPy-only
+                 marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8187,7 +8191,8 @@ def _kstest_n_samples(kwargs):
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
                                 ('dask.array', 'no rankdata')],
-                 jax_jit=False, cpu_only=True)  # see ks_1samp/ks_2samp
+                 jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
+                 marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8520,7 +8525,8 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+                 marray=True)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8630,7 +8636,8 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")])
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
+                 marray=True)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8732,6 +8739,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
+                 marray=True,
                  skip_backends=[('dask.array', 'needs rankdata'),
                                 ('cupy', 'needs rankdata')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
@@ -8873,7 +8881,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.')
+    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.',
+    marray=True)
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
@@ -10160,7 +10169,8 @@ def _validate_distribution(values, weights):
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")])
+                                ("dask.array", "no `take_along_axis`")],
+                 marray=True)
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
@@ -10398,7 +10408,7 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     return out
 
 
-@xp_capabilities(
+@xp_capabilities(marray=True,
     skip_backends=[('dask.array', 'uses `optimize.elementwise.find_root`'),
                    ('array_api_strict', 'uses `optimize.elementwise.find_root`'),
                    ('jax.numpy', 'uses `optimize.elementwise.find_root`')])
@@ -10721,7 +10731,8 @@ def _unpack_LinregressResult(res, _):
 
 
 @xp_capabilities(skip_backends=[('dask.array', '`dtype` inference failed....')],
-                 cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+                 cpu_only=True, exceptions=['cupy', 'jax.numpy'],
+                 marray=True)
 @_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)
