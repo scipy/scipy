@@ -660,10 +660,10 @@ def _share_masks(*args, xp):
 
 
 def _masked_elementwise(f, *, args, kwargs=None, xp):
-    # Unmask array arguments, evaluate function, and apply result mask to output
-    # Assumes that *when `xp` is an MArray namespace*, MArrays are the only objects
-    # in `args` and `kwargs` with `data` and `mask` attributes.
-    # Could/should combine with `xpx.lazy_apply`
+    # Unmask array arguments, evaluate function, and apply result mask to outputs.
+    # Assumes that when `xp` is an MArray namespace, there is at least one MArray
+    # in `args`/`kwargs` and MArrays are the only objects in `args`/`kwargs` with
+    # `data` and `mask` attributes. Could/should combine with `xpx.lazy_apply`.
     kwargs = {} if kwargs is None else kwargs
 
     if not is_marray(xp):
@@ -674,7 +674,9 @@ def _masked_elementwise(f, *, args, kwargs=None, xp):
     res = f(*arg_data, **dict(zip(kwarg_data, kwargs.keys())))
 
     masks = (arr.mask for arr in (*args, *kwargs.values()) if hasattr(arr, 'mask'))
-    return xp.asarray(res, mask=functools.reduce(operator.or_, masks))
+    mask = functools.reduce(operator.or_, masks)
+    return ((xp.asarray(out, mask=mask) for out in res) if isinstance(res, tuple)
+            else xp.asarray(res, mask=mask))
 
 
 ### End MArray Helpers ###
