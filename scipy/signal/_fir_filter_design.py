@@ -1395,7 +1395,7 @@ def minimum_phase(h,
         # i.e., double the positive frequencies and zero out the negative ones;
         # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
         # To facilitate ease and readability, start with ndarray then cast
-        win = np.zeros(n_fft, dtype=h.dtype)
+        win = np.zeros(n_fft)
         win[0] = 1
         stop = n_fft // 2
         win[1:stop] = 2
