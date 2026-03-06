@@ -6,7 +6,7 @@ from pytest import raises
 from numpy.testing import assert_equal
 
 BANDWIDTH_DTYPES = (
-    np.bool,
+    bool,
     np.int8, np.int16, np.int32, np.int64,
     np.uint8, np.uint16, np.uint32, np.uint64,
     np.float32, np.float64,
@@ -91,7 +91,7 @@ def test_bandwidth_rect_inputs(T):
 
 @skip_xp_invalid_arg
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_issymetric_ishermitian_dtypes():
+def test_issymmetric_ishermitian_dtypes():
     n = 5
     for t in np.typecodes['All']:
         A = np.zeros([n, n], dtype=t)
@@ -117,7 +117,7 @@ def test_issymmetric_ishermitian_invalid_input():
     raises(ValueError, ishermitian, A)
 
 
-def test_issymetric_complex_decimals():
+def test_issymmetric_complex_decimals():
     A = np.arange(1, 10).astype(complex).reshape(3, 3)
     A += np.arange(-4, 5).astype(complex).reshape(3, 3)*1j
     # make entries decimal

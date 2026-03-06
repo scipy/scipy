@@ -51,7 +51,7 @@ trlib_int_t trlib_quadratic_zero(trlib_flt_t c_abs, trlib_flt_t c_lin, trlib_flt
             return n;
         }
         else {
-            // discriminant large enough, two distinc zeros
+            // discriminant large enough, two distinct zeros
             n = 2;
             // start with root according to plus sign to avoid cancellation
             *t1 = -.5 * ( c_lin + copysign( sqrt(q), c_lin ) );

@@ -309,7 +309,7 @@ class ArpackNoConvergence(ArpackError):
     msg : str
         Error message.
     eigenvalues : ndarray
-        Conveged eigenvalues.
+        Converged eigenvalues.
     eigenvectors : ndarray
         Converged eigenvectors.
 

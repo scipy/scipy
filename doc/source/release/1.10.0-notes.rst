@@ -695,7 +695,7 @@ Pull requests for 1.10.0
 * `#9072 <https://github.com/scipy/scipy/pull/9072>`__: ENH: Added rectangular integral to multivariate_normal
 * `#9932 <https://github.com/scipy/scipy/pull/9932>`__: ENH: stats.gaussian_kde: add method that returns marginal distribution
 * `#11712 <https://github.com/scipy/scipy/pull/11712>`__: BUG: trust-constr evaluates function out of bounds
-* `#12211 <https://github.com/scipy/scipy/pull/12211>`__: DOC: Dice similiarity index
+* `#12211 <https://github.com/scipy/scipy/pull/12211>`__: DOC: Dice similarity index
 * `#12312 <https://github.com/scipy/scipy/pull/12312>`__: ENH: Accelerate matrix normal sampling using matmul
 * `#12594 <https://github.com/scipy/scipy/pull/12594>`__: BUG: fixed indexing error when using bounds in Powell's method...
 * `#13053 <https://github.com/scipy/scipy/pull/13053>`__: ENH: add MLE for stats.powerlaw.fit

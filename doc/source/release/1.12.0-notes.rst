@@ -783,7 +783,7 @@ Pull requests for 1.12.0
 * `#18853 <https://github.com/scipy/scipy/pull/18853>`__: BENCH: Remove factorial benchmarks
 * `#18854 <https://github.com/scipy/scipy/pull/18854>`__: MAINT: signal: lighten the notation in lsim
 * `#18856 <https://github.com/scipy/scipy/pull/18856>`__: MAINT: Remove more runtests.py stuff
-* `#18858 <https://github.com/scipy/scipy/pull/18858>`__: MAINT: clean up views/strides/dtypes utilities in \`cluster.hierarcy\`
+* `#18858 <https://github.com/scipy/scipy/pull/18858>`__: MAINT: clean up views/strides/dtypes utilities in \`cluster.hierarchy\`
 * `#18861 <https://github.com/scipy/scipy/pull/18861>`__: MAINT: avoid \`np.deprecate\` and \`np.core\`, add \`normalize_axis_index\`...
 * `#18862 <https://github.com/scipy/scipy/pull/18862>`__: ENH: sparse arrays for hstack, vstack, bmat, block_diag. New...
 * `#18863 <https://github.com/scipy/scipy/pull/18863>`__: DEP: remove extra np.deprecate and add docs back

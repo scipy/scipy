@@ -3631,7 +3631,7 @@ fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const dou
         number = number + 2;
     }
     if (number == 0) { return; }
-    // the sum of squared residulas sq is a quadratic polynomial in the
+    // the sum of squared residuals sq is a quadratic polynomial in the
     // parameters g(j). we determine the unknown coefficients of this
     // polymomial by calculating (number+1)*(number+2)/2 different splines
     // according to specific values for g(j).
