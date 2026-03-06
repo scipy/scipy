@@ -422,10 +422,10 @@ def test_atol(solver, xp):
 
     rng = np.random.default_rng(168441431005389)
     A = rng.uniform(size=[10, 10])
-    A = xp.asarray(A)
     A = A @ A.T + 10*xp.eye(10)
     b = 1e3 * rng.uniform(size=10)
-    b = xp.asarray(b)
+    # use the default dtype of the backend
+    A, b = xp.asarray(A.tolist()),  xp.asarray(b.tolist())
 
     b_norm = xp_vector_norm(b)
 
