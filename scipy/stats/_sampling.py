@@ -946,6 +946,9 @@ class FastGeneratorInversion:
             ``np.random.default_rng(random_state)`` is used.
             If `random_state` is already a ``Generator`` or ``RandomState``
             instance then that instance is used.
+        x_error : bool
+            If ``True``, return the x-error, as per the notes section. If ``False``,
+            returns ``NaN``.
 
         Returns
         -------

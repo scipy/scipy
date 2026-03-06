@@ -205,9 +205,6 @@ class RK23(RungeKutta):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
-    first_step : float or None, optional
-        Initial step size. Default is ``None`` which means that the algorithm
-        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
@@ -241,6 +238,11 @@ class RK23(RungeKutta):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by methods 'Radau' and 'BDF', but
         will result in slower execution for this solver.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
+    **extraneous
+        Any additional keyword arguments will be ignored.
 
     Attributes
     ----------
@@ -317,9 +319,6 @@ class RK45(RungeKutta):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
-    first_step : float or None, optional
-        Initial step size. Default is ``None`` which means that the algorithm
-        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
@@ -339,6 +338,11 @@ class RK45(RungeKutta):
         1e-3 for `rtol` and 1e-6 for `atol`.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
+    **extraneous
+        Any additional keyword arguments will be ignored.
 
     Attributes
     ----------
@@ -430,9 +434,6 @@ class DOP853(RungeKutta):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
-    first_step : float or None, optional
-        Initial step size. Default is ``None`` which means that the algorithm
-        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
@@ -452,6 +453,11 @@ class DOP853(RungeKutta):
         1e-3 for `rtol` and 1e-6 for `atol`.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
+    **extraneous
+        Any additional keyword arguments will be ignored.
 
     Attributes
     ----------
