@@ -666,20 +666,15 @@ def _masked_elementwise(f, *, args, kwargs=None, xp):
     # Could/should combine with `xpx.lazy_apply`
     kwargs = {} if kwargs is None else kwargs
 
-    arrays = list(arr for arr in (*args, *kwargs.values()) if hasattr(arr, 'mask'))
-    if not is_marray(xp) or len(arrays) == 0:
+    if not is_marray(xp):
         return f(*args, **kwargs)
-    _xp = arrays[0]._xp
 
     arg_data = (getattr(arg, 'data', arg) for arg in args)
     kwarg_data = (getattr(val, 'data', val) for val in kwargs.values())
     res = f(*arg_data, **dict(zip(kwarg_data, kwargs.keys())))
 
-    arg_masks = (arg.mask for arg in args if hasattr(arg, 'mask'))
-    kwarg_masks = (kwarg.mask for kwarg in kwargs.values() if hasattr(kwarg, 'mask'))
-    mask = functools.reduce(_xp.logical_or, (*arg_masks, *kwarg_masks))
-
-    return xp.asarray(res, mask=mask)
+    masks = (arr.mask for arr in (*args, *kwargs.values()) if hasattr(arr, 'mask'))
+    return xp.asarray(res, mask=functools.reduce(operator.or_, masks))
 
 
 ### End MArray Helpers ###

@@ -9,7 +9,7 @@ import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
-                                   is_marray, _share_masks, xp_capabilities)
+                                   _masked_elementwise, _share_masks, xp_capabilities)
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -153,11 +153,7 @@ def entropy(pk: np.typing.ArrayLike,
     if qk is None:
         vec = special.entr(pk)
     else:
-        if is_marray(xp):  # compensate for mdhaber/marray#97
-            vec = special.rel_entr(pk.data, qk.data)  # type: ignore[union-attr]
-            vec = xp.asarray(vec, mask=pk.mask)  #  type: ignore[union-attr]
-        else:
-            vec = special.rel_entr(pk, qk)
+        vec = _masked_elementwise(special.rel_entr, args=(pk, qk), xp=xp)
 
     S = xp.sum(vec, axis=axis)
     if base is not None:
