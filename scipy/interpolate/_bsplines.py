@@ -22,7 +22,7 @@ __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
 
 def _deprecate_dtypes(*args):
     """
-    A temporary helper for deprecating non-LAPACK dtypes.
+    A temporary helper for deprecating dtypes.
     """
     for dtype in args:
         if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
