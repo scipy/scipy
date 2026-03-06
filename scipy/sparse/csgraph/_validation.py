@@ -32,7 +32,12 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
 
     if issparse(csgraph):
         if csr_output:
-            csgraph = csgraph.tocsr(copy=copy_if_sparse).astype(DTYPE, copy=False)
+            if csgraph.format == "bsr":
+                csgraph = csgraph.tocsr(copy=copy_if_sparse)
+                csgraph.eliminate_zeros()
+                csgraph = csgraph.astype(DTYPE, copy=False)
+            else:
+                csgraph = csgraph.tocsr(copy=copy_if_sparse).astype(DTYPE, copy=False)
         else:
             csgraph = csgraph_to_dense(csgraph, null_value=null_value_out)
     elif np.ma.isMaskedArray(csgraph):
