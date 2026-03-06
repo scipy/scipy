@@ -1,5 +1,6 @@
 py3.install_sources([
     '__init__.py',
+    '_rvs_util.py',
     'common_tests.py',
     'test_axis_nan_policy.py',
     'test_binned_statistic.py',
