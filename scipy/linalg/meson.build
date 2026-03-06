@@ -4,6 +4,7 @@ _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 _cython_tree += fs.copyfile('__init__.pxd')
 
 _generate_pyx = find_program('_generate_pyx.py')
+ilp64_flag = use_ilp64 ? '--ilp64' : []
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -14,10 +15,11 @@ cython_linalg = custom_target('cython_linalg',
     '_lapack_subroutines.h'
   ],
   input: '_generate_pyx.py',
-  command: [_generate_pyx, '-o', '@OUTDIR@', accelerate_flag],
+  command: [_generate_pyx, '-o', '@OUTDIR@', accelerate_flag, ilp64_flag],
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
+    '../_build_utils/_wrappers_common.py',
   ],
   install: true,
   # Install only the .pxd files
@@ -216,6 +218,10 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   subdir: 'scipy/linalg'
 )
 
+# When use_ilp64 is true, cython_blas/cython_lapack use ILP64 (64-bit integer)
+# BLAS/LAPACK interfaces via `lapack_dep`; otherwise they use LP64 via
+# `lapack_lp64_dep`.
+cython_blas_lapack_dep = use_ilp64 ? lapack_dep : lapack_lp64_dep
 cython_blas = py3.extension_module('cython_blas',
   [
     linalg_cython_gen.process(cython_linalg[0]),  # cython_blas.pyx
@@ -223,7 +229,7 @@ cython_blas = py3.extension_module('cython_blas',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [cython_blas_lapack_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -236,7 +242,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [cython_blas_lapack_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
