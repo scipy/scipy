@@ -1395,12 +1395,12 @@ def minimum_phase(h,
         # i.e., double the positive frequencies and zero out the negative ones;
         # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
         # To facilitate ease and readability, start with ndarray then cast
-        win = np.zeros(n_fft)
-        win[0] = 1
+        win = xp.zeros(n_fft, dtype=h_temp.dtype)
+        xpx.at(win)[0].set(1)
         stop = n_fft // 2
-        win[1:stop] = 2
-        win[stop] = 1 + (n_fft % 2)  # Nyquist freq: if odd: use 2, if even: use 1
-        h_temp *= xp.asarray(win, dtype=h_temp.dtype)
+        xpx.at(win)[1:stop].set(2)
+        xpx.at(win)[stop].set(1 + (n_fft % 2))  # Nyquist freq: odd use 2, even use 1
+        h_temp *= win
         h_temp = ifft(xp.exp(fft(h_temp)))
         h_minimum = xp.real(h_temp)
     n_out = (n_half + h.shape[0] % 2) if half else h.shape[0]
