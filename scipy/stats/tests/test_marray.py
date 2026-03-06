@@ -336,6 +336,7 @@ def test_directional_stats(xp, axis):
 @pytest.mark.parametrize('fun, kwargs', [
     make_xp_pytest_param(stats.wilcoxon,
                          {'method': 'asymptotic', 'zero_method': 'zsplit'}),
+    make_xp_pytest_param(stats.cramervonmises, {'cdf': stats.norm.cdf}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_one_sample_tests(fun, kwargs, axis, xp):

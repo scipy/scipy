@@ -609,7 +609,6 @@ def xp_default_dtype(xp):
         return xp.float64
 
 
-### MArray Helpers ###
 def xp_result_device(*args):
     """Return the device of an array in `args`, for the purpose of
     input-output device propagation.
@@ -631,6 +630,9 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """
     arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]
     return xp.concat(arys)
+
+
+### MArray Helpers ###
 
 
 def is_marray(xp):
@@ -655,6 +657,30 @@ def _share_masks(*args, xp):
         mask = functools.reduce(operator.or_, (arg.mask for arg in args))
         args = [xp.asarray(arg.data, mask=mask) for arg in args]
     return args[0] if len(args) == 1 else args
+
+
+def _masked_elementwise(f, *, args, kwargs=None, xp):
+    # Unmask array arguments, evaluate function, and apply result mask to output
+    # Assumes that *when `xp` is an MArray namespace*, MArrays are the only objects
+    # in `args` and `kwargs` with `data` and `mask` attributes.
+    # Could/should combine with `xpx.lazy_apply`
+    kwargs = {} if kwargs is None else kwargs
+
+    arrays = list(arr for arr in (*args, *kwargs.values()) if hasattr(arr, 'mask'))
+    if not is_marray(xp) or len(arrays) == 0:
+        return f(*args, **kwargs)
+    _xp = arrays[0]._xp
+
+    arg_data = (getattr(arg, 'data', arg) for arg in args)
+    kwarg_data = (getattr(val, 'data', val) for val in kwargs.values())
+    res = f(*arg_data, **dict(zip(kwarg_data, kwargs.keys())))
+
+    arg_masks = (arg.mask for arg in args if hasattr(arg, 'mask'))
+    kwarg_masks = (kwarg.mask for kwarg in kwargs.values() if hasattr(kwarg, 'mask'))
+    mask = functools.reduce(_xp.logical_or, (*arg_masks, *kwarg_masks))
+
+    return xp.asarray(res, mask=mask)
+
 
 ### End MArray Helpers ###
 
