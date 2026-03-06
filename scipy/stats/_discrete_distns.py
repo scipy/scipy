@@ -1012,10 +1012,7 @@ class poisson_gen(rv_discrete):
         return special.pdtrc(k, mu)
 
     def _ppf(self, q, mu):
-        vals = ceil(special.pdtrik(q, mu))
-        vals1 = np.maximum(vals - 1, 0)
-        temp = special.pdtr(vals1, mu)
-        return np.where(temp >= q, vals1, vals)
+        return scu._poisson_ppf(q, mu)
 
     def _stats(self, mu):
         var = mu
