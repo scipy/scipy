@@ -1075,7 +1075,7 @@ def reduce(double[:, :] quat, left=None, right=None):
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double[:, :]:
+def apply(double[:, :] quat, const double[:, :] vectors, bint inverse=False) -> double[:, :]:
     cdef Py_ssize_t n_vectors = len(vectors)
     cdef Py_ssize_t n_rotations = len(quat)
 
