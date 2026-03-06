@@ -13,7 +13,7 @@ from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
     xp_ravel
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
 

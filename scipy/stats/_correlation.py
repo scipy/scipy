@@ -1,15 +1,17 @@
 import numpy as np
 import math
-from scipy import stats
+from scipy import stats, special
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
-                                   xp_result_type)
+                                   is_numpy, _share_masks, _count_nonmasked, is_marray)
 from scipy.stats._stats_py import (_SimpleNormal, SignificanceResult, _get_pvalue,
                                    _rankdata)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
-from scipy.stats._stats_mstats_common import TheilslopesResult, _n_samples_optional_x
+from scipy.stats._stats_mstats_common import (TheilslopesResult, _n_samples_optional_x,
+                                              SiegelslopesResult)
 
 
-__all__ = ['chatterjeexi', 'spearmanrho', 'theilslopes']
+__all__ = ['chatterjeexi', 'spearmanrho', 'theilslopes', 'siegelslopes']
 
 
 def _xi_statistic(x, y, y_continuous, xp):
@@ -29,7 +31,6 @@ def _xi_statistic(x, y, y_continuous, xp):
     # " additionally define li to be the number of j such that Y(j) ≥ Y(i)"
     # Could probably compute this from r, but that can be an enhancement
     l = stats.rankdata(-y, method='max', axis=-1)
-    r, l = xp.astype(r, x.dtype), xp.astype(l, x.dtype)
 
     num = xp.sum(xp.abs(xp.diff(r, axis=-1)), axis=-1)
     if y_continuous:  # [1] Eq. 1.1
@@ -88,12 +89,11 @@ def _unpack(res, _):
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'no take_along_axis'),
-                                ('cupy', 'no rankdata (xp.repeats limitation)')],
-                 jax_jit=False)  # rankdata not compatible with JAX JIT
+                                ('cupy', 'no rankdata (xp.repeats limitation)')])
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
 def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
-    r"""Compute the xi correlation and perform a test of independence
+    r"""Compute the xi correlation and perform a test of independence.
 
     The xi correlation coefficient is a measure of association between two
     variables; the value tends to be close to zero when the variables are
@@ -108,6 +108,11 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         dependent variable. The (N-d) arrays must be broadcastable.
     axis : int, default: 0
         Axis along which to perform the test.
+    y_continuous : bool, default: False
+        Whether `y` is assumed to be drawn from a continuous distribution.
+        If `y` is drawn from a continuous distribution, results are valid
+        whether this is assumed or not, but enabling this assumption will
+        result in faster computation and typically produce similar results.
     method : 'asymptotic' or `PermutationMethod` instance, optional
         Selects the method used to calculate the *p*-value.
         Default is 'asymptotic'. The following options are available.
@@ -117,12 +122,6 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
         * `PermutationMethod` instance. In this case, the p-value
           is computed using `permutation_test` with the provided
           configuration options and other appropriate settings.
-
-    y_continuous : bool, default: False
-        Whether `y` is assumed to be drawn from a continuous distribution.
-        If `y` is drawn from a continuous distribution, results are valid
-        whether this is assumed or not, but enabling this assumption will
-        result in faster computation and typically produce similar results.
 
     Returns
     -------
@@ -249,7 +248,6 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
 
 @xp_capabilities(cpu_only=True, exceptions=['jax.numpy'],
     skip_backends=[('dask.array', 'not supported by rankdata (take_along_axis)')],
-    jax_jit=False  # rankdata not compatible with JAX JIT
 )
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
@@ -381,16 +379,16 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
 
     """
     xp = array_namespace(x, y)
-    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
+    x, y = _share_masks(x, y, xp=xp)
     rx = stats.rankdata(x, axis=axis)
     ry = stats.rankdata(y, axis=axis)
-    rx = xp.astype(rx, dtype, copy=False)
-    ry = xp.astype(ry, dtype, copy=False)
     res = stats.pearsonr(rx, ry, method=method, alternative=alternative, axis=axis)
     return SignificanceResult(res.statistic, res.pvalue)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
+                                ("jax.numpy", "non-concrete boolean indexing"),
+                                ('cupy', 'no rankdata (xp.repeats limitation)')])
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -508,59 +506,225 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     >>> plt.show()
 
     """
-    if method not in ['joint', 'separate']:
-        raise ValueError("method must be either 'joint' or 'separate'."
+    return _robust_slopes(y, x=x, alpha=alpha, method=method, pfun='theilslopes')
+
+
+@xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
+                                ("jax.numpy", "quantile needs lazy nan_policy")])
+@_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
+                          n_samples=_n_samples_optional_x,
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
+def siegelslopes(y, x=None, method='hierarchical', *, axis=None):
+    r"""
+    Computes the Siegel estimator for a set of points (x, y).
+
+    `siegelslopes` implements a method for robust linear regression
+    using repeated medians (see [1]_) to fit a line to the points (x, y).
+    The method is robust to outliers with an asymptotic breakdown point
+    of 50%.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    method : {'hierarchical', 'separate'}
+        If 'hierarchical', estimate the intercept using the estimated
+        slope ``slope`` (default option).
+        If 'separate', estimate the intercept independent of the estimated
+        slope. See Notes for details.
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+
+    Returns
+    -------
+    result : ``SiegelslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        slope : float
+            Estimate of the slope of the regression line.
+        intercept : float
+            Estimate of the intercept of the regression line.
+
+    See Also
+    --------
+    theilslopes : a similar technique without repeated medians
+
+    Notes
+    -----
+    With ``n = len(y)``, compute ``m_j`` as the median of
+    the slopes of the lines from the point ``(x[j], y[j])`` to all other ``n-1`` points.
+    ``slope`` is then the median of all slopes ``m_j``.
+    Two ways are given to estimate the intercept in [1]_ which can be chosen
+    via the parameter ``method``.
+    The hierarchical approach uses the estimated slope ``slope``
+    and computes ``intercept`` as the median of ``y - slope*x``.
+    The other approach estimates the intercept separately as follows: for
+    each point ``(x[j], y[j])``, compute the intercepts of all the ``n-1``
+    lines through the remaining points and take the median ``i_j``.
+    ``intercept`` is the median of the ``i_j``.
+
+    The implementation computes `n` times the median of a vector of size `n`
+    which can be slow for large vectors. There are more efficient algorithms
+    (see [2]_) which are not implemented here.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 2, with fields ``slope`` and
+    ``intercept``, so one can continue to write::
+
+        slope, intercept = siegelslopes(y, x)
+
+    References
+    ----------
+    .. [1] A. Siegel, "Robust Regression Using Repeated Medians",
+           Biometrika, Vol. 69, pp. 242-244, 1982.
+
+    .. [2] A. Stein and M. Werman, "Finding the repeated median regression
+           line", Proceedings of the Third Annual ACM-SIAM Symposium on
+           Discrete Algorithms, pp. 409-413, 1992.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-5, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
+
+    Compute the slope and intercept.  For comparison, also compute the
+    least-squares fit with `linregress`:
+
+    >>> res = stats.siegelslopes(y, x)
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results. The Siegel regression line is shown in red. The green
+    line shows the least-squares fit for comparison.
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
+
+    """
+    return _robust_slopes(y, x=x, method=method, pfun='siegelslopes')
+
+
+def _robust_slopes(y, *, x, alpha=None, method, pfun):
+    other_method = 'joint' if pfun == 'theilslopes' else 'hierarchical'
+    if method not in {other_method, 'separate'}:
+        raise ValueError(f"method must be either '{other_method}' or 'separate'. "
                          f"'{method}' is invalid.")
 
-    y, x = xp_promote(y, x, force_floating=True, xp=np)
-    x = np.arange(y.shape[-1], dtype=y.dtype) if x is None else x
-    y, x = np.broadcast_arrays(y, x)
+    xp = array_namespace(y, x)
+    y, x = xp_promote(y, x, force_floating=True, xp=xp)
+    x = xp.arange(y.shape[-1], dtype=y.dtype) if x is None else x
+    y, x = xp.broadcast_arrays(y, x)
+    x, y = _share_masks(x, y, xp=xp)
 
     if x.shape[-1] < 2 or y.shape[-1] < 2:  # only needed by test_axis_nan_policy
         raise ValueError("`x` and `y` must have length at least 2.")
 
     # Compute sorted slopes only when deltax > 0
-    deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
-    deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
-    i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
-    # with NumPy:
-    deltax, deltay = deltax[..., i], deltay[..., i]
-    # with array API, mask must be sole index, so we'll need to broadcast it.
-    # indexing will ravel the array, so we'll need to reshape it after
-    deltax[deltax == 0] = np.nan
+    deltax = x[..., :, xp.newaxis] - x[..., xp.newaxis, :]
+    deltay = y[..., :, xp.newaxis] - y[..., xp.newaxis, :]
+
+    if pfun == 'theilslopes':
+        i = xp.astype(xp.triu(xp.ones(deltax.shape[-2:]), k=1), xp.bool)
+        if is_numpy(xp):
+            deltax, deltay = deltax[..., i], deltay[..., i]
+        else:
+            # With array API, mask must be sole index, so we need to broadcast it.
+            # Indexing ravels the array, so we need to reshape the results.
+            i = xp.broadcast_to(i, deltax.shape)
+            deltax, deltay = deltax[i], deltay[i]
+            deltax = xp.reshape(deltax, (*i.shape[:-2], -1))
+            deltay = xp.reshape(deltay, (*i.shape[:-2], -1))
+
+    # Use `.data` to avoid indexing with masked indices. If masked elements of deltax=0,
+    # they can safely be set to xp.nan, too - they're masked, after all.
+    deltax0 = (deltax.data == 0) if is_marray(xp) else (deltax == 0)
+    deltax = xpx.at(deltax)[deltax0].set(xp.nan)
     slopes = deltay / deltax
-    slopes = np.sort(slopes, axis=-1)
-    medslope = np.nanmedian(slopes, axis=-1)
-    if method == 'joint':
-        medinter = np.median(y - medslope * x, axis=-1)
+
+    if is_marray(xp):
+        def nanmedian(x, axis):  # use mask to ignore NaNs
+            x_nans_masked = xp.asarray(x.data, mask=x.mask | x._xp.isnan(x.data))
+            return stats.quantile(x_nans_masked, 0.5, axis=axis)
     else:
-        medinter = np.median(y, axis=-1) - medslope * np.median(x, axis=-1)
+        def nanmedian(x, axis):  # use nan_policy to ignore NaNs
+            return stats.quantile(x, 0.5, axis=axis, nan_policy='omit')
+
+    def median(x, axis): return stats.quantile(x, 0.5, axis=axis)
+
+    # `theilslopes` is median of all slopes. Indexing with `i` above has already raveled
+    # all the slopes, so we only need to take the median along the last axis.
+    # `siegelslope` is a median of medians: we take the median of slopes from point i
+    # to all other points, then the median of those medians.
+    # The slope is NaN wherever the two points are the same, and those don't contribute,
+    # hence the first median omits NaNs. NaNs in the input are propagated by the
+    # `_axis_nan_policy` decorator.
+    medslope = (median(nanmedian(slopes, axis=-1), axis=-1) if pfun == 'siegelslopes'
+                else nanmedian(slopes, axis=-1))
+
+    if method in {'joint', 'hierarchical'}:
+        medinter = median(y - medslope[..., np.newaxis] * x, axis=-1)
+    elif pfun == 'theilslopes':
+        medinter = median(y, axis=-1) - medslope * median(x, axis=-1)
+    else:
+        # Calculate pairwise intercepts given each point (row i) and the slope to each
+        # other point (column j). Then calculate the median of (row) medians.
+        intercepts = y[..., :, xp.newaxis] - slopes*x[..., :, xp.newaxis]
+        medinter = median(nanmedian(intercepts, axis=-1), axis=-1)
+
+    if pfun == 'siegelslopes':
+        return SiegelslopesResult(slope=medslope[()], intercept=medinter[()])
+
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
 
-    z = stats.norm.ppf(alpha / 2.)
+    z = float(special.ndtri(alpha / 2.))
     # This implements (2.6) from Sen (1968)
     # we don't actually need ranks, so an enhancement could be to have
     # `rankdata` return only the second output. In the meantime, use the
     # least expensive `method`.
     _, nxreps = _rankdata(x, method='min', return_ties=True)
     _, nyreps = _rankdata(y, method='min', return_ties=True)
-    nt = np.count_nonzero(np.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
-    ny = y.shape[-1]                                                    # n in Sen 1968
+    nt = xp.count_nonzero(xp.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
+    nt = xp.asarray(nt, dtype=y.dtype)
+    ny = _count_nonmasked(y, keepdims=True, axis=-1)                    # n in Sen 1968
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (
         ny * (ny-1) * (2*ny+5)
-        - np.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
-        - np.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
+        - xp.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
+        - xp.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
     # Find the confidence interval indices in `slopes`
-    sigma = np.sqrt(np.maximum(sigsq, 0.))
-    Ru = np.minimum(np.round((nt - z*sigma)/2.).astype(np.int64), nt-1)
-    Rl = np.maximum(np.round((nt + z*sigma)/2.).astype(np.int64) - 1, 0)
-    R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
-    delta = np.take_along_axis(slopes, R, axis=-1)
-    i_nan = np.broadcast_to(sigsq < 0, delta.shape)
-    delta[i_nan] = np.nan
+    sigma = xp.sqrt(xp.maximum(sigsq, xp.zeros_like(sigsq)))
+    Ru = xp.minimum(xp.astype(xp.round((nt - z*sigma)/2.), xp.int64),
+                    xp.astype(nt, xp.int64)-1)
+    Rl = xp.maximum(xp.astype(xp.round((nt + z*sigma)/2.), xp.int64) - 1,
+                    xp.asarray(0, dtype=xp.int64))
+    R = xp.concat((xpx.atleast_nd(Rl, ndim=1), xpx.atleast_nd(Ru, ndim=1)), axis=-1)
+    slopes = xp.sort(slopes, axis=-1)
+    delta = xp.take_along_axis(slopes, R, axis=-1)
+    i_nan = xp.broadcast_to(sigsq < 0, delta.shape)
+    delta = xpx.at(delta)[i_nan].set(xp.nan)
 
-    return TheilslopesResult(slope=medslope[()], intercept=medinter[()],
-                             low_slope=delta[..., 0][()], high_slope=delta[..., 1][()])
+    slope = medslope[()] if medslope.ndim == 0 else medslope
+    intercept = medinter[()] if medinter.ndim == 0 else medinter
+    low_slope = delta[..., 0]
+    high_slope = delta[..., 1]
+    low_slope = low_slope[()] if low_slope.ndim == 0 else low_slope
+    high_slope = high_slope[()] if high_slope.ndim == 0 else high_slope
+    return TheilslopesResult(slope=slope, intercept=intercept,
+                             low_slope=low_slope, high_slope=high_slope)

@@ -106,7 +106,7 @@ class OdeSolver:
     ----------
     n : int
         Number of equations.
-    status : string
+    status : str
         Current status of the solver: 'running', 'finished' or 'failed'.
     t_bound : float
         Boundary time.
@@ -181,7 +181,7 @@ class OdeSolver:
 
         Returns
         -------
-        message : string or None
+        message : str or None
             Report from the solver. Typically a reason for a failure if
             `self.status` is 'failed' after the step was taken or None
             otherwise.
@@ -240,6 +240,13 @@ class DenseOutput:
     It interpolates between `t_min` and `t_max` (see Attributes below).
     Evaluation outside this interval is not forbidden, but the accuracy is not
     guaranteed.
+
+    Parameters
+    ----------
+    t_old : float
+        Previous time.
+    t : float
+        Current time.
 
     Attributes
     ----------

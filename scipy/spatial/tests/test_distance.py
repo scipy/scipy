@@ -43,8 +43,7 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
-                           assert_almost_equal, assert_allclose,
-                           break_cycles, IS_PYPY)
+                           assert_almost_equal, assert_allclose)
 import pytest
 
 import scipy.spatial.distance
@@ -689,8 +688,6 @@ class TestCdist:
         weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
         del x1, x2, out
 
-        if IS_PYPY:
-            break_cycles()
         assert all(weak_ref() is None for weak_ref in weak_refs)
 
 

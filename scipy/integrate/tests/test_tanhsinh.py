@@ -694,7 +694,7 @@ class TestTanhSinh:
         def f(x, c):
             return x**c
 
-        res = _tanhsinh(f, a, b, args=29)
+        res = _tanhsinh(f, a, b, args=xp.asarray(29.))
         xp_assert_close(res.integral, xp.asarray(1/30))
 
         # Test NaNs
@@ -755,6 +755,20 @@ class TestTanhSinh:
         assert res.success
         assert res.maxlevel < 5
         xp_assert_close(res.integral, ref.integral, rtol=1e-15)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**p + c
+
+        a = xp.zeros((), dtype=xp.float32)
+        b = xp.ones((), dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = _tanhsinh(f, a, b, args=(c,), kwargs={'p': p})
+        ref = b**(p+1) / (p+1) + c
+        xp_assert_close(res.integral, ref)
 
 
 @make_xp_test_case(nsum)
@@ -1156,3 +1170,18 @@ class TestNSum:
 
         res = nsum(f, 1, np.inf)
         assert_allclose(res.sum, ref)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**-p + c
+
+        a = xp.ones((), dtype=xp.float32)
+        b = xp.full((), 10, dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = nsum(f, a, b, args=(c,), kwargs={'p': p})
+        x = xp.arange(1, 11, dtype=xp.float32)
+        ref = xp.sum(f(x, c[..., xp.newaxis], p=p[..., xp.newaxis]), axis=-1)
+        xp_assert_close(res.sum, ref)

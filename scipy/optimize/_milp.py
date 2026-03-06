@@ -153,7 +153,7 @@ def _milp_iv(c, integrality, bounds, constraints, options):
 
 def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     r"""
-    Mixed-integer linear programming
+    Mixed-integer linear programming.
 
     Solves problems of the following form:
 

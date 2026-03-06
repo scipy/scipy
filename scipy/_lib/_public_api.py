@@ -10,6 +10,8 @@ scipy/doc/source/array_api_capabilities.py.
 # much.  This has resulted in lots of things that look like public modules
 # (i.e. things that can be imported as `import scipy.somesubmodule.somefile`),
 # but were never intended to be public.  The PUBLIC_MODULES list contains
+import pathlib
+
 # modules that are either public because they were meant to be, or because they
 # contain public functions/objects that aren't present in any other namespace
 # for whatever reason and therefore should be treated as public.
@@ -54,3 +56,9 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "stats.qmc",
     "stats.sampling"
 ]]
+
+# Handle the `_without-fortran` build option
+_without_fortran = False
+if not (pathlib.Path(__file__).parent.parent / 'odr').is_dir():
+    _without_fortran = True
+    PUBLIC_MODULES.remove('scipy.odr')

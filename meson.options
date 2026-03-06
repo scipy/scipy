@@ -23,3 +23,6 @@ option('use-system-libraries', type: 'array',
         choices : ['none', 'all', 'auto', 'boost.math', 'qhull'], value : ['none'],
         description: 'Choose which system libraries for subprojects ' +
                      'if they are available.')
+option('_without-fortran', type: 'boolean', value: false,
+       description: 'If set to true, build without a Fortran compiler ' +
+                    '(the deprecated `scipy.odr` will be missing)')

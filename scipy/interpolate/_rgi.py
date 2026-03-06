@@ -7,7 +7,7 @@ import numpy as np
 
 import scipy.sparse.linalg as ssl
 from scipy._lib._array_api import array_namespace, xp_capabilities
-from scipy._lib.array_api_compat import is_array_api_obj
+from scipy._external.array_api_compat import is_array_api_obj
 
 from ._interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator

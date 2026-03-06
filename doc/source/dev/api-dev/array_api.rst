@@ -351,6 +351,19 @@ and PyTorch with the
 on ARM Mac. We are open to expanding and improving ``float32``-only
 support in cases where this is feasible and there is sufficient user interest.
 
+It is therefore recommended that those using SciPy with the JAX backend set the X64 flag by one
+of the means JAX provides since the default ``float32``-only configuration is not
+currently tested.
+
+Though not directly related to default dtypes, it may be useful to know that JAX defaults to using
+`TensorFloat32 <https://github.com/jax-ml/jax/issues/4873>`_
+precision for matrix multiplication of ``float32`` arrays on GPUs that support TensorFloat32.
+The half-precision mantissas used in this format can cause accuracy issues in scientific applications.
+SciPy sets `jax_default_matmul_precision <https://docs.jax.dev/en/latest/_autosummary/jax.default_matmul_precision.html>`_ to
+``"float32"`` in its JAX GPU tests and we recommend this configuration for users
+of the JAX backend. This configuration option does not affect matrix multiplications of ``float64``
+arrays when the X64 flag is enabled.
+
 
 Array creation functions without array inputs
 `````````````````````````````````````````````
@@ -407,6 +420,10 @@ signature::
       allow_dask_compute=False, jax_jit=True,
       # Extra note to inject into the docstring
       extra_note=None,
+      # Dictionary mapping method names to dictionaries of method
+      # specific capabilities for use when when xp_capabilities is
+      # applied to a class with varying capabilities per method
+      method_capabilities=None,
   ):
 
 This is available in ``scipy._lib._array_api`` and can be applied to functions,
@@ -670,8 +687,50 @@ best demonstrated with an example::
     """
   )
 
-.. _dev-arrayapi_adding_tests:
+Applying ``xp_capabilities`` to classes
+```````````````````````````````````````
 
+For classes with array API standard support, one must apply ``xp_capabilities``
+once to the class itself, not separately to individual methods. The class level
+capabilities should be decided based on best judgment of which backends
+are generally usable with the class in a holistic sense. If individual methods
+differ in their capabilities, this can be specified using the
+``method_capabilities`` kwarg of ``xp_capabilities`` like in the example
+below::
+
+  @xp_capabilities(
+      method_capabilities={
+          "__init__": dict(jax_jit=False),
+	  "bar": dict(cpu_only=True, exceptions=["cupy"], jax_jit=False),
+      }
+  )
+  class Foo:
+      def __init__(self, x):
+          ...
+      def bar(self, y):
+          # not array-agnostic but has delegation to CuPy to set up
+	  ...
+      def baz(self, y):
+          # array-agnostic method
+	  ...
+
+Adding ``method_capabilities`` makes no changes to the documentation but does
+make it possible to access method level capabilities when adding tests and
+to test class methods with the JAX JIT. Documentation of
+method specific support and limitations should be added to the ``extra_note``
+described above.
+
+``method_capabilities`` should be a dictionary mapping method names to
+dictionaries with keys corresponding to the usual arguments of ``xp_capabilities``.
+Keys that are not supplied in the inner dictionaries will be filled with the
+``xp_capabilities`` default values. Entries in ``method_capabilities`` completely
+override the class level capabilities entry so that one can declare that some
+methods are supported on backends for which the class itself is considered
+unsupported; this is useful for incremental development. If a method has no
+corresponding entry in ``method_capabilities``, then by default, its capabilities
+will be the same as the class level capabilities.
+
+.. _dev-arrayapi_adding_tests:
 
 Adding tests
 ------------
@@ -781,6 +840,7 @@ below::
 ``make_xp_pytest_marks`` is rarely used. It directly returns a list of
 pytest marks which can be used with the ``pytestmark = ...`` variable
 to set marks for all tests in a file.
+
 
 **Strict checks:**
 
@@ -1057,7 +1117,8 @@ the trouble of backend isolation. Maintainers are free to use their discretion t
 decide whether backend isolation is necessary or desirable.
 
 Testing the JAX JIT compiler (and lazy evaluation with Dask)
-------------------------------------------------------------
+````````````````````````````````````````````````````````````
+
 The `JAX JIT compiler <https://jax.readthedocs.io/en/latest/jit-compilation.html>`_
 introduces special restrictions to all code wrapped by ``@jax.jit``, which are not
 present when running JAX in eager mode. Notably, boolean masks in ``__getitem__``
@@ -1085,7 +1146,7 @@ To achieve this for private functions without ``xp_capabilities`` entries,
 you should tag them as follows in your test module::
 
   from scipy._lib._array_api import xp_assert_close
-  from scipy._lib.array_api_extra.testing import lazy_xp_function
+  from scipy._external.array_api_extra.testing import lazy_xp_function
   from scipy.mymodule import _private_toto_helper
 
   lazy_xp_function(_private_toto_helper)
@@ -1137,6 +1198,45 @@ as it does for tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
+Adding tests for class methods
+``````````````````````````````
+
+To declare that a test is testing a particular method of a class,
+one can pass a tuple of the form ``tuple[type, str]`` as an entry of
+``funcs`` in ``make_xp_test_case`` and ``make_xp_pytest_marks`` or as
+the argument ``func`` of ``make_xp_pytest_param``. The tuple
+``(A, "f")`` signifies that one is testing the method ``A.f`` of the
+class ``A``. Such a tuple is used rather than simply ``A.f``
+in order allow unambiguous specification of what is being tested in
+cases where a method is inherited from a parent class.::
+
+  @make_xp_test_case((Foo, "bar"))
+  def test_Foo_bar(xp):
+      ...
+
+When passing such a tuple to ``make_xp_pytest_param``, only the first
+entry of the tuple is actually used in the resulting pytest param::
+
+  @pytest.mark.parametrize("cls", [(A, "f"), (B, "f"), C])
+      def test(cls, xp):
+          # cls iterates over A, B, C.
+	  ...
+
+When using such tuple arguments, the pytest skips and xfails will be
+taken from the class level capabilities, unless a method specific
+override was added in the ``method_capabilities`` kwarg of
+``xp_capabilities``.
+
+
+If the capabilities for ``(A, "f")`` have
+``jax_jit=True`` (or if Dask is not in ``skip_backends``) then using
+``@make_xp_test_case((A, "f"))`` or one of its equivalents
+will cause ``lazy_xp_function`` to be applied to ``(A, "f")``.
+(``lazy_xp_function`` will in this case replace ``A.f`` with
+a clone to avoid unintentional modification of a parent
+in cases where a method is inherited from a parent class).
+
+
 Additional information
 ----------------------
 
@@ -1161,14 +1261,12 @@ helped during the development phase:
 API Coverage
 ------------
 The below tables show the current state of alternative backend support across
-SciPy's modules. Currently only public functions and function-like callable
-objects are included in the tables, but it is planned to eventually also include
-relevant public classes. Functions which are deemed out-of-scope are excluded
-from consideration. If a module or submodule contains no in-scope functions, it
-is excluded from the tables. For example, `scipy.spatial.transform` is currently
-excluded because it's API contains no functions, but may be included in the future
-when the scope expands to include classes. `scipy.odr` and `scipy.datasets` are excluded
-because their contents are considered out-of-scope.
+SciPy's modules. Public functions, function-like callables, and classes are
+included in the tables. Parts of the public API which are deemed out-of-scope
+are excluded from consideration when calculating coverage percentages. If a
+module or submodule contains no in-scope functions, it is excluded from the
+tables. For example, `scipy.datasets` is excluded because its contents are
+considered out-of-scope.
 
 .. toctree::
    :hidden:
@@ -1193,6 +1291,7 @@ because their contents are considered out-of-scope.
    array_api_modules_tables/sparse_csgraph
    array_api_modules_tables/spatial
    array_api_modules_tables/spatial_distance
+   array_api_modules_tables/spatial_transform
    array_api_modules_tables/special
    array_api_modules_tables/stats
    array_api_modules_tables/stats_contingency
@@ -1223,6 +1322,7 @@ Support on CPU
    :sparse.csgraph: array_api_support_sparse_csgraph_cpu
    :spatial: array_api_support_spatial_cpu
    :spatial.distance: array_api_support_spatial_distance_cpu
+   :spatial.transform: array_api_support_spatial_transform_cpu
    :special: array_api_support_special_cpu
    :stats: array_api_support_stats_cpu
    :stats.contingency: array_api_support_stats_contingency_cpu
@@ -1253,6 +1353,7 @@ Support on GPU
    :sparse.csgraph: array_api_support_sparse_csgraph_gpu
    :spatial: array_api_support_spatial_gpu
    :spatial.distance: array_api_support_spatial_distance_gpu
+   :spatial.transform: array_api_support_spatial_transform_gpu
    :special: array_api_support_special_gpu
    :stats: array_api_support_stats_gpu
    :stats.contingency: array_api_support_stats_contingency_gpu
@@ -1283,6 +1384,7 @@ Support with JIT
    :sparse.csgraph: array_api_support_sparse_csgraph_jit
    :spatial: array_api_support_spatial_jit
    :spatial.distance: array_api_support_spatial_distance_jit
+   :spatial.transform: array_api_support_spatial_transform_jit
    :special: array_api_support_special_jit
    :stats: array_api_support_stats_jit
    :stats.contingency: array_api_support_stats_contingency_jit

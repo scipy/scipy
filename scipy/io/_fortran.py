@@ -167,14 +167,16 @@ class FortranFile:
             item.tofile(self._fp)
         nb.tofile(self._fp)
 
-    def read_record(self, *dtypes, **kwargs):
+    def read_record(self, *dtypes, dtype=None):
         """
         Reads a record of a given type from the file.
 
         Parameters
         ----------
-        *dtypes : dtypes, optional
+        *dtypes : dtype, optional
             Data type(s) specifying the size and endianness of the data.
+        dtype : dtype, optional
+            Data type specifying the size and endianness of the data
 
         Returns
         -------
@@ -188,6 +190,11 @@ class FortranFile:
         FortranFormattingError
             To signal that the end of the file was encountered
             part-way through a record
+
+        See Also
+        --------
+        read_reals
+        read_ints
 
         Notes
         -----
@@ -235,16 +242,7 @@ class FortranFile:
 
             record = f.read_record('<f4', '(3,3)<i4')
 
-        See Also
-        --------
-        read_reals
-        read_ints
-
         """
-        dtype = kwargs.pop('dtype', None)
-        if kwargs:
-            raise ValueError(f"Unknown keyword arguments {tuple(kwargs.keys())}")
-
         if dtype is not None:
             dtypes = dtypes + (dtype,)
         elif not dtypes:
@@ -340,10 +338,11 @@ class FortranFile:
 
     def close(self):
         """
-        Closes the file. It is unsupported to call any other methods off this
-        object after closing it. Note that this class supports the 'with'
-        statement in modern versions of Python, to call this automatically
+        Closes the file.
 
+        It is unsupported to call any other methods off this
+        object after closing it. Note that this class supports the 'with'
+        statement in modern versions of Python, to call this automatically.
         """
         self._fp.close()
 

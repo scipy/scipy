@@ -10,8 +10,9 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
-                                   xp_promote, xp_result_type, xp_copy, is_numpy)
-import scipy._lib.array_api_extra as xpx
+                                   xp_promote, xp_result_type, xp_copy, is_numpy,
+                                   is_lazy_array, _count_nonmasked, is_marray)
+import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -29,8 +30,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy")],
-                 jax_jit=False)  # value-dependent branching
+@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy")])
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
@@ -119,7 +119,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # check if t is valid
     if t.ndim > 1:
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
-    if xp.any(t <= 0):
+    if is_lazy_array(t):
+        t = xpx.at(t)[t <= 0].set(xp.nan)
+    elif xp.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
 
     # Previously, non-finite input caused an error in linalg functions.
@@ -149,7 +151,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     est_cov = (n/nx)*cov_x + (n/ny)*cov_y
     est_cov_inv = xp.linalg.pinv(est_cov)
     r = xp.asarray(xp.linalg.matrix_rank(est_cov_inv), dtype=est_cov_inv.dtype)
-    if xp.any(r < 2*xp_size(t)):
+    if not is_lazy_array(r) and xp.any(r < 2*xp_size(t)):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
                       'test might not be consistent.', # see p. 183 in [1]_
@@ -1033,7 +1035,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         contingency table.
     fisher_exact : Fisher exact test on a 2x2 contingency table.
     boschloo_exact : Boschloo's exact test on a 2x2 contingency table,
-        which is an uniformly more powerful alternative to Fisher's exact test.
+        which is a uniformly more powerful alternative to Fisher's exact test.
 
     Notes
     -----
@@ -1578,6 +1580,7 @@ def _pval_cvm_2samp_exact(s, m, n):
     """
 
     # [1, p. 3]
+    m, n = int(m), int(n)
     lcm = np.lcm(m, n)
     # [1, p. 4], below eq. 3
     a = lcm // m
@@ -1618,12 +1621,13 @@ def _pval_cvm_2samp_exact(s, m, n):
 
 def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     # compute expected value and variance of T (eq. 11 and 14 in [2])
+    nx, ny = xp.asarray(nx, dtype=t.dtype), xp.asarray(ny, dtype=t.dtype)
     et = (1 + 1 / N) / 6
     vt = (N + 1) * (4 * k * N - 3 * (nx ** 2 + ny ** 2) - 2 * k)
     vt = vt / (45 * N ** 2 * 4 * k)
 
     # computed the normalized statistic (eq. 15 in [2])
-    tn = 1 / 6 + (t - et) / math.sqrt(45 * vt)
+    tn = 1 / 6 + (t - et) / xp.sqrt(45 * vt)
 
     # approximate distribution of tn with limiting distribution
     # of the one-sample test statistic
@@ -1637,7 +1641,7 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
 
 @xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
-                 cpu_only=True, jax_jit=False)  # rankdata not compatible with JAX JIT
+                 cpu_only=True, jax_jit=False)  # due to p-value calculation
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
@@ -1759,16 +1763,22 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
 
     """
     xp = array_namespace(x, y)
-    nx = x.shape[-1]
-    ny = y.shape[-1]
+    length_x = x.shape[-1]
+    length_y = y.shape[-1]
+    count_x = _count_nonmasked(x, axis=-1, xp=xp)
+    count_y = _count_nonmasked(y, axis=-1, xp=xp)
 
-    if nx <= 1 or ny <= 1:  # only needed for testing / `test_axis_nan_policy`
+    if length_x <= 1 or length_y <= 1:  # only needed for `test_axis_nan_policy`
         raise ValueError('x and y must contain at least two observations.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
 
+    if is_marray(xp) and method in {'auto', 'asymptotic'}:
+        message = "Only `method='exact'` is compatible with MArray."
+        raise ValueError(message)
+
     if method == 'auto':
-        if max(nx, ny) > 20:
+        if max(count_x, count_y) > 20:
             method = 'asymptotic'
         else:
             method = 'exact'
@@ -1782,22 +1792,24 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # in case of ties, use midrank (see [1])
     r = scipy.stats.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
-    r = xp.astype(r, dtype, copy=False)
-    rx = r[..., :nx]
-    ry = r[..., nx:]
+    rx = r[..., :length_x]
+    ry = r[..., length_x:]
 
     # compute U (eq. 10 in [2])
-    u = (nx * xp.sum((rx - xp.arange(1, nx+1, dtype=dtype))**2, axis=-1)
-         + ny * xp.sum((ry - xp.arange(1, ny+1, dtype=dtype))**2, axis=-1))
+    u = (count_x * xp.sum((rx - xp.arange(1, length_x+1, dtype=dtype))**2, axis=-1)
+         + count_y * xp.sum((ry - xp.arange(1, length_y+1, dtype=dtype))**2, axis=-1))
 
     # compute T (eq. 9 in [2])
-    k, N = nx*ny, nx + ny
+    k, N = count_x*count_y, count_x + count_y
     t = u / (k*N) - (4*k - 1)/(6*N)
 
     if method == 'exact':
-        p = xp.asarray(_pval_cvm_2samp_exact(np.asarray(u), nx, ny), dtype=dtype)
+        if is_marray(xp):
+            u, count_x, count_y = u.data, count_x.data, count_y.data
+        p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
+        p = xp.asarray(p, dtype=dtype)
     else:
-        p = _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, xp=xp)
+        p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 
     t = t[()] if t.ndim == 0 else t
     p = p[()] if p.ndim == 0 else p
@@ -1952,7 +1964,7 @@ def _tukey_hsd_iv(args, equal_var):
 
 
 @xp_capabilities(np_only=True)
-def tukey_hsd(*args, equal_var=True):
+def tukey_hsd(*samples, equal_var=True):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 
     Tukey's honestly significant difference (HSD) test performs pairwise
@@ -1972,7 +1984,7 @@ def tukey_hsd(*args, equal_var=True):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample measurements for each group. There must be at least
         two arguments.
     equal_var : bool, optional
@@ -2109,7 +2121,7 @@ def tukey_hsd(*args, equal_var=True):
     (2 - 0) -4.620  5.140
     (2 - 1) -9.220  0.540
     """
-    args = _tukey_hsd_iv(args, equal_var)
+    args = _tukey_hsd_iv(samples, equal_var)
     ntreatments = len(args)
     means = np.asarray([np.mean(arg) for arg in args])
     nsamples_treatments = np.asarray([a.size for a in args])
