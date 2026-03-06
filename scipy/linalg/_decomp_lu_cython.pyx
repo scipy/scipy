@@ -2,7 +2,7 @@
 
 import cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
+from scipy.linalg.cython_lapack cimport blas_int, sgetrf, dgetrf, cgetrf, zgetrf
 from scipy.linalg._cythonized_array_utils cimport swap_c_and_f_layout
 
 cimport numpy as cnp
@@ -47,12 +47,13 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
          (extract U)         (extract L)
 
     """
-    cdef int m = a.shape[0], n = a.shape[1], mn = min(m, n)
+    cdef blas_int m = a.shape[0], n = a.shape[1], mn = min(m, n)
     cdef cnp.npy_intp dims[2]
-    cdef int info = 0, ind1, ind2, tmp_int
+    cdef blas_int info = 0
+    cdef int ind1, ind2, tmp_int
     cdef lapack_t *aa = <lapack_t *>cnp.PyArray_DATA(a)
     cdef lapack_t *bb
-    cdef int *ipiv = <int*>PyMem_Malloc(m * sizeof(int))
+    cdef blas_int *ipiv = <blas_int*>PyMem_Malloc(m * sizeof(blas_int))
     if not ipiv:
         raise MemoryError('scipy.linalg.lu failed to allocate '
                           'required memory.')
