@@ -11,7 +11,8 @@ from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
-                                   is_lazy_array, _count_nonmasked, is_marray)
+                                   is_lazy_array, _count_nonmasked, is_marray,
+                                   _masked_apply)
 import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -653,20 +654,20 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
         message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
         raise ValueError(message)
 
-    n = rvs.shape[-1]
-    if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
+    n_length = rvs.shape[-1]
+    if n_length <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
     rvs = xp_promote(rvs, force_floating=True, xp=xp)
-    n = float(n)
     vals = xp.sort(rvs, axis=-1)
-    cdfvals = cdf(vals, *args)
+    cdfvals = _masked_apply(cdf, args=(vals, *args), xp=xp)
+    n_count = xp.asarray(_count_nonmasked(rvs, axis=-1, xp=xp), dtype=rvs.dtype)
 
-    u = (2*xp.arange(1, n+1, dtype=rvs.dtype) - 1)/(2*n)
-    w = 1/(12*n) + xp.sum((u - cdfvals)**2, axis=-1)
+    u = (2*xp.arange(1, n_length+1, dtype=rvs.dtype) - 1)/(2*n_count[..., xp.newaxis])
+    w = 1/(12*n_count) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
-    p = xp.clip(1. - _cdf_cvm(w, n), 0., None)
+    p = xp.clip(1. - _masked_apply(_cdf_cvm, args=(w, n_count), xp=xp), 0., None)
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
