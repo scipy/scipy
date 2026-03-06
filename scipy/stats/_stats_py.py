@@ -7659,7 +7659,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if mode == 'exact':
         prob = _masked_apply(distributions.kstwo.sf, args=(D, N), xp=xp)
     elif mode == 'asymp':
-        prob = _masked_apply(distributions.kstwobign.sf, args=(D * N ** 0.5), xp=xp)
+        prob = _masked_apply(distributions.kstwobign.sf, args=(D * N**0.5,), xp=xp)
     else:
         # mode == 'approx'
         prob = 2 * _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
