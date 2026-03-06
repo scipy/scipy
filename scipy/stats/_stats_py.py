@@ -81,7 +81,7 @@ from scipy._lib._array_api import (
     xp_ravel,
     _count_nonmasked,
     _share_masks,
-    _masked_elementwise,
+    _masked_apply,
     xp_swapaxes,
     xp_device,
 )
@@ -7619,14 +7619,14 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     x = xp.sort(x, axis=-1)
     x = xp_promote(x, force_floating=True, xp=xp)
     N = _count_nonmasked(x, axis=-1, xp=xp)
-    cdfvals = _masked_elementwise(cdf, args=(x, *args), xp=xp)
+    cdfvals = _masked_apply(cdf, args=(x, *args), xp=xp)
 
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
     ones = ones[()] if ones.ndim == 0 else ones
 
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
-        pvalue = _masked_elementwise(distributions.ksone.sf, args=(Dplus, N), xp=xp)
+        pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
         pvalue = xp.asarray(pvalue, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
@@ -7636,7 +7636,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
 
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
-        pvalue = _masked_elementwise(distributions.ksone.sf, args=(Dminus, N), xp=xp)
+        pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
         pvalue = xp.asarray(pvalue, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
@@ -7657,12 +7657,12 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
-        prob = _masked_elementwise(distributions.kstwo.sf, args=(D, N), xp=xp)
+        prob = _masked_apply(distributions.kstwo.sf, args=(D, N), xp=xp)
     elif mode == 'asymp':
-        prob = _masked_elementwise(distributions.kstwobign.sf, args=(D * N**0.5), xp=xp)
+        prob = _masked_apply(distributions.kstwobign.sf, args=(D * N ** 0.5), xp=xp)
     else:
         # mode == 'approx'
-        prob = 2 * _masked_elementwise(distributions.ksone.sf, args=(D, N), xp=xp)
+        prob = 2 * _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
     prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
     return KstestResult(D, prob,
                         statistic_location=d_location,

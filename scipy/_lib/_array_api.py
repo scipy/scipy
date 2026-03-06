@@ -659,7 +659,7 @@ def _share_masks(*args, xp):
     return args[0] if len(args) == 1 else args
 
 
-def _masked_elementwise(f, *, args, kwargs=None, xp):
+def _masked_apply(f, *, args, kwargs=None, xp):
     # Unmask array arguments, evaluate function, and apply result mask to outputs.
     # Assumes that when `xp` is an MArray namespace, there is at least one MArray
     # in `args`/`kwargs` and MArrays are the only objects in `args`/`kwargs` with
