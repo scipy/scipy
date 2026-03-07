@@ -1,4 +1,6 @@
 import numpy as np
+
+from scipy._lib._array_api import xp_capabilities
 from .iterative import _get_atol_rtol
 from .utils import make_system
 
@@ -6,6 +8,7 @@ from .utils import make_system
 __all__ = ['tfqmr']
 
 
+@xp_capabilities(np_only=True)
 def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
           callback=None, show=False):
     """
@@ -97,7 +100,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     if np.issubdtype(b.dtype, np.int64):
         b = b.astype(dtype)
 
-    A, M, x, b = make_system(A, M, x0, b)
+    A, M, x, b, xp = make_system(A, M, x0, b)
 
     # Check if the R.H.S is a zero vector
     if np.linalg.norm(b) == 0.:
