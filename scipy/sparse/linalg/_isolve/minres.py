@@ -2,11 +2,14 @@ from numpy import inner, zeros, inf, finfo
 from numpy.linalg import norm
 from math import sqrt
 
+from scipy._lib._array_api import xp_capabilities
+
 from .utils import make_system
 
 __all__ = ['minres']
 
 
+@xp_capabilities(np_only=True)
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
