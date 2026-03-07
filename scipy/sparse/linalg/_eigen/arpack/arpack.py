@@ -1281,6 +1281,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
+        .. versionadded:: 1.17.0
+
     Returns
     -------
     w : ndarray
@@ -1604,6 +1606,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionadded:: 1.17.0
 
     Raises
     ------
