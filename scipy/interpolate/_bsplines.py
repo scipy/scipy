@@ -203,10 +203,6 @@ class BSpline:
     >>> ax.grid(True)
     >>> ax.legend(loc='best')
     >>> plt.show()
-    
-    See Also
-    --------
-    :doc:`/tutorial/interpolate/extrapolation_examples`
 
 
     References
