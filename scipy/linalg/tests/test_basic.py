@@ -821,7 +821,7 @@ class TestSolve:
     @pytest.mark.parametrize('b', [0, 1, [0, 1]])
     def test_singular_scalar(self, b):
         # regression test for gh-24355: scalar a=0 is singular
-        # thus should raise the same error 
+        # thus should raise the same error
 
         with pytest.raises(LinAlgError):
             a = np.zeros((1, 1))
@@ -1179,9 +1179,9 @@ class TestSolve:
 
         assert np.shares_memory(x, b) == b_inplace
 
+        # for `assume_a="banded"`, the `overwrite_a` argument is ignored for now
         assert (b == b_ref).all() != b_inplace
-        if assume_a is None: # `overwrite_a` unused for `assume_a="banded"`
-            assert (a == a_ref).all() != a_inplace
+        assert (a == a_ref).all() != a_inplace or assume_a == "banded"
 
     def test_posdef_not_posdef(self):
         # the `b` matrix is invertible but not positive definite
