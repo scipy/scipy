@@ -4,6 +4,7 @@
 #include "_linalg_svd.hh"
 #include "_linalg_lstsq.hh"
 #include "_linalg_eig.hh"
+#include "_linalg_cholesky.hh"
 #include "_common_array_utils.hh"
 
 
@@ -244,7 +245,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     npy_intp m = shape[ndim - 2];
     npy_intp n = shape[ndim - 1];
-    npy_intp k = m < n ? m : n; 
+    npy_intp k = m < n ? m : n;
 
     // Allocate the output(s)
 
@@ -377,7 +378,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // At the python call site, 
+    // At the python call site,
     // 1) 1D `b` must have been converted into 2D, and
     // 2) batch dimensions of `a` and `b` have been broadcast
     // Therefore, if `a.shape == (s, p, r, m, n)`, then `b.shape == (s, p, r, m, nrhs)`
@@ -608,6 +609,90 @@ fail:
 }
 
 
+
+static PyObject*
+_linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_Am = NULL;
+    PyArrayObject *ap_Cm = NULL;
+    PyObject *ret_lst = NULL;
+    int lower, overwrite_a;
+
+    int info = 0;
+    SliceStatusVec vec_status;
+
+    // Get input
+    if (!PyArg_ParseTuple(args, "O!pp", &PyArray_Type, (PyObject **)&ap_Am, &lower, &overwrite_a)) {
+        return NULL;
+    }
+
+    int typenum = PyArray_TYPE(ap_Am);
+    bool dtype_ok = (typenum == NPY_FLOAT32)
+                    || (typenum == NPY_FLOAT64)
+                    || (typenum == NPY_COMPLEX64)
+                    || (typenum == NPY_COMPLEX128);
+    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+        return NULL;
+    }
+
+    // Basic checks of array dimensions
+    int ndim = PyArray_NDIM(ap_Am);
+    npy_intp *shape = PyArray_SHAPE(ap_Am);
+    if (ndim < 2) {
+        PyErr_SetString(PyExc_ValueError, "Expected at least a 2D array.");
+        return NULL;
+    }
+
+    npy_intp n = shape[ndim - 1];
+
+    if (PyArray_DIM(ap_Am, ndim-2) != n) {
+        PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
+        return NULL;
+    }
+
+    // Allocate the output array if needed
+    if (!overwrite_a) {
+        ap_Cm = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, typenum);
+        if (ap_Cm == NULL) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+    } else {
+        Py_INCREF(ap_Am);
+        ap_Cm = ap_Am;
+    }
+
+    switch(typenum) {
+        case(NPY_FLOAT32):
+            info = _cholesky<float>(ap_Am, ap_Cm, lower, overwrite_a, vec_status);
+            break;
+        case(NPY_FLOAT64):
+            info = _cholesky<double>(ap_Am, ap_Cm, lower, overwrite_a, vec_status);
+            break;
+        case(NPY_COMPLEX64):
+            info = _cholesky<npy_complex64>(ap_Am, ap_Cm, lower, overwrite_a, vec_status);
+            break;
+        case(NPY_COMPLEX128):
+            info = _cholesky<npy_complex128>(ap_Am, ap_Cm, lower, overwrite_a, vec_status);
+            break;
+    }
+
+    if (info < 0) {
+        // Out-of-memory or scipy internal error
+        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.cholesky.");
+        goto fail;
+    }
+
+    // normal return
+    ret_lst = convert_vec_status(vec_status);
+    return Py_BuildValue("NN", PyArray_Return(ap_Cm), ret_lst);
+
+fail:
+    Py_XDECREF(ap_Cm);
+    return NULL;
+}
+
+
 /*
  * Helper: convert a vector of slice error statuses to list of dicts
  */
@@ -657,6 +742,7 @@ static char doc_solve[] = ("Solve the linear system of equations.");
 static char doc_svd[] = ("SVD factorization.");
 static char doc_lstsq[] = ("linear least squares.");
 static char doc_eig[] = ("eigenvalue solver.");
+static char doc_cholesky[] = ("Cholesky factorization.");
 
 static struct PyMethodDef inv_module_methods[] = {
   {"_inv", _linalg_inv, METH_VARARGS, doc_inv},
@@ -664,6 +750,7 @@ static struct PyMethodDef inv_module_methods[] = {
   {"_svd", _linalg_svd, METH_VARARGS, doc_svd},
   {"_lstsq", _linalg_lstsq, METH_VARARGS, doc_lstsq},
   {"_eig", _linalg_eig, METH_VARARGS, doc_eig},
+  {"_cholesky", _linalg_cholesky, METH_VARARGS, doc_cholesky},
   {NULL, NULL, 0, NULL}
 };
 
