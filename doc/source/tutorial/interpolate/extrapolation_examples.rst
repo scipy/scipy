@@ -33,6 +33,15 @@ are deliberately pared down to bare essentials needed to demonstrate the
 main ideas, in a hope that they serve as an inspiration for your
 handling of your particular problem.
 
+Many interpolation classes in SciPy support extrapolation behavior, including
+:class:`scipy.interpolate.BSpline`,
+:class:`scipy.interpolate.PPoly`,
+:class:`scipy.interpolate.CubicSpline`,
+and :class:`scipy.interpolate.BPoly`.
+
+These classes provide different representations of piecewise polynomials and
+splines, and expose parameters that control how extrapolation outside the
+data range is handled.
 
 .. _tutorial-extrapolation-left-right:
 

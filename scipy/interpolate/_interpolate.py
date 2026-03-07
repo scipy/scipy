@@ -282,7 +282,7 @@ class interp1d(_Interpolator1D):
     >>> plt.plot(x, y, 'o', xnew, ynew, '-')
     >>> plt.show()
     """
-
+    
     def __init__(self, x, y, kind='linear', axis=-1,
                  copy=True, bounds_error=None, fill_value=np.nan,
                  assume_sorted=False):
