@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from scipy.special import betainc
+from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (
     xp_capabilities,
     xp_ravel,
@@ -15,7 +16,7 @@ import scipy._external.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
-def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
+def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, rich_result):
     xp = array_namespace(x, p, weights)
 
     if not xp.isdtype(xp.asarray(x).dtype, ('integral', 'real floating')):
@@ -59,6 +60,15 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
                   'round_nearest', 'round_inward', 'round_outward'}
     if weights is not None and method in no_weights:
         message = f"`method='{method}'` does not support `weights`."
+        raise ValueError(message)
+
+    rich_result = False if rich_result is None else rich_result
+    if rich_result not in {True, False}:
+        message = "If specified, `rich_result` must be True or False"
+        raise ValueError(message)
+
+    if rich_result and method in no_weights:
+        message = f"`method='{method}'` is incompatible with `rich_result=True`."
         raise ValueError(message)
 
     contains_nans = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
@@ -134,12 +144,12 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     p = xp.where(p_mask, 0.5, p)
 
     return (y, p, method, axis, nan_policy, keepdims,
-            n, axis_none, ndim, p_mask, weights, xp)
+            n, axis_none, ndim, p_mask, weights, rich_result, xp)
 
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
 def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None,
-             weights=None):
+             weights=None, rich_result=None):
     """
     Compute the p-th quantile of the data along the specified axis.
 
@@ -221,6 +231,13 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         numbers are accepted, but may not have valid statistical interpretations.
         Not compatible with ``method='harrell-davis'`` or those that begin with
         ``'round_'``.
+
+    rich_result : bool, optional
+        By default, `quantile` returns a point estimate as a scalar or array.
+        When True, `quantile` will return a result object including attributes
+        ``estimate``, the point estimate, and ``standard_error``, the Maritz-Jarrett
+        estimate of the standard error. Not compatible with ``method='harrell-davis'``
+        or those that begin with ``'round_'``.
 
     Returns
     -------
@@ -319,6 +336,19 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     These methods are also useful for trimming data: removing ``p*n`` of the most
     extreme observations. See :ref:`outliers` for example applications.
 
+    When ``rich_result=True`` and `method` is one of the options corresponding with
+    1-9 from H&F [1]_, attribute ``standard_error`` of the returned object is a
+    Maritz-Jarrett [3]_ estimate of the standard error. Specifically, we follow
+    Wilcox [4]_ Section 3.5.3 to compute the standard error ``s`` corresponding with
+    order statistics at indices ``j`` and ``j + 1``. The standard error of the quantile
+    estimate is taken as the weighted sum ``(1-g)*s[j] + g*s[j+1]`` (as defined above),
+    which assumes worst-case correlation between the order statistics. Note that we
+    have generalized from Wilcox's discrete quantile estimate to any of those from
+    [1]_, and we correct for the difference between Wilcox's parameterization of the
+    beta distribution and the standard parameterization when computing the beta CDF,
+    which [4]_ neglects. The theory assumes that the underlying distribution is
+    continuous; no corrections are made for ties in the sample.
+
     Examples
     --------
     >>> import numpy as np
@@ -365,18 +395,23 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     .. [2] Harrell, Frank E., and C. E. Davis.
        "A new distribution-free quantile estimator."
        Biometrika 69.3 (1982): 635-640.
-
+    .. [3] Maritz, J. S., and R. G. Jarrett.
+       "A note on estimating the variance of the sample median."
+       Journal of the American Statistical Association 73.361 (1978): 194-196.
+    .. [4] Wilcox, Rand R.
+       "Introduction to robust estimation and hypothesis testing".
+       Academic Press, 2012.
     """
     # Input validation / standardization
 
-    temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights)
+    temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, rich_result)
     (y, p, method, axis, nan_policy, keepdims,
-     n, axis_none, ndim, p_mask, weights, xp) = temp
+     n, axis_none, ndim, p_mask, weights, rich_result, xp) = temp
 
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                   'hazen', 'interpolated_inverted_cdf', 'linear',
                   'median_unbiased', 'normal_unbiased', 'weibull'}:
-        res = _quantile_hf(y, p, n, method, weights, xp)
+        res, se = _quantile_hf(y, p, n, method, weights, rich_result, xp)
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
     elif method in {'_lower', '_midpoint', '_higher', '_nearest'}:
@@ -397,10 +432,20 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     if not keepdims:
         res = xp.squeeze(res, axis=axis)
 
-    return res[()] if res.ndim == 0 else res
+    res = res[()] if res.ndim == 0 else res
+
+    if rich_result:
+        se = xpx.at(se, p_mask).set(xp.nan)
+        se = xp.reshape(se, shape) if axis_none and keepdims else se
+        se = xp.moveaxis(se, -1, axis)
+        se = xp.squeeze(se, axis=axis) if not keepdims else se
+        se = se[()] if se.ndim == 0 else se
+        res = _RichResult(estimate=res, standard_error=se)
+
+    return res
 
 
-def _quantile_hf(y, p, n, method, weights, xp):
+def _quantile_hf(y, p, n, method, weights, rich_result, xp):
     ms = dict(inverted_cdf=0, averaged_inverted_cdf=0, closest_observation=-0.5,
               interpolated_inverted_cdf=0, hazen=0.5, weibull=p, linear=1 - p,
               median_unbiased=p/3 + 1/3, normal_unbiased=p/4 + 3/8)
@@ -435,8 +480,20 @@ def _quantile_hf(y, p, n, method, weights, xp):
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(jp1, 0., n - 1)
 
-    return ((1 - g) * xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
-            + g * xp.take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
+    estimate = ((1 - g) * xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
+                + g * xp.take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
+
+    standard_error = None
+    if rich_result:
+        # Compute Maritz-Jarrett [3, 4] estimates of the standard errors of the order
+        # statistics at indices `j` and `jp1`. The quantile estimate is a weighted sum
+        # of these order statistics, so a (conservative) approximation of the quantile
+        # standard error is the weighted sum of the order statistic standard errors.
+        sj = _maritz_jarrett(y, j, n, xp=xp)
+        sjp1 = _maritz_jarrett(y, jp1, n, xp=xp)
+        standard_error = (1 - g)*sj + g*sjp1
+
+    return estimate, standard_error
 
 
 def _quantile_hd(y, p, n, xp):
@@ -480,6 +537,17 @@ def _quantile_bc(y, p, n, method, xp):
     elif method == '_nearest':
         k = xp.round(ij)
     return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)
+
+
+def _maritz_jarrett(y, m, n, *, xp):
+    a = m + 1
+    b = n - m
+    i = xp.arange(y.shape[-1] + 1, dtype=y.dtype, device=xp_device(y))
+    w = betainc(a, b, i / n)
+    Wi = w[..., 1:] - w[..., :-1]
+    C1 = xp.vecdot(Wi, y, axis=-1)
+    C2 = xp.vecdot(Wi, y**2, axis=-1)
+    return xp.sqrt(C2 - C1 ** 2)
 
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
