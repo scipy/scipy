@@ -6,9 +6,10 @@ from pytest import raises as assert_raises
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
 from numpy.random import random
 from scipy.linalg import (cholesky, cholesky_banded, cho_solve_banded,
-     cho_factor, cho_solve)
+     cho_factor, cho_solve, LinAlgError)
 
 from scipy.linalg._testutils import assert_no_overwrite
+from .test_basic import parametrize_overwrite_arg
 
 
 class TestCholesky:
@@ -39,33 +40,31 @@ class TestCholesky:
         a = dot(c, transpose(conjugate(c)))
         assert_array_almost_equal(cholesky(a, lower=1), c)
 
-    def test_random(self):
-        n = 20
+    @pytest.mark.parametrize("n", [5, 10, 20])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                        np.complex64, np.complex128])
+    @pytest.mark.parametrize("order", ["F", "C"])
+    def test_random(self, n, dtype, order):
+        decimal = 4 if dtype in [np.complex64, np.float32] else 12
+
         for k in range(2):
-            m = random([n, n])
+            m = random([n, n]).astype(dtype)
+            if np.issubdtype(dtype, np.complexfloating):
+                m += 1j * random([n, n]).astype(dtype)
             for i in range(n):
                 m[i, i] = 20*(.1+m[i, i])
-            a = dot(transpose(m), m)
-            c = cholesky(a)
-            a1 = dot(transpose(c), c)
-            assert_array_almost_equal(a, a1)
-            c = transpose(c)
-            a = dot(c, transpose(c))
-            assert_array_almost_equal(cholesky(a, lower=1), c)
 
-    def test_random_complex(self):
-        n = 20
-        for k in range(2):
-            m = random([n, n])+1j*random([n, n])
-            for i in range(n):
-                m[i, i] = 20*(.1+abs(m[i, i]))
-            a = dot(transpose(conjugate(m)), m)
+            a = np.conj(m.T) @ m
+            if order == "F":
+                a = np.asfortranarray(a)
+
             c = cholesky(a)
-            a1 = dot(transpose(conjugate(c)), c)
-            assert_array_almost_equal(a, a1)
+            a1 = dot(np.conj(c.T), c)
+            assert_array_almost_equal(a, a1, decimal=decimal)
+
             c = transpose(c)
-            a = dot(c, transpose(conjugate(c)))
-            assert_array_almost_equal(cholesky(a, lower=1), c)
+            a = dot(c, np.conj(c.T))
+            assert_array_almost_equal(cholesky(a, lower=1), c, decimal=decimal)
 
     @pytest.mark.xslow
     def test_int_overflow(self):
@@ -110,6 +109,31 @@ class TestCholesky:
         a4 = [[]]
         for x in ([a1, a2, a3, a4]):
             assert_raises(ValueError, cholesky, x)
+
+    @pytest.mark.parametrize("shape", [(3,), (2, 3), (3, 2)])
+    def test_invalid_shape(self, shape):
+        rng = np.random.default_rng(seed=12345)
+        a = rng.normal(size=shape)
+
+        with pytest.raises(ValueError, match="Expected a square matrix"):
+            cholesky(a)
+
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                             np.complex64, np.complex128])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_non_posdef(self, dtype, order):
+        n = 10
+        rng = np.random.default_rng(seed=12345)
+
+        lmbd = np.diag(-np.abs(rng.normal(size=(n,))).astype(dtype))
+        x = rng.normal(size=(n, n)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            x += 1j * rng.normal(size=(n, n)).astype(dtype)
+
+        a = x @ lmbd @ np.conj(x.T)
+
+        with pytest.raises(LinAlgError, match="Internal potrf return info"):
+            cholesky(a)
 
 
 class TestCholeskyBanded:
@@ -255,6 +279,25 @@ class TestOverwrite:
         xcho = cholesky_banded(x)
         assert_no_overwrite(lambda b: cho_solve_banded((xcho, False), b),
                             [(3,)])
+
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite_args(self, overwrite_kw, dtype, order):
+        rng = np.random.default_rng(seed=12345)
+        n = 5
+        x = rng.normal(size=(n, 100))
+        x = x.astype(dtype)
+        a = x @ x.T
+        a = a.astype(dtype, order=order)
+        a_ref = np.copy(a)
+
+        c = cholesky(a, **overwrite_kw)
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        a_inplace = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+
+        assert np.shares_memory(a, c) == a_inplace
+        assert np.all(a == a_ref) != a_inplace
 
 class TestChoFactor:
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])

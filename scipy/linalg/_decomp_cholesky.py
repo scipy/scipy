@@ -4,12 +4,23 @@ import numpy as np
 from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
 
 # Local imports
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import LinAlgError, _datacopied
-from .lapack import get_lapack_funcs
+from .lapack import (
+    get_lapack_funcs, _normalize_lapack_dtype, _ensure_aligned_and_native
+)
+from . import _batched_linalg
 
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
            'cho_solve_banded']
+
+
+def _check_format_errors_warnings(routine_name, err_lst):
+    msg = (
+        f"Internal {routine_name} return info = {[e['lapack_info'] for e in err_lst]} "
+        f"for slices {[e['num'] for e in err_lst]}."
+    )
+    raise LinAlgError(msg)
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
@@ -47,7 +58,6 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     return c, lower
 
 
-@_apply_over_batch(('a', 2))
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix.
@@ -57,7 +67,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : (M, M) array_like
+    a : (..., M, M) array_like
         Matrix to be decomposed
     lower : bool, optional
         Whether to compute the upper- or lower-triangular Cholesky
@@ -72,7 +82,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    c : (M, M) ndarray
+    c : (..., M, M) ndarray
         Upper- or lower-triangular Cholesky factor of `a`.
 
     Raises
@@ -103,8 +113,29 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                         check_finite=check_finite)
+
+    # sanity checks
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    a1 = np.atleast_2d(a1)
+    if a1.shape[-1] != a1.shape[-2]:
+        raise ValueError(f"Expected a square matrix or batch thereof, got {a1.shape=}")
+
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
+
+    # accomodate empty arrays
+    if a1.shape[-1] == 0:
+        batch_shape = a1.shape[:-2]
+        c_n = cholesky(np.eye(2, dtype=a1.dtype))
+        c = np.zeros(batch_shape + (0, 0), dtype=c_n.dtype)
+        return c
+
+    c, err_lst = _batched_linalg._cholesky(a1, lower, overwrite_a)
+
+    if err_lst:
+        _check_format_errors_warnings("potrf", err_lst)
+
     return c
 
 
