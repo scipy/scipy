@@ -494,7 +494,7 @@ def _mode_result(mode, count):
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
                  jax_jit=False,  # would delegate, but jax-ml/jax#34486
-                 extra_note=("Values in `MArrays` must be real numbers "
+                 extra_note=("Values in MArrays must be real numbers "
                              "that cast safely to floating point."),
                  marray=True)
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})

@@ -534,7 +534,8 @@ def _cvm_result_to_tuple(res, _):
 
 @xp_capabilities(cpu_only=True,  # needs special function `kv`
                  skip_backends=[('dask.array', 'typical dask issues')],
-                 jax_jit=False)  # array boolean indices must be concrete
+                 jax_jit=False,  # array boolean indices must be concrete
+                 marray=True)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
