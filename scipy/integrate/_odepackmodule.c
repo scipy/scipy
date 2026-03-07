@@ -548,9 +548,21 @@ compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu,
     int lrn, lrs, nyh, lmat;
 
     if (jt == 1 || jt == 2) {
+        /* 46340 ~ floor(sqrt(INT_MAX)) — prevent neq*neq from overflowing int */
+        if (neq > 46340) {
+            PyErr_SetString(odepack_error,
+                "neq is too large for workspace size calculation (integer overflow)");
+            return -1;
+        }
         lmat = neq*neq + 2;
     }
     else if (jt == 4 || jt == 5) {
+        /* Overflow check: (2*ml + mu + 1)*neq must fit in int */
+        if (neq > 0 && (2*ml + mu + 1) > (INT_MAX - 2) / neq) {
+            PyErr_SetString(odepack_error,
+                "Banded Jacobian dimensions too large (integer overflow)");
+            return -1;
+        }
         lmat = (2*ml + mu + 1)*neq + 2;
     }
     else {

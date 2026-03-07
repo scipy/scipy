@@ -69,10 +69,18 @@ PyObject* direct_optimize(
      if (fglobal == DIRECT_UNKNOWN_FGLOBAL)
       fglobal_reltol = DIRECT_UNKNOWN_FGLOBAL_RELTOL;
 
-     if (dimension < 1) *ret_code = DIRECT_INVALID_ARGS;
+     if (dimension < 1) {
+      *ret_code = DIRECT_INVALID_ARGS;
+      PyErr_SetString(PyExc_ValueError, "dimension must be >= 1");
+      return NULL;
+     }
 
      l = (doublereal *) malloc(sizeof(doublereal) * dimension * 2);
-     if (!l) *ret_code = DIRECT_OUT_OF_MEMORY;
+     if (!l) {
+      *ret_code = DIRECT_OUT_OF_MEMORY;
+      PyErr_NoMemory();
+      return NULL;
+     }
      u = l + dimension;
      for (i = 0; i < dimension; ++i) {
       l[i] = lower_bounds[i];
