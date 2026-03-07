@@ -2364,35 +2364,102 @@ class TestRegression:
         xp_assert_equal(res.intercept_stderr, NaN)
 
 
-def test_cumfreq():
-    x = [1, 4, 2, 1, 3, 1]
-    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
-    assert_array_almost_equal(cumfreqs, np.array([3., 4., 5., 6.]))
-    cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(
-        x, numbins=4, defaultreallimits=(1.5, 5))
-    assert_(extrapoints == 3)
+class HistFunctionsTest:
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    @pytest.mark.parametrize("edge_points", [False, True])
+    @pytest.mark.parametrize("specify_limits", [False, True])
+    @pytest.mark.parametrize("specify_weights", [False, True])
+    def test_against_reference(self, dtype, edge_points, specify_limits,
+                               specify_weights, xp):
+        rng = np.random.default_rng(5194553734)
+        nbins = int(rng.integers(10, 15))
 
-    # test for namedtuple attribute results
-    attributes = ('cumcount', 'lowerlimit', 'binsize', 'extrapoints')
-    res = stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
-    check_named_results(res, attributes)
+        if edge_points and not specify_limits:
+            pytest.skip("Limits must be specified to determine edge points.")
+        if edge_points and (is_jax(xp) or (dtype != 'float64' and is_torch(xp))):
+            pytest.skip("Some backends are having trouble with edge point arithmetic.")
+
+        a = np.astype(rng.random(100), dtype)
+
+        if specify_limits:
+            limits = np.astype(np.sort(rng.random(2)), dtype)
+            range_ = limits
+        else:
+            # copy-pasted from documentation to generate reference values
+            s = (1 / 2)*(a.max() - a.min()) / (nbins - 1)
+            range_ = (a.min() - s, a.max() + s)
+            limits = None
+
+        if edge_points:
+            _, edges = np.histogram(a, bins=nbins, range=range_, density=False)
+            a2 = np.repeat(edges, rng.integers(5, size=edges.shape).tolist())
+            a = np.concat([a, a2], dtype=dtype)
+
+        weights = np.astype(rng.random(a.shape), dtype) if specify_weights else None
+
+        bin_counts, ref_bins = np.histogram(a, bins=nbins, range=range_, density=False)
+        ref_hist, _ = np.histogram(a, bins=nbins, range=range_,
+                                   weights=weights, density=False)
+
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        histfun = getattr(stats, self.histfun)
+        limits = limits if limits is None else xp.asarray(limits, dtype=dtype)
+        weights = weights if weights is None else xp.asarray(weights, dtype=dtype)
+        res = histfun(xp.asarray(a, dtype=dtype), nbins, limits, weights)
+        ref_hist = xp.asarray(ref_hist, dtype=dtype)
+
+        rtol = 1e-12 if dtype == xp.float64 else 2e-5
+        if histfun == stats.cumfreq:
+            ref_cumcount = xp.cumulative_sum(ref_hist)
+            xp_assert_close(res.cumcount, ref_cumcount, rtol=rtol)
+        else:
+            den = a.shape[0] if weights is None else xp.sum(weights)
+            ref_frequency = xp.asarray(ref_hist/den, dtype=dtype)
+            xp_assert_close(res.frequency, ref_frequency, rtol=rtol)
+        xp_assert_close(res.lowerlimit, xp.asarray(ref_bins[0], dtype=dtype))
+        xp_assert_close(res.binsize, xp.asarray(ref_bins[1] - ref_bins[0], dtype=dtype))
+        xp_assert_close(res.extrapoints, xp.asarray(a.size - sum(bin_counts.tolist())))
 
 
-def test_relfreq():
-    a = np.array([1, 4, 2, 1, 3, 1])
-    relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
-    assert_array_almost_equal(relfreqs,
-                              array([0.5, 0.16666667, 0.16666667, 0.16666667]))
+@make_xp_test_case(stats.cumfreq)
+class TestCumfreq(HistFunctionsTest):
+    histfun = 'cumfreq'
 
-    # test for namedtuple attribute results
-    attributes = ('frequency', 'lowerlimit', 'binsize', 'extrapoints')
-    res = stats.relfreq(a, numbins=4)
-    check_named_results(res, attributes)
+    def test_cumfreq(self, xp):
+        x = xp.asarray([1, 4, 2, 1, 3, 1])
+        cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
+        xp_assert_equal(cumfreqs, xp.asarray([3., 4., 5., 6.]))
+        cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(
+            x, numbins=4, defaultreallimits=(1.5, 5))
+        assert extrapoints == 3
 
-    # check array_like input is accepted
-    relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1],
-                                                            numbins=4)
-    assert_array_almost_equal(relfreqs, relfreqs2)
+        # test for namedtuple attribute results
+        attributes = ('cumcount', 'lowerlimit', 'binsize', 'extrapoints')
+        res = stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
+        check_named_results(res, attributes, xp=xp)
+
+
+@make_xp_test_case(stats.relfreq)
+class TestRelfreq(HistFunctionsTest):
+    histfun = 'relfreq'
+
+    def test_relfreq(self, xp):
+        a = xp.asarray([1, 4, 2, 1, 3, 1])
+        relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
+        xp_assert_close(relfreqs, xp.asarray([0.5, 0.16666667, 0.16666667, 0.16666667]))
+
+        # test for namedtuple attribute results
+        attributes = ('frequency', 'lowerlimit', 'binsize', 'extrapoints')
+        res = stats.relfreq(a, numbins=4)
+        check_named_results(res, attributes, xp=xp)
+
+    @skip_xp_backends(np_only=True, reason='array-like input is NumPy-only')
+    def test_relfreq_array_like(self):
+        # check array_like input is accepted
+        a = [1, 4, 2, 1, 3, 1]
+        res, _, _, _ = stats.relfreq(a, numbins=4)
+        ref, _, _, _ = stats.relfreq(np.asarray(a), numbins=4)
+        xp_assert_equal(res, ref)
 
 
 class TestScoreatpercentile:
