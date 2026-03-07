@@ -225,7 +225,7 @@ MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
                  skip_backends=[('cupy', 'needs rankdata'),
                                 ('dask.array', 'needs rankdata')],
                  marray=True,
-                 extra_note=("Only `method='asymptotic'` is compatible with MArrays. "
+                 extra_note=("Only ``method='asymptotic'`` is compatible with MArrays. "
                              "``method='auto'`` is incompatible with JAX arrays."))
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",

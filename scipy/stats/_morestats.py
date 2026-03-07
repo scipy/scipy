@@ -3870,7 +3870,7 @@ def wilcoxon_outputs(kwds):
                                 ("cupy", "no rankdata")],
                  cpu_only=True,  # null distribution is CPU only
                  marray=True,
-                 extra_note=("Only `method='asymptotic'`/`zero_method='zsplit'` is "
+                 extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "
                              "compatible with MArrays. "
                              "``method='auto'`` is incompatible with JAX arrays."))
 @_rename_parameter("mode", "method")

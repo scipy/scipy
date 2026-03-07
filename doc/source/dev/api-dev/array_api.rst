@@ -356,10 +356,10 @@ standard, and it had been implemented in SciPy as::
 This implementation assumes that the denominator used to normalize the sum will be the
 same for each axis-slice: the length of the array along the ``axis``. This assumption
 is not valid for an array with masked values. Although MArray will ensure that masked
-values are not considered when computing the sum, the implmentation still needs to be
+values are not considered when computing the sum, the implementation still needs to be
 generalized to normalize by the *number of non-masked elements* in a slice::
 
-  from scipy._lib.array_api import _count_nonmasked
+  from scipy._lib._array_api import _count_nonmasked
 
   def mean(x, axis=0):
       xp = array_namespace(x)
@@ -367,28 +367,27 @@ generalized to normalize by the *number of non-masked elements* in a slice::
       n = _count_nonmasked(x, axis=axis, keepdims=True, xp=xp)
       return xp.sum(x, axis=axis) / n
 
-This distinction between length and the number of non-masked elements was by far the
-most common generalization that was needed to add MArray support throughout scipy.stats`,
-and for many functions, it was the only generalization needed. Other common
-considerations include:
+Using counts of non-masked elements instead of slice lengths was by far the most common
+generalization needed to add MArray support throughout `scipy.stats`, and for many
+functions, it was the only generalization needed. Other common changes included:
 
-- sharing a common masked between input arrays with paired values using
-  ```scipy._lib.array_api._share_masks`` (e.g. see `scipy.stats.spearmanrho`)
-- separate consideration of the length along an axis and the count of non-masked
-  values (e.g. see `scipy.stats.cramervonmises_2samp`)
-- distinguishing between (built-in) ``sum``, repeated binary summation that propagates
-  a mask, and ``xp.sum``, a reducing operation that *ignores* masked values
-  (e.g. see `scipy.stats.chisquare`)
+- separate consideration of *both* the length along an axis and the count of non-masked
+  values (e.g., see `scipy.stats.cramervonmises_2samp`),
+- sharing a common mask between "paired-data" input arrays using
+  ``scipy._lib._array_api._share_masks`` (e.g., see `scipy.stats.spearmanrho`),
+- using ``scipy._lib._array_api._masked_apply`` to evaluate an elementwise function
+  on all data, then re-applying the common mask of the inputs to the output (e.g., see
+  `scipy.stats.cramervonmises`), and
+- distinguishing between (built-in) ``sum``, which propagates a mask, and ``xp.sum``,
+  which ignores masked values (e.g., see `scipy.stats.chisquare`).
 
-In most cases, use of ``_count_nonmasked`` and ``_share_masks`` has been sufficient
-to generalize functions without treating MArray input as a special case or accessing
-the ``mask`` or ``data`` attributes of an MArray directly. In exceptional cases,
-``scipy._lib._array_api.is_marray`` is available to determine when the namespace
+In most cases, use of ``_count_nonmasked``, ``_share_masks``, and ``_masked_apply`` has
+been sufficient to generalize functions without treating MArray input as a special case
+or accessing the ``mask`` or ``data`` attributes of an MArray directly. In exceptional
+cases, ``scipy._lib._array_api.is_marray`` is available to determine when the namespace
 has been wrapped with MArray, and the namespace of the underlying array library
-can be accessed using the ``_xp`` attribute of MArray variables. For example,
-see how `scipy.stat.ks_1samp` passes the ``data`` attribute of a masked array to
-an elementwise user-provided callable, then applies the original ``mask`` to the
-output.
+can be accessed using the ``_xp`` attribute of an MArray variable (e.g. see
+`scipy.stats.mode`).
 
 .. warning::
 
@@ -397,7 +396,7 @@ output.
   treat these "invalid" outputs as "missing", erroneously producing seemingly valid
   numerical output when the correct calculation would propagate the infinite or NaN
   value. When adding MArray support to SciPy functions, ensure that masked values of
-  the output arise due to masked input (e.g. the output of an elementwise function on
+  the output arise due to masked input (e.g., the output of an elementwise function on
   a masked input value is masked; the output of a reducing function on an all-masked
   slice is masked) and *only* due to masked input.
 
