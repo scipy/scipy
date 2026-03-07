@@ -1069,6 +1069,32 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
 
 
 /*
+ * Copy only a specific triangle of F-ordered `src` to C-ordered `dst`.
+ *
+ * `src` is n x n, F-ordered
+ * `dst` is n x n, C-ordered
+ *
+ * `uplo` determines which triangle gets copied over,
+ */
+template<typename T>
+void copy_triangle_F_to_C(T *dst, const T *src, const npy_intp n, const char uplo) {
+    if (uplo == 'U') {
+        for (npy_intp i = 0; i < n; i++) {
+            for (npy_intp j = 0; j <= i; j++) {
+                dst[i + j * n] = src[i * n + j];
+            }
+        }
+    } else {
+        for (npy_intp i = 0; i < n; i++) {
+            for (npy_intp j = i; j < n; j++) {
+                dst[i + j * n] = src[i * n + j];
+            }
+        }
+    }
+}
+
+
+/*
  * 1-norm of a matrix
  */
 

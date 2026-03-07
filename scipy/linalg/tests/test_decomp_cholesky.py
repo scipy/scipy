@@ -1,14 +1,14 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 
-from numpy import array, transpose, dot, conjugate, zeros_like, empty
-from numpy.random import random
+from numpy import array, transpose, zeros_like, empty
 from scipy.linalg import (cholesky, cholesky_banded, cho_solve_banded,
-     cho_factor, cho_solve)
+     cho_factor, cho_solve, LinAlgError)
 
 from scipy.linalg._testutils import assert_no_overwrite
+from .test_basic import parametrize_overwrite_arg
 
 
 class TestCholesky:
@@ -16,56 +16,53 @@ class TestCholesky:
     def test_simple(self):
         a = [[8, 2, 3], [2, 9, 3], [3, 3, 6]]
         c = cholesky(a)
-        assert_array_almost_equal(dot(transpose(c), c), a)
+        assert_allclose(c.T @ c, a, atol=1e-14)
         c = transpose(c)
-        a = dot(c, transpose(c))
-        assert_array_almost_equal(cholesky(a, lower=1), c)
+        a = c @ c.T
+        assert_allclose(cholesky(a, lower=1), c, atol=1e-14)
 
     def test_check_finite(self):
         a = [[8, 2, 3], [2, 9, 3], [3, 3, 6]]
         c = cholesky(a, check_finite=False)
-        assert_array_almost_equal(dot(transpose(c), c), a)
+        assert_allclose(c.T @ c, a, atol=1e-14)
         c = transpose(c)
-        a = dot(c, transpose(c))
-        assert_array_almost_equal(cholesky(a, lower=1, check_finite=False), c)
+        a = c @ c.T
+        assert_allclose(cholesky(a, lower=1, check_finite=False), c, atol=1e-14)
 
     def test_simple_complex(self):
         m = array([[3+1j, 3+4j, 5], [0, 2+2j, 2+7j], [0, 0, 7+4j]])
-        a = dot(transpose(conjugate(m)), m)
+        a = np.conj(m.T) @ m
         c = cholesky(a)
-        a1 = dot(transpose(conjugate(c)), c)
-        assert_array_almost_equal(a, a1)
+        a1 = np.conj(c.T) @ c
+        assert_allclose(a, a1)
         c = transpose(c)
-        a = dot(c, transpose(conjugate(c)))
-        assert_array_almost_equal(cholesky(a, lower=1), c)
+        a = c @ np.conj(c.T)
+        assert_allclose(cholesky(a, lower=1), c, atol=1e-14)
 
-    def test_random(self):
-        n = 20
+    @pytest.mark.parametrize("n", [5, 10, 20])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                        np.complex64, np.complex128])
+    @pytest.mark.parametrize("order", ["F", "C"])
+    def test_random(self, n, dtype, order):
+        atol = 5e-4 if dtype in [np.float32, np.complex64] else 1e-12
+        rng = np.random.default_rng(seed=12345)
+
         for k in range(2):
-            m = random([n, n])
+            m = rng.normal(size=(n, n)).astype(dtype)
+            if np.issubdtype(dtype, np.complexfloating):
+                m += 1j * rng.normal(size=(n, n)).astype(dtype)
             for i in range(n):
                 m[i, i] = 20*(.1+m[i, i])
-            a = dot(transpose(m), m)
-            c = cholesky(a)
-            a1 = dot(transpose(c), c)
-            assert_array_almost_equal(a, a1)
-            c = transpose(c)
-            a = dot(c, transpose(c))
-            assert_array_almost_equal(cholesky(a, lower=1), c)
 
-    def test_random_complex(self):
-        n = 20
-        for k in range(2):
-            m = random([n, n])+1j*random([n, n])
-            for i in range(n):
-                m[i, i] = 20*(.1+abs(m[i, i]))
-            a = dot(transpose(conjugate(m)), m)
-            c = cholesky(a)
-            a1 = dot(transpose(conjugate(c)), c)
-            assert_array_almost_equal(a, a1)
+            a = np.asarray(np.conj(m.T) @ m, order=order)
+
+            c = cholesky(a, lower=0)
+            a1 = np.conj(c.T) @ c
+            assert_allclose(a, a1, atol=atol)
+
             c = transpose(c)
-            a = dot(c, transpose(conjugate(c)))
-            assert_array_almost_equal(cholesky(a, lower=1), c)
+            a = c @ np.conj(c.T)
+            assert_allclose(cholesky(a, lower=1), c, atol=atol)
 
     @pytest.mark.xslow
     def test_int_overflow(self):
@@ -111,6 +108,71 @@ class TestCholesky:
         for x in ([a1, a2, a3, a4]):
             assert_raises(ValueError, cholesky, x)
 
+    @pytest.mark.parametrize("shape", [(3,), (2, 3), (3, 2)])
+    def test_invalid_shape(self, shape):
+        rng = np.random.default_rng(seed=12345)
+        a = rng.normal(size=shape)
+
+        with pytest.raises(ValueError, match="Expected a square matrix"):
+            cholesky(a)
+
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                             np.complex64, np.complex128])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_non_posdef(self, dtype, order):
+        n = 10
+        rng = np.random.default_rng(seed=12345)
+
+        lmbd = np.diag(-np.abs(rng.normal(size=(n,))).astype(dtype))
+        x = rng.normal(size=(n, n)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            x += 1j * rng.normal(size=(n, n)).astype(dtype)
+
+        a = np.asarray(x @ lmbd @ np.conj(x.T), order=order)
+
+        with pytest.raises(LinAlgError, match="Internal potrf return info"):
+            cholesky(a)
+
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite_args(self, overwrite_kw, dtype, order):
+        rng = np.random.default_rng(seed=12345)
+        n = 5
+
+        x = rng.normal(size=(n, n))
+        x = x.astype(dtype)
+        a = x @ x.T
+        a = a.astype(dtype, order=order)
+        a_ref = np.copy(a)
+
+        c = cholesky(a, **overwrite_kw)
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        a_inplace = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+
+        assert np.shares_memory(a, c) == a_inplace
+        assert np.all(a == a_ref) != a_inplace
+
+    @pytest.mark.parametrize("lower", [True, False])
+    def test_overwrite_cleaning(self, lower):
+        # Since only half the array is copied over, this checks if the other
+        # half is correctly put to 0 when the input array is passed in instead.
+        rng = np.random.default_rng(seed=12345)
+        n = 5
+
+        x = rng.normal(size=(n, n))
+        a = np.asfortranarray(x @ x.T)
+        a_ref = np.copy(a)
+
+        c = cholesky(a, lower=lower, overwrite_a=True)
+
+        if lower:
+            assert_allclose(np.triu(a, k=1), np.zeros_like(a), atol=1e-14)
+            assert_allclose(c @ c.T, a_ref, atol=1e-14)
+        else:
+            assert_allclose(np.tril(a, k=-1), np.zeros_like(a), atol=1e-14)
+            assert_allclose(c.T @ c, a_ref, atol=1e-14)
+
 
 class TestCholeskyBanded:
     """Tests for cholesky_banded() and cho_solve_banded."""
@@ -128,11 +190,11 @@ class TestCholeskyBanded:
         ufac = zeros_like(a)
         ufac[list(range(4)), list(range(4))] = c[-1]
         ufac[(0, 1, 2), (1, 2, 3)] = c[0, 1:]
-        assert_array_almost_equal(a, dot(ufac.T, ufac))
+        assert_allclose(a, ufac.T @ ufac, atol=1e-14)
 
         b = array([0.0, 0.5, 4.2, 4.2])
         x = cho_solve_banded((c, False), b, check_finite=False)
-        assert_array_almost_equal(x, [0.0, 0.0, 1.0, 1.0])
+        assert_allclose(x, [0.0, 0.0, 1.0, 1.0], atol=1e-14)
 
     def test_upper_real(self):
         # Symmetric positive definite banded matrix `a`
@@ -147,11 +209,11 @@ class TestCholeskyBanded:
         ufac = zeros_like(a)
         ufac[list(range(4)), list(range(4))] = c[-1]
         ufac[(0, 1, 2), (1, 2, 3)] = c[0, 1:]
-        assert_array_almost_equal(a, dot(ufac.T, ufac))
+        assert_allclose(a, ufac.T @ ufac, atol=1e-14)
 
         b = array([0.0, 0.5, 4.2, 4.2])
         x = cho_solve_banded((c, False), b)
-        assert_array_almost_equal(x, [0.0, 0.0, 1.0, 1.0])
+        assert_allclose(x, [0.0, 0.0, 1.0, 1.0], atol=1e-14)
 
     def test_upper_complex(self):
         # Hermitian positive definite banded matrix `a`
@@ -166,11 +228,11 @@ class TestCholeskyBanded:
         ufac = zeros_like(a)
         ufac[list(range(4)), list(range(4))] = c[-1]
         ufac[(0, 1, 2), (1, 2, 3)] = c[0, 1:]
-        assert_array_almost_equal(a, dot(ufac.conj().T, ufac))
+        assert_allclose(a, np.conj(ufac.T) @ ufac, atol=1e-14)
 
         b = array([0.0, 0.5, 4.0-0.2j, 0.2j + 4.0])
         x = cho_solve_banded((c, False), b)
-        assert_array_almost_equal(x, [0.0, 0.0, 1.0, 1.0])
+        assert_allclose(x, [0.0, 0.0, 1.0, 1.0], atol=1e-14)
 
     def test_lower_real(self):
         # Symmetric positive definite banded matrix `a`
@@ -185,11 +247,11 @@ class TestCholeskyBanded:
         lfac = zeros_like(a)
         lfac[list(range(4)), list(range(4))] = c[0]
         lfac[(1, 2, 3), (0, 1, 2)] = c[1, :3]
-        assert_array_almost_equal(a, dot(lfac, lfac.T))
+        assert_allclose(a, lfac @ lfac.T, atol=1e-14)
 
         b = array([0.0, 0.5, 4.2, 4.2])
         x = cho_solve_banded((c, True), b)
-        assert_array_almost_equal(x, [0.0, 0.0, 1.0, 1.0])
+        assert_allclose(x, [0.0, 0.0, 1.0, 1.0], atol=1e-14)
 
     def test_lower_complex(self):
         # Hermitian positive definite banded matrix `a`
@@ -204,11 +266,11 @@ class TestCholeskyBanded:
         lfac = zeros_like(a)
         lfac[list(range(4)), list(range(4))] = c[0]
         lfac[(1, 2, 3), (0, 1, 2)] = c[1, :3]
-        assert_array_almost_equal(a, dot(lfac, lfac.conj().T))
+        assert_allclose(a, lfac @ np.conj(lfac.T), atol=1e-14)
 
         b = array([0.0, 0.5j, 3.8j, 3.8])
         x = cho_solve_banded((c, True), b)
-        assert_array_almost_equal(x, [0.0, 0.0, 1.0j, 1.0])
+        assert_allclose(x, [0.0, 0.0, 1.0j, 1.0], atol=1e-14)
 
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
@@ -256,6 +318,7 @@ class TestOverwrite:
         assert_no_overwrite(lambda b: cho_solve_banded((xcho, False), b),
                             [(3,)])
 
+
 class TestChoFactor:
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
@@ -266,3 +329,80 @@ class TestChoFactor:
 
         xx, lower = cho_factor(np.eye(2, dtype=dt))
         assert x.dtype == xx.dtype
+
+    @pytest.mark.parametrize("n", [5, 10, 20])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                np.complex64, np.complex128])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("lower", [True, False])
+    def test_random(self, n, dtype, order, lower):
+        atol = 1e-5 if dtype in [np.float32, np.complex64] else 1e-12
+        rng = np.random.default_rng(seed=12345)
+
+        lmbd = np.diag(np.abs(rng.normal(size=(n,)).astype(dtype)))
+        x = rng.normal(size=(n, n)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            x += 1j * rng.normal(size=(n, n)).astype(dtype)
+
+        a = np.asarray(x @ lmbd @ np.conj(x.T), order=order)
+        c = cholesky(a, lower=lower)
+        c_f, lower_out = cho_factor(a, lower=lower)
+
+        assert lower_out == lower
+
+        # Theoretically exactly equal
+        # For `cho_factor` the other half of the matrix is irrelevant.
+        if lower:
+            l = np.tril(c_f)
+            assert_allclose(c, l, atol=atol)
+            assert_allclose(a, l @ np.conj(l.T), atol=atol)
+        else:
+            u = np.triu(c_f)
+            assert_allclose(c, u, atol=atol)
+            assert_allclose(a, np.conj(u.T) @ u, atol=atol)
+
+    @pytest.mark.parametrize("shape", [(3,), (3, 2), (2, 3)])
+    def test_invalid_shape(self, shape):
+        rng = np.random.default_rng(seed=12345)
+        a = rng.normal(size=shape)
+
+        with pytest.raises(ValueError, match="Expected a square matrix or batch"):
+            cho_factor(a)
+
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                             np.complex64, np.complex128])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_non_posdef(self, dtype, order):
+        n = 10
+        rng = np.random.default_rng(seed=12345)
+
+        lmbd = np.diag(-np.abs(rng.normal(size=(n,))).astype(dtype))
+        x = rng.normal(size=(n, n)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            x += 1j * rng.normal(size=(n, n)).astype(dtype)
+
+        a = np.asarray(x @ lmbd @ np.conj(x.T), order=order)
+
+        with pytest.raises(LinAlgError, match="Internal potrf return info"):
+            cho_factor(a)
+
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("lower", [True, False])
+    def test_overwrite_args(self, overwrite_kw, dtype, order, lower):
+        rng = np.random.default_rng(seed=12345)
+        n = 5
+
+        x = rng.normal(size=(n, n))
+        x = x.astype(dtype)
+        a = x @ x.T
+        a = a.astype(dtype, order=order)
+        a_ref = np.copy(a)
+
+        c, lower = cho_factor(a, **overwrite_kw, lower=lower)
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        a_inplace = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+
+        assert np.shares_memory(a, c) == a_inplace
+        assert np.all(a == a_ref) != a_inplace

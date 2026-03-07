@@ -704,4 +704,3 @@ def test_shapes_solve_like(func, core_shape):
     with pytest.raises(ValueError, match=pattern):
         # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
         func(a, b)
-
