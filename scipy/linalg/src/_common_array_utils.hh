@@ -1303,13 +1303,13 @@ bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy
 
 template<typename T>
 void
-detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *kl_max, npy_intp *ku_max) {
+detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *ldab_max) {
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T* slice_ptr = compute_slice_ptr(idx, data, ndim, shape, strides);
 
         bandwidth_strided(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
-        if (kl[idx] > *kl_max) {*kl_max = kl[idx];}
-        if (ku[idx] > *ku_max) {*ku_max = ku[idx];}
+
+        if (2 * kl[idx] + ku[idx] + 1 > *ldab_max) { *ldab_max = 2 * kl[idx] + ku[idx] + 1; }
     }
 }
 
@@ -1472,6 +1472,44 @@ to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T 
     for (i = 0; i < ku; i++) {
         for (j = i + 1; j < n; j++) {
             ab[(j + 1) * ldab - kl - i - 2] = data[(i + 1) * s2 + (j - i - 1) * (s1 + s2)];
+        }
+    }
+}
+
+
+/*
+ * Copy the passed in matrix `data`, which is already in banded storage since
+ * it is passed from `solve_banded()` to a buffer of the apropriate size.
+ *
+ * Input matrix is of size `m` x `n` and the `dst` matrix is of size
+ * `ldab` x `n`.
+ *
+ * `s1` and `s2` are the strides along the first and second dimensions, respectively,
+ * of the array.
+ */
+template<typename T>
+inline void
+copy_banded(T *src, npy_intp m, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *dst, npy_intp s1, npy_intp s2) {
+    npy_intp i, j;
+    s1 = s1 / sizeof(T);
+    s2 = s2 / sizeof(T);
+
+    // main diagonal
+    for (i = 0; i < n; i++) {
+        dst[(i + 1) * ldab - kl - 1] = src[(m - kl - 1) * s1 + i * s2];
+    }
+
+    // lower bands
+    for (i = 0; i < kl; i++) {
+        for (j = 0; j < n - i - 1; j++) {
+            dst[(j + 1) * ldab - kl + i] = src[(m - kl + i) * s1 + j * s2];
+        }
+    }
+
+    // upper bands
+    for (i = 0; i < ku; i++) {
+        for (j = i + 1; j < n; j++) {
+            dst[(j + 1) * ldab - kl - 2 - i] = src[(m - kl - 2 - i) * s1 + j * s2];
         }
     }
 }

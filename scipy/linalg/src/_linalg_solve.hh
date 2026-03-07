@@ -335,8 +335,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // maximal `kl` and `ku` to find the minimal size the array will need to
     // have. To avoid having to call `bandwidth` twice per slice, the results
     // are stored in these arrays.
-    npy_intp kl_max = 0;
-    npy_intp ku_max = 0;
+    npy_intp ldab_max = 0;
     ks = (npy_intp *)malloc(2 * outer_size * sizeof(npy_intp));
 
     if (ks == NULL) {
@@ -348,9 +347,9 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
     npy_intp *kls = &ks[0]; // Lower bandwidths
     npy_intp *kus = &ks[outer_size]; // Upper bandwidths
-    detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &kl_max, &ku_max);
+    detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
 
-    buffer = (T *)malloc((n * nrhs + 3 * n + (2 * kl_max + ku_max + 1) * n) * sizeof(T));
+    buffer = (T *)malloc((n * nrhs + 3 * n + (ldab_max) * n) * sizeof(T));
 
     if (buffer == NULL) {
         free(ipiv);
@@ -463,7 +462,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
     CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
     CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
-    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork; 
+    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork;
 
     T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
@@ -682,5 +681,168 @@ free_exit:
     free(buffer);
     free(irwork);
     free(ipiv);
+    return 1;
+}
+
+
+template<typename T>
+int
+_solve_banded(PyArrayObject *ap_Ab, PyArrayObject *ap_b, T *ret_data, PyArrayObject *ap_kls, PyArrayObject *ap_kus, int overwrite_ab, int overwrite_b, SliceStatusVec vec_status)
+{
+    using real_type = typename type_traits<T>::real_type;
+
+    char trans = 'N'; // `solve_banded` does not offer transposing.
+    SliceStatus slice_status;
+    npy_intp ldab_max = 0; // Maximal size required for LAPACK call format of `ab`
+    CBLAS_INT info;
+
+
+    // -------------------------------------------------------------------
+    // Input array attributes
+    // -------------------------------------------------------------------
+    T *ab_data = (T *)PyArray_DATA(ap_Ab);
+    int ndim = PyArray_NDIM(ap_Ab);
+    npy_intp *shape = PyArray_SHAPE(ap_Ab);
+    npy_intp n = shape[ndim - 1];
+    npy_intp *strides = PyArray_STRIDES(ap_Ab);
+
+    // Number of slices to traverse
+    npy_intp outer_size = 1;
+    if (ndim > 2) {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
+    }
+
+    T *bm_data = (T *)PyArray_DATA(ap_b);
+    npy_intp ndim_b = PyArray_NDIM(ap_b);
+    npy_intp *shape_b = PyArray_SHAPE(ap_b);
+    npy_intp *strides_b = PyArray_STRIDES(ap_b);
+    npy_intp nrhs = PyArray_DIM(ap_b, ndim_b - 1);
+
+    // The invariant is that `kl` + `ku` + 1 == `ldab` => only track one
+    // Assume that this is checked on the python side.
+    CBLAS_INT *kls_data = (CBLAS_INT *)PyArray_DATA(ap_kls);
+    npy_intp *shape_kls = PyArray_SHAPE(ap_kls);
+    npy_intp *strides_kls = PyArray_STRIDES(ap_kls);
+
+    // Find the maximum number of bands to use for allocation of buffer
+    npy_intp *ks = (npy_intp *)malloc(2 * outer_size * sizeof(npy_intp));
+    if (ks == NULL) {
+        info = -102;
+        return (int)info;
+    }
+
+    // find size of the buffer by determining the required leading dimension
+    npy_intp *kls = &ks[0];
+    npy_intp *kus = &ks[outer_size];
+
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        CBLAS_INT *idx_kl = compute_slice_ptr(idx, kls_data, ndim, shape_kls, strides_kls);
+        kls[idx] = (npy_intp)*idx_kl;
+        kus[idx] = shape[ndim-2] - kls[idx] - 1;
+
+        if (2 * kls[idx] + kus[idx] + 1 > ldab_max) {
+            ldab_max = 2 * kls[idx] + kus[idx] + 1;
+        }
+    }
+
+    // -------------------------------------------------------------------
+    // Workspace computation and allocation
+    // -------------------------------------------------------------------
+    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
+
+    /*
+     * Chop the buffer up into parts:
+     *   ldab_max * n    3 * n     b_data_size
+     * |--------------|----------|--------------|
+     * ^              ^          ^
+     * ab             work       b_data
+     *
+     * - `ab` is for the "padded" banded storage buffer
+     * - `work` is the temporary work buffer for `gbcon`, size = 3 * n
+     * - `b_data` is a buffer for `b`, if `overwrite_b` is enabled no need for the buffer (size = 0)
+     *
+     * NB. `overwrite_ab` can not trivially be enabled since the array always has to be
+     * "padded" with a set of zeros, meaning the buffer should be larger than the input array.
+     */
+    CBLAS_INT b_data_size = overwrite_b ? 0 : n * nrhs;
+    T *buffer = (T *)malloc((b_data_size + 3 * n + ldab_max * n) * sizeof(T));
+
+    if (buffer == NULL) {
+        free(ks);
+        info = -102;
+        return (int)info;
+    }
+
+    T* ab = &buffer[0];
+    T* work = &buffer[ldab_max * n];
+
+    T *b_data = NULL;
+    if (!overwrite_b) {
+        b_data = &buffer[ldab_max * n + 3 * n];
+    } else {
+        b_data = bm_data;
+    }
+
+    // Work and pivots
+    CBLAS_INT *ipiv = (CBLAS_INT *)malloc(intn * sizeof(CBLAS_INT));
+    if (ipiv == NULL) {
+        free(ks);
+        free(buffer);
+        info = -102;
+        return int(info);
+    }
+
+    void *irwork;
+    if (type_traits<T>::is_complex) {
+        irwork = malloc(intn * sizeof(real_type));
+    } else {
+        irwork = malloc(intn * sizeof(CBLAS_INT));
+    }
+
+    if (irwork == NULL) {
+        free(ks);
+        free(buffer);
+        free(ipiv);
+        info = -102;
+        return int(info);
+    }
+
+    // -------------------------------------------------------------------
+    // Main loop traversal, taken from `_solve`
+    // -------------------------------------------------------------------
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        T *slice_ptr_ab = compute_slice_ptr(idx, ab_data, ndim, shape, strides);
+        CBLAS_INT ldab = 2 * kls[idx] + kus[idx] + 1;
+        copy_banded(slice_ptr_ab, shape[ndim-2], shape[ndim-1], kls[idx], kus[idx], ldab, ab, strides[ndim-2], strides[ndim-1]);
+
+        // `overwrite_b` is only enabled when `b` is 2D and F-contiguous. Therefore, it is possible
+        // use the data of the array directly instead of having to transfer to a buffer. Similarly,
+        // the result then also does not have to be copied.
+        if (!overwrite_b) {
+            T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
+            copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        }
+
+        init_status(slice_status, idx, St::BANDED);
+        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work, irwork, kls[idx], kus[idx], slice_status);
+
+        if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
+            vec_status.push_back(slice_status);
+            goto free_exit_banded;
+        } else if (slice_status.is_ill_conditioned) {
+            vec_status.push_back(slice_status);
+        }
+
+        if (!overwrite_b) {
+            copy_slice_F_to_C(&ret_data[idx * n * nrhs], b_data, n, nrhs);
+        }
+    }
+
+free_exit_banded:
+    free(ks);
+    free(ipiv);
+    free(irwork);
+    free(buffer);
+
     return 1;
 }
