@@ -14,7 +14,7 @@ from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
 __all__ = ['entropy', 'differential_entropy']
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x,
     n_samples=lambda kwgs: (

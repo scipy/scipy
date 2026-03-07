@@ -134,8 +134,10 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     # For now, use _make_sphinx_capabilities because that's where
     # the relevant logic for determining what is and isn't
     # supported based on xp_capabilities_table entries lives.
-    # Perhaps this logic should be decoupled from sphinx.
-    for backend, capabilities in _make_sphinx_capabilities(**entry).items():
+    # This logic should be decoupled from this function due to exceptions; e.g. marray.
+    sphinx_capabilities = _make_sphinx_capabilities(**entry)
+    sphinx_capabilities.pop("marray")
+    for backend, capabilities in sphinx_capabilities.items():
         if backend in {"array_api_strict", "numpy"}:
             continue
         backend = BACKEND_NAMES_MAP.get(backend, backend)
