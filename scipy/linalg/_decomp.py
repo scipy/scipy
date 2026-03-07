@@ -20,7 +20,7 @@ import numpy as np
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    asarray, argsort, empty, iscomplex, zeros, einsum, eye, inf)
 # Local imports
-from scipy._lib._util import _asarray_validated, _apply_over_batch
+from scipy._lib._util import _asarray_validated, _apply_over_batch, _deprecate_dtypes
 from ._misc import LinAlgError, _datacopied
 from scipy.linalg._misc import norm   # noqa: F401  (backwards compat)
 from .lapack import (
@@ -209,6 +209,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     """
     # basic sanity checks of the input matrix
     a1 = _asarray_validated(a, check_finite=check_finite)
+    _deprecate_dtypes("eig", a1)
 
     if len(a1.shape) < 2 or a1.shape[-1] != a1.shape[-2]:
         raise ValueError(
@@ -239,6 +240,8 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     if b is not None:
         b1 = _asarray_validated(b, check_finite=check_finite)
+        _deprecate_dtypes("eig", b1)
+
         a1, b1 = _ensure_dtype_cdsz(a1, b1)  # NB: makes a1.dtype == b1.dtype, if needed
         overwrite_b = overwrite_b or (_datacopied(b1, b))
         b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
@@ -1614,6 +1617,7 @@ def cdf2rdf(w, v):
            [ 0.     , -3.23942,  2.59153]])
     """
     w, v = _asarray_validated(w), _asarray_validated(v)
+    _deprecate_dtypes("cdf2rdf", w, v)
 
     # check dimensions
     if w.ndim < 1:

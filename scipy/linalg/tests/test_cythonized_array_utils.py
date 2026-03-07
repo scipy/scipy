@@ -6,6 +6,7 @@ from pytest import raises
 
 
 @skip_xp_invalid_arg
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_bandwidth_dtypes():
     n = 5
     for t in np.typecodes['All']:
@@ -25,6 +26,7 @@ def test_bandwidth_non2d_input():
 
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']
                                if x not in 'eGUVOMmS'])
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_bandwidth_square_inputs(T):
     n = 20
     k = 4
@@ -51,6 +53,7 @@ def test_bandwidth_square_inputs(T):
 @skip_xp_invalid_arg
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']
                                if x not in 'eGUVOMm'])
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_bandwidth_rect_inputs(T):
     n, m = 10, 20
     k = 5
@@ -64,6 +67,7 @@ def test_bandwidth_rect_inputs(T):
 
 
 @skip_xp_invalid_arg
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_issymetric_ishermitian_dtypes():
     n = 5
     for t in np.typecodes['All']:
