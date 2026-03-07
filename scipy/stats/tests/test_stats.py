@@ -8723,17 +8723,18 @@ def quantile_test_reference(x, q, p, alternative):
     return res.statistic, res.pvalue, *res.confidence_interval()
 
 
+@make_xp_test_case(stats.quantile_test)
 class TestQuantileTest:
     r""" Test the non-parametric quantile test,
     including the computation of confidence intervals
     """
 
-    def test_quantile_test_iv(self):
-        x = np.asarray([1, 2, 3])
+    def test_quantile_test_iv(self, xp):
+        x = xp.asarray([1, 2, 3])
 
         message = "`x` must be an array of numbers."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x.astype(bool))
+            stats.quantile_test(xp.astype(x, xp.bool))
 
         message = "`q` must be a scalar or array of numbers."
         with pytest.raises(ValueError, match=message):
@@ -8744,11 +8745,11 @@ class TestQuantileTest:
             stats.quantile_test(x, p=2)
 
         # should p == 0. / p == 1. be valid?
-        p = np.asarray([-1., 0., 1., 1.5, np.nan])
+        p = xp.asarray([-1., 0., 1., 1.5, xp.nan])
         res = stats.quantile_test(x, p=p)
-        assert_equal(res.statistic, np.full_like(p, -1, dtype=int))
-        assert_equal(res.statistic_type, np.full_like(p, -1, dtype=int))
-        assert_equal(res.pvalue, np.full_like(p, np.nan))
+        xp_assert_equal(res.statistic, xp.full_like(p, xp.nan))
+        xp_assert_equal(res.statistic_type, xp.full_like(p, xp.nan))
+        xp_assert_equal(res.pvalue, xp.full_like(p, xp.nan))
 
         message = "`axis` must be an integer or None."
         with pytest.raises(ValueError, match=message):
@@ -8764,7 +8765,7 @@ class TestQuantileTest:
 
         message = ("`keepdims` may be False only if...")
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x, p=[0.1, 0.2], keepdims=False)
+            stats.quantile_test(x, p=xp.asarray([0.1, 0.2]), keepdims=False)
 
         message = "`alternative` must be one of..."
         with pytest.raises(ValueError, match=message):
@@ -8781,7 +8782,7 @@ class TestQuantileTest:
          [0.25, 0.95, -np.inf, 1.39096812846378, 'less'],
          [0.8, 0.9, 2.117000016612675, np.inf, 'greater']]
     )
-    def test_R_ci_quantile(self, p, alpha, lb, ub, alternative):
+    def test_R_ci_quantile(self, p, alpha, lb, ub, alternative, xp):
         # Test against R library `confintr` function `ci_quantile`, e.g.
         # library(confintr)
         # options(digits=16)
@@ -8790,29 +8791,31 @@ class TestQuantileTest:
         # ci_quantile(x, q = 0.5, probs = c(0.05, 0.95))$interval
         # ci_quantile(x, q = 0.25, probs = c(0, 0.95))$interval
         # ci_quantile(x, q = 0.8, probs = c(0.1, 1))$interval
-        x = np.exp(np.arange(0, 1.01, 0.01))
+        x = xp.exp(xp.arange(0.0, 1.01, 0.01))
         res = stats.quantile_test(x, p=p, alternative=alternative)
-        assert_allclose(res.confidence_interval(alpha), [lb, ub], rtol=1e-15)
+        ci = res.confidence_interval(alpha)
+        xp_assert_close(ci.low, xp.asarray(lb))
+        xp_assert_close(ci.high, xp.asarray(ub))
 
     @pytest.mark.parametrize(
         'q, p, alternative, ref',
         [[1.2, 0.3, 'two-sided', 0.01515567517648],
          [1.8, 0.5, 'two-sided', 0.1109183496606]]
     )
-    def test_R_pvalue(self, q, p, alternative, ref):
+    def test_R_pvalue(self, q, p, alternative, ref, xp):
         # Test against R library `snpar` function `quant.test`, e.g.
         # library(snpar)
         # options(digits=16)
         # x < - exp(seq(0, 1, by=0.01))
         # quant.test(x, q=1.2, p=0.3, exact=TRUE, alternative='t')
-        x = np.exp(np.arange(0, 1.01, 0.01))
+        x = xp.exp(xp.arange(0.0, 1.01, 0.01))
         res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
-        assert_allclose(res.pvalue, ref, rtol=1e-12)
+        xp_assert_close(res.pvalue, xp.asarray(ref))
 
     @pytest.mark.parametrize('case', ['continuous', 'discrete'])
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
     @pytest.mark.parametrize('alpha', [0.9, 0.95])
-    def test_pval_ci_match(self, case, alternative, alpha):
+    def test_pval_ci_match(self, case, alternative, alpha, xp):
         # Verify that the following statement holds:
 
         # The 95% confidence interval corresponding with alternative='less'
@@ -8833,14 +8836,15 @@ class TestQuantileTest:
             p = rng.random()
             q = rng.integers(1, 11)
 
+        rvs, p, q = xp.asarray(rvs.tolist()), float(p), float(q)
         res = stats.quantile_test(rvs, q=q, p=p, alternative=alternative)
         ci = res.confidence_interval(confidence_level=alpha)
 
         # select elements inside the confidence interval based on alternative
         if alternative == 'less':
-            i_inside = rvs <= ci.high
+            i_inside = xp.astype(rvs, ci.high.dtype) <= ci.high
         else:
-            i_inside = rvs >= ci.low
+            i_inside = xp.astype(rvs, ci.low.dtype) >= ci.low
 
         for x in rvs[i_inside]:
             res = stats.quantile_test(rvs, q=x, p=p, alternative=alternative)
@@ -8850,7 +8854,8 @@ class TestQuantileTest:
             res = stats.quantile_test(rvs, q=x, p=p, alternative=alternative)
             assert res.pvalue < 1 - alpha
 
-    def test_match_conover_examples(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_match_conover_examples(self, dtype, xp):
         # Test against the examples in [1] (Conover Practical Nonparametric
         # Statistics Third Edition) pg 139
 
@@ -8861,11 +8866,12 @@ class TestQuantileTest:
         # (q=193). Conover shows that 7 of the observations are less than or
         # equal to 193, and "for the binomial random variable Y, P(Y<=7) =
         # 0.0173", so the two-sided p-value is twice that, 0.0346.
-        x = [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193,
-             174, 166, 248]
-        pvalue_expected = 0.0346
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([189, 233, 195, 160, 212, 176, 231, 185,
+                        199, 213, 202, 193, 174, 166, 248], dtype=dtype)
+        pvalue_ref = 0.0346
         res = stats.quantile_test(x, q=193, p=0.75, alternative='two-sided')
-        assert_allclose(res.pvalue, pvalue_expected, rtol=1e-5)
+        xp_assert_close(res.pvalue, xp.asarray(pvalue_ref, dtype=dtype), rtol=1e-5)
 
         # Example 2
         # Conover doesn't give explicit data, just that 8 out of 112
@@ -8875,18 +8881,21 @@ class TestQuantileTest:
         # distributed random variable, now with p=0.5 and n=112. Conover uses a
         # normal approximation, but we can easily calculate the CDF of the
         # binomial distribution.
-        x = [59]*8 + [61]*(112-8)
-        pvalue_expected = stats.binom(p=0.5, n=112).pmf(k=8)
+        x = xp.asarray([59]*8 + [61]*(112-8), dtype=dtype)
+        pvalue_ref = float(stats.binom(p=0.5, n=112).pmf(k=8))
         res = stats.quantile_test(x, q=60, p=0.5, alternative='greater')
-        assert_allclose(res.pvalue, pvalue_expected, atol=1e-10)
+        xp_assert_close(res.pvalue, xp.asarray(pvalue_ref, dtype=dtype), atol=1e-10)
 
+    @skip_xp_backends('array_api_strict', reason='indexing in _apply_over_batch')
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize('axis', [0, 1])
-    def test_multidimensional(self, alternative, axis):
+    def test_multidimensional(self, alternative, axis, xp):
         rng = np.random.default_rng(85468924398205602)
         x = rng.random(size=(2, 20))
         p = rng.random(size=(1, 3,))
         q = p + rng.random(size=(2, 1))*0.01
+
+        x, p, q = (xp.asarray(arr.tolist()) for arr in (x, p, q))
 
         ref = quantile_test_reference(x, q, p, alternative=alternative)
         ref_statistic, ref_pvalue, ref_low, ref_high = ref
@@ -8900,12 +8909,12 @@ class TestQuantileTest:
             res_statistic, res_pvalue = res_statistic.T, res_pvalue.T
             res_low, res_high = res_low.T, res_high.T
 
-        assert_allclose(res_statistic, ref_statistic)
-        assert_allclose(res_pvalue, ref_pvalue)
-        assert_allclose(res_low, res_low)
-        assert_allclose(res_low, ref_low)
+        xp_assert_close(res_statistic, ref_statistic)
+        xp_assert_close(res_pvalue, ref_pvalue)
+        xp_assert_close(res_low, res_low)
+        xp_assert_close(res_low, ref_low)
 
-    def test_zero_size(self):
+    def test_zero_size(self, xp):
         rng = np.random.default_rng(883771738488451943)
         x_shape = (2, 50)
         qp_shape = (2, 10)
@@ -8913,136 +8922,138 @@ class TestQuantileTest:
         q = rng.random(qp_shape)
         p = q + rng.random(qp_shape) * 1e-2
 
+        x, p, q = (xp.asarray(arr.tolist()) for arr in (x, p, q))
+
         # case 1: p/q is size zero.
-        qp_zero = np.empty((0, *qp_shape))
+        qp_zero = xp.empty((0, *qp_shape))
         out = qp_zero
         res = stats.quantile_test(x, q=qp_zero, p=qp_zero, axis=-1)
         ci = res.confidence_interval()
         # different default int on different platforms
-        xp_assert_equal(res.statistic, np.asarray(out), check_dtype=False)
-        xp_assert_equal(res.statistic_type, np.asarray(out), check_dtype=False)
-        assert np.isdtype(res.statistic.dtype, "integral")
-        assert np.isdtype(res.statistic_type.dtype, "integral")
+        xp_assert_equal(res.statistic, xp.asarray(out))
+        xp_assert_equal(res.statistic_type, xp.asarray(out))
         xp_assert_equal(res.pvalue, out)
         xp_assert_equal(ci.low, out)
         xp_assert_equal(ci.high, out)
 
         # case 2: x is size zero with nonzero length along axis.
-        x_zero = np.empty((0, *x_shape))
-        out = np.empty((0, *qp_shape))
+        x_zero = xp.empty((0, *x_shape))
+        out = xp.empty((0, *qp_shape))
         res = stats.quantile_test(x_zero, q=q, p=p, axis=-1)
         ci = res.confidence_interval()
         # different default int on different platforms
-        xp_assert_equal(res.statistic, np.asarray(out), check_dtype=False)
-        xp_assert_equal(res.statistic_type, np.asarray(out), check_dtype=False)
-        assert np.isdtype(res.statistic.dtype, "integral")
-        assert np.isdtype(res.statistic_type.dtype, "integral")
+        xp_assert_equal(res.statistic, xp.asarray(out))
+        xp_assert_equal(res.statistic_type, xp.asarray(out))
         xp_assert_equal(res.pvalue, out)
         xp_assert_equal(ci.low, out)
         xp_assert_equal(ci.high, out)
 
         # case 3: x has zero length along axis.
-        x_zero = np.empty((x.shape[0], 0))
-        out = -np.ones(qp_shape, dtype=np.int64)
+        x_zero = xp.empty((x.shape[0], 0))
+        out = xp.full(qp_shape, xp.nan)
         res = stats.quantile_test(x_zero, q=q, p=p, axis=-1)
         ci = res.confidence_interval()
         # different default int on different platforms
-        xp_assert_equal(res.statistic, np.asarray(out), check_dtype=False)
-        xp_assert_equal(res.statistic_type, np.asarray(out), check_dtype=False)
-        assert np.isdtype(res.statistic.dtype, "integral")
-        assert np.isdtype(res.statistic_type.dtype, "integral")
-        xp_assert_equal(res.pvalue, out*np.nan)
-        xp_assert_equal(ci.low, out*np.nan)
-        xp_assert_equal(ci.high, out*np.nan)
+        xp_assert_equal(res.statistic, out)
+        xp_assert_equal(res.statistic_type, out)
+        xp_assert_equal(res.pvalue, out)
+        xp_assert_equal(ci.low, out)
+        xp_assert_equal(ci.high, out)
 
-    def test_nans(self):
+    def test_nans(self, xp):
         rng = np.random.default_rng(2920028761208905)
         x = rng.random((10, 50))
         q = rng.random((10, 10))
         p = q + rng.random((10, 10)) * 1e-2
+        x, p, q = (xp.asarray(arr.tolist()) for arr in (x, p, q))
+
         ref = stats.quantile_test(x, q=q, p=p, axis=-1)
         ref_low, ref_high = ref.confidence_interval()
 
-        x_ = x.copy()
-        i_nan = rng.random(x.shape) < 0.01
-        x_[i_nan] = np.nan
-        i_nan_out = np.any(i_nan, axis=-1)
-        assert not np.all(i_nan_out)
+        x_ = xp_copy(x)
+        i_nan = xp.asarray(rng.random(x.shape) < 0.01)
+        x_ = xpx.at(x_)[i_nan].set(xp.nan)
+        i_nan_out = xp.any(i_nan, axis=-1)
+        assert not xp.all(i_nan_out)
         res = stats.quantile_test(x_, q=q, p=p, axis=-1)
         res_low, res_high = res.confidence_interval()
-        assert_equal(res.statistic[i_nan_out], -1)
-        assert_equal(res.statistic_type[i_nan_out], -1)
-        assert_equal(res.pvalue[i_nan_out], np.nan)
-        assert_equal(res_low[i_nan_out], np.nan)
-        assert_equal(res_high[i_nan_out], np.nan)
-        assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
-        assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
-        assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
-        assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
-        assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
 
-        i_nan_q = rng.random(q.shape) < 0.01
-        i_nan_p = rng.random(p.shape) < 0.01
-        assert np.any(i_nan_q)
-        assert np.any(i_nan_p)
-        q[i_nan_q] = np.nan
-        p[i_nan_p] = np.nan
+        assert xp.all(xp.isnan(res.statistic[i_nan_out]))
+        assert xp.all(xp.isnan(res.statistic_type[i_nan_out]))
+        assert xp.all(xp.isnan(res.pvalue[i_nan_out]))
+        assert xp.all(xp.isnan(res_low[i_nan_out]))
+        assert xp.all(xp.isnan(res_high[i_nan_out]))
+        xp_assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
+        xp_assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
+        xp_assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
+        xp_assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
+        xp_assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
 
-        i_nan_out = i_nan_q | i_nan_p
-        assert not np.all(i_nan_out)
+        i_nan_q = xp.asarray(rng.random(q.shape) < 0.01)
+        i_nan_p = xp.asarray(rng.random(p.shape) < 0.01)
+        assert xp.any(i_nan_q)
+        assert xp.any(i_nan_p)
+        q = xpx.at(q)[xp.broadcast_to(i_nan_q, q.shape)].set(xp.nan)
+        p = xpx.at(p)[xp.broadcast_to(i_nan_p, p.shape)].set(xp.nan)
+
+        i_nan_out = xp.asarray(i_nan_q | i_nan_p)
+        assert not xp.all(i_nan_out)
 
         res = stats.quantile_test(x, q=q, p=p, axis=-1)
         res_low, res_high = res.confidence_interval()
-        assert_equal(res.statistic[i_nan_out], -1)
-        assert_equal(res.statistic_type[i_nan_out], -1)
-        assert_equal(res.pvalue[i_nan_out], np.nan)
-        assert_equal(res_low[i_nan_out], np.nan)
-        assert_equal(res_high[i_nan_out], np.nan)
-        assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
-        assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
-        assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
-        assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
-        assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
+        assert xp.all(xp.isnan(res.statistic[i_nan_out]))
+        assert xp.all(xp.isnan(res.statistic_type[i_nan_out]))
+        assert xp.all(xp.isnan(res.pvalue[i_nan_out]))
+        assert xp.all(xp.isnan(res_low[i_nan_out]))
+        assert xp.all(xp.isnan(res_high[i_nan_out]))
+        xp_assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
+        xp_assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
+        xp_assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
+        xp_assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
+        xp_assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
 
-    def test_axis_none(self):
+    def test_axis_none(self, xp):
         rng = np.random.default_rng(883771738488451943)
         x_shape = (2, 50)
         qp_shape = (2, 10)
         x = rng.random(x_shape)
         q = rng.random(qp_shape)
         p = q + rng.random(qp_shape) * 1e-2
+        x, p, q = (xp.asarray(arr.tolist()) for arr in (x, p, q))
 
         res = stats.quantile_test(x, q=q, p=p, axis=None)
         res_low, res_high = res.confidence_interval()
-        ref = stats.quantile_test(np.ravel(x), q=np.ravel(q), p=np.ravel(p), axis=None)
+        ref = stats.quantile_test(xp_ravel(x), q=xp_ravel(q), p=xp_ravel(p), axis=None)
         ref_low, ref_high = ref.confidence_interval()
-        assert_equal(res.statistic, ref.statistic[np.newaxis, :])
-        assert_equal(res.statistic_type, ref.statistic_type[np.newaxis, :])
-        assert_equal(res.pvalue, ref.pvalue[np.newaxis, :])
-        assert_equal(res_low, ref_low[np.newaxis, :])
-        assert_equal(res_high, ref_high[np.newaxis, :])
+        xp_assert_equal(res.statistic, ref.statistic[xp.newaxis, :])
+        xp_assert_equal(res.statistic_type, ref.statistic_type[xp.newaxis, :])
+        xp_assert_equal(res.pvalue, ref.pvalue[xp.newaxis, :])
+        xp_assert_equal(res_low, ref_low[xp.newaxis, :])
+        xp_assert_equal(res_high, ref_high[xp.newaxis, :])
 
         res = stats.quantile_test(x, q=0.5, p=0.5, axis=None)
         res_low, res_high = res.confidence_interval()
-        ref = stats.quantile_test(np.ravel(x), q=0.5, p=0.5, axis=None)
+        ref = stats.quantile_test(xp_ravel(x), q=0.5, p=0.5, axis=None)
         ref_low, ref_high = ref.confidence_interval()
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.statistic_type, ref.statistic_type)
-        assert_equal(res.pvalue, ref.pvalue)
-        assert_equal(res_low, ref_low)
-        assert_equal(res_high, ref_high)
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.statistic_type, ref.statistic_type)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res_low, ref_low)
+        xp_assert_equal(res_high, ref_high)
 
+    @pytest.mark.filterwarnings("ignore:torch:UserWarning")
     @pytest.mark.parametrize("x_shape, qp_shape, axis, keepdims, res_shape", [
         ((1, 3), (1,), None, False, ()),
         ((1, 3), (1,), None, True, (1, 1)),
         ((1, 3), (2, 1), -1, False, (2,)),
         ((1, 3), (2, 1), -1, True, (2, 1)),
     ])
-    def test_keepdims(self, x_shape, qp_shape, axis, keepdims, res_shape):
+    def test_keepdims(self, x_shape, qp_shape, axis, keepdims, res_shape, xp):
         rng = np.random.default_rng(883771738488451943)
-        x, qp = rng.random(x_shape), rng.random(qp_shape)
+        x, qp = xp.asarray(rng.random(x_shape)), xp.asarray(rng.random(qp_shape))
         res = stats.quantile_test(x, q=qp, p=qp, axis=axis, keepdims=keepdims)
         assert res.statistic.shape == res_shape
+
 
 class TestPageTrendTest:
     def setup_method(self):
