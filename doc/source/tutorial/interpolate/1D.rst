@@ -45,7 +45,7 @@ Cubic splines
 Of course, piecewise linear interpolation produces corners at data points,
 where the linear pieces join. To produce a smoother curve, you can use cubic
 splines, where the interpolating curve is made of cubic pieces with matching
-first and second derivatives. In code, these objects are represented by instances of the 
+first and second derivatives. In code, these objects are represented by instances of the
 ``CubicSpline`` class. An instance is constructed with the ``x`` and
 ``y`` arrays of data, and then it can be evaluated using the target ``xnew``
 values:
