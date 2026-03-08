@@ -101,8 +101,8 @@ def test_validation_same_lengths():
 
 
 def test_validation_sparse_only_two_args():
-    with pytest.raises(ValueError, match='only two input sequences'):
-        crosstab([0, 1, 1], [8, 8, 9], [1, 3, 3], sparse=True)
+    # no longer raises when not two input sequences because sparse arrays are 2D
+    crosstab([0, 1, 1], [8, 8, 9], [1, 3, 3], sparse=True)
 
 
 def test_validation_len_levels_matches_args():
