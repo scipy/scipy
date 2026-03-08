@@ -517,6 +517,7 @@ cdef class cKDTree:
         readonly np.ndarray      mins
         readonly np.ndarray      indices
         readonly object          boxsize
+        readonly object          _tree_lock
         np.ndarray               boxsize_data
 
     property n:
@@ -536,13 +537,14 @@ cdef class cKDTree:
         def __get__(cKDTree self):
             cdef cKDTreeNode n
             cdef ckdtree *cself = self.cself
-            if self._python_tree is not None:
-                return self._python_tree
-            else:
-                n = cKDTreeNode()
-                n._setup(self, node=cself.ctree, level=0)
-                self._python_tree = n
-                return self._python_tree
+            with self._tree_lock:
+                if self._python_tree is not None:
+                    return self._python_tree
+                else:
+                    n = cKDTreeNode()
+                    n._setup(self, node=cself.ctree, level=0)
+                    self._python_tree = n
+                    return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
@@ -559,6 +561,7 @@ cdef class cKDTree:
             int compact, median
 
         self._python_tree = None
+        self._tree_lock = threading.Lock()
 
         if not copy_data:
             copy_data = copy_if_needed
@@ -788,6 +791,8 @@ cdef class cKDTree:
          [13 19]]
 
         """
+        with self._tree_lock:
+            pass
 
         cdef:
             np.intp_t n
@@ -937,6 +942,9 @@ cdef class cKDTree:
 
         """
 
+        with self._tree_lock:
+            pass
+
         cdef:
             object[::1] vout
             np.intp_t[::1] vlen
@@ -1059,6 +1067,8 @@ cdef class cKDTree:
         >>> plt.show()
 
         """
+        with self._tree_lock:
+            pass
 
         cdef:
             vector[vector[np.intp_t]] vvres
@@ -1149,6 +1159,8 @@ cdef class cKDTree:
         >>> plt.show()
 
         """
+        with self._tree_lock:
+            pass
 
         cdef ordered_pairs results
 
@@ -1355,6 +1367,9 @@ cdef class cKDTree:
         1
 
         """
+        with self._tree_lock:
+            pass
+
         cdef:
             int r_ndim
             np.intp_t n_queries, i
@@ -1608,6 +1623,7 @@ cdef class cKDTree:
 
         # set raw pointers
         self._python_tree = None
+        self._tree_lock = threading.Lock()
         self._pre_init()
 
         # copy the tree data
