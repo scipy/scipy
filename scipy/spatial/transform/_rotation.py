@@ -1969,10 +1969,10 @@ class Rotation:
 
         Returns
         -------
-        approx_equal : ndarray or bool
-            Whether the rotations are approximately equal, bool if object
-            contains a single rotation and ndarray if object contains multiple
-            rotations.
+        approx_equal : bool ndarray
+            Whether the rotations are approximately equal, shape ``(1,)`` if object
+            contains a single rotation and shape ``(N, ...)`` if object contains 
+            multiple rotations.
 
         Examples
         --------
@@ -1986,7 +1986,7 @@ class Rotation:
         Approximate equality for a single rotation:
 
         >>> p.approx_equal(q[0])
-        False
+        array([False])
         """
         cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
         backend = select_backend(self._xp, cython_compatible=cython_compatible)
