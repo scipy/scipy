@@ -282,6 +282,7 @@ Checklist before submitting a PR
 
 -  Did you check that the code can be distributed under a BSD license? See
    :ref:`license-considerations`.
+-  Have you checked SciPy's AI policy? See :ref:`ai_policy`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
 -  Do all unit tests pass locally? See :ref:`the-spin-interface`.
