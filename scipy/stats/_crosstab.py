@@ -188,8 +188,7 @@ def crosstab(*args, levels=None, sparse=False):
         indices = tuple(inv[:, mask_all])
 
     if sparse:
-        count = coo_array((np.ones(len(indices[0]), dtype=int),
-                            (indices[0], indices[1])))
+        count = coo_array((np.ones(len(indices[0]), dtype=int), indices))
         count.sum_duplicates()
     else:
         shape = [len(u) for u in actual_levels]
