@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from types import EllipsisType, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
 from collections.abc import Callable
 
 import numpy as np
@@ -424,6 +424,9 @@ class RigidTransform:
     >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, matrix: ArrayLike, normalize: bool = True, copy: bool = True):
         """Initialize from a 4x4 transformation matrix.
