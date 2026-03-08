@@ -43,10 +43,10 @@ Cubic splines
 =============
 
 Of course, piecewise linear interpolation produces corners at data points,
-where linear pieces join. To produce a smoother curve, you can use cubic
+where the linear pieces join. To produce a smoother curve, you can use cubic
 splines, where the interpolating curve is made of cubic pieces with matching
-first and second derivatives. In code, these objects are represented via the
-``CubicSpline`` class instances. An instance is constructed with the ``x`` and
+first and second derivatives. In code, these objects are represented by instances of the 
+``CubicSpline`` class. An instance is constructed with the ``x`` and
 ``y`` arrays of data, and then it can be evaluated using the target ``xnew``
 values:
 
@@ -92,7 +92,7 @@ data points. In these situations, an alternative is to use the so-called
 *monotone* cubic interpolants: these are constructed to be only once
 continuously differentiable, and attempt to preserve the local shape implied
 by the data. `scipy.interpolate` provides two objects of this kind:
-`PchipInterpolator` and `Akima1DInterpolator` . To illustrate, let's consider
+`PchipInterpolator` and `Akima1DInterpolator`. To illustrate, let's consider
 data with an outlier:
 
 .. plot::
@@ -117,7 +117,7 @@ data with an outlier:
 Interpolation with B-splines
 ============================
 
-B-splines form an alternative (if formally equivalent) representation of piecewise polynomials. This basis is generally more computationally stable than the power basis and is useful for a variety of applications which include interpolation, regression and curve representation. Details are given in the :ref:`piecewise polynomials section <tutorial-interpolate_ppoly>`, and here we illustrate their usage by constructing the interpolation of a sine function: 
+B-splines form an alternative (though formally equivalent) representation of piecewise polynomials. This basis is generally more computationally stable than the power basis and is useful for a variety of applications which include interpolation, regression and curve representation. Details are given in the :ref:`piecewise polynomials section <tutorial-interpolate_ppoly>`, and here we illustrate their usage by constructing the interpolation of a sine function: 
 
 
 .. plot::
@@ -226,7 +226,7 @@ Second, the interpolation axis can be controlled by an optional ``axis`` argumen
 example above uses the default value of ``axis=0``. For a non-default values, the
 following is true:
 
-- ``y.shape[axis] == x.size`` (otherwise en error is raised)
+- ``y.shape[axis] == x.size`` (otherwise an error is raised)
 - the shape of ``spl(xv)`` is ``y.shape[axis:] + xv.shape + y.shape[:axis]``
 
 
@@ -279,7 +279,7 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
 
     >>> u_unif = x
 
-    Second, we consider the so-called *cord length* parametrization, which is
+    Second, we consider the so-called *chord length* parametrization, which is
     nothing but a cumulative length of straight line segments connecting the
     data points:
 
@@ -292,13 +292,13 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
 
     >>> dp = p[:, 1:] - p[:, :-1]      # 2-vector distances between points
     >>> l = (dp**2).sum(axis=0)        # squares of lengths of 2-vectors between points
-    >>> u_cord = np.sqrt(l).cumsum()   # cumulative sums of 2-norms
-    >>> u_cord = np.r_[0, u_cord]      # the first point is parameterized at zero
+    >>> u_chord = np.sqrt(l).cumsum()   # cumulative sums of 2-norms
+    >>> u_chord = np.r_[0, u_chord]      # the first point is parameterized at zero
 
     Finally, we consider what is sometimes called the *centripetal*
     parametrization: :math:`u_j = u_{j-1} + |\mathbf{p}_j - \mathbf{p}_{j-1}|^{1/2}`.
     Due to the extra square root, the difference between consecutive values
-    :math:`u_j - u_{j-1}` will be smaller than for the cord length parametrization: 
+    :math:`u_j - u_{j-1}` will be smaller than for the chord length parametrization: 
 
     >>> u_c = np.r_[0, np.cumsum((dp**2).sum(axis=0)**0.25)]
 
@@ -307,9 +307,9 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
     >>> from scipy.interpolate import make_interp_spline
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 3, figsize=(8, 3))
-    >>> parametrizations = ['uniform', 'cord length', 'centripetal']
+    >>> parametrizations = ['uniform', 'chord length', 'centripetal']
     >>>
-    >>> for j, u in enumerate([u_unif, u_cord, u_c]):
+    >>> for j, u in enumerate([u_unif, u_chord, u_c]):
     ...    spl = make_interp_spline(u, p, axis=1)    # note p is a 2D array
     ...    
     ...    uu = np.linspace(u[0], u[-1], 51)
