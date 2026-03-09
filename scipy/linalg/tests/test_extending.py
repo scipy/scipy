@@ -8,6 +8,7 @@ import pytest
 from scipy._lib._testutils import IS_EDITABLE, _test_cython_extension, cython
 from scipy.linalg.blas import get_blas_funcs
 from scipy.linalg.lapack import get_lapack_funcs
+import scipy.linalg.cython_blas as cython_blas
 
 
 @pytest.mark.parallel_threads_limit(4)  # 0.35 GiB per thread RAM usage
@@ -47,3 +48,8 @@ def test_cython(tmp_path):
     cdotu = get_blas_funcs('dotu', dtype=np.complex64, ilp64="preferred")
     np.testing.assert_array_equal(cdotu(cx, cy), extensions.complex_dot(cx, cy))
     np.testing.assert_array_equal(cdotu(cx, cy), extensions_cpp.complex_dot(cx, cy))
+
+    # Verify blas_int size consistency between installed and JIT-compiled modules
+    expected_size = cython_blas._blas_int_size()
+    assert extensions.get_blas_int_size() == expected_size
+    assert extensions_cpp.get_blas_int_size() == expected_size
