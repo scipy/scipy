@@ -1883,21 +1883,6 @@ def test_euclideans():
     assert_almost_equal(wsqeuclidean(x1, x2), 3.0, decimal=14)
     assert_almost_equal(weuclidean(x1, x2), np.sqrt(3), decimal=14)
 
-    # Check flattening for (1, N) or (N, 1) inputs
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        weuclidean(x1[np.newaxis, :], x2[np.newaxis, :]), np.sqrt(3)
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        wsqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :])
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        wsqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis])
-
-    # Distance metrics only defined for vectors (= 1-D)
-    x = np.arange(4).reshape(2, 2)
-    with pytest.raises(ValueError):
-        weuclidean(x, x)
-    with pytest.raises(ValueError):
-        wsqeuclidean(x, x)
-
     # Another check, with random data.
     rs = np.random.RandomState(1234567890)
     x = rs.rand(10)
@@ -2282,3 +2267,37 @@ class TestChebyshev:
         assert_equal(chebyshev(x, y, w), 0)
         assert_equal(pdist([x, y], 'chebyshev', w=w), [0])
         assert_equal(cdist([x], [y], 'chebyshev', w=w), [[0]])
+
+
+@pytest.mark.parametrize(
+    "func,p",
+    [
+        (minkowski, 1),
+        (minkowski, 2),
+        (minkowski, 3.5),
+        (minkowski, np.inf),
+        (euclidean, None),
+        (sqeuclidean, None),
+    ],
+)
+@pytest.mark.parametrize("weights", [True, False])
+def test_distance_nd(func, p, weights):
+    rng = np.random.default_rng(6738657865438)
+
+    u = rng.random((5, 2, 4))
+    v = rng.random((2, 4))
+    w = rng.random(4) if weights else None
+
+    if p is None:
+        res = func(u, v, w=w)
+    else:
+        res = func(u, v, p=p, w=w)
+
+    ref = np.empty((5, 2))
+    for i, j in np.ndindex(ref.shape):
+        if p is None:
+            ref[i, j] = func(u[i, j], v[j], w=w)
+        else:
+            ref[i, j] = func(u[i, j], v[j], p=p, w=w)
+
+    assert_allclose(res, ref)
