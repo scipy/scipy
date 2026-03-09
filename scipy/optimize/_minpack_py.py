@@ -34,7 +34,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                 msg += f" '{func_name}'."
             else:
                 msg += "."
-            msg += f'Shape should be {output_shape} but it is {shape(res)}.'
+            msg += f' Shape should be {output_shape} but it is {shape(res)}.'
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
