@@ -743,4 +743,4 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-          run: ccache -s
+        run: ccache -s
