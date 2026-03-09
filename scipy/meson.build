@@ -785,6 +785,15 @@ foreach name, dep : dependency_map
 endforeach
 
 
+# Resolve cython-blas-abi for config: 'auto' follows use-ilp64
+_cython_blas_abi = get_option('cython-blas-abi')
+if _cython_blas_abi == 'auto'
+  _cython_blas_ilp64 = use_ilp64
+else
+  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
+endif
+conf_data.set('BLAS_CYTHON_ILP64', _cython_blas_ilp64.to_string())
+
 configure_file(
   input: '__config__.py.in',
   output: '__config__.py',

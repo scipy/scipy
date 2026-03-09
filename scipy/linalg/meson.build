@@ -4,7 +4,14 @@ _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 _cython_tree += fs.copyfile('__init__.pxd')
 
 _generate_pyx = find_program('_generate_pyx.py')
-ilp64_flag = use_ilp64 ? '--ilp64' : []
+# Resolve cython-blas-abi: 'auto' follows use-ilp64, otherwise explicit
+_cython_blas_abi = get_option('cython-blas-abi')
+if _cython_blas_abi == 'auto'
+  _cython_blas_ilp64 = use_ilp64
+else
+  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
+endif
+ilp64_flag = _cython_blas_ilp64 ? '--ilp64' : []
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -218,10 +225,7 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   subdir: 'scipy/linalg'
 )
 
-# When use_ilp64 is true, cython_blas/cython_lapack use ILP64 (64-bit integer)
-# BLAS/LAPACK interfaces via `lapack_dep`; otherwise they use LP64 via
-# `lapack_lp64_dep`.
-cython_blas_lapack_dep = use_ilp64 ? lapack_dep : lapack_lp64_dep
+cython_blas_lapack_dep = _cython_blas_ilp64 ? lapack_dep : lapack_lp64_dep
 cython_blas = py3.extension_module('cython_blas',
   [
     linalg_cython_gen.process(cython_linalg[0]),  # cython_blas.pyx
