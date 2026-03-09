@@ -202,11 +202,22 @@ jobs:
           sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
           python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: ccache -s
+
       - name: Testing SciPy
         run: |
           cd doc
@@ -243,6 +254,12 @@ jobs:
         run: |
           pip install build meson-python ninja pythran pybind11 cython numpy
 
+
+      - name: Set up ccache
+         uses: ./.github/ccache
+         with:
+           workflow_name: ${{ github.workflow }}
+
       - name: Build wheel and install
         run: |
           set -euo pipefail
@@ -251,6 +268,10 @@ jobs:
           # specify which compilers to use using environment variables
           CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python -m pip install dist/scipy*.whl
+
+      - name: Ccache performance
+         shell: bash -l {0}
+         run: ccache -s
 
       - name: Install test dependencies
         run: |
@@ -339,6 +360,11 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Set up ccache
+      uses: ./.github/ccache
+      with:
+        workflow_name: ${{ github.workflow }}
+
     - name: build + test
       run: |
         set -exuo pipefail
@@ -362,6 +388,10 @@ jobs:
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: ccache -s
 
   #################################################################################
   distro_multiple_pythons:
