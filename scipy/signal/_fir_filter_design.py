@@ -1394,7 +1394,6 @@ def minimum_phase(h,
         # lmin[n] = 2u[n] - d[n]
         # i.e., double the positive frequencies and zero out the negative ones;
         # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
-        # To facilitate ease and readability, start with ndarray then cast
         win = xp.zeros(n_fft, dtype=h_temp.dtype)
         win = xpx.at(win)[0].set(1)
         stop = n_fft // 2
