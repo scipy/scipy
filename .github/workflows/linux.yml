@@ -256,9 +256,9 @@ jobs:
 
 
       - name: Set up ccache
-         uses: ./.github/ccache
-         with:
-           workflow_name: ${{ github.workflow }}
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
 
       - name: Build wheel and install
         run: |
@@ -270,8 +270,8 @@ jobs:
           python -m pip install dist/scipy*.whl
 
       - name: Ccache performance
-         shell: bash -l {0}
-         run: ccache -s
+        shell: bash -l {0}
+        run: ccache -s
 
       - name: Install test dependencies
         run: |
