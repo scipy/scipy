@@ -16,7 +16,7 @@ from . import _fitpack_py
 from ._polyint import _Interpolator1D
 from . import _ppoly
 from ._interpnd import _ndim_coords_from_arrays
-from ._bsplines import make_interp_spline, BSpline
+from ._bsplines import make_interp_spline, BSpline, _get_dtype, _deprecate_dtypes
 
 
 def lagrange(x, w):
@@ -549,7 +549,7 @@ class interp1d(_Interpolator1D):
         # 1. Handle values in x_new that are outside of x. Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
-        x_new = asarray(x_new)
+        x_new = asarray(x_new, dtype=np.float64)
         y_new = self._call(self, x_new)
         if not self._extrapolate:
             below_bounds, above_bounds = self._check_bounds(x_new)
@@ -605,7 +605,7 @@ class _PPolyBase:
 
         self._c = np.asarray(c)
         self._x = np.ascontiguousarray(x, dtype=np.float64)
-        self._deprecate_dtypes(self._c.dtype, np.asarray(x).dtype)
+        _deprecate_dtypes(self._c.dtype, np.asarray(x).dtype)
 
         if extrapolate is None:
             extrapolate = True
@@ -645,30 +645,8 @@ class _PPolyBase:
         if not (np.all(dx >= 0) or np.all(dx <= 0)):
             raise ValueError("`x` must be strictly increasing or decreasing.")
 
-        dtype = self._get_dtype(self._c.dtype)
+        dtype = _get_dtype(self._c.dtype)
         self._c = np.ascontiguousarray(self._c, dtype=dtype)
-
-    def _deprecate_dtypes(self, *args):
-        """
-        A temporary helper for deprecating dtypes.
-        """
-        for dtype in args:
-            if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
-                msg = (f"Interpolations with arguments of dtype={dtype} "
-                       f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
-                        "removed in SciPy 1.20.0. Please cast inputs to one of "
-                        "np.float{32,64} or np.complex{64,128} manually."
-                       )
-                import warnings
-                warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-                return
-
-    def _get_dtype(self, dtype):
-        if np.issubdtype(dtype, np.complexfloating) \
-               or np.issubdtype(self._c.dtype, np.complexfloating):
-            return np.complex128
-        else:
-            return np.float64
 
     @property
     def x(self):
@@ -740,7 +718,7 @@ class _PPolyBase:
 
         c = np.asarray(c)
         x = np.asarray(x)
-        self._deprecate_dtypes(c.dtype, x.dtype)
+        _deprecate_dtypes(c.dtype, x.dtype)
 
         if c.ndim < 2:
             raise ValueError("invalid dimensions for c")
@@ -785,7 +763,7 @@ class _PPolyBase:
                 raise ValueError("`x` is neither on the left or on the right "
                                 "from `self.x`.")
 
-        dtype = self._get_dtype(c.dtype)
+        dtype = _get_dtype(c.dtype)
 
         k2 = max(c.shape[0], self._c.shape[0])
         c2 = np.zeros((k2, self._c.shape[1] + c.shape[1]) + self._c.shape[2:],
@@ -794,11 +772,11 @@ class _PPolyBase:
         if action == 'append':
             c2[k2-self._c.shape[0]:, :self._c.shape[1]] = self._c
             c2[k2-c.shape[0]:, self._c.shape[1]:] = c
-            self._x = np.ascontiguousarray(np.r_[self._x, x], dtype=np.float64)
+            self._x = np.r_[self._x, x].astype(np.float64)
         elif action == 'prepend':
             c2[k2-self._c.shape[0]:, :c.shape[1]] = c
             c2[k2-c.shape[0]:, c.shape[1]:] = self._c
-            self._x = np.ascontiguousarray(np.r_[x, self._x], dtype=np.float64)
+            self._x = np.r_[x, self._x].astype(np.float64)
 
         self._c = c2
 
@@ -1962,7 +1940,7 @@ class NdPPoly:
     def __init__(self, c, x, extrapolate=None):
         self.x = tuple(np.ascontiguousarray(v, dtype=np.float64) for v in x)
         self.c = np.asarray(c)
-        self._deprecate_dtypes(self.c.dtype, *[np.asarray(v).dtype for v in x])
+        _deprecate_dtypes(self.c.dtype, *[np.asarray(v).dtype for v in x])
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = bool(extrapolate)
@@ -1979,7 +1957,7 @@ class NdPPoly:
         if any(a != b.size - 1 for a, b in zip(c.shape[ndim:2*ndim], self.x)):
             raise ValueError("x and c do not agree on the number of intervals")
 
-        dtype = self._get_dtype(self.c.dtype)
+        dtype = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dtype)
 
     @classmethod
@@ -2000,28 +1978,6 @@ class NdPPoly:
             extrapolate = True
         self.extrapolate = extrapolate
         return self
-
-    def _deprecate_dtypes(self, *args):
-        """
-        A temporary helper for deprecating dtypes.
-        """
-        for dtype in args:
-            if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
-                msg = (f"Interpolations with arguments of dtype={dtype} "
-                       f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
-                        "removed in SciPy 1.20.0. Please cast inputs to one of "
-                        "np.float{32,64} or np.complex{64,128} manually."
-                       )
-                import warnings
-                warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-                return
-
-    def _get_dtype(self, dtype):
-        if np.issubdtype(dtype, np.complexfloating) \
-               or np.issubdtype(self.c.dtype, np.complexfloating):
-            return np.complex128
-        else:
-            return np.float64
 
     def _ensure_c_contiguous(self):
         if not self.c.flags.c_contiguous:

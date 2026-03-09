@@ -17,15 +17,16 @@ from itertools import combinations
 from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
-           "make_smoothing_spline"]
+           "make_smoothing_spline", "supported_dtypes"]
 
+supported_dtypes = np.typecodes['Integer'] + 'efdFD'
 
 def _deprecate_dtypes(*args):
     """
     A temporary helper for deprecating dtypes.
     """
     for dtype in args:
-        if dtype.char not in np.typecodes['AllInteger'] + 'efdFD':
+        if dtype.char not in supported_dtypes:
             msg = (f"Interpolations with arguments of dtype={dtype} "
                    f"({dtype.char = }) are deprecated in SciPy 1.18.0 and will be "
                     "removed in SciPy 1.20.0. Please cast inputs to one of "
@@ -38,6 +39,7 @@ def _deprecate_dtypes(*args):
 
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
+    _deprecate_dtypes(dtype)
     if np.issubdtype(dtype, np.complexfloating):
         return np.complex128
     else:
@@ -50,7 +52,6 @@ def _as_float_array(x, check_finite=False):
     NB: Upcasts half- and single-precision floats to double precision.
     """
     x = np.ascontiguousarray(x)
-    _deprecate_dtypes(x.dtype)
     dtyp = _get_dtype(x.dtype)
     x = x.astype(dtyp, copy=False)
     if check_finite and not np.isfinite(x).all():
