@@ -21,3 +21,7 @@ cpdef float complex complex_dot(float complex[:] cx, float complex[:] cy):
         blas_int incx = cx.strides[0] // sizeof(cx[0])
         blas_int incy = cy.strides[0] // sizeof(cy[0])
     return cdotu(&n, &cx[0], &incx, &cy[0], &incy)
+
+cpdef int get_blas_int_size():
+    """Return sizeof(blas_int) to verify correct type at compile+runtime."""
+    return sizeof(blas_int)

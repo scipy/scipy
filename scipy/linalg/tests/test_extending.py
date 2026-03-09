@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from scipy._lib._testutils import IS_EDITABLE, _test_cython_extension, cython
+import scipy.linalg.cython_blas as cython_blas
 from scipy.linalg.blas import cdotu  # type: ignore[attr-defined]
 from scipy.linalg.lapack import dgtsv  # type: ignore[attr-defined]
 
@@ -45,3 +46,8 @@ def test_cython(tmp_path):
     cy = np.array([4+4j, 5-5j, 6+6j], dtype=np.complex64)
     np.testing.assert_array_equal(cdotu(cx, cy), extensions.complex_dot(cx, cy))
     np.testing.assert_array_equal(cdotu(cx, cy), extensions_cpp.complex_dot(cx, cy))
+
+    # Verify blas_int size consistency between installed and JIT-compiled modules
+    expected_size = cython_blas._blas_int_size()
+    assert extensions.get_blas_int_size() == expected_size
+    assert extensions_cpp.get_blas_int_size() == expected_size

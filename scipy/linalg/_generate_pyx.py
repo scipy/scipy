@@ -352,6 +352,10 @@ cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) noe
         blas_int incx = zx.strides[0] // sizeof(zx[0])
         blas_int incy = zy.strides[0] // sizeof(zy[0])
     return zdotu(&n, &zx[0], &incx, &zy[0], &incy)
+
+def _blas_int_size():
+    # Return the size of blas_int in bytes.
+    return sizeof(blas_int)
 """
 
 lapack_py_wrappers = """
