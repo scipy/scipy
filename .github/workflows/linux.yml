@@ -199,7 +199,8 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libmpc-dev
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
+            gfortran libgmp-dev libmpfr-dev libmpc-dev ccache
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
 
@@ -248,7 +249,7 @@ jobs:
           sudo apt-get -y update
           sudo apt install -y g++-9 gcc-9 gfortran-9
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
-            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
 
       - name: Setup Python build deps
         run: |
@@ -312,7 +313,8 @@ jobs:
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran lcov
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran \
+          lcov ccache
 
     - name: Install Python packages
       run: |
