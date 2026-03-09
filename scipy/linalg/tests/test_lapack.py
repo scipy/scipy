@@ -20,8 +20,7 @@ from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
-
-import scipy.sparse as sps
+from scipy.sparse import diags_array
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -591,7 +590,7 @@ class TestTbtrs:
             bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
-        a = sps.diags(bands, band_offsets, format='dia')
+        a = diags_array(bands, offsets=band_offsets, format='dia')
 
         # Convert A into banded storage form
         ab = np.zeros((kd + 1, n), dtype)
