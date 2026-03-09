@@ -143,7 +143,13 @@ jobs:
         # into a venv is working, so leave out optional dependencies. That's
         # also why we can get away with an old version of OpenBLAS from Ubuntu
         sudo apt-get update
-        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran
+        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran \
+          ccache
+
+    - name: Set up ccache
+      uses: ./.github/ccache
+      with:
+        workflow_name: ${{ github.workflow }}
 
     - name: Create venv, install SciPy
       run: |
@@ -181,6 +187,10 @@ jobs:
         python -c "import scipy"
         python -c "import scipy.linalg"
         python -c "from scipy import cluster; cluster.test()"
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: ccache -s
 
   #################################################################################
   python_debug:
@@ -547,7 +557,7 @@ jobs:
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gfortran
+        sudo apt-get install -y gfortran ccache
 
     - name: Set up ccache
       uses: ./.github/ccache
@@ -676,7 +686,8 @@ jobs:
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev \
+          gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
       run: |
@@ -714,8 +725,22 @@ jobs:
           pixi-version: v0.63.2
           cache: false
 
+      - name: Install Ubuntu dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+
       - name: Build SciPy
         run: pixi run build --setup-args=-D_without-fortran=true
 
       - name: Test SciPy
         run: pixi run test
+
+      - name: Ccache performance
+        shell: bash -l {0}
+          run: ccache -s
