@@ -362,6 +362,12 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran \
+          lcov ccache
+
     - name: Set up ccache
       uses: ./.github/ccache
       with:
@@ -417,7 +423,13 @@ jobs:
           sudo apt install software-properties-common
           sudo add-apt-repository ppa:deadsnakes/ppa
           sudo apt update -y
-          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
+          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev \
+            liblapack-dev ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
 
       - name: Setup Python build deps
         run: |
@@ -427,6 +439,10 @@ jobs:
         run: |
           python3.12 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3.12 -m pip install dist/*.whl
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: ccache -s
 
       - name: Install test dependencies
         run: |
@@ -461,7 +477,13 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gfortran pkg-config libopenblas-dev liblapack-dev
+          sudo apt-get install -y gfortran pkg-config libopenblas-dev liblapack-dev \
+            ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
 
       - name: Install global meson
         run: |
@@ -488,6 +510,10 @@ jobs:
         run: |
           python -m build -wnx
           python -m pip install dist/*.whl
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: ccache -s
 
       - name: Run tests
         run: |
@@ -523,6 +549,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gfortran
 
+    - name: Set up ccache
+      uses: ./.github/ccache
+      with:
+        workflow_name: ${{ github.workflow }}
+
     - name: Install Python dependencies
       run: |
         pip install -r requirements/build.txt
@@ -538,6 +569,10 @@ jobs:
     - name: Build SciPy
       run: |
         spin build --with-scipy-openblas
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: ccache -s
 
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
