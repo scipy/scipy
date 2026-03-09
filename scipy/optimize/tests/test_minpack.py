@@ -284,6 +284,21 @@ class TestNfev:
         x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
         assert info['nfev'] == self.nfev.c
 
+    @pytest.mark.parametrize('method', ['hybr', 'lm'])
+    def test_root_njev(self, method):
+        # gh-24767: njev was off by one when a user-supplied Jacobian is given
+        njev_actual = 0
+
+        def zero_jac(y):
+            nonlocal njev_actual
+            njev_actual += 1
+            return 2 * y
+
+        njev_actual = 0
+        solution = optimize.root(self.zero_f, np.array([100.0]),
+                                 jac=zero_jac, method=method)
+        assert solution.njev == njev_actual
+
 
 class TestLeastSq:
     def setup_method(self):

@@ -277,6 +277,10 @@ def _root_hybr(func, x0, args=(), jac=None,
     sol = OptimizeResult(x=x, success=(status == 1), status=status,
                          method="hybr")
     sol.update(info)
+    # _check_func calls Dfun once for input validation before the solver;
+    # that call is not counted by the C routine, so add it here.
+    if Dfun is not None:
+        sol['njev'] += 1
     try:
         sol['message'] = errors[status]
     except KeyError:

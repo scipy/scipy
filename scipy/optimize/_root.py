@@ -332,6 +332,10 @@ def _root_leastsq(fun, x0, args=(), jac=None,
                          fun=info.pop('fvec'), method="lm")
     sol.update(info)
     sol.nfev = nfev
+    # leastsq calls _check_func on Dfun once for input validation before
+    # the solver; that call is not counted by the C routine.
+    if jac is not None:
+        sol['njev'] += 1
     return sol
 
 
