@@ -1399,7 +1399,8 @@ def minimum_phase(h,
         win = xpx.at(win)[0].set(1)
         stop = n_fft // 2
         win = xpx.at(win)[1:stop].set(2)
-        win = xpx.at(win)[stop].set(1 + (n_fft % 2))  # Nyquist freq: odd use 2, even use 1
+        # Nyquist freq: odd use 2, even use 1
+        win = xpx.at(win)[stop].set(1 + (n_fft % 2))
         h_temp *= win
         h_temp = ifft(xp.exp(fft(h_temp)))
         h_minimum = xp.real(h_temp)
