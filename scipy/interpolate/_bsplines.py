@@ -19,7 +19,7 @@ from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline", "supported_dtypes"]
 
-supported_dtypes = np.typecodes['Integer'] + 'efdFD'
+supported_dtypes = np.typecodes['AllInteger'] + 'efdFD'
 
 def _deprecate_dtypes(*args):
     """
