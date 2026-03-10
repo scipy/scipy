@@ -2624,7 +2624,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._cdf_quadrature(x[mask], *params_mask)
+            out[mask] = self._cdf_quadrature(x[mask], **params_mask)
         return out[()]
 
     def _cdf_quadrature(self, x, **params):
@@ -2824,7 +2824,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._icdf_inversion(x[mask], *params_mask)
+            out[mask] = self._icdf_inversion(x[mask], **params_mask)
         return out[()]
 
     def _icdf_inversion(self, x, **params):
@@ -2882,7 +2882,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._iccdf_inversion(x[mask], *params_mask)
+            out[mask] = self._iccdf_inversion(x[mask], **params_mask)
         return out[()]
 
     def _iccdf_inversion(self, x, **params):
