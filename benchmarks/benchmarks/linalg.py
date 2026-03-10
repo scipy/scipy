@@ -222,6 +222,23 @@ class BatchedEigBench(Benchmark):
             sl.eig(self.a)
 
 
+class BatchedCholeskyBench(Benchmark):
+    params = [
+        [(100, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100), (100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names  = ["shape", "module"]
+
+    def setup(self, shape, module):
+        x = random(shape[:-1] + (1000,))
+        self.a = x @ np.swapaxes(x, axis1=-2, axis2=-1)
+
+    def time_cholesky(self, shape, module):
+        if module == "numpy":
+            nl.cholesky(self.a)
+        else:
+            sl.cholesky(self.a)
+
 
 class Norm(Benchmark):
     params = [
