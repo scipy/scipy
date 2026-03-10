@@ -44,7 +44,7 @@ _SKIP_ALL = "skip_all"
 _NO_CACHE = "no_cache"
 
 # TODO:
-#  Test sample dtypes.
+#  Test sample dtypes
 #  Add dtype kwarg (especially for distributions with no parameters)
 #  Rewrite `test_continuous` without Hypothesis, more modular tests that are easier to
 #    run individually.
@@ -74,8 +74,9 @@ _NO_CACHE = "no_cache"
 #    distribution parameters as necessary.
 #  Reconsider `all_inclusive` - see comment in `contains` method of `_interval`
 # `validation_policy` needs testing
-# `tol` does not affect offer very fine-grained control; consider improving
+# `tol` does not offer very fine-grained control; consider improving
 # report accuracy estimates? How?
+# reconsider distribution mutability
 
 # Originally, I planned to filter out invalid distribution parameters;
 # distribution implementation functions would always work with "compressed",
