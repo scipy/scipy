@@ -363,6 +363,22 @@ class TestQuantile:
         ref = stats.quantile(x, p, method=method)
         xp_assert_close(res, ref)
 
+    def test_all_nan_harrell_davis_gh24707(self, xp):
+        # While working on gh-24707, there was a case in which if *all* elements of one
+        # slice were NaN, only some elements of another slice were NaN, and
+        # `nan_policy='omit'`, then the NaNs would not be ignored in the other slice.
+        # The same test case could fail with `nan_policy='propagate'` for a different
+        # reason, if the fix were not made carefully. Check that both these cases are
+        # resolved.
+        kwargs = dict(method='harrell-davis', axis=-1)
+        x = xp.asarray([[xp.nan, xp.nan, xp.nan], [xp.nan, 2, 3]])
+
+        res = stats.quantile(x, 0.5, **kwargs, nan_policy='omit')
+        xp_assert_close(res, xp.asarray([xp.nan, 2.5]))
+
+        res = stats.quantile(x, 0.5, **kwargs, nan_policy='propagate')
+        xp_assert_close(res, xp.asarray([xp.nan, xp.nan]))
+
 
 @_apply_over_batch(('a', 1), ('v', 1))
 def np_searchsorted(a, v, side):
