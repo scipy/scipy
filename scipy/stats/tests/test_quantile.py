@@ -363,6 +363,8 @@ class TestQuantile:
         ref = stats.quantile(x, p, method=method)
         xp_assert_close(res, ref)
 
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
+                      exceptions=['cupy', 'jax.numpy'])
     def test_all_nan_harrell_davis_gh24707(self, xp):
         # While working on gh-24707, there was a case in which if *all* elements of one
         # slice were NaN, only some elements of another slice were NaN, and
