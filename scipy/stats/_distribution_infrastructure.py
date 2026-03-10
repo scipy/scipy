@@ -3862,30 +3862,29 @@ _distribution_names = {
 def make_distribution(dist):
     """Generate a `UnivariateDistribution` class from a compatible object.
 
-    The argument may be an instance of `rv_continuous` or an instance of
+    The argument may be an instance of `rv_continuous`, `rv_discrete`, or an instance of
     another class that satisfies the interface described below.
 
-    The returned value is a `ContinuousDistribution` subclass if the input is an
-    instance of `rv_continuous` or a `DiscreteDistribution` subclass if the input
-    is an instance of `rv_discrete`. Like any subclass of `UnivariateDistribution`,
-    it must be instantiated (i.e. by passing all shape parameters as keyword
-    arguments) before use. Once instantiated, the resulting object will have the
-    same interface as any other instance of `UnivariateDistribution`; e.g.,
-    `scipy.stats.Normal`, `scipy.stats.Binomial`.
+    The returned value is a `ContinuousDistribution` subclass if the input defines a
+    ``pdf`` method or a `DiscreteDistribution` subclass if the input defines a ``pmf``
+    method. Like any subclass of `UnivariateDistribution`, it must be instantiated (i.e.
+    by passing all shape parameters as keyword arguments) before use. Once instantiated,
+    the resulting object will have the same interface as any other instance of
+    `UnivariateDistribution`; e.g., `scipy.stats.Normal`, `scipy.stats.Binomial`.
 
     .. note::
 
         `make_distribution` does not work perfectly with all instances of
-        `rv_continuous`. Known failures include `levy_stable`, `vonmises`,
-        `hypergeom`, 'nchypergeom_fisher', 'nchypergeom_wallenius', and
+        `rv_continuous` or `rv_discrete`. Known failures include `levy_stable`,
+        `vonmises`, `hypergeom`, 'nchypergeom_fisher', 'nchypergeom_wallenius', and
         `poisson_binom`. Some methods of some distributions will not support
         array shape parameters.
 
     Parameters
     ----------
     dist : `rv_continuous`
-        Instance of `rv_continuous`, `rv_discrete`, or an instance of any class with
-        the following attributes:
+        Instance of `rv_continuous`, `rv_discrete`, or an instance of any custom class
+        with the following attributes:
 
         __make_distribution_version__ : str
             A string containing the version number of SciPy in which this interface
@@ -3897,6 +3896,10 @@ def make_distribution(dist):
             and the corresponding value is either a dictionary or tuple.
             If the value is a dictionary, it may have the following items, with default
             values used for entries which aren't present.
+
+            domain : {'continuous', 'discrete'}, default: 'continuous'
+                A string identifying whether the domain of the parameter is continuous
+                or discrete (i.e. accepts only integral values).
 
             endpoints : tuple, default: (-inf, inf)
                 A tuple defining the lower and upper endpoints of the domain of the
@@ -3930,17 +3933,21 @@ def make_distribution(dist):
         support : dict or tuple
             A dictionary describing the support of the distribution or a tuple
             describing the endpoints of the support. This behaves identically to
-            the values of the parameters dict described above, except that the key
-            ``typical`` is ignored.
+            the values of the parameters dict described above, except that the keys
+            ``typical`` and ``domain`` are ignored.  (``domain`` is inferred from
+            whether ``pdf`` or ``pmf`` is defined.)
 
-        The class **must** also define a ``pdf`` method and **may** define methods
-        ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
+        The class **must** also define a ``pdf`` OR ``pmf`` method - not both - and
+        this determines whether the support of the distribution is continuous or
+        discrete (i.e. accepts only integral values). It **may** define methods
+        ``logentropy``, ``entropy``, ``median``, ``mode``,
+        ``logpdf``, ``logpmf``,
         ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
         ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
         ``moment``, ``lmoment``, and ``sample``.
         If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
-        the corresponding method of `ContinuousDistribution`.
+        the corresponding method of `ContinuousDistribution`/`DiscreteDistribution`.
         When multiple parameterizations are defined, these methods must accept
         all parameters from all parameterizations. The ``moment`` method
         must accept the ``order`` and ``kind`` arguments by position or keyword, but
@@ -3973,8 +3980,7 @@ def make_distribution(dist):
     --------
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy import stats
-    >>> from scipy import special
+    >>> from scipy import stats, special
 
     Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
 
@@ -3988,7 +3994,7 @@ def make_distribution(dist):
     >>> plt.legend(('pdf', 'histogram'))
     >>> plt.show()
 
-    Create a custom distribution.
+    Create a custom continuous distribution.
 
     >>> class MyLogUniform:
     ...     @property
@@ -4086,6 +4092,36 @@ def make_distribution(dist):
     >>> X = MyBeta(a=2.0, b=2.0)
     >>> Y = MyBeta(mu=0.5, nu=4.0)
     >>> np.isclose(X.pdf(0.3), Y.pdf(0.3))
+    np.True_
+
+    Create a custom discrete distribution with one continuous shape parameter and one
+    discrete shape parameter.
+
+    >>> class MyBinomial:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'n': {'domain': 'discrete',
+    ...                       'endpoints': (0., np.inf),
+    ...                       'inclusive': (True, False)},
+    ...                 'p': {'domain': 'continuous',
+    ...                       'endpoints': (0., 1.),
+    ...                       'inclusive': (True, True)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+    ...
+    ...     def pmf(self, x, n, p):
+    ...         return special.binom(n, x) * p**x * (1 - p)**(n-x)
+    >>>
+    >>> MyBinomial = stats.make_distribution(MyBinomial())
+    >>> X = stats.Binomial(n=10, p=0.4)
+    >>> Y = MyBinomial(n=10, p=0.4)
+    >>> np.isclose(Y.cdf(8.), X.cdf(8.))
     np.True_
 
     """
@@ -4237,8 +4273,14 @@ def _make_distribution_rv_generic(dist):
 
 def _get_domain_info(info):
     domain_info = {"endpoints": info} if isinstance(info, tuple) else info
+    domain_type_str = domain_info.pop("domain", "continuous")
+    if domain_type_str not in {"discrete", "continuous"}:
+        message = ("If specified, the `domain` value of a parameter "
+                   "must be either 'continuous' or 'discrete'.")
+        raise ValueError(message)
+    domain_type = _IntegerInterval if domain_type_str == 'discrete' else _RealInterval
     typical = domain_info.pop("typical", None)
-    return domain_info, typical
+    return domain_type, domain_info, typical
 
 
 def _make_distribution_custom(dist):
@@ -4255,18 +4297,30 @@ def _make_distribution_custom(dist):
         parameters = []
 
         for name, info in parameterization.items():
-            domain_info, typical = _get_domain_info(info)
-            domain = _RealInterval(**domain_info)
+            domain_type, domain_info, typical = _get_domain_info(info)
+            domain = domain_type(**domain_info)
             param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
         parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    domain_info, _ = _get_domain_info(dist.support)
-    _x_support = _RealInterval(**domain_info)
+    domain_type, domain_info, _ = _get_domain_info(dist.support)
+    _x_support = domain_type(**domain_info)
+
+    if hasattr(dist, 'pdf') and not hasattr(dist, 'pmf'):
+        pxf = 'PDF'
+        distribution_subclass = ContinuousDistribution
+    elif hasattr(dist, 'pmf') and not hasattr(dist, 'pdf'):
+        pxf = 'PMF'
+        distribution_subclass = DiscreteDistribution
+    else:
+        message = ("The argument of `make_distribution` must implement "
+                   "either `pdf` OR `pmf` (not both).")
+        raise ValueError(message)
+
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
-    class CustomDistribution(ContinuousDistribution):
+    class CustomDistribution(distribution_subclass):
         _parameterizations = parameterizations
         _variable = _x_param
 
@@ -4279,7 +4333,7 @@ def _make_distribution_custom(dist):
             return s.replace('CustomDistribution', repr_str)
 
     methods = {'sample', 'logentropy', 'entropy',
-               'median', 'mode', 'logpdf', 'pdf',
+               'median', 'mode', 'logpdf', 'pdf', 'logpmf', 'pmf',
                'logcdf2', 'logcdf', 'cdf2', 'cdf',
                'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
                'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
@@ -4315,8 +4369,8 @@ def _make_distribution_custom(dist):
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
         f"This class represents `{repr_str}` as a subclass of "
-        "`ContinuousDistribution`.",
-        f"The PDF of the distribution is defined {support_etc}"
+        f"`{str(distribution_subclass)}`.",
+        f"The {pxf} of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
 
