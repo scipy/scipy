@@ -1,9 +1,10 @@
-"""Test dtype deprecations.
-"""
+'''Test dtype deprecations.
+'''
 import numpy as np
 import scipy.linalg as linalg
 import pytest
 
+from scipy._lib._array_api_override import SCIPY_ARRAY_API
 
 #
 # When the deprecation expires
@@ -68,6 +69,55 @@ _skip_dict = {
 }
 
 
+# these raise if SCIPY_ARRAY_API env var is defined
+_array_api_skip_dict = {
+    'cho_factor' : 'mM',
+    'cho_solve' : 'mM',
+    'cho_solve_banded' : 'mM',
+    'cholesky' : 'mM',
+    'cholesky_banded' : 'mM',
+    'cossin' : 'mM',
+    'diagsvd' : 'mM',
+    'eig_banded' : 'mM',
+    'eigh' : 'mM',
+    'eigh_tridiagonal' : 'mM',
+    'eigvals_banded' : 'mM',
+    'eigvalsh' : 'mM',
+    'eigvalsh_tridiagonal' : 'mM',
+    'funm' : 'mM',
+    'hessenberg' : 'mM',
+    'ldl' : 'mM',
+    'lu_factor' : 'mM',
+    'lu_solve' : 'mM',
+    'matrix_balance' : 'mM',
+    'null_space' : 'mM',
+    'ordqz' : 'mM',
+    'orth' : 'mM',
+    'pinvh' : 'mM',
+    'polar' : 'mM',
+    'qr' : 'mM',
+    'qr_multiply' : 'mM',
+    'qz' : 'mM',
+    'rq' : 'mM',
+    'schur' : 'mM',
+    'solve_banded' : 'mM',
+    'solve_continuous_lyapunov' : 'mM',
+    'solve_lyapunov' : 'mM',
+    'solve_triangular' : 'mM',
+    'solveh_banded' : 'mM',
+    'subspace_angles' : 'mM',
+}
+
+
+if SCIPY_ARRAY_API:
+    #_skip_dict.update(**_array_api_skip_dict)
+    for key, val in _array_api_skip_dict.items():
+        if key in _skip_dict:
+            _skip_dict[key] += val
+        else:
+            _skip_dict[key] = val
+
+
 # loop over all names
 _names = linalg.__all__
 _objs = {name: getattr(linalg, name)
@@ -88,9 +138,9 @@ _two_arg_names = set([
     'solveh_banded', 'solve_banded', 'solveh_banded', 'qr_multiply',
 ])
 
-_three_arg_names = set(["solve_sylvester"])
+_three_arg_names = set(['solve_sylvester'])
 
-_four_arg_names = set(["solve_continuous_are", "solve_discrete_are"])
+_four_arg_names = set(['solve_continuous_are', 'solve_discrete_are'])
 
 _arr_and_int_names = set([
     'clarkson_woodruff_transform', 'convolution_matrix', 'fractional_matrix_power',
@@ -100,12 +150,12 @@ _arr_and_two_int_names = set(['diagsvd', 'cossin'])
 
 
 def _patch_args(func_name, args):
-    """Make sure func(*args) does not raise because *args is wrong."""
+    '''Make sure func(*args) does not raise because *args is wrong.'''
     if func_name == 'cdf2rdf':
         args = (args[0][0], args[1])  # cdf2rd(1d, 2d)
-    elif func_name == "funm":
+    elif func_name == 'funm':
         args = (args[0], lambda x: x)
-    elif func_name == "lu_solve":
+    elif func_name == 'lu_solve':
         a = args[0]
         piv = np.arange(a.shape[0])
         args = ((a, piv), args[1])
@@ -115,16 +165,16 @@ def _patch_args(func_name, args):
     elif func_name == 'cossin':
         a = args[0]
         args = (a, a.shape[0]//2, a.shape[1]//2)
-    elif func_name == "solve_banded":
+    elif func_name == 'solve_banded':
         from scipy.linalg._basic import _to_banded
         args = ((1, 2), _to_banded(1, 2, args[0]), args[0])
-    elif func_name == "solveh_banded":
+    elif func_name == 'solveh_banded':
         from scipy.linalg._basic import _to_banded
         args = (_to_banded(0, 2, args[0])[:, :-1], args[0][0, :-1])
-    elif func_name == "cholesky_banded":
+    elif func_name == 'cholesky_banded':
         from scipy.linalg._basic import _to_banded
         args = (_to_banded(0, 2, args[0])[:, :-1],)
-    elif func_name == "solve_toeplitz":
+    elif func_name == 'solve_toeplitz':
         c = args[0][1]
         args = (c, np.ones_like(c))
     return args
@@ -132,14 +182,14 @@ def _patch_args(func_name, args):
 
 @pytest.mark.skip_xp_backends(np_only=True)
 @pytest.mark.filterwarnings(
-    "ignore:attempting to conjugate non-numeric dtype:DeprecationWarning"
+    'ignore:attempting to conjugate non-numeric dtype:DeprecationWarning'
 )
-@pytest.mark.filterwarnings("ignore:overflow encountered in dot:RuntimeWarning")
-@pytest.mark.filterwarnings("ignore:invalid value encountered in dot:RuntimeWarning")
-@pytest.mark.filterwarnings("ignore:logm result may be inaccurate:RuntimeWarning")
-@pytest.mark.filterwarnings("ignore:overflow encountered in multiply:RuntimeWarning")
-@pytest.mark.parametrize("func_name", _objs.keys())
-@pytest.mark.parametrize("tcode", 'e' + 'mMgG')
+@pytest.mark.filterwarnings('ignore:overflow encountered in dot:RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:invalid value encountered in dot:RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:logm result may be inaccurate:RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:overflow encountered in multiply:RuntimeWarning')
+@pytest.mark.parametrize('func_name', _objs.keys())
+@pytest.mark.parametrize('tcode', 'e' + 'mMgG')
 def test_deprecations(func_name, tcode):
     func = _objs[func_name]
 
