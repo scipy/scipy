@@ -7504,8 +7504,13 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
         * 'auto' : selects one of the other options.
         * 'exact' : uses the exact distribution of test statistic.
         * 'approx' : approximates the two-sided probability with twice
-          the one-sided probability
-        * 'asymp': uses asymptotic distribution of test statistic
+          the one-sided probability. For one-sided alternatives
+          (``alternative='less'`` or ``'greater'``), this is equivalent
+          to ``'exact'`` since the one-sided statistic already follows
+          ``ksone`` exactly.
+        * 'asymp': uses asymptotic distribution of test statistic.
+          For one-sided alternatives, uses the approximation
+          ``exp(-2 * N * d**2)``.
 
     axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
@@ -7615,6 +7620,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     # `_axis_nan_policy` decorator ensures `axis=-1`
     xp = array_namespace(x)
     mode = method
+    if mode not in ['auto', 'exact', 'approx', 'asymp']:
+        raise ValueError(
+            f"Invalid value for method: {mode!r}. "
+            f"Must be one of 'auto', 'exact', 'approx', 'asymp'."
+        )
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
@@ -7629,10 +7639,18 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
     ones = ones[()] if ones.ndim == 0 else ones
 
+    if mode == 'auto':  # Always select exact for one-sample test
+        mode = 'exact'
+
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        if mode == 'asymp':
+            # Asymptotic one-sided p-value: P(sqrt(N)*D+ >= z) ~ exp(-2*z^2)
+            prob = _masked_apply(lambda d, n: float(np.exp(-2 * n * d**2)),
+                                 args=(Dplus, N), xp=xp)
+        else:  # exact or approx: use the exact one-sided distribution
+            prob = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
+        pvalue = xp.asarray(prob, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
         return KstestResult(Dplus, pvalue,
@@ -7641,8 +7659,13 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
 
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
+        if mode == 'asymp':
+            # Asymptotic one-sided p-value: P(sqrt(N)*D- >= z) ~ exp(-2*z^2)
+            prob = _masked_apply(lambda d, n: float(np.exp(-2 * n * d**2)),
+                                 args=(Dminus, N), xp=xp)
+        else:  # exact or approx: use the exact one-sided distribution
+            prob = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
+        pvalue = xp.asarray(prob, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
         Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
         return KstestResult(Dminus, pvalue,
@@ -7659,8 +7682,6 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if D.ndim == 0:
         D, d_location, d_sign = D[()], d_location[()], d_sign[()]
 
-    if mode == 'auto':  # Always select exact
-        mode = 'exact'
     if mode == 'exact':
         prob = _masked_apply(distributions.kstwo.sf, args=(D, N), xp=xp)
     elif mode == 'asymp':
@@ -8231,7 +8252,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto', *,
         * 'auto' : selects one of the other options.
         * 'exact' : uses the exact distribution of test statistic.
         * 'approx' : approximates the two-sided probability with twice the
-          one-sided probability
+          one-sided probability. Only valid for one-sample tests; raises
+          ``ValueError`` when ``cdf`` is array_like (two-sample test).
         * 'asymp': uses asymptotic distribution of test statistic
 
     Returns

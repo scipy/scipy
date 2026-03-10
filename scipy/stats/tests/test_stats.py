@@ -4732,6 +4732,51 @@ class TestKSOneSample:
         xp_assert_equal(res.statistic_location, xp.asarray(ref_location))
         xp_assert_equal(res.statistic_sign, xp.asarray(ref_sign, dtype=xp.int8))
 
+    def test_invalid_method_raises(self):
+        # gh-24737: unrecognized method strings must raise ValueError, not
+        # silently fall through to the 'approx' else-clause.
+        rng = np.random.default_rng(42)
+        x = rng.standard_normal(10)
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.ks_1samp(x, special.ndtr, method='any_other_string')
+        # must fire for one-sided alternatives too, not just two-sided
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.ks_1samp(x, special.ndtr, method='typo',
+                           alternative='greater')
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.ks_1samp(x, special.ndtr, method='typo',
+                           alternative='less')
+        # kstest wrapper must also raise
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.kstest(x, stats.norm.cdf, method='any_other_string')
+
+    def test_onesided_method_respected(self):
+        # gh-24737: method must not be ignored for one-sided alternatives;
+        # 'exact'/'approx' use ksone.sf, 'asymp' uses exp(-2*N*D^2).
+        rng = np.random.default_rng(12345)
+        x = rng.standard_normal(100)
+        N = len(x)
+        for alternative in ['greater', 'less']:
+            res_exact = stats.ks_1samp(x, special.ndtr,
+                                       method='exact', alternative=alternative)
+            res_approx = stats.ks_1samp(x, special.ndtr,
+                                        method='approx', alternative=alternative)
+            res_asymp = stats.ks_1samp(x, special.ndtr,
+                                       method='asymp', alternative=alternative)
+            # approx is equivalent to exact for one-sided
+            np.testing.assert_equal(float(res_approx.pvalue),
+                                    float(res_exact.pvalue))
+            # asymp must now produce a different result from exact
+            assert res_asymp.pvalue != res_exact.pvalue, (
+                f"method='asymp' should differ from method='exact' "
+                f"for alternative='{alternative}'"
+            )
+            # asymp result matches the analytic formula: exp(-2*N*D^2)
+            D = float(res_exact.statistic)
+            expected_asymp = np.exp(-2 * N * D**2)
+            np.testing.assert_allclose(float(res_asymp.pvalue),
+                                       expected_asymp, rtol=1e-10)
+
     # missing: no test that uses *args
 
 

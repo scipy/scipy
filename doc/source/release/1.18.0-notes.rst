@@ -68,6 +68,13 @@ New features
 
 ``scipy.stats`` improvements
 ============================
+- `scipy.stats.ks_1samp` now raises ``ValueError`` for unrecognized ``method``
+  strings (previously, an unrecognized string silently fell through to the
+  ``'approx'`` method). In addition, the ``method`` argument is now respected
+  for one-sided alternatives (``alternative='less'`` and ``'greater'``):
+  ``method='asymp'`` uses the asymptotic approximation ``exp(-2*N*d**2)``,
+  while ``method='approx'`` is equivalent to ``method='exact'`` for one-sided
+  tests.
 
 
 
