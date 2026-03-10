@@ -10,7 +10,7 @@ reading to see an example of fixing a bug and submitting a pull request.*
 This guide assumes that you have created your own fork (copy) of the SciPy
 repository, cloned the repository on your own machine, and built SciPy from this
 source code. If you haven't, check the :ref:`building-from-source` pages appropriate to your
-system. Before getting started here, there are two other things you need to do
+system. Before getting started here, there are three other things you need to do
 just once before you start modifying SciPy.
 
 #. In a terminal, introduce yourself to Git::
