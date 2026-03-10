@@ -480,6 +480,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
     info = retval[-1]
 
     if full_output:
+        # _check_func calls Dfun once for input validation before the solver;
+        # that call is not counted by the Fortran routine, so add it here.
+        if Dfun is not None:
+            retval[1]['njev'] += 1
         cov_x = None
         if info in LEASTSQ_SUCCESS:
             # This was
