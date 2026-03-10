@@ -762,6 +762,7 @@ class TestMinimumPhase:
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         xp_assert_close(m, k, rtol=2e-3)
 
+    @xfail_xp_backends("cupy", reason="cupy/cupy#9795")
     @pytest.mark.parametrize("N", (963, 964))
     @pytest.mark.parametrize("dtype", ("float32", "float64"))
     def test_nyquist(self, N, dtype, xp):
