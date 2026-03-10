@@ -650,6 +650,7 @@ class sparse_distance_matrix_consistency:
         d = tree.sparse_distance_matrix(tree, 3, output_type='dok_array').toarray()
         assert_array_almost_equal(d, d.T, decimal=14)
 
+    @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
     def test_ckdtree_return_types(self):
         # brute-force reference
         ref = np.zeros((self.n, self.n))
