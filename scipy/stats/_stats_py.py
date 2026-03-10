@@ -9895,8 +9895,8 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
         return np.nan
 
     # create constraints
-    A_upper_part = sparse.block_diag((np.ones((1, n)), ) * m)
-    A_lower_part = sparse.hstack((sparse.eye(n), ) * m)
+    A_upper_part = sparse.block_diag((sparse.coo_array(np.ones((1, n))), ) * m)
+    A_lower_part = sparse.hstack((sparse.eye_array(n), ) * m)
     # sparse constraint matrix of size (m + n)*(m * n)
     A = sparse.vstack((A_upper_part, A_lower_part))
     A = sparse.coo_array(A)
