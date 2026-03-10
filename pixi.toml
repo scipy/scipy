@@ -431,6 +431,11 @@ cmd = "spin test --no-build --build-dir=build-mkl-lp64"
 depends-on = "build-mkl-lp64"
 description = "Test SciPy with MKL (LP64)"
 
+[feature.mkl-lp64.tasks.check-mkl-lp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-lp64 --loaded-sharedlibs"
+depends-on = "build-mkl-lp64"
+description = "Check loaded shared libraries with MKL (LP64)"
+
 [feature.build-mkl-ilp64]
 platforms = ["linux-64"]
 
@@ -443,6 +448,11 @@ description = "Build SciPy with MKL (ILP64)"
 cmd = "spin test --no-build --build-dir=build-mkl-ilp64"
 depends-on = "build-mkl-ilp64"
 description = "Test SciPy with MKL (ILP64)"
+
+[feature.mkl-ilp64.tasks.check-mkl-ilp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-ilp64 --loaded-sharedlibs"
+depends-on = "build-mkl-ilp64"
+description = "Check loaded shared libraries with MKL (ILP64)"
 
 
 [feature.scipy-openblas.pypi-dependencies]
