@@ -13,7 +13,7 @@ from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
 from scipy import special
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import check_random_state
-from scipy.linalg.blas import drot, get_blas_funcs
+from scipy.linalg.blas import get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
 from . import _covariance, _rcont
@@ -4732,6 +4732,8 @@ class random_correlation_gen(multi_rv_generic):
         if not (m.flags.c_contiguous and m.dtype == np.float64 and
                 m.shape[0] == m.shape[1]):
             raise ValueError()
+
+        drot = get_blas_funcs('rot', dtype=np.float64, ilp64='preferred')
 
         d = m.shape[0]
         for i in range(d-1):
