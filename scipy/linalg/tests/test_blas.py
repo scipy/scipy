@@ -14,7 +14,7 @@ from numpy import (arange, triu, tril, zeros, tril_indices, ones,
 
 import scipy
 from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
-from scipy.linalg.lapack import HAS_ILP64
+from scipy.linalg.blas import HAS_ILP64
 
 try:
     from scipy.linalg import _cblas as cblas
@@ -77,6 +77,32 @@ def test_get_blas_funcs():
                          np.empty((2, 2), dtype=np.complex64))
                         )
     assert_equal(f1.typecode, 'z')
+
+
+@pytest.mark.skipif(fblas is None, reason="32-bit BLAS is not available")
+def test_get_blas_funcs_lp64():
+    # default is LP64
+    gemm = get_blas_funcs('gemm', (np.eye(3),))
+    assert gemm.int_dtype == np.int32
+
+    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
+    assert gemm.int_dtype == np.int32
+
+    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64="preferred")
+    assert gemm.int_dtype == np.int64 if HAS_ILP64 else np.int32
+
+
+@pytest.mark.skipif(fblas_64 is None, reason="64-bit BLAS is not available")
+def test_get_blas_funcs_ilp64():
+    # default is LP64
+    gemm = get_blas_funcs('gemm', (np.eye(3),))
+    assert gemm.int_dtype == np.int32
+
+    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
+    assert gemm.int_dtype == np.int32
+
+    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64="preferred")
+    assert gemm.int_dtype == np.int64
 
 
 def test_get_blas_funcs_alias():
