@@ -14,6 +14,7 @@ from scipy._lib._util import copy_if_needed
 cimport numpy as np
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from libcpp.mutex cimport py_safe_call_object_once, py_safe_once_flag
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
@@ -407,6 +408,19 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     return n
 
 
+cdef class call_once_wrapper:
+    cdef:
+        cKDTree tree
+
+    def __cinit__(call_once_wrapper self, cKDTree tree):
+        self.tree = tree
+
+    def __call__(self):
+        n = cKDTreeNode()
+        n._setup(self.tree, node=self.tree.cself.ctree, level=0)
+        self.tree._python_tree = n
+
+
 # Main cKDTree class
 # ==================
 
@@ -518,6 +532,7 @@ cdef class cKDTree:
         readonly np.ndarray      indices
         readonly object          boxsize
         np.ndarray               boxsize_data
+        py_safe_once_flag        flag
 
     property n:
         def __get__(self): return self.cself.n
@@ -536,13 +551,11 @@ cdef class cKDTree:
         def __get__(cKDTree self):
             cdef cKDTreeNode n
             cdef ckdtree *cself = self.cself
-            if self._python_tree is not None:
-                return self._python_tree
-            else:
-                n = cKDTreeNode()
-                n._setup(self, node=cself.ctree, level=0)
-                self._python_tree = n
-                return self._python_tree
+            cdef call_once_wrapper wrapper
+            if self._python_tree is None:
+                wrapper = call_once_wrapper(self)
+                py_safe_call_object_once(self.flag, wrapper)
+            return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
