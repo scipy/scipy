@@ -190,7 +190,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
         * ``"not-a-knot"`` (default): The first and second segments are the
           same polynomial. This is equivalent to having ``bc_type=None``.
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
-          ends are equivalent.
+          ends are equivalent. Requires that ``y[0]`` equals ``y[-1]``.
 
     Yields
     ------
@@ -1067,7 +1067,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         * ``"not-a-knot"`` (default): The first and second segments are the
           same polynomial. This is equivalent to having ``bc_type=None``.
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
-          ends are equivalent.
+          ends are equivalent. Requires that ``y[0]`` equals ``y[-1]``.
 
     Returns
     -------
@@ -1227,7 +1227,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
         * ``"not-a-knot"`` (default): The first and second segments are the
           same polynomial. This is equivalent to having ``bc_type=None``.
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
-          ends are equivalent.
+          ends are equivalent. Requires that ``y[0]`` equals ``y[-1]``.
 
     Returns
     -------
