@@ -14,6 +14,7 @@ from scipy._lib._util import copy_if_needed
 cimport numpy as np
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from libcpp.mutex cimport py_safe_call_object_once, py_safe_once_flag
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
@@ -536,12 +537,15 @@ cdef class cKDTree:
         def __get__(cKDTree self):
             cdef cKDTreeNode n
             cdef ckdtree *cself = self.cself
+            cdef py_safe_once_flag flag
             if self._python_tree is not None:
                 return self._python_tree
             else:
-                n = cKDTreeNode()
-                n._setup(self, node=cself.ctree, level=0)
-                self._python_tree = n
+                def create_tree():
+                    n = cKDTreeNode()
+                    n._setup(self, node=cself.ctree, level=0)
+                    self._python_tree = n
+                py_safe_call_object_once(flag, create_tree)
                 return self._python_tree
 
     def __cinit__(cKDTree self):
