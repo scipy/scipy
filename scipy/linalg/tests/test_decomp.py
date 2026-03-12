@@ -1943,13 +1943,11 @@ class TestQR:
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
-        q_e, r_e, *other = qr(a, mode='economic', pivoting=pivoting)
-        assert_equal(q_e.shape, (m, k))
-        assert_equal(q_e.dtype, dtype)
-        assert_equal(r_e.shape, (k, n))
-        assert_equal(r_e.dtype, dtype)
-        assert_equal(q_e, q[:, :k])
-        assert_equal(r_e, r[:k, :])
+        q, r, *other = qr(a, mode='economic', pivoting=pivoting)
+        assert_equal(q.shape, (m, k))
+        assert_equal(q.dtype, dtype)
+        assert_equal(r.shape, (k, n))
+        assert_equal(r.dtype, dtype)
         assert len(other) == (1 if pivoting else 0)
         if pivoting:
             p, = other
