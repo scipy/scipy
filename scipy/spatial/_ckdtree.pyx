@@ -577,6 +577,11 @@ cdef class cKDTree:
             copy_data = copy_if_needed
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
+        # read-only view so ban people modifying tree.data after the tree is
+        # constructed
+        data = data.view(np.ndarray)
+        data.flags.writeable = False
+
         if data.ndim != 2:
             raise ValueError("data must be of shape (n, m), where there are "
                              "n points of dimension m")
@@ -602,7 +607,8 @@ cdef class cKDTree:
             self.boxsize_data[:self.m] = boxsize
             self.boxsize_data[self.m:] = 0.5 * boxsize
 
-            self.boxsize = boxsize
+            self.boxsize = np.array(boxsize, copy=True)
+            self.boxsize.flags.writeable = False
             periodic_mask = self.boxsize > 0
             if ((self.data >= self.boxsize[None, :])[:, periodic_mask]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
@@ -612,10 +618,13 @@ cdef class cKDTree:
         self.maxes = np.ascontiguousarray(
             np.amax(self.data, axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.maxes.flags.writeable = False
         self.mins = np.ascontiguousarray(
             np.amin(self.data,axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.mins.flags.writeable = False
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
+        self.indices.flags.writeable = False
 
         self._pre_init()
 
