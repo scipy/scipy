@@ -1593,3 +1593,31 @@ def test_gh_18800(incantation):
     tree = incantation(points, 10)
     tree.query(arr_like, 1)
     tree.query_ball_point(arr_like, 200)
+
+
+def test_immutable(kdtree_type):
+    rng = np.random.RandomState(3965682946)
+    n = 1000
+    k = 2
+    points = rng.rand(n, k)
+    T = kdtree_type(points, boxsize=1)
+    object_attrs = {
+        'm': 3,
+        'n': 3,
+        'size': 100,
+        'leafsize': 12,
+        'tree': None,
+    }
+    for attr, attr_val in object_attrs.items():
+        with pytest.raises(AttributeError, match="(is not writable|has no setter)"):
+            setattr(T, attr, attr_val)
+    array_attrs = {
+        'data': np.array([0, 0], dtype=np.float64),
+        'indices': 7,
+        'boxsize': 4,
+        'maxes': 1.5,
+        'mins': 1.5,
+    }
+    for attr, attr_val in array_attrs.items():
+        with pytest.raises(ValueError, match="destination is read-only"):
+            getattr(T, attr)[:] = attr_val
