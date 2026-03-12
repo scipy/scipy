@@ -960,6 +960,37 @@ class TestGetWindow:
             assert not isinstance(win, np.ndarray)
 
 
+@make_xp_test_case(windows.general_gaussian)
+class TestGeneralGaussian():
+      
+    def test_basic(self, xp):
+         #Testing against hard-coded data
+        xp_assert_close(windows.general_gaussian(7, 1, 1, xp=xp), xp.asarray([0.011108997, 0.135335283,
+                    0.60653066,  1.,  0.60653066,  0.135335283, 0.011108997],dtype=xp.float64 ), atol=1e-9)
+        xp_assert_close(windows.general_gaussian(6, 1.5, 2, xp=xp), xp.asarray([0.376603451, 0.809824679,
+                    0.992217938, 0.992217938, 0.809824679, 0.376603451],dtype=xp.float64 ), atol=1e-9)
+        xp_assert_close(windows.general_gaussian(6, 1.5, 2, False, xp=xp), xp.asarray([0.1849814, 0.60653066,
+                    0.939413063, 1., 0.939413063, 0.60653066],dtype=xp.float64 ), atol=1e-9)
+
+    def test_p1_equals_gaussian(self,xp):   
+        #Testing that general_gaussian with p = 1 is equivalen to the normal gaussian
+        w1 = windows.general_gaussian(7, p=1.0, sig=2.0, xp=xp)
+        w2 = windows.gaussian(7, std=2.0, xp=xp)
+        xp_assert_close(w1, w2)
+    
+    def test_peak_value(self, xp):
+        # Testing that if M is odd, the peak is at 1
+        w = windows.general_gaussian(7, p=3, sig=2.0, xp=xp)
+        assert float(xp.max(w)) == 1.0
+
+        #Testing that if M is even, the peak is less than 1.0
+        w = windows.general_gaussian(6, p=1.5, sig=2.0, xp=xp)
+        assert float(xp.max(w)) < 1.0
+
+
+
+
+
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")
 @pytest.mark.parametrize(
     "window,window_name,params",
