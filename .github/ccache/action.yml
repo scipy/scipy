@@ -2,7 +2,10 @@ name: Setup Compiler Cache
 description: Prepare and restore compiler cache using ccache
 inputs:
   workflow_name:
-    description: "Unique name of the calling workflow to use as cache key prefix"
+    description: "Name of the calling workflow to use as cache key prefix"
+    required: true
+  job_name:
+    description: "Name of the calling job, used as cache key prefix"
     required: true
 
 runs:
@@ -21,4 +24,4 @@ runs:
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
         key: ${{ inputs.workflow_name }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-        restore-keys: ${{ inputs.workflow_name }}-ccache-linux-
+        restore-keys: ${{ inputs.workflow_name }}-${{ inputs.job_name }}-ccache-linux-

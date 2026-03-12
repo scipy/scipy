@@ -78,6 +78,7 @@ jobs:
       uses: ./.github/ccache
       with:
         workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: Setup build and install scipy
       run: |
@@ -151,6 +152,7 @@ jobs:
       uses: ./.github/ccache
       with:
         workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: Create venv, install SciPy
       run: |
@@ -219,6 +221,7 @@ jobs:
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Build SciPy
         run: |
@@ -271,6 +274,7 @@ jobs:
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Build wheel and install
         run: |
@@ -338,6 +342,7 @@ jobs:
       uses: ./.github/ccache
       with:
         workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: Build and install SciPy
       run: |
@@ -383,6 +388,7 @@ jobs:
       uses: ./.github/ccache
       with:
         workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: build + test
       run: |
@@ -441,6 +447,7 @@ jobs:
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Setup Python build deps
         run: |
@@ -495,6 +502,7 @@ jobs:
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Install global meson
         run: |
@@ -564,6 +572,7 @@ jobs:
       uses: ./.github/ccache
       with:
         workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: Install Python dependencies
       run: |
@@ -735,6 +744,7 @@ jobs:
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Build SciPy
         run: pixi run build --setup-args=-D_without-fortran=true
