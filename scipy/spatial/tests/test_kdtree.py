@@ -1507,7 +1507,7 @@ def test_kdtree_attributes():
 
     assert_array_equal(t.maxes, np.amax(points, axis=0))
     assert_array_equal(t.mins, np.amin(points, axis=0))
-    assert t.data is points
+    assert t.data.base is points
 
 
 @pytest.mark.parametrize("kdtree_class", [KDTree, cKDTree])
