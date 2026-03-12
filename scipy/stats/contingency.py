@@ -28,7 +28,7 @@ from ._stats_py import power_divergence, _untabulate
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
-from scipy._lib._array_api import xp_capabilities
+from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 
@@ -37,7 +37,7 @@ __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
            'association', 'relative_risk', 'odds_ratio']
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def margins(a):
     """Return a list of the marginal sums of the array `a`.
 
@@ -82,15 +82,16 @@ def margins(a):
     >>> m2
     array([[[60, 66, 72, 78]]])
     """
+    xp = array_namespace(a)
     margsums = []
     ranged = list(range(a.ndim))
     for k in ranged:
-        marg = np.apply_over_axes(np.sum, a, [j for j in ranged if j != k])
+        marg = xp.sum(a, axis=tuple(j for j in ranged if j != k), keepdims=True)
         margsums.append(marg)
     return margsums
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def expected_freq(observed):
     """
     Compute the expected frequencies from a contingency table.
@@ -126,16 +127,17 @@ def expected_freq(observed):
     # Typically `observed` is an integer array. If `observed` has a large
     # number of dimensions or holds large values, some of the following
     # computations may overflow, so we first switch to floating point.
-    observed = np.asarray(observed, dtype=np.float64)
+    xp = array_namespace(observed)
+    observed = xp_promote(observed, force_floating=True, xp=xp)
 
     # Create a list of the marginal sums.
     margsums = margins(observed)
 
     # Create the array of expected frequencies.  The shapes of the
-    # marginal sums returned by apply_over_axes() are just what we
-    # need for broadcasting in the following product.
+    # marginal sums returned by margins() are just what we need for
+    # broadcasting in the following product.
     d = observed.ndim
-    expected = reduce(np.multiply, margsums) / observed.sum() ** (d - 1)
+    expected = reduce(xp.multiply, margsums) / observed.sum() ** (d - 1)
     return expected
 
 
