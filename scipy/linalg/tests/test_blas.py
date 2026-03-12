@@ -14,7 +14,7 @@ from numpy import (arange, triu, tril, zeros, tril_indices, ones,
 
 import scipy
 from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
-from scipy.linalg.blas import HAS_ILP64
+from scipy.linalg.blas import HAS_ILP64, HAS_LP64
 
 try:
     from scipy.linalg import _cblas as cblas
@@ -79,30 +79,38 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'z')
 
 
-@pytest.mark.skipif(fblas is None, reason="32-bit BLAS is not available")
-def test_get_blas_funcs_lp64():
-    # default is LP64
-    gemm = get_blas_funcs('gemm', (np.eye(3),))
-    assert gemm.int_dtype == np.int32
-
-    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
-    assert gemm.int_dtype == np.int32
-
+def test_get_blas_funcs_ilp_preferred():
+    # "preferred" mean ILP64 if available LP64 otherwise
     gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64="preferred")
     assert gemm.int_dtype == np.int64 if HAS_ILP64 else np.int32
+    assert gemm.module_name == 'fblas_64' if HAS_ILP64 else 'fblas'
 
-
-@pytest.mark.skipif(fblas_64 is None, reason="64-bit BLAS is not available")
-def test_get_blas_funcs_ilp64():
-    # default is LP64
+    # default is "preferred"
     gemm = get_blas_funcs('gemm', (np.eye(3),))
-    assert gemm.int_dtype == np.int32
+    assert gemm.int_dtype == np.int64 if HAS_ILP64 else np.int32
+    assert gemm.module_name == 'fblas_64' if HAS_ILP64 else 'fblas'
 
-    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
-    assert gemm.int_dtype == np.int32
 
-    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64="preferred")
-    assert gemm.int_dtype == np.int64
+def test_get_blas_funcs_ilp_true():
+    # True is ILP64 or fail if not available
+    if HAS_ILP64:
+        gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
+        assert gemm.int_dtype == np.int64
+        assert gemm.module_name == 'fblas_64'
+    else:
+        with pytest.raises(RuntimeError):
+            get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
+
+
+def test_get_blas_funcs_ilp_false():
+    # False is LP64 or fail if not available
+    if HAS_LP64:
+        gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
+        assert gemm.int_dtype == np.int32
+        assert gemm.module_name == 'fblas'
+    else:
+        with pytest.raises(RuntimeError):
+            get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
 
 
 def test_get_blas_funcs_alias():
