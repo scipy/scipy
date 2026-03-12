@@ -71,11 +71,55 @@ example, in a ``meson.build`` file when using Meson::
         ...
     )
 
+
+ILP64 support
+-------------
+
+All integer parameters in this module use the ``blas_int`` type, which is
+a typedef for either ``int`` (LP64, the default) or ``int64_t`` (ILP64),
+depending on how SciPy was built. The build configuration can be checked
+at runtime via ``scipy.show_config()`` - look for the ``blas_cython_ilp64``
+entry.
+
+Downstream packages that want to support both LP64 and ILP64 builds of SciPy
+should follow this pattern:
+
+1. Use ``blas_int`` for all integer variables passed to BLAS functions.
+2. For backwards compatibility with scipy <=1.17.0 (if desired), perform a
+   **build-time check** for whether ``blas_int`` is available, and typedef
+   it as ``int`` otherwise. Example for Meson:
+
+.. code::
+
+    # Check if scipy's cython_blas exports blas_int (ILP64 support).
+    _blas_int_conf = configuration_data()
+    if cython.compiles('from scipy.linalg.cython_blas cimport blas_int')
+      _blas_int_conf.set('BLAS_INT_DEF', 'from scipy.linalg.cython_blas cimport blas_int')
+    else
+      _blas_int_conf.set('BLAS_INT_DEF', 'ctypedef int blas_int')
+    endif
+
+    _blas_int_pxi = configure_file(
+      input: '_blas_int.pxi.in',
+      output: '_blas_int.pxi',
+      configuration: _blas_int_conf,
+    )
+
+With the file ``_blas_int.pxi.in`` containing the single line::
+
+    @BLAS_INT_DEF@
+
+
+``cython_blas`` API
+-------------------
+
+Integer type:
+
+- blas_int: type alias for either ``int`` or ``int64_t``
+
 Raw function pointers (Fortran-style pointer arguments):
 
 - {}
-
-
 """
 
 # Within SciPy, these wrappers can be used via relative or absolute cimport.
@@ -116,11 +160,55 @@ fixed-api auxiliary routines.
 These wrappers do not check for alignment of arrays.
 Alignment should be checked before these wrappers are used.
 
+
+ILP64 support
+-------------
+
+All integer parameters in this module use the ``blas_int`` type, which is
+a typedef for either ``int`` (LP64, the default) or ``int64_t`` (ILP64),
+depending on how SciPy was built. The build configuration can be checked
+at runtime via ``scipy.show_config()`` - look for the ``blas_cython_ilp64``
+entry.
+
+Downstream packages that want to support both LP64 and ILP64 builds of SciPy
+should follow this pattern:
+
+1. Use ``blas_int`` for all integer variables passed to LAPACK functions.
+2. For backwards compatibility with scipy <=1.17.0 (if desired), perform a
+   **build-time check** for whether ``blas_int`` is available, and typedef
+   it as ``int`` otherwise. Example for Meson:
+
+.. code::
+
+    # Check if scipy's cython_lapack exports blas_int (ILP64 support).
+    _blas_int_conf = configuration_data()
+    if cython.compiles('from scipy.linalg.cython_lapack cimport blas_int')
+      _blas_int_conf.set('BLAS_INT_DEF', 'from scipy.linalg.cython_lapack cimport blas_int')
+    else
+      _blas_int_conf.set('BLAS_INT_DEF', 'ctypedef int blas_int')
+    endif
+
+    _blas_int_pxi = configure_file(
+      input: '_blas_int.pxi.in',
+      output: '_blas_int.pxi',
+      configuration: _blas_int_conf,
+    )
+
+With the file ``_blas_int.pxi.in`` containing the single line::
+
+    @BLAS_INT_DEF@
+
+
+``cython_lapack`` API
+---------------------
+
+Integer type:
+
+- blas_int: type alias for either ``int`` or ``int64_t``
+
 Raw function pointers (Fortran-style pointer arguments):
 
 - {}
-
-
 """
 
 # Within SciPy, these wrappers can be used via relative or absolute cimport.
@@ -578,7 +666,7 @@ def _sigs_replace_int(sigs):
     """Replace 'int' and 'bint' types with 'blas_int' in parsed signatures.
 
     This makes BLAS/LAPACK integer parameters use the ``blas_int`` typedef,
-    which resolves to ``int`` for LP64 and ``npy_int64`` for ILP64 builds.
+    which resolves to ``int`` for LP64 and ``int64_t`` for ILP64 builds.
     """
     for sig in sigs:
         sig['argtypes'] = [
