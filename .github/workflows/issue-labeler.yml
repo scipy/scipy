@@ -3,6 +3,8 @@ on:
   issues:
     types: [opened]
 
+permissions: {}
+
 jobs:
   label_issue:
     # Permissions needed for labelling issues automatically

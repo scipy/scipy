@@ -81,6 +81,7 @@ from scipy._lib._array_api import (
     xp_ravel,
     _count_nonmasked,
     _share_masks,
+    _masked_apply,
     xp_swapaxes,
     xp_device,
 )
@@ -146,7 +147,7 @@ def _unpack_CorrelationResult(res, _):
 
 
 # note that `weights` are paired with `x`
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -233,7 +234,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return xp.exp(_xp_mean(log_a, axis=axis, weights=weights))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -332,7 +333,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         return 1.0 / _xp_mean(1.0 / a, axis=axis, weights=weights)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
@@ -493,8 +494,9 @@ def _mode_result(mode, count):
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
                  jax_jit=False,  # would delegate, but jax-ml/jax#34486
-                 extra_note=("`MArray`s are supported, but values must be real numbers "
-                             "that cast safely to floating point."))
+                 extra_note=("Values in MArrays must be real numbers "
+                             "that cast safely to floating point."),
+                 marray=True)
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -658,7 +660,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     return a, mask
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -715,7 +717,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     return mean[()] if mean.ndim == 0 else mean
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -775,7 +777,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         return _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -839,7 +841,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -902,7 +904,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -955,7 +957,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return tvar(a, limits, inclusive, axis, ddof, _no_deco=True)**0.5
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -1071,7 +1073,8 @@ def _moment_tuple(x, n_out):
 # empty, there is no distinction between the `moment` function being called
 # with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
-@xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')])
+@xp_capabilities(skip_backends=[('dask.array', 'needs axis_nan_policy decorator')],
+                 marray=True)
 @_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
@@ -1225,7 +1228,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     return var
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1326,7 +1329,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals[()] if vals.ndim == 0 else vals
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
@@ -1440,7 +1443,7 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
@@ -1566,7 +1569,7 @@ def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
@@ -1672,7 +1675,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(KurtosistestResult, n_samples=1, too_small=4)
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether a dataset has normal kurtosis.
@@ -1783,7 +1786,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(NormaltestResult, n_samples=1, too_small=7)
 def normaltest(a, axis=0, nan_policy='propagate'):
     r"""Test whether a sample differs from a normal distribution.
@@ -1861,7 +1864,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(statistic, pvalue)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
     r"""Perform the Jarque-Bera goodness of fit test on sample data.
@@ -2598,7 +2601,7 @@ def _obrientransform(*samples, nan_policy):
     return np.array(arrays)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, too_small=1
 )
@@ -2680,7 +2683,7 @@ def _isconst(x):
         return (y[0] == y).all(keepdims=True)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -2766,7 +2769,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the geometric standard score.
@@ -2861,7 +2864,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the relative z-scores.
@@ -2942,7 +2945,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     return z
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     r"""
     Calculate the geometric standard deviation of an array.
@@ -3067,7 +3070,8 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 _scale_conversions = {'normal': float(special.erfinv(0.5) * 2.0 * math.sqrt(2.0))}
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)')])
+@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)')],
+                 marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3237,7 +3241,8 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')])
+@xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')],
+                 marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
 )
@@ -3769,7 +3774,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
 
 
 # Torch GPU need fdtrc
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True)
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -4062,7 +4067,7 @@ class AlexanderGovernResult:
     pvalue: float
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
     result_to_tuple=lambda x, _: (x.statistic, x.pvalue),
@@ -4396,7 +4401,7 @@ class PearsonRResult(PearsonRResultBase):
 
 
 # Missing special.betainc on torch
-@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -5469,7 +5474,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True)
 @_axis_nan_policy_factory(_pack_CorrelationResult, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
@@ -5571,12 +5576,10 @@ def pointbiserialr(x, y, *, axis=0):
     return res
 
 
-@xp_capabilities(np_only=True)
-@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
-                          result_to_tuple=_unpack_CorrelationResult, paired=True,
-                          too_small=1, n_outputs=3)
-def kendalltau(x, y, *, nan_policy='propagate',
-               method='auto', variant='b', alternative='two-sided'):
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2,
+                 marray=True)
+def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
+               alternative='two-sided', axis=None, keepdims=False):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
@@ -5624,6 +5627,15 @@ def kendalltau(x, y, *, nan_policy='propagate',
         * 'two-sided': the rank correlation is nonzero
         * 'less': the rank correlation is negative (less than zero)
         * 'greater': the rank correlation is positive (greater than zero)
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    keepdims : bool, optional
+        If this is set to ``True``, the axes which are reduced are left
+        in the result as dimensions with length one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -5691,6 +5703,35 @@ def kendalltau(x, y, *, nan_policy='propagate',
 
     For a more detailed example, see :ref:`hypothesis_kendalltau`.
     """
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
+    if is_marray(xp):
+        mask_x, mask_y = np.asarray(x.mask), np.asarray(y.mask)
+        x, y = np.asarray(x.data).copy(), np.asarray(y.data).copy()
+        unmasked_nans = np.any(np.isnan(x[~mask_x])) | np.any(np.isnan(y[~mask_y]))
+        if unmasked_nans:
+            if nan_policy == 'propagate':
+                message = "`nan_policy='propagate'` is incompatible with MArray input."
+            elif nan_policy == 'raise':
+                message = "The input contains nan values."
+            raise ValueError(message)
+        nan_policy = 'omit'
+        x[mask_x], y[mask_y] = np.nan, np.nan
+    else:
+        x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
+    res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
+                      alternative=alternative, axis=axis, keepdims=keepdims)
+    vals = res.statistic, res.pvalue, res.statistic
+    vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype) for val in vals)
+    return _pack_CorrelationResult(*vals)
+
+
+@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
+                          result_to_tuple=_unpack_CorrelationResult, paired=True,
+                          too_small=1, n_outputs=3)
+def _kendalltau(x, y, *, method='auto', variant='b', alternative='two-sided'):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
@@ -5747,8 +5788,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
         minclasses = min(len(set(x)), len(set(y)))
         tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
     else:
-        raise ValueError(f"Unknown variant of the method chosen: {variant}. "
-                         "variant must be 'b' or 'c'.")
+        raise ValueError(f"Unknown `variant` '{variant}' specified. "
+                         "`variant` must be 'b' or 'c'.")
 
     # Limit range to fix computational errors
     tau = np.minimum(1., max(-1., tau))
@@ -5756,7 +5797,7 @@ def kendalltau(x, y, *, nan_policy='propagate',
     # The p-value calculation is the same for all variants since the p-value
     # depends only on con_minus_dis.
     if method == 'exact' and (xtie != 0 or ytie != 0):
-        raise ValueError("Ties found, exact method cannot be used.")
+        raise ValueError("Ties found; exact method cannot be used.")
 
     if method == 'auto':
         if (xtie == 0 and ytie == 0) and (size <= 33 or
@@ -5775,8 +5816,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
         z = con_minus_dis / np.sqrt(var)
         pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     else:
-        raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
-                         "'exact' or 'asymptotic'.")
+        raise ValueError(f"Unknown `method` '{method}' specified.  `method` must be"
+                         "'auto', 'exact' or 'asymptotic'.")
 
     # create result object with alias for backward compatibility
     res = SignificanceResult(tau[()], pvalue[()])
@@ -6072,7 +6113,7 @@ def unpack_TtestResult(res, _):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6362,7 +6403,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True, alternative="two-sided"):
     r"""
@@ -6503,7 +6544,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
@@ -6890,7 +6931,7 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
@@ -7017,7 +7058,7 @@ def _pd_nsamples(kwargs):
     return 2 if kwargs.get('f_exp', None) is not None else 1
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -7264,7 +7305,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
@@ -7441,9 +7482,10 @@ def _compute_d(cdfvals, x, sign, xp=None):
         The location at which the maximum is reached.
     """
     xp = array_namespace(cdfvals, x) if xp is None else xp
-    n = cdfvals.shape[-1]
-    D = (xp.arange(1.0, n + 1, dtype=x.dtype) / n - cdfvals if sign == +1
-         else (cdfvals - xp.arange(0.0, n, dtype=x.dtype)/n))
+    length = cdfvals.shape[-1]
+    n = _count_nonmasked(cdfvals, axis=-1, keepdims=True)
+    D = (xp.arange(1.0, length + 1, dtype=x.dtype) / n - cdfvals if sign == +1
+         else (cdfvals - xp.arange(0.0, length, dtype=x.dtype) / n))
     amax = xp.argmax(D, axis=-1, keepdims=True)
     loc_max = xp.squeeze(xp.take_along_axis(x, amax, axis=-1), axis=-1)
     D = xp.squeeze(xp.take_along_axis(D, amax, axis=-1), axis=-1)
@@ -7462,7 +7504,7 @@ def _KstestResult_to_tuple(res, _):
 
 
 # JAX JIT / Torch GPU / CuPy need null distribution
-@xp_capabilities(cpu_only=True, jax_jit=False,
+@xp_capabilities(cpu_only=True, jax_jit=False, marray=True,
                  skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
@@ -7610,25 +7652,30 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError(f"Unexpected value {alternative=}")
 
-    N = x.shape[-1]
     x = xp.sort(x, axis=-1)
     x = xp_promote(x, force_floating=True, xp=xp)
-    cdfvals = cdf(x, *args)
+    N = _count_nonmasked(x, axis=-1, xp=xp)
+    cdfvals = _masked_apply(cdf, args=(x, *args), xp=xp)
+
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
     ones = ones[()] if ones.ndim == 0 else ones
 
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
-        pvalue = xp.asarray(distributions.ksone.sf(Dplus, N), dtype=x.dtype)
+        pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
+        pvalue = xp.asarray(pvalue, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
         return KstestResult(Dplus, pvalue,
                             statistic_location=d_location,
                             statistic_sign=ones)
 
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
-        pvalue = xp.asarray(distributions.ksone.sf(Dminus, N), dtype=x.dtype)
+        pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
+        pvalue = xp.asarray(pvalue, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
         return KstestResult(Dminus, pvalue,
                             statistic_location=d_location,
                             statistic_sign=-ones)
@@ -7646,12 +7693,12 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
-        prob = distributions.kstwo.sf(D, N)
+        prob = _masked_apply(distributions.kstwo.sf, args=(D, N), xp=xp)
     elif mode == 'asymp':
-        prob = distributions.kstwobign.sf(D * math.sqrt(N))
+        prob = _masked_apply(distributions.kstwobign.sf, args=(D * N**0.5,), xp=xp)
     else:
         # mode == 'approx'
-        prob = 2 * distributions.ksone.sf(D, N)
+        prob = 2 * _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
     prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
     return KstestResult(D, prob,
                         statistic_location=d_location,
@@ -7823,7 +7870,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
                                 ('dask.array', 'no rankdata')],
-                 jax_jit=False, cpu_only=True)  # null distribution is NumPy-only
+                 jax_jit=False, cpu_only=True,  # null distribution is NumPy-only
+                 marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8008,38 +8056,44 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     n2 = data2.shape[-1]
     if min(n1, n2) == 0:
         raise ValueError('Data passed to ks_2samp must not be empty')
-    n = n1 + n2
 
     data_all = xp.concat((data1, data2), axis=-1)
     batch_shape = data_all.shape[:-1]
 
-    # Previously, this part of the code was just:
-    # cdf1 = _xp_searchsorted(data1, data_all, side='right') / n1
-    # cdf2 = _xp_searchsorted(data2, data_all, side='right') / n2
-    # cddiffs = cdf1 - cdf2
-    # but the switch from `xp.searchsorted` to `_xp_searchsorted` would come with a
-    # pretty steep performance hit. When `xp.searchsorted` is vectorized, we can
-    # probably use that. In the meantime, the following algorithm is typically faster.
+    if is_marray(xp):
+        # Previously, we used this algorithm for all backends:
+        dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
+        n1 = xp.astype(_count_nonmasked(data1, axis=-1), dtype)
+        n2 = xp.astype(_count_nonmasked(data2, axis=-1), dtype)
+        cdf1 = xp.astype(_xp_searchsorted(data1, data_all, side='right'), dtype)
+        cdf2 = xp.astype(_xp_searchsorted(data2, data_all, side='right'), dtype)
+        cddiffs = cdf1/n1[..., xp.newaxis] - cdf2/n2[..., xp.newaxis]
+        # but the switch from `xp.searchsorted` to `_xp_searchsorted` would come with a
+        # pretty steep performance hit, so the algorithm below is faster.
+        # When `xp.searchsorted` is vectorized, we can revert.
+    else:
+        n = n1 + n2
 
-    # We want the ECDF of each sample evaluated at *all* the points in the pooled
-    # sample. The values each ECDF can assume are given by:
-    cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
-    cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
-    # Now we "just" need to know how many times each of these values *will* be assumed
-    # when we evaluate the ECDFs at all points in the pooled sample.
-    # These counts are given by the differences between consecutive ("min" or "max")
-    # ranks corresponding with the observations in the (sorted) samples.
-    ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
-    ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
-    one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype, device=xp_device(ranks))
-    cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
-    cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
-    # Repeat isn't vectorized - in general, this would produce a ragged array. However,
-    # In our case, the sum of repeats for each slice is the same, so we can do a
-    # vectorized repeat by raveling, repeating, then restoring the shape.
-    cdf1 = xp.repeat(xp_ravel(cdf1_vals), xp_ravel(cdf1_counts), axis=-1)
-    cdf2 = xp.repeat(xp_ravel(cdf2_vals), xp_ravel(cdf2_counts), axis=-1)
-    cddiffs = xp.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
+        # We want the ECDF of each sample evaluated at *all* the points in the pooled
+        # sample. The values each ECDF can assume are given by:
+        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
+        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+        # Now we "just" need to know how many times each of these values *will* be
+        # assumed when we evaluate the ECDFs at all points in the pooled sample.
+        # These counts are given by the differences between consecutive ("min" or "max")
+        # ranks corresponding with the observations in the (sorted) samples.
+        ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)
+        ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
+        one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
+                      device=xp_device(ranks))
+        cdf1_counts = xp.diff(ranks[..., :n1], prepend=one, append=n + one, axis=-1)
+        cdf2_counts = xp.diff(ranks[..., -n2:], prepend=one, append=n + one, axis=-1)
+        # Repeat isn't vectorized - in general, this would produce a ragged array.
+        # However, in our case, the sum of repeats for each slice is the same, so we can
+        # do a vectorized repeat by raveling, repeating, then restoring the shape.
+        cdf1 = xp.repeat(xp_ravel(cdf1_vals), xp_ravel(cdf1_counts), axis=-1)
+        cdf2 = xp.repeat(xp_ravel(cdf2_vals), xp_ravel(cdf2_counts), axis=-1)
+        cddiffs = xp.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
 
     # Identify the location of the statistic
     argminS = xp.argmin(cddiffs, axis=-1, keepdims=True)
@@ -8063,16 +8117,20 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     d_location = xp.where(selector, loc_minS, loc_maxS)
     one = xp.asarray(1, dtype=xp.int8)
     d_sign = xp.where(selector, -one, one)
+
+    if is_marray(xp):
+        d = d.data  # converted to NumPy below
+        n1, n2 = np.asarray(n1.data, dtype=int), np.asarray(n2.data, dtype=int)
     prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
     dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
     prob = xp.asarray(prob, dtype=dtype)
-    d = xp.astype(d, dtype, copy=False)
+    d = xp.asarray(d, dtype=dtype)
     if d.ndim == 0:
         d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
     return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
 
 
-@np.vectorize(excluded={1, 2, 3, 4, 5}, otypes=[np.float64])
+@np.vectorize(excluded={3, 4, 5}, otypes=[np.float64])
 def _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative):
     # math.gcd used to return an `int`, but now that these return arrays, NumPy can
     # return an int32. Unless we want the pythranized functions to be compiled for
@@ -8157,7 +8215,8 @@ def _kstest_n_samples(kwargs):
 
 @xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
                                 ('dask.array', 'no rankdata')],
-                 jax_jit=False, cpu_only=True)  # see ks_1samp/ks_2samp
+                 jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
+                 marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8490,7 +8549,8 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+                 marray=True)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8600,7 +8660,8 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")])
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
+                 marray=True)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8702,6 +8763,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
+                 marray=True,
                  skip_backends=[('dask.array', 'needs rankdata'),
                                 ('cupy', 'needs rankdata')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
@@ -8843,7 +8905,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.')
+    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.',
+    marray=True)
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """
@@ -10130,7 +10193,8 @@ def _validate_distribution(values, weights):
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")])
+                                ("dask.array", "no `take_along_axis`")],
+                 marray=True)
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
@@ -10368,7 +10432,7 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     return out
 
 
-@xp_capabilities(
+@xp_capabilities(marray=True,
     skip_backends=[('dask.array', 'uses `optimize.elementwise.find_root`'),
                    ('array_api_strict', 'uses `optimize.elementwise.find_root`'),
                    ('jax.numpy', 'uses `optimize.elementwise.find_root`')])
@@ -10691,7 +10755,8 @@ def _unpack_LinregressResult(res, _):
 
 
 @xp_capabilities(skip_backends=[('dask.array', '`dtype` inference failed....')],
-                 cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+                 cpu_only=True, exceptions=['cupy', 'jax.numpy'],
+                 marray=True)
 @_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)

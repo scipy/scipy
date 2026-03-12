@@ -12,7 +12,7 @@ import scipy._external.array_api_extra as xpx
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )

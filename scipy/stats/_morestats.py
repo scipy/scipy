@@ -235,7 +235,7 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -341,7 +341,7 @@ def kstat(data, n=2, *, axis=None):
         raise ValueError("Should not be here.")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -3210,7 +3210,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
@@ -3330,7 +3330,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True,
                  extra_note="Option ``center='trimmed'`` is incompatible with MArray."
                  )
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
@@ -3486,6 +3486,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
                                 ('cupy', 'no rankdata')],
+                 marray=True,
                  extra_note="Option ``center='trimmed'`` is incompatible with MArray.")
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
@@ -3868,9 +3869,10 @@ def wilcoxon_outputs(kwds):
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
                  cpu_only=True,  # null distribution is CPU only
-                 extra_note=("``method='auto'`` is incompatible with JAX arrays. "
-                             "Only `method='asymptotic'`/`zero_method='zsplit'` is "
-                             "compatible with MArrays."))
+                 marray=True,
+                 extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "
+                             "compatible with MArrays. "
+                             "``method='auto'`` is incompatible with JAX arrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -4345,7 +4347,7 @@ def _circfuncs_common(samples, period, xp=None):
     return samples, sin_samp, cos_samp
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4439,7 +4441,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return (res * (period / (2.0 * pi)) - low) % period + low
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4534,7 +4536,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4668,7 +4670,7 @@ class DirectionalStats:
                 f" mean_resultant_length={self.mean_resultant_length})")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def directional_stats(samples, *, axis=0, normalize=True):
     """
     Computes sample statistics for directional data.

@@ -288,7 +288,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -302,7 +302,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_icomplement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -1159,7 +1159,8 @@ class TestMakeDistribution:
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance
                          'johnsonsb', 'ksone', 'kstwo',  # tolerance
                          'nchypergeom_wallenius'}  # tolerance
-        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang',  # tolerance
+                        'dlaplace'}  # slight tolerance issue, but only for array shape
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
@@ -1169,6 +1170,7 @@ class TestMakeDistribution:
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
         rng = np.random.default_rng(7548723590230982)
         CustomDistribution = stats.make_distribution(dist)
+        params = {key: np.asarray([val, val]) for key, val in params.items()}
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
@@ -1208,10 +1210,11 @@ class TestMakeDistribution:
             # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
             # new infrastructure. Adjust reference values accordingly.
             a, _ = Y.support()
+            a, p = np.broadcast_arrays(a, p)
             ref_ppf = Y.ppf(p)
-            ref_ppf[p == 0] = a
+            ref_ppf[p == 0] = a[p == 0]
             ref_isf = Y.isf(p)
-            ref_isf[p == 1] = a
+            ref_isf[p == 1] = a[p == 1]
 
             assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
             assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
@@ -1229,7 +1232,7 @@ class TestMakeDistribution:
                 # of the support, and the new infrastructure is slow there (for now).
                 seed = 845298245687345
                 assert_allclose(X.sample(shape=10, rng=seed),
-                                Y.rvs(size=10,
+                                Y.rvs(size=p.shape,
                                       random_state=np.random.default_rng(seed)),
                                 rtol=rtol)
 
@@ -1492,6 +1495,34 @@ class TestMakeDistribution:
         assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
         assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
+
+    @given(data=strategies.data())
+    def test_draw_distribution(self, data):
+        # `draw_distribution_from_family` is a private function right now, but we will
+        # want that functionality to be public someday. It was broken for custom
+        # distributions because the `typical` parameter of the support was ignored.
+        # Check that this is resolved.
+        rng = np.random.default_rng(8465652168548465121)
+        u_typical = tuple(np.sort(rng.standard_normal(2)))
+        s_typical = tuple(np.sort(rng.random(2)*2))
+        x_typical = tuple(np.sort(rng.standard_normal(2)))
+
+        class MyNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': u_typical},
+                          's': {'endpoints': (0, np.inf), 'typical': s_typical}}
+            support = {'endpoints': (-np.inf, np.inf), 'typical': x_typical}
+
+            def pdf(self, x, a, b):
+                return 1 / (x * (np.log(b) - np.log(a)))
+
+        family = stats.make_distribution(MyNormal())
+        proportions = (1.0, 0., 0., 0.)
+        tmp = draw_distribution_from_family(family, data, rng, proportions, min_side=1)
+        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+        assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
+        assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
+        assert x_typical[0] < np.min(x) and np.max(x) < x_typical[1]
 
 
 class TestTransforms:

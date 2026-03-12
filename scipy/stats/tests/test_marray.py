@@ -4,7 +4,7 @@ from scipy import stats
 
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
-from scipy._lib._array_api import SCIPY_ARRAY_API, xp_default_dtype, is_torch
+from scipy._lib._array_api import SCIPY_ARRAY_API, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
 
 
@@ -336,6 +336,7 @@ def test_directional_stats(xp, axis):
 @pytest.mark.parametrize('fun, kwargs', [
     make_xp_pytest_param(stats.wilcoxon,
                          {'method': 'asymptotic', 'zero_method': 'zsplit'}),
+    make_xp_pytest_param(stats.cramervonmises, {'cdf': stats.norm.cdf}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_one_sample_tests(fun, kwargs, axis, xp):
@@ -344,6 +345,24 @@ def test_one_sample_tests(fun, kwargs, axis, xp):
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.ks_1samp),
+                                 make_xp_pytest_param(stats.kstest)])
+@pytest.mark.parametrize('method', ['exact', 'approx', 'asymptotic'])  # auto == exact
+@pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_ks_1samp(fun, method, alternative, axis, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp, seed=84912165484322)
+    kwargs = dict(method=method, alternative=alternative, axis=axis)
+    res = fun(*marrays, stats.norm.cdf, **kwargs)
+    ref = stats.ks_1samp(*narrays, stats.norm.cdf, nan_policy='omit', **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    xp_assert_equal(res.statistic_location.data, xp.asarray(ref.statistic_location))
+    xp_assert_equal(res.statistic_sign.data,
+                    xp.asarray(ref.statistic_sign, dtype=xp.int8))
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
@@ -363,6 +382,48 @@ def test_two_sample_tests(fun, kwargs, axis, xp):
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@make_xp_test_case(stats.ks_2samp)
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.ks_2samp),
+                                 make_xp_pytest_param(stats.kstest)])
+@pytest.mark.parametrize('method', ['exact', 'asymp', 'auto'])  # auto == exact
+@pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_ks_2samp(fun, method, alternative, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, xp=xp, seed=84912165484322)
+    kwargs = dict(method=method, alternative=alternative, axis=axis)
+    res = fun(*marrays, **kwargs)
+    ref = stats.ks_2samp(*narrays, nan_policy='omit', **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    # with this random data, there often multiple locations where the statistic assumes
+    # the most extreme value, so we can't expect these to always match
+    # xp_assert_equal(res.statistic_location.data, xp.asarray(ref.statistic_location))
+    xp_assert_equal(res.statistic_sign.data,
+                    xp.asarray(ref.statistic_sign, dtype=xp.int8))
+
+
+@make_xp_test_case(stats.kendalltau)
+class TestKendallTau:
+    @pytest.mark.parametrize('axis', [0, 1, None])
+    def test_omit_masked_elements(self, axis, xp):
+        mxp, marrays, narrays = get_arrays(2, xp=xp, seed=84912165484322)
+        res = stats.kendalltau(*marrays, axis=axis)
+        ref = stats.kendalltau(*narrays, nan_policy='omit', axis=axis)
+        xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+    @pytest.mark.parametrize('nan_policy, message', [
+        ('propagate', "`nan_policy='propagate'` is incompatible with MArray input."),
+        ('raise', 'The input contains nan values.')
+    ])
+    def test_input_validation(self, nan_policy, message, xp):
+        mxp = marray._get_namespace(xp)
+        x = mxp.asarray([1, 2, 3, xp.nan])
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, x, nan_policy=nan_policy)
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
@@ -426,9 +487,8 @@ def test_pearsonr(f, axis, xp):
         mask = np.isnan(xi) | np.isnan(yi)
         ref = f(xi[~mask], yi[~mask])
 
-        atol = 1e-7 if (is_torch(xp) and xp_default_dtype(xp) == xp.float32
-                        and f == stats.spearmanrho) else 0.
-        xp_assert_close(res.statistic.data[i], xp.asarray(ref.statistic)[()])
+        atol = 1e-7 if (is_torch(xp) and f == stats.spearmanrho) else 0.
+        xp_assert_close(res.statistic.data[i], xp.asarray(ref.statistic)[()], atol=atol)
         xp_assert_close(res.pvalue.data[i], xp.asarray(ref.pvalue)[()], atol=atol)
 
         if f == stats.pearsonr:
@@ -439,19 +499,31 @@ def test_pearsonr(f, axis, xp):
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@pytest.mark.parametrize('f', [make_xp_pytest_param(stats.linregress)])
+@skip_backend('array_api_strict', reason="issue with clip.")
+@pytest.mark.parametrize('f, method', [
+    make_xp_pytest_param(stats.siegelslopes, {'method':'hierarchical'}),
+    make_xp_pytest_param(stats.siegelslopes, {'method':'separate'}),
+    make_xp_pytest_param(stats.theilslopes, {'method': 'joint'}),
+    make_xp_pytest_param(stats.theilslopes, {'method': 'separate'}),
+    make_xp_pytest_param(stats.linregress, {}),
+])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_linregress(f, axis, xp):
-    mxp, marrays, narrays = get_arrays(2, seed=84912165484320, xp=xp)
-    res = f(*marrays, axis=axis)
-    ref = f(*narrays, nan_policy='omit', axis=axis)
+def test_robust_slopes(f, method, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, shape=(19, 20), seed=84912165484320, xp=xp)
+    res = f(*marrays, axis=axis, **method)
+    ref = f(*narrays, nan_policy='omit', axis=axis, **method)
 
     xp_assert_close(res.slope.data, xp.asarray(ref.slope))
     xp_assert_close(res.intercept.data, xp.asarray(ref.intercept))
-    xp_assert_close(res.rvalue.data, xp.asarray(ref.rvalue))
-    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
-    xp_assert_close(res.stderr.data, xp.asarray(ref.stderr))
-    xp_assert_close(res.intercept_stderr.data, xp.asarray(ref.intercept_stderr))
+
+    if f == stats.theilslopes:
+        xp_assert_close(res.low_slope.data, xp.asarray(ref.low_slope))
+        xp_assert_close(res.high_slope.data, xp.asarray(ref.high_slope))
+    elif f == stats.linregress:
+        xp_assert_close(res.rvalue.data, xp.asarray(ref.rvalue))
+        xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+        xp_assert_close(res.stderr.data, xp.asarray(ref.stderr))
+        xp_assert_close(res.intercept_stderr.data, xp.asarray(ref.intercept_stderr))
 
 
 @make_xp_test_case(stats.entropy)

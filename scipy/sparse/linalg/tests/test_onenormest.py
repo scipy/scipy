@@ -19,10 +19,9 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
             raise ValueError('expected ndarrays representing matrices')
         if A.shape[1] != B.shape[0]:
             raise ValueError('incompatible shapes')
+        super().__init__(dtype=None, shape=(A.shape[0], B.shape[1]))
         self.A = A
         self.B = B
-        self.ndim = 2
-        self.shape = (A.shape[0], B.shape[1])
 
     def _matvec(self, x):
         return np.dot(self.A, np.dot(self.B, x))

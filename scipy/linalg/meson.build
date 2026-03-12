@@ -54,7 +54,7 @@ linalg_cython_gen = generator(cython,
 
 # fblas
 fblas_module = custom_target('fblas_module',
-  output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
+  output: ['_fblasmodule.c'],
   input: 'fblas.pyf.src',
   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
@@ -65,6 +65,13 @@ fblas_module = custom_target('fblas_module',
     ]
 )
 
+link_language_blas_lapack = 'fortran'
+if get_option('_without-fortran')
+  link_language_blas_lapack = 'c'
+endif
+
+message(f'{fblas_module}')
+
 # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
 # the float/double routines are in BLAS while the complex routines are in
 # LAPACK - we have historically put these in `_fblas`.
@@ -73,7 +80,7 @@ py3.extension_module('_fblas',
   link_args: version_link_args,
   dependencies: [lapack_lp64_dep, fortranobject_dep],
   install: true,
-  link_language: 'fortran',
+  link_language: link_language_blas_lapack,
   subdir: 'scipy/linalg'
 )
 
@@ -121,7 +128,7 @@ py3.extension_module('_flapack',
 #       in azure-pipelines.yml if you want to check that).
 if use_ilp64
   fblas64_module = custom_target('fblas64_module',
-    output: ['_fblas_64module.c', '_fblas_64-f2pywrappers.f'],
+    output: ['_fblas_64module.c'],
     input: 'fblas_64.pyf.src',
     command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
     depend_files:
@@ -138,12 +145,12 @@ if use_ilp64
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_dep, fortranobject_dep],  # lapack_dep is ILP64 if use_ilp64==true
     install: true,
-    link_language: 'fortran',
+    link_language: link_language_blas_lapack,
     subdir: 'scipy/linalg'
   )
 
   flapack64_module = custom_target('flapack64_module',
-    output: ['_flapack_64module.c', '_flapack_64-f2pywrappers.f'],
+    output: ['_flapack_64module.c'],
     input: 'flapack_64.pyf.src',
     command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
   )
@@ -155,7 +162,7 @@ if use_ilp64
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_dep, fortranobject_dep],
     install: true,
-    link_language: 'fortran',
+    link_language: link_language_blas_lapack,
     subdir: 'scipy/linalg'
   )
 endif

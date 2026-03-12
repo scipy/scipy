@@ -1,10 +1,10 @@
 #include "slsqp.h"
 
-static void ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, int* indices, double* xnorm, int* mode);
-static void lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, int* jw, double* xnorm, int* mode);
-static void lsei(int ma, int me, int mg, int n, double* restrict a, double* restrict b, double* restrict e, double* restrict f, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, int* jw, double* xnorm, int* mode);
-static void lsq(int m, int meq, int n, int augment, double aug_weight, double* restrict Lf, double* restrict gradx, double* restrict C, double* restrict d, double* restrict xl, double* restrict xu, double* restrict x, double* restrict y, double* buffer, int* jw, int* mode);
-static void ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* restrict w);
+static void ldp(CBLAS_INT m, CBLAS_INT n, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, CBLAS_INT* indices, double* xnorm, int64_t* mode);
+static void lsi(CBLAS_INT ma, CBLAS_INT mg, CBLAS_INT n, double* restrict a, double* restrict b, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, CBLAS_INT* jw, double* xnorm, int64_t* mode);
+static void lsei(CBLAS_INT ma, CBLAS_INT me, CBLAS_INT mg, CBLAS_INT n, double* restrict a, double* restrict b, double* restrict e, double* restrict f, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, CBLAS_INT* jw, double* xnorm, int64_t* mode);
+static void lsq(CBLAS_INT m, CBLAS_INT meq, CBLAS_INT n, CBLAS_INT augment, double aug_weight, double* restrict Lf, double* restrict gradx, double* restrict C, double* restrict d, double* restrict xl, double* restrict xu, double* restrict x, double* restrict y, double* buffer, CBLAS_INT* jw, int64_t* mode);
+static void ldl_update(CBLAS_INT n, double* restrict a, double* restrict z, double sigma, double* restrict w);
 
 /*
  * The main SLSQP function. The function argument naming in the Fortran code is
@@ -45,16 +45,16 @@ __slsqp_body(
     struct SLSQP_vars* S, double* funx, double* restrict gradx,
     double* restrict C, double* restrict d, double* restrict sol,
     double* restrict mult, double* restrict xl, double* restrict xu, double* buffer,
-    int* indices)
+    CBLAS_INT* indices)
 {
 
-    int one = 1, lda = (S->m > 0 ? S->m : 1);
-    int j;
+    CBLAS_INT one = 1, lda = (S->m > 0 ? S->m : 1);
+    CBLAS_INT j;
     double done = 1.0, dmone = -1.0, alfmin = 0.1;
-    int n = S->n;
-    int m = S->m;
-    int n1 = n + 1;
-    int n2 = n1*n/2;
+    CBLAS_INT n = S->n;
+    CBLAS_INT m = S->m;
+    CBLAS_INT n1 = n + 1;
+    CBLAS_INT n2 = n1*n/2;
 
     // Chop the buffer for various array pointers.
     double* restrict bfgs       = &buffer[0];
@@ -67,7 +67,7 @@ __slsqp_body(
 
     // The badlin flag keeps track whether the SQP problem on the current
     // iteration was inconsistent or not.
-    int badlin = 0;
+    CBLAS_INT badlin = 0;
 
     // Fortran code uses reverse communication for the iterations hence it
     // needs to jump back to where it left off. Thus the goto statements are
@@ -85,16 +85,16 @@ MODE0:
     S->tol = 10*S->acc;
     S->iter = 0;
     S->reset = 0;
-    for (int i = 0; i < n; i++) { s[i] = 0.0; }
-    for (int i = 0; i < m; i++) { mu[i] = 0.0; }
+    for (int64_t i = 0; i < n; i++) { s[i] = 0.0; }
+    for (int64_t i = 0; i < m; i++) { mu[i] = 0.0; }
 
 RESET_BFGS:
     // Reset the BFGS matrix stored in packed format
     S->reset++;
     if (S->reset > 5) { goto LABEL255;}
-    for (int i = 0; i < n2; i++) { bfgs[i] = 0.0; }
+    for (int64_t i = 0; i < n2; i++) { bfgs[i] = 0.0; }
     j = 0;
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         bfgs[j] = 1.0;
         j += n - i;
@@ -109,7 +109,7 @@ ITER_START:
     S->iter++;
 
     // Search direction as solution of the QP-problem
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         u[i] = -sol[i] + xl[i] ;
         v[i] = -sol[i] + xu[i] ;
@@ -142,7 +142,7 @@ ITER_START:
     {
         badlin = 1;
         // Reset the RHS of the constraints to zero of the augmented system.
-        for (int i = 0; i < n; i++) { s[i] = 0.0; }
+        for (int64_t i = 0; i < n; i++) { s[i] = 0.0; }
         S->h3 = 0.0;
         double rho = 100.0;
         S->inconsistent = 0;
@@ -166,15 +166,15 @@ ITER_START:
     }
 
     // Update multipliers for L1-test
-    for (int i = 0; i < n; i++) { v[i] = gradx[i]; }
-    dgemv_("T", &m, &n, &dmone, C, &lda, mult, &one, &done, v, &one);
+    for (int64_t i = 0; i < n; i++) { v[i] = gradx[i]; }
+    BLAS_FUNC(dgemv)("T", &m, &n, &dmone, C, &lda, mult, &one, &done, v, &one);
 
     S->f0 = *funx;
-    for (int i = 0; i < n; i++) { x0[i] = sol[i]; }
-    S->gs = ddot_(&n, gradx, &one, s, &one);
+    for (int64_t i = 0; i < n; i++) { x0[i] = sol[i]; }
+    S->gs = BLAS_FUNC(ddot)(&n, gradx, &one, s, &one);
     S->h1 = fabs(S->gs);
     S->h2 = 0.0;
-    for (int j = 0; j < m; j++)
+    for (int64_t j = 0; j < m; j++)
     {
         if (j < S->meq)
         {
@@ -192,7 +192,7 @@ ITER_START:
     S->mode = 0;
     if ((S->h1 < S->acc) && (S->h2 < S->acc) && (!badlin) && (*funx == *funx)) { return; }
     S->h1 = 0.0;
-    for (int j = 0; j < m; j++)
+    for (int64_t j = 0; j < m; j++)
     {
         if (j < S->meq)
         {
@@ -217,9 +217,9 @@ LINE_SEARCH:
 
     S->line++;
     S->h3 = (S->alpha) * (S->h3);
-    dscal_(&n, &S->alpha, s, &one);
-    for (int i = 0; i < n; i++) { sol[i] = x0[i]; }
-    daxpy_(&n, &done, s, &one, sol, &one);
+    BLAS_FUNC(dscal)(&n, &S->alpha, s, &one);
+    for (int64_t i = 0; i < n; i++) { sol[i] = x0[i]; }
+    BLAS_FUNC(daxpy)(&n, &done, s, &one, sol, &one);
 
     S->mode = 1;
     return;
@@ -227,7 +227,7 @@ LINE_SEARCH:
 MODE1:
 
     S->t = *funx;
-    for (int j = 0; j < m; j++)
+    for (int64_t j = 0; j < m; j++)
     {
         if (j < S->meq)
         {
@@ -247,7 +247,7 @@ MODE1:
 
     // Check convergence
     S->h3 = 0.0;
-    for (int j = 0; j < m; j++)
+    for (int64_t j = 0; j < m; j++)
     {
         if (j < S->meq)
         {
@@ -258,7 +258,7 @@ MODE1:
         S->h3 = S->h3 + fmax(-d[j], S->h1);
     }
     if (
-        ((fabs(*funx - S->f0) < S->acc) || (dnrm2_(&n, s, &one) < S->acc)) &&
+        ((fabs(*funx - S->f0) < S->acc) || (BLAS_FUNC(dnrm2)(&n, s, &one) < S->acc)) &&
         (S->h3 < S->acc) &&
         (!badlin) &&
         (*funx == *funx) // To filter for finite entries
@@ -274,7 +274,7 @@ MODE1:
 LABEL255:
     // Check relaxed convergence in case of positive directional derivative
     S->h3 = 0.0;
-    for (int j = 0; j < m; j++)
+    for (int64_t j = 0; j < m; j++)
     {
         if (j < S->meq)
         {
@@ -284,7 +284,7 @@ LABEL255:
         }
         S->h3 = S->h3 + fmax(-d[j], S->h1);
     }
-    if (((fabs(*funx - S->f0) < S->tol) || (dnrm2_(&n, s, &one) < S->tol)) &&
+    if (((fabs(*funx - S->f0) < S->tol) || (BLAS_FUNC(dnrm2)(&n, s, &one) < S->tol)) &&
         (S->h3 < S->tol) &&
         (!badlin) &&
         (*funx == *funx)
@@ -303,37 +303,37 @@ MODEM1:
     // Update Cholesky factors of Hessian matrix modified by BFGS formula
     // u[i] = gradx[i] - C.T @ mult - v[i]
 
-    for (int i = 0; i < n; i++) { u[i] = gradx[i]; }
-    dgemv_("T", &m, &n, &dmone, C, &lda, mult, &one, &done, u, &one);
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++) { u[i] = gradx[i]; }
+    BLAS_FUNC(dgemv)("T", &m, &n, &dmone, C, &lda, mult, &one, &done, u, &one);
+    for (int64_t i = 0; i < n; i++)
     {
         u[i] = u[i] - v[i];
     }
 
     // L'*S
-    for (int i = 0; i < n; i++) { v[i] = s[i]; }
-    dtpmv_("L", "T", "U", &n, bfgs, v, &one);
+    for (int64_t i = 0; i < n; i++) { v[i] = s[i]; }
+    BLAS_FUNC(dtpmv)("L", "T", "U", &n, bfgs, v, &one);
 
     // D*L'*S
     j = 0;
-    for (int i = 0; i < n; i++) {
+    for (int64_t i = 0; i < n; i++) {
         v[i] = bfgs[j]*v[i];
         j += n - i;
     }
 
     // L*D*L'*S
-    dtpmv_("L", "N", "U", &n, bfgs, v, &one);
+    BLAS_FUNC(dtpmv)("L", "N", "U", &n, bfgs, v, &one);
 
-    S->h1 = ddot_(&n, s, &one, u, &one);
-    S->h2 = ddot_(&n, s, &one, v, &one);
+    S->h1 = BLAS_FUNC(ddot)(&n, s, &one, u, &one);
+    S->h2 = BLAS_FUNC(ddot)(&n, s, &one, v, &one);
     S->h3 = 0.2*(S->h2);
     if (S->h1 < S->h3)
     {
         S->h4 = (S->h2 - S->h3) / (S->h2 - S->h1);
         S->h1 = S->h3;
         double tmp_dbl = 1.0 - S->h4;
-        dscal_(&n, &S->h4, u, &one);
-        daxpy_(&n, &tmp_dbl, v, &one, u, &one);
+        BLAS_FUNC(dscal)(&n, &S->h4, u, &one);
+        BLAS_FUNC(daxpy)(&n, &tmp_dbl, v, &one, u, &one);
     }
 
     // Test for singular update, and reset hessian if so
@@ -424,17 +424,17 @@ MODEM1:
  */
 static void
 lsq(
-    int m, int meq, int n, int augment, double aug_weight, double* restrict Lf,
+    CBLAS_INT m, CBLAS_INT meq, CBLAS_INT n, CBLAS_INT augment, double aug_weight, double* restrict Lf,
     double* restrict gradx, double* restrict C, double* restrict d,
     double* restrict xl, double* restrict xu, double* restrict x,
-    double* restrict y, double* buffer, int* jw, int* mode)
+    double* restrict y, double* buffer, CBLAS_INT* jw, int64_t* mode)
 {
-    int one = 1, orign = n;
-    int mineq = m - meq;
+    CBLAS_INT one = 1, orign = n;
+    CBLAS_INT mineq = m - meq;
     double xnorm = 0.0;
-    int cursor = 0;
-    int ld = n;
-    int n_wG_rows = 0;
+    CBLAS_INT cursor = 0;
+    CBLAS_INT ld = n;
+    CBLAS_INT n_wG_rows = 0;
 
     if (augment) {
         ld = n + 1;
@@ -444,27 +444,27 @@ lsq(
     }
 
     // Recover A and b from Lf and gradx
-    for (int i = 0; i < (ld+2)*ld; i++) { buffer[i] = 0.0; }
+    for (int64_t i = 0; i < (ld+2)*ld; i++) { buffer[i] = 0.0; }
     double* restrict wA = buffer;
     double* restrict wb = &buffer[ld*(ld+1)];
 
     // Depending on augmented, wA is either the full array or the top-left block.
 
-    for (int j = 0; j < n; j++)
+    for (int64_t j = 0; j < n; j++)
     {
         double diag = sqrt(Lf[cursor++]);      // Extract the diagonal value from Lf.
         wA[j + j * ld] = diag;                 // Place the sqrt diagonal.
-        for (int i = j + 1; i < n; i++)
+        for (int64_t i = j + 1; i < n; i++)
         {
             wA[j + i * ld] = Lf[cursor++] * diag;
         }
     }
 
     // Compute b = - 1/sqrt(d[]) * inv(Lf[]) * gradx[]. Lf is already in packed format.
-    for (int i = 0; i < n; i++) { wb[i] = gradx[i]; }
-    dtpsv_("L", "N", "U", &n, Lf, wb, &one);
+    for (int64_t i = 0; i < n; i++) { wb[i] = gradx[i]; }
+    BLAS_FUNC(dtpsv)("L", "N", "U", &n, Lf, wb, &one);
     cursor = 0;
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         wb[i] /= -sqrt(Lf[cursor]);
         cursor += n - i;
@@ -481,9 +481,9 @@ lsq(
     double* restrict wf = &buffer[n*(n+1) + n + n*meq];
     if (meq > 0)
     {
-        for (int j = 0; j < n-1; j++)
+        for (int64_t j = 0; j < n-1; j++)
         {
-            for (int i = 0; i < meq; i++)
+            for (int64_t i = 0; i < meq; i++)
             {
                 wE[i + j*meq] = C[i + j*m];
             }
@@ -491,21 +491,21 @@ lsq(
         if (augment)
         {
             // n is incremented hence all Ceq is now in wE. Add the extra column.
-            for (int i = 0; i < meq; i++) { wE[i + (n-1)*meq] = -d[i]; }
+            for (int64_t i = 0; i < meq; i++) { wE[i + (n-1)*meq] = -d[i]; }
 
         } else  {
             // If not augmented then handle j = n - 1 that is skipped.
-            for (int i = 0; i < meq; i++) { wE[i + (n-1)*meq] = C[i + (n-1)*m]; }
+            for (int64_t i = 0; i < meq; i++) { wE[i + (n-1)*meq] = C[i + (n-1)*m]; }
 
         }
-        for (int i = 0; i < meq; i++) { wf[i] = -d[i]; }
+        for (int64_t i = 0; i < meq; i++) { wf[i] = -d[i]; }
     }
 
     // Get the inequality constraints if given. First zero out wG and wh.
     double* restrict wG = &buffer[n*(n+1) + n + n*meq + meq];
     double* restrict wh = &buffer[n*(n+1) + n + n*meq + meq + (mineq + 2*n)*ld];
     // Zero out wG and wh
-    for (int i = 0; i < (mineq + 2*n)*(ld + 1); i++) { wG[i] = 0.0; }
+    for (int64_t i = 0; i < (mineq + 2*n)*(ld + 1); i++) { wG[i] = 0.0; }
 
     // Convert the bounds on x to +I and -I blocks in G.
     // Augment h by xl and -xu.
@@ -518,13 +518,13 @@ lsq(
     // of wG has been kept separate and it causes to be sent to every nested
     // function call. Instead we form wG and wh once with fixed size.
 
-    int nancount = 0;
-    int nrow = mineq;
+    CBLAS_INT nancount = 0;
+    CBLAS_INT nrow = mineq;
     if (m > meq)
     {
-        for (int i = 0; i < mineq; i++) { wh[i] = -d[meq + i]; }
+        for (int64_t i = 0; i < mineq; i++) { wh[i] = -d[meq + i]; }
     }
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         if (isnan(xl[i]))
         {
@@ -533,7 +533,7 @@ lsq(
             wh[nrow++] = xl[i];
         }
     }
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         if (isnan(xu[i]))
         {
@@ -549,9 +549,9 @@ lsq(
     // the top part with C.
     if (m > meq)
     {
-        for (int j = 0; j < orign; j++)
+        for (int64_t j = 0; j < orign; j++)
         {
-            for (int i = 0; i < mineq; i++)
+            for (int64_t i = 0; i < mineq; i++)
             {
                 wG[i + j*n_wG_rows] = C[meq + i + j*m];
             }
@@ -561,7 +561,7 @@ lsq(
     // If augmented add the extra column.
     if (augment)
     {
-        for (int i = 0; i < mineq; i++)
+        for (int64_t i = 0; i < mineq; i++)
         {
             wG[i + orign*n_wG_rows] = fmax(-d[meq + i], 0.0);
         }
@@ -569,7 +569,7 @@ lsq(
 
     // Reset counter
     nrow = mineq;
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         if (!isnan(xl[i]))
         {
@@ -577,7 +577,7 @@ lsq(
             nrow++;
         }
     }
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         if (!isnan(xu[i]))
         {
@@ -594,15 +594,15 @@ lsq(
     if (*mode == 1)
     {
         // Restore the Lagrange multipliers, first equality, then inequality.
-        for (int i = 0; i < meq; i++) { y[i] = lsei_scratch[i+n_wG_rows]; }
-        for (int i = 0; i < mineq; i++) { y[meq + i] = lsei_scratch[i]; }
+        for (int64_t i = 0; i < meq; i++) { y[i] = lsei_scratch[i+n_wG_rows]; }
+        for (int64_t i = 0; i < mineq; i++) { y[meq + i] = lsei_scratch[i]; }
 
         // Set the user-defined bounds on x to NaN
-        for (int i = 0; i < 2*n; i++) { y[m + i] = NAN; }
+        for (int64_t i = 0; i < 2*n; i++) { y[m + i] = NAN; }
     }
 
     // Clamp the solution, if given, to the finite bound interval
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         if ((!isnan(xl[i])) && (x[i] < xl[i])) { x[i] = xl[i]; }
         else if ((!isnan(xu[i])) && (x[i] > xu[i])) { x[i] = xu[i]; }
@@ -638,17 +638,17 @@ lsq(
  *
  */
 static void
-lsei(int ma, int me, int mg, int n,
+lsei(CBLAS_INT ma, CBLAS_INT me, CBLAS_INT mg, CBLAS_INT n,
      double* restrict a, double* restrict b, double* restrict e,
      double* restrict f, double* restrict g, double* restrict h,
-     double* restrict x, double* restrict buffer, int* jw,
-     double* xnorm, int* mode)
+     double* restrict x, double* restrict buffer, CBLAS_INT* jw,
+     double* xnorm, int64_t* mode)
 {
-    int one = 1, nvars = 0, info = 0, lde = 0, ldg = 0;
+    CBLAS_INT one = 1, nvars = 0, info = 0, lde = 0, ldg = 0;
     double done = 1.0, dmone = -1.0, dzero = 0.0, t= 0.0;
     const double epsmach = 2.220446049250313e-16;
 
-    for (int i = 0; i < n; i++) { x[i] = 0.0; }
+    for (int64_t i = 0; i < n; i++) { x[i] = 0.0; }
     // Return if the problem is over-constrained.
     if (me > n) { *mode = 2; return; }
 
@@ -675,43 +675,43 @@ lsei(int ma, int me, int mg, int n,
     // Use top of the yet unutilized scratch space for throw-away work.
     lde = (me > 0 ? me : 1);
     ldg = (mg > 0 ? mg : 1);
-    dgerq2_(&me, &n, e, &lde, tau, lsi_scratch, &info);
+    BLAS_FUNC(dgerq2)(&me, &n, e, &lde, tau, lsi_scratch, &info);
 
     // Right triangularize E and apply Q.T to A and G from the right.
-    dormr2_("R", "T", &ma, &n, &me, e, &lde, tau, a, &ma, lsi_scratch, &info);
-    dormr2_("R", "T", &mg, &n, &me, e, &lde, tau, g, &ldg, lsi_scratch, &info);
+    BLAS_FUNC(dormr2)("R", "T", &ma, &n, &me, e, &lde, tau, a, &ma, lsi_scratch, &info);
+    BLAS_FUNC(dormr2)("R", "T", &mg, &n, &me, e, &lde, tau, g, &ldg, lsi_scratch, &info);
 
     // Check the diagonal elements of E for rank deficiency.
-    for (int i = 0; i < me; i++)
+    for (int64_t i = 0; i < me; i++)
     {
         if (!(fabs(e[i + (nvars + i)*me]) >= epsmach)) { *mode = 6;return; }
     }
     // Solve E*x = f and modify b.
     // Note: RQ forms R at the right of E instead of [0, 0] position.
-    for (int i = 0; i < me; i++) { x[nvars + i] = f[i]; }
-    dtrsv_("U", "N", "N", &me, &e[(nvars)*me], &lde, &x[nvars], &one);
+    for (int64_t i = 0; i < me; i++) { x[nvars + i] = f[i]; }
+    BLAS_FUNC(dtrsv)("U", "N", "N", &me, &e[(nvars)*me], &lde, &x[nvars], &one);
 
     *mode = 1;
     // Zero out the inequality multiplier.
-    for (int i = 0; i < mg; i++) { gmults[i] = 0.0; }
+    for (int64_t i = 0; i < mg; i++) { gmults[i] = 0.0; }
 
     // If the problem is fully equality-constrained, revert the basis and return.
     if (me == n) { goto ORIGINAL_BASIS; }
 
     // Compute the modified RHS wb = b - A1*x
     // Copy b into wb
-    for (int i = 0; i < ma; i++) { wb[i] = b[i]; }
+    for (int64_t i = 0; i < ma; i++) { wb[i] = b[i]; }
     // Compute wb -= A1*xe
-    dgemv_("N", &ma, &me, &dmone, &a[ma*nvars], &ma, &x[nvars], &one, &done, wb, &one);
+    BLAS_FUNC(dgemv)("N", &ma, &me, &dmone, &a[ma*nvars], &ma, &x[nvars], &one, &done, wb, &one);
 
     // Store the transformed A2 and G2 in the buffer
-    for (int j = 0; j < nvars; j++)
+    for (int64_t j = 0; j < nvars; j++)
     {
-        for (int i = 0; i < ma; i++)
+        for (int64_t i = 0; i < ma; i++)
         {
             a2[i + j*ma] = a[i + j*ma];
         }
-        for (int i = 0; i < mg; i++)
+        for (int64_t i = 0; i < mg; i++)
         {
             g2[i + j*mg] = g[i + j*mg];
         }
@@ -721,21 +721,21 @@ lsei(int ma, int me, int mg, int n,
     {
         // No inequality constraints, solve the least squares problem directly.
         // We deliberately use the unblocked algorithm to avoid allocation.
-        int lwork = ma*nvars + 3*nvars + 1;
+        CBLAS_INT lwork = ma*nvars + 3*nvars + 1;
         // Save the RHS for residual computation
         double* restrict wb_orig = &lsi_scratch[lwork];
-        for (int i = 0; i < ma; i++) { wb_orig[i] = wb[i]; }
+        for (int64_t i = 0; i < ma; i++) { wb_orig[i] = wb[i]; }
 
-        int krank = 0;
+        CBLAS_INT krank = 0;
         t = sqrt(epsmach);
-        dgelsy_(&ma, &nvars, &one, a2, &ma, wb, &ma, jw, &t, &krank, lsi_scratch, &lwork, &info);
+        BLAS_FUNC(dgelsy)(&ma, &nvars, &one, a2, &ma, wb, &ma, jw, &t, &krank, lsi_scratch, &lwork, &info);
 
         // Copy the solution to x
-        for (int i = 0; i < nvars; i++) { x[i] = wb[i]; }
+        for (int64_t i = 0; i < nvars; i++) { x[i] = wb[i]; }
 
         // Compute the residual and its norm, use a since a2 is overwritten.
-        dgemv_("N", &ma, &nvars, &done, a, &ma, x, &one, &dmone, wb_orig, &one);
-        *xnorm = dnrm2_(&ma, wb_orig, &one);
+        BLAS_FUNC(dgemv)("N", &ma, &nvars, &done, a, &ma, x, &one, &dmone, wb_orig, &one);
+        *xnorm = BLAS_FUNC(dnrm2)(&ma, wb_orig, &one);
 
         *mode = 7;
         if (krank < nvars) { return; }
@@ -745,17 +745,17 @@ lsei(int ma, int me, int mg, int n,
 
     // Modify h, and solve the inequality constrained least squares problem.
     // h -= G1*xe
-    dgemv_("N", &mg, &me, &dmone, &g[mg*nvars], &ldg, &x[nvars], &one, &done, h, &one);
+    BLAS_FUNC(dgemv)("N", &mg, &me, &dmone, &g[mg*nvars], &ldg, &x[nvars], &one, &done, h, &one);
 
     lsi(ma, mg, nvars, a2, wb, g2, h, x, lsi_scratch, jw, xnorm, mode);
 
     // Copy multipliers from scratch to gmults
-    for (int i = 0; i < mg; i++) { gmults[i] = lsi_scratch[i]; }
+    for (int64_t i = 0; i < mg; i++) { gmults[i] = lsi_scratch[i]; }
 
     // If no equality constraints this was an LSI problem all along.
     if (me == 0) { return; }
 
-    t = dnrm2_(&me, &x[nvars], &one);
+    t = BLAS_FUNC(dnrm2)(&me, &x[nvars], &one);
     // Modify the norm by adding the equality solution.
     *xnorm = hypot(*xnorm, t);
     if (*mode != 1) { return; }
@@ -763,17 +763,17 @@ lsei(int ma, int me, int mg, int n,
 ORIGINAL_BASIS:
     // Convert the solution and multipliers to the original basis.
     // b = A*x - b (residuals)
-    dgemv_("N", &ma, &n, &done, a, &ma, x, &one, &dmone, b, &one);
+    BLAS_FUNC(dgemv)("N", &ma, &n, &done, a, &ma, x, &one, &dmone, b, &one);
     // f = A1^T*b - G1^T*w
-    dgemv_("T", &ma, &me, &done, &a[nvars*ma], &ma, b, &one, &dzero, f, &one);
-    dgemv_("T", &mg, &me, &dmone, &g[nvars*mg], &ldg, gmults, &one, &done, f, &one);
+    BLAS_FUNC(dgemv)("T", &ma, &me, &done, &a[nvars*ma], &ma, b, &one, &dzero, f, &one);
+    BLAS_FUNC(dgemv)("T", &mg, &me, &dmone, &g[nvars*mg], &ldg, gmults, &one, &done, f, &one);
 
     // x = Q.T*x
-    dormr2_("L", "T", &n, &one, &me, e, &lde, tau, x, &n, lsi_scratch, &info);
+    BLAS_FUNC(dormr2)("L", "T", &n, &one, &me, e, &lde, tau, x, &n, lsi_scratch, &info);
 
     // Solve the triangular system for the equality multipliers, emults.
-    for (int i = 0; i < me; i++) { emults[i] = f[i]; }
-    dtrsv_("U", "T", "N", &me, &e[(n - me)*me], &lde, emults, &one);
+    for (int64_t i = 0; i < me; i++) { emults[i] = f[i]; }
+    BLAS_FUNC(dtrsv)("U", "T", "N", &me, &e[(n - me)*me], &lde, emults, &one);
 
     return;
 }
@@ -798,11 +798,11 @@ ORIGINAL_BASIS:
  *
 */
 static void
-lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restrict g,
-    double* restrict h, double* restrict x, double* restrict buffer, int* jw,
-    double* xnorm, int* mode)
+lsi(CBLAS_INT ma, CBLAS_INT mg, CBLAS_INT n, double* restrict a, double* restrict b, double* restrict g,
+    double* restrict h, double* restrict x, double* restrict buffer, CBLAS_INT* jw,
+    double* xnorm, int64_t* mode)
 {
-    int one = 1, tmp_int = 0, info = 0;
+    CBLAS_INT one = 1, tmp_int = 0, info = 0;
     double done = 1.0, dmone = -1.0, tmp_dbl = 0.0;
     const double epsmach = 2.220446049250313e-16;
 
@@ -810,15 +810,15 @@ lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restr
     // We use the unblocked versions of the LAPACK routines to avoid
     // allocating extra "work" memory for the blocked versions.
     tmp_int = (ma < n ? ma : n);
-    dgeqr2_(&ma, &n, a, &ma, buffer, &buffer[tmp_int], &info);
+    BLAS_FUNC(dgeqr2)(&ma, &n, a, &ma, buffer, &buffer[tmp_int], &info);
 
     // Compute Q^T b
-    dorm2r_("L", "T", &ma, &one, &tmp_int, a, &ma, buffer, b, &ma, &buffer[tmp_int], &info);
+    BLAS_FUNC(dorm2r)("L", "T", &ma, &one, &tmp_int, a, &ma, buffer, b, &ma, &buffer[tmp_int], &info);
 
     // Check the diagonal elements of R for rank deficiency.
     *mode = 5;
     *xnorm = 0.0;
-    for (int i = 0; i < tmp_int; i++) {
+    for (int64_t i = 0; i < tmp_int; i++) {
         if (!(fabs(a[i + i*ma]) >= epsmach)) { return; }
     }
     // Transform G and h to form the LDP problem.
@@ -826,21 +826,21 @@ lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restr
     // The result is stored in G.
     // Note: There is an inherent assumption that ma >= n. This is a bug carried
     // over here from the original slsqp implementation.
-    dtrsm_("R", "U", "N", "N", &mg, &n, &done, a, &ma, g, &mg);
+    BLAS_FUNC(dtrsm)("R", "U", "N", "N", &mg, &n, &done, a, &ma, g, &mg);
     // h = h - Xf
-    dgemv_("N", &mg, &n, &dmone, g, &mg, b, &one, &done, h, &one);
+    BLAS_FUNC(dgemv)("N", &mg, &n, &dmone, g, &mg, b, &one, &done, h, &one);
 
     // Solve the LDP problem.
     ldp(mg, n, g, h, x, buffer, jw, xnorm, mode);
     if (*mode != 1) { return; }
 
     // Convert to the solution of the original problem.
-    daxpy_(&n, &done, b, &one, x, &one);
-    dtrsv_("U", "N", "N", &n, a, &ma, x, &one);
+    BLAS_FUNC(daxpy)(&n, &done, b, &one, x, &one);
+    BLAS_FUNC(dtrsv)("U", "N", "N", &n, a, &ma, x, &one);
 
     // If any, compute the norm of the tail of b and add to xnorm
     tmp_int = ma - n;
-    tmp_dbl = dnrm2_(&tmp_int, &b[(n + 1 > ma ? ma : n + 1) - 1], &one);
+    tmp_dbl = BLAS_FUNC(dnrm2)(&tmp_int, &b[(n + 1 > ma ? ma : n + 1) - 1], &one);
     *xnorm = hypot(*xnorm, tmp_dbl);
 
     return;
@@ -865,14 +865,14 @@ lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restr
  *
 */
 static void
-ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x,
-    double* restrict buffer, int* indices, double* xnorm, int* mode)
+ldp(CBLAS_INT m, CBLAS_INT n, double* restrict g, double* restrict h, double* restrict x,
+    double* restrict buffer, CBLAS_INT* indices, double* xnorm, int64_t* mode)
 {
-    int one = 1;
+    CBLAS_INT one = 1;
     double dzero = 0.0, rnorm = 0.0;
     // Check for inputs and initialize x
     if (n <= 0) { *mode = 2; return; }
-    for (int i = 0; i < n; i++) { x[i] = 0.0; }
+    for (int64_t i = 0; i < n; i++) { x[i] = 0.0; }
     if (m == 0) { *mode = 1; return; }
 
     // Define pointers for the variables on buffer
@@ -887,9 +887,9 @@ ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x,
     //                    [h^T]       [1]
 
     // LHS, G is (m x n), h is (m). Both transposed and stacked into (n+1) x m.
-    for (int j = 0; j < m; j++)
+    for (int64_t j = 0; j < m; j++)
     {
-        for (int i = 0; i < n; i++)
+        for (int64_t i = 0; i < n; i++)
         {
             a[i + j*(n+1)] = g[j + i*m];
         }
@@ -897,7 +897,7 @@ ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x,
         a[n + j*(n+1)] = h[j];
     }
     // RHS is (n+1)
-    for (int i = 0; i < n; i++) { b[i] = 0.0; }
+    for (int64_t i = 0; i < n; i++) { b[i] = 0.0; }
     b[n] = 1.0;
 
     // Solve the dual problem
@@ -907,15 +907,15 @@ ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x,
     if (rnorm <= 0.0) { return; }
 
     // Solve the primal problem
-    double fac = 1.0 - ddot_(&m, h, &one, y, &one);
+    double fac = 1.0 - BLAS_FUNC(ddot)(&m, h, &one, y, &one);
     if (!((1.0 + fac) - 1.0 > 0.0)) { return; }
     *mode = 1;
     fac = 1.0 / fac;
-    dgemv_("T", &m, &n, &fac, g, &m, y, &one, &dzero, x, &one);
-    *xnorm = dnrm2_(&n, x, &one);
+    BLAS_FUNC(dgemv)("T", &m, &n, &fac, g, &m, y, &one, &dzero, x, &one);
+    *xnorm = BLAS_FUNC(dnrm2)(&n, x, &one);
 
     // Compute the lagrange multipliers for the primal problem
-    for (int i = 0; i < m; i++) { buffer[i] = fac*y[i]; }
+    for (int64_t i = 0; i < m; i++) { buffer[i] = fac*y[i]; }
     return;
 }
 
@@ -939,9 +939,9 @@ ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x,
  *
  */
 static void
-ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* restrict w)
+ldl_update(CBLAS_INT n, double* restrict a, double* restrict z, double sigma, double* restrict w)
 {
-    int j, ij = 0;
+    CBLAS_INT j, ij = 0;
     const double epsmach = 2.220446049250313e-16;
     if (sigma == 0.0) { return; }
     double alpha, beta, delta, gamma, u, v, tp, t = 1.0 / sigma;
@@ -949,12 +949,12 @@ ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* 
     if (sigma <= 0.0)
     {
         // Negative update
-        for (int i = 0; i < n; i++) { w[i] = z[i]; }
-        for (int i = 0; i < n; i++)
+        for (int64_t i = 0; i < n; i++) { w[i] = z[i]; }
+        for (int64_t i = 0; i < n; i++)
         {
             v = w[i];
             t = t + v*v/a[ij];
-            for (int j = i + 1; j < n; j++)
+            for (int64_t j = i + 1; j < n; j++)
             {
                 ij++;
                 w[j] = w[j] - v*a[ij];
@@ -963,7 +963,7 @@ ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* 
         }
         if (t >= 0.0) { t = epsmach / sigma; }
 
-        for (int i = 0; i < n; i++)
+        for (int64_t i = 0; i < n; i++)
         {
             j = n - i - 1;
             ij -= i + 1;
@@ -974,7 +974,7 @@ ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* 
     }
 
     // Positive update
-    for (int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         v = z[i];
         delta = v / a[ij];
@@ -986,7 +986,7 @@ ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* 
         beta = delta / tp;
         if (alpha <= 4.0)
         {
-            for (int j = i + 1; j < n; j++)
+            for (int64_t j = i + 1; j < n; j++)
             {
                 ij++;
                 z[j] = z[j] - v * a[ij];
@@ -994,7 +994,7 @@ ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* 
             }
         } else {
             gamma = t / tp;
-            for (int j = i + 1; j < n; j++)
+            for (int64_t j = i + 1; j < n; j++)
             {
                 ij++;
                 u = a[ij];

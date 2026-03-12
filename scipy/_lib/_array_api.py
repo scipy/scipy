@@ -29,6 +29,7 @@ from scipy._external.array_api_compat import (
     is_torch_array,
     is_jax_array,
     is_dask_array,
+    is_pydata_sparse_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -50,7 +51,7 @@ from scipy._external import array_api_extra as xpx
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray',
+    'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray', 'is_pydata_sparse_array',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
@@ -608,7 +609,6 @@ def xp_default_dtype(xp):
         return xp.float64
 
 
-### MArray Helpers ###
 def xp_result_device(*args):
     """Return the device of an array in `args`, for the purpose of
     input-output device propagation.
@@ -630,6 +630,9 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """
     arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]
     return xp.concat(arys)
+
+
+### MArray Helpers ###
 
 
 def is_marray(xp):
@@ -654,6 +657,27 @@ def _share_masks(*args, xp):
         mask = functools.reduce(operator.or_, (arg.mask for arg in args))
         args = [xp.asarray(arg.data, mask=mask) for arg in args]
     return args[0] if len(args) == 1 else args
+
+
+def _masked_apply(f, *, args, kwargs=None, xp):
+    # Unmask array arguments, evaluate function, and apply result mask to outputs.
+    # Assumes that when `xp` is an MArray namespace, there is at least one MArray
+    # in `args`/`kwargs` and MArrays are the only objects in `args`/`kwargs` with
+    # `data` and `mask` attributes. Could/should combine with `xpx.lazy_apply`.
+    kwargs = {} if kwargs is None else kwargs
+
+    if not is_marray(xp):
+        return f(*args, **kwargs)
+
+    arg_data = (getattr(arg, 'data', arg) for arg in args)
+    kwarg_data = (getattr(val, 'data', val) for val in kwargs.values())
+    res = f(*arg_data, **dict(zip(kwarg_data, kwargs.keys())))
+
+    masks = (arr.mask for arr in (*args, *kwargs.values()) if hasattr(arr, 'mask'))
+    mask = functools.reduce(operator.or_, masks)
+    return ((xp.asarray(out, mask=mask) for out in res) if isinstance(res, tuple)
+            else xp.asarray(res, mask=mask))
+
 
 ### End MArray Helpers ###
 
@@ -690,8 +714,11 @@ def _make_sphinx_capabilities(
     allow_dask_compute=False, jax_jit=True,
     # list of tuples [(module name, reason), ...]
     warnings = (),
+    # Whether the function supports MArrays that wrap one of the supported backends
+    marray=None,
     # unused in documentation
     reason=None,
+    method_capabilities=None,
 ):
     if out_of_scope:
         return {"out_of_scope": True}
@@ -732,6 +759,11 @@ def _make_sphinx_capabilities(
         backend = capabilities[module]
         backend.warnings.append(warning)
 
+    # MArrays are either supported or not. If supported, they work with all combinations
+    # of device + backend that are supported by the function and MArray itself. This is
+    # indicated with an extra note after the backend table.
+    capabilities.update({'marray': marray})
+
     return capabilities
 
 
@@ -749,6 +781,11 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         See :ref:`dev-arrayapi` for more information.
         """
         return textwrap.dedent(note)
+
+    marray_note = (f"`{fun_name}` also accepts "
+        "`MArrays <https://mdhaber.github.io/marray/tutorial.html>`__ "
+        "backed by the backends indicated above; masked values will be treated as "
+        "though they were not present." if capabilities.get("marray", False) else "")
 
     # Note: deliberately not documenting array-api-strict
     note = f"""
@@ -770,6 +807,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
+    {marray_note or ""}
     {extra_note or ""}
     See :ref:`dev-arrayapi` for more information.
     """
@@ -795,6 +833,12 @@ def xp_capabilities(
     allow_dask_compute=False, jax_jit=True,
     # Extra note to inject into the docstring
     extra_note=None,
+    # Dictionary mapping method names to dictionaries of method
+    # specific capabilities for use when when xp_capabilities is
+    # applied to a class with varying capabilities per method
+    method_capabilities=None,
+    # Whether the function supports MArrays that wrap one of the supported backends
+    marray=False,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -819,6 +863,25 @@ def xp_capabilities(
     if out_of_scope:
         np_only = True
 
+    if method_capabilities is None:
+        method_capabilities = {}
+    for method, capabilities in method_capabilities.items():
+        # Fill in missing entries of method capabilities with
+        # defaults if any entries are missing.
+        method_capabilities[method] = dict(
+            skip_backends=(),
+            xfail_backends=(),
+            cpu_only=False,
+            np_only=False,
+            out_of_scope=False,
+            reason=None,
+            exceptions=(),
+            warnings=(),
+            allow_dask_compute=False,
+            jax_jit=True,
+            marray=False,
+        ) | capabilities
+
     capabilities = dict(
         skip_backends=skip_backends,
         xfail_backends=xfail_backends,
@@ -830,6 +893,8 @@ def xp_capabilities(
         allow_dask_compute=allow_dask_compute,
         jax_jit=jax_jit,
         warnings=warnings,
+        method_capabilities=method_capabilities,
+        marray=marray,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 
@@ -891,6 +956,23 @@ def make_xp_test_case(*funcs, capabilities_table=None):
     etc., where the arguments of ``skip_xp_backends`` and ``xfail_xp_backends`` are
     determined by the ``@xp_capabilities`` decorator applied to the functions.
 
+    Notes
+    -----
+
+    To allow use of ``make_xp_test_case`` with classes, elements of ``funcs`` may
+    also be tuples of the form ``(cls, method_name)`` consisting of a ``type`` and
+    a string giving the name of a method. ``lazy_xp_function`` will be applied to the
+    method of interest. Capabilities for the method with name ``method_name`` can
+    be specified in the ``method_capabilities`` kwarg in the application of
+    ``xp_capabilities`` to ``cls``. If no ``method_capabilities`` entry is given
+    for ``method_name``, then the capabilities default to the class level
+    capabilities.
+
+    Tuples of the form ``(cls, method_name)`` are used instead of ``cls.method`` in
+    order to handle inheritance gracefully, since if ``cls`` derives from a parent
+    class, ``cls.method`` will be a reference to the parent method, potentially
+    causing problems for ``lazy_xp_function``.
+
     See Also
     --------
     xp_capabilities
@@ -902,7 +984,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
     return lambda func: functools.reduce(lambda f, g: g(f), marks, func)
 
 
-def make_xp_pytest_param(func, *args, capabilities_table=None):
+def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=None):
     """Variant of ``make_xp_test_case`` that returns a pytest.param for a function,
     with all necessary skip_xp_backends and xfail_xp_backends marks applied::
 
@@ -928,8 +1010,22 @@ def make_xp_pytest_param(func, *args, capabilities_table=None):
 
     Parameters
     ----------
-    func : Callable
+    func : Callable | tuple[type, str]
         Function to be tested. It must be decorated with ``@xp_capabilities``.
+        Alternatively, a tuple of the form ``(cls, method_name)``, where
+        ``cls`` must be decorated with ``@xp_capabilities``, specifying
+        that one wants marks for a particular method of the given class.
+        See the Notes section of the docstring for ``make_xp_test_case`` for
+        more info.
+
+        Note that if func is a tuple, then only the first entry is actually
+        used in the resulting pytest param, and the second entry is only
+        used to specify capabilities for a particular given method and tell
+        the testing infra to apply ``lazy_xp_function`` to that method.::
+
+        @pytest.mark.parametrize("cls", [(A, "f"), (B, "f"), C])
+        def test(cls, xp):
+            # cls iterates over A, B, C.
     *args : Any, optional
         Extra pytest parameters for the use case, e.g.::
 
@@ -939,6 +1035,9 @@ def make_xp_pytest_param(func, *args, capabilities_table=None):
         def test(func, verb, xp):
             # iterates on (func=f1, verb="hello")
             # and (func=f2, verb="world")
+    additional_marks : pytest.MarkDecorator | List[pytest.MarkDecorator]
+        Additional pytest marks to add to the parameter, e.g.
+        ``pytest.mark.slow``.
 
     See Also
     --------
@@ -950,6 +1049,12 @@ def make_xp_pytest_param(func, *args, capabilities_table=None):
     import pytest
 
     marks = make_xp_pytest_marks(func, capabilities_table=capabilities_table)
+    if additional_marks is not None:
+        if isinstance(additional_marks, pytest.MarkDecorator):
+            additional_marks = [additional_marks]
+        marks.extend(additional_marks)
+    if isinstance(func, tuple):
+        func, _ = func
     return pytest.param(func, *args, marks=marks, id=func.__name__)
 
 
@@ -987,11 +1092,26 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
     import pytest
 
     marks = []
-    # Inject a marker which will help us identify tests using the xp
-    # fixture which do not use xp_capabilities.
-    marks.append(pytest.mark.uses_xp_capabilities(True, funcs=funcs))
+    # func may be a (cls, method_name) pair. This objs list will store cls
+    # if the corresponding entry of funcs is such a tuple, and func otherwise.
+    # the objs list is passed to the uses_xp_capabilities mark and used in
+    # check_xp_untested. The intention is that all classes ``cls`` which advertise
+    # support must have at least one test that uses the ``xp`` fixture along
+    # with ``make_xp_test_case(cls)``. Testing is not enforced at the method level
+    # since the documentation of capabilities is done at the class level.
+    objs = []
+
     for func in funcs:
-        capabilities = capabilities_table[func]
+        if isinstance(func, tuple):
+            cls, method = func
+            capabilities = capabilities_table[cls]
+            if method in capabilities["method_capabilities"]:
+                capabilities = capabilities["method_capabilities"][method]
+            objs.append(cls)
+        else:
+            capabilities = capabilities_table[func]
+            objs.append(func)
+
         exceptions = capabilities['exceptions']
         reason = capabilities['reason']
 
@@ -1010,6 +1130,10 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
         lazy_kwargs = {k: capabilities[k]
                        for k in ('allow_dask_compute', 'jax_jit')}
         lazy_xp_function(func, **lazy_kwargs)
+
+    # Inject a marker which will help us identify tests using the xp
+    # fixture which do not use xp_capabilities.
+    marks.append(pytest.mark.uses_xp_capabilities(True, funcs=objs))
 
     return marks
 
@@ -1033,3 +1157,7 @@ def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:
         return xp_device_type(a._meta)
     # array-api-strict is a stand-in for unknown libraries; don't special-case it
     return None
+
+
+def xp_isscalar(x):
+    return np.isscalar(x) or (is_array_api_obj(x) and x.ndim == 0)

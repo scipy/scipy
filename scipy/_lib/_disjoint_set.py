@@ -4,9 +4,14 @@ Disjoint set data structure
 
 
 class DisjointSet:
-    """ Disjoint set data structure for incremental connectivity queries.
+    """Disjoint set data structure for incremental connectivity queries.
 
     .. versionadded:: 1.6.0
+
+    Parameters
+    ----------
+    elements : sequence of hashable objects
+        Elements of the disjoint set.
 
     Attributes
     ----------
@@ -138,6 +143,11 @@ class DisjointSet:
 
     def add(self, x):
         """Add element `x` to disjoint set.
+
+        Parameters
+        ----------
+        x : hashable object
+            Element to add to the disjoint set.
         """
         if x in self._indices:
             return
