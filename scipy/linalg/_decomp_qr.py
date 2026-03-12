@@ -4,7 +4,7 @@ import numpy as np
 from scipy._lib._util import _apply_over_batch
 
 # Local imports
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, HAS_ILP64
 from ._misc import _datacopied
 
 __all__ = ['qr', 'qr_multiply', 'rq']
@@ -160,7 +160,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
             R = np.empty_like(a1, shape=(K, N))
 
         if pivoting:
-            Rj = R, np.arange(N, dtype=np.int32)
+            Rj = R, np.arange(N, dtype=np.int64 if HAS_ILP64 else np.int32)
         else:
             Rj = R,
 
