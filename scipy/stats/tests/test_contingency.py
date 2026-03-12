@@ -9,49 +9,61 @@ from scipy.special import xlogy
 from scipy.stats.contingency import (margins, expected_freq,
                                      chi2_contingency, association)
 
+from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
-def test_margins():
-    a = np.array([1])
-    m = margins(a)
-    assert_equal(len(m), 1)
-    m0 = m[0]
-    assert_array_equal(m0, np.array([1]))
-
-    a = np.array([[1]])
-    m0, m1 = margins(a)
-    expected0 = np.array([[1]])
-    expected1 = np.array([[1]])
-    assert_array_equal(m0, expected0)
-    assert_array_equal(m1, expected1)
-
-    a = np.arange(12).reshape(2, 6)
-    m0, m1 = margins(a)
-    expected0 = np.array([[15], [51]])
-    expected1 = np.array([[6, 8, 10, 12, 14, 16]])
-    assert_array_equal(m0, expected0)
-    assert_array_equal(m1, expected1)
-
-    a = np.arange(24).reshape(2, 3, 4)
-    m0, m1, m2 = margins(a)
-    expected0 = np.array([[[66]], [[210]]])
-    expected1 = np.array([[[60], [92], [124]]])
-    expected2 = np.array([[[60, 66, 72, 78]]])
-    assert_array_equal(m0, expected0)
-    assert_array_equal(m1, expected1)
-    assert_array_equal(m2, expected2)
+lazy_xp_modules = [stats]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
-def test_expected_freq():
-    assert_array_equal(expected_freq([1]), np.array([1.0]))
+@make_xp_test_case(margins)
+class TestMargins:
 
-    observed = np.array([[[2, 0], [0, 2]], [[0, 2], [2, 0]], [[1, 1], [1, 1]]])
-    e = expected_freq(observed)
-    assert_array_equal(e, np.ones_like(observed))
+    def test_1d(self, xp):
+        a = xp.asarray([1])
+        m = margins(a)
+        assert_equal(len(m), 1)
+        xp_assert_equal(m[0], xp.asarray([1]))
 
-    observed = np.array([[10, 10, 20], [20, 20, 20]])
-    e = expected_freq(observed)
-    correct = np.array([[12., 12., 16.], [18., 18., 24.]])
-    assert_array_almost_equal(e, correct)
+    def test_2d_trivial(self, xp):
+        a = xp.asarray([[1]])
+        m0, m1 = margins(a)
+        xp_assert_equal(m0, xp.asarray([[1]]))
+        xp_assert_equal(m1, xp.asarray([[1]]))
+
+    def test_2d(self, xp):
+        a = xp.reshape(xp.arange(12), (2, 6))
+        m0, m1 = margins(a)
+        xp_assert_equal(m0, xp.asarray([[15], [51]]))
+        xp_assert_equal(m1, xp.asarray([[6, 8, 10, 12, 14, 16]]))
+
+    def test_3d(self, xp):
+        a = xp.reshape(xp.arange(24), (2, 3, 4))
+        m0, m1, m2 = margins(a)
+        xp_assert_equal(m0, xp.asarray([[[66]], [[210]]]))
+        xp_assert_equal(m1, xp.asarray([[[60], [92], [124]]]))
+        xp_assert_equal(m2, xp.asarray([[[60, 66, 72, 78]]]))
+
+
+@make_xp_test_case(expected_freq)
+class TestExpectedFreq:
+
+    def test_1d(self, xp):
+        obs = xp.asarray([1])
+        xp_assert_close(expected_freq(obs), xp.asarray([1.0]))
+
+    def test_3d(self, xp):
+        observed = xp.asarray([[[2, 0], [0, 2]],
+                                [[0, 2], [2, 0]],
+                                [[1, 1], [1, 1]]])
+        e = expected_freq(observed)
+        xp_assert_close(e, xp.ones_like(e))
+
+    def test_2d(self, xp):
+        observed = xp.asarray([[10, 10, 20], [20, 20, 20]])
+        e = expected_freq(observed)
+        correct = xp.asarray([[12., 12., 16.], [18., 18., 24.]])
+        xp_assert_close(e, correct)
 
 
 class TestChi2Contingency:
