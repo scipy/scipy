@@ -3189,3 +3189,16 @@ def test_non_writeable():
     q = np.array([0, 0, 0, 1.0])
     q.flags.writeable = False
     Rotation.from_quat(q)  # Regression test against gh-24354, should not raise
+
+
+def test_gh_24751():
+    points = np.array([[0.0, 0.0, 0.0]])
+    points.flags.writeable = False
+    rot = Rotation.from_euler("z", 0.0)
+    rot.apply(points)
+
+
+def test_rotvec_non_writeable():
+    rotvec = np.array([0, 0, 1]) * np.pi / 2
+    rotvec.flags.writeable = False
+    Rotation.from_rotvec(rotvec)

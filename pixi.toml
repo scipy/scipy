@@ -139,6 +139,11 @@ features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "sy
 # tasks: build-scipy-openblas, test-scipy-openblas
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
 
+[environments.gha-update]
+# tasks: gha-update
+features = ["gha-update"]
+no-default-feature = true
+
 
 ### Default dependencies (included in all environments) ###
 
@@ -653,3 +658,12 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.py312.dependencies]
 python = "3.12.*"
+
+
+### Maintenance tools ###
+
+[feature.gha-update.dependencies]
+gha-tools = "*"
+
+[feature.gha-update.tasks.gha-update]
+cmd = "gha-tools autoupdate ./.github/workflows/ --write --pin all -s specific"

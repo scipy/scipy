@@ -143,10 +143,21 @@ static void dcstep(
 );
 
 // Helper functions
+static inline void save_local_vars(
+    CBLAS_INT prjctd, CBLAS_INT cnstnd, CBLAS_INT boxed, CBLAS_INT updatd,
+    CBLAS_INT nintol,
+    CBLAS_INT iback, CBLAS_INT nskip, CBLAS_INT head, CBLAS_INT col, CBLAS_INT itail,
+    CBLAS_INT iter, CBLAS_INT iupdat, CBLAS_INT nseg, CBLAS_INT nfgv, CBLAS_INT info,
+    CBLAS_INT ifun, CBLAS_INT iword, CBLAS_INT nfree, CBLAS_INT nact, CBLAS_INT ileave,
+    CBLAS_INT nenter,
+    double theta, double fold, double tol, double dnorm, double gd,
+    double stpmx, double sbgnrm, double stp, double gdold, double dtd,
+    CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave
+);
 static inline void save_vars(
-    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
-    double stmax, double width, double width1, int* isave, double* dsave
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave
 );
 
 static double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
@@ -379,6 +390,61 @@ setulb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u, CBLAS_INT* nbd
            lsave, &isave[21], dsave, maxls, &ln_task[0], &ln_task[1]);
 
     return;
+}
+
+
+static inline void save_local_vars(
+    CBLAS_INT prjctd, CBLAS_INT cnstnd, CBLAS_INT boxed, CBLAS_INT updatd,
+    CBLAS_INT nintol,
+    CBLAS_INT iback, CBLAS_INT nskip, CBLAS_INT head, CBLAS_INT col, CBLAS_INT itail,
+    CBLAS_INT iter, CBLAS_INT iupdat, CBLAS_INT nseg, CBLAS_INT nfgv, CBLAS_INT info,
+    CBLAS_INT ifun, CBLAS_INT iword, CBLAS_INT nfree, CBLAS_INT nact, CBLAS_INT ileave,
+    CBLAS_INT nenter,
+    double theta, double fold, double tol, double dnorm, double gd,
+    double stpmx, double sbgnrm, double stp, double gdold, double dtd,
+    CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave
+)
+{
+    // Save local variables
+    lsave[0]  = prjctd;
+    lsave[1]  = cnstnd;
+    lsave[2]  = boxed;
+    lsave[3]  = updatd;
+
+    isave[0]  = nintol;
+    isave[3]  = iback;
+    isave[4]  = nskip;
+    isave[5]  = head;
+    isave[6]  = col;
+    isave[7]  = itail;
+    isave[8]  = iter;
+    isave[9]  = iupdat;
+    isave[11] = nseg;
+    isave[12] = nfgv;
+    isave[13] = info;
+    isave[14] = ifun;
+    isave[15] = iword;
+    isave[16] = nfree;
+    isave[17] = nact;
+    isave[18] = ileave;
+    isave[19] = nenter;
+
+    dsave[0]  = theta;
+    dsave[1]  = fold;
+    dsave[2]  = tol;
+    dsave[3]  = dnorm;
+    // dsave[4]  = epsmch;
+    // dsave[5]  = cpu1;
+    // dsave[6]  = cachyt;
+    // dsave[7]  = sbtime;
+    // dsave[8]  = lnscht;
+    // dsave[9]  = time1;
+    dsave[10] = gd;
+    dsave[11] = stpmx;
+    dsave[12] = sbgnrm;
+    dsave[13] = stp;
+    dsave[14] = gdold;
+    dsave[15] = dtd;
 }
 
 
@@ -688,7 +754,14 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
     *task_msg = FG_START;
 
     // Return to the driver to calculate f and g, then reenter at 111
-    goto LINE1000;
+    save_local_vars(
+        prjctd, cnstnd, boxed, updatd, nintol,
+        iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+        ifun, iword, nfree, nact, ileave, nenter,
+        theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+        lsave, isave, dsave
+    );
+    return;
 
 LINE111:
     nfgv = 1;
@@ -854,7 +927,14 @@ LINE666:
         }
     } else if ((*task == FG) && (*task_msg == FG_LNSRCH)) {
         // Return to the driver for calculating f and g; renter at 666.
-        goto LINE1000;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     } else {
         // Calculate and print out the quantities related to the new X.
         iter++;
@@ -862,7 +942,14 @@ LINE666:
         // Compute the infinity norm of the projected (-)gradient.
         projgr(n, l, u, nbd, x, g, &sbgnrm);
 
-        goto LINE1000;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
 LINE777:
@@ -954,48 +1041,13 @@ LINE888:
 LINE999:
     ;
 
-LINE1000:
-    // Save local variables
-    lsave[0]  = prjctd;
-    lsave[1]  = cnstnd;
-    lsave[2]  = boxed;
-    lsave[3]  = updatd;
-
-    isave[0]  = nintol;
-    isave[3]  = iback;
-    isave[4]  = nskip;
-    isave[5]  = head;
-    isave[6]  = col;
-    isave[7]  = itail;
-    isave[8]  = iter;
-    isave[9]  = iupdat;
-    isave[11] = nseg;
-    isave[12] = nfgv;
-    isave[13] = info;
-    isave[14] = ifun;
-    isave[15] = iword;
-    isave[16] = nfree;
-    isave[17] = nact;
-    isave[18] = ileave;
-    isave[19] = nenter;
-
-    dsave[0]  = theta;
-    dsave[1]  = fold;
-    dsave[2]  = tol;
-    dsave[3]  = dnorm;
-    // dsave[4]  = epsmch;
-    // dsave[5]  = cpu1;
-    // dsave[6]  = cachyt;
-    // dsave[7]  = sbtime;
-    // dsave[8]  = lnscht;
-    // dsave[9]  = time1;
-    dsave[10] = gd;
-    dsave[11] = stpmx;
-    dsave[12] = sbgnrm;
-    dsave[13] = stp;
-    dsave[14] = gdold;
-    dsave[15] = dtd;
-
+    save_local_vars(
+        prjctd, cnstnd, boxed, updatd, nintol,
+        iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+        ifun, iword, nfree, nact, ileave, nenter,
+        theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+        lsave, isave, dsave
+    );
     return;
 }
 
@@ -1533,14 +1585,13 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
     tsum = 0.0;
     *nseg = 1;
 
-    // If there are no breakpoints, locate the GCP and return.
-    if (nbreak == -1) { goto LINE888; }
     nleft = nbreak;
     iter = 0;
     tj = 0.0;
 
     // ------------------- the beginning of the loop -------------------------
-    while (1)
+    // If there are no breakpoints, we skip the loop, locate the GCP and return.
+    while (nbreak > -1)
     {
         // Find the next smallest breakpoint;
         // compute dt = t(nleft) - t(nleft + 1).
@@ -1572,7 +1623,19 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
         dt = tj - tj0;
 
         // If a minimizer is within this interval, locate the GCP and return.
-        if (dtm < dt) { goto LINE888; }
+        if (dtm < dt) {
+            if (dtm <= 0.0) { dtm = 0.0; }
+            tsum = tsum + dtm;
+            // Move free variables (i.e. the ones w/o breakpoints) and the variables
+            // whose breakpoints haven't been reached.
+            BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
+
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+
+            return;
+        }
 
         // Otherwise fix one variable and reset the corresponding component
         // of d to zero.
@@ -1593,7 +1656,10 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
         if (nleft == -1 && nbreak == n) {
             // All n variables are fixed, return with xcp as GCP.
             dtm = dt;
-            goto LINE999;
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+            return;
         }
 
         // Update the derivative information.
@@ -1649,18 +1715,14 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
 
     // ------------------- the end of the loop -------------------------------
 
-LINE888:
     if (dtm <= 0.0) { dtm = 0.0; }
     tsum = tsum + dtm;
-
     // Move free variables (i.e. the ones w/o breakpoints) and the variables
     // whose breakpoints haven't been reached.
     BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
 
-LINE999:
     // Update c = c + dtm*p = W'(x^c - x)
     // which will be used in computing r = Z'(B(x^c - x) + g).
-
     if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
 
     return;
@@ -3393,9 +3455,9 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
 }
 
 static inline void save_vars(
-    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
-    double stmax, double width, double width1, int* isave, double* dsave) {
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave) {
     if (brackt)
     {
         isave[0] = 1;

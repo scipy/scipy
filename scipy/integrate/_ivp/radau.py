@@ -198,9 +198,6 @@ class Radau(OdeSolver):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
-    first_step : float or None, optional
-        Initial step size. Default is ``None`` which means that the algorithm
-        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
@@ -258,6 +255,9 @@ class Radau(OdeSolver):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by this method, but may result in slower
         execution overall in some circumstances (e.g. small ``len(y0)``).
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
     tcrit : float and array_like, optional
         Critical points to take care during integration.  Forces
         solver to integrate to this time point exactly before proceeding.
@@ -267,6 +267,8 @@ class Radau(OdeSolver):
         between ``t0`` and ``t_bound``.
 
         .. versionadded:: 1.18.0
+    **extraneous
+        Any additional keyword arguments will be ignored.
 
     Attributes
     ----------

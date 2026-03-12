@@ -336,6 +336,7 @@ def test_directional_stats(xp, axis):
 @pytest.mark.parametrize('fun, kwargs', [
     make_xp_pytest_param(stats.wilcoxon,
                          {'method': 'asymptotic', 'zero_method': 'zsplit'}),
+    make_xp_pytest_param(stats.cramervonmises, {'cdf': stats.norm.cdf}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_one_sample_tests(fun, kwargs, axis, xp):
@@ -344,6 +345,24 @@ def test_one_sample_tests(fun, kwargs, axis, xp):
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.ks_1samp),
+                                 make_xp_pytest_param(stats.kstest)])
+@pytest.mark.parametrize('method', ['exact', 'approx', 'asymptotic'])  # auto == exact
+@pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_ks_1samp(fun, method, alternative, axis, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp, seed=84912165484322)
+    kwargs = dict(method=method, alternative=alternative, axis=axis)
+    res = fun(*marrays, stats.norm.cdf, **kwargs)
+    ref = stats.ks_1samp(*narrays, stats.norm.cdf, nan_policy='omit', **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    xp_assert_equal(res.statistic_location.data, xp.asarray(ref.statistic_location))
+    xp_assert_equal(res.statistic_sign.data,
+                    xp.asarray(ref.statistic_sign, dtype=xp.int8))
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
@@ -363,6 +382,27 @@ def test_two_sample_tests(fun, kwargs, axis, xp):
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@make_xp_test_case(stats.ks_2samp)
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.ks_2samp),
+                                 make_xp_pytest_param(stats.kstest)])
+@pytest.mark.parametrize('method', ['exact', 'asymp', 'auto'])  # auto == exact
+@pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_ks_2samp(fun, method, alternative, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, xp=xp, seed=84912165484322)
+    kwargs = dict(method=method, alternative=alternative, axis=axis)
+    res = fun(*marrays, **kwargs)
+    ref = stats.ks_2samp(*narrays, nan_policy='omit', **kwargs)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    # with this random data, there often multiple locations where the statistic assumes
+    # the most extreme value, so we can't expect these to always match
+    # xp_assert_equal(res.statistic_location.data, xp.asarray(ref.statistic_location))
+    xp_assert_equal(res.statistic_sign.data,
+                    xp.asarray(ref.statistic_sign, dtype=xp.int8))
 
 
 @make_xp_test_case(stats.kendalltau)
@@ -459,19 +499,31 @@ def test_pearsonr(f, axis, xp):
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
-@pytest.mark.parametrize('f', [make_xp_pytest_param(stats.linregress)])
+@skip_backend('array_api_strict', reason="issue with clip.")
+@pytest.mark.parametrize('f, method', [
+    make_xp_pytest_param(stats.siegelslopes, {'method':'hierarchical'}),
+    make_xp_pytest_param(stats.siegelslopes, {'method':'separate'}),
+    make_xp_pytest_param(stats.theilslopes, {'method': 'joint'}),
+    make_xp_pytest_param(stats.theilslopes, {'method': 'separate'}),
+    make_xp_pytest_param(stats.linregress, {}),
+])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_linregress(f, axis, xp):
-    mxp, marrays, narrays = get_arrays(2, seed=84912165484320, xp=xp)
-    res = f(*marrays, axis=axis)
-    ref = f(*narrays, nan_policy='omit', axis=axis)
+def test_robust_slopes(f, method, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, shape=(19, 20), seed=84912165484320, xp=xp)
+    res = f(*marrays, axis=axis, **method)
+    ref = f(*narrays, nan_policy='omit', axis=axis, **method)
 
     xp_assert_close(res.slope.data, xp.asarray(ref.slope))
     xp_assert_close(res.intercept.data, xp.asarray(ref.intercept))
-    xp_assert_close(res.rvalue.data, xp.asarray(ref.rvalue))
-    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
-    xp_assert_close(res.stderr.data, xp.asarray(ref.stderr))
-    xp_assert_close(res.intercept_stderr.data, xp.asarray(ref.intercept_stderr))
+
+    if f == stats.theilslopes:
+        xp_assert_close(res.low_slope.data, xp.asarray(ref.low_slope))
+        xp_assert_close(res.high_slope.data, xp.asarray(ref.high_slope))
+    elif f == stats.linregress:
+        xp_assert_close(res.rvalue.data, xp.asarray(ref.rvalue))
+        xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+        xp_assert_close(res.stderr.data, xp.asarray(ref.stderr))
+        xp_assert_close(res.intercept_stderr.data, xp.asarray(ref.intercept_stderr))
 
 
 @make_xp_test_case(stats.entropy)
@@ -494,6 +546,20 @@ def test_rankdata(axis, xp):
     ref = stats.rankdata(*narrays, nan_policy='omit', axis=axis)
     xp_assert_close(res.data[~res.mask], xp.asarray(ref[~np.isnan(ref)]))
     xp_assert_close(res.mask, xp.asarray(np.isnan(ref)))
+
+
+@make_xp_test_case(stats.obrientransform)
+@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
+@pytest.mark.parametrize('n_arrays', [1, 3])
+def test_obrientransform(dtype, n_arrays, xp):
+    # obrientransform is not yet vectorized
+    mxp, marrays, narrays = get_arrays(n_arrays, dtype=dtype, shape=(25,), xp=xp)
+    res = stats.obrientransform(*marrays)
+    ref = stats.obrientransform(*narrays, nan_policy='omit')
+    for res_i, ref_i in zip(res, ref):
+        xp_assert_close(res_i.data[~res_i.mask],
+                        xp.asarray(ref_i[~np.isnan(ref_i)], dtype=getattr(xp, dtype)))
 
 
 @pytest.mark.parametrize('f', [

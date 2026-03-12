@@ -6,10 +6,23 @@ REM SPDX-License-Identifier: MIT
 
 set URL=%1
 set COMPONENTS=%2
-
+set EXPECTED_SHA256=%3
 
 :: download installer from intel
 curl.exe --output %TEMP%\webimage.exe --url %URL% --retry 5 --retry-delay 5
+
+:: verify checksum if provided
+if not "%EXPECTED_SHA256%"=="" (
+  for /f "tokens=1" %%h in ('certutil -hashfile %TEMP%\webimage.exe SHA256 ^| findstr /v "hash"') do set FILE_HASH=%%h
+  if /i not "%FILE_HASH%"=="%EXPECTED_SHA256%" (
+    echo Checksum verification failed for %URL%
+    echo Expected: %EXPECTED_SHA256%
+    echo Got:      %FILE_HASH%
+    del %TEMP%\webimage.exe
+    exit /b 1
+  )
+)
+
 start /b /wait %TEMP%\webimage.exe -s -x -f webimage_extracted
 del %TEMP%\webimage.exe
 if "%COMPONENTS%"=="" (

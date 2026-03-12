@@ -2453,13 +2453,18 @@ def keip_zeros(nt):
 
 
 def kelvin_zeros(nt):
-    """Compute nt zeros of all Kelvin functions.
+    """Compute `nt` zeros of all Kelvin functions.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute for each function.
 
     Returns
     -------
     zeros : tuple of arrays
-        Length-8 tuple of arrays of length nt.  The tuple contains the arrays of zeros
-        of (ber, bei, ker, kei, ber', bei', ker', kei').
+        Length-8 tuple of arrays of length `nt`.  The tuple contains the arrays of zeros
+        of ``(ber, bei, ker, kei, ber', bei', ker', kei')``.
 
     References
     ----------
@@ -2484,8 +2489,15 @@ def pro_cv_seq(m, n, c):
     """Characteristic values for prolate spheroidal wave functions.
 
     Compute a sequence of characteristic values for the prolate
-    spheroidal wave functions for mode m and n'=m..n and spheroidal
-    parameter c.
+    spheroidal wave functions for mode `m` and n'=m..n and spheroidal
+    parameter `c`.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
 
     Returns
     -------
@@ -2515,6 +2527,13 @@ def obl_cv_seq(m, n, c):
     Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
 
     Returns
     -------

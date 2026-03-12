@@ -161,8 +161,7 @@ Currently, SciPy wheels are being built as follows:
 .. _Images: https://github.com/orgs/cirruslabs/packages?tab=packages&q=macos
 .. _rtools: https://community.chocolatey.org/packages/rtools#versionhistory
 
-Note that the OSX wheels additionally vendor gfortran 11.3.0 for x86_64,
-and gfortran 12.1.0 for arm64. See ``tools/wheels/cibw_before_build_macos.sh``.
+Note that the OSX wheels additionally vendor the libgfortran dylib.
 
 
 C Compilers

@@ -292,6 +292,13 @@ class DenseOutput:
     Evaluation outside this interval is not forbidden, but the accuracy is not
     guaranteed.
 
+    Parameters
+    ----------
+    t_old : float
+        Previous time.
+    t : float
+        Current time.
+
     Attributes
     ----------
     t_min, t_max : float

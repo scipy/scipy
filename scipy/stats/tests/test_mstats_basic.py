@@ -1964,7 +1964,7 @@ class TestCompareWithStats:
     def test_obrientransform(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            r = stats.obrientransform(x)
+            r = np.stack(stats.obrientransform(x))
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
 

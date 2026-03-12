@@ -609,7 +609,6 @@ def xp_default_dtype(xp):
         return xp.float64
 
 
-### MArray Helpers ###
 def xp_result_device(*args):
     """Return the device of an array in `args`, for the purpose of
     input-output device propagation.
@@ -631,6 +630,9 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """
     arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]
     return xp.concat(arys)
+
+
+### MArray Helpers ###
 
 
 def is_marray(xp):
@@ -655,6 +657,27 @@ def _share_masks(*args, xp):
         mask = functools.reduce(operator.or_, (arg.mask for arg in args))
         args = [xp.asarray(arg.data, mask=mask) for arg in args]
     return args[0] if len(args) == 1 else args
+
+
+def _masked_apply(f, *, args, kwargs=None, xp):
+    # Unmask array arguments, evaluate function, and apply result mask to outputs.
+    # Assumes that when `xp` is an MArray namespace, there is at least one MArray
+    # in `args`/`kwargs` and MArrays are the only objects in `args`/`kwargs` with
+    # `data` and `mask` attributes. Could/should combine with `xpx.lazy_apply`.
+    kwargs = {} if kwargs is None else kwargs
+
+    if not is_marray(xp):
+        return f(*args, **kwargs)
+
+    arg_data = (getattr(arg, 'data', arg) for arg in args)
+    kwarg_data = (getattr(val, 'data', val) for val in kwargs.values())
+    res = f(*arg_data, **dict(zip(kwarg_data, kwargs.keys())))
+
+    masks = (arr.mask for arr in (*args, *kwargs.values()) if hasattr(arr, 'mask'))
+    mask = functools.reduce(operator.or_, masks)
+    return ((xp.asarray(out, mask=mask) for out in res) if isinstance(res, tuple)
+            else xp.asarray(res, mask=mask))
+
 
 ### End MArray Helpers ###
 
@@ -691,6 +714,8 @@ def _make_sphinx_capabilities(
     allow_dask_compute=False, jax_jit=True,
     # list of tuples [(module name, reason), ...]
     warnings = (),
+    # Whether the function supports MArrays that wrap one of the supported backends
+    marray=None,
     # unused in documentation
     reason=None,
     method_capabilities=None,
@@ -734,6 +759,11 @@ def _make_sphinx_capabilities(
         backend = capabilities[module]
         backend.warnings.append(warning)
 
+    # MArrays are either supported or not. If supported, they work with all combinations
+    # of device + backend that are supported by the function and MArray itself. This is
+    # indicated with an extra note after the backend table.
+    capabilities.update({'marray': marray})
+
     return capabilities
 
 
@@ -751,6 +781,11 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         See :ref:`dev-arrayapi` for more information.
         """
         return textwrap.dedent(note)
+
+    marray_note = (f"`{fun_name}` also accepts "
+        "`MArrays <https://mdhaber.github.io/marray/tutorial.html>`__ "
+        "backed by the backends indicated above; masked values will be treated as "
+        "though they were not present." if capabilities.get("marray", False) else "")
 
     # Note: deliberately not documenting array-api-strict
     note = f"""
@@ -772,6 +807,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
+    {marray_note or ""}
     {extra_note or ""}
     See :ref:`dev-arrayapi` for more information.
     """
@@ -801,6 +837,8 @@ def xp_capabilities(
     # specific capabilities for use when when xp_capabilities is
     # applied to a class with varying capabilities per method
     method_capabilities=None,
+    # Whether the function supports MArrays that wrap one of the supported backends
+    marray=False,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -841,6 +879,7 @@ def xp_capabilities(
             warnings=(),
             allow_dask_compute=False,
             jax_jit=True,
+            marray=False,
         ) | capabilities
 
     capabilities = dict(
@@ -855,6 +894,7 @@ def xp_capabilities(
         jax_jit=jax_jit,
         warnings=warnings,
         method_capabilities=method_capabilities,
+        marray=marray,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 

@@ -65,7 +65,7 @@ jobs:
           submodules: recursive
 
       - name: Cache pixi
-        uses: cirruslabs/cache@v4 #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
         with:
           path: ${{ env.PIXI_CACHE_DIR }}
           # Cache hit if lock file did not change. If it did, still restore the cache,
@@ -77,7 +77,7 @@ jobs:
             ${{ runner.os }}-gpu-pixi
 
       - name: Setup compiler cache
-        uses: cirruslabs/cache@v4 #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
         with:
           path: ${{ env.CCACHE_DIR }}
           # Make primary key unique by using `run_id`, this ensures the cache
@@ -93,7 +93,7 @@ jobs:
           echo "CUPY_CACHE_DIR=$HOME/.cupy/kernel_cache" >> $GITHUB_ENV
 
       - name: Cache CuPy kernels
-        uses: cirruslabs/cache@v4 #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
         with:
           path: ${{ env.CUPY_CACHE_DIR }}
           # Same as for ccache above

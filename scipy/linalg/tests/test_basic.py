@@ -821,7 +821,7 @@ class TestSolve:
     @pytest.mark.parametrize('b', [0, 1, [0, 1]])
     def test_singular_scalar(self, b):
         # regression test for gh-24355: scalar a=0 is singular
-        # thus should raise the same error 
+        # thus should raise the same error
 
         with pytest.raises(LinAlgError):
             a = np.zeros((1, 1))
@@ -1147,9 +1147,10 @@ class TestSolve:
     @pytest.mark.parametrize('b_order', ['C', 'F'])
     @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
     @pytest.mark.parametrize('transposed', [True, False])
+    @pytest.mark.parametrize('assume_a', [None, "banded"]) # separate branches in C code
     def test_overwrite_args(
         self, overwrite_kw, overwrite_b_kw, a_dtype, a_order,
-        b_dtype, b_order, b_ndim, transposed
+        b_dtype, b_order, b_ndim, transposed, assume_a
     ):
         n = 3
         a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
@@ -1164,7 +1165,8 @@ class TestSolve:
         b_ref = b.copy()
 
         # solve and check that the solution is correct for all parameters
-        x = solve(a, b, **overwrite_kw, **overwrite_b_kw, transposed=transposed)
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw,
+                transposed=transposed, assume_a=assume_a)
         a_or_aT = a_ref.T if transposed else a_ref
         assert_allclose(a_or_aT @ x, b_ref, atol=1e-14)
 
@@ -1177,8 +1179,9 @@ class TestSolve:
 
         assert np.shares_memory(x, b) == b_inplace
 
+        # for `assume_a="banded"`, the `overwrite_a` argument is ignored for now
         assert (b == b_ref).all() != b_inplace
-        assert (a == a_ref).all() != a_inplace
+        assert (a == a_ref).all() != a_inplace or assume_a == "banded"
 
     def test_posdef_not_posdef(self):
         # the `b` matrix is invertible but not positive definite

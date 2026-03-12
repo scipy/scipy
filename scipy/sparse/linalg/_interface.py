@@ -68,9 +68,7 @@ from scipy.sparse._sputils import asmatrix, is_pydata_spmatrix, isintlike, issha
 __all__ = ["LinearOperator", "aslinearoperator"]
 
 
-@xp_capabilities(skip_backends=[
-    ("cupy", "TODO: waiting for scipy/scipy#24670"),
-])
+@xp_capabilities()
 class LinearOperator:
     """Common interface for performing matrix vector products.
 
@@ -193,7 +191,7 @@ class LinearOperator:
     >>> A @ np.ones(2)
     array([ 2.,  3.])
 
-    """  # numpydoc ignore=PR02
+    """  # numpydoc ignore=PR01,PR02
 
     # Necessary for right matmul with numpy arrays.
     __array_ufunc__ = None
@@ -1161,6 +1159,7 @@ class IdentityOperator(LinearOperator):
         return self
 
 
+@xp_capabilities()
 def aslinearoperator(A):
     """Return `A` as a `LinearOperator`.
 

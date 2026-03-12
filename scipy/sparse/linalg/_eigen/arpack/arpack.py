@@ -279,6 +279,13 @@ HOWMNY_DICT = {'A': 0, 'P': 1, 'S': 2}
 class ArpackError(RuntimeError):
     """
     ARPACK error.
+
+    Parameters
+    ----------
+    info : int or str
+        Key for `infodict` to get error message.
+    infodict : dict, optional
+        Dictionary mapping `info` keys to error messages.
     """
 
     def __init__(self, info, infodict=None):
@@ -293,6 +300,15 @@ class ArpackError(RuntimeError):
 class ArpackNoConvergence(ArpackError):
     """
     ARPACK iteration did not converge.
+
+    Parameters
+    ----------
+    msg : str
+        Error message.
+    eigenvalues : ndarray
+        Conveged eigenvalues.
+    eigenvectors : ndarray
+        Converged eigenvectors.
 
     Attributes
     ----------
@@ -1265,6 +1281,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
+        .. versionadded:: 1.17.0
+
     Returns
     -------
     w : ndarray
@@ -1588,6 +1606,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionadded:: 1.17.0
 
     Raises
     ------

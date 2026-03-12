@@ -92,6 +92,8 @@ class LSODA(OdeSolver):
         between ``t0`` and ``t_bound``.
 
         .. versionadded:: 1.18.0
+    **extraneous
+        Any additional keyword arguments will be ignored.
 
     Attributes
     ----------

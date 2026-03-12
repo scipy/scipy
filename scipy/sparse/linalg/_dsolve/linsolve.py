@@ -459,7 +459,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         Sparse array to factorize. Most efficient when provided in CSC format.
         Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
-        Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
+        Drop tolerance (``0 <= tol <= 1``) for an incomplete LU decomposition.
         (default: 1e-4)
 
         Note that `drop_tol` primarily affects entries generated as fill-in
@@ -467,13 +467,37 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         fill-in, changing this parameter may have no visible effect on the
         sparsity pattern of the factors.
     fill_factor : float, optional
-        Specifies the fill ratio upper bound (>= 1.0) for ILU. (default: 10)
+        Specifies the fill ratio upper bound (``>= 1.0``) for ILU. (default: 10)
     drop_rule : str, optional
         Comma-separated string of drop rules to use.
         Available rules: ``basic``, ``prows``, ``column``, ``area``,
         ``secondary``, ``dynamic``, ``interp``. (Default: ``basic,area``)
 
         See SuperLU documentation for details.
+    permc_spec : str, optional
+        How to permute the columns of the matrix for sparsity preservation.
+        (default: 'COLAMD')
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering
+
+    diag_pivot_thresh : float, optional
+        Threshold used for a diagonal entry to be an acceptable pivot.
+        See SuperLU user's guide for details [1]_
+    relax : int, optional
+        Expert option for customizing the degree of relaxing supernodes.
+        See SuperLU user's guide for details [1]_
+    panel_size : int, optional
+        Expert option for customizing the panel size.
+        See SuperLU user's guide for details [1]_
+    options : dict, optional
+        Dictionary containing additional expert options to SuperLU.
+        See SuperLU user guide [1]_ (section 2.4 on the 'Options' argument)
+        for more details. For example, you can specify
+        ``options=dict(Equil=False, IterRefine='SINGLE'))``
+        to turn equilibration off and perform a single iterative refinement.
 
     Returns
     -------
@@ -487,7 +511,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Notes
     -----
     When a real array is factorized and the returned SuperLU object's ``solve()`` method
-    is used with complex arguments an error is generated. Instead, cast the initial 
+    is used with complex arguments an error is generated. Instead, cast the initial
     array to complex and then factorize.
 
     To improve the better approximation to the inverse, you may need to
@@ -500,6 +524,10 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     to the full LU factors even for large `drop_tol`.
 
     This function uses the SuperLU library.
+
+    References
+    ----------
+    .. [1] SuperLU https://portal.nersc.gov/project/sparse/superlu/
 
     Examples
     --------

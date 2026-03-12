@@ -1069,6 +1069,32 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
 
 
 /*
+ * Copy only a specific triangle of F-ordered `src` to C-ordered `dst`.
+ *
+ * `src` is n x n, F-ordered
+ * `dst` is n x n, C-ordered
+ *
+ * `uplo` determines which triangle gets copied over,
+ */
+template<typename T>
+void copy_triangle_F_to_C(T *dst, const T *src, const npy_intp n, const char uplo) {
+    if (uplo == 'U') {
+        for (npy_intp i = 0; i < n; i++) {
+            for (npy_intp j = 0; j <= i; j++) {
+                dst[i + j * n] = src[i * n + j];
+            }
+        }
+    } else {
+        for (npy_intp i = 0; i < n; i++) {
+            for (npy_intp j = i; j < n; j++) {
+                dst[i + j * n] = src[i * n + j];
+            }
+        }
+    }
+}
+
+
+/*
  * 1-norm of a matrix
  */
 
@@ -1303,13 +1329,14 @@ bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy
 
 template<typename T>
 void
-detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *kl_max, npy_intp *ku_max) {
+detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *ldab_max) {
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T* slice_ptr = compute_slice_ptr(idx, data, ndim, shape, strides);
 
         bandwidth_strided(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
-        if (kl[idx] > *kl_max) {*kl_max = kl[idx];}
-        if (ku[idx] > *ku_max) {*ku_max = ku[idx];}
+        if (2 * kl[idx] + ku[idx] + 1 > *ldab_max) {
+            *ldab_max = 2 * kl[idx] + ku[idx] + 1;
+        }
     }
 }
 

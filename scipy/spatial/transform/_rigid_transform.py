@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from types import EllipsisType, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
 from collections.abc import Callable
 
 import numpy as np
@@ -129,6 +129,20 @@ class RigidTransform:
     below). ``RigidTransform(...)`` is not supposed to be instantiated directly.
 
     For rigorous introductions to rigid transforms, see [2]_, [3]_, and [4]_.
+
+    Parameters
+    ----------
+    matrix : array_like, shape (..., 4, 4)
+        A single transformation matrix or a stack of transformation
+        matrices.
+    normalize : bool, optional
+        If True, orthonormalize the rotation matrix using singular value
+        decomposition. If False, the rotation matrix is not checked for
+        orthogonality or right-handedness.
+    copy : bool, optional
+        If True, copy the input matrix. If False, a reference to the input
+        matrix is used. If normalize is True, the input matrix is always
+        copied regardless of the value of copy.
 
     Attributes
     ----------
@@ -410,6 +424,9 @@ class RigidTransform:
     >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, matrix: ArrayLike, normalize: bool = True, copy: bool = True):
         """Initialize from a 4x4 transformation matrix.
