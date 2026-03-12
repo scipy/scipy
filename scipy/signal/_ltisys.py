@@ -395,12 +395,33 @@ class lti(LinearTimeInvariant):
     def to_discrete(self, dt, method='zoh', alpha=None):
         """Return a discretized version of the current system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: dlti
             Discrete version of the current system.
+
+        See Also
+        --------
+        cont2discrete
         """
         raise NotImplementedError('to_discrete is not implemented for this '
                                   'system class.')
@@ -495,19 +516,19 @@ class dlti(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Create an instance of the appropriate subclass."""
         if cls is dlti:
             N = len(system)
             if N == 2:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete, *system, **kwargs)
+                    TransferFunctionDiscrete, *system, dt=dt)
             elif N == 3:
                 return ZerosPolesGainDiscrete.__new__(ZerosPolesGainDiscrete,
-                                                      *system, **kwargs)
+                                                      *system, dt=dt)
             elif N == 4:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
-                                                  **kwargs)
+                                                  dt=dt)
             else:
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")
@@ -785,23 +806,19 @@ class TransferFunction(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Handle object conversion if input is an instance of lti."""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_tf()
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is TransferFunction:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return TransferFunctionContinuous.__new__(
-                    TransferFunctionContinuous,
-                    *system,
-                    **kwargs)
+                    TransferFunctionContinuous, *system)
             else:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete,
-                    *system,
-                    **kwargs)
+                    TransferFunctionDiscrete, *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1019,11 +1036,32 @@ class TransferFunctionContinuous(TransferFunction, lti):
         """
         Returns the discretized `TransferFunction` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `StateSpace`
+
+        See Also
+        --------
+        cont2discrete
         """
         return TransferFunction(*cont2discrete((self.num, self.den),
                                                dt,
@@ -1165,24 +1203,21 @@ class ZerosPolesGain(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Handle object conversion if input is an instance of `lti`"""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_zpk()
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is ZerosPolesGain:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return ZerosPolesGainContinuous.__new__(
                     ZerosPolesGainContinuous,
-                    *system,
-                    **kwargs)
+                    *system)
             else:
                 return ZerosPolesGainDiscrete.__new__(
                     ZerosPolesGainDiscrete,
-                    *system,
-                    **kwargs
-                    )
+                    *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1353,11 +1388,32 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
         """
         Returns the discretized `ZerosPolesGain` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `ZerosPolesGain`
+
+        See Also
+        --------
+        cont2discrete
         """
         return ZerosPolesGain(
             *cont2discrete((self.zeros, self.poles, self.gain),
@@ -1537,7 +1593,7 @@ class StateSpace(LinearTimeInvariant):
     __array_priority__ = 100.0
     __array_ufunc__ = None
 
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Create new StateSpace object and settle inheritance."""
         # Handle object conversion if input is an instance of `lti`
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
@@ -1545,12 +1601,12 @@ class StateSpace(LinearTimeInvariant):
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is StateSpace:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return StateSpaceContinuous.__new__(StateSpaceContinuous,
-                                                    *system, **kwargs)
+                                                    *system)
             else:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete,
-                                                  *system, **kwargs)
+                                                  *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1809,7 +1865,7 @@ class StateSpace(LinearTimeInvariant):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Additional keywords passed to `ss2zpk`
 
         Returns
@@ -1827,7 +1883,7 @@ class StateSpace(LinearTimeInvariant):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Additional keywords passed to `ss2zpk`
 
         Returns
@@ -1912,11 +1968,32 @@ class StateSpaceContinuous(StateSpace, lti):
         """
         Returns the discretized `StateSpace` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `StateSpace`
+
+        See Also
+        --------
+        cont2discrete
         """
         return StateSpace(*cont2discrete((self.A, self.B, self.C, self.D),
                                          dt,

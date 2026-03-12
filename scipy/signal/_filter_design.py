@@ -2850,7 +2850,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
-                             "design an Chebyshev II filter.")
+                             "design a Chebyshev II filter.")
         z, p, k = typefunc(N, rs, xp=xp)
     elif typefunc == ellipap:
         if rs is None or rp is None:
@@ -4061,10 +4061,10 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         Two element sequence of fixed passband edges.
     stopb : ndarray
         Two element sequence of fixed stopband edges.
-    gstop : float
-        Amount of attenuation in stopband in dB.
     gpass : float
         Amount of ripple in the passband in dB.
+    gstop : float
+        Amount of attenuation in stopband in dB.
     type : {'butter', 'cheby', 'ellip'}
         Type of filter.
 

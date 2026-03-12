@@ -1158,7 +1158,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         in `rvs` must match the number of elements of `n_observations`, i.e.
         ``len(rvs) == len(n_observations)``. If `rvs` is a single callable,
         `n_observations` is treated as a single element.
-    n_observations : tuple of ints or tuple of integer arrays
+    n_observations : tuple of ints or tuple of int arrays
         If a sequence of ints, each is the sizes of a sample to be passed to `test`.
         If a sequence of integer arrays, the power is simulated for each
         set of corresponding sample sizes. See Examples.
@@ -1168,14 +1168,6 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         hypothesis. Equivalently, the acceptable rate of Type I error under
         the null hypothesis. If an array, the power is simulated for each
         significance threshold.
-    kwargs : dict, optional
-        Keyword arguments to be passed to `rvs` and/or `test` callables.
-        Introspection is used to determine which keyword arguments may be
-        passed to each callable.
-        The value corresponding with each keyword must be an array.
-        Arrays must be broadcastable with one another and with each array in
-        `n_observations`. The power is simulated for each set of corresponding
-        sample sizes and arguments. See Examples.
     vectorized : bool, optional
         If `vectorized` is set to ``False``, `test` will not be passed keyword
         argument `axis` and is expected to perform the test only for 1D samples.
@@ -1192,6 +1184,14 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         The number of samples to process in each call to `test`. Memory usage is
         proportional to the product of `batch` and the largest sample size. Default
         is ``None``, in which case `batch` equals `n_resamples`.
+    kwargs : dict, optional
+        Keyword arguments to be passed to `rvs` and/or `test` callables.
+        Introspection is used to determine which keyword arguments may be
+        passed to each callable.
+        The value corresponding with each keyword must be an array.
+        Arrays must be broadcastable with one another and with each array in
+        `n_observations`. The power is simulated for each set of corresponding
+        sample sizes and arguments. See Examples.
 
     Returns
     -------
@@ -2183,7 +2183,7 @@ class MonteCarloMethod(ResamplingMethod):
     hypothesis test functions to perform a Monte Carlo version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of Monte Carlo samples to draw. Default is 9999.
@@ -2253,7 +2253,7 @@ class PermutationMethod(ResamplingMethod):
     hypothesis test functions to perform a permutation version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.
@@ -2338,7 +2338,7 @@ class BootstrapMethod(ResamplingMethod):
     Instances of this class can be passed into the `method` parameter of some
     confidence interval methods to generate a bootstrap confidence interval.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.

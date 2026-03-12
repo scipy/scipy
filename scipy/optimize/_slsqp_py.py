@@ -17,6 +17,8 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
 from ._slsqplib import slsqp
+from scipy.linalg import norm as lanorm
+from scipy.linalg.lapack import HAS_ILP64
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x, _wrap_callback)
@@ -149,7 +151,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         The number of iterations.
     imode : int, if full_output is true
         The exit mode from the optimizer (see below).
-    smode : string, if full_output is true
+    smode : str, if full_output is true
         Message describing the exit mode from the optimizer.
 
     See Also
@@ -505,8 +507,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} "
               f"{'OPTIMALITY':>16} {'CON. VIOLATION':>16}")
 
+    # XXX: check problem size too large for LP64?
+
     # Internal buffer and int array
-    indices = np.zeros([max(m + 2*n + 2, 1)], dtype=np.int32)
+    indices = np.zeros(
+        [max(m + 2*n + 2, 1)], dtype=np.int64 if HAS_ILP64 else np.int32
+    )
 
     # The worst case workspace requirements for the buffer are:
 

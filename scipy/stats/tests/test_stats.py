@@ -26,7 +26,6 @@ from numpy import array, arange, power
 import numpy as np
 
 import scipy.stats as stats
-import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy import optimize, special
@@ -41,9 +40,11 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes, xp_result_type, xp_copy)
+                                   xp_swapaxes, xp_result_type, xp_copy, is_jax)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
+from scipy._lib._util import _apply_over_batch
+
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -1534,271 +1535,206 @@ class TestCorrSpearmanr2:
 
 # I need to figure out how to do this one.
 
-@pytest.mark.thread_unsafe(reason="fails in parallel")
-def test_kendalltau():
-    # For the cases without ties, both variants should give the same
-    # result.
-    variants = ('b', 'c')
+@make_xp_test_case(stats.kendalltau)
+class TestKendallTau:
+    @pytest.mark.parametrize('x, y, statistic, pvalue', [
+        # For the cases without ties, both variants should give the same
+        # result. Reference values result from R:
+        # cor.test(x, y, method="kendall", exact=1)
+        ([5, 2, 1, 3, 6, 4, 7, 8], [5, 2, 6, 3, 1, 8, 7, 4], 0.0, 1.0),
+        ([0, 5, 2, 1, 3, 6, 4, 7, 8], [5, 2, 0, 6, 3, 1, 8, 7, 4], 0.0, 1.0),
+        ([5, 2, 1, 3, 6, 4, 7], [5, 2, 6, 3, 1, 7, 4], -0.14285714286, 0.77261904762),
+        ([2, 1, 3, 6, 4, 7, 8], [2, 6, 3, 1, 8, 7, 4], 0.047619047619, 1.0),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+         1.0, 5.511463844797e-07),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 2, 1, 3, 4, 5, 6, 7, 8, 9],
+         0.9555555555555556, 5.511463844797e-06),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 2, 1, 3, 4, 6, 5, 7, 8, 9],
+         0.9111111111111111, 2.976190476190e-05),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+         -1.0, 5.511463844797e-07),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 7, 8, 6, 5, 4, 3, 2, 1, 0],
+         -0.9555555555555556, 5.511463844797e-06),
+        ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 7, 8, 6, 5, 3, 4, 2, 1, 0],
+         -0.9111111111111111, 2.976190476190e-05),
+    ])
+    @pytest.mark.parametrize('variant', ['b', 'c'])
+    def test_kendalltau_no_ties(self, x, y, statistic, pvalue, variant, xp):
+        res = stats.kendalltau(xp.asarray(x), xp.asarray(y), variant=variant)
+        xp_assert_close(res[0], xp.asarray(statistic))
+        xp_assert_close(res[1], xp.asarray(pvalue))
 
-    # case without ties, con-dis equal zero
-    x = [5, 2, 1, 3, 6, 4, 7, 8]
-    y = [5, 2, 6, 3, 1, 8, 7, 4]
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (0.0, 1.0)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+    def test_kendalltau_ties(self, xp):
+        # Check a case where variants are different
+        # Example values found from Kendall (1970).
+        # P-value is the same for the both variants
+        x = xp.asarray([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+        y = xp.asarray([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
+        expected = 0.85895569
+        xp_assert_close(stats.kendalltau(x, y, variant='b')[0], xp.asarray(expected))
+        expected = 0.825
+        xp_assert_close(stats.kendalltau(x, y, variant='c')[0], xp.asarray(expected))
 
-    # case without ties, con-dis equal zero
-    x = [0, 5, 2, 1, 3, 6, 4, 7, 8]
-    y = [5, 2, 0, 6, 3, 1, 8, 7, 4]
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (0.0, 1.0)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # tau-b with some ties
+        # Cross-check with R:
+        # cor.test(c(12, 2, 1, 12, 2), c(1, 4, 7, 1, 0), method="kendall", exact=FALSE)
+        x1 = xp.asarray([12, 2, 1, 12, 2])
+        x2 = xp.asarray([1, 4, 7, 1, 0])
+        expected = (-0.47140452079103173, 0.28274545993277478)
+        res = stats.kendalltau(x1, x2)
+        assert_approx_equal(res[0], xp.asarray(expected[0]))
+        assert_approx_equal(res[1], xp.asarray(expected[1]))
 
-    # case without ties, con-dis close to zero
-    x = [5, 2, 1, 3, 6, 4, 7]
-    y = [5, 2, 6, 3, 1, 7, 4]
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (-0.14285714286, 0.77261904762)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # this should result in 1 for tau-b but not tau-c
+        x = xp.asarray([1, 1, 2])
+        xp_assert_close(stats.kendalltau(x, x, variant='b')[0], xp.asarray(1.0))
+        xp_assert_close(stats.kendalltau(x, x, variant='c')[0], xp.asarray(0.88888888))
 
-    # case without ties, con-dis close to zero
-    x = [2, 1, 3, 6, 4, 7, 8]
-    y = [2, 6, 3, 1, 8, 7, 4]
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (0.047619047619, 1.0)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+    def test_input_validation_edge_cases(self, xp):
+        x = xp.asarray([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+        y = xp.asarray([1, 2, 2, 4, 4, 4, 8, 8, 8, 10])
 
-    # simple case without ties
-    x = np.arange(10)
-    y = np.arange(10)
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (1.0, 5.511463844797e-07)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # check exception in case of ties and method='exact' requested
+        message = "Ties found; exact method cannot be used."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y, method='exact')
 
-    # swap a couple of values
-    b = y[1]
-    y[1] = y[2]
-    y[2] = b
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (0.9555555555555556, 5.511463844797e-06)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # check exception in case of invalid method keyword
+        message = "Unknown `method` 'banana' specified."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y, method='banana')
 
-    # swap a couple more
-    b = y[5]
-    y[5] = y[6]
-    y[6] = b
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (0.9111111111111111, 2.976190476190e-05)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # check exception in case of invalid variant keyword
+        message = "Unknown `variant` 'rms' specified."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y, variant='rms')
 
-    # same in opposite direction
-    x = np.arange(10)
-    y = np.arange(10)[::-1]
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (-1.0, 5.511463844797e-07)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # empty arrays provided as input
+        with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
+            res = stats.kendalltau(xp.asarray([]), xp.asarray([]))
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    # swap a couple of values
-    b = y[1]
-    y[1] = y[2]
-    y[2] = b
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (-0.9555555555555556, 5.511463844797e-06)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # test too small
+        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+            tau, p_value = stats.kendalltau(xp.asarray([0]), xp.asarray([0]))
+        xp_assert_equal(tau, xp.asarray(np.nan))
+        xp_assert_equal(p_value, xp.asarray(np.nan))
 
-    # swap a couple more
-    b = y[5]
-    y[5] = y[6]
-    y[6] = b
-    # Cross-check with exact result from R:
-    # cor.test(x,y,method="kendall",exact=1)
-    expected = (-0.9111111111111111, 2.976190476190e-05)
-    for taux in variants:
-        res = stats.kendalltau(x, y, variant=taux)
-        assert_approx_equal(res[0], expected[0])
-        assert_approx_equal(res[1], expected[1])
+        # test unequal length inputs
+        x = np.arange(10.)
+        y = np.arange(20.)
+        message = "Array shapes are incompatible for broadcasting."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, y)
 
-    # Check a case where variants are different
-    # Example values found from Kendall (1970).
-    # P-value is the same for the both variants
-    x = array([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
-    y = array([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
-    expected = 0.85895569
-    assert_approx_equal(stats.kendalltau(x, y, variant='b')[0], expected)
-    expected = 0.825
-    assert_approx_equal(stats.kendalltau(x, y, variant='c')[0], expected)
+    @pytest.mark.parametrize('variant', ['b', 'c'])
+    def test_attributes(self, variant, xp):
+        x1 = xp.asarray([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+        x2 = xp.asarray([1, 2, 2, 4, 4, 4, 8, 8, 8, 10])
+        # test for namedtuple attribute results
+        attributes = ('correlation', 'pvalue')
+        res = stats.kendalltau(x1, x2, variant=variant)
+        check_named_results(res, attributes, xp=xp)
+        xp_assert_equal(res.correlation, res.statistic)
 
-    # check exception in case of ties and method='exact' requested
-    y[2] = y[1]
-    assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
+    @pytest.mark.parametrize('x, y', [
+        ([2, 2, 2], [2, 2, 2]),
+        ([2, 0, 2], [2, 2, 2]),
+        ([2, 2, 2], [2, 0, 2]),
+    ])
+    @pytest.mark.parametrize('variant', ['b', 'c'])
+    def test_degenerate_input(self, x, y, variant, xp):
+        # with only ties in one or both inputs in tau-b or tau-c
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.kendalltau(x, y, variant=variant)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    # check exception in case of invalid method keyword
-    assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_large_arrays(self, dtype, xp):
+        # check with larger arrays
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        rng = np.random.RandomState(7546)
+        x = np.array([rng.normal(loc=1, scale=1, size=500),
+                      rng.normal(loc=1, scale=1, size=500)])
+        corr = [[1.0, 0.3],
+                [0.3, 1.0]]
+        x = np.dot(np.linalg.cholesky(corr), x)
+        x0 = xp.asarray(x[0], dtype=dtype)
+        x1 = xp.asarray(x[1], dtype=dtype)
+        expected = (0.19291382765531062, 1.1337095377742629e-10)
+        res = stats.kendalltau(x0, x1)
+        xp_assert_close(res[0], xp.asarray(expected[0], dtype=dtype))
+        xp_assert_close(res[1], xp.asarray(expected[1], dtype=dtype))
 
-    # check exception in case of invalid variant keyword
-    assert_raises(ValueError, stats.kendalltau, x, y, variant='rms')
+    def test_nan_policy(self, xp):
+        # test nan_policy
+        x = np.arange(10.)
+        x[9] = np.nan
+        x = xp.asarray(x.tolist())
 
-    # tau-b with some ties
-    # Cross-check with R:
-    # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
-    x1 = [12, 2, 1, 12, 2]
-    x2 = [1, 4, 7, 1, 0]
-    expected = (-0.47140452079103173, 0.28274545993277478)
-    res = stats.kendalltau(x1, x2)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+        res = stats.kendalltau(x, x)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    # test for namedtuple attribute results
-    attributes = ('correlation', 'pvalue')
-    for taux in variants:
-        res = stats.kendalltau(x1, x2, variant=taux)
-        check_named_results(res, attributes)
-        assert_equal(res.correlation, res.statistic)
+        res = stats.kendalltau(x, x, nan_policy='omit')
+        xp_assert_close(res.statistic, xp.asarray(1.0))
+        xp_assert_close(res.pvalue, xp.asarray(5.5114638e-6), rtol=1e-06)
 
-    # with only ties in one or both inputs in tau-b or tau-c
-    for taux in variants:
-        assert_equal(stats.kendalltau([2, 2, 2], [2, 2, 2], variant=taux),
-                     (np.nan, np.nan))
-        assert_equal(stats.kendalltau([2, 0, 2], [2, 2, 2], variant=taux),
-                     (np.nan, np.nan))
-        assert_equal(stats.kendalltau([2, 2, 2], [2, 0, 2], variant=taux),
-                     (np.nan, np.nan))
+        res = stats.kendalltau(x, x, nan_policy='omit', method='asymptotic')
+        xp_assert_close(res.statistic, xp.asarray(1.0))
+        xp_assert_close(res.pvalue, xp.asarray(0.00017455009626808976), rtol=1e-06)
 
-    # empty arrays provided as input
-    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
-        assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, x, nan_policy='raise')
 
-    # check with larger arrays
-    rng = np.random.RandomState(7546)
-    x = np.array([rng.normal(loc=1, scale=1, size=500),
-                  rng.normal(loc=1, scale=1, size=500)])
-    corr = [[1.0, 0.3],
-            [0.3, 1.0]]
-    x = np.dot(np.linalg.cholesky(corr), x)
-    expected = (0.19291382765531062, 1.1337095377742629e-10)
-    res = stats.kendalltau(x[0], x[1])
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x, x, nan_policy='foobar')
 
-    # this should result in 1 for taub but not tau-c
-    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0],
-                        1.0)
-    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0],
-                        0.88888888)
+    def test_kendalltau_nan_2nd_arg_gh6134(self, xp):
+        # regression test for gh-6134: nans in the second arg were not handled
+        x = xp.asarray([1., 2., 3., 4.])
+        y = xp.asarray([np.nan, 2.4, 3.4, 3.4])
 
-    # test nan_policy
-    x = np.arange(10.)
-    x[9] = np.nan
-    assert_array_equal(stats.kendalltau(x, x), (np.nan, np.nan))
-    assert_allclose(stats.kendalltau(x, x, nan_policy='omit'),
-                    (1.0, 5.5114638e-6), rtol=1e-06)
-    assert_allclose(stats.kendalltau(x, x, nan_policy='omit', method='asymptotic'),
-                    (1.0, 0.00017455009626808976), rtol=1e-06)
-    assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
-    assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
+        r1 = stats.kendalltau(x, y, nan_policy='omit')
+        r2 = stats.kendalltau(x[1:], y[1:])
+        xp_assert_close(r1.statistic, r2.statistic, atol=1e-15)
 
-    # test unequal length inputs
-    x = np.arange(10.)
-    y = np.arange(20.)
-    assert_raises(ValueError, stats.kendalltau, x, y)
+    @pytest.mark.thread_unsafe(reason="fails in parallel")
+    def test_kendalltau_gh18139_overflow(self, xp):
+        # gh-18139 reported an overflow in `kendalltau` that appeared after
+        # SciPy 0.15.1. Check that this particular overflow does not occur.
+        # (Test would fail if warning were emitted.)
+        import random
+        random.seed(6272161)
+        classes = [1, 2, 3, 4, 5, 6, 7]
+        n_samples = 2 * 10 ** 5
+        x = xp.asarray(random.choices(classes, k=n_samples))
+        y = xp.asarray(random.choices(classes, k=n_samples))
+        res = stats.kendalltau(x, y)
+        # Reference value from SciPy 0.15.1
+        xp_assert_close(res.statistic, xp.asarray(0.0011816493905730343))
+        # Reference p-value from `permutation_test` w/ n_resamples=9999 (default).
+        # Expected to be accurate to at least two digits.
+        xp_assert_close(res.pvalue, xp.asarray(0.4894), atol=2e-3)
 
-    # test all ties
-    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
-        tau, p_value = stats.kendalltau([0], [0])
-    assert_equal(np.nan, tau)
-    assert_equal(np.nan, p_value)
-
-    # Regression test for GitHub issue #6061 - Overflow on Windows
-    x = np.arange(2000, dtype=float)
-    x = np.ma.masked_greater(x, 1995)
-    y = np.arange(2000, dtype=float)
-    y = np.concatenate((y[1000:], y[:1000]))
-    assert_(np.isfinite(stats.mstats.kendalltau(x,y)[1]))
+    def test_kendall_tau_large_nan_policy(self, xp):
+        n = 172
+        # Test omit policy
+        x = np.arange(n + 1).astype(float)
+        y = np.arange(n + 1).astype(float)
+        y[-1] = np.nan
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
+        _, pval = stats.kendalltau(x, y, method='exact', nan_policy='omit')
+        xp_assert_equal(pval, xp.asarray(0.0))
 
 
-def test_kendalltau_vs_mstats_basic():
-    rng = np.random.RandomState(42)
-    for s in range(3, 10):
-        a = []
-        # Generate rankings with ties
-        for i in range(s):
-            a += [i]*i
-        b = list(a)
-        rng.shuffle(a)
-        rng.shuffle(b)
-        expected = mstats_basic.kendalltau(a, b)
-        actual = stats.kendalltau(a, b)
-        assert_approx_equal(actual[0], expected[0])
-        assert_approx_equal(actual[1], expected[1])
-
-
-def test_kendalltau_nan_2nd_arg():
-    # regression test for gh-6134: nans in the second arg were not handled
-    x = [1., 2., 3., 4.]
-    y = [np.nan, 2.4, 3.4, 3.4]
-
-    r1 = stats.kendalltau(x, y, nan_policy='omit')
-    r2 = stats.kendalltau(x[1:], y[1:])
-    assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
-
-
-@pytest.mark.thread_unsafe(reason="fails in parallel")
-def test_kendalltau_gh18139_overflow():
-    # gh-18139 reported an overflow in `kendalltau` that appeared after
-    # SciPy 0.15.1. Check that this particular overflow does not occur.
-    # (Test would fail if warning were emitted.)
-    import random
-    random.seed(6272161)
-    classes = [1, 2, 3, 4, 5, 6, 7]
-    n_samples = 2 * 10 ** 5
-    x = random.choices(classes, k=n_samples)
-    y = random.choices(classes, k=n_samples)
-    res = stats.kendalltau(x, y)
-    # Reference value from SciPy 0.15.1
-    assert_allclose(res.statistic, 0.0011816493905730343)
-    # Reference p-value from `permutation_test` w/ n_resamples=9999 (default).
-    # Expected to be accurate to at least two digits.
-    assert_allclose(res.pvalue, 0.4894, atol=2e-3)
-
-
+@make_xp_test_case(stats.kendalltau)
 class TestKendallTauAlternative:
-    def test_kendalltau_alternative_asymptotic(self):
+    def test_kendalltau_alternative_asymptotic(self, xp):
         # Test alternative parameter, asymptotic method (due to tie)
 
         # Based on TestCorrSpearman2::test_alternative
@@ -1806,38 +1742,40 @@ class TestKendallTauAlternative:
         x2 = [5, 6, 7, 8, 7]
 
         # strong positive correlation
-        expected = stats.kendalltau(x1, x2, alternative="two-sided")
+        expected = stats.kendalltau(xp.asarray(x1), xp.asarray(x2),
+                                    alternative="two-sided")
         assert expected[0] > 0
 
         # rank correlation > 0 -> large "less" p-value
-        res = stats.kendalltau(x1, x2, alternative="less")
-        assert_equal(res[0], expected[0])
-        assert_allclose(res[1], 1 - (expected[1] / 2))
+        res = stats.kendalltau(xp.asarray(x1), xp.asarray(x2), alternative="less")
+        xp_assert_equal(res[0], xp.asarray(expected[0]))
+        xp_assert_close(res[1], xp.asarray(1 - (expected[1] / 2)))
 
         # rank correlation > 0 -> small "greater" p-value
-        res = stats.kendalltau(x1, x2, alternative="greater")
-        assert_equal(res[0], expected[0])
-        assert_allclose(res[1], expected[1] / 2)
+        res = stats.kendalltau(xp.asarray(x1), xp.asarray(x2), alternative="greater")
+        xp_assert_equal(res[0], xp.asarray(expected[0]))
+        xp_assert_close(res[1], xp.asarray(expected[1] / 2))
 
         # reverse the direction of rank correlation
         x2.reverse()
 
         # strong negative correlation
-        expected = stats.kendalltau(x1, x2, alternative="two-sided")
+        expected = stats.kendalltau(xp.asarray(x1), xp.asarray(x2),
+                                    alternative="two-sided")
         assert expected[0] < 0
 
         # rank correlation < 0 -> large "greater" p-value
-        res = stats.kendalltau(x1, x2, alternative="greater")
-        assert_equal(res[0], expected[0])
-        assert_allclose(res[1], 1 - (expected[1] / 2))
+        res = stats.kendalltau(xp.asarray(x1), xp.asarray(x2), alternative="greater")
+        xp_assert_equal(res[0], xp.asarray(expected[0]))
+        xp_assert_close(res[1], xp.asarray(1 - (expected[1] / 2)))
 
         # rank correlation < 0 -> small "less" p-value
-        res = stats.kendalltau(x1, x2, alternative="less")
-        assert_equal(res[0], expected[0])
-        assert_allclose(res[1], expected[1] / 2)
+        res = stats.kendalltau(xp.asarray(x1), xp.asarray(x2), alternative="less")
+        xp_assert_equal(res[0], xp.asarray(expected[0]))
+        xp_assert_close(res[1], xp.asarray(expected[1] / 2))
 
         with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
-            stats.kendalltau(x1, x2, alternative="ekki-ekki")
+            stats.kendalltau(xp.asarray(x1), xp.asarray(x2), alternative="ekki-ekki")
 
     # There are a lot of special cases considered in the calculation of the
     # exact p-value, so we test each separately. We also need to test
@@ -1852,152 +1790,154 @@ class TestKendallTauAlternative:
 
     alternatives = ('less', 'two-sided', 'greater')
     p_n1 = [np.nan, np.nan, np.nan]
-    p_n2 = [1, 1, 0.5]
-    p_c0 = [1, 0.3333333333333, 0.1666666666667]
+    p_n2 = [1.0, 1.0, 0.5]
+    p_c0 = [1.0, 0.3333333333333, 0.1666666666667]
     p_c1 = [0.9583333333333, 0.3333333333333, 0.1666666666667]
-    p_no_correlation = [0.5916666666667, 1, 0.5916666666667]
-    p_no_correlationb = [0.5475694444444, 1, 0.5475694444444]
+    p_no_correlation = [0.5916666666667, 1.0, 0.5916666666667]
+    p_no_correlationb = [0.5475694444444, 1.0, 0.5475694444444]
     p_n_lt_171 = [0.9624118165785, 0.1194389329806, 0.0597194664903]
     p_n_lt_171b = [0.246236925303, 0.4924738506059, 0.755634083327]
     p_n_lt_171c = [0.9847475308925, 0.03071385306533, 0.01535692653267]
 
-    def exact_test(self, x, y, alternative, rev, stat_expected, p_expected):
+    def exact_test(self, x, y, alternative, rev, stat_expected, p_expected, xp):
+        x, y = xp.asarray(x), xp.asarray(y)
         if rev:
-            y = -np.asarray(y)
+            y = -y
             stat_expected *= -1
         res = stats.kendalltau(x, y, method='exact', alternative=alternative)
-        res_expected = stat_expected, p_expected
-        assert_allclose(res, res_expected)
+        xp_assert_close(res.statistic, xp.asarray(stat_expected))
+        xp_assert_close(res.pvalue, xp.asarray(p_expected))
 
     case_R_n1 = (list(zip(alternatives, p_n1, [False]*3))
                  + list(zip(alternatives, reversed(p_n1), [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_n1)
-    def test_against_R_n1(self, alternative, p_expected, rev):
+    def test_against_R_n1(self, alternative, p_expected, rev, xp):
         x, y = [1], [2]
         stat_expected = np.nan
         with pytest.warns(SmallSampleWarning, match="One or more sample..."):
-            self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+            self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_R_n2 = (list(zip(alternatives, p_n2, [False]*3))
                  + list(zip(alternatives, reversed(p_n2), [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_n2)
-    def test_against_R_n2(self, alternative, p_expected, rev):
+    def test_against_R_n2(self, alternative, p_expected, rev, xp):
         x, y = [1, 2], [3, 4]
         stat_expected = 0.9999999999999998
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_R_c0 = (list(zip(alternatives, p_c0, [False]*3))
                  + list(zip(alternatives, reversed(p_c0), [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_c0)
-    def test_against_R_c0(self, alternative, p_expected, rev):
+    def test_against_R_c0(self, alternative, p_expected, rev, xp):
         x, y = [1, 2, 3], [1, 2, 3]
-        stat_expected = 1
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        stat_expected = 1.
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_R_c1 = (list(zip(alternatives, p_c1, [False]*3))
                  + list(zip(alternatives, reversed(p_c1), [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_c1)
-    def test_against_R_c1(self, alternative, p_expected, rev):
+    def test_against_R_c1(self, alternative, p_expected, rev, xp):
         x, y = [1, 2, 3, 4], [1, 2, 4, 3]
         stat_expected = 0.6666666666666667
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_R_no_corr = (list(zip(alternatives, p_no_correlation, [False]*3))
                       + list(zip(alternatives, reversed(p_no_correlation),
                                  [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_no_corr)
-    def test_against_R_no_correlation(self, alternative, p_expected, rev):
+    def test_against_R_no_correlation(self, alternative, p_expected, rev, xp):
         x, y = [1, 2, 3, 4, 5], [1, 5, 4, 2, 3]
-        stat_expected = 0
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        stat_expected = 0.
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_no_cor_b = (list(zip(alternatives, p_no_correlationb, [False]*3))
                      + list(zip(alternatives, reversed(p_no_correlationb),
                                 [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_no_cor_b)
-    def test_against_R_no_correlationb(self, alternative, p_expected, rev):
+    def test_against_R_no_correlationb(self, alternative, p_expected, rev, xp):
         x, y = [1, 2, 3, 4, 5, 6, 7, 8], [8, 6, 1, 3, 2, 5, 4, 7]
-        stat_expected = 0
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        stat_expected = 0.
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_R_lt_171 = (list(zip(alternatives, p_n_lt_171, [False]*3))
                      + list(zip(alternatives, reversed(p_n_lt_171), [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_lt_171)
-    def test_against_R_lt_171(self, alternative, p_expected, rev):
+    def test_against_R_lt_171(self, alternative, p_expected, rev, xp):
         # Data from Hollander & Wolfe (1973), p. 187f.
         # Used from https://rdrr.io/r/stats/cor.test.html
         x = [44.4, 45.9, 41.9, 53.3, 44.7, 44.1, 50.7, 45.2, 60.1]
         y = [2.6, 3.1, 2.5, 5.0, 3.6, 4.0, 5.2, 2.8, 3.8]
         stat_expected = 0.4444444444444445
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_R_lt_171b = (list(zip(alternatives, p_n_lt_171b, [False]*3))
                       + list(zip(alternatives, reversed(p_n_lt_171b),
                                  [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_lt_171b)
-    def test_against_R_lt_171b(self, alternative, p_expected, rev):
+    def test_against_R_lt_171b(self, alternative, p_expected, rev, xp):
         rng = np.random.RandomState(0)
-        x = rng.rand(100)
-        y = rng.rand(100)
+        x = rng.rand(100).tolist()
+        y = rng.rand(100).tolist()
         stat_expected = -0.04686868686868687
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_R_lt_171c = (list(zip(alternatives, p_n_lt_171c, [False]*3))
                       + list(zip(alternatives, reversed(p_n_lt_171c),
                                  [True]*3)))
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_lt_171c)
-    def test_against_R_lt_171c(self, alternative, p_expected, rev):
+    def test_against_R_lt_171c(self, alternative, p_expected, rev, xp):
         rng = np.random.RandomState(0)
-        x = rng.rand(170)
-        y = rng.rand(170)
+        x = rng.rand(170).tolist()
+        y = rng.rand(170).tolist()
         stat_expected = 0.1115906717716673
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected, xp=xp)
 
     case_gt_171 = (list(zip(alternatives, [False]*3)) +
                    list(zip(alternatives, [True]*3)))
 
     @pytest.mark.parametrize("alternative, rev", case_gt_171)
-    def test_gt_171(self, alternative, rev):
+    def test_gt_171(self, alternative, rev, xp):
         rng = np.random.RandomState(0)
-        x = rng.rand(400)
-        y = rng.rand(400)
-        res0 = stats.kendalltau(x, y, method='exact',
-                                alternative=alternative)
-        res1 = stats.kendalltau(x, y, method='asymptotic',
-                                alternative=alternative)
-        assert_equal(res0[0], res1[0])
-        assert_allclose(res0[1], res1[1], rtol=1e-3)
+        x = xp.asarray(rng.rand(400).tolist())
+        y = xp.asarray(rng.rand(400).tolist())
+        res0 = stats.kendalltau(x, y, method='exact', alternative=alternative)
+        res1 = stats.kendalltau(x, y, method='asymptotic', alternative=alternative)
+        xp_assert_equal(res0[0], res1[0])
+        xp_assert_close(res0[1], res1[1], rtol=1e-3)
 
     @pytest.mark.parametrize("method", ('exact', 'asymptotic'))
     @pytest.mark.parametrize("alternative", ('two-sided', 'less', 'greater'))
-    def test_nan_policy(self, method, alternative):
+    def test_nan_policy(self, method, alternative, xp):
         # Test nan policies
         x1 = [1, 2, 3, 4, 5]
         x2 = [5, 6, 7, 8, 9]
         x1nan = x1 + [np.nan]
         x2nan = x2 + [np.nan]
+        x1, x2 = xp.asarray(x1), xp.asarray(x2)
+        x1nan, x2nan = xp.asarray(x1nan), xp.asarray(x2nan)
 
         # test nan_policy="propagate"
         res_actual = stats.kendalltau(x1nan, x2nan,
                                       method=method, alternative=alternative)
-        res_expected = (np.nan, np.nan)
-        assert_allclose(res_actual, res_expected)
+        xp_assert_equal(res_actual.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res_actual.pvalue, xp.asarray(xp.nan))
 
         # test nan_policy="omit"
         res_actual = stats.kendalltau(x1nan, x2nan, nan_policy='omit',
                                       method=method, alternative=alternative)
         res_expected = stats.kendalltau(x1, x2, method=method,
                                         alternative=alternative)
-        assert_allclose(res_actual, res_expected)
+        xp_assert_equal(res_actual.statistic, res_expected.statistic)
+        xp_assert_equal(res_actual.pvalue, res_expected.pvalue)
 
         # test nan_policy="raise"
         message = 'The input contains nan values'
@@ -2114,16 +2054,6 @@ def test_segfault_issue_9710():
         stats.weightedtau([1], [1.0])
         # The code below also caused SEGFAULT
         stats.weightedtau([np.nan], [52])
-
-
-def test_kendall_tau_large():
-    n = 172
-    # Test omit policy
-    x = np.arange(n + 1).astype(float)
-    y = np.arange(n + 1).astype(float)
-    y[-1] = np.nan
-    _, pval = stats.kendalltau(x, y, method='exact', nan_policy='omit')
-    assert_equal(pval, 0.0)
 
 
 def test_weightedtau_vs_quadratic():
@@ -3594,9 +3524,6 @@ class TestMoments:
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
     def test_moment_center_scalar_moment(self, size, m, c, xp):
         rng = np.random.default_rng(6581432544381372042)
         x = xp.asarray(rng.random(size=size))
@@ -3607,16 +3534,13 @@ class TestMoments:
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('c', (None, 0, 1))
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
     def test_moment_center_array_moment(self, size, c, xp):
         rng = np.random.default_rng(1706828300224046506)
         x = xp.asarray(rng.random(size=size))
         m = [0, 1, 2, 3]
         res = stats.moment(x, m, center=c)
         ref = xp.concat([stats.moment(x, i, center=c)[xp.newaxis, ...] for i in m])
-        xp_assert_equal(res, ref)
+        xp_assert_close(res, ref)  # JAX JIT doesn't pass with equality
 
     def test_moment(self, xp):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
@@ -3640,26 +3564,39 @@ class TestMoments:
         y = stats.moment(testcase, [1, 2, 3, 4])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
-        # check moment input consists only of integers
+        # check floating point integer order
         y = stats.moment(testcase, 0.0)
         xp_assert_close(y, xp.asarray(1.0))
-        message = 'All elements of `order` must be integral.'
-        with pytest.raises(ValueError, match=message):
-            stats.moment(testcase, 1.2)
+
         y = stats.moment(testcase, [1.0, 2, 3, 4.0])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
-        def test_cases():
+    @skip_xp_backends("jax.numpy", reason="array value-dependent error")
+    def test_order_input_validation(self, xp):
+        testcase = xp.asarray(self.testcase)
+        message = 'All elements of `order` must be integral.'
+        with pytest.raises(ValueError, match=message):
+            stats.moment(testcase, 1.2)
+
+    def test_zero_size(self, xp):
+        message = "One or more sample arguments..."
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([]))
             xp_assert_equal(y, xp.asarray(xp.nan))
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([], dtype=xp.float32))
             xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
-            y = stats.moment(xp.zeros((1, 0)), axis=0)
-            xp_assert_equal(y, xp.empty((0,)))
+
+        message = "All axis-slices of one or more"
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             y = stats.moment(xp.asarray([[]]), axis=1)
             xp_assert_equal(y, xp.asarray([xp.nan]))
-            y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
-            xp_assert_equal(y, xp.empty((2, 0)))
+
+        y = stats.moment(xp.zeros((1, 0)), axis=0)
+        xp_assert_equal(y, xp.empty((0,)))
+
+        y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
+        xp_assert_equal(y, xp.empty((2, 0)))
 
     def test_nan_policy(self):
         x = np.arange(10.)
@@ -3680,12 +3617,15 @@ class TestMoments:
         y = stats.moment(x, order=order)
         xp_assert_equal(y, xp.asarray(expect, dtype=dtype))
 
-        y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
-        xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
+        message = "Precision loss occurred in moment calculation"
+        with eager_warns(RuntimeWarning, match=message, xp=xp):
+            y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
+            xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
 
-        y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
-                         order=order)
-        xp_assert_equal(y, xp.full((1, 2, 4, 5), expect, dtype=dtype))
+        with eager_warns(RuntimeWarning, match=message, xp=xp):
+            y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
+                             order=order)
+            xp_assert_equal(y, xp.full((1, 2, 4, 5), expect, dtype=dtype))
 
         y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
                          order=order)
@@ -3724,15 +3664,13 @@ class TestMoments:
 
     @pytest.mark.parametrize('order', [0, 1, 2, 3])
     @pytest.mark.parametrize('axis', [-1, 0, 1])
-    @pytest.mark.parametrize('center', [None, 0])
-    @pytest.mark.filterwarnings(
-        "ignore:divide by zero encountered in divide:RuntimeWarning:dask"
-    )
+    @pytest.mark.parametrize('center', [None, 0.])
     def test_moment_array_api(self, xp, order, axis, center):
         rng = np.random.default_rng(34823589259425)
         x = rng.random(size=(5, 6, 7))
         res = stats.moment(xp.asarray(x), order, axis=axis, center=center)
-        ref = xp.asarray(_moment(x, order, axis, mean=center))
+        center = center if center is None else np.asarray(center)
+        ref = xp.asarray(_moment(x, order, axis, center=center)[()])
         xp_assert_close(res, ref)
 
 
@@ -3755,7 +3693,7 @@ class TestSkew(SkewKurtosisTest):
         return stats.skew(x)
 
     @pytest.mark.filterwarnings(
-        "ignore:invalid value encountered in scalar divide:RuntimeWarning:dask"
+        "ignore:invalid value encountered:RuntimeWarning:dask"
     )
     def test_skewness(self, xp):
         # Scalar test case
@@ -3852,7 +3790,7 @@ class TestKurtosis(SkewKurtosisTest):
     def stat_fun(self, x):
         return stats.kurtosis(x)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_kurtosis(self, xp):
         # Scalar test case
         y = stats.kurtosis(xp.asarray(self.scalar_testcase))
@@ -4621,50 +4559,70 @@ class TestFriedmanChiSquare:
             stats.friedmanchisquare(xp.asarray(self.x3[0]), xp.asarray(self.x3[1]))
 
 
+@make_xp_test_case(stats.kstest)
 class TestKSTest:
     """Tests kstest and ks_1samp agree with K-S various sizes, alternatives, modes."""
 
-    def _testOne(self, x, alternative, expected_statistic, expected_prob,
-                 mode='auto', decimal=14):
-        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-        expected = np.array([expected_statistic, expected_prob])
-        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
-
     def _test_kstest_and_ks1samp(self, x, alternative, mode='auto', decimal=14):
         result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-        result_1samp = stats.ks_1samp(x, stats.norm.cdf,
+        result_1samp = stats.ks_1samp(x, special.ndtr,
                                       alternative=alternative, mode=mode)
-        assert_array_almost_equal(np.array(result), result_1samp, decimal=decimal)
+        xp_assert_close(result.statistic, result_1samp.statistic)
+        xp_assert_close(result.pvalue, result_1samp.pvalue)
+        xp_assert_equal(result.statistic_location, result.statistic_location)
+        xp_assert_equal(result.statistic_sign, result.statistic_sign)
 
-    def test_namedtuple_attributes(self):
-        x = np.linspace(-1, 1, 9)
+    def test_namedtuple_attributes(self, xp):
+        x = xp.linspace(-1, 1, 9)
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        res = stats.kstest(x, 'norm')
-        check_named_results(res, attributes)
+        res = stats.kstest(x, special.ndtr)
+        check_named_results(res, attributes, xp=xp)
 
-    def test_agree_with_ks_1samp(self):
-        x = np.linspace(-1, 1, 9)
+    def test_agree_with_ks_1samp(self, xp):
+        x = xp.linspace(-1, 1, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
-        x = np.linspace(-15, 15, 9)
+        x = xp.linspace(-15, 15, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
         x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
+        x = xp.asarray(x)
         self._test_kstest_and_ks1samp(x, 'two-sided')
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
 
-    def test_pm_inf_gh20386(self):
+    # parametrize over function-specific options to make sure they're passed through;
+    # `test_axis_nan_policy` takes care of the rest.
+    @pytest.mark.parametrize("method", ["auto", "exact", "asymp"])
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_agree_with_ks_2samp(self, method, alternative, xp):
+        rng = np.random.default_rng(236114087)
+        x, y = rng.random((2, 9, 10))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.kstest(x, y, alternative=alternative, method=method)
+        ref = stats.ks_2samp(x, y, alternative=alternative, method=method)
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic_location, ref.statistic_location)
+        xp_assert_equal(res.statistic_sign, ref.statistic_sign)
+
+    def test_pm_inf_gh20386(self, xp):
         # Check that gh-20386 is resolved - `kstest` does not
         # return NaNs when both -inf and inf are in sample.
-        vals = [-np.inf, 0, 1, np.inf]
-        res = stats.kstest(vals, stats.cauchy.cdf)
-        ref = stats.kstest(vals, stats.cauchy.cdf, _no_deco=True)
-        assert np.all(np.isfinite(res))
-        assert_equal(res, ref)
-        assert not np.isnan(res.statistic)
-        assert not np.isnan(res.pvalue)
+        vals = xp.asarray([-xp.inf, 0, 1, xp.inf])
+        def cdf(x):  # Cauchy CDF
+            return xp.atan2(xp.ones_like(x), -x) / xp.pi
+        res = stats.kstest(vals, cdf)
+        ref = stats.kstest(vals, cdf, _no_deco=True)
+        assert xp.isfinite(res.statistic)
+        assert xp.isfinite(res.pvalue)
+        assert xp.isfinite(res.statistic_location)
+        assert xp.isfinite(res.statistic_sign)
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic_location, ref.statistic_location)
+        xp_assert_equal(res.statistic_sign, ref.statistic_sign)
 
     # missing: no test that uses *args
 
@@ -6631,21 +6589,23 @@ class TestJarqueBera:
         xp_assert_close(res.pvalue, resT.pvalue)
 
 
-def test_pointbiserial():
-    # same as mstats test except for the nan
-    # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
-    x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
-         0,0,0,0,1]
-    y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
-         2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
-         0.8,0.7,0.6,0.5,0.2,0.2,0.1]
-    assert_almost_equal(stats.pointbiserialr(x, y)[0], 0.36149, 5)
+@make_xp_test_case(stats.pointbiserialr)
+class TestPointBiserialR:
+    def test_pointbiserial(self, xp):
+        # same as mstats test except for the nan
+        # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
+        x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
+             0,0,0,0,1.]
+        y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
+             2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
+             0.8,0.7,0.6,0.5,0.2,0.2,0.1]
+        res = stats.pointbiserialr(xp.asarray(x), xp.asarray(y))
+        xp_assert_close(res[0], xp.asarray(0.36149), atol=1e-5)
 
-    # test for namedtuple attribute results
-    attributes = ('correlation', 'pvalue')
-    res = stats.pointbiserialr(x, y)
-    check_named_results(res, attributes)
-    assert_equal(res.correlation, res.statistic)
+        # test for namedtuple attribute results
+        attributes = ('correlation', 'pvalue')
+        check_named_results(res, attributes, xp=xp)
+        xp_assert_equal(res.correlation, res.statistic)
 
 
 def test_obrientransform():
@@ -8757,29 +8717,54 @@ class TestBrunnerMunzel:
         xp_assert_equal(p, xp.asarray(0.))
 
 
+@_apply_over_batch(('x', 1), ('q', 1), ('p', 1))
+def quantile_test_reference(x, q, p, alternative):
+    res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
+    return res.statistic, res.pvalue, *res.confidence_interval()
+
+
 class TestQuantileTest:
     r""" Test the non-parametric quantile test,
     including the computation of confidence intervals
     """
 
     def test_quantile_test_iv(self):
-        x = [1, 2, 3]
+        x = np.asarray([1, 2, 3])
 
-        message = "`x` must be a one-dimensional array of numbers."
+        message = "`x` must be an array of numbers."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test([x])
+            stats.quantile_test(x.astype(bool))
 
-        message = "`q` must be a scalar."
+        message = "`q` must be a scalar or array of numbers."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x, q=[1, 2])
+            stats.quantile_test(x, q=False)
 
-        message = "`p` must be a float strictly between 0 and 1."
-        with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x, p=[0.5, 0.75])
+        message = "`p` must be a scalar or array of floats."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, p=2)
+
+        # should p == 0. / p == 1. be valid?
+        p = np.asarray([-1., 0., 1., 1.5, np.nan])
+        res = stats.quantile_test(x, p=p)
+        assert_equal(res.statistic, np.full_like(p, -1, dtype=int))
+        assert_equal(res.statistic_type, np.full_like(p, -1, dtype=int))
+        assert_equal(res.pvalue, np.full_like(p, np.nan))
+
+        message = "`axis` must be an integer or None."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x, p=-0.5)
+            stats.quantile_test(x, axis=2.5)
+
+        message = "`axis` is not compatible with the shapes of the inputs."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, axis=2)
+
+        message = "If specified, `keepdims` must be True or False."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, keepdims=10)
+
+        message = ("`keepdims` may be False only if...")
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, p=[0.1, 0.2], keepdims=False)
 
         message = "`alternative` must be one of..."
         with pytest.raises(ValueError, match=message):
@@ -8895,6 +8880,169 @@ class TestQuantileTest:
         res = stats.quantile_test(x, q=60, p=0.5, alternative='greater')
         assert_allclose(res.pvalue, pvalue_expected, atol=1e-10)
 
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_multidimensional(self, alternative, axis):
+        rng = np.random.default_rng(85468924398205602)
+        x = rng.random(size=(2, 20))
+        p = rng.random(size=(1, 3,))
+        q = p + rng.random(size=(2, 1))*0.01
+
+        ref = quantile_test_reference(x, q, p, alternative=alternative)
+        ref_statistic, ref_pvalue, ref_low, ref_high = ref
+
+        if axis == 0:
+            x, p, q = x.T, p.T, q.T
+        res = stats.quantile_test(x, q=q, p=p, alternative=alternative, axis=axis)
+        res_statistic, res_pvalue = res.statistic, res.pvalue
+        res_low, res_high = res.confidence_interval()
+        if axis == 0:
+            res_statistic, res_pvalue = res_statistic.T, res_pvalue.T
+            res_low, res_high = res_low.T, res_high.T
+
+        assert_allclose(res_statistic, ref_statistic)
+        assert_allclose(res_pvalue, ref_pvalue)
+        assert_allclose(res_low, res_low)
+        assert_allclose(res_low, ref_low)
+
+    def test_zero_size(self):
+        rng = np.random.default_rng(883771738488451943)
+        x_shape = (2, 50)
+        qp_shape = (2, 10)
+        x = rng.random(x_shape)
+        q = rng.random(qp_shape)
+        p = q + rng.random(qp_shape) * 1e-2
+
+        # case 1: p/q is size zero.
+        qp_zero = np.empty((0, *qp_shape))
+        out = qp_zero
+        res = stats.quantile_test(x, q=qp_zero, p=qp_zero, axis=-1)
+        ci = res.confidence_interval()
+        # different default int on different platforms
+        xp_assert_equal(res.statistic, np.asarray(out), check_dtype=False)
+        xp_assert_equal(res.statistic_type, np.asarray(out), check_dtype=False)
+        assert np.isdtype(res.statistic.dtype, "integral")
+        assert np.isdtype(res.statistic_type.dtype, "integral")
+        xp_assert_equal(res.pvalue, out)
+        xp_assert_equal(ci.low, out)
+        xp_assert_equal(ci.high, out)
+
+        # case 2: x is size zero with nonzero length along axis.
+        x_zero = np.empty((0, *x_shape))
+        out = np.empty((0, *qp_shape))
+        res = stats.quantile_test(x_zero, q=q, p=p, axis=-1)
+        ci = res.confidence_interval()
+        # different default int on different platforms
+        xp_assert_equal(res.statistic, np.asarray(out), check_dtype=False)
+        xp_assert_equal(res.statistic_type, np.asarray(out), check_dtype=False)
+        assert np.isdtype(res.statistic.dtype, "integral")
+        assert np.isdtype(res.statistic_type.dtype, "integral")
+        xp_assert_equal(res.pvalue, out)
+        xp_assert_equal(ci.low, out)
+        xp_assert_equal(ci.high, out)
+
+        # case 3: x has zero length along axis.
+        x_zero = np.empty((x.shape[0], 0))
+        out = -np.ones(qp_shape, dtype=np.int64)
+        res = stats.quantile_test(x_zero, q=q, p=p, axis=-1)
+        ci = res.confidence_interval()
+        # different default int on different platforms
+        xp_assert_equal(res.statistic, np.asarray(out), check_dtype=False)
+        xp_assert_equal(res.statistic_type, np.asarray(out), check_dtype=False)
+        assert np.isdtype(res.statistic.dtype, "integral")
+        assert np.isdtype(res.statistic_type.dtype, "integral")
+        xp_assert_equal(res.pvalue, out*np.nan)
+        xp_assert_equal(ci.low, out*np.nan)
+        xp_assert_equal(ci.high, out*np.nan)
+
+    def test_nans(self):
+        rng = np.random.default_rng(2920028761208905)
+        x = rng.random((10, 50))
+        q = rng.random((10, 10))
+        p = q + rng.random((10, 10)) * 1e-2
+        ref = stats.quantile_test(x, q=q, p=p, axis=-1)
+        ref_low, ref_high = ref.confidence_interval()
+
+        x_ = x.copy()
+        i_nan = rng.random(x.shape) < 0.01
+        x_[i_nan] = np.nan
+        i_nan_out = np.any(i_nan, axis=-1)
+        assert not np.all(i_nan_out)
+        res = stats.quantile_test(x_, q=q, p=p, axis=-1)
+        res_low, res_high = res.confidence_interval()
+        assert_equal(res.statistic[i_nan_out], -1)
+        assert_equal(res.statistic_type[i_nan_out], -1)
+        assert_equal(res.pvalue[i_nan_out], np.nan)
+        assert_equal(res_low[i_nan_out], np.nan)
+        assert_equal(res_high[i_nan_out], np.nan)
+        assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
+        assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
+        assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
+        assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
+        assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
+
+        i_nan_q = rng.random(q.shape) < 0.01
+        i_nan_p = rng.random(p.shape) < 0.01
+        assert np.any(i_nan_q)
+        assert np.any(i_nan_p)
+        q[i_nan_q] = np.nan
+        p[i_nan_p] = np.nan
+
+        i_nan_out = i_nan_q | i_nan_p
+        assert not np.all(i_nan_out)
+
+        res = stats.quantile_test(x, q=q, p=p, axis=-1)
+        res_low, res_high = res.confidence_interval()
+        assert_equal(res.statistic[i_nan_out], -1)
+        assert_equal(res.statistic_type[i_nan_out], -1)
+        assert_equal(res.pvalue[i_nan_out], np.nan)
+        assert_equal(res_low[i_nan_out], np.nan)
+        assert_equal(res_high[i_nan_out], np.nan)
+        assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
+        assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
+        assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
+        assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
+        assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
+
+    def test_axis_none(self):
+        rng = np.random.default_rng(883771738488451943)
+        x_shape = (2, 50)
+        qp_shape = (2, 10)
+        x = rng.random(x_shape)
+        q = rng.random(qp_shape)
+        p = q + rng.random(qp_shape) * 1e-2
+
+        res = stats.quantile_test(x, q=q, p=p, axis=None)
+        res_low, res_high = res.confidence_interval()
+        ref = stats.quantile_test(np.ravel(x), q=np.ravel(q), p=np.ravel(p), axis=None)
+        ref_low, ref_high = ref.confidence_interval()
+        assert_equal(res.statistic, ref.statistic[np.newaxis, :])
+        assert_equal(res.statistic_type, ref.statistic_type[np.newaxis, :])
+        assert_equal(res.pvalue, ref.pvalue[np.newaxis, :])
+        assert_equal(res_low, ref_low[np.newaxis, :])
+        assert_equal(res_high, ref_high[np.newaxis, :])
+
+        res = stats.quantile_test(x, q=0.5, p=0.5, axis=None)
+        res_low, res_high = res.confidence_interval()
+        ref = stats.quantile_test(np.ravel(x), q=0.5, p=0.5, axis=None)
+        ref_low, ref_high = ref.confidence_interval()
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.statistic_type, ref.statistic_type)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert_equal(res_low, ref_low)
+        assert_equal(res_high, ref_high)
+
+    @pytest.mark.parametrize("x_shape, qp_shape, axis, keepdims, res_shape", [
+        ((1, 3), (1,), None, False, ()),
+        ((1, 3), (1,), None, True, (1, 1)),
+        ((1, 3), (2, 1), -1, False, (2,)),
+        ((1, 3), (2, 1), -1, True, (2, 1)),
+    ])
+    def test_keepdims(self, x_shape, qp_shape, axis, keepdims, res_shape):
+        rng = np.random.default_rng(883771738488451943)
+        x, qp = rng.random(x_shape), rng.random(qp_shape)
+        res = stats.quantile_test(x, q=qp, p=qp, axis=axis, keepdims=keepdims)
+        assert res.statistic.shape == res_shape
 
 class TestPageTrendTest:
     def setup_method(self):
@@ -9300,6 +9448,8 @@ class TestLMoment:
 
     @pytest.mark.parametrize('order', not_integers + [0, -1, [], [[1, 2, 3]]])
     def test_order_iv(self, order, xp):
+        if is_jax(xp) and np.isscalar(order) and order < 1:
+            pytest.skip("Order is treated as an array; can't do value-based IV")
         message = '`order` must be a scalar or a non-empty...'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(xp.asarray(self.data), order=order)

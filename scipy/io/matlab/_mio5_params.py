@@ -236,6 +236,13 @@ class MatlabObject(np.ndarray):
 
     This is a simple subclass of :class:`numpy.ndarray` meant to be used
     by :func:`scipy.io.loadmat` and should not be instantiated directly.
+
+    Parameters
+    ----------
+    input_array : array-like
+        The data to be stored in the array.
+    classname : str, optional
+        The MATLAB class name of the object.
     """
 
     def __new__(cls, input_array, classname=None):
@@ -258,6 +265,11 @@ class MatlabFunction(np.ndarray):
 
     This is a simple subclass of :class:`numpy.ndarray` meant to be used
     by :func:`scipy.io.loadmat` and should not be directly instantiated.
+
+    Parameters
+    ----------
+    input_array : array-like
+        The data to be stored in the array.
     """
 
     def __new__(cls, input_array):
@@ -270,6 +282,11 @@ class MatlabOpaque(np.ndarray):
 
     This is a simple subclass of :class:`numpy.ndarray` meant to be used
     by :func:`scipy.io.loadmat` and should not be directly instantiated.
+
+    Parameters
+    ----------
+    input_array : array-like
+        The data to be stored in the array.
     """
 
     def __new__(cls, input_array):

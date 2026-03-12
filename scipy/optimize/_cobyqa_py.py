@@ -1,10 +1,6 @@
 import numpy as np
-from threading import Lock
 
 from ._optimize import _check_unknown_options
-
-
-COBYQA_LOCK = Lock()
 
 
 def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
@@ -55,7 +51,8 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
     .. [1] COBYQA
            https://www.cobyqa.com/stable/
     """
-    from .._external.cobyqa import minimize  # import here to avoid circular imports
+    # Import here to avoid circular imports
+    from .._external.cobyqa import minimize as _cobyqa_minimize
 
     _check_unknown_options(unknown_options)
     options = {
@@ -68,5 +65,4 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         'radius_final': float(final_tr_radius),
         'scale': bool(scale),
     }
-    with COBYQA_LOCK:
-        return minimize(fun, x0, args, bounds, constraints, callback, options)
+    return _cobyqa_minimize(fun, x0, args, bounds, constraints, callback, options)

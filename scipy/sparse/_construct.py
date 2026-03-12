@@ -6,7 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
            'diags_array', 'block_array', 'eye_array', 'random_array',
-           'expand_dims', 'permute_dims', 'swapaxes']
+           'expand_dims', 'permute_dims', 'swapaxes', 'matrix_transpose']
 
 import numbers
 import math
@@ -47,7 +47,7 @@ def expand_dims(A, /, *, axis=0):
     Returns
     -------
     out : sparse array
-        A expanded copy output in COO format with the same dtype as `A`.
+        An expanded copy output in COO format with the same dtype as `A`.
 
     Raises
     ------
@@ -203,6 +203,53 @@ def permute_dims(A, axes=None, copy=False):
     A.coords = tuple(A.coords[idx] for idx in axes)
     A.has_canonical_format = False  # data usually no longer sorted
     return A
+
+
+def matrix_transpose(A):
+    """Return the matrix transpose of `A`.
+
+    Parameters
+    ----------
+    A : sparse array
+        Input array.
+
+    Returns
+    -------
+    sparse array
+        The matrix transpose of `A`.
+
+    See Also
+    --------
+    coo_array.mT : equivalent attribute
+    coo_array.T : full transposition reversing all dimensions
+    numpy.matrix_transpose : equivalent function in NumPy
+
+    Notes
+    -----
+    This is equivalent to ``A.T`` for 2-D arrays, and interprets
+    greater dimensional `A` as a stack of 2-D arrays on which
+    to perform the transpose.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import coo_array, matrix_transpose
+    >>> data = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+    >>> array = coo_array(data)
+    >>> array.T.toarray()
+    array([[[1, 5],
+            [3, 7]],
+    <BLANKLINE>
+           [[2, 6],
+            [4, 8]]])
+    >>> matrix_transpose(array).toarray()
+    array([[[1, 3],
+            [2, 4]],
+    <BLANKLINE>
+           [[5, 7],
+            [6, 8]]])
+    """
+    return A.mT
 
 
 def spdiags(data, diags, m=None, n=None, format=None):
@@ -1001,7 +1048,7 @@ def hstack(blocks, format=None, dtype=None):
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse matrices with compatible shapes
     format : str
         sparse format of the result (e.g., "csr")
@@ -1048,7 +1095,7 @@ def vstack(blocks, format=None, dtype=None):
 
     Parameters
     ----------
-    blocks
+    blocks : sequence of sparse matrices or arrays
         sequence of sparse arrays with compatible shapes
     format : str, optional
         sparse format of the result (e.g., "csr")

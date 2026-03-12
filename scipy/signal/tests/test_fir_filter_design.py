@@ -511,7 +511,7 @@ class TestRemez:
         N = 11  # number of taps in the filter
         a = 0.1  # width of the transition band
 
-        # design an unity gain hilbert bandpass filter from w to 0.5-w
+        # design a unity gain hilbert bandpass filter from w to 0.5-w
         h = remez(11, [a, 0.5-a], [1], type='hilbert')
 
         # make sure the filter has correct # of taps

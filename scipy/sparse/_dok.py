@@ -14,6 +14,9 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
 
 
+_NoValue = object()
+
+
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
     _allow_nd = (1, 2)
@@ -58,10 +61,17 @@ class _dok_base(_spbase, IndexMixin, dict):
             self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
     def update(self, val):
-        """Update values from a dict, sparse dok or iterable of 2-tuples like .items().
+        """Update values from a dict, sparse dok or iterable of 2-tuples like
+        ``.items()``.
 
-        Keys of the input must be sequences of nonnegative integers less than the shape
-        for each axis.
+        Parameters
+        ----------
+        val : dict, dok_array, iterable of 2-tuples
+            The values to update in the dok_array. If a dict or dok_array is
+            provided, the keys and values will be taken from it. If an iterable
+            of 2-tuples is provided, each tuple should contain a key and a value.
+            Keys of the input must be sequences of nonnegative integers less than
+            the shape for each axis.
         """
         if isinstance(val, dict):
             inputs = val.items()
@@ -76,7 +86,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 isintlike(idx) and 0 <= idx < max_idx
                 for idx, max_idx in zip(index, self.shape)
             ):
-                # Error handling. Re-search to find which error occured
+                # Error handling. Re-search to find which error occurred
                 for idx, max_idx in zip(index, self.shape):
                     if not isintlike(idx):
                         raise IndexError(f'integer keys required for update. Got {key}')
@@ -96,9 +106,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def count_nonzero(self, axis=None):
         if axis is not None:
-            raise NotImplementedError(
-                "count_nonzero over an axis is not implemented for DOK format."
-            )
+            return self.tocoo().count_nonzero(axis=axis)
         return sum(x != 0 for x in self.values())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
@@ -134,7 +142,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         """Remove all items from the dok_array."""
         self._dict.clear()
 
-    def pop(self, /, *args):
+    def pop(self, key, default=_NoValue, /):
         """Remove specified key and return the corresponding value.
 
         Parameters
@@ -155,7 +163,10 @@ class _dok_base(_spbase, IndexMixin, dict):
         KeyError
             If the key is not found and default is not provided.
         """
-        return self._dict.pop(*args)
+        if default is _NoValue:
+            return self._dict.pop(key)
+        else:
+            return self._dict.pop(key, default)
 
     def __reversed__(self):
         raise TypeError("reversed is not defined for dok_array type")
@@ -677,10 +688,16 @@ class dok_array(_dok_base, sparray):
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-        Number of nonzero elements
-    size
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'dok'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : dok_array
+        The transpose of the array
+    mT : dok_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -701,7 +718,7 @@ class dok_array(_dok_base, sparray):
     ...     for j in range(5):
     ...         S[i, j] = i + j    # Update element
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class dok_matrix(spmatrix, _dok_base):
@@ -730,10 +747,16 @@ class dok_matrix(spmatrix, _dok_base):
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-        Number of nonzero elements
-    size
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'dok'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : dok_matrix
+        The transpose of the matrix
+    mT : dok_matrix
+        The matrix transpose
 
     Notes
     -----

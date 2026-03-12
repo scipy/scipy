@@ -1,6 +1,7 @@
 class spmatrix:
     """This class provides a base class for all sparse matrix classes.
 
+    This class also serves as the namespace for SciPy sparse matrix types.
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """
     _allow_nd = (2,)

@@ -2,11 +2,14 @@ from numpy import inner, zeros, inf, finfo
 from numpy.linalg import norm
 from math import sqrt
 
+from scipy._lib._array_api import xp_capabilities
+
 from .utils import make_system
 
 __all__ = ['minres']
 
 
+@xp_capabilities(np_only=True)
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
@@ -31,7 +34,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     -------
     x : ndarray
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
@@ -41,12 +44,12 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     ----------------
     x0 : ndarray
         Starting guess for the solution.
-    shift : float
-        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
     rtol : float
         Tolerance to achieve. The algorithm terminates when the relative
         residual is below ``rtol``.
-    maxiter : integer
+    shift : float
+        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse array, ndarray, LinearOperator}
