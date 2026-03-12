@@ -340,7 +340,7 @@ def find_best_blas_type(arrays=(), dtype=None):
 def _get_funcs(names, arrays, dtype,
                lib_name, fmodule, cmodule,
                fmodule_name, cmodule_name, alias,
-               ilp64=False):
+               ilp64="preferred"):
     """
     Return available BLAS/LAPACK functions.
 
@@ -396,7 +396,7 @@ def _memoize_get_funcs(func):
     func.memo = memo
 
     @functools.wraps(func)
-    def getter(names, arrays=(), dtype=None, ilp64=False):
+    def getter(names, arrays=(), dtype=None, ilp64="preferred"):
         key = (names, dtype, ilp64)
         for array in arrays:
             # cf. find_blas_funcs
@@ -423,7 +423,7 @@ def _memoize_get_funcs(func):
 
 
 @_memoize_get_funcs
-def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
+def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     """Return available BLAS function objects from names.
 
     Arrays are used to determine the optimal prefix of BLAS routines.
@@ -444,7 +444,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
     ilp64 : {True, False, 'preferred'}, optional
         Whether to return ILP64 routine variant.
         Choosing 'preferred' returns ILP64 routine if available,
-        and otherwise the 32-bit routine. Default: False
+        and otherwise the 32-bit routine. Default: ``'preferred'``.
 
     Returns
     -------
