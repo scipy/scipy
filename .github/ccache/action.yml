@@ -23,5 +23,5 @@ runs:
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
-        key: ${{ inputs.workflow_name }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
+        key: ${{ inputs.workflow_name }}-${{ inputs.job_name}}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
         restore-keys: ${{ inputs.workflow_name }}-${{ inputs.job_name }}-ccache-linux-
