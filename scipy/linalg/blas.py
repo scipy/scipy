@@ -221,7 +221,10 @@ __all__ = ['get_blas_funcs', 'find_best_blas_type']
 import numpy as np
 import functools
 
+# TODO: fold to __config__
 from scipy.linalg import _fblas
+HAS_LP64 = True
+
 try:
     from scipy.linalg import _cblas
 except ImportError:

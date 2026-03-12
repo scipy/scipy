@@ -871,7 +871,11 @@ from .blas import (
     _get_funcs, _memoize_get_funcs,
     find_best_blas_type as find_best_lapack_type   # to appease the name test
 )
+
+# TODO: fold into __config__
 from scipy.linalg import _flapack
+HAS_LP64 = True
+
 from re import compile as regex_compile
 try:
     from scipy.linalg import _clapack
