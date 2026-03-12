@@ -476,7 +476,11 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with ``copy_data=True``.
+        with ``copy_data=True``. Concurrently modifying the contents of the
+        ``data`` array while the KDTree initializer is running may lead to data
+        corruption or crashes. If the data are not copied, modifying the
+        original ``data`` array after the tree is created may lead to crashes or
+        data corruption when searching the tree.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -495,6 +499,9 @@ cdef class cKDTree:
         query functions in Python.
     size : int
         The number of nodes in the tree.
+    boxsize : None or ndarray, shape (m.)
+        If boxsize is passed to the initializer, this will be set to the bounds
+        of the periodic box. None if no boxsize is passed.
 
     Notes
     -----
