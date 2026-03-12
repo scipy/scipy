@@ -2560,47 +2560,6 @@ def _xp_obrientransform_one_sample(a, *, xp, nan_policy):
     return ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
 
 
-def _obrientransform(*samples, nan_policy):
-    # This is the original version of `obrientransform`. It is currently
-    # used only for testing.
-    TINY = np.sqrt(np.finfo(float).eps)
-
-    # `arrays` will hold the transformed arguments.
-    arrays = []
-    sLast = None
-
-    for sample in samples:
-        contains_nan = _contains_nan(sample, nan_policy, xp_omit_okay=True)
-        if nan_policy == 'omit' and contains_nan:
-            _mean, _sum = np.nanmean, np.nansum
-            def _len(x): return int(np.count_nonzero(~np.isnan(x)))
-        else:
-            _mean, _sum, _len = np.mean, np.sum, len
-        a = np.asarray(sample)
-        n = _len(a)
-        mu = _mean(a)
-        sq = (a - mu)**2
-        sumsq = _sum(sq)
-
-        # The O'Brien transform.
-        t = ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
-
-        # Check that the mean of the transformed data is equal to the
-        # original variance.
-        var = sumsq / (n - 1)
-        if abs(var - _mean(t)) > TINY:
-            raise ValueError('Lack of convergence in obrientransform.')
-
-        arrays.append(t)
-        sLast = a.shape
-
-    if sLast:
-        for arr in arrays[:-1]:
-            if sLast != arr.shape:
-                return np.array(arrays, dtype=object)
-    return np.array(arrays)
-
-
 @xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, too_small=1

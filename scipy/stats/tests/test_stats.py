@@ -33,7 +33,7 @@ from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy.stats._stats_py import (_chk_asarray, _moment, _obrientransform,
+from scipy.stats._stats_py import (_chk_asarray, _moment,
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
@@ -6682,23 +6682,6 @@ class TestObrientransform:
         ref = stats.obrientransform(x[~i])[0]
         xp_assert_equal(res[i], x[i])
         xp_assert_close(res[~i], ref)
-
-    @pytest.mark.parametrize('nan_policy', [None, 'propagate', 'omit'])
-    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
-    def test_new_vs_old(self, nan_policy, dtype, xp):
-        dtype = dtype if dtype is None else getattr(xp, dtype)
-        rng = np.random.default_rng(4284359689201882838835)
-        x = rng.random(10)
-        if nan_policy is not None:
-            x[3] = np.nan
-        else:
-            nan_policy = 'propagate'
-        res = stats.obrientransform(xp.asarray(x.tolist(), dtype=dtype),
-                                    nan_policy=nan_policy)
-        ref = _obrientransform(x, nan_policy=nan_policy)
-        xp_assert_close(res[0], xp.asarray(ref[0].tolist(), dtype=dtype))
-
-        assert isinstance(res, tuple)
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
