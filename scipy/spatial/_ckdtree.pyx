@@ -408,6 +408,19 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     return n
 
 
+cdef class call_once_wrapper:
+    cdef:
+        cKDTree tree
+
+    def __cinit__(call_once_wrapper self, cKDTree tree):
+        self.tree = tree
+
+    def __call__(self):
+        n = cKDTreeNode()
+        n._setup(self.tree, node=self.tree.cself.ctree, level=0)
+        self.tree._python_tree = n
+
+
 # Main cKDTree class
 # ==================
 
@@ -538,15 +551,11 @@ cdef class cKDTree:
             cdef cKDTreeNode n
             cdef ckdtree *cself = self.cself
             cdef py_safe_once_flag flag
-            if self._python_tree is not None:
-                return self._python_tree
-            else:
-                def create_tree():
-                    n = cKDTreeNode()
-                    n._setup(self, node=cself.ctree, level=0)
-                    self._python_tree = n
-                py_safe_call_object_once(flag, create_tree)
-                return self._python_tree
+            cdef call_once_wrapper wrapper
+            if self._python_tree is None:
+                wrapper = call_once_wrapper(self)
+                py_safe_call_object_once(flag, wrapper)
+            return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
