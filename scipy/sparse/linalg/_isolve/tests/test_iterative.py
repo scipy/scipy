@@ -12,7 +12,7 @@ from numpy.testing import assert_allclose
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 
 from scipy._lib._array_api import (
-    is_numpy, make_xp_pytest_param, make_xp_pytest_marks,
+    is_numpy, is_torch, make_xp_pytest_param, make_xp_pytest_marks,
     xp_assert_close, xp_assert_less, xp_vector_norm, xp_assert_equal,
 )
 from scipy._lib._sparse import issparse
@@ -507,10 +507,12 @@ def test_atol(solver, xp, batch_A, batch_b):
     b_norm = xp_vector_norm(b, axis=-1)
 
     tols = np.r_[0, np.logspace(-9, 2, 7), np.inf]
+    if is_torch(xp) and b.dtype == xp.float32:
+        tols = np.r_[0, np.logspace(-1.5, 2, 7), np.inf]
 
     # Check effect of badly scaled preconditioners
     M0 = rng.standard_normal(size=(*batch_A, 10, 10))
-    M0 = xp.asarray(M0)
+    M0 = xp.asarray(M0.tolist() if 0 not in batch_A else M0)
     M0 = M0 @ M0.mT
     Ms = [None, 1e-6 * M0, 1e6 * M0]
 
@@ -535,11 +537,11 @@ def test_atol(solver, xp, batch_A, batch_b):
         atol2 = rtol * b_norm
         # Added 1.00025 fudge factor because of `err` exceeding `atol` just
         # very slightly on s390x (see gh-17839)
-        atol = xp.asarray(atol)
-        atol2 = xp.asarray(atol2)
+        atol = xp.asarray(atol, dtype=err.dtype)
+        atol2 = xp.asarray(atol2, dtype=err.dtype)
         xp_assert_less(
             err, 1.00025 * xp.maximum(atol, atol2),
-            check_shape=False, check_0d=False, check_dtype=False,
+            check_shape=False, check_0d=False
         )
 
 
