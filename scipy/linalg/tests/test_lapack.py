@@ -84,8 +84,8 @@ class TestFlapackSimple:
               [4, 0, 0, 2e-3],
               [7, 1, 0, 0],
               [0, 1, 0, 0]]
-        for p in 'sdzc':
-            f = getattr(flapack, p+'gebal', None)
+        for dtype in DTYPES:
+            f = get_lapack_funcs('gebal', dtype=dtype)
             if f is None:
                 continue
             ba, lo, hi, pivscale, info = f(a)
@@ -103,8 +103,8 @@ class TestFlapackSimple:
         a = [[-149, -50, -154],
              [537, 180, 546],
              [-27, -9, -25]]
-        for p in 'd':
-            f = getattr(flapack, p+'gehrd', None)
+        for dtype in [np.float64]:
+            f = get_lapack_funcs('gehrd', dtype=dtype)
             if f is None:
                 continue
             ht, tau, info = f(a)
