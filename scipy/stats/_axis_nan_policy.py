@@ -12,7 +12,7 @@ from scipy._lib._array_api import xp_ravel
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_size, xp_copy,
-                                   xp_promote, is_dask, is_jax)
+                                   xp_promote, is_dask, is_jax, is_lazy_array)
 import scipy._external.array_api_extra as xpx
 
 import inspect
@@ -318,10 +318,10 @@ _desc = (
   NaN.
 - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
-For multidimensional input, `nan_policy` is only supported by the NumPy backend;
-otherwise, it is ignored. Other backends may propagate NaNs by default, and they may
-support omitting NaNs by wrapping input with
-`MArray <https://mdhaber.github.io/marray/tutorial.html>`__; see Notes.""".split('\n'))
+``nan_policy='raise'`` is not supported by lazy backends. For multidimensional input,
+``nan_policy='omit'`` is supported only by the NumPy backend. An alternative is to
+mask NaN values using `MArray <https://mdhaber.github.io/marray/tutorial.html>`__; see
+Notes for support information.""".split('\n'))
 _nan_policy_parameter_doc = Parameter(_name, _type, _desc)
 _nan_policy_parameter = inspect.Parameter(_name,
                                           inspect.Parameter.KEYWORD_ONLY,
@@ -620,14 +620,24 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
-            if not is_numpy(xp) and 'nan_policy' in kwds:
-                msg = ("Use of `nan_policy` is incompatible with multidimensional "
-                       "non-NumPy arrays.")
+            if not is_numpy(xp) and nan_policy == 'omit':
+                msg = ("Use of `nan_policy='omit'` is incompatible with "
+                       "multidimensional non-NumPy arrays. Similar behavior may be "
+                       "supported by masking NaNs with MArray; see Notes.")
                 raise NotImplementedError(msg)
 
             if not is_numpy(xp):
-                res = hypotest_fun_out(*samples, axis=axis, **kwds)
+                # At this point, we know axis=-1 unconditionally
+                x = _broadcast_concatenate(samples, axis=-1, paired=paired)
+                contains_nan = _contains_nan(x, nan_policy)
+                res = hypotest_fun_out(*samples, axis=-1, **kwds)
                 res = result_to_tuple(res, n_out)
+
+                if is_lazy_array(x) or contains_nan:
+                    nan_out = xp.any(xp.isnan(x), axis=-1)
+                    res = ((xpx.at(res_i)[nan_out].set(xp.nan, copy=True)
+                            if hasattr(res_i, 'shape') else res_i) for res_i in res)
+
                 res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
