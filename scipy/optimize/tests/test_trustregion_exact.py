@@ -204,19 +204,16 @@ class TestIterativeSubproblem:
 
     def test_gh20244(self):
         g = [20, -10]
-        H = [[15, 0],
-             [0, 5]]
+        H = [[15, 0], [0, 5]]
 
-        subprob = IterativeSubproblem(x=np.zeros(2),
-                                      fun=lambda _: 0,
+        subprob = IterativeSubproblem(x=np.zeros(2), fun=lambda _: 0,
                                       jac=lambda _: np.array(g),
-                                      hess=lambda _: np.array(H),
-                                      k_easy=1e-6,
+                                      hess=lambda _: np.array(H), k_easy=1e-6,
                                       k_hard=1e-9)
         p, hits_boundary = subprob.solve(1.0)
 
         assert_allclose(p, [-0.77472957,  0.63229272])
-        assert_equal(hits_boundary, True)
+        assert hits_boundary
 
     def test_for_interior_convergence(self):
 
