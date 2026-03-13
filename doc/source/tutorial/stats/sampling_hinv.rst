@@ -19,10 +19,10 @@ of values of the CDF and PDF at interval boundaries. This makes it possible to i
 the accuracy by splitting a particular interval without recomputations in unaffected
 intervals. Three types of splines are implemented: linear, cubic, and quintic
 interpolation. For linear interpolation only the CDF is required. Cubic interpolation
-also requires PDF and quintic interpolation requires the PDF and its derivative.
+also requires the PDF, and quintic interpolation requires the PDF and its derivative.
 
 These splines have to be computed in a setup step. However, it only works for
-distributions with a bounded domain; for distributions with an unbounded domain the 
+distributions with a bounded domain; for distributions with an unbounded domain, the 
 tails are chopped off such that the probability for the tail regions is small compared 
 to the given u-resolution.
 

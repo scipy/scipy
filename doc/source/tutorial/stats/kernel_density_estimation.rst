@@ -16,7 +16,7 @@ Univariate estimation
 
 We start with a minimal amount of data in order to see how
 :func:`scipy.stats.gaussian_kde` works and what the different options for
-bandwidth selection do. The data samples from the PDF are shown as blue dashes
+bandwidth selection do. The data sampled from the PDF are shown as blue dashes
 at the bottom of the figure (this is called a rug plot):
 
 .. plot::
@@ -125,7 +125,7 @@ each feature.
 As expected, the KDE is not as close to the true PDF as we would like due to
 the different characteristic sizes of the two features of the bimodal
 distribution. By halving the default bandwidth (``Scott * 0.5``), we can do
-somewhat better, while using a bandwidth five times smaller than the default
+somewhat better, while using a bandwidth one-fifth that of the default
 does not smooth enough. What we really need, though, in this case, is a
 non-uniform (adaptive) bandwidth.
 
