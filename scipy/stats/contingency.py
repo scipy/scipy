@@ -137,7 +137,7 @@ def expected_freq(observed):
     # marginal sums returned by margins() are just what we need for
     # broadcasting in the following product.
     d = observed.ndim
-    expected = reduce(xp.multiply, margsums) / observed.sum() ** (d - 1)
+    expected = reduce(xp.multiply, margsums) / xp.sum(observed) ** (d - 1)
     return expected
 
 
