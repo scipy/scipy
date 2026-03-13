@@ -148,13 +148,14 @@ ilu_cpivotL(
     /* Test for singularity */
     if (pivmax < 0.0) {
 #if SCIPY_FIX
-		ABORT("[0]: matrix is singular");
-    /*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+	ABORT("[0]: matrix is singular");
+#else
+    	/*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
 	fflush(stderr);
 	exit(1); */
-#endif
 	*usepr = 0;
 	return (jcol+1);
+#endif
     }
     if ( pivmax == 0.0 ) {
 	if (diag != SLU_EMPTY)

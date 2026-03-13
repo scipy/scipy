@@ -241,10 +241,10 @@ cpanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
-#else
+#else		
 		    clsolve ( nsupr, segsze, &lusup[luptr], TriTmp );
 #endif
 		    
@@ -440,7 +440,7 @@ cpanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #endif
 		    

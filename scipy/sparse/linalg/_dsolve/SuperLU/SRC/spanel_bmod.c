@@ -227,10 +227,10 @@ spanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    strsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
-#else
+#else		
 		    slsolve ( nsupr, segsze, &lusup[luptr], TriTmp );
 #endif
 		    
@@ -412,7 +412,7 @@ spanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    strsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #endif
 		    

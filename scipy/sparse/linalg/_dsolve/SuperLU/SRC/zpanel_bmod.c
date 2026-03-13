@@ -241,10 +241,10 @@ zpanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
-#else
+#else		
 		    zlsolve ( nsupr, segsze, &lusup[luptr], TriTmp );
 #endif
 		    
@@ -440,7 +440,7 @@ zpanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #endif
 		    

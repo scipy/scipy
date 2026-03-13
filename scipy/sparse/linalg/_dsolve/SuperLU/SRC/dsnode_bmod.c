@@ -110,7 +110,7 @@ dsnode_bmod (
            ABORT("failed to factorize matrix");
        }
 #endif
-	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
+	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );
 	dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );

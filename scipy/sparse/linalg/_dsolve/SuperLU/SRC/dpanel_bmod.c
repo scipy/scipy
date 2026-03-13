@@ -227,10 +227,10 @@ dpanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
-#else
+#else		
 		    dlsolve ( nsupr, segsze, &lusup[luptr], TriTmp );
 #endif
 		    
@@ -412,7 +412,7 @@ dpanel_bmod (
 			ABORT("failed to factorize matrix");
 		   }
 #endif
-		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr],
+		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #endif
 		    

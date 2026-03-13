@@ -137,7 +137,7 @@ if ( jcol == MIN_COL ) {
     if ( pivmax == 0.0 ) {
 #if 0
         // There is no valid pivot.
-        // jcol represents the rank of U,
+        // jcol represents the rank of U, 
         // report the rank, let dgstrf handle the pivot
 	*pivrow = lsub_ptr[pivptr];
 	perm_r[*pivrow] = jcol;
