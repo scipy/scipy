@@ -79,6 +79,14 @@ def _get_xp_bspline_cls(xp):
     return getattr(getattr(spx, "interpolate", None), "BSpline", None)
 
 
+_bspline_extra_note = (
+    """The methods ``design_matrix`` and ``from_power_basis`` are currently
+    NumPy only. `insert_knot`` is currently not supported with CuPy.
+
+    """
+)
+
+
 @xp_capabilities(
     cpu_only=True, jax_jit=False,
     exceptions=["cupy"],
@@ -92,7 +100,8 @@ def _get_xp_bspline_cls(xp):
     skip_backends=[
         ("dask.array",
          "https://github.com/data-apis/array-api-extra/issues/488")
-    ]
+    ],
+    extra_note=_bspline_extra_note,
 )
 class BSpline:
     r"""Univariate spline in the B-spline basis.
