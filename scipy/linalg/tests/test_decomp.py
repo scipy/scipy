@@ -18,8 +18,6 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           subspace_angles, hadamard, eigvalsh_tridiagonal,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
-#from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
-#                                 dsbevd, dsbevx, zhbevd, zhbevx)
 from scipy.linalg.lapack import get_lapack_funcs
 
 from scipy.linalg._misc import norm

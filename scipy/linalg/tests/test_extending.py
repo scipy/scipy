@@ -29,7 +29,7 @@ def test_cython(tmp_path):
     b = np.ones(9)
     c = np.ones(8) * 4
     x = np.ones(9)
-    dgtsv = get_lapack_funcs('gtsv', dtype=np.float64, ilp64="preferred")   # XXX: check ILP64 build
+    dgtsv = get_lapack_funcs('gtsv', dtype=np.float64, ilp64="preferred")
     _, _, _, x, _ = dgtsv(a, b, c, x)
     a = np.ones(8) * 3
     b = np.ones(9)

@@ -32,9 +32,6 @@ except ImportError:
     fblas_64 = None
 
 
-print(f"{fblas = }  {fblas_64 = }  {cblas = }")
-
-
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
@@ -155,7 +152,6 @@ def parametrize_blas(func_name, prefixes, modules=None):
                 # Fetch the BLAS function from the BLAS module. NB: if the name is not
                 # found in the module, it's a hard failure (all names must be present).
                 f = getattr(mod, prefix + func_name)
-                mark_kwd = {}
                 param_ = pytest.param(f, dtype, id=f"{mod_name}.{prefix}{func_name}")
 
             params.append(param_)
