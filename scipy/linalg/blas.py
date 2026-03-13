@@ -234,8 +234,9 @@ __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
 import numpy as np
 import functools
+from scipy.__config__ import CONFIG
 
-# TODO: fold to __config__
+# TODO: fold HAS_LP64 into __config__, allow for _fblas not being available
 from scipy.linalg import _fblas
 HAS_LP64 = True
 
@@ -244,7 +245,6 @@ try:
 except ImportError:
     _cblas = None
 
-from scipy.__config__ import CONFIG
 HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
 del CONFIG
 _fblas_64 = None

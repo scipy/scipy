@@ -6,6 +6,7 @@ from scipy.linalg import lu, lu_factor, lu_solve, get_lapack_funcs, solve
 from numpy.testing import assert_allclose, assert_array_equal, assert_equal
 from scipy.linalg.lapack import HAS_ILP64
 
+
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES

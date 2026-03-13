@@ -81,7 +81,6 @@ def test_lp64_ilp64_blas_lapack_both_or_none():
     assert blas_has_lp64 == lapack_has_lp64
 
 
-
 class TestFlapackSimple:
 
     def test_gebal(self):

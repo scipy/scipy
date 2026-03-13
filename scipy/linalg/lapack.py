@@ -886,10 +886,6 @@ from .blas import (
     find_best_blas_type as find_best_lapack_type   # to appease the name test
 )
 
-# TODO: fold into __config__
-from scipy.linalg import _flapack
-HAS_LP64 = True
-
 from re import compile as regex_compile
 try:
     from scipy.linalg import _clapack
@@ -897,6 +893,11 @@ except ImportError:
     _clapack = None
 
 from scipy.__config__ import CONFIG
+
+# TODO: fold HAS_LP64 into __config__, allow for _flapack not being available
+from scipy.linalg import _flapack
+HAS_LP64 = True
+
 HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
 del CONFIG
 _flapack_64 = None
@@ -1010,8 +1011,8 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     >>> x_lange.typecode
     'z'
 
-    If you want to select a specific BLAS variant instead of relying on array types, use
-    the ``dtype=`` argument:
+    If you want to select a specific LAPACK variant instead of relying on array types,
+    use the ``dtype=`` argument:
 
     >>> LA.get_lapack_funcs('lange', dtype=np.float32)
     <fortran function slange>
@@ -1052,7 +1053,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     else:
         if not HAS_ILP64:
             raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
-                               "compiled only with 32-bit BLAS")
+                               "compiled only with 32-bit LAPACK")
         return _get_funcs(names, arrays, dtype,
                           "LAPACK", _flapack_64, None,
                           "flapack_64", None, _lapack_alias,

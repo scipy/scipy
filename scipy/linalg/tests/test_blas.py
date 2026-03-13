@@ -13,7 +13,7 @@ from numpy import (arange, triu, tril, zeros, tril_indices, ones,
                    diag, append, eye, nonzero)
 
 import scipy
-from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
+from scipy.linalg import get_blas_funcs, toeplitz, solve
 from scipy.linalg.blas import HAS_ILP64, HAS_LP64
 
 try:
@@ -23,16 +23,15 @@ except ImportError:
 
 try:
     from scipy.linalg import _fblas as fblas
+    FBLAS_ERROR = fblas.__fblas_error
 except ImportError:
     fblas = None
 
 try:
     from scipy.linalg import _fblas_64 as fblas_64
+    FBLAS_ERROR = fblas_64.__fblas_64_error
 except ImportError:
     fblas_64 = None
-
-
-print(f"{fblas = }  {fblas_64 = }  {cblas = }")
 
 
 REAL_DTYPES = [np.float32, np.float64]
@@ -138,6 +137,30 @@ def _dt_from_prefix(prefix):
 
 
 def parametrize_blas(func_name, prefixes, modules=None):
+    """Parametrize a test over BLAS prefixes, "sdcz", and over the BLAS modules,
+    `fblas,fblas_64,cblas`.
+
+    Given a func_name "gemm", this generates a pytest parametrization over up to 12
+    variants: sgemm, dgemm, cgemm, zgemm, each loaded from `fblas` (i.e. 32-bit LP64
+    variants), `fblas_64` (i.e. 64-bit ILP64 variants) and `cblas` (LP64 probably).
+
+    If a module is not available, the pytest parameter has a skip mark, so that the
+    test is skipped with a descriptive message.
+
+    The `cblas` variant here is historical, there's only a single test below, and
+    SciPy does not really use the cblas interface.
+
+    Parameters
+    ----------
+    func_name : str
+        The base name of a BLAS function, e.g. "gemm"
+    prefixes : str or sequence
+        BLAS prefixes to prepend to `func_name`.
+        E.g. ``func_name='gemm', prefixes='cz'`` generates `cgemm` and `zgemm`.
+    modules : sequence of ``(module, str)`` pairs
+        BLAS modules to fetch functions from. By default, use `fblas` (LP64 variant)
+        and fblas_64 (ILP64 variant).
+    """
     if modules is None:
         modules = [(fblas, "fblas"), (fblas_64, "fblas_64")]
 
@@ -155,7 +178,6 @@ def parametrize_blas(func_name, prefixes, modules=None):
                 # Fetch the BLAS function from the BLAS module. NB: if the name is not
                 # found in the module, it's a hard failure (all names must be present).
                 f = getattr(mod, prefix + func_name)
-                mark_kwd = {}
                 param_ = pytest.param(f, dtype, id=f"{mod_name}.{prefix}{func_name}")
 
             params.append(param_)
@@ -649,7 +671,6 @@ class TestFBLAS2Simple:
         Ab = zeros((k+1, n), dtype=dtype)
         for row in range(k+1):
             Ab[-row-1, row:] = diag(A, k=row)
-        #func, = get_blas_funcs(('tbmv',), dtype=dtype)
         func = f
 
         y1 = func(k=k, a=Ab, x=x)
@@ -1011,7 +1032,7 @@ class TestTRMM:
         self.b2 = np.array([[1, 4], [2, 5], [3, 6], [7, 8], [9, 10]],
                            order="f")
 
-    @parametrize_blas("trmm", "zc")
+    @parametrize_blas("trmm", "sdzc")
     def test_side(self, f, dtype):
         trmm = f
         # Provide large A array that works for side=1 but not 0 (see gh-10841)
@@ -1061,7 +1082,7 @@ class TestTRMM:
 def test_trsm(f, dtype):
     rng = np.random.default_rng(1234)
     tol = np.finfo(dtype).eps*1000
-    func = f #, = get_blas_funcs(('trsm',), dtype=dtype)
+    func = f
 
     # Test protection against size mismatches
     A = rng.random((4, 5)).astype(dtype)
@@ -1128,5 +1149,5 @@ def test_dnrm2_neg_incx():
     x = np.repeat(10, 9)
     incx = -1
     dnrm2 = scipy.linalg.blas.get_blas_funcs('nrm2', (x,), ilp64='preferred')
-    with assert_raises(fblas.__fblas_error):
+    with assert_raises(FBLAS_ERROR):
         dnrm2(x, 5, 3, incx)
