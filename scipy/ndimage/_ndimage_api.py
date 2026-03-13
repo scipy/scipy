@@ -12,4 +12,5 @@ from ._interpolation import *   # noqa: F403
 from ._measurements import *   # noqa: F403
 from ._morphology import *   # noqa: F403
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+# '@' due to pytest bug, scipy/scipy#22236
+__all__ = [s for s in dir() if not s.startswith(('_', '@'))]

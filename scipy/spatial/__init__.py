@@ -9,6 +9,7 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
    :hidden:
 
    spatial.distance
+   spatial.transform
 
 Spatial transformations
 =======================

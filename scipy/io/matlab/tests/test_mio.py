@@ -11,13 +11,13 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, assert_warns, assert_allclose)
+                           assert_equal, assert_, assert_allclose)
 import pytest
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns as assert_warns
 
 import numpy as np
 from numpy import array
-from scipy.sparse import issparse, eye_array, coo_array, csc_array
+from scipy.sparse import issparse, eye_array, coo_array, csc_array, sparray
 
 import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
@@ -29,7 +29,6 @@ from scipy.io.matlab._mio5 import (
     MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
     EmptyStructMarker)
 import scipy.io.matlab._mio5_params as mio5p
-from scipy._lib._util import VisibleDeprecationWarning
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
@@ -39,7 +38,7 @@ pytestmark = pytest.mark.thread_unsafe
 def mlarr(*args, **kwargs):
     """Convenience function to return matlab-compatible 2-D array."""
     arr = np.array(*args, **kwargs)
-    arr.shape = matdims(arr)
+    arr = arr.reshape(matdims(arr))
     return arr
 
 
@@ -1186,11 +1185,12 @@ def test_empty_sparse():
     sio.seek(0)
 
     res = loadmat(sio, spmatrix=False)
-    assert not scipy.sparse.isspmatrix(res['x'])
+    assert isinstance(res['x'], sparray)
     res = loadmat(sio, spmatrix=True)
-    assert scipy.sparse.isspmatrix(res['x'])
-    res = loadmat(sio)  # chk default
-    assert scipy.sparse.isspmatrix(res['x'])
+    assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
+    with pytest.deprecated_call(match="The default value for `spmatrix"):
+        res = loadmat(sio)  # chk default
+        assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
 
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].toarray(), 0)
@@ -1324,13 +1324,10 @@ def test_gh_17992(tmp_path):
     array_one = rng.random((5,3))
     array_two = rng.random((6,3))
     list_of_arrays = [array_one, array_two]
-    # warning suppression only needed for NumPy < 1.24.0
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(VisibleDeprecationWarning)
-        savemat(outfile,
-                {'data': list_of_arrays},
-                long_field_names=True,
-                do_compression=True)
+    savemat(outfile,
+            {'data': list_of_arrays},
+            long_field_names=True,
+            do_compression=True)
     # round trip check
     new_dict = {}
     loadmat(outfile,

@@ -31,10 +31,6 @@ cdef extern from "<limits.h>":
 
 __all__ = ['cKDTree']
 
-cdef extern from *:
-    int NPY_LIKELY(int)
-    int NPY_UNLIKELY(int)
-
 
 # C++ implementations
 # ===================
@@ -175,7 +171,7 @@ cdef class coo_entries:
         if self.buf != NULL:
             del self.buf
 
-    # The methods ndarray, dict, coo_matrix, and dok_matrix must only
+    # The methods ndarray, dict, coo_array, and dok_array must only
     # be called after the buffer is filled with coo_entry data. This
     # is because std::vector can reallocate its internal buffer when
     # push_back is called.
@@ -188,7 +184,7 @@ cdef class coo_entries:
         _dtype = [('i',np.intp),('j',np.intp),('v',np.float64)]
         res_dtype = np.dtype(_dtype, align = True)
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.uint8)
@@ -211,7 +207,7 @@ cdef class coo_entries:
             coo_entry *pr
             dict res_dict
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             res_dict = dict()
             for k in range(n):
@@ -222,6 +218,15 @@ cdef class coo_entries:
             return res_dict
         else:
             return {}
+
+    def coo_array(coo_entries self, m, n):
+        res_arr = self.ndarray()
+        return scipy.sparse.coo_array(
+                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
+                                       shape=(m, n))
+
+    def dok_array(coo_entries self, m, n):
+        return self.coo_array(m,n).todok()
 
     def coo_matrix(coo_entries self, m, n):
         res_arr = self.ndarray()
@@ -261,7 +266,7 @@ cdef class ordered_pairs:
             np.uintp_t uintptr
             np.intp_t n
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.intp)
@@ -406,11 +411,9 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
 # ==================
 
 cdef class cKDTree:
-    """
-    cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True, boxsize=None)
+    """cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True, boxsize=None)\n--
 
-    kd-tree for quick nearest-neighbor lookup
+    kd-tree for quick nearest-neighbor lookup.
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
@@ -447,32 +450,11 @@ cdef class cKDTree:
         the midpoint. This usually gives a more compact tree and
         faster queries at the expense of longer build time. Default: True.
     boxsize : array_like or scalar, optional
-        Apply a m-d toroidal topology to the KDTree.. The topology is generated
+        Apply an m-d toroidal topology to the KDTree. The topology is generated
         by :math:`x_i + n_i L_i` where :math:`n_i` are integers and :math:`L_i`
         is the boxsize along i-th dimension. The input data shall be wrapped
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
-
-    Notes
-    -----
-    The algorithm used is described in Maneewongvatana and Mount 1999.
-    The general idea is that the kd-tree is a binary tree, each of whose
-    nodes represents an axis-aligned hyperrectangle. Each node specifies
-    an axis and splits the set of points based on whether their coordinate
-    along that axis is greater than or less than a particular value.
-
-    During construction, the axis and splitting point are chosen by the
-    "sliding midpoint" rule, which ensures that the cells do not all
-    become long and thin.
-
-    The tree can be queried for the r closest neighbors of any given point
-    (optionally returning only those within some maximum distance of the
-    point). It can also be queried, with a substantial gain in efficiency,
-    for the r approximate closest neighbors.
-
-    For large dimensions (20 is already large) do not expect this to run
-    significantly faster than brute force. High-dimensional nearest-neighbor
-    queries are a substantial open problem in computer science.
 
     Attributes
     ----------
@@ -500,7 +482,33 @@ cdef class cKDTree:
     size : int
         The number of nodes in the tree.
 
-    """
+    Notes
+    -----
+    The algorithm used is described in [1]_.
+    The general idea is that the kd-tree is a binary tree, each of whose
+    nodes represents an axis-aligned hyperrectangle. Each node specifies
+    an axis and splits the set of points based on whether their coordinate
+    along that axis is greater than or less than a particular value.
+
+    During construction, the axis and splitting point are chosen by the
+    "sliding midpoint" rule, which ensures that the cells do not all
+    become long and thin.
+
+    The tree can be queried for the r closest neighbors of any given point
+    (optionally returning only those within some maximum distance of the
+    point). It can also be queried, with a substantial gain in efficiency,
+    for the r approximate closest neighbors.
+
+    For large dimensions (20 is already large) do not expect this to run
+    significantly faster than brute force. High-dimensional nearest-neighbor
+    queries are a substantial open problem in computer science.
+
+    References
+    ----------
+    .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
+           nearest neighbor searching with clustered point sets,"
+           Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
+    """  # numpydoc ignore=SS02 - not ignoring, so special-case in numpydoc_lint.py
     cdef:
         ckdtree * cself
         object                   _python_tree
@@ -665,11 +673,11 @@ cdef class cKDTree:
     # -----
 
     @cython.boundscheck(False)
-    def query(cKDTree self, object x, object k=1, np.float64_t eps=0,
-              np.float64_t p=2, np.float64_t distance_upper_bound=INFINITY,
+    def query(cKDTree self, object x, object k=1, np.float64_t eps=0.0,
+              np.float64_t p=2.0, np.float64_t distance_upper_bound=INFINITY,
               object workers=None, **kwargs):
         r"""
-        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1)
+        query(self, x, k=1, eps=0.0, p=2.0, distance_upper_bound=np.inf, workers=1)
 
         Query the kd-tree for nearest neighbors
 
@@ -848,11 +856,12 @@ cdef class cKDTree:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, object r,
-                         np.float64_t p=2., np.float64_t eps=0, object workers=None,
+                         np.float64_t p=2.0, np.float64_t eps=0.0,
+                         object workers=None,
                          return_sorted=None,
                          return_length=False, **kwargs):
         """
-        query_ball_point(self, x, r, p=2., eps=0, workers=1, return_sorted=None,
+        query_ball_point(self, x, r, p=2.0, eps=0.0, workers=1, return_sorted=None,
                          return_length=False)
 
         Find all points within distance r of point(s) x.
@@ -946,7 +955,7 @@ cdef class cKDTree:
 
             const np.float64_t *vxx = <np.float64_t*>x_arr.data
             const np.float64_t *vrr = <np.float64_t*>r_arr.data
-        
+
         if not np.isfinite(x_arr).all():
             raise ValueError("'x' must be finite, check for nan or inf values")
 
@@ -999,9 +1008,9 @@ cdef class cKDTree:
     # ---------------
 
     def query_ball_tree(cKDTree self, cKDTree other,
-                        np.float64_t r, np.float64_t p=2., np.float64_t eps=0):
+                        np.float64_t r, np.float64_t p=2.0, np.float64_t eps=0.0):
         """
-        query_ball_tree(self, other, r, p=2., eps=0)
+        query_ball_tree(self, other, r, p=2.0, eps=0.0)
 
         Find all pairs of points between `self` and `other` whose distance is at most r
 
@@ -1076,7 +1085,7 @@ cdef class cKDTree:
         results = n * [None]
         for i in range(n):
             m = <np.intp_t> (vvres[i].size())
-            if NPY_LIKELY(m > 0):
+            if (m > 0):
                 tmp = m * [None]
                 cur = vvres[i].data()
                 for j in range(m):
@@ -1091,10 +1100,10 @@ cdef class cKDTree:
     # query_pairs
     # -----------
 
-    def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
-                    np.float64_t eps=0, output_type='set'):
+    def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.0,
+                    np.float64_t eps=0.0, output_type='set'):
         """
-        query_pairs(self, r, p=2., eps=0, output_type='set')
+        query_pairs(self, r, p=2.0, eps=0.0, output_type='set')
 
         Find all pairs of points in `self` whose distance is at most r.
 
@@ -1111,14 +1120,14 @@ cdef class cKDTree:
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : string, optional
+        output_type : str, optional
             Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
         Returns
         -------
         results : set or ndarray
             Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
-            positions are close. If output_type is 'ndarray', an ndarry is
+            positions are close. If output_type is 'ndarray', an ndarray is
             returned instead of a set.
 
         Examples
@@ -1204,10 +1213,10 @@ cdef class cKDTree:
     # ---------------
 
     @cython.boundscheck(False)
-    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.,
+    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.0,
                         object weights=None, int cumulative=True):
         """
-        count_neighbors(self, other, r, p=2., weights=None, cumulative=True)
+        count_neighbors(self, other, r, p=2.0, weights=None, cumulative=True)
 
         Count how many nearby pairs can be formed.
 
@@ -1228,8 +1237,8 @@ cdef class cKDTree:
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-            If the count is non-cumulative(``cumulative=False``), ``r`` defines
-            the edges of the bins, and must be non-decreasing.
+            If the count is non-cumulative (``cumulative=False``), ``r``
+            defines the edges of the bins, and must be non-decreasing.
         p : float, optional
             1<=p<=infinity.
             Which Minkowski p-norm to use.
@@ -1464,10 +1473,10 @@ cdef class cKDTree:
 
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
-                               np.float64_t p=2.,
+                               np.float64_t p=2.0,
                                output_type='dok_matrix'):
         """
-        sparse_distance_matrix(self, other, max_distance, p=2.)
+        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
 
         Compute a sparse distance matrix
 
@@ -1477,24 +1486,35 @@ cdef class cKDTree:
         Parameters
         ----------
         other : cKDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
+        output_type : str, optional
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
+            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
+            Default: ``'dok_matrix'``.
 
-        output_type : string, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            .. warning:: dok_matrix and coo_matrix are being replaced.
+
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' continue
+               to work, but will go away eventually.
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------
@@ -1505,9 +1525,9 @@ cdef class cKDTree:
         >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
-        >>> kd_tree1 = cKDTree(points1)
-        >>> kd_tree2 = cKDTree(points2)
-        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> kdtree1 = cKDTree(points1)
+        >>> kdtree2 = cKDTree(points2)
+        >>> sdm = kdtree1.sparse_distance_matrix(kdtree2, 0.3, output_type="dok_array")
         >>> sdm.toarray()
         array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
            [0.        , 0.        , 0.        , 0.        , 0.        ],
@@ -1544,10 +1564,14 @@ cdef class cKDTree:
             return res.dict()
         elif output_type == 'ndarray':
             return res.ndarray()
-        elif output_type == 'coo_matrix':
-            return res.coo_matrix(self.n, other.n)
         elif output_type == 'dok_matrix':
             return res.dok_matrix(self.n, other.n)
+        elif output_type == 'dok_array':
+            return res.dok_array(self.n, other.n)
+        elif output_type == 'coo_matrix':
+            return res.coo_matrix(self.n, other.n)
+        elif output_type == 'coo_array':
+            return res.coo_array(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
 

@@ -173,7 +173,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     idx_dtype : dtype
         Desired dtype. Should be an integer dtype (default: ``np.int32``).
         Most of scipy.sparse uses either int64 or int32.
-    msg : string, optional
+    msg : str, optional
         A string to be added to the end of the ValueError message
         if the array shape is too big to fit in `idx_dtype`.
         The error message is ``f"<index> values too large for {msg}"``
@@ -369,14 +369,14 @@ def isintlike(x) -> bool:
     return True
 
 
-def isshape(x, nonneg=False, *, allow_nd=(2,)) -> bool:
+def isshape(x, nonneg=False, *, allow_nd=(2,), check_nd=True) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
     Shapes of length in the tuple allow_nd are allowed.
     """
     ndim = len(x)
-    if ndim not in allow_nd:
+    if check_nd and ndim not in allow_nd:
         return False
 
     for d in x:
@@ -403,27 +403,42 @@ def isdense(x) -> bool:
     return isinstance(x, np.ndarray)
 
 
-def validateaxis(axis) -> None:
+def validateaxis(axis, *, ndim=2) -> tuple[int, ...] | None:
     if axis is None:
-        return
-    axis_type = type(axis)
+        return None
 
-    # In NumPy, you can pass in tuples for 'axis', but they are
-    # not very useful for sparse matrices given their limited
-    # dimensions, so let's make it explicit that they are not
-    # allowed to be passed in
-    if isinstance(axis, tuple):
-        raise TypeError("Tuples are not accepted for the 'axis' parameter. "
-                        "Please pass in one of the following: "
-                        "{-2, -1, 0, 1, None}.")
+    if axis == ():
+        raise ValueError(
+            "sparse does not accept 0D axis (). Either use toarray (for dense) "
+            "or copy (for sparse)."
+        )
 
-    # If not a tuple, check that the provided axis is actually
-    # an integer and raise a TypeError similar to NumPy's
-    if not np.issubdtype(np.dtype(axis_type), np.integer):
-        raise TypeError(f"axis must be an integer, not {axis_type.__name__}")
+    if not isinstance(axis, tuple):
+        # If not a tuple, check that the provided axis is actually
+        # an integer and raise a TypeError similar to NumPy's
+        if not np.issubdtype(np.dtype(type(axis)), np.integer):
+            raise TypeError(f'axis must be an integer/tuple of ints, not {type(axis)}')
+        axis = (axis,)
 
-    if not (-2 <= axis <= 1):
-        raise ValueError("axis out of range")
+    canon_axis = []
+    for ax in axis:
+        if not isintlike(ax):
+            raise TypeError(f"axis must be an integer. (given {ax})")
+        if ax < 0:
+            ax += ndim
+        if ax < 0 or ax >= ndim:
+            raise ValueError("axis out of range for ndim")
+        canon_axis.append(ax)
+
+    len_axis = len(canon_axis)
+    if len_axis != len(set(canon_axis)):
+        raise ValueError("duplicate value in axis")
+    elif len_axis > ndim:
+        raise ValueError("axis tuple has too many elements")
+    elif len_axis == ndim:
+        return None
+    else:
+        return tuple(canon_axis)
 
 
 def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
@@ -509,7 +524,7 @@ def broadcast_shapes(*shapes):
     """
     if not shapes:
         return ()
-    shapes = [shp if isinstance(shp, (tuple, list)) else (shp,) for shp in shapes]
+    shapes = [shp if isinstance(shp, tuple | list) else (shp,) for shp in shapes]
     big_shp = max(shapes, key=len)
     out = list(big_shp)
     for shp in shapes:
@@ -521,23 +536,6 @@ def broadcast_shapes(*shapes):
                     raise ValueError("shapes cannot be broadcast to a single shape.")
                 out[i] = x
     return (*out,)
-
-
-def check_reshape_kwargs(kwargs):
-    """Unpack keyword arguments for reshape function.
-
-    This is useful because keyword arguments after star arguments are not
-    allowed in Python 2, but star keyword arguments are. This function unpacks
-    'order' and 'copy' from the star keyword arguments (with defaults) and
-    throws an error for any remaining.
-    """
-
-    order = kwargs.pop('order', 'C')
-    copy = kwargs.pop('copy', False)
-    if kwargs:  # Some unused kwargs remain
-        raise TypeError("reshape() got unexpected keywords arguments: "
-                        f"{', '.join(kwargs.keys())}")
-    return order, copy
 
 
 def is_pydata_spmatrix(m) -> bool:

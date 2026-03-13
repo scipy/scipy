@@ -4,6 +4,8 @@ import numpy as np
 from operator import index
 from collections import namedtuple
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ['binned_statistic',
            'binned_statistic_2d',
            'binned_statistic_dd']
@@ -13,6 +15,7 @@ BinnedStatisticResult = namedtuple('BinnedStatisticResult',
                                    ('statistic', 'bin_edges', 'binnumber'))
 
 
+@xp_capabilities(np_only=True)
 def binned_statistic(x, values, statistic='mean',
                      bins=10, range=None):
     """
@@ -32,29 +35,29 @@ def binned_statistic(x, values, statistic='mean',
         the same shape as `x`, or a set of sequences - each the same shape as
         `x`.  If `values` is a set of sequences, the statistic will be computed
         on each independently.
-    statistic : string or callable, optional
+    statistic : str or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
 
-          * 'mean' : compute the mean of values for points within each bin.
-            Empty bins will be represented by NaN.
-          * 'std' : compute the standard deviation within each bin. This
-            is implicitly calculated with ddof=0.
-          * 'median' : compute the median of values for points within each
-            bin. Empty bins will be represented by NaN.
-          * 'count' : compute the count of points within each bin.  This is
-            identical to an unweighted histogram.  `values` array is not
-            referenced.
-          * 'sum' : compute the sum of values for points within each bin.
-            This is identical to a weighted histogram.
-          * 'min' : compute the minimum of values for points within each bin.
-            Empty bins will be represented by NaN.
-          * 'max' : compute the maximum of values for point within each bin.
-            Empty bins will be represented by NaN.
-          * function : a user-defined function which takes a 1D array of
-            values, and outputs a single numerical statistic. This function
-            will be called on the values in each bin.  Empty bins will be
-            represented by function([]), or NaN if this returns an error.
+        * 'mean' : compute the mean of values for points within each bin.
+          Empty bins will be represented by NaN.
+        * 'std' : compute the standard deviation within each bin. This
+          is implicitly calculated with ddof=0.
+        * 'median' : compute the median of values for points within each
+          bin. Empty bins will be represented by NaN.
+        * 'count' : compute the count of points within each bin.  This is
+          identical to an unweighted histogram.  `values` array is not
+          referenced.
+        * 'sum' : compute the sum of values for points within each bin.
+          This is identical to a weighted histogram.
+        * 'min' : compute the minimum of values for points within each bin.
+          Empty bins will be represented by NaN.
+        * 'max' : compute the maximum of values for point within each bin.
+          Empty bins will be represented by NaN.
+        * function : a user-defined function which takes a 1D array of
+          values, and outputs a single numerical statistic. This function
+          will be called on the values in each bin.  Empty bins will be
+          represented by function([]), or NaN if this returns an error.
 
     bins : int or sequence of scalars, optional
         If `bins` is an int, it defines the number of equal-width bins in the
@@ -192,6 +195,7 @@ BinnedStatistic2dResult = namedtuple('BinnedStatistic2dResult',
                                       'binnumber'))
 
 
+@xp_capabilities(np_only=True)
 def binned_statistic_2d(x, y, values, statistic='mean',
                         bins=10, range=None, expand_binnumbers=False):
     """
@@ -213,37 +217,37 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         the same shape as `x`, or a list of sequences - each with the same
         shape as `x`.  If `values` is such a list, the statistic will be
         computed on each independently.
-    statistic : string or callable, optional
+    statistic : str or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
 
-          * 'mean' : compute the mean of values for points within each bin.
-            Empty bins will be represented by NaN.
-          * 'std' : compute the standard deviation within each bin. This
-            is implicitly calculated with ddof=0.
-          * 'median' : compute the median of values for points within each
-            bin. Empty bins will be represented by NaN.
-          * 'count' : compute the count of points within each bin.  This is
-            identical to an unweighted histogram.  `values` array is not
-            referenced.
-          * 'sum' : compute the sum of values for points within each bin.
-            This is identical to a weighted histogram.
-          * 'min' : compute the minimum of values for points within each bin.
-            Empty bins will be represented by NaN.
-          * 'max' : compute the maximum of values for point within each bin.
-            Empty bins will be represented by NaN.
-          * function : a user-defined function which takes a 1D array of
-            values, and outputs a single numerical statistic. This function
-            will be called on the values in each bin.  Empty bins will be
-            represented by function([]), or NaN if this returns an error.
+        * 'mean' : compute the mean of values for points within each bin.
+          Empty bins will be represented by NaN.
+        * 'std' : compute the standard deviation within each bin. This
+          is implicitly calculated with ddof=0.
+        * 'median' : compute the median of values for points within each
+          bin. Empty bins will be represented by NaN.
+        * 'count' : compute the count of points within each bin.  This is
+          identical to an unweighted histogram.  `values` array is not
+          referenced.
+        * 'sum' : compute the sum of values for points within each bin.
+          This is identical to a weighted histogram.
+        * 'min' : compute the minimum of values for points within each bin.
+          Empty bins will be represented by NaN.
+        * 'max' : compute the maximum of values for point within each bin.
+          Empty bins will be represented by NaN.
+        * function : a user-defined function which takes a 1D array of
+          values, and outputs a single numerical statistic. This function
+          will be called on the values in each bin.  Empty bins will be
+          represented by function([]), or NaN if this returns an error.
 
     bins : int or [int, int] or array_like or [array, array], optional
         The bin specification:
 
-          * the number of bins for the two dimensions (nx = ny = bins),
-          * the number of bins in each dimension (nx, ny = bins),
-          * the bin edges for the two dimensions (x_edge = y_edge = bins),
-          * the bin edges in each dimension (x_edge, y_edge = bins).
+        * the number of bins for the two dimensions (nx = ny = bins),
+        * the number of bins in each dimension (nx, ny = bins),
+        * the bin edges for the two dimensions (x_edge = y_edge = bins),
+        * the bin edges in each dimension (x_edge, y_edge = bins).
 
         If the bin edges are specified, the number of bins will be,
         (nx = len(x_edge)-1, ny = len(y_edge)-1).
@@ -373,6 +377,7 @@ def _bincount(x, weights):
     return z
 
 
+@xp_capabilities(np_only=True)
 def binned_statistic_dd(sample, values, statistic='mean',
                         bins=10, range=None, expand_binnumbers=False,
                         binned_statistic_result=None):
@@ -394,38 +399,39 @@ def binned_statistic_dd(sample, values, statistic='mean',
         the same shape as `sample`, or a list of sequences - each with the
         same shape as `sample`.  If `values` is such a list, the statistic
         will be computed on each independently.
-    statistic : string or callable, optional
+    statistic : str or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
 
-          * 'mean' : compute the mean of values for points within each bin.
-            Empty bins will be represented by NaN.
-          * 'median' : compute the median of values for points within each
-            bin. Empty bins will be represented by NaN.
-          * 'count' : compute the count of points within each bin.  This is
-            identical to an unweighted histogram.  `values` array is not
-            referenced.
-          * 'sum' : compute the sum of values for points within each bin.
-            This is identical to a weighted histogram.
-          * 'std' : compute the standard deviation within each bin. This
-            is implicitly calculated with ddof=0. If the number of values
-            within a given bin is 0 or 1, the computed standard deviation value
-            will be 0 for the bin.
-          * 'min' : compute the minimum of values for points within each bin.
-            Empty bins will be represented by NaN.
-          * 'max' : compute the maximum of values for point within each bin.
-            Empty bins will be represented by NaN.
-          * function : a user-defined function which takes a 1D array of
-            values, and outputs a single numerical statistic. This function
-            will be called on the values in each bin.  Empty bins will be
-            represented by function([]), or NaN if this returns an error.
+        * 'mean' : compute the mean of values for points within each bin.
+          Empty bins will be represented by NaN.
+        * 'median' : compute the median of values for points within each
+          bin. Empty bins will be represented by NaN.
+        * 'count' : compute the count of points within each bin.  This is
+          identical to an unweighted histogram.  `values` array is not
+          referenced.
+        * 'sum' : compute the sum of values for points within each bin.
+          This is identical to a weighted histogram.
+        * 'std' : compute the standard deviation within each bin. This
+          is implicitly calculated with ddof=0. If the number of values
+          within a given bin is 0 or 1, the computed standard deviation value
+          will be 0 for the bin.
+        * 'min' : compute the minimum of values for points within each bin.
+          Empty bins will be represented by NaN.
+        * 'max' : compute the maximum of values for point within each bin.
+          Empty bins will be represented by NaN.
+        * function : a user-defined function which takes a 1D array of
+          values, and outputs a single numerical statistic. This function
+          will be called on the values in each bin.  Empty bins will be
+          represented by function([]), or NaN if this returns an error.
 
     bins : sequence or positive int, optional
         The bin specification must be in one of the following forms:
 
-          * A sequence of arrays describing the bin edges along each dimension.
-          * The number of bins for each dimension (nx, ny, ... = bins).
-          * The number of bins for all dimensions (nx = ny = ... = bins).
+        * A sequence of arrays describing the bin edges along each dimension.
+        * The number of bins for each dimension (nx, ny, ... = bins).
+        * The number of bins for all dimensions (nx = ny = ... = bins).
+
     range : sequence, optional
         A sequence of lower and upper bin edges to be used if the edges are
         not given explicitly in `bins`. Defaults to the minimum and maximum
@@ -544,9 +550,12 @@ def binned_statistic_dd(sample, values, statistic='mean',
         pass
     # If bins was an integer-like object, now it is an actual Python int.
 
-    # NOTE: for _bin_edges(), see e.g. gh-11365
-    if isinstance(bins, int) and not np.isfinite(sample).all():
-        raise ValueError(f'{sample!r} contains non-finite values.')
+    # For context: see gh-23751 and linked issues/PRs
+    if np.isnan(sample).any():
+        message = ("The sample on which `values` is to be binned contains at least one "
+                   "NaN, and the meaning is ambiguous. Consider removing or replacing "
+                   "with numerical outliers.")
+        raise ValueError(message)
 
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.
@@ -719,11 +728,17 @@ def _bin_edges(sample, bins=None, range=None):
     edges = Ndim * [None]         # Bin edges for each dim (will be 2D array)
     dedges = Ndim * [None]        # Spacing between edges (will be 2D array)
 
+    # Preserve sample floating point precision in bin edges
+    edges_dtype = (sample.dtype if np.issubdtype(sample.dtype, np.floating)
+                   else float)
+
     # Select range for each dimension
     # Used only if number of bins is given.
     if range is None:
-        smin = np.atleast_1d(np.array(sample.min(axis=0), float))
-        smax = np.atleast_1d(np.array(sample.max(axis=0), float))
+        sample = sample.astype(float, copy=True)
+        sample[np.isinf(sample)] = np.nan
+        smin = np.atleast_1d(np.nanmin(sample, axis=0))
+        smax = np.atleast_1d(np.nanmax(sample, axis=0))
     else:
         if len(range) != Ndim:
             raise ValueError(
@@ -742,10 +757,6 @@ def _bin_edges(sample, bins=None, range=None):
         if smin[i] == smax[i]:
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
-
-    # Preserve sample floating point precision in bin edges
-    edges_dtype = (sample.dtype if np.issubdtype(sample.dtype, np.floating)
-                   else float)
 
     # Create edge arrays
     for i in builtins.range(Ndim):

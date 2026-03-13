@@ -117,6 +117,7 @@ class TestInt32Overflow:
     def teardown_method(self):
         gc.collect()
 
+    @pytest.mark.fail_slow(2)  # keep in fast set, only non-slow test
     def test_coo_todense(self):
         # Check *_todense routines (cf. gh-2179)
         #

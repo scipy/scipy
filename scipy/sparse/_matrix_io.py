@@ -18,7 +18,7 @@ def save_npz(file, matrix, compressed=True):
         where the data will be saved. If file is a string, the ``.npz``
         extension will be appended to the file name if it is not already
         there.
-    matrix: spmatrix or sparray
+    matrix : spmatrix or sparray
         The sparse matrix or array to save.
         Supported formats: ``csc``, ``csr``, ``bsr``, ``dia`` or ``coo``.
     compressed : bool, optional
@@ -60,7 +60,11 @@ def save_npz(file, matrix, compressed=True):
     elif matrix.format == 'dia':
         arrays_dict.update(offsets=matrix.offsets)
     elif matrix.format == 'coo':
-        arrays_dict.update(row=matrix.row, col=matrix.col)
+        if matrix.ndim == 2:
+            # TODO: After a few releases, switch 2D case to save with coords only.
+            arrays_dict.update(row=matrix.row, col=matrix.col)
+        else:
+            arrays_dict.update(coords=matrix.coords)
     else:
         msg = f'Save is not implemented for sparse matrix of format {matrix.format}.'
         raise NotImplementedError(msg)
@@ -157,9 +161,10 @@ def load_npz(file):
             return cls((loaded['data'], loaded['indices'], loaded['indptr']),
                        shape=loaded['shape'])
         elif sparse_format == 'dia':
-            return cls((loaded['data'], loaded['offsets']),
-                       shape=loaded['shape'])
+            return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
         elif sparse_format == 'coo':
+            if 'coords' in loaded:
+                return cls((loaded['data'], loaded['coords']), shape=loaded['shape'])
             return cls((loaded['data'], (loaded['row'], loaded['col'])),
                        shape=loaded['shape'])
         else:

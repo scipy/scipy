@@ -14,6 +14,9 @@ def get_submodule_paths():
                         datum.startswith('\tpath = ')]
         submodule_paths = [os.path.join(root_directory, path) for path in
                            submodule_paths]
+    # super-directories
+    submodule_paths.append(os.path.join(root_directory, 'subprojects'))
+    submodule_paths.append(os.path.join(root_directory, 'scipy/_external'))
     return submodule_paths
 
 

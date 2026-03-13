@@ -36,7 +36,7 @@ on:
       - maintenance/**
 
 permissions:
-   contents: read  # to fetch code (actions/checkout)
+  contents: read # to fetch code (actions/checkout)
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
@@ -57,15 +57,15 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:22.04
+    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:24.04
     steps:
       - name: Checkout scipy repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
       - name: Cache pixi
-        uses: cirruslabs/cache@v4  #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
         with:
           path: ${{ env.PIXI_CACHE_DIR }}
           # Cache hit if lock file did not change. If it did, still restore the cache,
@@ -77,7 +77,7 @@ jobs:
             ${{ runner.os }}-gpu-pixi
 
       - name: Setup compiler cache
-        uses: cirruslabs/cache@v4  #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
         with:
           path: ${{ env.CCACHE_DIR }}
           # Make primary key unique by using `run_id`, this ensures the cache
@@ -86,30 +86,45 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gpu-ccache
 
+      - name: Define default CuPy cache path
+        run: |
+          # We don't want to change the directory, and $HOME isn't available in
+          # `env:` above
+          echo "CUPY_CACHE_DIR=$HOME/.cupy/kernel_cache" >> $GITHUB_ENV
+
+      - name: Cache CuPy kernels
+        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        with:
+          path: ${{ env.CUPY_CACHE_DIR }}
+          # Same as for ccache above
+          key: ${{ runner.os }}-gpu-cupy-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-cupy
+
       - name: run nvidia-smi
         run: nvidia-smi
 
       - name: run nvidia-smi --query
         run: nvidia-smi --query
 
-      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          pixi-version: v0.39.2
-          manifest-path: .github/workflows/pixi.toml
+          pixi-version: v0.55.0
           cache: false
+          environments: >-
+            build-cuda
+            torch-cuda
+            jax-cuda
+            cupy
 
       - name: Build SciPy
-        working-directory: .github/workflows
-        run: pixi run build
+        run: pixi run build-cuda
 
       - name: Run PyTorch GPU tests
-        working-directory: .github/workflows
-        run: pixi run -e torch-cuda test-torch-cuda -v -m "array_api_backends and not slow"
-
-      - name: Run JAX GPU tests
-        working-directory: .github/workflows
-        run: pixi run -e jax-cuda test-jax-cuda -v -m "array_api_backends and not slow"
+        run: pixi run --skip-deps test-torch-cuda -v
 
       - name: Run CuPy tests
-        working-directory: .github/workflows
-        run: pixi run -e cupy test-cupy -v -m "array_api_backends and not slow"
+        run: pixi run --skip-deps test-cupy -v
+
+      - name: Run JAX GPU tests
+        run: pixi run --skip-deps test-jax-cuda -v

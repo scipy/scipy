@@ -4,10 +4,24 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "scipy_config.h"
 #include "sf_error.h"
 
-#include "xsf/error.h"
-// #include "sf_error.h"
+/* If this isn't volatile clang tries to optimize it away */
+static volatile SCIPY_TLS sf_action_t sf_error_actions[] = {
+    SF_ERROR_IGNORE, /* SF_ERROR_OK */
+    SF_ERROR_IGNORE, /* SF_ERROR_SINGULAR */
+    SF_ERROR_IGNORE, /* SF_ERROR_UNDERFLOW */
+    SF_ERROR_IGNORE, /* SF_ERROR_OVERFLOW */
+    SF_ERROR_IGNORE, /* SF_ERROR_SLOW */
+    SF_ERROR_IGNORE, /* SF_ERROR_LOSS */
+    SF_ERROR_IGNORE, /* SF_ERROR_NO_RESULT */
+    SF_ERROR_IGNORE, /* SF_ERROR_DOMAIN */
+    SF_ERROR_IGNORE, /* SF_ERROR_ARG */
+    SF_ERROR_IGNORE, /* SF_ERROR_OTHER */
+    SF_ERROR_RAISE,  /* SF_ERROR_MEMORY */
+    SF_ERROR_IGNORE  /* SF_ERROR__LAST */
+};
 
 const char *sf_error_messages[] = {
     "no error",
@@ -26,6 +40,14 @@ const char *sf_error_messages[] = {
 
 extern "C" int wrap_PyUFunc_getfperr(void);
 
+void sf_error_set_action(sf_error_t code, sf_action_t action) {
+    sf_error_actions[(int)code] = action;
+}
+
+sf_action_t sf_error_get_action(sf_error_t code) {
+    return sf_error_actions[(int)code];
+}
+
 void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list ap) {
     /* Internal function which takes a va_list instead of variadic args.
      * Makes this easier to wrap in error handling used in special C++
@@ -39,7 +61,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     if ((int) code < 0 || (int) code >= SF_ERROR__LAST) {
         code = SF_ERROR_OTHER;
     }
-    action = scipy_sf_error_get_action(code);
+    action = sf_error_get_action(code);
     if (action == SF_ERROR_IGNORE) {
         return;
     }
@@ -55,9 +77,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
         PyOS_snprintf(msg, 2048, "scipy.special/%s: %s", func_name, sf_error_messages[(int) code]);
     }
 
-#ifdef WITH_THREAD
     save = PyGILState_Ensure();
-#endif
 
     if (PyErr_Occurred()) {
         goto skip_warn;
@@ -98,11 +118,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
 skip_warn:
-#ifdef WITH_THREAD
     PyGILState_Release(save);
-#else
-    ;
-#endif
 }
 
 void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
@@ -118,10 +134,10 @@ void sf_error_check_fpe(const char *func_name) {
         sf_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
     }
     if (status & NPY_FPE_OVERFLOW) {
-        sf_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
+        sf_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
     }
     if (status & NPY_FPE_UNDERFLOW) {
-        sf_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
+        sf_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
     }
     if (status & NPY_FPE_INVALID) {
         sf_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");

@@ -102,9 +102,9 @@ given by ``np.arange(1.5, 5, 1000)``.
     ...     rng = SimpleRatioUniforms(dist, mode=p[i]-1,
     ...                               pdf_area=math.gamma(p[i]),
     ...                               random_state=urng)
-    ...     with np.testing.suppress_warnings() as sup:
-    ...         sup.filter(RuntimeWarning, "invalid value encountered in double_scalars")
-    ...         sup.filter(RuntimeWarning, "overflow encountered in exp")
+    ...     with warnings.catch_warnings():
+    ...         warnings.filterwarnings("ignore", RuntimeWarning, "invalid value encountered in double_scalars")
+    ...         warnings.filterwarnings("ignore", RuntimeWarning, "overflow encountered in exp")
     ...         res[i] = rng.rvs(100)
 
 See [1]_, [2]_, and [3]_ for more details.

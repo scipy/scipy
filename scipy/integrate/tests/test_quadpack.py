@@ -3,12 +3,13 @@ import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi
 from numpy.testing import (assert_,
-        assert_allclose, assert_array_less, assert_almost_equal)
+        assert_allclose, assert_array_less, assert_almost_equal, assert_equal)
 import pytest
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.special import erf, erfc
 from scipy._lib._ccallback import LowLevelCallable
+from scipy._lib._array_api import make_xp_test_case
 
 import ctypes
 import ctypes.util
@@ -29,6 +30,7 @@ def get_clib_test_routine(name, restype, *argtypes):
     return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
 
 
+@make_xp_test_case(quad)
 class TestCtypesQuad:
     def setup_method(self):
         if sys.platform == 'win32':
@@ -101,6 +103,7 @@ class TestCtypesQuad:
                 pytest.raises(ValueError, quad, func, 0, pi)
 
 
+@make_xp_test_case(quad)
 class TestMultivariateCtypesQuad:
     def setup_method(self):
         restype = ctypes.c_double
@@ -127,6 +130,7 @@ class TestMultivariateCtypesQuad:
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
 
+@make_xp_test_case(quad)
 class TestQuad:
     def test_typical(self):
         # 1) Typical function with two extra arguments:
@@ -239,6 +243,65 @@ class TestQuad:
         err = max(res_1[1], res_2[1])
         assert_allclose(res_1[0], -res_2[0], atol=err)
 
+    @pytest.mark.parametrize("complex_func", [True, False])
+    def test_b_equals_a(self, complex_func):
+        def f(x):
+            return 1/x
+
+        upper = lower = 0.
+        limit = 50
+        expected_infodict = {"neval": 0, "last": 0,
+                             "alist": np.full(limit, np.nan, dtype=np.float64),
+                             "blist": np.full(limit, np.nan, dtype=np.float64),
+                             "rlist": np.zeros(limit, dtype=np.float64),
+                             "elist": np.zeros(limit, dtype=np.float64),
+                             "iord" : np.zeros(limit, dtype=np.int32)}
+
+        zero, err, infodict = quad(f, lower, upper, full_output=1,
+                                   complex_func=complex_func)
+        assert (zero, err) == (0., 0.)
+        if complex_func:
+            assert_equal(infodict, {"real": expected_infodict,
+                                    "imag": expected_infodict})
+        else:
+            assert_equal(infodict, expected_infodict)
+
+    def test_complex(self):
+        def tfunc(x):
+            return np.exp(1j*x)
+
+        assert np.allclose(
+                    quad(tfunc, 0, np.pi/2, complex_func=True)[0],
+                    1+1j)
+
+        # We consider a divergent case in order to force quadpack
+        # to return an error message.  The output is compared
+        # against what is returned by explicit integration
+        # of the parts.
+        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
+                  'weight': 'cos', 'wvar': 1}
+        res_c = quad(tfunc, complex_func=True, **kwargs)
+        res_r = quad(lambda x: np.real(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+        res_i = quad(lambda x: np.imag(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+
+        np.testing.assert_equal(res_c[0], res_r[0] + 1j*res_i[0])
+        np.testing.assert_equal(res_c[1], res_r[1] + 1j*res_i[1])
+
+        assert len(res_c[2]['real']) == len(res_r[2:]) == 3
+        assert res_c[2]['real'][2] == res_r[4]
+        assert res_c[2]['real'][1] == res_r[3]
+        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
+
+        assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
+        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
+
+
+@make_xp_test_case(dblquad)
+class TestDblquad:
     def test_double_integral(self):
         # 8) Double Integral test
         def simpfunc(y, x):       # Note order of arguments.
@@ -314,7 +377,11 @@ class TestQuad:
             (1, np.inf, -1, np.inf, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
             # Multiple integration of a function in n = 2 variables: f(x, y, z)
             # over domain D = [-inf, inf] for all n.
-            (-np.inf, np.inf, -np.inf, np.inf, np.pi)
+            (-np.inf, np.inf, -np.inf, np.inf, np.pi),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [0, 0] for each n (one at a time).
+            (0, 0, 0, np.inf, 0.),
+            (0, np.inf, 0, 0, 0.),
         ]
     )
     def test_double_integral_improper(
@@ -330,6 +397,9 @@ class TestQuad:
             error_tolerance=3e-8
         )
 
+
+@make_xp_test_case(tplquad)
+class TestTplquad:
     def test_triple_integral(self):
         # 9) Triple Integral test
         def simpfunc(z, y, x, t):      # Note order of arguments.
@@ -484,6 +554,11 @@ class TestQuad:
             # over domain D = [-inf, inf] for all n.
             (-np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf,
              np.pi ** (3 / 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [0, 0] for each n (one at a time).
+            (0, 0, 0, np.inf, 0, np.inf, 0),
+            (0, np.inf, 0, 0, 0, np.inf, 0),
+            (0, np.inf, 0, np.inf, 0, 0, 0),
         ],
     )
     def test_triple_integral_improper(
@@ -506,40 +581,8 @@ class TestQuad:
             error_tolerance=6e-8
         )
 
-    def test_complex(self):
-        def tfunc(x):
-            return np.exp(1j*x)
 
-        assert np.allclose(
-                    quad(tfunc, 0, np.pi/2, complex_func=True)[0],
-                    1+1j)
-
-        # We consider a divergent case in order to force quadpack
-        # to return an error message.  The output is compared
-        # against what is returned by explicit integration
-        # of the parts.
-        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
-                  'weight': 'cos', 'wvar': 1}
-        res_c = quad(tfunc, complex_func=True, **kwargs)
-        res_r = quad(lambda x: np.real(np.exp(1j*x)),
-                     complex_func=False,
-                     **kwargs)
-        res_i = quad(lambda x: np.imag(np.exp(1j*x)),
-                     complex_func=False,
-                     **kwargs)
-
-        np.testing.assert_equal(res_c[0], res_r[0] + 1j*res_i[0])
-        np.testing.assert_equal(res_c[1], res_r[1] + 1j*res_i[1])
-
-        assert len(res_c[2]['real']) == len(res_r[2:]) == 3
-        assert res_c[2]['real'][2] == res_r[4]
-        assert res_c[2]['real'][1] == res_r[3]
-        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
-
-        assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
-        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
-
-
+@make_xp_test_case(nquad)
 class TestNQuad:
     @pytest.mark.fail_slow(5)
     def test_fixed_limits(self):

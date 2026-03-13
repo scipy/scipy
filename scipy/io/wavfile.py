@@ -25,6 +25,12 @@ __all__ = [
 
 
 class WavFileWarning(UserWarning):
+    """
+    Warning for WAV files with format issues that can still be read.
+    
+    Raised when a WAV file has problems like missing metadata or 
+    non-standard formatting, but can still be processed successfully.
+    """
     pass
 
 
@@ -614,7 +620,7 @@ def read(filename, mmap=False):
 
     Parameters
     ----------
-    filename : string or open file handle
+    filename : str or open file handle
         Input WAV file.
     mmap : bool, optional
         Whether to read data as memory-mapped (default: False).  Not compatible
@@ -786,7 +792,7 @@ def write(filename, rate, data):
 
     Parameters
     ----------
-    filename : string or open file handle
+    filename : str or open file handle
         Output wav file.
     rate : int
         The sample rate (in samples/sec).

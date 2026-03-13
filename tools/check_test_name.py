@@ -141,7 +141,7 @@ def main(content: str, file: str) -> int:
                         Path("scipy").rglob("**/tests/**/test*.py"),
                         ["scipy/_lib/_testutils.py"],
                     ):
-                        with open(os.path.join(_file)) as fd:
+                        with open(os.path.join(_file), encoding="utf-8") as fd:
                             _content = fd.read()
                         if f"self.{_node.name}" in _content:
                             should_continue = True

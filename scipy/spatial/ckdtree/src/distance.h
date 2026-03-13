@@ -117,10 +117,10 @@ struct BoxDist1D {
          *
          * We will fix the convention later.
          * */
-        if (CKDTREE_UNLIKELY(full <= 0)) {
+        if (full <= 0) {
             /* A non-periodic dimension */
             /* \/     */
-            if(max <= 0 || min >= 0) {
+            if (max <= 0 || min >= 0) {
                 /* do not pass though 0 */
                 min = ckdtree_fabs(min);
                 max = ckdtree_fabs(max);
@@ -230,7 +230,7 @@ struct BoxDist1D {
         tmax = x - max;
         tmin = x - min;
         /* is the test point in this range */
-        if(CKDTREE_LIKELY(tmax < 0 && tmin > 0)) {
+        if(tmax < 0 && tmin > 0) {
             /* yes. min distance is 0 */
             return 0;
         }
@@ -262,8 +262,8 @@ struct BoxDist1D {
     wrap_distance(const double x, const double hb, const double fb)
     {
         double x1;
-        if (CKDTREE_UNLIKELY(x < -hb)) x1 = fb + x;
-        else if (CKDTREE_UNLIKELY(x > hb)) x1 = x - fb;
+        if (x < -hb) x1 = fb + x;
+        else if (x > hb) x1 = x - fb;
         else x1 = x;
     #if 0
         printf("ckdtree_fabs_b x : %g x1 %g\n", x, x1);

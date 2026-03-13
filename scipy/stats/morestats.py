@@ -13,7 +13,7 @@ __all__ = [  # noqa: F822
     'fligner', 'mood', 'wilcoxon', 'median_test',
     'circmean', 'circvar', 'circstd', 'anderson_ksamp',
     'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-    'yeojohnson_normplot', 'find_repeats', 'chi2_contingency', 'distributions',
+    'yeojohnson_normplot', 'chi2_contingency', 'distributions',
 ]
 
 

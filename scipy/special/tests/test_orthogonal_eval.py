@@ -148,11 +148,11 @@ class TestRecurrence:
 
     def check_poly(self, func, param_ranges=(), x_range=(), nn=10,
                    nparam=10, nx=10, rtol=1e-8):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
         dataset = []
         for n in np.arange(nn):
-            params = [a + (b-a)*np.random.rand(nparam) for a,b in param_ranges]
+            params = [a + (b-a)*rng.random(nparam) for a,b in param_ranges]
             params = np.asarray(params).T
             if not param_ranges:
                 params = [0]
@@ -161,7 +161,7 @@ class TestRecurrence:
                     p = (n,) + tuple(p)
                 else:
                     p = (n,)
-                x = x_range[0] + (x_range[1] - x_range[0])*np.random.rand(nx)
+                x = x_range[0] + (x_range[1] - x_range[0])*rng.random(nx)
                 x[0] = x_range[0]  # always include domain start point
                 x[1] = x_range[1]  # always include domain end point
                 kw = dict(sig=(len(p)+1)*'d'+'->d')
@@ -273,3 +273,95 @@ def test_gegenbauer_nan(n, alpha, x):
     nan_gegenbauer = np.isnan(_ufuncs.eval_gegenbauer(n, alpha, x))
     nan_arg = np.any(np.isnan([n, alpha, x]))
     assert nan_gegenbauer == nan_arg
+
+@pytest.mark.parametrize(
+    "n, expected",
+    [
+        (0, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+        (1, [-2.0, -1.8, -1.6, -1.4, -1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0.0]),
+        (2, [3.0, 2.16, 1.44, 0.84, 0.36, 0.0, -0.24, -0.36, -0.36, -0.24, 0.0]),
+        (3, [-4.0, -1.98, -0.64, 0.14, 0.48, 0.5, 0.32, 0.06, -0.16, -0.22, 0.0]),
+        (
+            4,
+            [5.0, 1.332, -0.288, -0.658, -0.408, 0.0, 0.272, 0.282, 0.072, -0.148, 0.0],
+        ),
+        (
+            5,
+            [
+                -6.0,
+                -0.43308,
+                0.79104,
+                0.36876,
+                -0.21312,
+                -0.375,
+                -0.14208,
+                0.15804,
+                0.19776,
+                -0.04812,
+                0.0,
+            ],
+        ),
+    ],
+)
+def test_jacobi_alpha_minus_one_beta_plus_one(n, expected):
+    # gh-7001 - expected values were computed with mathematica
+    x = np.linspace(-1.0, 1.0, 11)
+    a, b = -1, 1  # alpha, beta
+    assert_allclose(_ufuncs.eval_jacobi(n, a, b, x), expected, rtol=1e-10, atol=1e-14)
+    assert_allclose(
+        _ufuncs.eval_jacobi(float(n), a, b, x), expected, rtol=1e-10, atol=1e-14
+    )
+
+
+@pytest.mark.parametrize(
+    "n, expected",
+    [
+        (0, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+        (1, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        (2, [0.0, -0.09, -0.16, -0.21, -0.24, -0.25, -0.24, -0.21, -0.16, -0.09, 0.0]),
+        (
+            3,
+            [0.0, 0.144, 0.192, 0.168, 0.096, 0.0, -0.096, -0.168, -0.192, -0.144, 0.0],
+        ),
+        (
+            4,
+            [
+                0.0,
+                -0.1485,
+                -0.096,
+                0.0315,
+                0.144,
+                0.1875,
+                0.144,
+                0.0315,
+                -0.096,
+                -0.1485,
+                0.0,
+            ],
+        ),
+        (
+            5,
+            [
+                0.0,
+                0.10656,
+                -0.04608,
+                -0.15792,
+                -0.13056,
+                0.0,
+                0.13056,
+                0.15792,
+                0.04608,
+                -0.10656,
+                0.0,
+            ],
+        ),
+    ],
+)
+def test_jacobi_alpha_minus_one_beta_minus_one(n, expected):
+    # gh-7001 - expected values were computed with mathematica
+    x = np.linspace(-1.0, 1.0, 11)
+    a, b = -1, -1  # alpha, beta
+    assert_allclose(_ufuncs.eval_jacobi(n, a, b, x), expected, rtol=1e-10, atol=1e-14)
+    assert_allclose(
+        _ufuncs.eval_jacobi(float(n), a, b, x), expected, rtol=1e-10, atol=1e-14
+    )

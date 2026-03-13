@@ -13,7 +13,7 @@ from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       check_shape, check_reshape_kwargs)
+                       check_shape)
 from . import _csparsetools
 
 
@@ -132,6 +132,16 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
+
+        Parameters
+        ----------
+        i : int
+            Row to return view of.
+
+        Returns
+        -------
+        lil_array or lil_matrix
+            A view of the 'i'th row.
         """
         new = self._lil_container((1, self.shape[1]), dtype=self.dtype)
         new.rows[0] = self.rows[i]
@@ -140,6 +150,16 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
+
+        Parameters
+        ----------
+        i : int
+            Row to return a copy of.
+
+        Returns
+        -------
+        lil_array or lil_matrix
+            A copy of the 'i'th row.
         """
         M, N = self.shape
         if i < 0:
@@ -160,16 +180,6 @@ class _lil_base(_spbase, IndexMixin):
             return self._get_intXint(*key)
         # Everything else takes the normal path.
         return IndexMixin.__getitem__(self, key)
-
-    def _asindices(self, idx, N):
-        # LIL routines handle bounds-checking for us, so don't do it here.
-        try:
-            x = np.asarray(idx)
-        except (ValueError, TypeError, MemoryError) as e:
-            raise IndexError('invalid index') from e
-        if x.ndim not in (1, 2):
-            raise IndexError('Index dimension must be <= 2')
-        return x
 
     def _get_intXint(self, row, col):
         v = _csparsetools.lil_get1(self.shape[0], self.shape[1], self.rows,
@@ -269,6 +279,10 @@ class _lil_base(_spbase, IndexMixin):
             row, col = key
             # Fast path for simple (int, int) indexing.
             if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
+                if issparse(x):
+                    x = x.toarray()
+                if isinstance(x, np.ndarray):
+                    x = x.item()
                 x = self.dtype.type(x)
                 if x.size > 1:
                     raise ValueError("Trying to assign a sequence to an item")
@@ -291,8 +305,7 @@ class _lil_base(_spbase, IndexMixin):
         else:
             res_dtype = upcast_scalar(self.dtype, other)
 
-            new = self.copy()
-            new = new.astype(res_dtype)
+            new = self.astype(res_dtype)  # sure to make a copy
             # Multiply this scalar by every element.
             for j, rowvals in enumerate(new.data):
                 new.data[j] = [val*other for val in rowvals]
@@ -320,9 +333,8 @@ class _lil_base(_spbase, IndexMixin):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def reshape(self, *args, **kwargs):
-        shape = check_shape(args, self.shape)
-        order, copy = check_reshape_kwargs(kwargs)
+    def reshape(self, *shape, order="C", copy=False):
+        shape = check_shape(shape, self.shape)
 
         # Return early if reshape is not required
         if shape == self.shape:
@@ -524,19 +536,26 @@ class lil_array(_lil_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        LIL format data array of the array
+    rows : ndarray
+        LIL format row index array of the array
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        LIL format data array of the array
-    rows
-        LIL format row index array of the array
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'lil'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : lil_array
+        The transpose of the array
+    mT : lil_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -564,7 +583,7 @@ class lil_array(_lil_base, sparray):
         - The corresponding nonzero values are stored in similar
           fashion in ``self.data``.
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class lil_matrix(spmatrix, _lil_base):
@@ -589,19 +608,26 @@ class lil_matrix(spmatrix, _lil_base):
 
     Attributes
     ----------
+    data : ndarray
+        LIL format data array of the matrix
+    rows : ndarray
+        LIL format row index array of the matrix
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        LIL format data array of the matrix
-    rows
-        LIL format row index array of the matrix
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'lil'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : lil_matrix
+        The transpose of the matrix
+    mT : lil_array
+        The transpose of the matrix
 
     Notes
     -----

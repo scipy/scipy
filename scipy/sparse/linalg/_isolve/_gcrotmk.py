@@ -6,6 +6,7 @@ from numpy.linalg import LinAlgError
 from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
 from .iterative import _get_atol_rtol
 from scipy.sparse.linalg._isolve.utils import make_system
+from scipy._lib._array_api import xp_capabilities
 
 
 __all__ = ['gcrotmk']
@@ -181,6 +182,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     return Q, R, B, vs, zs, y, res
 
 
+@xp_capabilities(np_only=True)
 def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest'):
     """
@@ -433,7 +435,8 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
             ux = axpy(u, ux, ux.shape[0], -byc)  # ux -= u*byc
 
         # cx := V H y
-        hy = Q.dot(R.dot(y))
+        with np.errstate(invalid="ignore"):
+            hy = Q.dot(R.dot(y))
         cx = vs[0] * hy[0]
         for v, hyc in zip(vs[1:], hy[1:]):
             cx = axpy(v, cx, cx.shape[0], hyc)  # cx += v*hyc

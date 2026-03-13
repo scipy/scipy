@@ -35,6 +35,19 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
 class RootResults(OptimizeResult):
     """Represents the root finding result.
 
+    Parameters
+    ----------
+    root : float
+        Estimated root location.
+    iterations : int
+        Number of iterations needed to find the root.
+    function_calls : int
+        Number of times the function was called.
+    flag : str
+        Description of the cause of termination.
+    method : str
+        Root finding method used.
+
     Attributes
     ----------
     root : float
@@ -135,7 +148,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     ----------
     func : callable
         The function whose root is wanted. It must be a function of a
-        single variable of the form ``f(x,a,b,c...)``, where ``a,b,c...``
+        single variable of the form ``f(x,a,b,c,...)``, where ``a,b,c,...``
         are extra arguments that can be passed in the `args` parameter.
     x0 : float, sequence, or ndarray
         An initial estimate of the root that should be somewhere near the
@@ -500,33 +513,33 @@ def bisect(f, a, b, args=(),
     Find root of a function within an interval using bisection.
 
     Basic bisection routine to find a root of the function `f` between the
-    arguments `a` and `b`. `f(a)` and `f(b)` cannot have the same signs.
+    arguments `a` and `b`. ``f(a)`` and ``f(b)`` cannot have the same signs.
     Slow but sure.
 
     Parameters
     ----------
     f : function
         Python function returning a number.  `f` must be continuous, and
-        f(a) and f(b) must have opposite signs.
+        ``f(a)`` and ``f(b)`` must have opposite signs.
     a : scalar
-        One end of the bracketing interval [a,b].
+        One end of the bracketing interval ``[a,b]``.
     b : scalar
-        The other end of the bracketing interval [a,b].
+        The other end of the bracketing interval ``[a,b]``.
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter must be positive.
     rtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``.
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where x is the root, and r is
@@ -544,6 +557,29 @@ def bisect(f, a, b, args=(),
         Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
+    See Also
+    --------
+    brentq, brenth, bisect, newton
+    fixed_point : scalar fixed-point finder
+    fsolve : n-dimensional root-finding
+    elementwise.find_root : efficient elementwise 1-D root-finder
+
+    Notes
+    -----
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x0)``.
+
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `bisect` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
+
     Examples
     --------
 
@@ -559,13 +595,6 @@ def bisect(f, a, b, args=(),
     >>> root = optimize.bisect(f, -2, 0)
     >>> root
     -1.0
-
-    See Also
-    --------
-    brentq, brenth, bisect, newton
-    fixed_point : scalar fixed-point finder
-    fsolve : n-dimensional root-finding
-
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -594,21 +623,21 @@ def ridder(f, a, b, args=(),
         One end of the bracketing interval [a,b].
     b : scalar
         The other end of the bracketing interval [a,b].
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter must be positive.
     rtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``.
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
@@ -630,6 +659,7 @@ def ridder(f, a, b, args=(),
     --------
     brentq, brenth, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
@@ -641,6 +671,20 @@ def ridder(f, a, b, args=(),
 
     The routine used here diverges slightly from standard presentations in
     order to be a bit more careful of tolerance.
+
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x0)``.
+
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `ridder` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     References
     ----------
@@ -709,14 +753,17 @@ def brentq(f, a, b, args=(),
         One end of the bracketing interval :math:`[a, b]`.
     b : scalar
         The other end of the bracketing interval :math:`[a, b]`.
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter must be positive. For nice functions, Brent's
         method will often satisfy the above condition with ``xtol/2``
         and ``rtol/2``. [Brent1973]_
     rtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``. For nice functions, Brent's
@@ -725,9 +772,6 @@ def brentq(f, a, b, args=(),
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
@@ -755,10 +799,25 @@ def brentq(f, a, b, args=(),
     fsolve : N-D root-finding
     brenth, ridder, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
     `f` must be continuous.  f(a) and f(b) must have opposite signs.
+
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x0)``.
+
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `brentq` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     References
     ----------
@@ -827,14 +886,17 @@ def brenth(f, a, b, args=(),
         One end of the bracketing interval [a,b].
     b : scalar
         The other end of the bracketing interval [a,b].
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
     xtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter must be positive. As with `brentq`, for nice
         functions the method will often satisfy the above condition
         with ``xtol/2`` and ``rtol/2``.
     rtol : number, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``. As with `brentq`, for nice functions
@@ -843,9 +905,6 @@ def brenth(f, a, b, args=(),
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised. Must be >= 0.
-    args : tuple, optional
-        Containing extra arguments for the function `f`.
-        `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
         If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
@@ -873,6 +932,23 @@ def brenth(f, a, b, args=(),
     fsolve : N-D root-finding
     brentq, ridder, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
+    elementwise.find_root : efficient elementwise 1-D root-finder
+
+    Notes
+    -----
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x0)``.
+
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `brenth` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     References
     ----------
@@ -1269,7 +1345,7 @@ def toms748(f, a, b, args=(), k=1,
     Find a root using TOMS Algorithm 748 method.
 
     Implements the Algorithm 748 method of Alefeld, Potro and Shi to find a
-    root of the function `f` on the interval ``[a , b]``, where ``f(a)`` and
+    root of the function `f` on the interval ``[a , b]``, where `f(a)` and
     `f(b)` must have opposite signs.
 
     It uses a mixture of inverse cubic interpolation and
@@ -1292,11 +1368,11 @@ def toms748(f, a, b, args=(), k=1,
         The number of Newton quadratic steps to perform each
         iteration. ``k>=1``.
     xtol : scalar, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter must be positive.
     rtol : scalar, optional
-        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root.
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
@@ -1322,6 +1398,7 @@ def toms748(f, a, b, args=(), k=1,
     --------
     brentq, brenth, ridder, bisect, newton
     fsolve : find roots in N dimensions.
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
@@ -1344,13 +1421,27 @@ def toms748(f, a, b, args=(), k=1,
     the kth root of ``(3k-2)``, hence ``k=1`` or ``k=2`` are
     usually appropriate.
 
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x0)``.
+
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `toms748` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
+
     References
     ----------
     .. [APS1995]
        Alefeld, G. E. and Potra, F. A. and Shi, Yixun,
        *Algorithm 748: Enclosing Zeros of Continuous Functions*,
        ACM Trans. Math. Softw. Volume 221(1995)
-       doi = {10.1145/210089.210111}
+       https://doi.org/10.1145/210089.210111
 
     Examples
     --------

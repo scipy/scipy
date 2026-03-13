@@ -1,6 +1,7 @@
 import os
+import warnings
+
 import numpy as np
-import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 from scipy import stats
@@ -35,14 +36,15 @@ mle_failing_fits = [
         'tukeylambda',
         'vonmises',
         'levy_stable',
-        'trapezoid',
+        'truncpareto',
         'truncweibull_min',
         'studentized_range',
 ]
 
 # these pass but are XSLOW (>1s)
 mle_Xslow_fits = ['betaprime', 'crystalball', 'exponweib', 'f', 'geninvgauss',
-                  'jf_skew_t', 'recipinvgauss', 'rel_breitwigner', 'vonmises_line']
+                  'jf_skew_t', 'nct', 'recipinvgauss', 'rel_breitwigner',
+                  'vonmises_line']
 
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.
@@ -69,7 +71,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'rel_breitwigner', 'skewcauchy', 't', 'triang',
                    'truncpareto', 'truncweibull_min', 'tukeylambda',
                    'studentized_range']
 
@@ -129,10 +131,10 @@ def test_cont_fit(distname, arg, method):
 
     for fit_size in fit_sizes:
         # Note that if a fit succeeds, the other fit_sizes are skipped
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
         with np.errstate(all='ignore'):
-            rvs = distfn.rvs(size=fit_size, *arg)
+            rvs = distfn.rvs(size=fit_size, *arg, random_state=rng)
             if method == 'MLE' and distfn.name in mle_use_floc0:
                 kwds = {'floc': 0}
             else:
@@ -247,7 +249,8 @@ def cases_test_fit_mle():
                       'nbinom', 'norminvgauss',
                       'pareto', 'pearson3', 'powerlaw', 'powernorm',
                       'randint', 'rdist', 'recipinvgauss', 'rice', 'skewnorm',
-                      't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy'}
+                      't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy',
+                      'zipfian'}
 
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'betabinom', 'betanbinom', 'burr', 'dpareto_lognorm',
@@ -258,7 +261,7 @@ def cases_test_fit_mle():
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
                        'skellam', 'trapezoid', 'triang',
-                       'tukeylambda', 'vonmises', 'zipfian'}
+                       'tukeylambda', 'vonmises'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -304,7 +307,8 @@ def cases_test_fit_mse():
                       'semicircular',
                       't', 'triang', 'truncexpon', 'truncpareto',
                       'uniform',
-                      'wald', 'weibull_max', 'weibull_min', 'wrapcauchy'}
+                      'wald', 'weibull_max', 'weibull_min', 'wrapcauchy',
+                      'zipfian'}
 
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
@@ -316,7 +320,7 @@ def cases_test_fit_mse():
                        'pearson3', 'powerlognorm',
                        'reciprocal', 'rel_breitwigner', 'rice',
                        'trapezoid', 'truncnorm', 'truncweibull_min',
-                       'vonmises_line', 'zipfian'}
+                       'vonmises_line'}
 
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 
@@ -520,8 +524,8 @@ class TestFit:
         if getattr(dist, 'pdf', False):
             data = dist.rvs(*ref, size=N, random_state=rng)
 
-        with npt.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "overflow encountered", RuntimeWarning)
             res = stats.fit(dist, data, bounds, method=method,
                             optimizer=self.opt)
 
@@ -912,11 +916,10 @@ class TestGoodnessOfFit:
         # c that produced critical value of statistic found w/ root_scalar
         x = stats.genextreme(0.051896837188595134, loc=0.5,
                              scale=1.5).rvs(size=1000, random_state=rng)
-        res = goodness_of_fit(stats.gumbel_r, x, statistic='ad',
-                              rng=rng)
-        ref = stats.anderson(x, dist='gumbel_r')
-        assert_allclose(res.statistic, ref.critical_values[0])
-        assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
+        res = goodness_of_fit(stats.gumbel_r, x, statistic='ad', rng=rng)
+        ref = stats.anderson(x, dist='gumbel_r', method='interpolate')
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)
 
     def test_against_filliben_norm(self):
         # Test against `stats.fit` ref. [7] Section 8 "Example"

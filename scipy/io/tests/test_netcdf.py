@@ -6,16 +6,15 @@ import tempfile
 import warnings
 from io import BytesIO
 from glob import glob
-from contextlib import contextmanager
+from contextlib import chdir, contextmanager
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           break_cycles, suppress_warnings, IS_PYPY)
+from numpy.testing import assert_, assert_allclose, assert_equal
+
 import pytest
 from pytest import raises as assert_raises
 
 from scipy.io import netcdf_file
-from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -24,6 +23,28 @@ VARTYPE_EG = 'b'  # var type for example variable
 
 
 pytestmark = pytest.mark.thread_unsafe
+
+
+@contextmanager
+def in_tempdir():
+    ''' Create, return, and change directory to a temporary directory
+
+    Examples
+    --------
+    >>> import os
+    >>> my_cwd = os.getcwd()
+    >>> with in_tempdir() as tmpdir:
+    ...     _ = open('test.txt', 'wt').write('some text')
+    ...     assert os.path.isfile('test.txt')
+    ...     assert os.path.isfile(os.path.join(tmpdir, 'test.txt'))
+    >>> os.path.exists(tmpdir)
+    False
+    >>> os.getcwd() == my_cwd
+    True
+    '''
+    with tempfile.TemporaryDirectory() as td:
+        with chdir(td):
+            yield td
 
 
 @contextmanager
@@ -83,8 +104,8 @@ def test_read_write_files():
 
         # To read the NetCDF file we just created::
         with netcdf_file('simple.nc') as f:
-            # Using mmap is the default (but not on pypy)
-            assert_equal(f.use_mmap, not IS_PYPY)
+            # Using mmap is the default
+            assert f.use_mmap
             check_simple(f)
             assert_equal(f._attributes['appendRan'], 1)
 
@@ -112,10 +133,7 @@ def test_read_write_files():
                 check_simple(f)
 
         # Read file from fileobj, with mmap
-        with suppress_warnings() as sup:
-            if IS_PYPY:
-                sup.filter(RuntimeWarning,
-                           "Cannot close a netcdf_file opened with mmap=True.*")
+        with warnings.catch_warnings():
             with open('simple.nc', 'rb') as fobj:
                 with netcdf_file(fobj, mmap=True) as f:
                     assert_(f.use_mmap)
@@ -136,11 +154,6 @@ def test_read_write_files():
             assert_equal(f.variables['app_var'][:], 42)
 
     finally:
-        if IS_PYPY:
-            # windows cannot remove a dead file held by a mmap
-            # that has not been collected in PyPy
-            break_cycles()
-            break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
 
@@ -247,10 +260,10 @@ def test_itemset_no_segfault_on_readonly():
     # Open the test file in read-only mode.
 
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    with suppress_warnings() as sup:
+    with warnings.catch_warnings():
         message = ("Cannot close a netcdf_file opened with mmap=True, when "
                    "netcdf_variables or arrays referring to its data still exist")
-        sup.filter(RuntimeWarning, message)
+        warnings.filterwarnings("ignore", message, RuntimeWarning)
         with netcdf_file(filename, 'r', mmap=True) as f:
             time_var = f.variables['time']
 
@@ -337,23 +350,22 @@ def test_ticket_1720():
 def test_mmaps_segfault():
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
 
-    if not IS_PYPY:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            with netcdf_file(filename, mmap=True) as f:
-                x = f.variables['lat'][:]
-                # should not raise warnings
-                del x
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with netcdf_file(filename, mmap=True) as f:
+            x = f.variables['lat'][:]
+            # should not raise warnings
+            del x
 
     def doit():
         with netcdf_file(filename, mmap=True) as f:
             return f.variables['lat'][:]
 
     # should not crash
-    with suppress_warnings() as sup:
+    with warnings.catch_warnings():
         message = ("Cannot close a netcdf_file opened with mmap=True, when "
                    "netcdf_variables or arrays referring to its data still exist")
-        sup.filter(RuntimeWarning, message)
+        warnings.filterwarnings("ignore", message, RuntimeWarning)
         x = doit()
     x.sum()
 

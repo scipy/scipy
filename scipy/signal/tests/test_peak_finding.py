@@ -150,11 +150,15 @@ class TestRidgeLines:
         test_matr[0, 10] = 1
         lines = _identify_ridge_lines(test_matr, np.full(20, 2), 1)
         assert len(lines) == 1
+        for line in lines:
+            xp_assert_equal(line[0], np.sort(line[0]))
 
         test_matr = np.zeros([20, 100])
         test_matr[0:2, 10] = 1
         lines = _identify_ridge_lines(test_matr, np.full(20, 2), 1)
         assert len(lines) == 1
+        for line in lines:
+            xp_assert_equal(line[0], np.sort(line[0]))
 
     def test_single_pass(self):
         distances = [0, 1, 2, 5]
@@ -168,6 +172,8 @@ class TestRidgeLines:
                                                  max_distances,
                                                  max(gaps) + 1)
         assert len(identified_lines) == 1
+        for iline in identified_lines:
+            xp_assert_equal(iline[0], np.sort(iline[0]))
         for iline_, line_ in zip(identified_lines[0], line):
             xp_assert_equal(iline_, line_, check_dtype=False)
 
@@ -187,6 +193,7 @@ class TestRidgeLines:
         assert len(identified_lines) == 2
 
         for iline in identified_lines:
+            xp_assert_equal(iline[0], np.sort(iline[0]))
             adists = np.diff(iline[1])
             np.testing.assert_array_less(np.abs(adists), max_dist)
 
@@ -208,6 +215,7 @@ class TestRidgeLines:
         assert len(identified_lines) == 2
 
         for iline in identified_lines:
+            xp_assert_equal(iline[0], np.sort(iline[0]))
             adists = np.diff(iline[1])
             np.testing.assert_array_less(np.abs(adists), max_dist)
 
@@ -229,11 +237,48 @@ class TestRidgeLines:
         assert len(identified_lines) == 3
 
         for iline in identified_lines:
+            xp_assert_equal(iline[0], np.sort(iline[0]))
             adists = np.diff(iline[1])
             np.testing.assert_array_less(np.abs(adists), max_dist)
 
             agaps = np.diff(iline[0])
             np.testing.assert_array_less(np.abs(agaps), max(gaps) + 0.1)
+
+    def test_sorting(self):
+        test_matr = np.zeros([5, 10])
+        test_matr[4, 5] = 1.0
+        test_matr[3, 4] = 1.0
+        test_matr[3, 6] = 1.0
+        ridge_lines = _identify_ridge_lines(test_matr, np.full(5, 2), 1)
+        for line in ridge_lines:
+            xp_assert_equal(line[0], np.sort(line[0]))
+
+        test_matr = np.zeros([5, 10])
+        test_matr[0, 3] = 1.0
+        test_matr[0, 7] = 1.0
+        test_matr[1, 5] = 1.0
+        ridge_lines = _identify_ridge_lines(test_matr, np.full(5, 3), 1)
+        for line in ridge_lines:
+            xp_assert_equal(line[0], np.sort(line[0]))
+
+        test_matr = np.zeros([5, 15])
+        test_matr[0, 2] = 1.0
+        test_matr[0, 7] = 1.0
+        test_matr[0, 12] = 1.0
+        test_matr[1, 7] = 1.0
+        ridge_lines = _identify_ridge_lines(test_matr, np.full(5, 6), 1)
+        for line in ridge_lines:
+            xp_assert_equal(line[0], np.sort(line[0]))
+
+        test_matr = np.zeros([6, 12])
+        test_matr[5, 5] = 1.0
+        test_matr[4, 3] = 1.0
+        test_matr[4, 7] = 1.0
+        test_matr[3, 5] = 1.0
+        test_matr[2, 5] = 1.0
+        ridge_lines = _identify_ridge_lines(test_matr, np.full(6, 3), 1)
+        for line in ridge_lines:
+            xp_assert_equal(line[0], np.sort(line[0]))
 
 
 class TestArgrel:
@@ -429,7 +474,6 @@ class TestPeakProminences:
         with raises(ValueError, match='wlen'):
             peak_prominences(np.arange(10), [3, 5], wlen=1)
 
-    @pytest.mark.thread_unsafe
     def test_warnings(self):
         """
         Verify that appropriate warnings are raised.
@@ -526,7 +570,6 @@ class TestPeakWidths:
             # prominence data contains None
             peak_widths([1, 2, 1], [1], prominence_data=(None, None, None))
 
-    @pytest.mark.thread_unsafe
     def test_warnings(self):
         """
         Verify that appropriate warnings are raised.
@@ -844,8 +887,8 @@ class TestFindPeaksCwt:
         test_data, act_locs = _gen_gaussians_even(sigmas, num_points)
         widths = np.arange(0.1, max(sigmas))
         noise_amp = 0.07
-        np.random.seed(18181911)
-        test_data += (np.random.rand(num_points) - 0.5)*(2*noise_amp)
+        rng = np.random.default_rng(18181911)
+        test_data += (rng.random(num_points) - 0.5)*(2*noise_amp)
         found_locs = find_peaks_cwt(test_data, widths, min_length=15,
                                          gap_thresh=1, min_snr=noise_amp / 5)
 

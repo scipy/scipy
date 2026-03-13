@@ -84,7 +84,7 @@ def _get_output(output, input, shape=None, complex_output=False):
         else:
             complex_type = np.promote_types(input.dtype, np.complex64)
             output = np.zeros(shape, dtype=complex_type)
-    elif isinstance(output, (type, np.dtype)):
+    elif isinstance(output, type | np.dtype):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
         if complex_output and np.dtype(output).kind != 'c':
             warnings.warn("promoting specified output dtype to complex", stacklevel=3)
@@ -137,7 +137,3 @@ def _skip_if_dtype(arg):
         return None if issubclass(arg, np.generic) else arg
     else:
         return None if isinstance(arg, np.dtype) else arg
-
-
-def _skip_if_int(arg):
-    return None if (arg is None or isinstance(arg, int)) else arg

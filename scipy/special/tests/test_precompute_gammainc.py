@@ -18,6 +18,10 @@ except ImportError:
     mp = MissingModule('mpmath')
 
 
+pytestmark = pytest.mark.thread_unsafe(
+    reason=("mpmath gmpy2 backend is not thread-safe, "
+            "see https://github.com/mpmath/mpmath/issues/974"))
+
 @check_version(mp, '0.19')
 def test_g():
     # Test data for the g_k. See DLMF 5.11.4.

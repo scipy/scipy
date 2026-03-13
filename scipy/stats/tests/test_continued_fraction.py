@@ -14,28 +14,27 @@ from scipy.stats._continued_fraction import _continued_fraction
 # n = int(xp.real(xp_ravel(n))[0])
 # (at some point in here the shape becomes nan)
 @pytest.mark.skip_xp_backends('dask.array', reason="dask has issues with the shapes")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestContinuedFraction:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10)
 
     def a1(self, n, x=1.5):
-        xp = array_namespace(x)
         if n == 0:
             y = 0*x
         elif n == 1:
             y = x
         else:
             y = -x**2
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def b1(self, n, x=1.5):
-        xp = array_namespace(x)
         if n == 0:
             y = 0*x
         else:
             one = x/x  # gets array of correct type, dtype, and shape
             y = one * (2*n - 1)
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def log_a1(self, n, x):
         xp = array_namespace(x)
@@ -45,7 +44,7 @@ class TestContinuedFraction:
             y = xp.log(x)
         else:
             y = 2 * xp.log(x) + math.pi * 1j
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def log_b1(self, n, x):
         xp = array_namespace(x)
@@ -54,7 +53,7 @@ class TestContinuedFraction:
         else:
             one = x - x  # gets array of correct type, dtype, and shape
             y = one + math.log(2 * n - 1)
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def test_input_validation(self, xp):
         a1 = self.a1
@@ -111,8 +110,6 @@ class TestContinuedFraction:
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_log(self, shape, dtype, xp):
-        if (np.__version__ < "2") and (dtype == 'float32'):
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         np_dtype = getattr(np, dtype)
         rng = np.random.default_rng(2435908729190400)
         x = rng.random(shape).astype(np_dtype)

@@ -1,16 +1,13 @@
 import numpy as np
-from ._cython_nnls import _nnls
-from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
+from ._slsqplib import nnls as _nnls
 
 
 __all__ = ['nnls']
 
 
-@_deprecate_positional_args(version='1.18.0',
-                            deprecated_args={'atol'})
-def nnls(A, b, *, maxiter=None, atol=_NoValue):
+def nnls(A, b, *, maxiter=None):
     """
-    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
+    Solve ``argmin_x || Ax - b ||_2^2`` for ``x>=0``.
 
     This problem, often called as NonNegative Least Squares, is a convex
     optimization problem with convex constraints. It typically arises when
@@ -23,12 +20,8 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
         Coefficient array
     b : (m,) ndarray, float
         Right-hand side vector.
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations, optional. Default value is ``3 * n``.
-    atol : float, optional
-        .. deprecated:: 1.18.0
-            This parameter is deprecated and will be removed in SciPy 1.18.0.
-            It is not used in the implementation.
 
     Returns
     -------
@@ -44,7 +37,7 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     Notes
     -----
     The code is based on the classical algorithm of [1]_. It utilizes an active
-    set method and solves the KKK (Karush-Kuhn-Tucker) conditions for the
+    set method and solves the KKT (Karush-Kuhn-Tucker) conditions for the
     non-negative least squares problem.
 
     References
@@ -72,11 +65,13 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     b = np.asarray_chkfinite(b, dtype=np.float64)
 
     if len(A.shape) != 2:
-        raise ValueError("Expected a two-dimensional array (matrix)" +
-                         f", but the shape of A is {A.shape}")
-    if len(b.shape) != 1:
-        raise ValueError("Expected a one-dimensional array (vector)" +
-                         f", but the shape of b is {b.shape}")
+        raise ValueError(f"Expected a 2D array, but the shape of A is {A.shape}")
+
+    if (b.ndim > 2) or ((b.ndim == 2) and (b.shape[1] != 1)):
+        raise ValueError("Expected a 1D array,(or 2D with one column), but the,"
+                         f" shape of b is {b.shape}")
+    elif (b.ndim == 2) and (b.shape[1] == 1):
+        b = b.ravel()
 
     m, n = A.shape
 
@@ -88,7 +83,7 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     if not maxiter:
         maxiter = 3*n
     x, rnorm, info = _nnls(A, b, maxiter)
-    if info == -1:
+    if info == 3:
         raise RuntimeError("Maximum number of iterations reached.")
 
     return x, rnorm

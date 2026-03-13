@@ -85,7 +85,6 @@ class TestRoot:
         with assert_raises(ValueError):
             root(F, [0.1, 0.0], method='lm')
 
-    @pytest.mark.thread_unsafe
     def test_gh_10370(self):
         # gh-10370 reported that passing both `args` and `jac` to `root` with
         # `method='krylov'` caused a failure. Ensure that this is fixed whether

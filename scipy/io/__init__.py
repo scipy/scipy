@@ -5,6 +5,11 @@ Input and output (:mod:`scipy.io`)
 
 .. currentmodule:: scipy.io
 
+.. toctree::
+   :hidden:
+
+   io.matlab
+
 SciPy has many modules, classes, and functions available to read data
 from and write data to a variety of file formats.
 

@@ -333,6 +333,15 @@ def test_construct_shortest_path():
         for directed in (True, False):
             check(method, directed)
 
+@pytest.mark.parametrize("directed", [True, False])
+def test_construct_dist_matrix_predecessors_error(directed):
+    SP1, pred = shortest_path(directed_G,
+                                directed=directed,
+                                overwrite=False,
+                                return_predecessors=True)
+    assert_raises(TypeError, construct_dist_matrix,
+                  directed_G, pred.astype(np.int64), directed)
+
 
 def test_unweighted_path():
     def check(method, directed):
@@ -505,6 +514,13 @@ def test_yen_negative_weights():
         K=1,
     )
     assert_allclose(distances, [-2.])
+
+
+@pytest.mark.parametrize('source, sink', [(0, -1), (10000, 1), (2, 6)])
+def test_yen_source_sink_validation(source, sink):
+    # directed_G has shape (6, 6)
+    with pytest.raises(ValueError, match="must have 0 <="):
+        yen(directed_G, source, sink, 2)
 
 
 @pytest.mark.parametrize("min_only", (True, False))

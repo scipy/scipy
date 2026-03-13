@@ -82,7 +82,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-    See also
+    See Also
     --------
     show_options : Additional options accepted by the solvers
 
@@ -132,8 +132,9 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
        1980. User Guide for MINPACK-1.
     .. [2] C. T. Kelley. 1995. Iterative Methods for Linear and Nonlinear
        Equations. Society for Industrial and Applied Mathematics.
-       <https://archive.siam.org/books/kelley/fr16/>
-    .. [3] W. La Cruz, J.M. Martinez, M. Raydan. Math. Comp. 75, 1429 (2006).
+       :doi:`10.1137/1.9781611970944`
+    .. [3] W. La Cruz, J.M. Martinez, M. Raydan.
+       Math. Comp. 75, 1429 (2006).
 
     Examples
     --------

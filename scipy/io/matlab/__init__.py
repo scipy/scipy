@@ -39,7 +39,7 @@ namespace also exist in this namespace:
 
 Notes
 -----
-MATLAB(R) is a registered trademark of The MathWorks, Inc., 3 Apple Hill
+MATLAB® is a registered trademark of The MathWorks, Inc., 3 Apple Hill
 Drive, Natick, MA 01760-2098, USA.
 
 """

@@ -434,7 +434,7 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
 
     In general, we will always reach the same sum of weights as if we had used
     :func:`scipy.optimize.linear_sum_assignment` but note that for that one,
-    missing edges are represented by a array entry of ``float('inf')``. Let us
+    missing edges are represented by an array entry of ``float('inf')``. Let us
     generate a random sparse array with integer entries between 1 and 10:
 
     >>> import numpy as np
@@ -481,6 +481,9 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     i, j = biadjacency.shape
 
     a = np.arange(np.min(biadjacency.shape))
+
+    if biadjacency.format not in ("csc", "csr"):
+        biadjacency = biadjacency.tocsc(copy=False) if j < i else biadjacency.tocsr(copy=False)
 
     indices, indptr = safely_cast_index_arrays(biadjacency, ITYPE, msg="csgraph")
     if indices is not biadjacency.indices:

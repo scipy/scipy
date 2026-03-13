@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.typing as npt
 import math
 import warnings
 from collections import namedtuple
@@ -8,7 +7,11 @@ from collections.abc import Callable
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib._array_api import _asarray, array_namespace, xp_broadcast_promote
+from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type, xp_copy,
+                                   xp_capabilities, xp_promote, xp_swapaxes, is_numpy,
+                                   xp_size,
+                                   is_lazy_array)
+import scipy._external.array_api_extra as xpx
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -17,6 +20,8 @@ __all__ = ['fixed_quad', 'romb',
            'qmc_quad', 'cumulative_simpson']
 
 
+@xp_capabilities(skip_backends=[('jax.numpy',
+                                 "JAX arrays do not support item assignment")])
 def trapezoid(y, x=None, dx=1.0, axis=-1):
     r"""
     Integrate along the given axis using the composite trapezoidal rule.
@@ -124,7 +129,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     # Cannot just use the broadcasted arrays that are returned
     # because trapezoid does not follow normal broadcasting rules
     # cf. https://github.com/scipy/scipy/pull/21524#issuecomment-2354105942
-    result_dtype = xp_broadcast_promote(y, force_floating=True, xp=xp)[0].dtype
+    result_dtype = xp_result_type(y, force_floating=True, xp=xp)
     nd = y.ndim
     slice1 = [slice(None)]*nd
     slice2 = [slice(None)]*nd
@@ -175,6 +180,7 @@ def _cached_roots_legendre(n):
 _cached_roots_legendre.cache = dict()
 
 
+@xp_capabilities()
 def fixed_quad(func, a, b, args=(), n=5):
     """
     Compute a definite integral using fixed-order Gaussian quadrature.
@@ -233,13 +239,17 @@ def fixed_quad(func, a, b, args=(), n=5):
     1.0
 
     """
+    # `args` not necessarily numeric arrays, so don't pass to array_namespace/xp_promote
+    xp = array_namespace(a, b)
+    a, b = xp_promote(a, b, force_floating=True, xp=xp)
     x, w = _cached_roots_legendre(n)
-    x = np.real(x)
-    if np.isinf(a) or np.isinf(b):
+    x, w = xp.asarray(x, dtype=a.dtype), xp.asarray(w, dtype=a.dtype)
+    x = xp.real(x)
+    if not is_lazy_array(a) and (xp.isinf(a) or xp.isinf(b)):
         raise ValueError("Gaussian quadrature is only available for "
                          "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
-    return (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1), None
+    return (b-a)/2.0 * xp.sum(w*func(y, *args), axis=-1), None
 
 
 def tupleset(t, i, value):
@@ -248,6 +258,7 @@ def tupleset(t, i, value):
     return tuple(l)
 
 
+@xp_capabilities()
 def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     """
     Cumulatively integrate y(x) using the composite trapezoidal rule.
@@ -299,24 +310,27 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     """
-    y = np.asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
+
     if y.shape[axis] == 0:
         raise ValueError("At least one point is required along `axis`.")
+
     if x is None:
         d = dx
     else:
-        x = np.asarray(x)
+        x = xp.asarray(x)
         if x.ndim == 1:
-            d = np.diff(x)
+            d = xp.diff(x)
             # reshape to correct shape
             shape = [1] * y.ndim
             shape[axis] = -1
-            d = d.reshape(shape)
+            d = xp.reshape(d, tuple(shape))
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
         else:
-            d = np.diff(x, axis=axis)
+            d = xp.diff(x, axis=axis)
 
         if d.shape[axis] != y.shape[axis] - 1:
             raise ValueError("If given, length of x along axis must be the "
@@ -325,7 +339,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
     slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
-    res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
+    res = xp.cumulative_sum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
         if initial != 0:
@@ -335,14 +349,14 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
-                             axis=axis)
+        res = xp.concat((xp.full(tuple(shape), initial, dtype=res.dtype), res),
+                        axis=axis)
 
     return res
 
 
-def _basic_simpson(y, start, stop, x, dx, axis):
-    nd = len(y.shape)
+def _basic_simpson(y, start, stop, x, dx, axis, *, xp):
+    nd = y.ndim
     if start is None:
         start = 0
     step = 2
@@ -352,32 +366,29 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even-spaced Simpson's rule.
-        result = np.sum(y[slice0] + 4.0*y[slice1] + y[slice2], axis=axis)
-        result *= dx / 3.0
+        result = dx / 3.0 * xp.sum(y[slice0] + 4.0*y[slice1] + y[slice2], axis=axis)
     else:
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
-        h = np.diff(x, axis=axis)
+        h = xp.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = h[sl0].astype(float, copy=False)
-        h1 = h[sl1].astype(float, copy=False)
+        h0 = h[sl0] if xp_size(h) else h
+        h1 = h[sl1] if xp_size(h) else h
         hsum = h0 + h1
         hprod = h0 * h1
-        h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1 != 0)
+        h0divh1 = xpx.apply_where(h1 != 0, (h0, h1), xp.divide, fill_value=0.)
         tmp = hsum/6.0 * (y[slice0] *
-                          (2.0 - np.true_divide(1.0, h0divh1,
-                                                out=np.zeros_like(h0divh1),
-                                                where=h0divh1 != 0)) +
-                          y[slice1] * (hsum *
-                                       np.true_divide(hsum, hprod,
-                                                      out=np.zeros_like(hsum),
-                                                      where=hprod != 0)) +
-                          y[slice2] * (2.0 - h0divh1))
-        result = np.sum(tmp, axis=axis)
+            (2.0 - xpx.apply_where(h0divh1 != 0, (xp.ones_like(h0divh1), h0divh1,),
+                                   xp.divide, fill_value=0.))
+            + y[slice1] * (hsum * xpx.apply_where(hprod != 0, (hsum, hprod,),
+                                                  xp.divide, fill_value=0.))
+            + (y[slice2] if xp_size(y) > 1 else y[0:0, ...]) * (2.0 - h0divh1))
+        result = xp.sum(tmp, axis=axis)
     return result
 
 
+@xp_capabilities()
 def simpson(y, x=None, *, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
@@ -440,25 +451,20 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
     1640.25
 
     """
-    y = np.asarray(y)
-    nd = len(y.shape)
+    xp = array_namespace(y, x, dx)
+    y, x, dx = xp_promote(y, x, dx, xp=xp)
+    nd = y.ndim
     N = y.shape[axis]
     last_dx = dx
-    returnshape = 0
     if x is not None:
-        x = np.asarray(x)
-        if len(x.shape) == 1:
+        if x.ndim == 1:
             shapex = [1] * nd
             shapex[axis] = x.shape[0]
-            saveshape = x.shape
-            returnshape = 1
-            x = x.reshape(tuple(shapex))
-        elif len(x.shape) != len(y.shape):
-            raise ValueError("If given, shape of x must be 1-D or the "
-                             "same as y.")
+            x = xp.reshape(x, tuple(shapex))
+        elif x.ndim != y.ndim:
+            raise ValueError("If given, shape of x must be 1-D or the same as y.")
         if x.shape[axis] != N:
-            raise ValueError("If given, length of x along axis must be the "
-                             "same as y.")
+            raise ValueError("If given, length of x along axis must be the same as y.")
 
     if N % 2 == 0:
         val = 0.0
@@ -473,24 +479,24 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
             slice2 = tupleset(slice_all, axis, -2)
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
-            val += 0.5 * last_dx * (y[slice1] + y[slice2])
+            val = 0.5 * last_dx * (y[slice1] + y[slice2])
         else:
             # use Simpson's rule on first intervals
-            result = _basic_simpson(y, 0, N-3, x, dx, axis)
+            result = _basic_simpson(y, 0, N-3, x, dx, axis, xp=xp)
 
             slice1 = tupleset(slice_all, axis, -1)
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
 
-            h = np.asarray([dx, dx], dtype=np.float64)
+            h = xp.stack([dx, dx])
             if x is not None:
                 # grab the last two spacings from the appropriate axis
                 hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
                 hm1 = tupleset(slice_all, axis, slice(-1, None, 1))
 
-                diffs = np.float64(np.diff(x, axis=axis))
-                h = [np.squeeze(diffs[hm2], axis=axis),
-                     np.squeeze(diffs[hm1], axis=axis)]
+                diffs = xp.diff(x, axis=axis)
+                h = [xp.squeeze(diffs[hm2], axis=axis),
+                     xp.squeeze(diffs[hm1], axis=axis)]
 
             # This is the correction for the last interval according to
             # Cartwright.
@@ -504,63 +510,50 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
             # the values shown.
             num = 2 * h[1] ** 2 + 3 * h[0] * h[1]
             den = 6 * (h[1] + h[0])
-            alpha = np.true_divide(
-                num,
-                den,
-                out=np.zeros_like(den),
-                where=den != 0
-            )
+            alpha = xpx.apply_where(den != 0, (num, den), xp.divide, fill_value=0.)
 
             num = h[1] ** 2 + 3.0 * h[0] * h[1]
             den = 6 * h[0]
-            beta = np.true_divide(
-                num,
-                den,
-                out=np.zeros_like(den),
-                where=den != 0
-            )
+            beta = xpx.apply_where(den != 0, (num, den), xp.divide, fill_value=0.)
 
             num = 1 * h[1] ** 3
             den = 6 * h[0] * (h[0] + h[1])
-            eta = np.true_divide(
-                num,
-                den,
-                out=np.zeros_like(den),
-                where=den != 0
-            )
+            eta = xpx.apply_where(den != 0, (num, den), xp.divide, fill_value=0.)
 
             result += alpha*y[slice1] + beta*y[slice2] - eta*y[slice3]
 
         result += val
     else:
-        result = _basic_simpson(y, 0, N-2, x, dx, axis)
-    if returnshape:
-        x = x.reshape(saveshape)
+        result = _basic_simpson(y, 0, N-2, x, dx, axis, xp=xp)
     return result
 
 
 def _cumulatively_sum_simpson_integrals(
-    y: np.ndarray, 
-    dx: np.ndarray, 
+    y: np.ndarray,
+    dx: np.ndarray,
     integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    xp
 ) -> np.ndarray:
     """Calculate cumulative sum of Simpson integrals.
-    Takes as input the integration function to be used. 
+    Takes as input the integration function to be used.
     The integration_func is assumed to return the cumulative sum using
     composite Simpson's rule. Assumes the axis of summation is -1.
     """
     sub_integrals_h1 = integration_func(y, dx)
-    sub_integrals_h2 = integration_func(y[..., ::-1], dx[..., ::-1])[..., ::-1]
-    
+    sub_integrals_h2 = xp.flip(
+        integration_func(xp.flip(y, axis=-1), xp.flip(dx, axis=-1)),
+        axis=-1
+    )
+
     shape = list(sub_integrals_h1.shape)
     shape[-1] += 1
-    sub_integrals = np.empty(shape)
+    sub_integrals = xp.empty(shape, dtype=xp.result_type(y, dx))
     sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
     sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
-    # Integral over last subinterval can only be calculated from 
+    # Integral over last subinterval can only be calculated from
     # formula for h2
     sub_integrals[..., -1] = sub_integrals_h2[..., -1]
-    res = np.cumsum(sub_integrals, axis=-1)
+    res = xp.cumulative_sum(sub_integrals, axis=-1)
     return res
 
 
@@ -602,17 +595,12 @@ def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.n
     return x21/6 * (coeff1*f1 + coeff2*f2 + coeff3*f3)
 
 
-def _ensure_float_array(arr: npt.ArrayLike) -> np.ndarray:
-    arr = np.asarray(arr)
-    if np.issubdtype(arr.dtype, np.integer):
-        arr = arr.astype(float, copy=False)
-    return arr
-
-
+@xp_capabilities(allow_dask_compute=1,
+                 skip_backends=[("jax.numpy", "item assignment")])
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
-    The integral of the samples at every point is calculated by assuming a 
+    The integral of the samples at every point is calculated by assuming a
     quadratic relationship between each point and the two adjacent points.
 
     Parameters
@@ -628,7 +616,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         If `x` is None (default), integration is performed using spacing `dx`
         between consecutive elements in `y`.
     dx : scalar or array_like, optional
-        Spacing between elements of `y`. Only used if `x` is None. Can either 
+        Spacing between elements of `y`. Only used if `x` is None. Can either
         be a float, or an array with the same shape as `y`, but of length one along
         `axis`. Default is 1.0.
     axis : int, optional
@@ -651,7 +639,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum
-    cumulative_trapezoid : cumulative integration using the composite 
+    cumulative_trapezoid : cumulative integration using the composite
         trapezoidal rule
     simpson : integrator for sampled data using the Composite Simpson's Rule
 
@@ -660,18 +648,18 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
 
     .. versionadded:: 1.12.0
 
-    The composite Simpson's 1/3 method can be used to approximate the definite 
-    integral of a sampled input function :math:`y(x)` [1]_. The method assumes 
+    The composite Simpson's 1/3 method can be used to approximate the definite
+    integral of a sampled input function :math:`y(x)` [1]_. The method assumes
     a quadratic relationship over the interval containing any three consecutive
     sampled points.
 
-    Consider three consecutive points: 
+    Consider three consecutive points:
     :math:`(x_1, y_1), (x_2, y_2), (x_3, y_3)`.
 
     Assuming a quadratic relationship over the three points, the integral over
     the subinterval between :math:`x_1` and :math:`x_2` is given by formula
     (8) of [2]_:
-    
+
     .. math::
         \int_{x_1}^{x_2} y(x) dx\ &= \frac{x_2-x_1}{6}\left[\
         \left\{3-\frac{x_2-x_1}{x_3-x_1}\right\} y_1 + \
@@ -683,11 +671,11 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     appearances of :math:`x_1` and :math:`x_3`. The integral is estimated
     separately for each subinterval and then cumulatively summed to obtain
     the final result.
-    
+
     For samples that are equally spaced, the result is exact if the function
     is a polynomial of order three or less [1]_ and the number of subintervals
     is even. Otherwise, the integral is exact for polynomials of order two or
-    less. 
+    less.
 
     References
     ----------
@@ -732,67 +720,69 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     estimates of the underlying integral over subintervals.
 
     """
-    y = _ensure_float_array(y)
+    xp = array_namespace(y)
+    y = xp_promote(y, force_floating=True, xp=xp)
 
     # validate `axis` and standardize to work along the last axis
     original_y = y
     original_shape = y.shape
     try:
-        y = np.swapaxes(y, axis, -1)
+        y = xp_swapaxes(y, axis, -1, xp)
     except IndexError as e:
         message = f"`axis={axis}` is not valid for `y` with `y.ndim={y.ndim}`."
         raise ValueError(message) from e
     if y.shape[-1] < 3:
         res = cumulative_trapezoid(original_y, x, dx=dx, axis=axis, initial=None)
-        res = np.swapaxes(res, axis, -1)
+        res = xp_swapaxes(res, axis, -1, xp)
 
     elif x is not None:
-        x = _ensure_float_array(x)
+        x = xp_promote(x, force_floating=True, xp=xp)
         message = ("If given, shape of `x` must be the same as `y` or 1-D with "
                    "the same length as `y` along `axis`.")
         if not (x.shape == original_shape
-                or (x.ndim == 1 and len(x) == original_shape[axis])):
+                or (x.ndim == 1 and x.shape[0] == original_shape[axis])):
             raise ValueError(message)
 
-        x = np.broadcast_to(x, y.shape) if x.ndim == 1 else np.swapaxes(x, axis, -1)
-        dx = np.diff(x, axis=-1)
-        if np.any(dx <= 0):
+        x = xp.broadcast_to(x, y.shape) if x.ndim == 1 else xp_swapaxes(x, axis, -1, xp)
+        dx = xp.diff(x, axis=-1)
+        if xp.any(dx <= 0):
             raise ValueError("Input x must be strictly increasing.")
         res = _cumulatively_sum_simpson_integrals(
-            y, dx, _cumulative_simpson_unequal_intervals
+            y, dx, _cumulative_simpson_unequal_intervals, xp
         )
 
     else:
-        dx = _ensure_float_array(dx)
+        dx = xp_promote(xp.asarray(dx), force_floating=True, xp=xp)
         final_dx_shape = tupleset(original_shape, axis, original_shape[axis] - 1)
         alt_input_dx_shape = tupleset(original_shape, axis, 1)
         message = ("If provided, `dx` must either be a scalar or have the same "
                    "shape as `y` but with only 1 point along `axis`.")
         if not (dx.ndim == 0 or dx.shape == alt_input_dx_shape):
             raise ValueError(message)
-        dx = np.broadcast_to(dx, final_dx_shape)
-        dx = np.swapaxes(dx, axis, -1)
+        dx = xp.broadcast_to(dx, final_dx_shape)
+        dx = xp_swapaxes(dx, axis, -1, xp)
         res = _cumulatively_sum_simpson_integrals(
-            y, dx, _cumulative_simpson_equal_intervals
+            y, dx, _cumulative_simpson_equal_intervals, xp
         )
 
     if initial is not None:
-        initial = _ensure_float_array(initial)
+        initial = xp_promote(initial, force_floating=True, xp=xp)
         alt_initial_input_shape = tupleset(original_shape, axis, 1)
         message = ("If provided, `initial` must either be a scalar or have the "
                    "same shape as `y` but with only 1 point along `axis`.")
         if not (initial.ndim == 0 or initial.shape == alt_initial_input_shape):
             raise ValueError(message)
-        initial = np.broadcast_to(initial, alt_initial_input_shape)
-        initial = np.swapaxes(initial, axis, -1)
+        initial = xp.broadcast_to(initial, alt_initial_input_shape)
+        initial = xp_swapaxes(initial, axis, -1, xp)
 
         res += initial
-        res = np.concatenate((initial, res), axis=-1)
+        res = xp.concat((initial, res), axis=-1)
 
-    res = np.swapaxes(res, -1, axis)
+    res = xp_swapaxes(res, -1, axis, xp)
     return res
 
 
+@xp_capabilities()
 def romb(y, dx=1.0, axis=-1, show=False):
     """
     Romberg integration using samples of a function.
@@ -849,8 +839,12 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ======================================================
     -0.742561336672229  # may vary
 
+    >>> integrate.romb([[1, 2, 3], [4, 5, 6]], show=True)
+    *** Printing table only supported for integrals of a single data set.
+    array([ 4., 10.])
     """
-    y = np.asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
     nd = len(y.shape)
     Nsamps = y.shape[axis]
     Ninterv = Nsamps-1
@@ -867,7 +861,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice_all = (slice(None),) * nd
     slice0 = tupleset(slice_all, axis, 0)
     slicem1 = tupleset(slice_all, axis, -1)
-    h = Ninterv * np.asarray(dx, dtype=float)
+    h = Ninterv * xp.asarray(dx, dtype=xp.float64)
     R[(0, 0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = slice_all
     start = stop = step = Ninterv
@@ -875,7 +869,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
         start >>= 1
         slice_R = tupleset(slice_R, axis, slice(start, stop, step))
         step >>= 1
-        R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*y[slice_R].sum(axis=axis))
+        R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*xp.sum(y[slice_R], axis=axis))
         for j in range(1, i+1):
             prev = R[(i, j-1)]
             R[(i, j)] = prev + (prev-R[(i-1, j-1)]) / ((1 << (2*j))-1)
@@ -969,13 +963,14 @@ _builtincoeffs = {
     }
 
 
+@xp_capabilities(np_only=True)
 def newton_cotes(rn, equal=0):
     r"""
     Return weights and error coefficient for Newton-Cotes integration.
 
-    Suppose we have (N+1) samples of f at the positions
-    x_0, x_1, ..., x_N. Then an N-point Newton-Cotes formula for the
-    integral between x_0 and x_N is:
+    Suppose we have :math:`(N+1)` samples of :math:`f` at the positions
+    :math:`x_0, x_1, ..., x_N`. Then an :math:`N`-point Newton-Cotes formula
+    for the integral between :math:`x_0` and :math:`x_N` is:
 
     :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
     + B_N (\Delta x)^{N+2} f^{N+1} (\xi)`
@@ -1078,8 +1073,7 @@ def newton_cotes(rn, equal=0):
     return ai, BN*fac
 
 
-def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
-
+def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log, xp):
     # lazy import to avoid issues with partially-initialized submodule
     if not hasattr(qmc_quad, 'qmc'):
         from scipy import stats
@@ -1092,9 +1086,11 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
         raise TypeError(message)
 
     # a, b will be modified, so copy. Oh well if it's copied twice.
-    a = np.atleast_1d(a).copy()
-    b = np.atleast_1d(b).copy()
-    a, b = np.broadcast_arrays(a, b)
+    a, b = xp_promote(a, b, broadcast=True, force_floating=True, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a, b = xp.broadcast_arrays(a, b)
+    a, b = xp_copy(a), xp_copy(b)
     dim = a.shape[0]
 
     try:
@@ -1107,25 +1103,33 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
         raise ValueError(message) from e
 
     try:
-        func(np.array([a, b]).T)
+        func(xp.stack([a, b]).T)
         vfunc = func
     except Exception as e:
+        if not is_numpy(xp):
+            message = ("Exception encountered when attempting vectorized call to "
+                       f"`func`: {e}. When using array library {xp}, `func` must "
+                       "accept two-dimensional array `x` with shape `(a.shape[0], "
+                       "n_points)` and return an array of the integrand value at "
+                       "each of the `n_points`.")
+            raise ValueError(message)
+
         message = ("Exception encountered when attempting vectorized call to "
                    f"`func`: {e}. For better performance, `func` should "
                    "accept two-dimensional array `x` with shape `(len(a), "
                    "n_points)` and return an array of the integrand value at "
-                   "each of the `n_points.")
+                   "each of the `n_points`.")
         warnings.warn(message, stacklevel=3)
 
         def vfunc(x):
             return np.apply_along_axis(func, axis=-1, arr=x)
 
-    n_points_int = np.int64(n_points)
+    n_points_int = int(n_points)
     if n_points != n_points_int:
         message = "`n_points` must be an integer."
         raise TypeError(message)
 
-    n_estimates_int = np.int64(n_estimates)
+    n_estimates_int = int(n_estimates)
     if n_estimates != n_estimates_int:
         message = "`n_estimates` must be an integer."
         raise TypeError(message)
@@ -1155,6 +1159,9 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
+@xp_capabilities(skip_backends=[("dask.array",
+                                 "Dask arrays are confused about their shape")],
+                 jax_jit=False)
 def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
              log=False):
     """
@@ -1171,7 +1178,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         the dimensionality of the function domain) and `n_points` is the number
         of quadrature points, and return an array of shape ``(n_points,)``,
         the integrand at each quadrature point.
-    a, b : array-like
+    a, b : scalar or 1-d array-like
         One-dimensional arrays specifying the lower and upper integration
         limits, respectively, of each of the ``d`` variables.
     n_estimates, n_points : int, optional
@@ -1190,7 +1197,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         If a QMCEngine is not provided, the default `scipy.stats.qmc.Halton`
         will be initialized with the number of dimensions determine from
         the length of `a`.
-    log : boolean, default: False
+    log : bool, default: False
         When set to True, `func` returns the log of the integrand, and
         the result object contains the log of the integral.
 
@@ -1265,72 +1272,79 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     0.00018430867675187443
 
     """
-    args = _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log)
+    xp = array_namespace(a, b)
+    args = _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log, xp)
     func, a, b, n_points, n_estimates, qrng, rng, log, stats = args
 
     def sum_product(integrands, dA, log=False):
         if log:
-            return logsumexp(integrands) + np.log(dA)
+            return logsumexp(integrands) + math.log(dA)
         else:
-            return np.sum(integrands * dA)
+            return xp.sum(integrands * dA)
 
     def mean(estimates, log=False):
         if log:
-            return logsumexp(estimates) - np.log(n_estimates)
+            return logsumexp(estimates) - math.log(n_estimates)
         else:
-            return np.mean(estimates)
+            return xp.mean(estimates)
 
     def std(estimates, m=None, ddof=0, log=False):
         m = m or mean(estimates, log)
         if log:
-            estimates, m = np.broadcast_arrays(estimates, m)
-            temp = np.vstack((estimates, m + np.pi * 1j))
+            estimates, m = xp.broadcast_arrays(estimates, m)
+            temp = xp.stack((estimates, m + xp.pi * 1j))
             diff = logsumexp(temp, axis=0)
-            return np.real(0.5 * (logsumexp(2 * diff)
-                                  - np.log(n_estimates - ddof)))
+            return xp.real(0.5 * (logsumexp(2 * diff)
+                                  - math.log(n_estimates - ddof)))
         else:
-            return np.std(estimates, ddof=ddof)
+            return xp.std(estimates, correction=ddof)
 
     def sem(estimates, m=None, s=None, log=False):
         m = m or mean(estimates, log)
         s = s or std(estimates, m, ddof=1, log=log)
         if log:
-            return s - 0.5*np.log(n_estimates)
+            return s - 0.5*math.log(n_estimates)
         else:
-            return s / np.sqrt(n_estimates)
+            return s / math.sqrt(n_estimates)
 
     # The sign of the integral depends on the order of the limits. Fix this by
     # ensuring that lower bounds are indeed lower and setting sign of resulting
     # integral manually
-    if np.any(a == b):
+    if xp.any(a == b):
         message = ("A lower limit was equal to an upper limit, so the value "
                    "of the integral is zero by definition.")
         warnings.warn(message, stacklevel=2)
-        return QMCQuadResult(-np.inf if log else 0, 0)
+        zero = xp.asarray(-xp.inf if log else 0, dtype=a.dtype)
+        return QMCQuadResult(zero, xp.asarray(0., dtype=a.dtype))
 
     i_swap = b < a
-    sign = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
-    a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+    sign = (-1)**(xp.count_nonzero(i_swap, axis=-1))  # odd # of swaps -> negative
+    sign = xp.astype(sign, a.dtype)
+    # a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+    a_iswap = a[i_swap]
+    b_iswap = b[i_swap]
+    a = xpx.at(a)[i_swap].set(b_iswap)
+    b = xpx.at(b)[i_swap].set(a_iswap)
 
-    A = np.prod(b - a)
+    A = xp.prod(b - a)
     dA = A / n_points
 
-    estimates = np.zeros(n_estimates)
+    estimates = xp.zeros(n_estimates, dtype=a.dtype)
     rngs = _rng_spawn(qrng.rng, n_estimates)
     for i in range(n_estimates):
         # Generate integral estimate
-        sample = qrng.random(n_points)
+        sample = xp.asarray(qrng.random(n_points), dtype=a.dtype)
         # The rationale for transposing is that this allows users to easily
         # unpack `x` into separate variables, if desired. This is consistent
         # with the `xx` array passed into the `scipy.integrate.nquad` `func`.
-        x = stats.qmc.scale(sample, a, b).T  # (n_dim, n_points)
+        x = (sample * (b - a) + a).T  # (n_dim, n_points)
         integrands = func(x)
-        estimates[i] = sum_product(integrands, dA, log)
+        estimates = xpx.at(estimates)[i].set(sum_product(integrands, dA, log))
 
         # Get a new, independently-scrambled QRNG for next time
         qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
 
     integral = mean(estimates, log)
     standard_error = sem(estimates, m=integral, log=log)
-    integral = integral + np.pi*1j if (log and sign < 0) else integral*sign
+    integral = integral + xp.pi*1j if (log and sign < 0) else integral*sign
     return QMCQuadResult(integral, standard_error)

@@ -6,19 +6,9 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'IndexMixin',
-    'check_shape',
     'dok_matrix',
-    'getdtype',
-    'isdense',
-    'isintlike',
-    'isscalarlike',
-    'isshape',
     'isspmatrix_dok',
-    'itertools',
     'spmatrix',
-    'upcast',
-    'upcast_scalar',
 ]
 
 

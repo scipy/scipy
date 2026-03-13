@@ -225,9 +225,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
     def count_nonzero(self, axis=None):
         if axis is not None:
-            raise NotImplementedError(
-                "count_nonzero over axis is not implemented for BSR format."
-            )
+            return self.tocsr().count_nonzero(axis=axis)
         return np.count_nonzero(self._deduped_data())
 
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
@@ -317,11 +315,13 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                            other.indptr, other.indices))
 
-        bnnz = csr_matmat_maxnnz(M//R, N//C,
-                                 self.indptr.astype(idx_dtype),
-                                 self.indices.astype(idx_dtype),
-                                 other.indptr.astype(idx_dtype),
-                                 other.indices.astype(idx_dtype))
+        n_brow = M // R
+        n_bcol = N // C
+        bnnz = csr_matmat_maxnnz(n_brow, n_bcol,
+                                 self.indptr.astype(idx_dtype, copy=False),
+                                 self.indices.astype(idx_dtype, copy=False),
+                                 other.indptr.astype(idx_dtype, copy=False),
+                                 other.indices.astype(idx_dtype, copy=False))
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                            other.indptr, other.indices),
@@ -330,12 +330,12 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         indices = np.empty(bnnz, dtype=idx_dtype)
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
-        bsr_matmat(bnnz, M//R, N//C, R, C, n,
-                   self.indptr.astype(idx_dtype),
-                   self.indices.astype(idx_dtype),
+        bsr_matmat(bnnz, n_brow, n_bcol, R, C, n,
+                   self.indptr.astype(idx_dtype, copy=False),
+                   self.indices.astype(idx_dtype, copy=False),
                    np.ravel(self.data),
-                   other.indptr.astype(idx_dtype),
-                   other.indices.astype(idx_dtype),
+                   other.indptr.astype(idx_dtype, copy=False),
+                   other.indices.astype(idx_dtype, copy=False),
                    np.ravel(other.data),
                    indptr,
                    indices,
@@ -354,20 +354,14 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     ######################
 
     def tobsr(self, blocksize=None, copy=False):
-        """Convert this array/matrix into Block Sparse Row Format.
-
-        With copy=False, the data/indices may be shared between this
-        array/matrix and the resultant bsr_array/bsr_matrix.
-
-        If blocksize=(R, C) is provided, it will be used for determining
-        block size of the bsr_array/bsr_matrix.
-        """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
         if copy:
             return self.copy()
         else:
             return self
+
+    tobsr.__doc__ = _spbase.tobsr.__doc__
 
     def tocsr(self, copy=False):
         M, N = self.shape
@@ -398,12 +392,6 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=True):
-        """Convert this array/matrix to COOrdinate format.
-
-        When copy=False the data array will be shared between
-        this array/matrix and the resultant coo_array/coo_matrix.
-        """
-
         M,N = self.shape
         R,C = self.blocksize
 
@@ -434,6 +422,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         return self._coo_container(
             (data, (row, col)), shape=self.shape
         )
+
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)
@@ -492,7 +482,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.prune()
 
     def sum_duplicates(self):
-        """Eliminate duplicate array/matrix entries by adding them together
+        """Eliminate duplicate array/matrix entries by adding them together.
 
         The is an *in place* operation
         """
@@ -525,7 +515,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.has_canonical_format = True
 
     def sort_indices(self):
-        """Sort the indices of this array/matrix *in place*
+        """Sort the indices of this array/matrix *in place*.
         """
         if self.has_sorted_indices:
             return
@@ -584,11 +574,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
-           self.indptr.astype(idx_dtype),
-           self.indices.astype(idx_dtype),
+           self.indptr.astype(idx_dtype, copy=False),
+           self.indices.astype(idx_dtype, copy=False),
            self.data,
-           other.indptr.astype(idx_dtype),
-           other.indices.astype(idx_dtype),
+           other.indptr.astype(idx_dtype, copy=False),
+           other.indices.astype(idx_dtype, copy=False),
            np.ravel(other.data),
            indptr,
            indices,
@@ -684,26 +674,34 @@ class bsr_array(_bsr_base, sparray):
 
     Attributes
     ----------
+    data : ndarray
+        BSR format data array of the array
+    indices : ndarray
+        BSR format index array of the array
+    indptr : ndarray
+        BSR format index pointer array of the array
+    blocksize : 2-tuple of integers
+        Block size (R, C)
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the array
     shape : 2-tuple
         Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        BSR format data array of the array
-    indices
-        BSR format index array of the array
-    indptr
-        BSR format index pointer array of the array
-    blocksize
-        Block size
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-    T
+    format : str
+        Three letter code for the format of the array storage, e.g. 'bsr'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : bsr_array
+        The transpose of the array
+    mT : bsr_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -765,7 +763,7 @@ class bsr_array(_bsr_base, sparray):
            [4, 4, 5, 5, 6, 6],
            [4, 4, 5, 5, 6, 6]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class bsr_matrix(spmatrix, _bsr_base):
@@ -795,26 +793,34 @@ class bsr_matrix(spmatrix, _bsr_base):
 
     Attributes
     ----------
+    data : ndarray
+        BSR format data array of the matrix
+    indices : ndarray
+        BSR format index array of the matrix
+    indptr : ndarray
+        BSR format index pointer array of the matrix
+    blocksize : 2-tuple of integers
+        Block size (R, C)
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+        Whether indices are sorted and no duplicate entries exist
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
         Shape of the matrix
     ndim : int
         Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        BSR format data array of the matrix
-    indices
-        BSR format index array of the matrix
-    indptr
-        BSR format index pointer array of the matrix
-    blocksize
-        Block size
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-    T
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'bsr'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : bsr_matrix
+        The transpose of the matrix
+    mT : bsr_matrix
+        The matrix transpose
 
     Notes
     -----

@@ -1,7 +1,7 @@
 import os
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 
 from .common import Benchmark, is_xslow, safe_import
 
@@ -86,8 +86,8 @@ class MagicSquare(Benchmark):
 
     def time_magic_square(self, meth, prob):
         method, options = meth
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "A_eq does not appear", OptimizeWarning)
             res = linprog(c=self.c, A_eq=self.A_eq, b_eq=self.b_eq,
                           bounds=(0, 1), method=method, options=options)
             self.fun = res.fun
@@ -141,8 +141,9 @@ class LpGen(Benchmark):
 
     def time_lpgen(self, meth, m, n):
         method, options = meth
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll-conditioned")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "scipy.linalg.solve\nIll-conditioned", RuntimeWarning)
             linprog(c=self.c, A_ub=self.A, b_ub=self.b,
                     method=method, options=options)
 

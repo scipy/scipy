@@ -4,6 +4,7 @@ import warnings
 
 import numpy as np
 from scipy import special, interpolate, stats
+from scipy._lib._array_api import xp_capabilities
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
@@ -249,6 +250,7 @@ def _iv_CensoredData(
     return sample
 
 
+@xp_capabilities(np_only=True)
 def ecdf(sample: "npt.ArrayLike | CensoredData") -> ECDFResult:
     """Empirical cumulative distribution function of a sample.
 
@@ -483,6 +485,7 @@ class LogRankResult:
     pvalue: np.ndarray
 
 
+@xp_capabilities(np_only=True)
 def logrank(
     x: "npt.ArrayLike | CensoredData",
     y: "npt.ArrayLike | CensoredData",

@@ -24,11 +24,10 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from scipy.signal import ShortTimeFFT
-from scipy.signal import csd, get_window, stft, istft
+from scipy.signal import get_window, stft, istft
 from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
 from scipy.signal._short_time_fft import FFT_MODE_TYPE
-from scipy.signal._spectral_py import _spectral_helper, _triage_segments, \
-    _median_bias
+from scipy.signal._spectral_py import _triage_segments
 
 
 def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
@@ -103,7 +102,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
         # This is an edge case where shortTimeFFT returns one more time slice
         # than the Scipy stft() shorten to remove last time slice:
         if n % 2 == 1 and nperseg % 2 == 1 and noverlap % 2 == 1:
-            x = x[..., :axis - 1]
+            x = x[..., : -1]
 
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
@@ -124,22 +123,14 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     k_off = nperseg // 2
     p0 = 0  # ST.lower_border_end[1] + 1
     nn = x.shape[axis] if padded else n+k_off+1
-    p1 = ST.upper_border_begin(nn)[1]  # ST.p_max(n) + 1
-
-    # This is bad hack to pass the test test_roundtrip_boundary_extension():
-    if padded is True and nperseg - noverlap == 1:
-        p1 -= nperseg // 2 - 1  # the reasoning behind this is not clear to me
+    # number of frames akin to legacy stft computation
+    p1 = (x.shape[axis] - nperseg) // nstep + 1 
 
     detr = None if detrend is False else detrend
     Sxx = ST.stft_detrend(x, detr, p0, p1, k_offset=k_off, axis=axis)
     t = ST.t(nn, 0, p1 - p0, k_offset=0 if boundary is not None else k_off)
     if x.dtype in (np.float32, np.complex64):
         Sxx = Sxx.astype(np.complex64)
-
-    # workaround for test_average_all_segments() - seems to be buggy behavior:
-    if boundary is None and padded is False:
-        t, Sxx = t[1:-1], Sxx[..., :-2]
-        t -= k_off / fs
 
     return ST.f, t, Sxx
 
@@ -234,156 +225,6 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     return t, x, (ST.lower_border_end[0], k_hi)
 
 
-def _csd_wrapper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
-                 nfft=None, detrend='constant', return_onesided=True,
-                 scaling='density', axis=-1, average='mean'):
-    """Wrapper for the `csd()` function based on `ShortTimeFFT` for
-        unit testing.
-    """
-    freqs, _, Pxy = _csd_test_shim(x, y, fs, window, nperseg, noverlap, nfft,
-                                   detrend, return_onesided, scaling, axis)
-
-    # The following code is taken from csd():
-    if len(Pxy.shape) >= 2 and Pxy.size > 0:
-        if Pxy.shape[-1] > 1:
-            if average == 'median':
-                # np.median must be passed real arrays for the desired result
-                bias = _median_bias(Pxy.shape[-1])
-                if np.iscomplexobj(Pxy):
-                    Pxy = (np.median(np.real(Pxy), axis=-1)
-                           + 1j * np.median(np.imag(Pxy), axis=-1))
-                else:
-                    Pxy = np.median(Pxy, axis=-1)
-                Pxy /= bias
-            elif average == 'mean':
-                Pxy = Pxy.mean(axis=-1)
-            else:
-                raise ValueError(f'average must be "median" or "mean", got {average}')
-        else:
-            Pxy = np.reshape(Pxy, Pxy.shape[:-1])
-
-    return freqs, Pxy
-
-
-def _csd_test_shim(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
-                   nfft=None, detrend='constant', return_onesided=True,
-                   scaling='density', axis=-1):
-    """Compare output of  _spectral_helper() and ShortTimeFFT, more
-    precisely _spect_helper_csd() for used in csd_wrapper().
-
-   The motivation of this function is to test if the ShortTimeFFT-based
-   wrapper `_spect_helper_csd()` returns the same values as `_spectral_helper`.
-   This function should only be usd by csd() in (unit) testing.
-   """
-    freqs, t, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
-                                     detrend, return_onesided, scaling, axis,
-                                     mode='psd')
-    freqs1, Pxy1 = _spect_helper_csd(x, y, fs, window, nperseg, noverlap, nfft,
-                                     detrend, return_onesided, scaling, axis)
-
-    np.testing.assert_allclose(freqs1, freqs)
-    amax_Pxy = max(np.abs(Pxy).max(), 1) if Pxy.size else 1
-    atol = np.finfo(Pxy.dtype).resolution * amax_Pxy  # needed for large Pxy
-    # for c_ in range(Pxy.shape[-1]):
-    #    np.testing.assert_allclose(Pxy1[:, c_], Pxy[:, c_], atol=atol)
-    np.testing.assert_allclose(Pxy1, Pxy, atol=atol)
-    return freqs, t, Pxy
-
-
-def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
-                      nfft=None, detrend='constant', return_onesided=True,
-                      scaling='density', axis=-1):
-    """Wrapper for replacing _spectral_helper() by using the ShortTimeFFT
-      for use by csd().
-
-    This function should be only used by _csd_test_shim() and is only useful
-    for testing the ShortTimeFFT implementation.
-    """
-
-    # The following lines are taken from the original _spectral_helper():
-    same_data = y is x
-    axis = int(axis)
-
-    # Ensure we have np.arrays, get outdtype
-    x = np.asarray(x)
-    if not same_data:
-        y = np.asarray(y)
-    #     outdtype = np.result_type(x, y, np.complex64)
-    # else:
-    #     outdtype = np.result_type(x, np.complex64)
-
-    if not same_data:
-        # Check if we can broadcast the outer axes together
-        xouter = list(x.shape)
-        youter = list(y.shape)
-        xouter.pop(axis)
-        youter.pop(axis)
-        try:
-            outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        except ValueError as e:
-            raise ValueError('x and y cannot be broadcast together.') from e
-
-    if same_data:
-        if x.size == 0:
-            return np.empty(x.shape), np.empty(x.shape)
-    else:
-        if x.size == 0 or y.size == 0:
-            outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
-            emptyout = np.moveaxis(np.empty(outshape), -1, axis)
-            return emptyout, emptyout
-
-    if nperseg is not None:  # if specified by user
-        nperseg = int(nperseg)
-        if nperseg < 1:
-            raise ValueError('nperseg must be a positive integer')
-
-    # parse window; if array like, then set nperseg = win.shape
-    n = x.shape[axis] if same_data else max(x.shape[axis], y.shape[axis])
-    win, nperseg = _triage_segments(window, nperseg, input_length=n)
-
-    if nfft is None:
-        nfft = nperseg
-    elif nfft < nperseg:
-        raise ValueError('nfft must be greater than or equal to nperseg.')
-    else:
-        nfft = int(nfft)
-
-    if noverlap is None:
-        noverlap = nperseg // 2
-    else:
-        noverlap = int(noverlap)
-    if noverlap >= nperseg:
-        raise ValueError('noverlap must be less than nperseg.')
-    nstep = nperseg - noverlap
-
-    if np.iscomplexobj(x) and return_onesided:
-        return_onesided = False
-
-    # using cast() to make mypy happy:
-    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided
-                    else 'twosided')
-    scale = {'spectrum': 'magnitude', 'density': 'psd'}[scaling]
-    SFT = ShortTimeFFT(win, nstep, fs, fft_mode=fft_mode, mfft=nfft,
-                       scale_to=scale, phase_shift=None)
-
-    # _spectral_helper() calculates X.conj()*Y instead of X*Y.conj():
-    Pxy = SFT.spectrogram(y, x, detr=None if detrend is False else detrend,
-                          p0=0, p1=(n-noverlap)//SFT.hop, k_offset=nperseg//2,
-                          axis=axis).conj()
-    # Note:
-    # 'onesided2X' scaling of ShortTimeFFT conflicts with the
-    # scaling='spectrum' parameter, since it doubles the squared magnitude,
-    # which in the view of the ShortTimeFFT implementation does not make sense.
-    # Hence, the doubling of the square is implemented here:
-    if return_onesided:
-        f_axis = Pxy.ndim - 1 + axis if axis < 0 else axis
-        Pxy = np.moveaxis(Pxy, f_axis, -1)
-        Pxy[..., 1:-1 if SFT.mfft % 2 == 0 else None] *= 2
-        Pxy = np.moveaxis(Pxy, -1, f_axis)
-
-    return SFT.f, Pxy
-
-
 def stft_compare(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
                  nfft=None, detrend=False, return_onesided=True,
                  boundary='zeros', padded=True, axis=-1, scaling='spectrum'):
@@ -468,21 +309,3 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     assert_allclose(x_wrapper[k_lo:k_hi], x[k_lo:k_hi], atol=atol, rtol=rtol,
                     err_msg=f"Signal values {e_msg_part}")
     return t, x
-
-
-def csd_compare(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
-                nfft=None, detrend='constant', return_onesided=True,
-                scaling='density', axis=-1, average='mean'):
-    """Assert that the results from the existing `csd()` and `_csd_wrapper()`
-    are close to each other. """
-    kw = dict(x=x, y=y, fs=fs, window=window, nperseg=nperseg,
-              noverlap=noverlap, nfft=nfft, detrend=detrend,
-              return_onesided=return_onesided, scaling=scaling, axis=axis,
-              average=average)
-    freqs0, Pxy0 = csd(**kw)
-    freqs1, Pxy1 = _csd_wrapper(**kw)
-
-    assert_allclose(freqs1, freqs0)
-    assert_allclose(Pxy1, Pxy0)
-    assert_allclose(freqs1, freqs0)
-    return freqs0, Pxy0

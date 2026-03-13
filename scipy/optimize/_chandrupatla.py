@@ -2,14 +2,10 @@ import math
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import xp_sign, xp_copy, xp_take_along_axis
-
-# TODO:
-# - (maybe?) don't use fancy indexing assignment
-# - figure out how to replace the new `try`/`except`s
+from scipy._lib._array_api import xp_copy
 
 
-def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
+def _chandrupatla(func, a, b, *, args=(), kwargs=None, xatol=None, xrtol=None,
                   fatol=None, frtol=0, maxiter=None, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
@@ -34,6 +30,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
         broadcastable with one another.
     args : tuple, optional
         Additional positional arguments to be passed to `func`.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `func`.
     xatol, xrtol, fatol, frtol : float, optional
         Absolute and relative tolerances on the root and function value.
         See Notes for details.
@@ -103,7 +101,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
         "A new hybrid quadratic/bisection algorithm for finding the zero of a
         nonlinear function without using derivatives".
         Advances in Engineering Software, 28(3), 145-149.
-        https://doi.org/10.1016/s0965-9978(96)00051-8
+        :doi:`10.1016/s0965-9978(96)00051-8`.
 
     See Also
     --------
@@ -125,12 +123,12 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     array([1.8932892 , 2.        , 2.09455148])
 
     """
-    res = _chandrupatla_iv(func, args, xatol, xrtol,
+    res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    temp = eim._initialize(func, (a, b), args)
+    temp = eim._initialize(func, (a, b), args, kwargs=kwargs)
     func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
@@ -187,7 +185,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
 
         # If the bracket is no longer valid, report failure (unless a function
         # tolerance is met, as detected above).
-        i = (xp_sign(work.f1) == xp_sign(work.f2)) & ~stop
+        i = (xp.sign(work.f1) == xp.sign(work.f2)) & ~stop
         NaN = xp.asarray(xp.nan, dtype=work.xmin.dtype)
         work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._ESIGNERR
         stop[i] = True
@@ -243,7 +241,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
                      xp=xp)
 
 
-def _chandrupatla_iv(func, args, xatol, xrtol,
+def _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
     # Input validation for `_chandrupatla`
 
@@ -270,10 +268,10 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return func, args, xatol, xrtol, fatol, frtol, maxiter, callback
+    return func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
-def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
+def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None,
                            xrtol=None, fatol=None, frtol=None, maxiter=100,
                            callback=None):
     """Find the minimizer of an elementwise function.
@@ -306,6 +304,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         differentiated requires arguments that are not broadcastable with `x`,
         wrap that callable with `func` such that `func` accepts only `x` and
         broadcastable arrays.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     xatol, xrtol, fatol, frtol : float, optional
         Absolute and relative tolerances on the minimizer and function value.
         See Notes for details.
@@ -371,7 +371,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         "An efficient quadratic fit-sectioning algorithm for minimization
         without derivatives".
         Computer Methods in Applied Mechanics and Engineering, 152 (1-2),
-        211-217. https://doi.org/10.1016/S0045-7825(97)00190-4
+        211-217. :doi:`10.1016/S0045-7825(97)00190-4`.
 
     See Also
     --------
@@ -390,13 +390,13 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     >>> res.x
     array([1. , 1.5, 2. ])
     """
-    res = _chandrupatla_iv(func, args, xatol, xrtol,
+    res = _chandrupatla_iv(func, args, kwargs, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, args, kwargs, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
     xs = (x1, x2, x3)
-    temp = eim._initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args, kwargs=kwargs)
     func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
@@ -411,8 +411,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     # Ensure that x1 < x2 < x3 initially.
     xs, fs = xp.stack((x1, x2, x3)), xp.stack((f1, f2, f3))
     i = xp.argsort(xs, axis=0)
-    x1, x2, x3 = xp_take_along_axis(xs, i, axis=0)  # data-apis/array-api#808
-    f1, f2, f3 = xp_take_along_axis(fs, i, axis=0)  # data-apis/array-api#808
+    x1, x2, x3 = xp.take_along_axis(xs, i, axis=0)  # data-apis/array-api#808
+    f1, f2, f3 = xp.take_along_axis(fs, i, axis=0)  # data-apis/array-api#808
     q0 = xp_copy(x3)  # "At the start, q0 is set at x3..." ([1] after (7))
 
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=x3, f3=f3, phi=phi,
@@ -448,7 +448,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # tol away from x2."
         # See also QBASIC code after "Accept Ql adjust if close to X2".
         j = xp.abs(q1[i] - work.x2[i]) <= work.xtol[i]
-        xi[j] = work.x2[i][j] + xp_sign(x32[i][j]) * work.xtol[i][j]
+        xi[j] = work.x2[i][j] + xp.sign(x32[i][j]) * work.xtol[i][j]
 
         # "If condition (7) is not satisfied, golden sectioning of the larger
         # interval is carried out to introduce the new point."
@@ -466,7 +466,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # point. In QBASIC code, see "IF SGN(X-X2) = SGN(X3-X2) THEN...".
         # There is an awful lot of data copying going on here; this would
         # probably benefit from code optimization or implementation in Pythran.
-        i = xp_sign(x - work.x2) == xp_sign(work.x3 - work.x2)
+        i = xp.sign(x - work.x2) == xp.sign(work.x3 - work.x2)
         xi, x1i, x2i, x3i = x[i], work.x1[i], work.x2[i], work.x3[i],
         fi, f1i, f2i, f3i = f[i], work.f1[i], work.f2[i], work.f3[i]
         j = fi > f2i

@@ -3,11 +3,12 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_sign, xp_copy, xp_take_along_axis
+from scipy._lib._array_api import array_namespace, xp_copy, xp_promote, xp_capabilities
+import scipy._external.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
 
-def _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
+def _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
                    step_factor, step_direction, preserve_shape, callback):
     # Input validation for `derivative`
     xp = array_namespace(x)
@@ -52,14 +53,21 @@ def _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return (f, x, args, atol, rtol, maxiter_int, order_int, initial_step,
+    return (f, x, args, kwargs, atol, rtol, maxiter_int, order_int, initial_step,
             step_factor, step_direction, preserve_shape, callback)
 
 
-def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
+
+_array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
+_dask_reason = 'boolean indexing assignment'
+
+
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
+def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
                order=8, initial_step=0.5, step_factor=2.0,
                step_direction=0, preserve_shape=False, callback=None):
-    """Evaluate the derivative of a elementwise, real scalar function numerically.
+    """Evaluate the derivative of an elementwise, real scalar function numerically.
 
     For each element of the output of `f`, `derivative` approximates the first
     derivative of `f` at the corresponding element of `x` using finite difference
@@ -89,6 +97,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances. Valid keys of the dictionary are:
 
@@ -99,6 +109,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         `atol` is the smallest normal number of the appropriate dtype, and
         the default `rtol` is the square root of the precision of the
         appropriate dtype.
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform. See Notes.
     order : int, default: 8
         The (positive integer) order of the finite difference formula to be
         used. Odd integers will be rounded up to the next even integer.
@@ -111,10 +123,7 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform. See
-        Notes.
-    step_direction : integer array_like
+    step_direction : int array_like
         An array representing the direction of the finite difference steps (for
         use when `x` lies near to the boundary of the domain of the function.)
         Must be broadcastable with `x` and all `args`.
@@ -374,9 +383,9 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     #  - relative steps?
     #  - show example of `np.vectorize`
 
-    res = _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
-                            step_factor, step_direction, preserve_shape, callback)
-    (func, x, args, atol, rtol, maxiter, order,
+    res = _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
+                         step_factor, step_direction, preserve_shape, callback)
+    (func, x, args, kwargs, atol, rtol, maxiter, order,
      h0, fac, hdir, preserve_shape, callback) = res
 
     # Initialization
@@ -384,7 +393,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     # possible to eliminate this function evaluation. However, it's useful for
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
-    temp = eim._initialize(func, (x,), args, preserve_shape=preserve_shape)
+    temp = eim._initialize(func, (x,), args, kwargs=kwargs,
+                           preserve_shape=preserve_shape)
     func, xs, fs, args, shape, dtype, xp = temp
 
     finfo = xp.finfo(dtype)
@@ -400,11 +410,11 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     # that `hdir` can be broadcasted to the final shape. Same with `h0`.
     hdir = xp.broadcast_to(hdir, shape)
     hdir = xp.reshape(hdir, (-1,))
-    hdir = xp.astype(xp_sign(hdir), dtype)
+    hdir = xp.astype(xp.sign(hdir), dtype)
     h0 = xp.broadcast_to(h0, shape)
     h0 = xp.reshape(h0, (-1,))
     h0 = xp.astype(h0, dtype)
-    h0[h0 <= 0] = xp.asarray(xp.nan, dtype=dtype)
+    h0 = xpx.at(h0)[h0 <= 0].set(xp.nan)
 
     status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
@@ -477,9 +487,9 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
         x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype)
         il, ic, ir = work.il, work.ic, work.ir
-        x_eval[ir] = work.x[ir][:, xp.newaxis] + hr[ir]
-        x_eval[ic] = work.x[ic][:, xp.newaxis] + hc[ic]
-        x_eval[il] = work.x[il][:, xp.newaxis] - hr[il]
+        x_eval = xpx.at(x_eval)[ir].set(work.x[ir][:, xp.newaxis] + hr[ir])
+        x_eval = xpx.at(x_eval)[ic].set(work.x[ic][:, xp.newaxis] + hc[ic])
+        x_eval = xpx.at(x_eval)[il].set(work.x[il][:, xp.newaxis] - hr[il])
         return x_eval
 
     def post_func_eval(x, f, work):
@@ -529,14 +539,14 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
             fo = xp.concat((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
 
         work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new), dtype=work.dtype)
-        work.fs[ic] = work_fc
-        work.fs[io] = work_fo
+        work.fs = xpx.at(work.fs)[ic].set(work_fc)
+        work.fs = xpx.at(work.fs)[io].set(work_fo)
 
         wc, wo = _derivative_weights(work, n, xp)
         work.df_last = xp.asarray(work.df, copy=True)
-        work.df[ic] = fc @ wc / work.h[ic]
-        work.df[io] = fo @ wo / work.h[io]
-        work.df[il] *= -1
+        work.df = xpx.at(work.df)[ic].set(fc @ wc / work.h[ic])
+        work.df = xpx.at(work.df)[io].set(fo @ wo / work.h[io])
+        work.df = xpx.at(work.df)[il].multiply(-1)
 
         work.h /= work.fac
         work.error_last = work.error
@@ -554,13 +564,14 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         stop = xp.astype(xp.zeros_like(work.df), xp.bool)
 
         i = work.error < work.atol + work.rtol*abs(work.df)
-        work.status[i] = eim._ECONVERGED
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(eim._ECONVERGED)
+        stop = xpx.at(stop)[i].set(True)
 
         if work.nit > 0:
             i = ~((xp.isfinite(work.x) & xp.isfinite(work.df)) | stop)
-            work.df[i], work.status[i] = xp.nan, eim._EVALUEERR
-            stop[i] = True
+            work.df = xpx.at(work.df)[i].set(xp.nan)
+            work.status = xpx.at(work.status)[i].set(eim._EVALUEERR)
+            stop = xpx.at(stop)[i].set(True)
 
         # With infinite precision, there is a step size below which
         # all smaller step sizes will reduce the error. But in floating point
@@ -570,8 +581,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         # detecting a step size that minimizes the total error, but this
         # heuristic seems simple and effective.
         i = (work.error > work.error_last*10) & ~stop
-        work.status[i] = _EERRORINCREASE
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(_EERRORINCREASE)
+        stop = xpx.at(stop)[i].set(True)
 
         return stop
 
@@ -707,6 +718,8 @@ def _derivative_weights(work, n, xp):
             xp.asarray(diff_state.right, dtype=work.dtype))
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
              step_factor=2.0, step_direction=0):
     r"""Evaluate the Jacobian of a function numerically.
@@ -751,7 +764,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    step_direction : integer array_like
+    step_direction : int array_like
         An array representing the direction of the finite difference steps (e.g.
         for use when `x` lies near to the boundary of the domain of the function.)
         Must be broadcastable with `x` and `initial_step`.
@@ -906,9 +919,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
 
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    int_dtype = xp.isdtype(x.dtype, 'integral')
-    x0 = xp.asarray(x, dtype=xp.asarray(1.0).dtype) if int_dtype else x
+    x0 = xp_promote(x, force_floating=True, xp=xp)
 
     if x0.ndim < 1:
         message = "Argument `x` must be at least 1-D."
@@ -925,7 +936,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         if x.ndim != x0.ndim:
             xph = xp.expand_dims(xph, axis=-1)
         xph = xp_copy(xp.broadcast_to(xph, new_shape), xp=xp)
-        xph[i, i] = x
+        xph = xpx.at(xph)[i, i].set(x)
         return f(xph)
 
     res = derivative(wrapped, x, tolerances=tolerances,
@@ -937,6 +948,8 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     return res
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def hessian(f, x, *, tolerances=None, maxiter=10,
             order=8, initial_step=0.5, step_factor=2.0):
     r"""Evaluate the Hessian of a function numerically.
@@ -966,6 +979,8 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
         `atol` is the smallest normal number of the appropriate dtype, and
         the default `rtol` is the square root of the precision of the
         appropriate dtype.
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform. See Notes.
     order : int, default: 8
         The (positive integer) order of the finite difference formula to be
         used. Odd integers will be rounded up to the next even integer.
@@ -978,9 +993,6 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform. See
-        Notes.
 
     Returns
     -------
@@ -1097,9 +1109,9 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     rtol = tolerances.get('rtol', None)
 
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    dtype = x.dtype if not xp.isdtype(x.dtype, 'integral') else xp.asarray(1.).dtype
-    finfo = xp.finfo(dtype)
+    x0 = xp_promote(x, force_floating=True, xp=xp)
+
+    finfo = xp.finfo(x0.dtype)
     rtol = finfo.eps**0.5 if rtol is None else rtol  # keep same as `derivative`
 
     # tighten the inner tolerance to make the inner error negligible
@@ -1121,7 +1133,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
 
     nfev = xp.cumulative_sum(xp.stack(nfev), axis=0)
     res_nit = xp.astype(res.nit[xp.newaxis, ...], xp.int64)  # appease torch
-    res.nfev = xp_take_along_axis(nfev, res_nit, axis=0)[0]
+    res.nfev = xp.take_along_axis(nfev, res_nit, axis=0)[0]
     res.ddf = res.df
     del res.df  # this is renamed to ddf
     del res.nit  # this is only the outer-jacobian nit

@@ -70,7 +70,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     T : (M, M) ndarray
         Schur form of A. It is real-valued for the real Schur decomposition.
     Z : (M, M) ndarray
-        An unitary Schur transformation matrix for A.
+        A unitary Schur transformation matrix for A.
         It is real-valued for the real Schur decomposition.
     sdim : int
         If and only if sorting was requested, a third return value will

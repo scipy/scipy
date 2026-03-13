@@ -111,7 +111,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 @_apply_over_batch(("a", 2))
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     """
-    Compute the Cholesky decomposition of a matrix, to use in cho_solve
+    Compute the Cholesky decomposition of a matrix, to use in cho_solve.
 
     Returns a matrix containing the Cholesky decomposition,
     ``A = L L*`` or ``A = U* U`` of a Hermitian positive-definite matrix `a`.
@@ -188,10 +188,18 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     """Solve the linear equations A x = b, given the Cholesky factorization of A.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    (c, lower) : tuple, (array, bool)
-        Cholesky factorization of a, as given by cho_factor
+    c_and_lower : tuple, (array, bool)
+        Cholesky factorization of an array, as given by cho_factor.
+        The first element of the
+        tuple is the matrix containing the Cholesky factor, and the second element is a
+        boolean flag indicating whether the factor is in the lower or upper triangle.
     b : array
         Right-hand side
     overwrite_b : bool, optional
@@ -257,7 +265,7 @@ def _cho_solve(c, b, lower, overwrite_b, check_finite):
 @_apply_over_batch(("ab", 2))
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """
-    Cholesky decompose a banded Hermitian positive-definite matrix
+    Cholesky decompose a banded Hermitian positive-definite matrix.
 
     The matrix a is stored in ab either in lower-diagonal or upper-
     diagonal ordered form::
@@ -339,11 +347,18 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     Solve the linear equations ``A x = b``, given the Cholesky factorization of
     the banded Hermitian ``A``.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    (cb, lower) : tuple, (ndarray, bool)
-        `cb` is the Cholesky factorization of A, as given by cholesky_banded.
-        `lower` must be the same value that was given to cholesky_banded.
+    cb_and_lower : tuple, (ndarray, bool)
+        The first element of the tuple is the matrix containing the Cholesky factor,
+        as provided by `cholesky_banded`. The second element is a boolean flag
+        indicating whether the factor is in the lower triangle, as provided *to*
+        `cholesky_banded`.
     b : array_like
         Right-hand side
     overwrite_b : bool, optional

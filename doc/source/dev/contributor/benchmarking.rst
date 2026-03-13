@@ -80,6 +80,12 @@ a combination of benchmark parameters and environment settings
 (e.g., the Cython version), and that the visibility of the traces can be
 toggled using the control panel on the left.
 
+Writing benchmarks for the Array API
+------------------------------------
+When writing benchmarks for the Array API, you should subclass
+``common.XPBenchmark`` instead of ``common.Benchmark``. See the
+docstring of the class for details and examples.
+
 Running benchmarks locally
 --------------------------
 
@@ -92,7 +98,7 @@ submitting a pull request.
 To run all benchmarks, navigate to the root SciPy directory at the
 command line and execute::
 
-   python dev.py bench
+   spin bench
 
 where ``bench`` activates the benchmark suite instead of the test
 suite. This builds SciPy and runs the benchmarks. (*Note: this could
@@ -104,17 +110,29 @@ To run benchmarks from a particular benchmark module, such as
 ``optimize_linprog.py``, simply append the filename without the
 extension::
 
-   python dev.py bench -t optimize_linprog
+   spin bench -t optimize_linprog
 
 To run a benchmark defined in a class, such as ``KleeMinty`` from
 ``optimize_linprog.py``::
 
-   python dev.py bench -t optimize_linprog.KleeMinty
+   spin bench -t optimize_linprog.KleeMinty
+
+Like ``spin test``, ``spin bench`` also supports Array API.
+*Some* benchmarks can be executed on multiple Array API backends. You can select
+one or more backends with the ``-b`` parameter. For example, to run benchmarks
+for ``Whiten`` on all available backends::
+
+   spin bench -b all -t cluster.Whiten
+
+Unlike ``spin test``, ``spin bench`` disregards the ``SCIPY_DEVICE`` flag. Instead, if a
+CUDA device is installed for backends that support both CPU and GPU (e.g. JAX, PyTorch),
+the benchmark will be run on both CPU and GPU and the results will be shown side by
+side.
 
 To compare benchmark results between the active branch and another, such
 as ``main``::
 
-   python dev.py bench --compare main  # select again by `-t optimize_linprog`
+   spin bench --compare main  # select again by `-t optimize_linprog`
 
 All of the commands above display the results in plain text in the
 console, and the results are not saved for comparison with future

@@ -28,7 +28,6 @@ __docformat__ = "restructuredtext en"
 import math
 import warnings
 import sys
-import inspect
 from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
@@ -39,10 +38,11 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
-                              _call_callback_maybe_halt, _transition_to_rng)
+                              _call_callback_maybe_halt, _transition_to_rng,
+                              wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace
-from scipy._lib import array_api_extra as xpx
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+from scipy._external import array_api_extra as xpx
 
 
 # standard status messages of optimizers
@@ -87,10 +87,10 @@ class MemoizeJac:
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
+    if callback is None or method in {'tnc', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
-    sig = inspect.signature(callback)
+    sig = wrapped_inspect_signature(callback)
 
     if set(sig.parameters) == {'intermediate_result'}:
         def wrapped_callback(res):
@@ -155,6 +155,7 @@ class OptimizeResult(_RichResult):
 
 
 class OptimizeWarning(UserWarning):
+    """General warning for :mod:`scipy.optimize`."""
     pass
 
 def _check_positive_definite(Hk):
@@ -214,7 +215,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an 1-D array with shape (n,) and ``args``
+        where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -337,6 +338,7 @@ def _check_clip_x(x, bounds):
     return x
 
 
+@xp_capabilities()
 def rosen(x):
     """
     The Rosenbrock function.
@@ -380,14 +382,13 @@ def rosen(x):
     >>> plt.show()
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
+    x = xp_promote(x, force_floating=True, xp=xp)
     r = xp.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
                axis=0, dtype=x.dtype)
     return r
 
 
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -416,9 +417,7 @@ def rosen_der(x):
 
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
+    x = xp_promote(x, force_floating=True, xp=xp)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
@@ -430,6 +429,7 @@ def rosen_der(x):
     return der
 
 
+@xp_capabilities()
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -461,18 +461,18 @@ def rosen_hess(x):
 
     """
     xp = array_namespace(x)
-    x = xpx.atleast_nd(x, ndim=1, xp=xp)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
-    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
+    x = xp_promote(x, force_floating=True, xp=xp)
+
+    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp)
          - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
     diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
-    diagonal[0] = 1200 * x[0]**2 - 400 * x[1] + 2
-    diagonal[-1] = 200
-    diagonal[1:-1] = 202 + 1200 * x[1:-1]**2 - 400 * x[2:]
+    diagonal = xpx.at(diagonal)[0].set(1200 * x[0]**2 - 400 * x[1] + 2)
+    diagonal = xpx.at(diagonal)[-1].set(200)
+    diagonal = xpx.at(diagonal)[1:-1].set(202 + 1200 * x[1:-1]**2 - 400 * x[2:])
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.
@@ -505,9 +505,8 @@ def rosen_hess_prod(x, p):
 
     """
     xp = array_namespace(x, p)
+    x = xp_promote(x, force_floating=True, xp=xp)
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
     p = xp.asarray(p, dtype=x.dtype)
     Hp = xp.zeros(x.shape[0], dtype=x.dtype)
     Hp[0] = (1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1]
@@ -532,8 +531,9 @@ def _wrap_scalar_function(function, args):
         # Ideally, we'd like to a have a true scalar returned from f(x). For
         # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.float64)
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError("The user-provided objective function "
                                  "must return a scalar value.") from e
@@ -563,8 +563,9 @@ def _wrap_scalar_function_maxfun_validation(function, args, maxfun):
         # backwards-compatibility, also allow np.array([1.3]),
         # np.array([[1.3]]) etc.
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError("The user-provided objective function "
                                  "must return a scalar value.") from e
@@ -630,7 +631,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     allvecs : list
         Solution at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Nelder-Mead' `method` in particular.
@@ -649,6 +650,17 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     converge to the minimum, or how fast it will if it does. Both the ftol and
     xtol criteria must be met for convergence.
 
+    References
+    ----------
+    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
+           minimization", The Computer Journal, 7, pp. 308-313
+
+    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
+           Respectable", in Numerical Analysis 1995, Proceedings of the
+           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
+           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
+           Harlow, UK, pp. 191-208.
+
     Examples
     --------
     >>> def f(x):
@@ -663,18 +675,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
              Function evaluations: 34
     >>> minimum[0]
     -8.8817841970012523e-16
-
-    References
-    ----------
-    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
-           minimization", The Computer Journal, 7, pp. 308-313
-
-    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
-           Respectable", in Numerical Analysis 1995, Proceedings of the
-           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
-           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
-           Harlow, UK, pp. 191-208.
-
     """
     opts = {'xatol': xtol,
             'fatol': ftol,
@@ -929,15 +929,14 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             iterations += 1
         except _MaxFuncCallError:
             pass
-        finally:
-            ind = np.argsort(fsim)
-            sim = np.take(sim, ind, 0)
-            fsim = np.take(fsim, ind, 0)
-            if retall:
-                allvecs.append(sim[0])
-            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
-            if _call_callback_maybe_halt(callback, intermediate_result):
-                break
+        ind = np.argsort(fsim)
+        sim = np.take(sim, ind, 0)
+        fsim = np.take(fsim, ind, 0)
+        if retall:
+            allvecs.append(sim[0])
+        intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
     x = sim[0]
     fval = np.min(fsim)
@@ -1051,8 +1050,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
 
 @_transition_to_rng("seed", position_num=6)
-def check_grad(func, grad, x0, *args, epsilon=_epsilon,
-                direction='all', rng=None):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, direction='all', rng=None):
     r"""Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -1065,7 +1063,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
-    args : \\*args, optional
+    *args : optional
         Extra arguments passed to `func` and `grad`.
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
@@ -1262,13 +1260,18 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Number of function_calls made.
     grad_calls : int
         Number of gradient calls made.
-    warnflag : integer
+    warnflag : int
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
         3 : NaN result encountered.
     allvecs : list
         The value of `xopt` at each iteration. Only returned if `retall` is
         True.
+
+    See Also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See ``method='BFGS'`` in particular.
 
     Notes
     -----
@@ -1278,14 +1281,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
-    See Also
-    --------
-    minimize: Interface to minimization algorithms for multivariate
-        functions. See ``method='BFGS'`` in particular.
-
     References
     ----------
-    Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
+    .. [1] Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
 
     Examples
     --------
@@ -1348,7 +1346,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
                    xrtol=0, c1=1e-4, c2=0.9,
-                   hess_inv0=None, **unknown_options):
+                   hess_inv0=None, workers=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1386,6 +1384,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     hess_inv0 : None or ndarray, optional
         Initial inverse hessian estimate, shape (n, n). If None (default) then
         the identity matrix is used.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -1405,12 +1409,13 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
-        x0.shape = (1,)
+        x0 = x0.reshape((1,))
     if maxiter is None:
         maxiter = len(x0) * 200
 
     sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  workers=workers)
 
     f = sf.fun
     myfprime = sf.grad
@@ -1714,7 +1719,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
                  gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
-                 c1=1e-4, c2=0.4, **unknown_options):
+                 c1=1e-4, c2=0.4, workers=None,
+                 **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -1747,6 +1753,12 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.4
         Parameter for curvature condition rule.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -1761,7 +1773,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         maxiter = len(x0) * 200
 
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  workers=workers)
 
     f = sf.fun
     myfprime = sf.grad
@@ -1930,7 +1943,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     allvecs : list
         The result at each iteration, if retall is True (see below).
 
-    See also
+    See Also
     --------
     minimize: Interface to minimization algorithms for multivariate
         functions. See the 'Newton-CG' `method` in particular.
@@ -1987,7 +2000,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
-                       disp=False, return_all=False, c1=1e-4, c2=0.9,
+                       disp=False, return_all=False, c1=1e-4, c2=0.9, workers=None,
                        **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -2013,6 +2026,12 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -2030,7 +2049,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     x0 = asarray(x0).flatten()
     # TODO: add hessp (callable or FD) to ScalarFunction?
     sf = _prepare_scalar_function(
-        fun, x0, jac, args=args, epsilon=eps, hess=hess
+        fun, x0, jac, args=args, epsilon=eps, hess=hess, workers=workers
     )
     f = sf.fun
     fprime = sf.grad
@@ -2191,7 +2210,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Maximum number of function evaluations allowed.
     full_output : bool, optional
         If True, return optional outputs.
-    disp: int, optional
+    disp : int, optional
         If non-zero, print messages.
 
         ``0`` : no message printing.
@@ -2215,7 +2234,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     numfunc : int
         (Optional output) The number of function calls made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Bounded' `method` in particular.
@@ -2635,7 +2654,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Brent' `method` in particular.
@@ -2773,7 +2792,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     funcalls : int
         (Optional output) Number of objective function evaluations made.
 
-    See also
+    See Also
     --------
     minimize_scalar: Interface to minimization algorithms for scalar
         univariate functions. See the 'Golden' `method` in particular.
@@ -3315,7 +3334,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     allvecs : list
         List of solutions at each iteration.
 
-    See also
+    See Also
     --------
     minimize: Interface to unconstrained minimization algorithms for
         multivariate functions. See the 'Powell' method in particular.

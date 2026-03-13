@@ -107,13 +107,42 @@ class TestSparseUtils:
         assert_equal(sputils.isdense(matrix([1])), True)
 
     def test_validateaxis(self):
-        assert_raises(TypeError, sputils.validateaxis, (0, 1))
-        assert_raises(TypeError, sputils.validateaxis, 1.5)
-        assert_raises(ValueError, sputils.validateaxis, 3)
+        with assert_raises(ValueError, match="does not accept 0D axis"):
+            sputils.validateaxis(())
 
-        # These function calls should not raise errors
-        for axis in (-2, -1, 0, 1, None):
-            sputils.validateaxis(axis)
+        for ax in [1.5, (0, 1.5), (1.5, 0)]:
+            with assert_raises(TypeError, match="must be an integer"):
+                sputils.validateaxis(ax)
+        for ax in [(1, 1), (1, -1), (0, -2)]:
+            with assert_raises(ValueError, match="duplicate value in axis"):
+                sputils.validateaxis(ax)
+
+        # ndim 1
+        for ax in [1, -2, (0, 1), (1, -1)]:
+            with assert_raises(ValueError, match="out of range"):
+                sputils.validateaxis(ax, ndim=1)
+        with assert_raises(ValueError, match="duplicate value in axis"):
+            sputils.validateaxis((0, -1), ndim=1)
+        # all valid axis values lead to None when canonical
+        for axis in (0, -1, None, (0,), (-1,)):
+            assert sputils.validateaxis(axis, ndim=1) is None
+
+        # ndim 2
+        for ax in [5, -5, (0, 5), (-5, 0)]:
+            with assert_raises(ValueError, match="out of range"):
+                sputils.validateaxis(ax, ndim=2)
+        for axis in ((0,), (1,), None):
+            assert sputils.validateaxis(axis, ndim=2) == axis
+        axis_2d = {-2: (0,), -1: (1,), 0: (0,), 1: (1,), (0, 1): None, (0, -1): None}
+        for axis, canonical_axis in axis_2d.items():
+            assert sputils.validateaxis(axis, ndim=2) == canonical_axis
+
+        # ndim 4
+        for axis in ((2,), (3,), (2, 3), (2, 1), (0, 3)):
+            assert sputils.validateaxis(axis, ndim=4) == axis
+        axis_4d = {-4: (0,), -3: (1,), 2: (2,), 3: (3,), (3, -4): (3, 0)}
+        for axis, canonical_axis in axis_4d.items():
+            sputils.validateaxis(axis, ndim=4) == canonical_axis
 
     @pytest.mark.parametrize("container", [csr_array, bsr_array])
     def test_safely_cast_index_compressed(self, container):

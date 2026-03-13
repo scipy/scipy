@@ -143,8 +143,8 @@ def cyzo(int nt, int kf, int kc):
 
 def eulerb(int n):
     """
-    Compute Bernoulli number Bn for n >= 2. This is a wrapper for the
-    function 'specfun_bernob'.
+    Compute Euler number En for n >= 2. This is a wrapper for the
+    function 'specfun_eulerb'.
     """
     cdef double *een
     cdef cnp.npy_intp dims[1]

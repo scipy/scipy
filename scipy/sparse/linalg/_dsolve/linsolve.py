@@ -26,6 +26,7 @@ __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
 
 
 class MatrixRankWarning(UserWarning):
+    """Warning for exactly singular matrices."""
     pass
 
 
@@ -35,13 +36,16 @@ def use_solver(**kwargs):
 
     Parameters
     ----------
-    useUmfpack : bool, optional
-        Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
-        if ``scikits.umfpack`` is installed. Default: True
-    assumeSortedIndices : bool, optional
-        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
-        installed. Default: False
+    **kwargs
+        The following options may be passed as keyword arguments.
+
+        useUmfpack : bool, optional
+            Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
+            if ``scikits.umfpack`` is installed. Default: True
+        assumeSortedIndices : bool, optional
+            Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+            Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+            installed. Default: False
 
     Notes
     -----
@@ -59,22 +63,22 @@ def use_solver(**kwargs):
     .. [1] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
            multifrontal method with a column pre-ordering strategy, ACM
            Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
-           https://dl.acm.org/doi/abs/10.1145/992200.992206
+           :doi:`10.1145/992200.992206`.
 
     .. [2] T. A. Davis, A column pre-ordering strategy for the
            unsymmetric-pattern multifrontal method, ACM Trans.
            on Mathematical Software, 30(2), 2004, pp. 165--195.
-           https://dl.acm.org/doi/abs/10.1145/992200.992205
+           :doi:`10.1145/992200.992205`.
 
     .. [3] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
            method for unsymmetric sparse matrices, ACM Trans. on
            Mathematical Software, 25(1), 1999, pp. 1--19.
-           https://doi.org/10.1145/305658.287640
+           :doi:`10.1145/305658.287640`.
 
     .. [4] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
            method for sparse LU factorization, SIAM J. Matrix Analysis and
            Computations, 18(1), 1997, pp. 140--158.
-           https://doi.org/10.1137/S0895479894246905T.
+           :doi:`10.1137/S0895479894246905T`.
 
     Examples
     --------
@@ -183,22 +187,22 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     .. [3] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
            multifrontal method with a column pre-ordering strategy, ACM
            Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
-           https://dl.acm.org/doi/abs/10.1145/992200.992206
+           :doi:`10.1145/992200.992206`.
 
     .. [4] T. A. Davis, A column pre-ordering strategy for the
            unsymmetric-pattern multifrontal method, ACM Trans.
            on Mathematical Software, 30(2), 2004, pp. 165--195.
-           https://dl.acm.org/doi/abs/10.1145/992200.992205
+           :doi:`10.1145/992200.992205`.
 
     .. [5] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
            method for unsymmetric sparse matrices, ACM Trans. on
            Mathematical Software, 25(1), 1999, pp. 1--19.
-           https://doi.org/10.1145/305658.287640
+           :doi:`10.1145/305658.287640`.
 
     .. [6] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
            method for sparse LU factorization, SIAM J. Matrix Analysis and
            Computations, 18(1), 1997, pp. 140--158.
-           https://doi.org/10.1137/S0895479894246905T.
+           :doi:`10.1137/S0895479894246905T`.
 
 
     Examples
@@ -284,9 +288,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             options = dict(ColPerm=permc_spec)
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
-            if info != 0:
+            if info == 0:
+                pass  # Success
+            elif 0 < info <= N:
                 warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
                 x.fill(np.nan)
+            elif info > N:
+                raise MemoryError("Out of memory during gssv")
+            else:
+                # gssv is not supposed to return any info < 0
+                # However, it calls gstrf, which can set info < 0
+                raise Exception(f"gssv exited with unknown exit code {info}")
             if b_is_vector:
                 x = x.ravel()
         else:
@@ -365,7 +377,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     invA : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
-    See also
+    See Also
     --------
     spilu : incomplete LU decomposition
 
@@ -447,39 +459,75 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         Sparse array to factorize. Most efficient when provided in CSC format.
         Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
-        Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
+        Drop tolerance (``0 <= tol <= 1``) for an incomplete LU decomposition.
         (default: 1e-4)
+
+        Note that `drop_tol` primarily affects entries generated as fill-in
+        during the ILU factorization; for matrices that produce little or no
+        fill-in, changing this parameter may have no visible effect on the
+        sparsity pattern of the factors.
     fill_factor : float, optional
-        Specifies the fill ratio upper bound (>= 1.0) for ILU. (default: 10)
+        Specifies the fill ratio upper bound (``>= 1.0``) for ILU. (default: 10)
     drop_rule : str, optional
         Comma-separated string of drop rules to use.
         Available rules: ``basic``, ``prows``, ``column``, ``area``,
         ``secondary``, ``dynamic``, ``interp``. (Default: ``basic,area``)
 
         See SuperLU documentation for details.
+    permc_spec : str, optional
+        How to permute the columns of the matrix for sparsity preservation.
+        (default: 'COLAMD')
 
-    Remaining other options
-        Same as for `splu`
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering
+
+    diag_pivot_thresh : float, optional
+        Threshold used for a diagonal entry to be an acceptable pivot.
+        See SuperLU user's guide for details [1]_
+    relax : int, optional
+        Expert option for customizing the degree of relaxing supernodes.
+        See SuperLU user's guide for details [1]_
+    panel_size : int, optional
+        Expert option for customizing the panel size.
+        See SuperLU user's guide for details [1]_
+    options : dict, optional
+        Dictionary containing additional expert options to SuperLU.
+        See SuperLU user guide [1]_ (section 2.4 on the 'Options' argument)
+        for more details. For example, you can specify
+        ``options=dict(Equil=False, IterRefine='SINGLE'))``
+        to turn equilibration off and perform a single iterative refinement.
 
     Returns
     -------
     invA_approx : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
-    See also
+    See Also
     --------
     splu : complete LU decomposition
 
     Notes
     -----
     When a real array is factorized and the returned SuperLU object's ``solve()`` method
-    is used with complex arguments an error is generated. Instead, cast the initial 
+    is used with complex arguments an error is generated. Instead, cast the initial
     array to complex and then factorize.
 
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
 
+    The effect of `drop_tol` is matrix-dependent. In particular, `drop_tol`
+    does not guarantee that existing off-diagonal entries will be removed;
+    it controls dropping of candidate entries during factorization (often
+    fill-in). For some sparsity patterns, the ILU factors can be identical
+    to the full LU factors even for large `drop_tol`.
+
     This function uses the SuperLU library.
+
+    References
+    ----------
+    .. [1] SuperLU https://portal.nersc.gov/project/sparse/superlu/
 
     Examples
     --------
@@ -729,9 +777,12 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         U = A
         U.setdiag(0)
 
+    L_indices, L_indptr = safely_cast_index_arrays(L, np.intc, "SuperLU")
+    U_indices, U_indptr = safely_cast_index_arrays(U, np.intc, "SuperLU")
+
     x, info = _superlu.gstrs(trans,
-                             N, L.nnz, L.data, L.indices, L.indptr,
-                             N, U.nnz, U.data, U.indices, U.indptr,
+                             N, L.nnz, L.data, L_indices, L_indptr,
+                             N, U.nnz, U.data, U_indices, U_indptr,
                              b)
     if info:
         raise LinAlgError('A is singular.')
@@ -744,7 +795,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
 
 def is_sptriangular(A):
-    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``.
 
     Checks for triangular structure in ``A``. The result is summarized in
     two boolean values ``lower`` and ``upper`` to designate whether ``A`` is
@@ -769,6 +820,7 @@ def is_sptriangular(A):
     Returns
     -------
     lower, upper : 2-tuple of bool
+        Whether `A` is lower / upper triangular.
 
         .. versionadded:: 1.15.0
 
@@ -829,8 +881,8 @@ def spbandwidth(A):
     Computes the lower and upper limits on the bandwidth of the
     sparse 2D array ``A``. The result is summarized as a 2-tuple
     of positive integers ``(lo, hi)``. A zero denotes no sub/super
-    diagonal entries on that side (tringular). The maximum value
-    for ``lo``(``hi``) is one less than the number of rows(cols).
+    diagonal entries on that side (triangular). The maximum value
+    for ``lo`` (``hi``) is one less than the number of rows(cols).
 
     Only the sparse structure is used here. Values are not checked for zeros.
 

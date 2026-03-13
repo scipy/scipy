@@ -2,7 +2,6 @@
 # Use the `scipy.odr` namespace for importing the functions
 # included below.
 
-from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'odr', 'OdrWarning', 'OdrError', 'OdrStop',
@@ -16,6 +15,14 @@ def __dir__():
 
 
 def __getattr__(name):
-    return _sub_module_deprecation(sub_package="odr", module="odrpack",
-                                   private_modules=["_odrpack"], all=__all__,
-                                   attribute=name)
+    msg = ("`scipy.odr` is deprecated as of version 1.17.0 and will be removed in "
+           "SciPy 1.19.0. Please use `https://pypi.org/project/odrpack/` instead.")
+    if name not in __all__:
+        raise AttributeError(
+            f"`scipy.odr.odrpack` has no attribute {name}. In addition, {msg}")
+
+    import warnings
+    from . import _odrpack
+    warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+
+    return getattr(_odrpack, name)

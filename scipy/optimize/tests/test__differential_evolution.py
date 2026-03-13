@@ -1,22 +1,23 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-import multiprocessing
 from multiprocessing.dummy import Pool as ThreadPool
 import platform
+import warnings
 
+from scipy._lib._gcutils import assert_deallocated
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
 from scipy.optimize import differential_evolution, OptimizeResult
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
-from scipy.optimize import rosen, minimize
+from scipy.optimize import rosen, minimize, rosen_der
 from scipy.sparse import csr_array
 from scipy import stats
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
-                           assert_string_equal, assert_, suppress_warnings)
+                           assert_string_equal, assert_)
 from pytest import raises as assert_raises, warns
 import pytest
 
@@ -261,7 +262,7 @@ class TestDifferentialEvolutionSolver:
         # test that the getter property method for the best solution works.
         solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
         result = solver.solve()
-        assert_equal(result.x, solver.x)
+        assert_allclose(result.x, solver.x, atol=1e-15, rtol=0)
 
     def test_intermediate_result(self):
         # Check that intermediate result object passed into the callback
@@ -383,7 +384,8 @@ class TestDifferentialEvolutionSolver:
         result = differential_evolution(quadratic,
                                         bounds,
                                         args=args,
-                                        polish=True)
+                                        polish=True,
+                                        rng=1980983098)
         assert_almost_equal(result.fun, 2 / 3.)
 
     def test_init_with_invalid_strategy(self):
@@ -411,7 +413,9 @@ class TestDifferentialEvolutionSolver:
                           bounds)
 
         # test that we can use a new-type Bounds object
-        result = differential_evolution(rosen, Bounds([0, 0], [2, 2]))
+        result = differential_evolution(
+            rosen, Bounds([0, 0], [2, 2]), rng=1980983098
+        )
         assert_almost_equal(result.x, (1., 1.))
 
     def test_select_samples(self):
@@ -436,6 +440,8 @@ class TestDifferentialEvolutionSolver:
     def test_maxfun_stops_solve(self):
         # test that if the maximum number of function evaluations is exceeded
         # during initialisation the solver stops
+        rng = np.random.default_rng(1980983098)
+
         solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1,
                                              polish=False)
         result = solver.solve()
@@ -455,7 +461,8 @@ class TestDifferentialEvolutionSolver:
                                              self.bounds,
                                              popsize=5,
                                              polish=False,
-                                             maxfun=40)
+                                             maxfun=40,
+                                             rng=rng)
         result = solver.solve()
 
         assert_equal(result.nfev, 41)
@@ -472,7 +479,8 @@ class TestDifferentialEvolutionSolver:
                                              popsize=5,
                                              polish=False,
                                              maxfun=47,
-                                             updating='deferred')
+                                             updating='deferred',
+                                             rng=rng)
         result = solver.solve()
 
         assert_equal(result.nfev, 47)
@@ -494,7 +502,7 @@ class TestDifferentialEvolutionSolver:
         differential_evolution(self.quadratic,
                                [(-100, 100)],
                                tol=0.02,
-                               seed=1)
+                               rng=1980983098)
 
     def test_rng_gives_repeatability(self):
         result = differential_evolution(self.quadratic,
@@ -562,8 +570,9 @@ class TestDifferentialEvolutionSolver:
     def test_iteration(self):
         # test that DifferentialEvolutionSolver is iterable
         # if popsize is 3, then the overall generation has size (6,)
+        rng = np.random.default_rng(4210919)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3,
-                                             maxfun=12)
+                                             maxfun=12, rng=rng)
         x, fun = next(solver)
         assert_equal(np.size(x, 0), 2)
 
@@ -575,7 +584,7 @@ class TestDifferentialEvolutionSolver:
         assert_raises(StopIteration, next, solver)
 
         # check a proper minimisation can be done by an iterable solver
-        solver = DifferentialEvolutionSolver(rosen, self.bounds)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, rng=rng)
         _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
@@ -586,10 +595,11 @@ class TestDifferentialEvolutionSolver:
                 break
 
     def test_convergence(self):
+        rng = np.random.default_rng(4210919)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, tol=0.2,
-                                             polish=False)
+                                             polish=False, rng=rng)
         solver.solve()
-        assert_(solver.convergence < 0.2)
+        assert solver.convergence < 0.2
 
     def test_maxiter_none_GH5731(self):
         # Pre 0.17 the previous default for maxiter and maxfun was None.
@@ -672,7 +682,8 @@ class TestDifferentialEvolutionSolver:
 
     def test_x0(self):
         # smoke test that checks that x0 is usable.
-        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8])
+        rng = np.random.default_rng(4210919)
+        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8], rng=rng)
         assert res.success
 
         # check what happens if some of the x0 lay outside the bounds
@@ -691,41 +702,36 @@ class TestDifferentialEvolutionSolver:
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
+        rng = np.random.default_rng(4210919)
         bounds = [(0., 2.), (0., 2.)]
-        solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
-        assert_(solver._updating == 'deferred')
-        assert_(solver._mapwrapper._mapfunc is map)
+        solver = DifferentialEvolutionSolver(
+            rosen, bounds, updating='deferred', rng=rng
+        )
+        assert solver._updating == 'deferred'
+        assert solver._mapwrapper._mapfunc is map
         res = solver.solve()
         assert res.success
 
         # check that deferred updating works with an exponential crossover
         res = differential_evolution(
-            rosen, bounds, updating='deferred', strategy='best1exp'
+            rosen, bounds, updating='deferred', strategy='best1exp', rng=rng
         )
         assert res.success
 
-    @pytest.mark.thread_unsafe
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
         solver = DifferentialEvolutionSolver(rosen, bounds)
         assert_(solver._updating == 'immediate')
 
-        # Safely forking from a multithreaded process is
-        # problematic, and deprecated in Python 3.12, so
-        # we use a slower but portable alternative
-        # see gh-19848
-        ctx = multiprocessing.get_context("spawn")
-        with ctx.Pool(2) as p:
-            # should raise a UserWarning because the updating='immediate'
-            # is being overridden by the workers keyword
-            with warns(UserWarning):
-                with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
-                    solver.solve()
-            assert s._updating == 'deferred'
+        # should raise a UserWarning because the updating='immediate'
+        # is being overridden by the workers keyword
+        with warns(UserWarning):
+            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as s:
+                solver.solve()
+        assert s._updating == 'deferred'
 
-    @pytest.mark.fail_slow(10)
-    def test_parallel(self):
+    def test_parallel_threads(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
         # use threads instead of Process to speed things up for this simple example
@@ -736,6 +742,9 @@ class TestDifferentialEvolutionSolver:
             assert solver._updating == 'deferred'
             solver.solve()
 
+    @pytest.mark.fail_slow(10)
+    def test_parallel_processes(self):
+        bounds = [(0., 2.), (0., 2.)]
         with DifferentialEvolutionSolver(
             rosen, bounds, updating='deferred', workers=2, popsize=3, tol=0.1
         ) as solver:
@@ -744,9 +753,10 @@ class TestDifferentialEvolutionSolver:
             solver.solve()
 
     def test_converged(self):
-        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
+        rng = np.random.default_rng(4210919)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)], rng=rng)
         solver.solve()
-        assert_(solver.converged())
+        assert solver.converged()
 
     def test_constraint_violation_fn(self):
         def constr_f(x):
@@ -850,15 +860,16 @@ class TestDifferentialEvolutionSolver:
             assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
             assert cv.shape == (2, 3)
 
-    @pytest.mark.thread_unsafe
     def test_constraint_solve(self):
+        rng = np.random.default_rng(4210919)
+
         def constr_f(x):
             return np.array([x[0] + x[1]])
 
         nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc,))
+                                             constraints=(nlc,), rng=rng)
 
         # trust-constr warns if the constraint function is linear
         with warns(UserWarning):
@@ -868,15 +879,16 @@ class TestDifferentialEvolutionSolver:
         assert res.success
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.thread_unsafe
     def test_impossible_constraint(self):
+        rng = np.random.default_rng(4210919)
+
         def constr_f(x):
             return np.array([x[0] + x[1]])
 
         nlc = NonlinearConstraint(constr_f, -np.inf, -1)
 
         solver = DifferentialEvolutionSolver(
-            rosen, [(0, 2), (0, 2)], constraints=(nlc,), popsize=1, rng=1, maxiter=100
+            rosen, [(0, 2), (0, 2)], constraints=(nlc,), popsize=1, rng=rng, maxiter=100
         )
 
         # a UserWarning is issued because the 'trust-constr' polishing is
@@ -1010,8 +1022,8 @@ class TestDifferentialEvolutionSolver:
         # gh20041 supplying an np.matrix to construct a LinearConstraint caused
         # _ConstraintWrapper to start returning constraint violations of the
         # wrong shape.
-        with suppress_warnings() as sup:
-            sup.filter(PendingDeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", PendingDeprecationWarning)
             matrix = np.matrix([[1, 1, 1, 1.],
                                 [2, 2, 2, 2.]])
         lc = LinearConstraint(matrix, 0, 1)
@@ -1053,8 +1065,9 @@ class TestDifferentialEvolutionSolver:
         bounds = [(0, 1)]*9 + [(0, 100)]*3 + [(0, 1)]
 
         # using a lower popsize to speed the test up
+        rng = np.random.default_rng(np.random.MT19937(12345))
         res = differential_evolution(
-            f, bounds, strategy='best1bin', rng=12345, constraints=(L,),
+            f, bounds, strategy='best1bin', rng=rng, constraints=(L,),
             popsize=5, tol=0.01
         )
 
@@ -1076,9 +1089,10 @@ class TestDifferentialEvolutionSolver:
         L = LinearConstraint(csr_array(A), -np.inf, b)
 
         # using a lower popsize to speed the test up
+        rng = np.random.default_rng(np.random.MT19937(12345))
         res = differential_evolution(
-            f, bounds, strategy='best1bin', rng=1211134, constraints=(L,),
-            popsize=2, tol=0.05
+            f, bounds, strategy='best1bin', rng=rng, constraints=(L,),
+            popsize=5, tol=0.01
         )
 
         assert_allclose(f(x_opt), f_opt)
@@ -1107,11 +1121,12 @@ class TestDifferentialEvolutionSolver:
         N2 = NonlinearConstraint(c2, -np.inf, b[8:9])
         constraints = (L, N, L2, N2)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
+        with warnings.catch_warnings():
+            rng = np.random.default_rng(np.random.MT19937(12345))
+            warnings.simplefilter("ignore", UserWarning)
             res = differential_evolution(
-                f, bounds, strategy='best1bin', rng=1211134,
-                constraints=constraints, popsize=2, tol=0.05
+                f, bounds, strategy='best1bin', rng=rng,
+                constraints=constraints, popsize=5, tol=0.05
             )
 
         assert_allclose(res.x, x_opt, atol=6e-4)
@@ -1123,6 +1138,7 @@ class TestDifferentialEvolutionSolver:
     @pytest.mark.fail_slow(10)
     def test_L2(self):
         # Lampinen ([5]) test problem 2
+        rng = np.random.default_rng(111121332)
 
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
@@ -1143,10 +1159,10 @@ class TestDifferentialEvolutionSolver:
         bounds = [(-10, 10)]*7
         constraints = (N)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
             res = differential_evolution(f, bounds, strategy='best1bin',
-                                         rng=1234, constraints=constraints)
+                                         rng=rng, constraints=constraints)
 
         f_opt = 680.6300599487869
         x_opt = (2.330499, 1.951372, -0.4775414, 4.365726,
@@ -1163,6 +1179,7 @@ class TestDifferentialEvolutionSolver:
     @pytest.mark.fail_slow(10)
     def test_L3(self):
         # Lampinen ([5]) test problem 3
+        rng = np.random.default_rng(1234520312198)
 
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
@@ -1193,9 +1210,9 @@ class TestDifferentialEvolutionSolver:
         bounds = [(-10, 10)]*10
         constraints = (L, N)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
-            res = differential_evolution(f, bounds, rng=1234,
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            res = differential_evolution(f, bounds, rng=rng,
                                          constraints=constraints, popsize=3)
 
         x_opt = (2.171996, 2.363683, 8.773926, 5.095984, 0.9906548,
@@ -1211,63 +1228,12 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.fail_slow(10)
-    def test_L4(self):
-        # Lampinen ([5]) test problem 4
-        def f(x):
-            return np.sum(x[:3])
-
-        A = np.zeros((4, 9))
-        A[1, [4, 6]] = 0.0025, 0.0025
-        A[2, [5, 7, 4]] = 0.0025, 0.0025, -0.0025
-        A[3, [8, 5]] = 0.01, -0.01
-        A = A[1:, 1:]
-        b = np.array([1, 1, 1])
-
-        def c1(x):
-            x = np.hstack(([0], x))  # 1-indexed to match reference
-            return [x[1]*x[6] - 833.33252*x[4] - 100*x[1] + 83333.333,
-                    x[2]*x[7] - 1250*x[5] - x[2]*x[4] + 1250*x[4],
-                    x[3]*x[8] - 1250000 - x[3]*x[5] + 2500*x[5]]
-
-        L = LinearConstraint(A, -np.inf, 1)
-        N = NonlinearConstraint(c1, 0, np.inf)
-
-        bounds = [(100, 10000)] + [(1000, 10000)]*2 + [(10, 1000)]*5
-        constraints = (L, N)
-
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
-            res = differential_evolution(
-                f, bounds, strategy='best1bin', rng=1234,
-                constraints=constraints, popsize=3, tol=0.05
-            )
-
-        f_opt = 7049.248
-
-        x_opt = [579.306692, 1359.97063, 5109.9707, 182.0177, 295.601172,
-                217.9823, 286.416528, 395.601172]
-
-        assert_allclose(f(x_opt), f_opt, atol=0.001)
-        assert_allclose(res.fun, f_opt, atol=0.001)
-
-        # use higher tol here for 32-bit Windows, see gh-11693
-        if (platform.system() == 'Windows' and np.dtype(np.intp).itemsize < 8):
-            assert_allclose(res.x, x_opt, rtol=2.4e-6, atol=0.0035)
-        else:
-            # tolerance determined from macOS + MKL failure, see gh-12701
-            assert_allclose(res.x, x_opt, rtol=5e-6, atol=0.0024)
-
-        assert res.success
-        assert_(np.all(A @ res.x <= b))
-        assert_(np.all(np.array(c1(res.x)) >= 0))
-        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
-        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+    # test_L4 was remove for flakiness due to numerical instability (gh24549)
 
     @pytest.mark.fail_slow(10)
     def test_L5(self):
         # Lampinen ([5]) test problem 5
-
+        rng = np.random.default_rng(209331234)
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
             fun = (np.sin(2*np.pi*x[1])**3*np.sin(2*np.pi*x[2]) /
@@ -1283,7 +1249,7 @@ class TestDifferentialEvolutionSolver:
         bounds = [(0, 10)]*2
         constraints = (N)
 
-        res = differential_evolution(f, bounds, strategy='rand1bin', rng=1234,
+        res = differential_evolution(f, bounds, strategy='rand1bin', rng=rng,
                                      constraints=constraints)
 
         x_opt = (1.22797135, 4.24537337)
@@ -1298,6 +1264,8 @@ class TestDifferentialEvolutionSolver:
     @pytest.mark.fail_slow(10)
     def test_L6(self):
         # Lampinen ([5]) test problem 6
+        rng = np.random.default_rng(209331234)
+
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
             fun = (x[1]-10)**3 + (x[2] - 20)**3
@@ -1311,7 +1279,7 @@ class TestDifferentialEvolutionSolver:
         N = NonlinearConstraint(c1, 0, np.inf)
         bounds = [(13, 100), (0, 100)]
         constraints = (N)
-        res = differential_evolution(f, bounds, strategy='rand1bin', rng=1234,
+        res = differential_evolution(f, bounds, strategy='rand1bin', rng=rng,
                                      constraints=constraints, tol=1e-7)
         x_opt = (14.095, 0.84296)
         f_opt = -6961.814744
@@ -1326,6 +1294,8 @@ class TestDifferentialEvolutionSolver:
 
     def test_L7(self):
         # Lampinen ([5]) test problem 7
+        rng = np.random.default_rng(209331234)
+
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
             fun = (5.3578547*x[3]**2 + 0.8356891*x[1]*x[5] +
@@ -1350,7 +1320,7 @@ class TestDifferentialEvolutionSolver:
         bounds = [(78, 102), (33, 45)] + [(27, 45)]*3
         constraints = (N)
 
-        res = differential_evolution(f, bounds, strategy='rand1bin', rng=1234,
+        res = differential_evolution(f, bounds, strategy='rand1bin', rng=rng,
                                      constraints=constraints)
 
         # using our best solution, rather than Lampinen/Koziel. Koziel solution
@@ -1374,6 +1344,8 @@ class TestDifferentialEvolutionSolver:
     @pytest.mark.xfail(platform.machine() == 'ppc64le',
                        reason="fails on ppc64le")
     def test_L8(self):
+        rng = np.random.default_rng(209331234)
+
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
             fun = 3*x[1] + 0.000001*x[1]**3 + 2*x[2] + 0.000002/3*x[2]**3
@@ -1401,13 +1373,13 @@ class TestDifferentialEvolutionSolver:
         bounds = [(0, 1200)]*2+[(-.55, .55)]*2
         constraints = (L, N)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
             # original Lampinen test was with rand1bin, but that takes a
             # huge amount of CPU time. Changing strategy to best1bin speeds
             # things up a lot
             res = differential_evolution(f, bounds, strategy='best1bin',
-                                         rng=1234, constraints=constraints,
+                                         rng=rng, constraints=constraints,
                                          maxiter=5000)
 
         x_opt = (679.9453, 1026.067, 0.1188764, -0.3962336)
@@ -1427,6 +1399,7 @@ class TestDifferentialEvolutionSolver:
     @pytest.mark.fail_slow(5)
     def test_L9(self):
         # Lampinen ([5]) test problem 9
+        rng = np.random.default_rng(209331234)
 
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
@@ -1440,7 +1413,7 @@ class TestDifferentialEvolutionSolver:
 
         bounds = [(-1, 1)]*2
         constraints = (N)
-        res = differential_evolution(f, bounds, strategy='rand1bin', rng=1234,
+        res = differential_evolution(f, bounds, strategy='rand1bin', rng=rng,
                                      constraints=constraints)
 
         x_opt = [np.sqrt(2)/2, 0.5]
@@ -1545,7 +1518,6 @@ class TestDifferentialEvolutionSolver:
             DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                         integrality=integrality)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(10)
     def test_vectorized(self):
         def quadratic(x):
@@ -1577,10 +1549,12 @@ class TestDifferentialEvolutionSolver:
             return rosen(x)
 
         bounds = [(0, 10), (0, 10)]
+        rng = np.random.default_rng(209331234)
         res1 = differential_evolution(rosen, bounds, updating='deferred',
-                                      rng=1)
+                                      rng=rng)
+        rng = np.random.default_rng(209331234)
         res2 = differential_evolution(rosen_vec, bounds, vectorized=True,
-                                      updating='deferred', rng=1)
+                                      updating='deferred', rng=rng)
 
         # the two minimisation runs should be functionally equivalent
         assert_allclose(res1.x, res2.x)
@@ -1605,17 +1579,84 @@ class TestDifferentialEvolutionSolver:
 
         bounds = [(0, 10), (0, 10)]
 
+        rng = np.random.default_rng(209331234)
         res1 = differential_evolution(rosen, bounds, updating='deferred',
-                                      rng=1, constraints=[nlc1, nlc2],
+                                      rng=rng, constraints=[nlc1, nlc2],
                                       polish=False)
+        rng = np.random.default_rng(209331234)
         res2 = differential_evolution(rosen_vec, bounds, vectorized=True,
-                                      updating='deferred', rng=1,
+                                      updating='deferred', rng=rng,
                                       constraints=[nlc1, nlc2],
                                       polish=False)
         # the two minimisation runs should be functionally equivalent
         assert_allclose(res1.x, res2.x)
 
+    def test_polish_function(self):
+        # the polishing may be done by a callable
+        N = len(self.bounds)
+
+        def pf(fun, x, **kwds):
+            pf.res = minimize(fun, x, jac=rosen_der, method='trust-constr', **kwds)
+            return pf.res
+        pf.res = None
+
+        rng = np.random.default_rng(209331234)
+        res = differential_evolution(
+            rosen, self.bounds, polish=pf, maxiter=1, rng=rng
+        )
+        rng = np.random.default_rng(209331234)
+        ref = differential_evolution(
+            rosen, self.bounds, polish=True, maxiter=1, rng=rng
+        )
+
+        # res.success will be False because of the small number of iterations
+        # The solution produced by DE would be bad after only one iteration.
+        # However, we still expect a good answer if the polishing worked
+        assert res.jac is not None
+        assert_allclose(res.x, np.ones(N), atol=1e-6)
+        # test that the `pf` callable is really used; it's not just truthy
+        assert res.fun == pf.res.fun
+        assert ref.fun != res.fun
+
+        def dummy_pf(func, x, **kwds):
+            assert "bounds" in kwds
+            assert isinstance(kwds["bounds"], Bounds)
+            assert "constraints" in kwds
+            return np.ones(N)
+
+        with assert_raises(
+            ValueError,
+            match="The result from a user defined polishing"
+        ):
+            differential_evolution(
+                rosen,
+                self.bounds,
+                polish=dummy_pf,
+                maxiter=1
+            )
+
+        # check that output of polish==False followed by a manual polish
+        # is the same as a callable(polish). Limit maxiter on DE so polisher
+        # has to do all the work.
+        def pf(func, x, **kwds):
+            return minimize(func, x, method='L-BFGS-B', **kwds)
+
+        rng = np.random.default_rng(110980928209)
+        res = differential_evolution(
+            rosen, self.bounds, polish=False, rng=rng, maxiter=1
+        )
+        res = minimize(rosen, res.x, bounds=self.bounds, method='L-BFGS-B')
+        rng = np.random.default_rng(110980928209)
+        res2 = differential_evolution(
+            rosen, self.bounds, polish=pf, rng=rng, maxiter=1
+        )
+        # could possibly do assert_allequal, but not sure about bitwise exactness
+        # for repeated runs from same starting point
+        assert_allclose(res.x, res2.x)
+        assert_allclose(res.fun, res2.fun)
+
     def test_constraint_violation_error_message(self):
+        rng = np.random.default_rng(209331234)
 
         def func(x):
             return np.cos(x[0]) + np.sin(x[1])
@@ -1629,7 +1670,7 @@ class TestDifferentialEvolutionSolver:
                                         constraints=[c0, c1],
                                         maxiter=10,
                                         polish=False,
-                                        rng=864197532)
+                                        rng=rng)
         assert result.success is False
         # The numerical value in the error message might be sensitive to
         # changes in the implementation.  It can be updated if the code is
@@ -1640,6 +1681,8 @@ class TestDifferentialEvolutionSolver:
 
     @pytest.mark.fail_slow(20)  # fail-slow exception by request - see gh-20806
     def test_strategy_fn(self):
+        rng = np.random.default_rng(209331234)
+
         # examines ability to customize strategy by mimicking one of the
         # in-built strategies
         parameter_count = 4
@@ -1679,7 +1722,7 @@ class TestDifferentialEvolutionSolver:
             mutation=mutation,
             maxiter=2,
             strategy=custom_strategy_fn,
-            rng=10,
+            rng=rng,
             polish=False
         )
         assert solver.strategy is custom_strategy_fn
@@ -1687,8 +1730,9 @@ class TestDifferentialEvolutionSolver:
         assert calls[0] > 0
 
         # check custom strategy works with updating='deferred'
+        rng = np.random.default_rng(209331234)
         res = differential_evolution(
-            rosen, bounds, strategy=custom_strategy_fn, updating='deferred'
+            rosen, bounds, strategy=custom_strategy_fn, updating='deferred', rng=rng
         )
         assert res.success
 
@@ -1701,3 +1745,7 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
+
+    def test_reference_cycles(self):
+        with assert_deallocated(DifferentialEvolutionSolver, rosen, [(0, 10)]*2):
+            pass

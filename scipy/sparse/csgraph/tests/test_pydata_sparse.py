@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.csgraph as spgraph
-from scipy._lib import _pep440
+from scipy._external.packaging_version import version
 
 from numpy.testing import assert_equal
 
@@ -27,7 +27,7 @@ def check_sparse_version(min_ver):
     if sparse is None:
         return pytest.mark.skip(reason="sparse is not installed")
     return pytest.mark.skipif(
-        _pep440.parse(sparse.__version__) < _pep440.Version(min_ver),
+        version.parse(sparse.__version__) < version.Version(min_ver),
         reason=f"sparse version >= {min_ver} required"
     )
 
@@ -154,9 +154,12 @@ def test_min_weight_full_bipartite_matching(graphs):
     func = spgraph.min_weight_full_bipartite_matching
 
     actual = func(A_sparse[0:2, 1:3])
-    desired = func(sp.csc_array(A_dense)[0:2, 1:3])
+    A_csc = sp.csc_array(A_dense)
+    desired = func(A_csc[0:2, 1:3])
+    desired1 = func(A_csc[0:2, 1:3].tocoo())
 
     assert_equal(actual, desired)
+    assert_equal(actual, desired1)
 
 
 @check_sparse_version("0.15.4")

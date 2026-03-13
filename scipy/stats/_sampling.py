@@ -203,7 +203,7 @@ def powerlaw_pdf(x, a):
 #   (as an example, see the entry for the beta distribution)
 # - rvs_transform_inv: the inverse of rvs_transform (it is required
 #   for the transformed ppf)
-# - mirror_uniform: boolean or a callable that returns true or false
+# - mirror_uniform: bool or a callable that returns true or false
 #   depending on the shape parameters. If True, the ppf is applied
 #   to 1-u instead of u to generate rvs, where u is a uniform rv.
 #   While both u and 1-u are uniform, it can be required to use 1-u
@@ -440,7 +440,7 @@ class FastGeneratorInversion:
         The default is None. In that case, the random variates are not
         truncated, and the domain is inferred from the support of the
         distribution.
-    ignore_shape_range : boolean, optional.
+    ignore_shape_range : bool, optional
         If False, shape parameters that are outside of the valid range
         of values to ensure that the numerical accuracy (see Notes) is
         high, raise a ValueError. If True, any shape parameters that are valid
@@ -522,8 +522,10 @@ class FastGeneratorInversion:
     antithetic variates are be used ([2]_).
 
     In addition, inversion makes it possible to
+
     - to use a QMC generator from `scipy.stats.qmc` (method `qrvs`),
     - to generate random variates truncated to an interval. For example, if
+
     one aims to sample standard normal random variates from
     the interval (2, 4), this can be easily achieved by using the parameter
     `domain`.
@@ -813,20 +815,20 @@ class FastGeneratorInversion:
 
         Parameters
         ----------
-        u : array_like
+        q : array_like
             Array with probabilities.
 
         Returns
         -------
         ppf : array_like
-            Quantiles corresponding to the values in `u`.
+            Quantiles corresponding to the values in `q`.
 
         Notes
         -----
         The evaluation of the PPF is very fast but it may have a large
         relative error in the far tails. The numerical precision of the PPF
-        is controlled by the u-error, that is,
-        ``max |u - CDF(PPF(u))|`` where the max is taken over points in
+        is controlled by the q-error, that is,
+        ``max |q - CDF(PPF(q))|`` where the max is taken over points in
         the interval [0,1], see `evaluate_error`.
 
         Note that this PPF is designed to generate random samples.
@@ -944,6 +946,9 @@ class FastGeneratorInversion:
             ``np.random.default_rng(random_state)`` is used.
             If `random_state` is already a ``Generator`` or ``RandomState``
             instance then that instance is used.
+        x_error : bool
+            If ``True``, return the x-error, as per the notes section. If ``False``,
+            returns ``NaN``.
 
         Returns
         -------
@@ -1028,7 +1033,7 @@ class FastGeneratorInversion:
         4.507068014335139e-07  # may vary
 
         """
-        if not isinstance(size, (numbers.Integral, np.integer)):
+        if not isinstance(size, numbers.Integral | np.integer):
             raise ValueError("size must be an integer.")
         # urng will be used to draw the samples for testing the error
         # it must not interfere with self.random_state. therefore, do not
@@ -1138,7 +1143,7 @@ class RatioUniforms:
         The lower bound of the bounding rectangle in the v-direction.
     vmax : float
         The upper bound of the bounding rectangle in the v-direction.
-    c : float, optional.
+    c : float, optional
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
@@ -1246,14 +1251,14 @@ class RatioUniforms:
     0.21121052054580314
 
     """
-    
+
     def __init__(self, pdf, *, umax, vmin, vmax, c=0, random_state=None):
         if vmin >= vmax:
             raise ValueError("vmin must be smaller than vmax.")
 
         if umax <= 0:
             raise ValueError("umax must be positive.")
-        
+
         self._pdf = pdf
         self._umax = umax
         self._vmin = vmin
@@ -1262,7 +1267,7 @@ class RatioUniforms:
         self._rng = check_random_state(random_state)
 
     def rvs(self, size=1):
-        """Sampling of random variates
+        """Sampling of random variates.
 
         Parameters
         ----------

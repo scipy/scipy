@@ -37,7 +37,6 @@ class TestDualAnnealing:
         self.low_temperature = 0.1
         self.qv = 2.62
         self.seed = 1234
-        self.rng = check_random_state(self.seed)
         self.nb_fun_call = threading.local()
         self.ngev = threading.local()
 
@@ -70,11 +69,12 @@ class TestDualAnnealing:
     #        this needs investigating - see gh-12384
     @pytest.mark.parametrize('qv', [1.1, 1.41, 2, 2.62, 2.9])
     def test_visiting_stepping(self, qv):
+        rng = np.random.default_rng(1234)
         lu = list(zip(*self.ld_bounds))
         lower = np.array(lu[0])
         upper = np.array(lu[1])
         dim = lower.size
-        vd = VisitingDistribution(lower, upper, qv, self.rng)
+        vd = VisitingDistribution(lower, upper, qv, rng)
         values = np.zeros(dim)
         x_step_low = vd.visiting(values, 0, self.high_temperature)
         # Make sure that only the first component is changed
@@ -86,10 +86,11 @@ class TestDualAnnealing:
 
     @pytest.mark.parametrize('qv', [2.25, 2.62, 2.9])
     def test_visiting_dist_high_temperature(self, qv):
+        rng = np.random.default_rng(1234)
         lu = list(zip(*self.ld_bounds))
         lower = np.array(lu[0])
         upper = np.array(lu[1])
-        vd = VisitingDistribution(lower, upper, qv, self.rng)
+        vd = VisitingDistribution(lower, upper, qv, rng)
         # values = np.zeros(self.nbtestvalues)
         # for i in np.arange(self.nbtestvalues):
         #     values[i] = vd.visit_fn(self.high_temperature)
@@ -187,7 +188,6 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
-    @pytest.mark.thread_unsafe
     def test_deprecated_local_search_options_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))
@@ -200,7 +200,6 @@ class TestDualAnnealing:
                 bounds=bounds,
                 minimizer_kwargs={"method": "CG", "bounds": bounds})
 
-    @pytest.mark.thread_unsafe
     def test_minimizer_kwargs_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))

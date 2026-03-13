@@ -69,7 +69,7 @@ your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab-item:: Fedora
+      .. tab-item:: Fedora / RHEL & CentOS 8+
 
         To install SciPy build requirements, you can do::
 
@@ -83,7 +83,7 @@ your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab-item:: CentOS/RHEL
+      .. tab-item:: CentOS & RHEL <=7
 
         To install SciPy build requirements, you can do::
 
@@ -278,7 +278,7 @@ Building from source to use SciPy
 
 
 
-.. _the-dev-py-interface:
+.. _the-spin-interface:
 
 Building from source for SciPy development
 ``````````````````````````````````````````
@@ -290,13 +290,30 @@ the SciPy repository::
       cd scipy
       git submodule update --init
 
+
+.. tip::
+
+    Many of the steps described below can now be accomplished automatically
+    with commands which execute tasks in SciPy's Pixi workspace,
+    like ``pixi run build``.
+    To use this workspace, `install Pixi <https://pixi.sh/latest/installation/>`__
+    and execute ``pixi task list`` in a local clone of SciPy's source to see
+    the various tasks available.
+    
+    This removes the need for developers to keep track of development environments
+    and installed dependencies, as running a task automatically installs and uses
+    a suitable environment.
+    A future update to this guide will provide full details on using the Pixi
+    workspace for SciPy development.
+
+
 Then you want to do the following:
 
 1. Create a dedicated development environment (virtual environment or conda
    environment),
 2. Install all needed dependencies (*build*, and also *test*, *doc* and
-   *optional* dependencies), 
-3. Build SciPy with our ``dev.py`` developer interface.
+   *optional* dependencies),
+3. Build SciPy with our ``spin`` developer interface.
 
 Step (3) is always the same, steps (1) and (2) are different between conda and
 virtual environments:
@@ -363,60 +380,50 @@ virtual environments:
        # Alternatively, you can install just the dependencies for certain
        # development tasks:
 
-       # Build and dev dependencies (for `python dev.py {build, lint, mypy}`)
+       # Build and dev dependencies (for `spin {build, lint, mypy}`)
        python -m pip install -r requirements/build.txt -r requirements/dev.txt
 
-       # Doc dependencies (for `python dev.py {doc, refguide-check}`)
+       # Doc dependencies (for `spin {doc, refguide-check}`)
        python -m pip install -r requirements/doc.txt
 
-       # Test dependencies (for `python dev.py {test, bench, refguide-check}`)
+       # Test dependencies (for `spin {test, bench, refguide-check}`)
        python -m pip install -r requirements/test.txt
 
 To build SciPy in an activated development environment, run::
 
-    python dev.py build
+    spin build
 
 This will install SciPy inside the repository (by default in a
-``build-install`` directory). You can then run tests (``python dev.py test``),
-drop into IPython (``python dev.py ipython``), or take other development steps
-like build the html documentation or running benchmarks. The ``dev.py``
-interface is self-documenting, so please see ``python dev.py --help`` and
-``python dev.py <subcommand> --help`` for detailed guidance.
+``build-install`` directory). You can then run tests (``spin test``),
+drop into IPython (``spin ipython``), or take other development steps
+like build the html documentation or running benchmarks. The ``spin``
+interface is self-documenting, so please see ``spin --help`` and
+``spin <subcommand> --help`` for detailed guidance.
 
 
 .. admonition:: IDE support & editable installs
 
-    While the ``dev.py`` interface is our recommended way of working on SciPy,
+    While the ``spin build`` interface is our recommended way of working on SciPy,
     it has one limitation: because of the custom install location, SciPy
-    installed using ``dev.py`` will not be recognized automatically within an
+    will not be recognized automatically within an
     IDE (e.g., for running a script via a "run" button, or setting breakpoints
     visually). This will work better with an *in-place build* (or "editable
     install").
 
-    Editable installs are supported. It is important to understand that **you
-    may use either an editable install or dev.py in a given repository clone,
-    but not both**. If you use editable installs, you have to use ``pytest``
-    and other development tools directly instead of using ``dev.py``.
-
-    To use an editable install, ensure you start from a clean repository (run
-    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all
-    dependencies set up correctly as described higher up on this page. Then
-    do::
-
-        # Note: the --no-build-isolation is important! meson-python will
-        # auto-rebuild each time SciPy is imported by the Python interpreter.
-        pip install -e . --no-build-isolation
-
-        # To run the tests for, e.g., the `scipy.linalg` module:
-        pytest scipy/linalg
-
+    Editable installs are supported via ``spin install``.
     When making changes to SciPy code, including to compiled code, there is no
-    need to manually rebuild or reinstall. When you run ``git clean -xdf``,
+    need to manually rebuild or reinstall. However, should you need to run ``git clean -xdf``,
     which removes the built extension modules, remember to also uninstall SciPy
     with ``pip uninstall scipy``.
 
     See the meson-python_ documentation on editable installs for more details
     on how things work under the hood.
+
+    Note that editable installations are unsuitable for some forms of development,
+    such as working on sections of C/Cython API where tests are disabled for editable
+    installations. They also tend to hit weird corner cases more frequently than
+    regular installations, and have some known limitations like a lack of support
+    for static typing.
 
 
 Installing static type stubs

@@ -7,11 +7,14 @@ import pytest
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_less
+from scipy._lib._array_api import (
+    xp_assert_close, xp_assert_less, make_xp_test_case, make_xp_pytest_param
+)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@make_xp_test_case(fht, fhtoffset)
 def test_fht_agrees_with_fftlog(xp):
     # check that fht numerically agrees with the output from Fortran FFTLog,
     # the results were generated with the provided `fftlogtest` program,
@@ -23,7 +26,7 @@ def test_fht_agrees_with_fftlog(xp):
 
     r = np.logspace(-4, 4, 16)
 
-    dln = np.log(r[1]/r[0])
+    dln = math.log(r[1]/r[0])
     mu = 0.3
     offset = 0.0
     bias = 0.0
@@ -60,6 +63,10 @@ def test_fht_agrees_with_fftlog(xp):
     # test 3: positive bias
     bias = 0.8
     offset = fhtoffset(dln, mu, bias=bias)
+    # offset is a np.float64, which array-api-strict disallows
+    # even if it's technically a subclass of float
+    offset = float(offset)
+
     ours = fht(a, dln, mu, offset=offset, bias=bias)
     theirs = [-7.3436673558316850E+00, +0.1710271207817100E+00,
               +0.1065374386206564E+00, -0.5121739602708132E-01,
@@ -75,6 +82,8 @@ def test_fht_agrees_with_fftlog(xp):
     # test 4: negative bias
     bias = -0.8
     offset = fhtoffset(dln, mu, bias=bias)
+    offset = float(offset)
+
     ours = fht(a, dln, mu, offset=offset, bias=bias)
     theirs = [+0.8985777068568745E-05, +0.4074898209936099E-04,
               +0.2123969254700955E-03, +0.1009558244834628E-02,
@@ -92,6 +101,7 @@ def test_fht_agrees_with_fftlog(xp):
 @pytest.mark.parametrize('offset', [0.0, 1.0, -1.0])
 @pytest.mark.parametrize('bias', [0, 0.1, -0.1])
 @pytest.mark.parametrize('n', [64, 63])
+@make_xp_test_case(fhtoffset, fht, ifht)
 def test_fht_identity(n, bias, offset, optimal, xp):
     rng = np.random.RandomState(3491349965)
 
@@ -101,6 +111,9 @@ def test_fht_identity(n, bias, offset, optimal, xp):
 
     if optimal:
         offset = fhtoffset(dln, mu, initial=offset, bias=bias)
+        # offset is a np.float64, which array-api-strict disallows
+        # even if it's technically a subclass of float
+        offset = float(offset)
 
     A = fht(a, dln, mu, offset=offset, bias=bias)
     a_ = ifht(A, dln, mu, offset=offset, bias=bias)
@@ -108,9 +121,7 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     xp_assert_close(a_, a, rtol=1.5e-7)
 
 
-
-
-@pytest.mark.thread_unsafe
+@make_xp_test_case(fht, ifht)
 def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
 
@@ -147,6 +158,7 @@ def test_fht_special_cases(xp):
 
 
 @pytest.mark.parametrize('n', [64, 63])
+@make_xp_test_case(fht)
 def test_fht_exact(n, xp):
     rng = np.random.RandomState(3491349965)
 
@@ -161,9 +173,12 @@ def test_fht_exact(n, xp):
     r = np.logspace(-2, 2, n)
     a = xp.asarray(r**gamma)
 
-    dln = np.log(r[1]/r[0])
+    dln = math.log(r[1]/r[0])
 
     offset = fhtoffset(dln, mu, initial=0.0, bias=gamma)
+    # offset is a np.float64, which array-api-strict disallows
+    # even if it's technically a subclass of float
+    offset = float(offset)
 
     A = fht(a, dln, mu, offset=offset, bias=gamma)
 
@@ -176,7 +191,9 @@ def test_fht_exact(n, xp):
 
 @skip_xp_backends(np_only=True,
                   reason='array-likes only supported for NumPy backend')
-@pytest.mark.parametrize("op", [fht, ifht])
+@pytest.mark.parametrize(
+    "op", [make_xp_pytest_param(fht), make_xp_pytest_param(ifht)]
+)
 def test_array_like(xp, op):
     x = [[[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]],
@@ -184,6 +201,7 @@ def test_array_like(xp, op):
     xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
 
 @pytest.mark.parametrize('n', [128, 129])
+@make_xp_test_case(fhtoffset, fht)
 def test_gh_21661(xp, n):
     one = xp.asarray(1.0)
     mu = 0.0

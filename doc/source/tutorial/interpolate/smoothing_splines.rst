@@ -11,10 +11,10 @@ Spline smoothing in 1D
 
 For the interpolation problem, the task is to construct a curve which passes
 through a given set of data points. This may be not appropriate if the data is
-noisy: we then want to construct a smooth curve, :math:`g(x)`, which *approximates*
-input data without passing through each point exactly.
+noisy: we may instead want to construct a smooth curve, :math:`g(x)`, 
+which *approximates* the input data without passing through each point exactly.
 
-To this end, `scipy.interpolate` allows constructing *smoothing splines* which
+To this end, `scipy.interpolate` allows constructing *smoothing splines* that
 balance how close the resulting curve, :math:`g(x)`, is to the data, and 
 the smoothness of :math:`g(x)`. Mathematically, the task is to solve
 a penalized least-squares problem, where the penalty controls the smoothness of
@@ -108,6 +108,18 @@ sine curve with some noise:
 We clearly see that ``lam=0`` constructs the interpolating spline; large values
 of ``lam`` flatten out the resulting curve towards a straight line; and the GCV
 result, ``lam=None``, is close to the underlying sine curve.
+
+
+.. _tutorial-interpolate_GCV_batching:
+
+Batching of ``y`` arrays
+````````````````````````
+
+`make_smoothing_spline` constructor accepts multidimensional ``y`` arrays and an
+optional ``axis`` parameter and interprets them exactly the same way the
+interpolating spline constructor, `make_interp_spline` does. See the
+:ref:`interpolation section <tutorial-interpolate_batching>` for a discussion and
+examples.
 
 
 .. _tutorial_make_splrep:
@@ -284,7 +296,7 @@ where :math:`\sigma` is an estimate for the standard deviation of the data.
 
 .. note::
 
-    The number of knots a very strongly dependent on ``s``. It is possible that
+    The number of knots is very strongly dependent on ``s``. It is possible that
     small variations of ``s`` lead to drastic changes in the knot number.
 
 .. note::
@@ -331,14 +343,14 @@ problem it solves.
 The main user-visible difference of the parametric case is the user interface:
 
 - instead of two data arrays, ``x`` and ``y``, `make_splprep` receives a single
-  two-dimensional array, where the second dimension has size :math:`d` and each
-  data array is stored along the first dimension (alternatively, you can supply
+  two-dimensional array, where the first dimension has size :math:`d` and each
+  data array is stored along the second dimension (alternatively, you can supply
   a list of 1D arrays).
 
 - the return value is pair: a `BSpline` instance and the array of parameter
   values, ``u``, which corresponds to the input data arrays.
 
-By default, `make_splprep` constructs and returns the cord length parametrization
+By default, `make_splprep` constructs and returns the chord length parametrization
 of input data (see the :ref:`Parametric spline curves <tutorial-interpolate_parametric>`
 section for details). Alternatively, you can provide your own array of
 parameter values, ``u``.
@@ -372,6 +384,40 @@ a folium of Descartes *plus* some noise.
    >>> plt.show()
 
 
+Batching of ``y`` arrays
+------------------------
+
+Unlike :ref:`interpolating splines <tutorial-interpolate_batching>` and
+:ref:`GCV smoothers <tutorial-interpolate_GCV_batching>`, `make_splrep` and `make_splprep`
+do **not** allow multidimensional ``y`` arrays and require that ``x.ndim == y.ndim == 1``.
+
+The technical reason for this limitation is that the length of the knot vector ``t``
+depends on the ``y`` values, thus for a batched ``y``, the batched ``t`` could be a
+ragged array, which `BSpline` is not equipped to handle.
+
+Therefore if you need to handle batched inputs, you will need to loop over the
+batch manually and construct a `BSpline` object per slice of the batch.
+Having done that, you can mimic `BSpline` behavior for evaluations with a workaround
+along the lines of
+
+.. code-block:: python
+
+    class BatchSpline:
+        """BSpline-like class with batch behavior."""
+        def __init__(self, x, y, axis, *, spline, **kwargs):
+            y = np.moveaxis(y, axis, -1)
+            self._batch_shape = y.shape[:-1]
+            self._splines = [
+                spline(x, yi, **kwargs) for yi in y.reshape(-1, y.shape[-1])
+            ]
+            self._axis = axis
+
+        def __call__(self, x):
+            y = [spline(x) for spline in self._splines]
+            y = np.reshape(y, self._batch_shape + x.shape)
+            return np.moveaxis(y, -1, self._axis) if x.shape else y
+
+
 .. _tutorial-fitpack-legacy:
 
 Legacy routines for spline smoothing in 1-D
@@ -388,7 +434,7 @@ Fortran library authored by P. Dierckx.
     alternatives, `make_smoothing_spline`, `make_splrep` or `make_splprep`, instead.
 
 For historical reasons, `scipy.interpolate` provides two equivalent interfaces
-for FITPACK, a interface and an object-oriented interface. While equivalent, these interfaces
+for FITPACK, an interface and an object-oriented interface. While equivalent, these interfaces
 have different defaults. Below we discuss them in turn, starting from the
 functional interface.
 
@@ -396,7 +442,7 @@ functional interface.
 .. _tutorial-interpolate_splXXX:
 
 Procedural (`splrep`)
-"""""""""""""""""""""
+`````````````````````
 
 Spline interpolation requires two essential steps: (1) a spline
 representation of the curve is computed, and (2) the spline is
@@ -493,7 +539,7 @@ providing the value of ``s`` explicitly.
 
 
 Manipulating spline objects: procedural (``splXXX``)
-""""""""""""""""""""""""""""""""""""""""""""""""""""
+````````````````````````````````````````````````````
 
 Once the spline representation of the data has been determined,
 functions are available for evaluating the spline
@@ -782,7 +828,7 @@ on the data while determining the appropriate spline. The recommended values
 for :math:`s` depend on the weights :math:`w_i`. If these are taken as :math:`1/d_i`,
 with :math:`d_i` an estimate of the standard deviation of :math:`z_i`, a
 good value of :math:`s` should be found in the range :math:`m- \sqrt{2m}, m + 
-\sqrt{2m}`, where where :math:`m` is the number of data points in the ``x``,
+\sqrt{2m}`, where :math:`m` is the number of data points in the ``x``,
 ``y``, and ``z`` vectors.
 
 The default value is :math:`s=m-\sqrt{2m}`.  As a result, **if no smoothing is

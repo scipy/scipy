@@ -115,6 +115,7 @@ class Cigar(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -125,7 +126,6 @@ class Cigar(Benchmark):
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -339,11 +339,11 @@ class CosineMixture(Benchmark):
     of Several Stochastic Algorithms on Selected Continuous Global
     Optimization Test Problems, Journal of Global Optimization, 2005, 31, 635
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.change_dimensionality = True
         self._bounds = [(-1.0, 1.0)] * self.N
 
         self.global_optimum = [[0. for _ in range(self.N)]]
@@ -501,11 +501,11 @@ class Csendes(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.change_dimensionality = True
         self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]

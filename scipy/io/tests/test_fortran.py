@@ -13,7 +13,6 @@ import numpy as np
 import pytest
 
 from scipy.io import (FortranFile,
-                      _test_fortran,
                       FortranEOFError,
                       FortranFormattingError)
 
@@ -131,6 +130,87 @@ def test_fortranfile_write_mixed_record(tmpdir):
         for aa, bb in zip(a, b):
             assert_equal(bb, aa)
 
+def read_unformatted_double(m, n, k, filename):
+    """
+    Read a Fortran-style unformatted binary file written with a single write() call,
+    assuming it wraps the data with 4-byte record markers.
+
+    Returns:
+        np.ndarray of shape (m, n, k) with dtype float64
+
+    Reference:
+        Fortran implementation:
+        https://github.com/scipy/scipy/blob/maintenance/1.15.x/scipy/io/_test_fortran.f#L1-L9
+    """
+    with open(filename.strip(), 'rb') as f:
+        f.read(4)  # Skip initial 4-byte record marker
+        data = np.fromfile(f, dtype=np.float64, count=m * n * k)
+        f.read(4)  # Skip trailing 4-byte record marker
+
+    if data.size != m * n * k:
+        raise ValueError(f"Expected {m*n*k} elements, got {data.size}")
+
+    return data.reshape((m, n, k), order='F')  # Fortran column-major order
+
+def read_unformatted_mixed(m, n, k, filename):
+    """
+    Read a Fortran unformatted binary file that contains a mix of:
+    - a double precision array a(m, n)
+    - an integer array b(k)
+
+    Assumes a single write(10) a, b was used and file is wrapped
+    with Fortran record markers.
+
+    Returns:
+        a: np.ndarray of shape (m, n) with dtype float64
+        b: np.ndarray of shape (k,) with dtype int32
+
+    Reference:
+        Fortran implementation:
+        https://github.com/scipy/scipy/blob/maintenance/1.15.x/scipy/io/_test_fortran.f#L21-L30
+    """
+    with open(filename.strip(), 'rb') as f:
+        f.read(4)  # Skip initial 4-byte record marker
+
+        # Read a(m,n): total m*n float64 values
+        a_flat = np.fromfile(f, dtype=np.float64, count=m * n)
+
+        # Read b(k): total k int32 values (assuming Fortran default integer*4)
+        b = np.fromfile(f, dtype=np.int32, count=k)
+
+        f.read(4)  # Skip trailing 4-byte record marker
+
+    # Reshape a to (m,n) Fortran-style
+    a = a_flat.reshape((m, n), order='F')
+
+    return a, b
+
+def read_unformatted_int(m, n, k, filename):
+    """
+    Read a Fortran unformatted binary file
+    containing a 3D integer array (m, n, k).
+    Assumes the array is written with a single
+    write(10) a and wrapped with record markers.
+
+    Returns:
+        np.ndarray: 3D array of shape (m, n, k) with dtype int32
+
+    Reference:
+        Fortran implementation:
+        https://github.com/scipy/scipy/blob/maintenance/1.15.x/scipy/io/_test_fortran.f#L11-L19
+    """
+    with open(filename.strip(), 'rb') as f:
+        f.read(4)  # Skip Fortran record marker at start
+
+        # Read m*n*k integers (Fortran default = 4 bytes per integer)
+        data = np.fromfile(f, dtype=np.int32, count=m * n * k)
+
+        f.read(4)  # Skip Fortran record marker at end
+
+    if data.size != m * n * k:
+        raise ValueError(f"Expected {m*n*k} elements, got {data.size}")
+
+    return data.reshape((m, n, k), order='F')  # Fortran-style column-major order
 
 def test_fortran_roundtrip(tmpdir, io_lock):
     filename = path.join(str(tmpdir), str(threading.get_native_id()),
@@ -145,7 +225,7 @@ def test_fortran_roundtrip(tmpdir, io_lock):
     with FortranFile(filename, 'w') as f:
         f.write_record(a.T)
     with io_lock:
-        a2 = _test_fortran.read_unformatted_double(m, n, k, filename)
+        a2 = read_unformatted_double(m, n, k, filename)
 
     with FortranFile(filename, 'r') as f:
         a3 = f.read_record('(2,3,5)f8').T
@@ -158,7 +238,7 @@ def test_fortran_roundtrip(tmpdir, io_lock):
     with FortranFile(filename, 'w') as f:
         f.write_record(a.T)
     with io_lock:
-        a2 = _test_fortran.read_unformatted_int(m, n, k, filename)
+        a2 = read_unformatted_int(m, n, k, filename)
     with FortranFile(filename, 'r') as f:
         a3 = f.read_record('(2,3,5)i4').T
     assert_equal(a2, a)
@@ -171,7 +251,7 @@ def test_fortran_roundtrip(tmpdir, io_lock):
     with FortranFile(filename, 'w') as f:
         f.write_record(a.T, b.T)
     with io_lock:
-        a2, b2 = _test_fortran.read_unformatted_mixed(m, n, k, filename)
+        a2, b2 = read_unformatted_mixed(m, n, k, filename)
     with FortranFile(filename, 'r') as f:
         a3, b3 = f.read_record('(3,5)f8', '2i4')
         a3 = a3.T

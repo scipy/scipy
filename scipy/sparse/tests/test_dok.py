@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 import numpy as np
 from numpy.testing import assert_equal
@@ -90,7 +92,8 @@ def test_pop(d, Asp):
     assert Asp.pop((22, 21), "other") == "other"
     with pytest.raises(KeyError, match="(22, 21)"):
         Asp.pop((22, 21))
-    with pytest.raises(TypeError, match="got an unexpected keyword argument"):
+    msg = "got some positional-only arguments passed as keyword arguments: 'default'"
+    with pytest.raises(TypeError, match=msg):
         Asp.pop((22, 21), default=5)
 
 def test_popitem(d, Asp):
@@ -105,8 +108,21 @@ def test_setdefault(d, Asp):
     assert d.items() == Asp.items()
 
 def test_update(d, Asp):
-    with pytest.raises(NotImplementedError):
-        Asp.update(Asp)
+    for input in [Asp, Asp._dict, Asp._dict.items()]:
+        Bsp = dok_array(Asp.shape)
+        Bsp.update(input)
+        assert_equal(Bsp.toarray(), Asp.toarray())
+
+    with pytest.raises(ValueError, match="Inexact indices .* not allowed"):
+        Asp.update(np.zeros((2,2)))
+    with pytest.raises(IndexError, match="length needs to match self.shape"):
+        Asp.update({(3, 2, 1, 0): 1.2})
+    with pytest.raises(IndexError, match="integer keys required"):
+        Asp.update({(0.2, 1): 1.2})
+    with pytest.raises(IndexError, match="negative index"):
+        Asp.update({(0, -1): 1.2})
+    with pytest.raises(IndexError, match="index .* is too large"):
+        Asp.update({(0, 3): 1.2})
 
 def test_values(d, Asp):
     # Note: dict.values are strange: d={1: 1}; d.values() == d.values() is False
@@ -175,8 +191,8 @@ def test_dunder_ror(d, Asp):
 
 # Note: comparison dunders, e.g. ==, >=, etc follow np.array not dict
 def test_dunder_eq(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp == Asp).toarray().all()
         assert (A == Asp).all()
 
@@ -193,14 +209,14 @@ def test_dunder_gt(A, Asp):
     assert not (A > Asp).any()
 
 def test_dunder_le(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp <= Asp).toarray().all()
         assert (A <= Asp).all()
 
 def test_dunder_ge(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp >= Asp).toarray().all()
         assert (A >= Asp).all()
 

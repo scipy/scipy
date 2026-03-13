@@ -2,11 +2,13 @@ import os
 import numpy as np
 import tempfile
 
+import pytest
 from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
 
-from scipy.sparse import (sparray, csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
-                          coo_matrix, dok_matrix, csr_array, save_npz, load_npz)
+from scipy.sparse import (sparray, csr_array, coo_array, save_npz, load_npz,
+                          csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
+                          coo_matrix, dok_matrix)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -70,6 +72,24 @@ def test_sparray_vs_spmatrix():
     assert isinstance(loaded_array, sparray)
     assert_(loaded_matrix.dtype == loaded_array.dtype)
     assert_equal(loaded_matrix.toarray(), loaded_array.toarray())
+
+@pytest.mark.parametrize("value", [0, 1.2])
+@pytest.mark.parametrize("ndim", [1, 2, 3])
+def test_nd_coo_format(ndim, value):
+    A = coo_array([value]).reshape((1,) * ndim)
+
+    #save/load array
+    fd, tmpfile = tempfile.mkstemp(suffix='.npz')
+    os.close(fd)
+    try:
+        save_npz(tmpfile, A)
+        loaded_A = load_npz(tmpfile)
+    finally:
+        os.remove(tmpfile)
+
+    assert isinstance(loaded_A, coo_array)
+    assert_(loaded_A.shape == A.shape)
+    assert_equal(A.toarray(), loaded_A.toarray())
 
 def test_malicious_load():
     class Executor:

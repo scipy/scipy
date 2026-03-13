@@ -60,10 +60,10 @@ _LPProblem.__doc__ = \
         within `bounds`.
 
         ``2`` : Semi-continuous variable; decision variable must be within
-        `bounds` or take value ``0``.
+        `bounds` or ``0``.
 
         ``3`` : Semi-integer variable; decision variable must be an integer
-        within `bounds` or take value ``0``.
+        within `bounds` or ``0``.
 
         By default, all variables are continuous.
 
@@ -414,7 +414,7 @@ def _clean_inputs(lp):
     # (2) a 1-D or 2-D sequence or array with 2 scalars
     # (3) None (or an empty sequence or array)
     # Unspecified bounds can be represented by None or (-)np.inf.
-    # All formats are converted into a N x 2 np.array with (-)np.inf where
+    # All formats are converted into an N x 2 np.array with (-)np.inf where
     # bounds are unspecified.
 
     # Prepare clean bounds array
@@ -514,7 +514,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
         If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
         Set False if ``A_eq`` is known to be of full row rank, or if you are
         looking for a potential speedup (at the expense of reliability).
-    rr_method : string
+    rr_method : str
         Method used to identify and remove redundant rows from the
         equality constraint matrix after presolve.
     tol : float
@@ -1407,9 +1407,10 @@ def _postsolve(x, postsolve_args, complete=False):
         x = rev(x)
 
     fun = x.dot(c)
-    slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
-    # report residuals of ORIGINAL EQ constraints
-    con = b_eq - A_eq.dot(x)
+    with np.errstate(invalid="ignore"):
+        slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
+        # report residuals of ORIGINAL EQ constraints
+        con = b_eq - A_eq.dot(x)
 
     return x, fun, slack, con
 

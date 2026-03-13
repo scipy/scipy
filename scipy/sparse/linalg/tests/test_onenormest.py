@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_
 import pytest
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
+from scipy.sparse.linalg._onenormest import _onenormest_core
 
 
 class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
@@ -19,10 +19,9 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
             raise ValueError('expected ndarrays representing matrices')
         if A.shape[1] != B.shape[0]:
             raise ValueError('incompatible shapes')
+        super().__init__(dtype=None, shape=(A.shape[0], B.shape[1]))
         self.A = A
         self.B = B
-        self.ndim = 2
-        self.shape = (A.shape[0], B.shape[1])
 
     def _matvec(self, x):
         return np.dot(self.A, np.dot(self.B, x))
@@ -228,25 +227,3 @@ class TestOnenormest:
         assert_allclose(s1, s0, rtol=1e-9)
         assert_allclose(np.linalg.norm(A.dot(v), 1), s0*np.linalg.norm(v, 1), rtol=1e-9)
         assert_allclose(A.dot(v), w, rtol=1e-9)
-
-
-class TestAlgorithm_2_2:
-
-    @pytest.mark.thread_unsafe
-    def test_randn_inv(self):
-        rng = np.random.RandomState(1234)
-        n = 20
-        nsamples = 100
-        for i in range(nsamples):
-
-            # Choose integer t uniformly between 1 and 3 inclusive.
-            t = rng.randint(1, 4)
-
-            # Choose n uniformly between 10 and 40 inclusive.
-            n = rng.randint(10, 41)
-
-            # Sample the inverse of a matrix with random normal entries.
-            A = scipy.linalg.inv(rng.randn(n, n))
-
-            # Compute the 1-norm bounds.
-            g, ind = _algorithm_2_2(A, A.T, t)

@@ -239,6 +239,10 @@ def test_expm_multiply(matrices):
     x = splin.expm_multiply(A_sparse, b)
     assert_allclose(x, x0)
 
+    x0 = splin.expm_multiply(A_dense, A_dense)
+    x = splin.expm_multiply(A_sparse, A_sparse)
+    assert_allclose(x.todense(), x0)
+
 
 def test_eq(same_matrix):
     sp_sparse, pd_sparse = same_matrix
@@ -252,3 +256,17 @@ def test_ne(same_matrix):
     # temporary splint until pydata sparse support sparray equality
     sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
     assert not (sp_sparse != pd_sparse).any()
+
+
+def test_ge(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    # temporary splint until pydata sparse support sparray equality
+    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    assert (sp_sparse >= pd_sparse).all()
+
+
+def test_gt(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    # temporary splint until pydata sparse support sparray equality
+    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    assert not (sp_sparse > pd_sparse).any()

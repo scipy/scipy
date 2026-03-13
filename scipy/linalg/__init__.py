@@ -21,8 +21,7 @@ Linear algebra functions.
 .. seealso::
 
    `numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__
-   for more linear algebra functions. Note that
-   although `scipy.linalg` imports most of them, identically named
+   for more linear algebra functions. Note that identically named
    functions from `scipy.linalg` may offer more or slightly differing
    functionality.
 
@@ -46,7 +45,6 @@ Basics
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
    pinvh - Pseudo-inverse of hermitian matrix
-   kron - Kronecker product of two arrays
    khatri_rao - Khatri-Rao product of two arrays
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation

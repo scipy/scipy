@@ -1,6 +1,6 @@
 # SciPy Documentation
 
-## How work with the docs
+## How to work with the docs
 
 Have a look at
 https://scipy.github.io/devdocs/dev/contributor/rendering_documentation.html
@@ -26,3 +26,11 @@ be redistributed.
   - `release` contains the release notes. Note that those normally should not
     be updated as part of a PR; we keep release notes for the upcoming releases
     on the wiki of the main SciPy repo.
+
+## Doc development
+
+- The `make dist` command is intended for releases only. If you are updating
+  the docs as a result of your changes, to build locally use either `spin docs`
+  or `pixi run docs` depending on which of the two you are using. Note that both
+  the spin and pixi commands for the docs may be run from the top level scipy
+  directory.

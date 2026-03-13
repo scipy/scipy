@@ -8,7 +8,7 @@ __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'Rectangle', 'KDTree']
 
 
-def minkowski_distance_p(x, y, p=2):
+def minkowski_distance_p(x, y, p=2.0):
     """Compute the pth power of the L**p distance between two arrays.
 
     For efficiency, this function computes the L**p distance but does
@@ -60,7 +60,7 @@ def minkowski_distance_p(x, y, p=2):
         return np.sum(np.abs(y-x)**p, axis=-1)
 
 
-def minkowski_distance(x, y, p=2):
+def minkowski_distance(x, y, p=2.0):
     """Compute the L**p distance between two arrays.
 
     The last dimensions of `x` and `y` must be the same length.  Any
@@ -99,6 +99,27 @@ class Rectangle:
     """Hyperrectangle class.
 
     Represents a Cartesian product of intervals.
+
+    Parameters
+    ----------
+    maxes : array_like of shape (m,)
+        Upper bounds of the hyperrectangle along each dimension.
+    mins : array_like of shape (m,)
+        Lower bounds of the hyperrectangle along each dimension.
+
+    Attributes
+    ----------
+    maxes : ndarray of shape (m,)
+        Upper bounds for each dimension.
+    mins : ndarray of shape (m,)
+        Lower bounds for each dimension.
+    m : int
+        Dimensionality of the hyperrectangle.
+
+    Notes
+    -----
+    If any element of `maxes` is smaller than the corresponding element in `mins`, the
+    values are swapped automatically.
     """
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
@@ -110,7 +131,13 @@ class Rectangle:
         return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
-        """Total volume."""
+        """Compute the total volume of the hyperrectangle.
+
+        Returns
+        -------
+        vol : float
+            Volume of the hyperrectangle.
+        """
         return np.prod(self.maxes-self.mins)
 
     def split(self, d, split):
@@ -127,6 +154,12 @@ class Rectangle:
         split : float
             Position along axis `d` to split at.
 
+        Returns
+        -------
+        less : Rectangle
+            Rectangle with `d`-th axis less than `split`.
+        greater : Rectangle
+            Rectangle with `d`-th axis greater than `split`.
         """
         mid = np.copy(self.maxes)
         mid[d] = split
@@ -136,7 +169,7 @@ class Rectangle:
         greater = Rectangle(mid, self.maxes)
         return less, greater
 
-    def min_distance_point(self, x, p=2.):
+    def min_distance_point(self, x, p=2.0):
         """
         Return the minimum distance between input and points in the
         hyperrectangle.
@@ -148,13 +181,17 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Minimum distance.
         """
         return minkowski_distance(
             0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
             p
         )
 
-    def max_distance_point(self, x, p=2.):
+    def max_distance_point(self, x, p=2.0):
         """
         Return the maximum distance between input and points in the hyperrectangle.
 
@@ -165,10 +202,14 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Maximum distance.
         """
         return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
 
-    def min_distance_rectangle(self, other, p=2.):
+    def min_distance_rectangle(self, other, p=2.0):
         """
         Compute the minimum distance between points in the two hyperrectangles.
 
@@ -179,6 +220,10 @@ class Rectangle:
         p : float
             Input.
 
+        Returns
+        -------
+        dist : float
+            Minimum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0,
@@ -187,7 +232,7 @@ class Rectangle:
             p
         )
 
-    def max_distance_rectangle(self, other, p=2.):
+    def max_distance_rectangle(self, other, p=2.0):
         """
         Compute the maximum distance between points in the two hyperrectangles.
 
@@ -198,13 +243,18 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : float
+            Maximum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
 
 
 class KDTree(cKDTree):
-    """kd-tree for quick nearest-neighbor lookup.
+    """
+    kd-tree for quick nearest-neighbor lookup.
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
@@ -234,32 +284,11 @@ class KDTree(cKDTree):
         the midpoint. This usually gives a more compact tree and
         faster queries at the expense of longer build time. Default: True.
     boxsize : array_like or scalar, optional
-        Apply a m-d toroidal topology to the KDTree.. The topology is generated
+        Apply an m-d toroidal topology to the KDTree. The topology is generated
         by :math:`x_i + n_i L_i` where :math:`n_i` are integers and :math:`L_i`
         is the boxsize along i-th dimension. The input data shall be wrapped
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
-
-    Notes
-    -----
-    The algorithm used is described in Maneewongvatana and Mount 1999.
-    The general idea is that the kd-tree is a binary tree, each of whose
-    nodes represents an axis-aligned hyperrectangle. Each node specifies
-    an axis and splits the set of points based on whether their coordinate
-    along that axis is greater than or less than a particular value.
-
-    During construction, the axis and splitting point are chosen by the
-    "sliding midpoint" rule, which ensures that the cells do not all
-    become long and thin.
-
-    The tree can be queried for the r closest neighbors of any given point
-    (optionally returning only those within some maximum distance of the
-    point). It can also be queried, with a substantial gain in efficiency,
-    for the r approximate closest neighbors.
-
-    For large dimensions (20 is already large) do not expect this to run
-    significantly faster than brute force. High-dimensional nearest-neighbor
-    queries are a substantial open problem in computer science.
 
     Attributes
     ----------
@@ -282,7 +311,33 @@ class KDTree(cKDTree):
     size : int
         The number of nodes in the tree.
 
-    """
+    Notes
+    -----
+    The algorithm used is described in [1]_.
+    The general idea is that the kd-tree is a binary tree, each of whose
+    nodes represents an axis-aligned hyperrectangle. Each node specifies
+    an axis and splits the set of points based on whether their coordinate
+    along that axis is greater than or less than a particular value.
+
+    During construction, the axis and splitting point are chosen by the
+    "sliding midpoint" rule, which ensures that the cells do not all
+    become long and thin.
+
+    The tree can be queried for the r closest neighbors of any given point
+    (optionally returning only those within some maximum distance of the
+    point). It can also be queried, with a substantial gain in efficiency,
+    for the r approximate closest neighbors.
+
+    For large dimensions (20 is already large) do not expect this to run
+    significantly faster than brute force. High-dimensional nearest-neighbor
+    queries are a substantial open problem in computer science.
+
+    References
+    ----------
+    .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
+           nearest neighbor searching with clustered point sets,"
+           Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
+    """  # numpydoc ignore=SS02
 
     class node:
         @staticmethod
@@ -360,8 +415,8 @@ class KDTree(cKDTree):
         super().__init__(data, leafsize, compact_nodes, copy_data,
                          balanced_tree, boxsize)
 
-    def query(
-            self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
+    def query(self, x, k=1, eps=0.0, p=2.0, distance_upper_bound=np.inf,
+              workers=1):
         r"""Query the kd-tree for nearest neighbors.
 
         Parameters
@@ -407,7 +462,7 @@ class KDTree(cKDTree):
                shape ``tuple``, containing lists of distances. This behavior
                has been removed, use `query_ball_point` instead.
 
-        i : integer or array of integers
+        i : int or array of integers
             The index of each neighbor in ``self.data``.
             ``i`` is the same shape as d.
             Missing neighbors are indicated with ``self.n``.
@@ -477,7 +532,7 @@ class KDTree(cKDTree):
             i = np.intp(i)
         return d, i
 
-    def query_ball_point(self, x, r, p=2., eps=0, workers=1,
+    def query_ball_point(self, x, r, p=2.0, eps=0.0, workers=1,
                          return_sorted=None, return_length=False):
         """Find all points within distance r of point(s) x.
 
@@ -554,7 +609,7 @@ class KDTree(cKDTree):
         return super().query_ball_point(
             x, r, p, eps, workers, return_sorted, return_length)
 
-    def query_ball_tree(self, other, r, p=2., eps=0):
+    def query_ball_tree(self, other, r, p=2.0, eps=0.0):
         """
         Find all pairs of points between `self` and `other` whose distance is
         at most r.
@@ -605,7 +660,7 @@ class KDTree(cKDTree):
         """
         return super().query_ball_tree(other, r, p, eps)
 
-    def query_pairs(self, r, p=2., eps=0, output_type='set'):
+    def query_pairs(self, r, p=2.0, eps=0.0, output_type='set'):
         """Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
@@ -620,7 +675,7 @@ class KDTree(cKDTree):
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : string, optional
+        output_type : str, optional
             Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
             .. versionadded:: 1.6.0
@@ -629,7 +684,7 @@ class KDTree(cKDTree):
         -------
         results : set or ndarray
             Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
-            positions are close. If output_type is 'ndarray', an ndarry is
+            positions are close. If output_type is 'ndarray', an ndarray is
             returned instead of a set.
 
         Examples
@@ -653,7 +708,7 @@ class KDTree(cKDTree):
         """
         return super().query_pairs(r, p, eps, output_type)
 
-    def count_neighbors(self, other, r, p=2., weights=None, cumulative=True):
+    def count_neighbors(self, other, r, p=2.0, weights=None, cumulative=True):
         """Count how many nearby pairs can be formed.
 
         Count the number of pairs ``(x1,x2)`` can be formed, with ``x1`` drawn
@@ -673,8 +728,8 @@ class KDTree(cKDTree):
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-            If the count is non-cumulative(``cumulative=False``), ``r`` defines
-            the edges of the bins, and must be non-decreasing.
+            If the count is non-cumulative (``cumulative=False``), ``r``
+            defines the edges of the bins, and must be non-decreasing.
         p : float, optional
             1<=p<=infinity.
             Which Minkowski p-norm to use.
@@ -802,7 +857,7 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2., output_type='dok_matrix'):
+            self, other, max_distance, p=2.0, output_type='dok_matrix'):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
@@ -811,26 +866,37 @@ class KDTree(cKDTree):
         Parameters
         ----------
         other : KDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
+        output_type : str, optional
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
+            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
+            Default: ``'dok_matrix'``.
 
-        output_type : string, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            .. warning:: dok_matrix and coo_matrix are being replaced.
+
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' continue
+               to work, but will go away eventually.
 
             .. versionadded:: 1.6.0
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------
@@ -841,9 +907,9 @@ class KDTree(cKDTree):
         >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
-        >>> kd_tree1 = KDTree(points1)
-        >>> kd_tree2 = KDTree(points2)
-        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> kdtree1 = KDTree(points1)
+        >>> kdtree2 = KDTree(points2)
+        >>> sdm = kdtree1.sparse_distance_matrix(kdtree2, 0.3, output_type="dok_array")
         >>> sdm.toarray()
         array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
            [0.        , 0.        , 0.        , 0.        , 0.        ],
@@ -862,11 +928,10 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        return super().sparse_distance_matrix(
-            other, max_distance, p, output_type)
+        return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
-def distance_matrix(x, y, p=2, threshold=1000000):
+def distance_matrix(x, y, p=2.0, threshold=1000000):
     """Compute the distance matrix.
 
     Returns the matrix of all pair-wise distances.

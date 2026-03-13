@@ -45,15 +45,19 @@ BLAS Level 1 functions
 .. autosummary::
    :toctree: generated/
 
-   caxpy
-   ccopy
-   cdotc
-   cdotu
-   crotg
-   cscal
-   csrot
-   csscal
-   cswap
+   sasum
+   saxpy
+   scasum
+   scnrm2
+   scopy
+   sdot
+   snrm2
+   srot
+   srotg
+   srotm
+   srotmg
+   sscal
+   sswap
    dasum
    daxpy
    dcopy
@@ -71,19 +75,15 @@ BLAS Level 1 functions
    idamax
    isamax
    izamax
-   sasum
-   saxpy
-   scasum
-   scnrm2
-   scopy
-   sdot
-   snrm2
-   srot
-   srotg
-   srotm
-   srotmg
-   sscal
-   sswap
+   caxpy
+   ccopy
+   cdotc
+   cdotu
+   crotg
+   cscal
+   csrot
+   csscal
+   cswap
    zaxpy
    zcopy
    zdotc
@@ -104,12 +104,15 @@ BLAS Level 2 functions
    sgemv
    sger
    ssbmv
+   sspmv
    sspr
    sspr2
    ssymv
    ssyr
    ssyr2
    stbmv
+   stbsv
+   stpmv
    stpsv
    strmv
    strsv
@@ -117,12 +120,15 @@ BLAS Level 2 functions
    dgemv
    dger
    dsbmv
+   dspmv
    dspr
    dspr2
    dsymv
    dsyr
    dsyr2
    dtbmv
+   dtbsv
+   dtpmv
    dtpsv
    dtrmv
    dtrsv
@@ -137,13 +143,15 @@ BLAS Level 2 functions
    chpmv
    chpr
    chpr2
+   cspmv
+   cspr
+   csyr
    ctbmv
    ctbsv
    ctpmv
    ctpsv
    ctrmv
    ctrsv
-   csyr
    zgbmv
    zgemv
    zgerc
@@ -155,12 +163,15 @@ BLAS Level 2 functions
    zhpmv
    zhpr
    zhpr2
+   zspmv
+   zspr
+   zsyr
    ztbmv
    ztbsv
    ztpmv
+   ztpsv
    ztrmv
    ztrsv
-   zsyr
 
 BLAS Level 3 functions
 ----------------------
@@ -216,12 +227,12 @@ try:
 except ImportError:
     _cblas = None
 
-try:
+from scipy.__config__ import CONFIG
+HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
+del CONFIG
+_fblas_64 = None
+if HAS_ILP64:
     from scipy.linalg import _fblas_64
-    HAS_ILP64 = True
-except ImportError:
-    HAS_ILP64 = False
-    _fblas_64 = None
 
 # Expose all functions (only fblas --- cblas is an implementation detail)
 empty_module = None

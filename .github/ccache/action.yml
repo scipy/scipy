@@ -1,0 +1,24 @@
+name: Setup Compiler Cache
+description: Prepare and restore compiler cache using ccache
+inputs:
+  workflow_name:
+    description: "Unique name of the calling workflow to use as cache key prefix"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Prepare compiler cache
+      id: prep-ccache
+      shell: bash
+      run: |
+        mkdir -p "${CCACHE_DIR:-$HOME/.ccache}"
+        echo "dir=${CCACHE_DIR:-$HOME/.ccache}" >> $GITHUB_OUTPUT
+        NOW=$(date -u +"%F-%T")
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
+    - name: Setup compiler cache
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        key: ${{ inputs.workflow_name }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
+        restore-keys: ${{ inputs.workflow_name }}-ccache-linux-

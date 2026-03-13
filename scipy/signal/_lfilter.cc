@@ -21,11 +21,6 @@ static void cmplx_filt(char *b, char *a, char *x, char *y, char *Z,
                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                        npy_intp stride_Y);
 
-static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
-                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
-                        npy_intp stride_Y);
-
-
 typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *,
                                     npy_intp, npy_uintp, npy_intp, npy_intp);
 
@@ -44,10 +39,7 @@ scipy_signal__sigtools_linear_filter_module_init(void)
     BasicFilterFunctions[NPY_CFLOAT] = cmplx_filt<NPY_CFLOAT>;
     BasicFilterFunctions[NPY_CDOUBLE] = cmplx_filt<NPY_CDOUBLE>;
     BasicFilterFunctions[NPY_CLONGDOUBLE] = cmplx_filt<NPY_CLONGDOUBLE>;
-    BasicFilterFunctions[NPY_OBJECT] = OBJECT_filt;
 }
-
-/* There is the start of an OBJECT_filt, but it may need work */
 
 static int
 RawFilter(const PyArrayObject * b, const PyArrayObject * a,
@@ -659,111 +651,4 @@ static void cmplx_filt(char *b, char *a, char *x, char *y, char *Z,
 
     }
     Py_END_ALLOW_THREADS
-}
-
-
-static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
-                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
-                        npy_intp stride_Y)
-{
-    char *ptr_x = x, *ptr_y = y;
-    PyObject **ptr_Z, **ptr_b;
-    PyObject **ptr_a;
-    PyObject **xn, **yn;
-    PyObject **a0 = (PyObject **) a;
-    PyObject *tmp1, *tmp2, *tmp3;
-    npy_intp n;
-    npy_uintp k;
-
-    /* My reference counting might not be right */
-    for (k = 0; k < len_x; k++) {
-        ptr_b = (PyObject **) b;        /* Reset a and b pointers */
-        ptr_a = (PyObject **) a;
-        xn = (PyObject **) ptr_x;
-        yn = (PyObject **) ptr_y;
-        if (len_b > 1) {
-            ptr_Z = ((PyObject **) Z);
-            /* Calculate first delay (output) */
-            tmp1 = PyNumber_Multiply(*ptr_b, *xn);
-            if (tmp1 == NULL) return;
-            tmp2 = PyNumber_TrueDivide(tmp1, *a0);
-            if (tmp2 == NULL) {
-                Py_DECREF(tmp1);
-                return;
-            }
-            tmp3 = PyNumber_Add(tmp2, *ptr_Z);
-            Py_XDECREF(*yn);
-            *yn = tmp3; /* Steals the reference */
-            Py_DECREF(tmp1);
-            Py_DECREF(tmp2);
-            if (tmp3 == NULL) return;
-            ptr_b++;
-            ptr_a++;
-
-            /* Fill in middle delays */
-            for (n = 0; n < len_b - 2; n++) {
-                tmp1 = PyNumber_Multiply(*xn, *ptr_b);
-                if (tmp1 == NULL) return;
-                tmp2 = PyNumber_TrueDivide(tmp1, *a0);
-                if (tmp2 == NULL) {
-                    Py_DECREF(tmp1);
-                    return;
-                }
-                tmp3 = PyNumber_Add(tmp2, ptr_Z[1]);
-                Py_DECREF(tmp1);
-                Py_DECREF(tmp2);
-                if (tmp3 == NULL) return;
-                tmp1 = PyNumber_Multiply(*yn, *ptr_a);
-                if (tmp1 == NULL) {
-                    Py_DECREF(tmp3);
-                    return;
-                }
-                tmp2 = PyNumber_TrueDivide(tmp1, *a0);
-                Py_DECREF(tmp1);
-                if (tmp2 == NULL) {
-                    Py_DECREF(tmp3);
-                    return;
-                }
-                Py_XDECREF(*ptr_Z);
-                *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
-                Py_DECREF(tmp2);
-                Py_DECREF(tmp3);
-                if (*ptr_Z == NULL) return;
-                ptr_b++;
-                ptr_a++;
-                ptr_Z++;
-            }
-            /* Calculate last delay */
-            tmp1 = PyNumber_Multiply(*xn, *ptr_b);
-            if (tmp1 == NULL) return;
-            tmp3 = PyNumber_TrueDivide(tmp1, *a0);
-            Py_DECREF(tmp1);
-            if (tmp3 == NULL) return;
-            tmp1 = PyNumber_Multiply(*yn, *ptr_a);
-            if (tmp1 == NULL) {
-                Py_DECREF(tmp3);
-                return;
-            }
-            tmp2 = PyNumber_TrueDivide(tmp1, *a0);
-            Py_DECREF(tmp1);
-            if (tmp2 == NULL) {
-                Py_DECREF(tmp3);
-                return;
-            }
-            Py_XDECREF(*ptr_Z);
-            *ptr_Z = PyNumber_Subtract(tmp3, tmp2);
-            Py_DECREF(tmp2);
-            Py_DECREF(tmp3);
-        } else {
-            tmp1 = PyNumber_Multiply(*xn, *ptr_b);
-            if (tmp1 == NULL) return;
-            Py_XDECREF(*yn);
-            *yn = PyNumber_TrueDivide(tmp1, *a0);
-            Py_DECREF(tmp1);
-            if (*yn == NULL) return;
-        }
-
-        ptr_y += stride_Y;      /* Move to next input/output point */
-        ptr_x += stride_X;
-    }
 }

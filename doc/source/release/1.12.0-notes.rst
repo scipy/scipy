@@ -285,7 +285,7 @@ Deprecated features
 - ``scipy.integrate.trapz``, ``scipy.integrate.cumtrapz``, and ``scipy.integrate.simps`` have
   been deprecated in favour of `scipy.integrate.trapezoid`, `scipy.integrate.cumulative_trapezoid`,
   and `scipy.integrate.simpson` respectively and will be removed in SciPy 1.14.
-- The ``tol`` argument of ``scipy.sparse.linalg.{bcg,bicstab,cg,cgs,gcrotmk,gmres,lgmres,minres,qmr,tfqmr}``
+- The ``tol`` argument of ``scipy.sparse.linalg.{bicg,bicgstab,cg,cgs,gcrotmk,gmres,lgmres,minres,qmr,tfqmr}``
   is now deprecated in favour of ``rtol`` and will be removed in SciPy 1.14.
   Furthermore, the default value of ``atol`` for these functions is due
   to change to ``0.0`` in SciPy 1.14.

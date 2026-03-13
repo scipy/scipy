@@ -94,14 +94,6 @@ Main functionality:
    estimate_spectral_norm_diff
    estimate_rank
 
-Following support functions are deprecated and will be removed in SciPy 1.17.0:
-
-.. autosummary::
-   :toctree: generated/
-
-   seed
-   rand
-
 
 References
 ==========
@@ -367,7 +359,6 @@ backend routine.
 
 import scipy.linalg._decomp_interpolative as _backend
 import numpy as np
-import warnings
 
 __all__ = [
     'estimate_rank',
@@ -375,11 +366,9 @@ __all__ = [
     'estimate_spectral_norm_diff',
     'id_to_svd',
     'interp_decomp',
-    'rand',
     'reconstruct_interp_matrix',
     'reconstruct_matrix_from_id',
     'reconstruct_skel_matrix',
-    'seed',
     'svd',
 ]
 
@@ -409,44 +398,6 @@ def _is_real(A):
             raise _DTYPE_ERROR
     except AttributeError as e:
         raise _TYPE_ERROR from e
-
-
-def seed(seed=None):
-    """
-    This function, historically, used to set the seed of the randomization algorithms
-    used in the `scipy.linalg.interpolative` functions written in Fortran77.
-
-    The library has been ported to Python and now the functions use the native NumPy
-    generators and this function has no content and returns None. Thus this function
-    should not be used and will be removed in SciPy version 1.17.0.
-    """
-    warnings.warn("`scipy.linalg.interpolative.seed` is deprecated and will be "
-                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
-
-
-def rand(*shape):
-    """
-    This function, historically, used to generate uniformly distributed random number
-    for the randomization algorithms used in the `scipy.linalg.interpolative` functions
-    written in Fortran77.
-
-    The library has been ported to Python and now the functions use the native NumPy
-    generators. Thus this function should not be used and will be removed in the
-    SciPy version 1.17.0.
-
-    If pseudo-random numbers are needed, NumPy pseudo-random generators should be used
-    instead.
-
-    Parameters
-    ----------
-    *shape
-        Shape of output array
-
-    """
-    warnings.warn("`scipy.linalg.interpolative.rand` is deprecated and will be "
-                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
-    rng = np.random.default_rng()
-    return rng.uniform(low=0., high=1.0, size=shape)
 
 
 def interp_decomp(A, eps_or_k, rand=True, rng=None):
@@ -612,6 +563,7 @@ def reconstruct_matrix_from_id(B, idx, proj):
     :class:`numpy.ndarray`
         Reconstructed matrix.
     """
+    B = np.atleast_2d(_C_contiguous_copy(B))
     if _is_real(B):
         return _backend.idd_reconid(B, idx, proj)
     else:

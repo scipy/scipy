@@ -2,6 +2,41 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_gen_harmonic_doc = R"(
+    _gen_harmonic(n, a)
+
+    Internal private function.
+
+    Compute sum_{i=1}^{n} i**-a for 1 <= m <= n.
+
+    This is the generalized harmonic number.
+
+    nan is returned if n < 1.
+
+    When n is type double, if it is nan, nan is returned.
+    Otherwise when n is double it is assumed to be an integer
+    value that is between 0 and 2**53.  This is not checked by
+    the function.
+
+    This function is used in scipy.stats.zipfian.
+    )";
+
+const char *_normalized_gen_harmonic_doc = R"(
+    _normalized_gen_harmonic(j, k, n, a)
+
+    Internal private function.
+
+    Compute (sum_{i=j}^{k} i**-a)/(sum_{i=1}^{n} i**-a) for 1 <= j <= k <= n.
+
+    When j, k and n are type double, nan is returned if any are nan.
+    Otherwise when the type is double it is assumed that i, j and k have integer
+    values that are between 0 and 2**53.  This is not checked by the function.
+    Failure to ensure this condition could result in invalid results and
+    possibly an infinite loop in the underlying C++ code.
+
+    This function is used in scipy.stats.zipfian.
+    )";
+
 const char *besselpoly_doc = R"(
     besselpoly(a, lmb, nu, out=None)
 
@@ -252,7 +287,7 @@ const char *cosdg_doc = R"(
 const char *cosm1_doc = R"(
     cosm1(x, out=None)
 
-    cos(x) - 1 for use when `x` is near zero.
+    Compute ``cos(x) - 1``, especially when `x` is near zero.
 
     Parameters
     ----------
@@ -338,7 +373,9 @@ const char *zetac_doc = R"(
 
     This function is defined as
 
-    .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
+    .. math::
+
+        \zeta(x) - 1 = \sum_{k=2}^{\infty} \frac{1}{k^x}
 
     where ``x > 1``.  For ``x < 1`` the analytic continuation is
     computed. For more information on the Riemann zeta function, see
@@ -407,28 +444,29 @@ const char *airy_doc = R"(
 
     Notes
     -----
-    The Airy functions Ai and Bi are two independent solutions of
+    The Airy functions :math:`\operatorname{Ai}` and :math:`\operatorname{Bi}` are two
+    independent solutions of
 
-    .. math:: y''(x) = x y(x).
+    .. math:: y''(z) = z y(z).
 
-    For real `z` in [-10, 10], the computation is carried out by calling
+    For real :math:`z` in :math:`[-10, 10]`, the computation is carried out by calling
     the Cephes [1]_ `airy` routine, which uses power series summation
-    for small `z` and rational minimax approximations for large `z`.
+    for small :math:`z` and rational minimax approximations for large :math:`z`.
 
     Outside this range, the AMOS [2]_ `zairy` and `zbiry` routines are
     employed.  They are computed using power series for :math:`|z| < 1` and
-    the following relations to modified Bessel functions for larger `z`
+    the following relations to modified Bessel functions for larger :math:`z`
     (where :math:`t \equiv 2 z^{3/2}/3`):
 
     .. math::
 
-        Ai(z) = \frac{1}{\pi \sqrt{3}} K_{1/3}(t)
+        \operatorname{Ai}(z) = \frac{1}{\pi}\sqrt{\frac{z}{3}} \, K_{1/3}(t)
 
-        Ai'(z) = -\frac{z}{\pi \sqrt{3}} K_{2/3}(t)
+        \operatorname{Ai}'(z) = -\frac{z}{\pi \sqrt{3}} \, K_{2/3}(t)
 
-        Bi(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t) \right)
+        \operatorname{Bi}(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t)\right)
 
-        Bi'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
+        \operatorname{Bi}'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
 
     References
     ----------
@@ -440,14 +478,14 @@ const char *airy_doc = R"(
 
     Examples
     --------
-    Compute the Airy functions on the interval [-15, 5].
+    Compute the Airy functions on the interval :math:`[-15, 5]`.
 
     >>> import numpy as np
     >>> from scipy import special
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
 
-    Plot Ai(x) and Bi(x).
+    Plot :math:`\operatorname{Ai}(x)` and :math:`\operatorname{Bi}(x)`.
 
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, ai, 'r', label='Ai(x)')
@@ -714,7 +752,7 @@ const char *binom_doc = R"(
 
     Parameters
     ----------
-    x, y: array_like
+    x, y : array_like
        Real arguments to :math:`\binom{x}{y}`.
     out : ndarray, optional
         Optional output array for the function values
@@ -819,7 +857,7 @@ const char *cotdg_doc = R"(
 const char *ellipe_doc = R"(
     ellipe(m, out=None)
 
-    Complete elliptic integral of the second kind
+    Complete elliptic integral of the second kind.
 
     This function is defined as
 
@@ -913,7 +951,7 @@ const char *ellipe_doc = R"(
 const char *ellipeinc_doc = R"(
     ellipeinc(phi, m, out=None)
 
-    Incomplete elliptic integral of the second kind
+    Incomplete elliptic integral of the second kind.
 
     This function is defined as
 
@@ -973,14 +1011,26 @@ const char *ellipeinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    The elliptic integral of the second kind can be used to find the circumference of an
+    ellipse with semi-major axis ``a`` and semi-minor axis ``b``.
+
+    >>> import numpy as np
+    >>> from scipy.special import ellipeinc
+    >>> a, b = 3.5, 2.1
+    >>> e = np.sqrt(1.0 - b**2/a**2)  # eccentricity
+    >>> 4*a*ellipeinc(np.pi/2, e**2)
+    np.float64(17.86889920437869)
     )";
 
 const char *ellipj_doc = R"(
     ellipj(u, m, out=None)
 
-    Jacobian elliptic functions
+    Jacobi elliptic functions.
 
-    Calculates the Jacobian elliptic functions of parameter `m` between
+    Calculates the Jacobi elliptic functions of parameter `m` between
     0 and 1, and real argument `u`.
 
     Parameters
@@ -1031,11 +1081,11 @@ const char *ellipj_doc = R"(
 const char *ellipkm1_doc = R"(
     ellipkm1(p, out=None)
 
-    Complete elliptic integral of the first kind around `m` = 1
+    Complete elliptic integral of the first kind around `m` = 1.
 
     This function is defined as
 
-    .. math:: K(p) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(p) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
 
     where `m = 1 - p`.
 
@@ -1065,14 +1115,14 @@ const char *ellipkm1_doc = R"(
 
     For ``p <= 1``, computation uses the approximation,
 
-    .. math:: K(p) \\approx P(p) - \\log(p) Q(p),
+    .. math:: K(p) \approx P(p) - \log(p) Q(p)
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  The
     argument `p` is used internally rather than `m` so that the logarithmic
     singularity at ``m = 1`` will be shifted to the origin; this preserves
     maximum accuracy.  For ``p > 1``, the identity
 
-    .. math:: K(p) = K(1/p)/\\sqrt(p)
+    .. math:: K(p) = K(1/p)/\sqrt{p}
 
     is used.
 
@@ -1140,7 +1190,7 @@ const char *ellipk_doc = R"(
 const char *ellipkinc_doc = R"(
     ellipkinc(phi, m, out=None)
 
-    Incomplete elliptic integral of the first kind
+    Incomplete elliptic integral of the first kind.
 
     This function is defined as
 
@@ -1231,7 +1281,7 @@ const char *xlogy_doc = R"(
     binary classification problems and is defined as:
 
     .. math::
-        L = 1/n * \\sum_{i=0}^n -(y_i*log(y\\_pred_i) + (1-y_i)*log(1-y\\_pred_i))
+        L = \frac{1}{n} \sum_{i=0}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
 
     We can define the parameters `x` and `y` as y and y_pred respectively.
     y is the array of the actual labels which over here can be either 0 or 1.
@@ -1485,7 +1535,7 @@ const char *exp1_doc = R"(
 
     Parameters
     ----------
-    z: array_like
+    z : array_like
         Real or complex argument.
     out : ndarray, optional
         Optional output array for the function results
@@ -2026,7 +2076,7 @@ const char *fresnel_doc = R"(
 const char *gamma_doc = R"(
     gamma(z, out=None)
 
-    gamma function.
+    Compute the gamma function.
 
     The gamma function is defined as
 
@@ -2517,7 +2567,7 @@ const char *gammasgn_doc = R"(
 const char *hankel1_doc = R"(
     hankel1(v, z, out=None)
 
-    Hankel function of the first kind
+    Hankel function of the first kind.
 
     Parameters
     ----------
@@ -2535,8 +2585,7 @@ const char *hankel1_doc = R"(
 
     See Also
     --------
-    hankel1e : ndarray
-        This function with leading exponential behavior stripped off.
+    hankel1e : This function with leading exponential behavior stripped off.
 
     Notes
     -----
@@ -2558,12 +2607,44 @@ const char *hankel1_doc = R"(
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    For the inhomogenous Helmholtz equation in :math:`\mathbb{R}^2` subject to radiation
+    boundary conditions, the Green's function is given by
+
+    .. math::
+
+        G(\mathbf{x}, \mathbf{x}^\prime) =
+        \frac{1}{4i} H^{(1)}_0(k|\mathbf{x} - \mathbf{x^\prime}|)
+
+    where :math:`k` is the wavenumber and :math:`H^{(1)}_0` is the Hankel function
+    of the first kind and of order zero. In the following example, we will solve the
+    Helmholtz equation with two Dirac sources.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hankel1
+    >>> k = 10  # Wavenumber
+    >>> sources = [0.5, -0.5]  # Location of two point sources
+    >>> x, y = np.linspace(-3, 3, 300), np.linspace(-3, 3, 300)
+    >>> Z = np.add.outer(1j*y, x)
+    >>> U = np.zeros_like(Z)
+    >>> for sz in sources:
+    ...     r = np.abs(Z - sz)
+    ...     U += (1j/4)*hankel1(0, k*r)
+
+    Finally, we will plot the real part of the solution.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.pcolormesh(np.real(Z), np.imag(Z), np.real(U))
+    >>> plt.show()
     )";
 
 const char *hankel1e_doc = R"(
     hankel1e(v, z, out=None)
 
-    Exponentially scaled Hankel function of the first kind
+    Exponentially scaled Hankel function of the first kind.
 
     Defined as::
 
@@ -2608,7 +2689,7 @@ const char *hankel1e_doc = R"(
 const char *hankel2_doc = R"(
     hankel2(v, z, out=None)
 
-    Hankel function of the second kind
+    Hankel function of the second kind.
 
     Parameters
     ----------
@@ -2653,7 +2734,7 @@ const char *hankel2_doc = R"(
 const char *hankel2e_doc = R"(
     hankel2e(v, z, out=None)
 
-    Exponentially scaled Hankel function of the second kind
+    Exponentially scaled Hankel function of the second kind.
 
     Defined as::
 
@@ -2699,7 +2780,7 @@ const char *hankel2e_doc = R"(
 const char *hyp2f1_doc = R"(
     hyp2f1(a, b, c, z, out=None)
 
-    Gauss hypergeometric function 2F1(a, b; c; z)
+    Gauss hypergeometric function 2F1(a, b; c; z).
 
     Parameters
     ----------
@@ -2999,7 +3080,7 @@ const char *it2struve0_doc = R"(
 const char *itairy_doc = R"(
     itairy(x, out=None)
 
-    Integrals of Airy functions
+    Integrals of Airy functions.
 
     Calculates the integrals of Airy functions from 0 to `x`.
 
@@ -3682,7 +3763,7 @@ const char *iv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -4102,7 +4183,7 @@ const char *jv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -4313,7 +4394,7 @@ const char *keip_doc = R"(
 const char *kelvin_doc = R"(
     kelvin(x, out=None)
 
-    Kelvin functions as complex numbers
+    Kelvin functions as complex numbers.
 
     Parameters
     ----------
@@ -4476,7 +4557,7 @@ const char *k0_doc = R"(
 const char *k0e_doc = R"(
     k0e(x, out=None)
 
-    Exponentially scaled modified Bessel function K of order 0
+    Exponentially scaled modified Bessel function K of order 0.
 
     Defined as::
 
@@ -4600,7 +4681,7 @@ const char *k1_doc = R"(
 const char *k1e_doc = R"(
     k1e(x, out=None)
 
-    Exponentially scaled modified Bessel function K of order 1
+    Exponentially scaled modified Bessel function K of order 1.
 
     Defined as::
 
@@ -4665,7 +4746,7 @@ const char *k1e_doc = R"(
 const char *kv_doc = R"(
     kv(v, z, out=None)
 
-    Modified Bessel function of the second kind of real order `v`
+    Modified Bessel function of the second kind of real order `v`.
 
     Returns the modified Bessel function of the second kind for real order
     `v` at complex `z`.
@@ -5025,6 +5106,29 @@ const char *loggamma_doc = R"(
     .. [hare1997] D.E.G. Hare,
       *Computing the Principal Branch of log-Gamma*,
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import loggamma, gamma
+
+    >>> z = 1.5 + 2j
+    >>> loggamma(z)
+    np.complex128(-1.4991963725850939+0.7332806816909994j)
+
+    Verify :math:`\exp(\log \Gamma(z)) = \Gamma(z)`:
+
+    >>> np.exp(loggamma(z))
+    np.complex128(0.165915108938991+0.14946347326641998j)
+    >>> gamma(z)
+    np.complex128(0.165915108938991+0.14946347326641998j)
+
+    Verify the recurrence :math:`\log \Gamma(z+1) = \log(z) + \log \Gamma(z)`:
+
+    >>> loggamma(z + 1)
+    np.complex128(-0.5829056407109388+1.6605758996926108j)
+    >>> np.log(z) + loggamma(z)
+    np.complex128(-0.5829056407109388+1.6605758996926117j)
     )";
 
 const char *logit_doc = R"(
@@ -5245,7 +5349,7 @@ const char *log_wright_bessel_doc = R"(
 const char *mathieu_a_doc = R"(
     mathieu_a(m, q, out=None)
 
-    Characteristic value of even Mathieu functions
+    Characteristic value of even Mathieu functions.
 
     Parameters
     ----------
@@ -5271,7 +5375,7 @@ const char *mathieu_a_doc = R"(
 const char *mathieu_b_doc = R"(
     mathieu_b(m, q, out=None)
 
-    Characteristic value of odd Mathieu functions
+    Characteristic value of odd Mathieu functions.
 
     Parameters
     ----------
@@ -5297,7 +5401,7 @@ const char *mathieu_b_doc = R"(
 const char *mathieu_cem_doc = R"(
     mathieu_cem(m, q, x, out=None)
 
-    Even Mathieu function and its derivative
+    Even Mathieu function and its derivative.
 
     Returns the even Mathieu function, ``ce_m(x, q)``, of order `m` and
     parameter `q` evaluated at `x` (given in degrees).  Also returns the
@@ -5366,7 +5470,7 @@ const char *mathieu_cem_doc = R"(
 const char *mathieu_modcem1_doc = R"(
     mathieu_modcem1(m, q, x, out=None)
 
-    Even modified Mathieu function of the first kind and its derivative
+    Even modified Mathieu function of the first kind and its derivative.
 
     Evaluates the even modified Mathieu function of the first kind,
     ``Mc1m(x, q)``, and its derivative at `x` for order `m` and parameter
@@ -5399,7 +5503,7 @@ const char *mathieu_modcem1_doc = R"(
 const char *mathieu_modcem2_doc = R"(
     mathieu_modcem2(m, q, x, out=None)
 
-    Even modified Mathieu function of the second kind and its derivative
+    Even modified Mathieu function of the second kind and its derivative.
 
     Evaluates the even modified Mathieu function of the second kind,
     Mc2m(x, q), and its derivative at `x` (given in degrees) for order `m`
@@ -5432,7 +5536,7 @@ const char *mathieu_modcem2_doc = R"(
 const char *mathieu_modsem1_doc = R"(
     mathieu_modsem1(m, q, x, out=None)
 
-    Odd modified Mathieu function of the first kind and its derivative
+    Odd modified Mathieu function of the first kind and its derivative.
 
     Evaluates the odd modified Mathieu function of the first kind,
     Ms1m(x, q), and its derivative at `x` (given in degrees) for order `m`
@@ -5465,7 +5569,7 @@ const char *mathieu_modsem1_doc = R"(
 const char *mathieu_modsem2_doc = R"(
     mathieu_modsem2(m, q, x, out=None)
 
-    Odd modified Mathieu function of the second kind and its derivative
+    Odd modified Mathieu function of the second kind and its derivative.
 
     Evaluates the odd modified Mathieu function of the second kind,
     Ms2m(x, q), and its derivative at `x` (given in degrees) for order `m`
@@ -5498,7 +5602,7 @@ const char *mathieu_modsem2_doc = R"(
 const char *mathieu_sem_doc = R"(
     mathieu_sem(m, q, x, out=None)
 
-    Odd Mathieu function and its derivative
+    Odd Mathieu function and its derivative.
 
     Returns the odd Mathieu function, se_m(x, q), of order `m` and
     parameter `q` evaluated at `x` (given in degrees).  Also returns the
@@ -5567,7 +5671,7 @@ const char *mathieu_sem_doc = R"(
 const char *modfresnelm_doc = R"(
     modfresnelm(x, out=None)
 
-    Modified Fresnel negative integrals
+    Modified Fresnel negative integrals.
 
     Parameters
     ----------
@@ -5581,7 +5685,7 @@ const char *modfresnelm_doc = R"(
     fm : scalar or ndarray
         Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
     km : scalar or ndarray
-        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
+        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fm``
 
     See Also
     --------
@@ -5592,7 +5696,7 @@ const char *modfresnelm_doc = R"(
 const char *modfresnelp_doc = R"(
     modfresnelp(x, out=None)
 
-    Modified Fresnel positive integrals
+    Modified Fresnel positive integrals.
 
     Parameters
     ----------
@@ -5617,7 +5721,7 @@ const char *modfresnelp_doc = R"(
 const char *obl_ang1_doc = R"(
     obl_ang1(m, n, c, x, out=None)
 
-    Oblate spheroidal angular function of the first kind and its derivative
+    Oblate spheroidal angular function of the first kind and its derivative.
 
     Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5709,7 +5813,7 @@ const char *ndtr_doc = R"(
 const char *obl_ang1_cv_doc = R"(
     obl_ang1_cv(m, n, c, cv, x, out=None)
 
-    Oblate spheroidal angular function obl_ang1 for precomputed characteristic value
+    Oblate spheroidal angular function obl_ang1 for precomputed characteristic value.
 
     Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5747,7 +5851,7 @@ const char *obl_ang1_cv_doc = R"(
 const char *obl_cv_doc = R"(
     obl_cv(m, n, c, out=None)
 
-    Characteristic value of oblate spheroidal function
+    Characteristic value of oblate spheroidal function.
 
     Computes the characteristic value of oblate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
@@ -5773,7 +5877,7 @@ const char *obl_cv_doc = R"(
 const char *obl_rad1_doc = R"(
     obl_rad1(m, n, c, x, out=None)
 
-    Oblate spheroidal radial function of the first kind and its derivative
+    Oblate spheroidal radial function of the first kind and its derivative.
 
     Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5808,7 +5912,7 @@ const char *obl_rad1_doc = R"(
 const char *obl_rad1_cv_doc = R"(
     obl_rad1_cv(m, n, c, cv, x, out=None)
 
-    Oblate spheroidal radial function obl_rad1 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad1 for precomputed characteristic value.
 
     Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5881,7 +5985,7 @@ const char *obl_rad2_doc = R"(
 const char *obl_rad2_cv_doc = R"(
     obl_rad2_cv(m, n, c, cv, x, out=None)
 
-    Oblate spheroidal radial function obl_rad2 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad2 for precomputed characteristic value.
 
     Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5918,7 +6022,7 @@ const char *obl_rad2_cv_doc = R"(
 const char *pbdv_doc = R"(
     pbdv(v, x, out=None)
 
-    Parabolic cylinder function D
+    Parabolic cylinder function D.
 
     Returns (d, dp) the parabolic cylinder function Dv(x) in d and the
     derivative, Dv'(x) in dp.
@@ -5943,7 +6047,7 @@ const char *pbdv_doc = R"(
 const char *pbvv_doc = R"(
     pbvv(v, x, out=None)
 
-    Parabolic cylinder function V
+    Parabolic cylinder function V.
 
     Returns the parabolic cylinder function Vv(x) in v and the
     derivative, Vv'(x) in vp.
@@ -6012,7 +6116,7 @@ const char *pbwa_doc = R"(
 const char *pro_ang1_doc = R"(
     pro_ang1(m, n, c, x, out=None)
 
-    Prolate spheroidal angular function of the first kind and its derivative
+    Prolate spheroidal angular function of the first kind and its derivative.
 
     Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6042,7 +6146,7 @@ const char *pro_ang1_doc = R"(
 const char *pro_ang1_cv_doc = R"(
     pro_ang1_cv(m, n, c, cv, x, out=None)
 
-    Prolate spheroidal angular function pro_ang1 for precomputed characteristic value
+    Prolate spheroidal angular function pro_ang1 for precomputed characteristic value.
 
     Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6075,7 +6179,7 @@ const char *pro_ang1_cv_doc = R"(
 const char *pro_cv_doc = R"(
     pro_cv(m, n, c, out=None)
 
-    Characteristic value of prolate spheroidal function
+    Characteristic value of prolate spheroidal function.
 
     Computes the characteristic value of prolate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
@@ -6100,7 +6204,7 @@ const char *pro_cv_doc = R"(
 const char *pro_rad1_doc = R"(
     pro_rad1(m, n, c, x, out=None)
 
-    Prolate spheroidal radial function of the first kind and its derivative
+    Prolate spheroidal radial function of the first kind and its derivative.
 
     Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6130,7 +6234,7 @@ const char *pro_rad1_doc = R"(
 const char *pro_rad1_cv_doc = R"(
     pro_rad1_cv(m, n, c, cv, x, out=None)
 
-    Prolate spheroidal radial function pro_rad1 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad1 for precomputed characteristic value.
 
     Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6163,7 +6267,7 @@ const char *pro_rad1_cv_doc = R"(
 const char *pro_rad2_doc = R"(
     pro_rad2(m, n, c, x, out=None)
 
-    Prolate spheroidal radial function of the second kind and its derivative
+    Prolate spheroidal radial function of the second kind and its derivative.
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6193,7 +6297,7 @@ const char *pro_rad2_doc = R"(
 const char *pro_rad2_cv_doc = R"(
     pro_rad2_cv(m, n, c, cv, x, out=None)
 
-    Prolate spheroidal radial function pro_rad2 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad2 for precomputed characteristic value.
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -6465,75 +6569,6 @@ const char *spherical_kn_doc = R"(
 
 const char *spherical_kn_d_doc = R"(
     Internal function, use `spherical_kn` instead.
-    )";
-
-const char *sph_harm_doc = R"(
-    sph_harm(m, n, theta, phi, out=None)
-
-    Compute spherical harmonics.
-
-    The spherical harmonics are defined as
-
-    .. math::
-
-        Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi} \frac{(n-m)!}{(n+m)!}}
-          e^{i m \theta} P^m_n(\cos(\phi))
-
-    where :math:`P_n^m` are the associated Legendre functions; see `lpmv`.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please use `scipy.special.sph_harm_y` instead.
-
-    Parameters
-    ----------
-    m : array_like
-        Order of the harmonic (int); must have ``|m| <= n``.
-    n : array_like
-       Degree of the harmonic (int); must have ``n >= 0``. This is
-       often denoted by ``l`` (lower case L) in descriptions of
-       spherical harmonics.
-    theta : array_like
-       Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
-    phi : array_like
-       Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    y_mn : complex scalar or ndarray
-       The harmonic :math:`Y^m_n` sampled at ``theta`` and ``phi``.
-
-    Notes
-    -----
-    There are different conventions for the meanings of the input
-    arguments ``theta`` and ``phi``. In SciPy ``theta`` is the
-    azimuthal angle and ``phi`` is the polar angle. It is common to
-    see the opposite convention, that is, ``theta`` as the polar angle
-    and ``phi`` as the azimuthal angle.
-
-    Note that SciPy's spherical harmonics include the Condon-Shortley
-    phase [2]_ because it is part of `lpmv`.
-
-    With SciPy's conventions, the first several spherical harmonics
-    are
-
-    .. math::
-
-        Y_0^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{1}{\pi}} \\
-        Y_1^{-1}(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                    e^{-i\theta} \sin(\phi) \\
-        Y_1^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{\pi}}
-                                 \cos(\phi) \\
-        Y_1^1(\theta, \phi) &= -\frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                 e^{i\theta} \sin(\phi).
-
-    References
-    ----------
-    .. [1] Digital Library of Mathematical Functions, 14.30.
-           https://dlmf.nist.gov/14.30
-    .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     )";
 
 const char *tandg_doc = R"(
@@ -6871,7 +6906,7 @@ const char *voigt_profile_doc = R"(
 const char *wofz_doc = R"(
     wofz(z, out=None)
 
-    Faddeeva function
+    Faddeeva function.
 
     Returns the value of the Faddeeva function for complex argument::
 
@@ -7176,7 +7211,7 @@ const char *yv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape

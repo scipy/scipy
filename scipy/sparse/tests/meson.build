@@ -1,5 +1,6 @@
 python_sources = [
   '__init__.py',
+  'test_64bit.py',
   'test_arithmetic1d.py',
   'test_array_api.py',
   'test_base.py',

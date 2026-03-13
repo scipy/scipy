@@ -57,6 +57,8 @@ import math
 from typing import Any
 from collections.abc import Callable
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
 
@@ -2087,7 +2089,7 @@ for k in _physical_constants_2018:
         _aliases[k] = k.replace('momentum', 'mom.um')
 for k in _physical_constants_2022:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')        
+        _aliases[k] = k.replace('momentum', 'mom.um')
 
 # CODATA 2018 and 2022: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'
@@ -2114,7 +2116,7 @@ for k, v in list(_aliases.items()):
 
 
 class ConstantWarning(DeprecationWarning):
-    """Accessing a constant no longer in current CODATA data set"""
+    """Accessing a constant no longer in current CODATA data set."""
     pass
 
 
@@ -2124,13 +2126,14 @@ def _check_obsolete(key: str) -> None:
                       ConstantWarning, stacklevel=3)
 
 
+@xp_capabilities(out_of_scope=True)
 def value(key: str) -> float:
     """
-    Value in physical_constants indexed by key
+    Value in physical_constants indexed by key.
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns
@@ -2149,18 +2152,19 @@ def value(key: str) -> float:
     return physical_constants[key][0]
 
 
+@xp_capabilities(out_of_scope=True)
 def unit(key: str) -> str:
     """
-    Unit in physical_constants indexed by key
+    Unit in physical_constants indexed by key.
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns
     -------
-    unit : Python string
+    unit : str
         Unit in `physical_constants` corresponding to `key`
 
     Examples
@@ -2174,13 +2178,14 @@ def unit(key: str) -> str:
     return physical_constants[key][1]
 
 
+@xp_capabilities(out_of_scope=True)
 def precision(key: str) -> float:
     """
-    Relative precision in physical_constants indexed by key
+    Relative precision in physical_constants indexed by key.
 
     Parameters
     ----------
-    key : Python string
+    key : str
         Key in dictionary `physical_constants`
 
     Returns
@@ -2199,6 +2204,7 @@ def precision(key: str) -> float:
     return physical_constants[key][2] / physical_constants[key][0]
 
 
+@xp_capabilities(out_of_scope=True)
 def find(sub: str | None = None, disp: bool = False) -> Any:
     """
     Return list of physical_constant keys containing a given string.

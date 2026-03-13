@@ -1,28 +1,12 @@
 import numpy as np
-from scipy._lib.decorator import decorator as _decorator
 
 __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
 
-@_decorator
-def _held_figure(func, obj, ax=None, **kw):
+def _get_axes():
     import matplotlib.pyplot as plt
 
-    if ax is None:
-        fig = plt.figure()
-        ax = fig.gca()
-        return func(obj, ax=ax, **kw)
-
-    # As of matplotlib 2.0, the "hold" mechanism is deprecated.
-    # When matplotlib 1.x is no longer supported, this check can be removed.
-    was_held = getattr(ax, 'ishold', lambda: True)()
-    if was_held:
-        return func(obj, ax=ax, **kw)
-    try:
-        ax.hold(True)
-        return func(obj, ax=ax, **kw)
-    finally:
-        ax.hold(was_held)
+    return plt.figure().gca()
 
 
 def _adjust_bounds(ax, points):
@@ -33,10 +17,9 @@ def _adjust_bounds(ax, points):
     ax.set_ylim(xy_min[1], xy_max[1])
 
 
-@_held_figure
 def delaunay_plot_2d(tri, ax=None):
     """
-    Plot the given Delaunay triangulation in 2-D
+    Plot the given Delaunay triangulation in 2-D.
 
     Parameters
     ----------
@@ -82,6 +65,8 @@ def delaunay_plot_2d(tri, ax=None):
         raise ValueError("Delaunay triangulation is not 2-D")
 
     x, y = tri.points.T
+
+    ax = ax or _get_axes()
     ax.plot(x, y, 'o')
     ax.triplot(x, y, tri.simplices.copy())
 
@@ -90,10 +75,9 @@ def delaunay_plot_2d(tri, ax=None):
     return ax.figure
 
 
-@_held_figure
 def convex_hull_plot_2d(hull, ax=None):
     """
-    Plot the given convex hull diagram in 2-D
+    Plot the given convex hull diagram in 2-D.
 
     Parameters
     ----------
@@ -140,6 +124,7 @@ def convex_hull_plot_2d(hull, ax=None):
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")
 
+    ax = ax or _get_axes()
     ax.plot(hull.points[:, 0], hull.points[:, 1], 'o')
     line_segments = [hull.points[simplex] for simplex in hull.simplices]
     ax.add_collection(LineCollection(line_segments,
@@ -150,10 +135,9 @@ def convex_hull_plot_2d(hull, ax=None):
     return ax.figure
 
 
-@_held_figure
 def voronoi_plot_2d(vor, ax=None, **kw):
     """
-    Plot the given Voronoi diagram in 2-D
+    Plot the given Voronoi diagram in 2-D.
 
     Parameters
     ----------
@@ -161,18 +145,21 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Diagram to plot
     ax : matplotlib.axes.Axes instance, optional
         Axes to plot on
-    show_points : bool, optional
-        Add the Voronoi points to the plot.
-    show_vertices : bool, optional
-        Add the Voronoi vertices to the plot.
-    line_colors : string, optional
-        Specifies the line color for polygon boundaries
-    line_width : float, optional
-        Specifies the line width for polygon boundaries
-    line_alpha : float, optional
-        Specifies the line alpha for polygon boundaries
-    point_size : float, optional
-        Specifies the size of points
+    **kw
+        The following options may be passed as keyword arguments:
+
+        show_points : bool, optional
+            Add the Voronoi points to the plot.
+        show_vertices : bool, optional
+            Add the Voronoi vertices to the plot.
+        line_colors : str, optional
+            Specifies the line color for polygon boundaries
+        line_width : float, optional
+            Specifies the line width for polygon boundaries
+        line_alpha : float, optional
+            Specifies the line alpha for polygon boundaries
+        point_size : float, optional
+            Specifies the size of points
 
     Returns
     -------
@@ -222,6 +209,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
     if vor.points.shape[1] != 2:
         raise ValueError("Voronoi diagram is not 2-D")
+
+    ax = ax or _get_axes()
 
     if kw.get('show_points', True):
         point_size = kw.get('point_size', None)

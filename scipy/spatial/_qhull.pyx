@@ -54,11 +54,11 @@ cdef extern from "setjmp.h" nogil:
     void longjmp(jmp_buf STATE, int VALUE) nogil
 
 # Define the clockwise constant
-cdef extern from "qhull_src/src/user_r.h":
+cdef extern from "<libqhull_r/user_r.h>":
     cdef enum:
         qh_ORIENTclock
 
-cdef extern from "qhull_src/src/qset_r.h":
+cdef extern from "<libqhull_r/qset_r.h>":
     ctypedef union setelemT:
         void *p
         int i
@@ -70,7 +70,7 @@ cdef extern from "qhull_src/src/qset_r.h":
     int qh_setsize(qhT *, setT *set) nogil
     void qh_setappend(qhT *, setT **setp, void *elem) nogil
 
-cdef extern from "qhull_src/src/libqhull_r.h":
+cdef extern from "<libqhull_r/libqhull_r.h>":
     ctypedef double realT
     ctypedef double coordT
     ctypedef double pointT
@@ -182,7 +182,7 @@ cdef extern from "qhull_misc.h":
                            boolT ismalloc, char* qhull_cmd, void *outfile,
                            void *errfile, coordT* feaspoint) nogil
 
-cdef extern from "qhull_src/src/io_r.h":
+cdef extern from "<libqhull_r/io_r.h>":
     ctypedef enum qh_RIDGE:
         qh_RIDGEall
         qh_RIDGEinner
@@ -197,14 +197,14 @@ cdef extern from "qhull_src/src/io_r.h":
     void qh_order_vertexneighbors(qhT *, vertexT *vertex) nogil
     int qh_compare_facetvisit(const void *p1, const void *p2) nogil
 
-cdef extern from "qhull_src/src/geom_r.h":
+cdef extern from "<libqhull_r/geom_r.h>":
     pointT *qh_facetcenter(qhT *, setT *vertices) nogil
     double qh_getarea(qhT *, facetT *facetlist) nogil
 
-cdef extern from "qhull_src/src/poly_r.h":
+cdef extern from "<libqhull_r/poly_r.h>":
     void qh_check_maxout(qhT *) nogil
 
-cdef extern from "qhull_src/src/mem_r.h":
+cdef extern from "<libqhull_r/mem_r.h>":
     void qh_memfree(qhT *, void *object, int insize)
 
 from libc.stdlib cimport qsort
@@ -219,6 +219,10 @@ qhull_misc_lib_check()
 
 
 class QhullError(RuntimeError):
+    """
+    Raised when Qhull encounters an error condition, such as 
+    geometrical degeneracy when options to resolve are not enabled.
+    """
     pass
 
 
@@ -394,8 +398,7 @@ cdef class _Qhull:
         # Note: this is direct copypaste from __dealloc__(), keep it
         # in sync with that.  The code must be written directly in
         # __dealloc__, because otherwise the generated C code tries to
-        # call PyObject_GetAttrStr(self, "close") which on Pypy
-        # crashes.
+        # call PyObject_GetAttrStr(self, "close") which resuscitates self
 
         cdef int curlong, totlong
 
@@ -453,7 +456,7 @@ cdef class _Qhull:
                 #Store the halfspaces in _points and the dual points in _dual_points later
                 self._point_arrays.append(np.array(points, copy=True))
                 dists = points[:, :-1].dot(interior_point)+points[:, -1]
-                arr = np.array(-points[:, :-1]/dists, dtype=np.double, order="C", copy=True)
+                arr = np.array(-points[:, :-1]/dists[:, np.newaxis], dtype=np.double, order="C", copy=True)
             else:
                 arr = np.array(points, dtype=np.double, order="C", copy=True)
 
@@ -2399,6 +2402,10 @@ class ConvexHull(_QhullUser):
     The convex hull is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
+    References
+    ----------
+    .. [Qhull] http://www.qhull.org/
+
     Examples
     --------
 
@@ -2465,11 +2472,6 @@ class ConvexHull(_QhullUser):
     >>> convex_hull_plot_2d(hull, ax=ax)
         <Figure size 640x480 with 1 Axes> # may vary
     >>> plt.show()
-
-    References
-    ----------
-    .. [Qhull] http://www.qhull.org/
-
     """
 
     def __init__(self, points, incremental=False, qhull_options=None):
@@ -2771,6 +2773,12 @@ class HalfspaceIntersection(_QhullUser):
     `Qhull library <http://www.qhull.org/>`__.
     This reproduces the "qhalf" functionality of Qhull.
 
+    References
+    ----------
+    .. [Qhull] http://www.qhull.org/
+    .. [1] S. Boyd, L. Vandenberghe, Convex Optimization, available
+           at http://stanford.edu/~boyd/cvxbook/
+
     Examples
     --------
 
@@ -2843,13 +2851,6 @@ class HalfspaceIntersection(_QhullUser):
     >>> ax.add_patch(circle)
     >>> plt.legend(bbox_to_anchor=(1.6, 1.0))
     >>> plt.show()
-
-    References
-    ----------
-    .. [Qhull] http://www.qhull.org/
-    .. [1] S. Boyd, L. Vandenberghe, Convex Optimization, available
-           at http://stanford.edu/~boyd/cvxbook/
-
     """
 
     def __init__(self, halfspaces, interior_point,
@@ -2905,9 +2906,11 @@ class HalfspaceIntersection(_QhullUser):
 
         Parameters
         ----------
-        halfspaces : ndarray
-            New halfspaces to add. The dimensionality should match that of the
-            initial halfspaces.
+        halfspaces : ndarray of double, shape (n_new_ineq, ndim+1)
+            New halfspaces to add. The dimensionality (ndim) should match that of the
+            initial halfspaces. Like in the constructor, these are stacked 
+            inequalites of the form Ax + b <= 0 in format [A; b]. The original
+            feasible point must also be feasible for these new inequalities.
         restart : bool, optional
             Whether to restart processing from scratch, rather than
             adding halfspaces incrementally.
@@ -2929,6 +2932,22 @@ class HalfspaceIntersection(_QhullUser):
         of halfspaces is also not possible after `close` has been called.
 
         """
+        if halfspaces.ndim > 2:
+            raise ValueError("`halfspaces` should be provided as a 2D array")
+        # We check for non-feasibility of incremental additions
+        # in a manner similar to `qh_sethalfspace`
+        halfspaces = np.atleast_2d(halfspaces)
+        dists = np.dot(halfspaces[:, :self.ndim], self.interior_point) + halfspaces[:, -1]
+        # HalfspaceIntersection uses closed half spaces so
+        # the feasible point also cannot be directly on the boundary
+        viols = dists >= 0
+        if viols.any():
+            # error out with an indication of the first violating
+            # half space discovered
+            first_viol = np.nonzero(viols)[0].min()
+            bad_hs = halfspaces[first_viol, :]
+            msg = f"feasible point is not clearly inside halfspace: {bad_hs}"
+            raise QhullError(msg)
         self._add_points(halfspaces, restart, self.interior_point)
 
     @property

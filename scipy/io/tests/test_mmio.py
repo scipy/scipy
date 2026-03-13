@@ -54,13 +54,11 @@ class TestMMIOArray:
         b = mmread(self.fn, spmatrix=False)
         assert_equal(a, b)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
         self.check_exact(array([[1, 2], [3, 4]], dtype=dtype),
                          (2, 2, 4, 'array', typeval, 'general'))
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_32bit_integer(self, typeval, dtype):
         a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)
@@ -276,14 +274,18 @@ class TestMMIOSparseCSR(TestMMIOArray):
         info = (2, 2, 3, 'coordinate', 'pattern', 'general')
         mmwrite(self.fn, a, field='pattern')
         assert_equal(mminfo(self.fn), info)
+
         b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(p, b.toarray())
-        assert not scipy.sparse.isspmatrix(b)
+        assert isinstance(b, scipy.sparse.sparray)
 
         b = mmread(self.fn, spmatrix=True)
-        assert scipy.sparse.isspmatrix(b)
-        b = mmread(self.fn)  # chk default
-        assert scipy.sparse.isspmatrix(b)
+        assert_array_almost_equal(p, b.toarray())
+        assert isinstance(b, scipy.sparse.spmatrix)
+
+        with pytest.deprecated_call(match="The default value"):
+            b = mmread(self.fn)  # chk default
+            assert not isinstance(b, scipy.sparse.sparray)
 
     def test_gh13634_non_skew_symmetric_int(self):
         a = scipy.sparse.csr_array([[1, 2], [-2, 99]], dtype=np.int32)

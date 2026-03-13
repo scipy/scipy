@@ -33,6 +33,7 @@ class YaoLiu04(Benchmark):
     TODO line 1201.  Gavana code and documentation differ.
     max(abs(x)) != abs(max(x))
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -41,7 +42,6 @@ class YaoLiu04(Benchmark):
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -75,6 +75,7 @@ class YaoLiu09(Benchmark):
 
     .. [2] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -83,7 +84,6 @@ class YaoLiu09(Benchmark):
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

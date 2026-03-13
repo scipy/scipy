@@ -1,8 +1,13 @@
 # Temporary file separated from _distribution_infrastructure.py
 # to simplify the diff during PR review.
 from abc import ABC, abstractmethod
+from types import GenericAlias
 
 class _ProbabilityDistribution(ABC):
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     @abstractmethod
     def support(self):
         r"""Support of the random variable
@@ -30,8 +35,8 @@ class _ProbabilityDistribution(ABC):
         Notes
         -----
         Suppose a continuous probability distribution has support ``(l, r)``.
-        The following table summarizes the value returned by methods
-        of ``ContinuousDistribution`` for arguments outside the support.
+        The following table summarizes the value returned by several
+        methods when the argument is outside the support.
 
         +----------------+---------------------+---------------------+
         | Method         | Value for ``x < l`` | Value for ``x > r`` |
@@ -49,13 +54,16 @@ class _ProbabilityDistribution(ABC):
         | ``logccdf(x)`` | 0                   | -inf                |
         +----------------+---------------------+---------------------+
 
-        For the ``cdf`` and related methods, the inequality need not be
-        strict; i.e. the tabulated value is returned when the method is
-        evaluated *at* the corresponding boundary.
+        For discrete distributions, the same table is applicable with
+        ``pmf`` and ``logpmf`` substituted for ``pdf`` and ``logpdf``.
+
+        For the ``cdf`` and related methods of continuous distributions, the
+        inequality need not be strict; i.e. the tabulated value is returned
+        when the method is evaluated *at* the corresponding boundary.
 
         The following table summarizes the value returned by the inverse
-        methods of ``ContinuousDistribution`` for arguments at the boundaries
-        of the domain ``0`` to ``1``.
+        methods for arguments ``0`` and ``1``, whether the distribution
+        is continuous or discrete.
 
         +-------------+-----------+-----------+
         | Method      | ``x = 0`` | ``x = 1`` |
@@ -65,7 +73,7 @@ class _ProbabilityDistribution(ABC):
         | ``icdf(x)`` | ``r``     | ``l``     |
         +-------------+-----------+-----------+
 
-        For the inverse log-functions, the same values are returned for
+        For the inverse log-functions, the same values are returned
         for ``x = log(0)`` and ``x = log(1)``. All inverse functions return
         ``nan`` when evaluated at an argument outside the domain ``0`` to ``1``.
 
@@ -123,19 +131,22 @@ class _ProbabilityDistribution(ABC):
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a `NotImplementedError``
             will be raised.
-        rng : `numpy.random.Generator` or `scipy.stats.QMCEngine`, optional
+        rng : `numpy.random.Generator` or `scipy.stats.qmc.QMCEngine`, optional
             Pseudo- or quasi-random number generator state. When `rng` is None,
             a new `numpy.random.Generator` is created using entropy from the
             operating system. Types other than `numpy.random.Generator` and
-            `scipy.stats.QMCEngine` are passed to `numpy.random.default_rng`
+            `scipy.stats.qmc.QMCEngine` are passed to `numpy.random.default_rng`
             to instantiate a ``Generator``.
 
-            If `rng` is an instance of `scipy.stats.QMCEngine` configured to use
+            If `rng` is an instance of `scipy.stats.qmc.QMCEngine` configured to use
             scrambling and `shape` is not empty, then each slice along the zeroth
             axis of the result is a "quasi-independent", low-discrepancy sequence;
             that is, they are distinct sequences that can be treated as statistically
             independent for most practical purposes. Separate calls to `sample`
-            produce new quasi-independent, low-discrepancy sequences.
+            produce new quasi-independent, low-discrepancy sequences. The dimensionality
+            (``d``) of the provided ``QMCEngine`` is ignored; new instances of the same
+            class and configuration options (``scramble``, ``optimization``, and
+            ``bits``, where applicable) will be created with ``d=1``.
 
         References
         ----------
@@ -173,7 +184,7 @@ class _ProbabilityDistribution(ABC):
 
         In terms of probability density function :math:`f(x)` and support
         :math:`\chi`, the "raw" moment (about the origin) of order :math:`n` of
-        a random variable :math:`X` is:
+        a continuous random variable :math:`X` is:
 
         .. math::
 
@@ -194,6 +205,9 @@ class _ProbabilityDistribution(ABC):
 
             \tilde{\mu}_n(X) = \frac{\mu_n(X)}
                                     {\sigma^n}
+
+        The definitions for discrete random variables are analogous, with
+        sums over the support replacing the integrals.
 
         Parameters
         ----------
@@ -217,7 +231,8 @@ class _ProbabilityDistribution(ABC):
               vice versa (see Notes)
             - ``'normalize'``: normalize a central moment to get a standardized
               or vice versa
-            - ``'quadrature'``: numerically integrate according to the definition
+            - ``'quadrature'``: numerically integrate (or, in the discrete case, sum)
+              according to the definition
 
             Not all `method` options are available for all orders, kinds, and
             distributions. If the selected `method` is not available, a
@@ -236,6 +251,7 @@ class _ProbabilityDistribution(ABC):
         standard_deviation
         skewness
         kurtosis
+        lmoment
 
         Notes
         -----
@@ -325,6 +341,124 @@ class _ProbabilityDistribution(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def lmoment(self, order, kind, *, method):
+        r"""L-moment or L-moment ratio of positive integer order.
+
+        The L-moment of order :math:`n` of a continuous random variable :math:`X` is:
+
+        .. math::
+
+            \lambda_n(X) = \frac{1}{n} \sum_{k=0}^{n-1} (-1)^{k} {{n-1}\choose k} E[X_{(n-k)}]
+
+        where :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}` are the order statistics
+        of an independent sample of size :math:`n`.
+
+        The L-moment can also be expressed in terms of the random variable's inverse
+        cumulative distribution function :math:`F^{-1}` and the shifted Legendre
+        polynomial :math:`\widetilde{P}_{n-1}`:
+
+        .. math::
+
+            \lambda_n(X) = \int_0^1 F^{-1}(p) \widetilde{P}_{n-1}(p) dp
+
+        For order :math:`n \geq 3`, the "standardized" L-moment, known as the L-moment
+        ratio, is the L-moment normalized by the L-moment of order 2, resulting in a
+        scale invariant quantity:
+
+        .. math::
+
+            \tau_n(X) = \frac{\lambda_n(X)}
+                             {\lambda_2(X)}
+
+        Parameters
+        ----------
+        order : int
+            The positive integer order of the L-moment; i.e. :math:`n` in the formulae
+            above.
+        standardize : bool, default: True
+            Whether to return L-moment ratios for orders 3 and higher. L-moment ratios
+            are analogous to standardized conventional moments: they are the
+            non-standardized L-moments divided by the L-moment of order 2.
+        method : {None, 'formula', 'general', 'order_statistics', 'quadrature_icdf', 'cache'}
+            The strategy used to evaluate the L-moment. By default (``None``),
+            the infrastructure chooses between the following options,
+            listed in order of precedence.
+
+            - ``'cache'``: use the value of the L-moment most recently calculated
+              via another method
+            - ``'formula'``: use a formula specific to the distribution.
+            - ``'general'``: use a general result that is true for all distributions
+              with finite L-moments; for instance, the first L-moment is identically
+              equal to the mean.
+            - ``'quadrature_icdf'``: numerically integrate according to the definition
+              in terms of the inverse cumulative distribution function.
+            - ``'order_statistics'``: compute according to the definition in terms of
+              order statistics.
+
+            Not all `method` options are available for all orders and distributions.
+            If the selected `method` is not available, a ``NotImplementedError`` will
+            be raised.
+
+        Returns
+        -------
+        out : array
+            The L-moment of the random variable of the specified order.
+
+        See Also
+        --------
+        moment
+        order_statistic
+
+        Notes
+        -----
+        L-moments are only defined for distributions with finite mean. If a formula for
+        the L-moment is not specifically implemented for the chosen distribution, SciPy
+        will attempt to compute the moment via a generic method, which may yield a
+        finite result where none exists. This is not a critical bug, but an opportunity
+        for an enhancement.
+
+        SciPy offers only basic capabilities for working with L-moments. For more advanced
+        features, consider the ``lmo`` package [2]_.
+
+        References
+        ----------
+        .. [1] L-moment, *Wikipedia*,
+               https://en.wikipedia.org/wiki/L-moment
+        .. [2] @jorenham, *Lmo*, https://github.com/jorenham/Lmo/
+
+        Examples
+        --------
+        Instantiate a distribution with the desired parameters:
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> X = stats.Normal(mu=1., sigma=2.)
+
+        Evaluate the first L-moment:
+
+        >>> X.lmoment(order=1)
+        1.0
+        >>> X.lmoment(order=1) == X.mean() == X.mu
+        True
+
+        Evaluate the second L-moment:
+
+        >>> X.lmoment(order=2)
+        np.float64(1.1283791670955123)
+        >>> np.allclose(X.lmoment(order=2), X.sigma / np.sqrt(np.pi))
+        True
+
+        Evaluate the fourth L-moment ratio, that is, the L-kurtosis:
+
+        >>> X.lmoment(order=4)
+        np.float64(0.12260171954089069)
+        >>> X.lmoment(order=4) == X.lmoment(order=4, standardize=False) / X.lmoment(order=2)
+        True
+
+        """  # noqa:E501
+        raise NotImplementedError()
+
+    @abstractmethod
     def mean(self, *, method):
         r"""Mean (raw first moment about the origin)
 
@@ -365,15 +499,19 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def median(self, *, method):
-        r"""Median (50th percentil)
+        r"""Median (50th percentile)
 
         If a continuous random variable :math:`X` has probability :math:`0.5` of
         taking on a value less than :math:`m`, then :math:`m` is the median.
-        That is, the median is the value :math:`m` for which:
+
+        More generally, a median is a value :math:`m` for which:
 
         .. math::
 
-            P(X ≤ m) = 0.5 = P(X ≥ m)
+            P(X ≤ m) ≤ 0.5 ≥ P(X ≥ m)
+
+        For discrete random variables, the median may not be unique, in which
+        case the smallest value satisfying the definition is reported.
 
         Parameters
         ----------
@@ -428,8 +566,8 @@ class _ProbabilityDistribution(ABC):
 
         Informally, the mode is a value that a random variable has the highest
         probability (density) of assuming. That is, the mode is the element of
-        the support :math:`\chi` that maximizes the probability density
-        function :math:`f(x)`:
+        the support :math:`\chi` that maximizes the probability density (or mass,
+        for discrete random variables) function :math:`f(x)`:
 
         .. math::
 
@@ -443,7 +581,7 @@ class _ProbabilityDistribution(ABC):
             following options, listed in order of precedence.
 
             - ``'formula'``: use a formula for the median
-            - ``'optimization'``: numerically maximize the PDF
+            - ``'optimization'``: numerically maximize the PDF/PMF
 
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a ``NotImplementedError``
@@ -465,7 +603,7 @@ class _ProbabilityDistribution(ABC):
         For some distributions
 
         #. the mode is not unique (e.g. the uniform distribution);
-        #. the PDF has one or more singularities, and it is debateable whether
+        #. the PDF has one or more singularities, and it is debatable whether
            a singularity is considered to be in the domain and called the mode
            (e.g. the gamma distribution with shape parameter less than 1); and/or
         #. the probability density function may have one or more local maxima
@@ -737,8 +875,11 @@ class _ProbabilityDistribution(ABC):
         By definition of the support, the PDF evaluates to its minimum value
         of :math:`0` outside the support; i.e. for :math:`x < l` or
         :math:`x > r`. The maximum of the PDF may be less than or greater than
-        :math:`1`; since the valus is a probability *density*, only its integral
+        :math:`1`; since the value is a probability *density*, only its integral
         over the support must equal :math:`1`.
+
+        For discrete distributions, `pdf` returns ``inf`` at supported points
+        and ``0`` elsewhere.
 
         References
         ----------
@@ -823,6 +964,9 @@ class _ProbabilityDistribution(ABC):
         to work with the logarithms of probabilities and probability densities to
         avoid underflow.
 
+        For discrete distributions, `logpdf` returns ``inf`` at supported points and
+        ``-inf`` (``log(0)``) elsewhere.
+
         References
         ----------
         .. [1] Probability density function, *Wikipedia*,
@@ -841,6 +985,156 @@ class _ProbabilityDistribution(ABC):
         >>> X.logpdf(0.5)
         -0.6931471805599453
         >>> np.allclose(X.logpdf(0.5), np.log(X.pdf(0.5)))
+        True
+
+        """
+        raise NotImplementedError()
+
+    def pmf(self, x, /, *, method=None):
+        r"""Probability mass function
+
+        The probability mass function ("PMF"), denoted :math:`f(x)`, is the
+        probability that the random variable :math:`X` will assume the value :math:`x`.
+
+        .. math::
+
+            f(x) = P(X = x)
+
+        `pmf` accepts `x` for :math:`x`.
+
+        Parameters
+        ----------
+        x : array_like
+            The argument of the PMF.
+        method : {None, 'formula', 'logexp'}
+            The strategy used to evaluate the PMF. By default (``None``), the
+            infrastructure chooses between the following options, listed in
+            order of precedence.
+
+            - ``'formula'``: use a formula for the PMF itself
+            - ``'logexp'``: evaluate the log-PMF and exponentiate
+
+            Not all `method` options are available for all distributions.
+            If the selected `method` is not available, a ``NotImplementedError``
+            will be raised.
+
+        Returns
+        -------
+        out : array
+            The PMF evaluated at the argument `x`.
+
+        See Also
+        --------
+        cdf
+        logpmf
+
+        Notes
+        -----
+        Suppose a discrete probability distribution has support over the integers
+        :math:`{l, l+1, ..., r-1, r}`.
+        By definition of the support, the PMF evaluates to its minimum value
+        of :math:`0` for non-integral :math:`x` and for :math:`x` outside the support;
+        i.e. for :math:`x < l` or :math:`x > r`.
+
+        For continuous distributions, `pmf` returns ``0`` at all real arguments.
+
+        References
+        ----------
+        .. [1] Probability mass function, *Wikipedia*,
+               https://en.wikipedia.org/wiki/Probability_mass_function
+
+        Examples
+        --------
+        Instantiate a distribution with the desired parameters:
+
+        >>> from scipy import stats
+        >>> X = stats.Binomial(n=10, p=0.5)
+
+        Evaluate the PMF at the desired argument:
+
+        >>> X.pmf(5)
+        np.float64(0.24609375)
+
+        """
+        raise NotImplementedError()
+
+    def logpmf(self, x, /, *, method=None):
+        r"""Log of the probability mass function
+
+        The probability mass function ("PMF"), denoted :math:`f(x)`, is the
+        probability that the random variable :math:`X` will assume the value :math:`x`.
+
+        .. math::
+
+            f(x) = \frac{d}{dx} F(x)
+
+        `logpmf` computes the logarithm of the probability mass function
+        ("log-PMF"), :math:`\log(f(x))`, but it may be numerically favorable
+        compared to the naive implementation (computing :math:`f(x)` and
+        taking the logarithm).
+
+        `logpmf` accepts `x` for :math:`x`.
+
+        Parameters
+        ----------
+        x : array_like
+            The argument of the log-PMF.
+        method : {None, 'formula', 'logexp'}
+            The strategy used to evaluate the log-PMF. By default (``None``), the
+            infrastructure chooses between the following options, listed in order
+            of precedence.
+
+            - ``'formula'``: use a formula for the log-PMF itself
+            - ``'logexp'``: evaluate the PMF and takes its logarithm
+
+            Not all `method` options are available for all distributions.
+            If the selected `method` is not available, a ``NotImplementedError``
+            will be raised.
+
+        Returns
+        -------
+        out : array
+            The log-PMF evaluated at the argument `x`.
+
+        See Also
+        --------
+        pmf
+        logcdf
+
+        Notes
+        -----
+        Suppose a discrete probability distribution has support over the integers
+        :math:`{l, l+1, ..., r-1, r}`.
+        By definition of the support, the log-PMF evaluates to its minimum value
+        of :math:`-\infty` (i.e. :math:`\log(0)`) for non-integral :math:`x` and
+        for :math:`x` outside the support; i.e. for :math:`x < l` or :math:`x > r`.
+
+        For distributions with infinite support, it is common for `pmf` to return
+        a value of ``0`` when the argument is theoretically within the support;
+        this can occur because the true value of the PMF is too small to be
+        represented by the chosen dtype. The log-PMF, however, will often be finite
+        (not ``-inf``) over a much larger domain. Consequently, it may be preferred
+        to work with the logarithms of probabilities and probability densities to
+        avoid underflow.
+
+        References
+        ----------
+        .. [1] Probability density function, *Wikipedia*,
+               https://en.wikipedia.org/wiki/Probability_density_function
+
+        Examples
+        --------
+        Instantiate a distribution with the desired parameters:
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> X = stats.Binomial(n=10, p=0.5)
+
+        Evaluate the log-PMF at the desired argument:
+
+        >>> X.logpmf(5)
+        np.float64(-1.4020427180880297)
+        >>> np.allclose(X.logpmf(5), np.log(X.pmf(5)))
         True
 
         """
@@ -880,7 +1174,8 @@ class _ProbabilityDistribution(ABC):
             - ``'formula'``: use a formula for the CDF itself
             - ``'logexp'``: evaluate the log-CDF and exponentiate
             - ``'complement'``: evaluate the CCDF and take the complement
-            - ``'quadrature'``: numerically integrate the PDF
+            - ``'quadrature'``: numerically integrate the PDF (or, in the discrete
+              case, sum the PMF)
 
             In place of ``'complement'``, the two-argument form accepts:
 
@@ -920,6 +1215,17 @@ class _ProbabilityDistribution(ABC):
         The CDF evaluates to its minimum value of :math:`0` for :math:`x ≤ l`
         and its maximum value of :math:`1` for :math:`x ≥ r`.
 
+        Suppose a discrete probability distribution has support :math:`[l, r]`.
+        The CDF :math:`F(x)` is related to the probability mass function
+        :math:`f(x)` by:
+
+        .. math::
+
+            F(x) = \sum_{u=l}^{\lfloor x \rfloor} f(u)
+
+        The CDF evaluates to its minimum value of :math:`0` for :math:`x < l`
+        and its maximum value of :math:`1` for :math:`x ≥ r`.
+
         The CDF is also known simply as the "distribution function".
 
         References
@@ -951,13 +1257,23 @@ class _ProbabilityDistribution(ABC):
     def icdf(self, p, /, *, method):
         r"""Inverse of the cumulative distribution function.
 
-        The inverse of the cumulative distribution function ("inverse CDF"),
-        denoted :math:`F^{-1}(p)`, is the argument :math:`x` for which the
-        cumulative distribution function :math:`F(x)` evaluates to :math:`p`.
+        For monotonic continuous distributions, the inverse of the cumulative
+        distribution function ("inverse CDF"), denoted :math:`F^{-1}(p)`, is the
+        argument :math:`x` for which the cumulative distribution function
+        :math:`F(x)` evaluates to :math:`p`.
 
         .. math::
 
             F^{-1}(p) = x \quad \text{s.t.} \quad F(x) = p
+
+        When a strict "inverse" of the cumulative distribution function does not
+        exist (e.g. discrete random variables), the "inverse CDF" is defined by
+        convention as the smallest value within the support :math:`\chi` for which
+        :math:`F(x)` is at least :math:`p`.
+
+        .. math::
+
+            F^{-1}(p) = \min_\chi \quad \text{s.t.} \quad F(x) ≥ p
 
         `icdf` accepts `p` for :math:`p \in [0, 1]`.
 
@@ -992,7 +1308,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
+        Suppose a probability distribution has support :math:`[l, r]`. The
         inverse CDF returns its minimum value of :math:`l` at :math:`p = 0`
         and its maximum value of :math:`r` at :math:`p = 1`. Because the CDF
         has range :math:`[0, 1]`, the inverse CDF is only defined on the
@@ -1063,7 +1379,8 @@ class _ProbabilityDistribution(ABC):
             - ``'formula'``: use a formula for the CCDF itself
             - ``'logexp'``: evaluate the log-CCDF and exponentiate
             - ``'complement'``: evaluate the CDF and take the complement
-            - ``'quadrature'``: numerically integrate the PDF
+            - ``'quadrature'``: numerically integrate the PDF (or, in the discrete
+              case, sum the PMF)
 
             The two-argument form chooses between:
 
@@ -1102,6 +1419,17 @@ class _ProbabilityDistribution(ABC):
 
         The CCDF returns its minimum value of :math:`0` for :math:`x ≥ r`
         and its maximum value of :math:`1` for :math:`x ≤ l`.
+
+        Suppose a discrete probability distribution has support :math:`[l, r]`.
+        The CCDF :math:`G(x)` is related to the probability mass function
+        :math:`f(x)` by:
+
+        .. math::
+
+            G(x) = \sum_{u=\lfloor x + 1 \rfloor}^{r} f(u)
+
+        The CCDF evaluates to its minimum value of :math:`0` for :math:`x ≥ r`
+        and its maximum value of :math:`1` for :math:`x < l`.
 
         The CCDF is also known as the "survival function".
 
@@ -1146,6 +1474,15 @@ class _ProbabilityDistribution(ABC):
 
             G^{-1}(p) = x \quad \text{s.t.} \quad G(x) = p
 
+        When a strict "inverse" of the complementary cumulative distribution function
+        does not exist (e.g. discrete random variables), the "inverse CCDF" is defined
+        by convention as the smallest value within the support :math:`\chi` for which
+        :math:`G(x)` is no greater than :math:`p`.
+
+        .. math::
+
+            G^{-1}(p) = \min_\chi \quad \text{s.t.} \quad G(x) ≤ p
+
         `iccdf` accepts `p` for :math:`p \in [0, 1]`.
 
         Parameters
@@ -1174,7 +1511,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
+        Suppose a probability distribution has support :math:`[l, r]`. The
         inverse CCDF returns its minimum value of :math:`l` at :math:`p = 1`
         and its maximum value of :math:`r` at :math:`p = 0`. Because the CCDF
         has range :math:`[0, 1]`, the inverse CCDF is only defined on the
@@ -1249,7 +1586,8 @@ class _ProbabilityDistribution(ABC):
             - ``'logexp'``: evaluate the CDF and take the logarithm
             - ``'complement'``: evaluate the log-CCDF and take the
               logarithmic complement (see Notes)
-            - ``'quadrature'``: numerically log-integrate the log-PDF
+            - ``'quadrature'``: numerically log-integrate the log-PDF (or, in the
+              discrete case, log-sum the log-PMF)
 
             In place of ``'complement'``, the two-argument form accepts:
 
@@ -1275,7 +1613,8 @@ class _ProbabilityDistribution(ABC):
         Suppose a continuous probability distribution has support :math:`[l, r]`.
         The log-CDF evaluates to its minimum value of :math:`\log(0) = -\infty`
         for :math:`x ≤ l` and its maximum value of :math:`\log(1) = 0` for
-        :math:`x ≥ r`.
+        :math:`x ≥ r`. An analogous statement can be made for discrete distributions,
+        but the inequality governing the minimum value is strict.
 
         For distributions with infinite support, it is common for
         `cdf` to return a value of ``0`` when the argument
@@ -1368,7 +1707,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
+        Suppose a probability distribution has support :math:`[l, r]`.
         The inverse log-CDF returns its minimum value of :math:`l` at
         :math:`\log(p) = \log(0) = -\infty` and its maximum value of :math:`r` at
         :math:`\log(p) = \log(1) = 0`. Because the log-CDF has range
@@ -1418,7 +1757,7 @@ class _ProbabilityDistribution(ABC):
 
             G(x) = 1 - F(x) = P(X > x)
 
-        A two-argument variant of this function is:
+         A two-argument variant of this function is:
 
         .. math::
 
@@ -1444,7 +1783,8 @@ class _ProbabilityDistribution(ABC):
             - ``'logexp'``: evaluate the CCDF and take the logarithm
             - ``'complement'``: evaluate the log-CDF and take the
               logarithmic complement (see Notes)
-            - ``'quadrature'``: numerically log-integrate the log-PDF
+            - ``'quadrature'``: numerically log-integrate the log-PDF (or, in the
+              discrete case, log-sum the log-PMF)
 
             The two-argument form chooses between:
 
@@ -1471,7 +1811,8 @@ class _ProbabilityDistribution(ABC):
         Suppose a continuous probability distribution has support :math:`[l, r]`.
         The log-CCDF returns its minimum value of :math:`\log(0)=-\infty` for
         :math:`x ≥ r` and its maximum value of :math:`\log(1) = 0` for
-        :math:`x ≤ l`.
+        :math:`x ≤ l`. An analogous statement can be made for discrete distributions,
+        but the inequality governing the maximum value is strict.
 
         For distributions with infinite support, it is common for
         `ccdf` to return a value of ``0`` when the argument
@@ -1554,7 +1895,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
+        Suppose a probability distribution has support :math:`[l, r]`. The
         inverse log-CCDF returns its minimum value of :math:`l` at
         :math:`\log(p) = \log(1) = 0` and its maximum value of :math:`r` at
         :math:`\log(p) = \log(0) = -\infty`. Because the log-CCDF has range
@@ -1567,7 +1908,7 @@ class _ProbabilityDistribution(ABC):
         however, the *logarithm* of this resulting probability may be
         represented in floating point arithmetic, in which case this function
         may be used to find the argument of the CCDF for which the *logarithm*
-        of the resulting probability is `y = \log(p)`.
+        of the resulting probability is :math:`y = \log(p)`.
 
         The "logarithmic complement" of a number :math:`z` is mathematically
         equivalent to :math:`\log(1-\exp(z))`, but it is computed to avoid loss
@@ -1601,15 +1942,18 @@ class _ProbabilityDistribution(ABC):
         r"""Logarithm of the differential entropy
 
         In terms of probability density function :math:`f(x)` and support
-        :math:`\chi`, the differential entropy (or simply "entropy") of a random
-        variable :math:`X` is:
+        :math:`\chi`, the differential entropy (or simply "entropy") of a
+        continuous random variable :math:`X` is:
 
         .. math::
 
             h(X) = - \int_{\chi} f(x) \log f(x) dx
 
+        The definition for a discrete random variable is analogous, with the PMF
+        replacing the PDF and a sum over the support replacing the integral.
+
         `logentropy` computes the logarithm of the differential entropy
-        ("log-entropy"), :math:`log(h(X))`, but it may be numerically favorable
+        ("log-entropy"), :math:`\log(h(X))`, but it may be numerically favorable
         compared to the naive implementation (computing :math:`h(X)` then
         taking the logarithm).
 
@@ -1622,8 +1966,8 @@ class _ProbabilityDistribution(ABC):
 
             - ``'formula'``: use a formula for the log-entropy itself
             - ``'logexp'``: evaluate the entropy and take the logarithm
-            - ``'quadrature'``: numerically log-integrate the logarithm of the
-              entropy integrand
+            - ``'quadrature'``: numerically log-integrate (or, in the discrete
+              case, log-sum) the logarithm of the entropy integrand (summand)
 
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a ``NotImplementedError``
@@ -1641,9 +1985,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        If the entropy of a distribution is negative, then the log-entropy
-        is complex with imaginary part :math:`\pi`. For
-        consistency, the result of this function always has complex dtype,
+        The differential entropy of a continuous distribution can be negative.
+        In this case, the log-entropy is complex with imaginary part :math:`\pi`.
+        For consistency, the result of this function always has complex dtype,
         regardless of the value of the imaginary part.
 
         References
@@ -1675,7 +2019,7 @@ class _ProbabilityDistribution(ABC):
 
         """
         raise NotImplementedError()
-        
+
     @abstractmethod
     def entropy(self, *, method):
         r"""Differential entropy
@@ -1688,6 +2032,9 @@ class _ProbabilityDistribution(ABC):
 
             h(X) = - \int_{\chi} f(x) \log f(x) dx
 
+        The definition for a discrete random variable is analogous, with the
+        PMF replacing the PDF and a sum over the support replacing the integral.
+
         Parameters
         ----------
         method : {None, 'formula', 'logexp', 'quadrature'}
@@ -1697,7 +2044,9 @@ class _ProbabilityDistribution(ABC):
 
             - ``'formula'``: use a formula for the entropy itself
             - ``'logexp'``: evaluate the log-entropy and exponentiate
-            - ``'quadrature'``: use numerical integration
+            - ``'quadrature'``:  numerically integrate (or, in the discrete
+              case, sum) the entropy integrand (summand)
+
 
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a ``NotImplementedError``

@@ -37,7 +37,6 @@ __all__ = ['netcdf_file', 'netcdf_variable']
 import warnings
 import weakref
 from operator import mul
-from platform import python_implementation
 
 import mmap as mm
 
@@ -46,8 +45,6 @@ from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-
-IS_PYPY = python_implementation() == 'PyPy'
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -111,7 +108,7 @@ class netcdf_file:
 
     Parameters
     ----------
-    filename : string or file-like
+    filename : str or file-like
         string -> filename
     mode : {'r', 'w', 'a'}, optional
         read-write-append mode, default is 'r'
@@ -132,14 +129,18 @@ class netcdf_file:
 
     Notes
     -----
+    This module is derived from
+    `pupynere <https://github.com/stcorp/pupynere>`_.
     The major advantage of this module over other modules is that it doesn't
-    require the code to be linked to the NetCDF libraries. This module is
-    derived from `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
+    require the code to be linked to the NetCDF libraries. However, for a more
+    recent version of the NetCDF standard and additional features, please consider
+    the permissively-licensed
+    `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_.
 
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <https://www.unidata.ucar.edu/software/netcdf/guide_toc.html>`__. There
+    <https://docs.unidata.ucar.edu/netcdf-c/current/>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions
@@ -151,7 +152,7 @@ class netcdf_file:
     uses and any attributes such as data units, along with containing the data
     values for the variable. It is good practice to include a
     variable that is the same name as a dimension to provide the values for
-    that axes. Lastly, the attributes section would contain additional
+    that axis. Lastly, the attributes section would contain additional
     information such as the name of the file creator or the instrument used to
     collect the data.
 
@@ -171,7 +172,7 @@ class netcdf_file:
     (default for read-only), arrays returned by it refer to data
     directly on the disk. The file should not be closed, and cannot be cleanly
     closed when asked, if such arrays are alive. You may want to copy data arrays
-    obtained from mmapped Netcdf file if they are to be processed after the file
+    obtained from mmapped NetCDF file if they are to be processed after the file
     is closed, see the example below.
 
     Examples
@@ -246,10 +247,7 @@ class netcdf_file:
             omode = 'r+' if mode == 'a' else mode
             self.fp = open(self.filename, f'{omode}b')
             if mmap is None:
-                # Mmapped files on PyPy cannot be usually closed
-                # before the GC runs, so it's better to use mmap=False
-                # as the default.
-                mmap = (not IS_PYPY)
+                mmap = True
 
         if mode != 'r':
             # Cannot read write-only files
@@ -563,7 +561,7 @@ class netcdf_file:
             types = [(int, NC_INT), (float, NC_FLOAT), (str, NC_CHAR)]
 
             # bytes index into scalars in py3k. Check for "string" types
-            if isinstance(values, (str, bytes)):
+            if isinstance(values, str | bytes):
                 sample = values
             else:
                 try:
@@ -692,13 +690,13 @@ class netcdf_file:
                 a_size = reduce(mul, shape, 1) * size
                 if self.use_mmap:
                     data = self._mm_buf[begin_:begin_+a_size].view(dtype=dtype_)
-                    data.shape = shape
+                    data = data.reshape(shape)
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
                     data = frombuffer(self.fp.read(a_size), dtype=dtype_
                                       ).copy()
-                    data.shape = shape
+                    data = data.reshape(shape)
                     self.fp.seek(pos)
 
             # Add variable.
@@ -716,13 +714,13 @@ class netcdf_file:
             if self.use_mmap:
                 buf = self._mm_buf[begin:begin+self._recs*self._recsize]
                 rec_array = buf.view(dtype=dtypes)
-                rec_array.shape = (self._recs,)
+                rec_array = rec_array.reshape((self._recs,))
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
                 rec_array = frombuffer(self.fp.read(self._recs*self._recsize),
                                        dtype=dtypes).copy()
-                rec_array.shape = (self._recs,)
+                rec_array = rec_array.reshape((self._recs,))
                 self.fp.seek(pos)
 
             for var in rec_vars:
@@ -852,9 +850,15 @@ class netcdf_variable:
     isrec, shape
         Properties
 
-    See also
+    See Also
     --------
     isrec, shape
+
+    Notes
+    -----
+    For a more recent version of the NetCDF standard and additional features, please
+    consider the permissively-licensed
+    `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_.
 
     """
     def __init__(self, data, typecode, size, shape, dimensions,
@@ -904,6 +908,11 @@ class netcdf_variable:
     def getValue(self):
         """
         Retrieve a scalar value from a `netcdf_variable` of length one.
+
+        Returns
+        -------
+        scalar
+            The scalar value contained in the length-one netcdf variable.
 
         Raises
         ------

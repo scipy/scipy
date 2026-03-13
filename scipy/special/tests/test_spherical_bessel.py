@@ -1,9 +1,10 @@
 #
 # Tests of spherical Bessel functions.
 #
+import warnings
+
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_allclose,
-                           assert_array_almost_equal, suppress_warnings)
+from numpy.testing import assert_allclose
 import pytest
 from numpy import sin, cos, sinh, cosh, exp, inf, nan, r_, pi
 
@@ -44,8 +45,9 @@ class TestSphericalJn:
         # https://dlmf.nist.gov/10.52.E3
         n = 7
         x = np.array([-inf + 0j, inf + 0j, inf*(1+1j)])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert_allclose(spherical_jn(n, x), np.array([0, 0, inf*(1+1j)]))
 
     def test_spherical_jn_large_arg_1(self):
@@ -101,8 +103,9 @@ class TestSphericalYn:
         # https://dlmf.nist.gov/10.52.E3
         n = 7
         x = np.array([-inf + 0j, inf + 0j, inf*(1+1j)])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert_allclose(spherical_yn(n, x), np.array([0, 0, inf*(1+1j)]))
 
     def test_spherical_yn_at_zero(self):
@@ -316,9 +319,10 @@ class TestSphericalOld:
 
         inp0 = (i1n[0][1])
         inp1 = (i1n[0][0] - 2.0/0.2 * i1n[0][1])
-        assert_array_almost_equal(i1n[0],np.array([1.0066800127054699381,
-                                                0.066933714568029540839]),12)
-        assert_array_almost_equal(i1n[1],[inp0,inp1],12)
+        assert_allclose(i1n[0], np.array([1.0066800127054699381,
+                                          0.066933714568029540839]),
+                        atol=1.5e-12, rtol=0.0)
+        assert_allclose(i1n[1], [inp0, inp1], atol=1.5e-12, rtol=0)
 
     def test_sph_in_kn_order0(self):
         x = 1.
@@ -327,14 +331,14 @@ class TestSphericalOld:
         sph_i0[1] = spherical_in(0, x, derivative=True)
         sph_i0_expected = np.array([np.sinh(x)/x,
                                     np.cosh(x)/x-np.sinh(x)/x**2])
-        assert_array_almost_equal(r_[sph_i0], sph_i0_expected)
+        assert_allclose(r_[sph_i0], sph_i0_expected, atol=1.5e-7, rtol=0)
 
         sph_k0 = np.empty((2,))
         sph_k0[0] = spherical_kn(0, x)
         sph_k0[1] = spherical_kn(0, x, derivative=True)
         sph_k0_expected = np.array([0.5*pi*exp(-x)/x,
                                     -0.5*pi*exp(-x)*(1/x+1/x**2)])
-        assert_array_almost_equal(r_[sph_k0], sph_k0_expected)
+        assert_allclose(r_[sph_k0], sph_k0_expected, atol=1.5e-7, rtol=0)
 
     def test_sph_jn(self):
         s1 = np.empty((2,3))
@@ -350,10 +354,11 @@ class TestSphericalOld:
         s10 = -s1[0][1]
         s11 = s1[0][0]-2.0/0.2*s1[0][1]
         s12 = s1[0][1]-3.0/0.2*s1[0][2]
-        assert_array_almost_equal(s1[0],[0.99334665397530607731,
-                                      0.066400380670322230863,
-                                      0.0026590560795273856680],12)
-        assert_array_almost_equal(s1[1],[s10,s11,s12],12)
+        assert_allclose(s1[0], [0.99334665397530607731,
+                                0.066400380670322230863,
+                                0.0026590560795273856680],
+                        atol=1.5e-12, rtol=0)
+        assert_allclose(s1[1], [s10, s11, s12], atol=1.5e-12, rtol=0)
 
     def test_sph_kn(self):
         kn = np.empty((2,3))
@@ -369,20 +374,22 @@ class TestSphericalOld:
         kn0 = -kn[0][1]
         kn1 = -kn[0][0]-2.0/0.2*kn[0][1]
         kn2 = -kn[0][1]-3.0/0.2*kn[0][2]
-        assert_array_almost_equal(kn[0],[6.4302962978445670140,
-                                         38.581777787067402086,
-                                         585.15696310385559829],12)
-        assert_array_almost_equal(kn[1],[kn0,kn1,kn2],9)
+        assert_allclose(kn[0], [6.4302962978445670140,
+                                38.581777787067402086,
+                                585.15696310385559829],
+                        atol=1.5e-12, rtol=0)
+        assert_allclose(kn[1], [kn0, kn1, kn2], atol=1.5e-9, rtol=0)
 
     def test_sph_yn(self):
         sy1 = spherical_yn(2, 0.2)
         sy2 = spherical_yn(0, 0.2)
-        assert_almost_equal(sy1,-377.52483,5)  # previous values in the system
-        assert_almost_equal(sy2,-4.9003329,5)
+        # previous values in the system
+        assert_allclose(sy1, -377.52483, atol=1.5e-5, rtol=0)
+        assert_allclose(sy2, -4.9003329, atol=1.5e-5, rtol=0)
         sphpy = (spherical_yn(0, 0.2) - 2*spherical_yn(2, 0.2))/3
         sy3 = spherical_yn(1, 0.2, derivative=True)
         # compare correct derivative val. (correct =-system val).
-        assert_almost_equal(sy3,sphpy,4)
+        assert_allclose(sy3, sphpy, atol=1.5e-4, rtol=0)
 
 
 @pytest.mark.parametrize('derivative', [False, True])
@@ -397,4 +404,4 @@ def test_negative_real_gh14582(derivative, fun):
     z = rng.standard_normal(size=size)
     res = fun(n, z, derivative=derivative)
     ref = fun(n, z+0j, derivative=derivative)
-    np.testing.assert_allclose(res, ref.real)
+    assert_allclose(res, ref.real)

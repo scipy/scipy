@@ -59,6 +59,8 @@ mid-year release of SciPy.
     ================  =======================================================================
      Date             Pythons supported
     ================  =======================================================================
+     2026              Py3.12+
+     2025              Py3.11+
      2024              Py3.10+
      2023              Py3.9+
      2022              Py3.8+
@@ -80,13 +82,17 @@ needs to be written using what is common in all of those 4 `NumPy releases`_.
 
 .. dropdown:: Python and NumPy version support per SciPy version
 
-    The table shows the NumPy versions suitable for each major Python version.
-    This table does not distinguish SciPy patch versions (e.g. when a new Python
-    version is released, SciPy will generally issue a compatible patch version).
+    The table shows the NumPy and Python versions suitable for each minor SciPy
+    version. Note that not all patch versions for a particular minor version of
+    SciPy support all listed versions of Python. Only the most recent patch version
+    within each minor version is guaranteed to support all listed Python versions.
 
     =================  ========================    =======================
      SciPy version      Python versions             NumPy versions
     =================  ========================    =======================
+     1.16               >=3.11, <3.14               >=1.25.2, <2.6.0
+     1.15               >=3.10, <3.14               >=1.23.5, <2.5.0
+     1.14               >=3.10, <3.14               >=1.23.5, <2.3.0
      1.13               >=3.9, <3.13                >=1.22.4, <2.3.0
      1.12               >=3.9, <3.13                >=1.22.4, <2.0.0
      1.11               >=3.9, <3.13                >=1.21.6, <1.27.0
@@ -143,8 +149,8 @@ Currently, SciPy wheels are being built as follows:
 =========================   ==============================   ====================================   =============================
  Linux x86                   ``ubuntu-22.04``                 GCC 10.2.1                             ``cibuildwheel``
  Linux arm                   ``docker-builder-arm64``         GCC 11.3.0                             ``cibuildwheel``
- OSX x86_64 (OpenBLAS)       ``macos-12``                     Apple clang 13.1.6/gfortran 11.3.0     ``cibuildwheel``
- OSX x86_64 (Accelerate)     ``macos-13``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
+ OSX x86_64 (OpenBLAS)       ``macos-15-intel``               Apple clang 13.1.6/gfortran 15.2.0     ``cibuildwheel``
+ OSX x86_64 (Accelerate)     ``macos-15-intel``               Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
  OSX arm64 (OpenBLAS)        ``macos-14``                     Apple clang 15.0.0/gfortran 12.1.0     ``cibuildwheel``
  OSX arm64 (Accelerate)      ``macos-14``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
  Windows                     ``windows-2019``                 GCC 10.3.0 (`rtools`_)                 ``cibuildwheel``
@@ -155,8 +161,7 @@ Currently, SciPy wheels are being built as follows:
 .. _Images: https://github.com/orgs/cirruslabs/packages?tab=packages&q=macos
 .. _rtools: https://community.chocolatey.org/packages/rtools#versionhistory
 
-Note that the OSX wheels additionally vendor gfortran 11.3.0 for x86_64,
-and gfortran 12.1.0 for arm64. See ``tools/wheels/cibw_before_build_macos.sh``.
+Note that the OSX wheels additionally vendor the libgfortran dylib.
 
 
 C Compilers

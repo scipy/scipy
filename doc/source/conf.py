@@ -51,6 +51,7 @@ extensions = [
     'matplotlib.sphinxext.plot_directive',
     'myst_nb',
     'jupyterlite_sphinx',
+    'array_api_capabilities_table',
 ]
 
 
@@ -131,6 +132,7 @@ nitpick_ignore = [
     ("py:class", "None.  Remove all items from D."),
     ("py:class", "(k, v), remove and return some (key, value) pair as a"),
     ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "None.  Update D from mapping/iterable E and F."),
     ("py:class", "v, remove specified key and return the corresponding value."),
 ]
 
@@ -188,6 +190,9 @@ warnings.filterwarnings(
     message=r'.*py:obj reference target not found: scipy.misc.*',
     category=Warning,
 )
+
+warnings.filterwarnings("ignore", message="`scipy.odr` is deprecated",
+                        category=DeprecationWarning)
 
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
@@ -249,25 +254,12 @@ if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
     html_theme_options["show_version_warning_banner"] = False
 
-if 'versionwarning' in tags:  # noqa: F821
-    # Specific to docs.scipy.org deployment.
-    # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
-    src = ('var script = document.createElement("script");\n'
-           'script.type = "text/javascript";\n'
-           'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);')
-    html_context = {
-        'VERSIONCHECK_JS': src
-    }
-    html_js_files += ['versioncheck.js', ]
-
 html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
 html_css_files = [
     "scipy.css",
-    "try_examples.css",
 ]
 
 # html_additional_pages = {
@@ -304,7 +296,8 @@ phantom_import_file = 'dump.xml'
 # Generate plots for example sections
 numpydoc_use_plots = True
 np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
-    '__call__', '__mul__', '__getitem__', '__len__',
+    '__call__', '__mul__', '__getitem__', '__len__', '__pow__', '__matmul__',
+    '__truediv__', '__add__', '__rmul__', '__rmatmul__'
 ]
 
 # -----------------------------------------------------------------------------
@@ -359,8 +352,8 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
+        'odr'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
@@ -408,6 +401,7 @@ myst_enable_extensions = [
     "colon_fence",
     "dollarmath",
     "substitution",
+    "linkify",
 ]
 nb_render_markdown_format = "myst"
 render_markdown_format = "myst"
@@ -481,7 +475,7 @@ def linkcode_resolve(domain, info):
         obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
-    if isinstance(obj, (rv_generic, multi_rv_generic)):
+    if isinstance(obj, rv_generic | multi_rv_generic):
         obj = obj.__class__
     try:
         fn = inspect.getsourcefile(obj)
@@ -501,7 +495,7 @@ def linkcode_resolve(domain, info):
         lineno = None
 
     if lineno:
-        linespec = f"#L{0}-L{1}".format(lineno, lineno + len(source) - 1)
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
     else:
         linespec = ""
 

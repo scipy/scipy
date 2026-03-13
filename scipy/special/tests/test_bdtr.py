@@ -1,7 +1,9 @@
+import warnings
+
 import numpy as np
 import scipy.special as sc
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_array_equal
 
 
 class TestBdtr:
@@ -24,8 +26,8 @@ class TestBdtr:
         (1.0, 2, np.inf)
     ])
     def test_inf(self, k, n, p):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
             val = sc.bdtr(k, n, p)
         assert np.isnan(val)
 
@@ -54,8 +56,8 @@ class TestBdtrc:
         (1.0, 2, np.inf)
     ])
     def test_inf(self, k, n, p):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
             val = sc.bdtrc(k, n, p)
         assert np.isnan(val)
 
@@ -93,8 +95,8 @@ class TestBdtri:
         (1.0, 2, np.inf)
     ])
     def test_inf(self, k, n, p):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
             val = sc.bdtri(k, n, p)
         assert np.isnan(val)
 

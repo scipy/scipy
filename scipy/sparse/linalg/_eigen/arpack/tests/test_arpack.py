@@ -1,19 +1,14 @@
-__usage__ = """
-To run tests locally:
-  python tests/test_arpack.py [-l<int>] [-v<int>]
-
-"""
-
 import threading
 import itertools
+import warnings
 
 import numpy as np
 
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import pytest
 
-from numpy import dot, conj, random
+from numpy import dot, conj
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_array, csr_array, diags_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
@@ -21,7 +16,7 @@ from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
                                               ArpackNoConvergence)
 
 
-from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._gcutils import assert_deallocated
 
 
 # precision for tests
@@ -189,7 +184,7 @@ def argsort_which(eigenvalues, typ, k, which,
 
 
 def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
-              mattype=np.asarray, OPpart=None, mode='normal'):
+              mattype=np.asarray, OPpart=None, mode='normal', rng=None):
     general = ('bmat' in d)
 
     if symmetric:
@@ -220,7 +215,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     exact_eval = exact_eval[ind]
 
     # compute arpack eigenvalues
-    kwargs = dict(which=which, v0=v0, sigma=sigma)
+    kwargs = dict(which=which, v0=v0, sigma=sigma, rng=rng)
     if eigs_func is eigsh:
         kwargs['mode'] = mode
     else:
@@ -398,46 +393,36 @@ class NonSymmetricParams:
         self.complex_test_cases = [SNC, GNC]
 
 
-@pytest.mark.iterations(1)
-@pytest.mark.thread_unsafe
-def test_symmetric_modes(num_parallel_threads):
-    assert num_parallel_threads == 1
-    params = SymmetricParams()
+@pytest.mark.parametrize("sigma, mode", [(None, 'normal'), (0.5, 'normal'),
+                                         (0.5, 'buckling'), (0.5, 'cayley')])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA', 'BE'])
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
+def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
+    rng = np.random.default_rng(1749531508689996)
     k = 2
-    symmetric = True
-    for D in params.real_test_cases:
-        for typ in 'fd':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for (sigma, modes) in params.sigmas_modes.items():
-                        for mode in modes:
-                            eval_evec(symmetric, D, typ, k, which,
-                                      None, sigma, mattype, None, mode)
+    eval_evec(True, D, typ, k, which, None, sigma, mattype, None, mode, rng=rng)
 
 
-def test_hermitian_modes():
-    params = SymmetricParams()
+@pytest.mark.parametrize("sigma", [None, 0.5])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA'])
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", SymmetricParams().complex_test_cases)
+def test_hermitian_modes(D, typ, which, mattype, sigma):
+    rng = np.random.default_rng(1749531706842957)
     k = 2
-    symmetric = True
-    for D in params.complex_test_cases:
-        for typ in 'FD':
-            for which in params.which:
-                if which == 'BE':
-                    continue  # BE invalid for complex
-                for mattype in params.mattypes:
-                    for sigma in params.sigmas_modes:
-                        eval_evec(symmetric, D, typ, k, which,
-                                  None, sigma, mattype)
+    eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
 
 
-def test_symmetric_starting_vector():
-    params = SymmetricParams()
-    symmetric = True
-    for k in [1, 2, 3, 4, 5]:
-        for D in params.real_test_cases:
-            for typ in 'fd':
-                v0 = random.rand(len(D['v0'])).astype(typ)
-                eval_evec(symmetric, D, typ, k, 'LM', v0)
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
+@pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
+def test_symmetric_starting_vector(k, D, typ):
+    rng = np.random.default_rng(1749532110418901)
+    v0 = rng.uniform(size=len(D['v0'])).astype(typ)
+    eval_evec(True, D, typ, k, 'LM', v0, rng=rng)
 
 
 def test_symmetric_no_convergence():
@@ -455,57 +440,39 @@ def test_symmetric_no_convergence():
         assert_allclose(dot(m, v), w * v, rtol=rtol, atol=atol)
 
 
-def test_real_nonsymmetric_modes():
-    params = NonSymmetricParams()
+@pytest.mark.parametrize("sigma, OPpart", [(None, None), (0.1, 'r'),
+                                            (0.1 + 0.1j, 'r'), (0.1 + 0.1j, 'i')])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'LR', 'LI'])
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", NonSymmetricParams().real_test_cases)
+def test_real_nonsymmetric_modes(D, typ, which, mattype,
+                                 sigma, OPpart):
+    rng = np.random.default_rng(174953334412726)
     k = 2
-    symmetric = False
-    for D in params.real_test_cases:
-        for typ in 'fd':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for sigma, OPparts in params.sigmas_OPparts.items():
-                        for OPpart in OPparts:
-                            eval_evec(symmetric, D, typ, k, which,
-                                      None, sigma, mattype, OPpart)
+    eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
 
 
-def test_complex_nonsymmetric_modes():
-    params = NonSymmetricParams()
+@pytest.mark.parametrize("sigma", [None, 0.1, 0.1 + 0.1j])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'LR', 'LI'])
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
+def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
+    rng = np.random.default_rng(1749533536274527)
     k = 2
-    symmetric = False
-    for D in params.complex_test_cases:
-        for typ in 'DF':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for sigma in params.sigmas_OPparts:
-                        eval_evec(symmetric, D, typ, k, which,
-                                  None, sigma, mattype)
+    eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
 
 
-def test_standard_nonsymmetric_starting_vector():
-    params = NonSymmetricParams()
-    sigma = None
-    symmetric = False
-    for k in [1, 2, 3, 4]:
-        for d in params.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
-
-
-def test_general_nonsymmetric_starting_vector():
-    params = NonSymmetricParams()
-    sigma = None
-    symmetric = False
-    for k in [1, 2, 3, 4]:
-        for d in params.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
+@pytest.mark.parametrize("k", [1, 2, 3, 4])
+def test_nonsymmetric_starting_vector(k, D, typ):
+    rng = np.random.default_rng(174953366983161)
+    A = D['mat']
+    n = A.shape[0]
+    v0 = rng.uniform(size=n).astype(typ)
+    eval_evec(False, D, typ, k, "LM", v0, sigma=None, rng=rng)
 
 
 def test_standard_nonsymmetric_no_convergence():
@@ -555,7 +522,6 @@ def test_ticket_1459_arpack_crash():
         evals, evecs = eigs(A, k, v0=v0)
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_linearoperator_deallocation():
     # Check that the linear operators used by the Arpack wrappers are
     # deallocatable by reference counting -- they are big objects, so
@@ -578,20 +544,21 @@ def test_linearoperator_deallocation():
         pass
 
 
-@pytest.mark.thread_unsafe
-def test_parallel_threads():
+def test_parallel_threads(num_parallel_threads):
     results = []
-    v0 = np.random.rand(50)
+    rng = np.random.default_rng(1234)
+    v0 = rng.random(50)
 
     def worker():
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=3, v0=v0)
         results.append(w)
 
         w, v = eigsh(x, k=3, v0=v0)
         results.append(w)
 
-    threads = [threading.Thread(target=worker) for k in range(10)]
+    nthreads = 9 // num_parallel_threads + 1
+    threads = [threading.Thread(target=worker) for _ in range(nthreads)]
     for t in threads:
         t.start()
     for t in threads:
@@ -606,14 +573,19 @@ def test_parallel_threads():
 def test_reentering():
     # Just some linear operator that calls eigs recursively
     def A_matvec(x):
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=1)
-        return v / w[0]
+        return v.real / w[0].real
     A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
 
+    # ================= Old Fortran tests ==================
     # The Fortran code is not reentrant, so this fails (gracefully, not crashing)
-    assert_raises(RuntimeError, eigs, A, k=1)
-    assert_raises(RuntimeError, eigsh, A, k=1)
+    # assert_raises(RuntimeError, eigs, A, k=1)
+    # assert_raises(RuntimeError, eigsh, A, k=1)
+    #
+    # These should not crash upon reentrance
+    eigs(A, k=1)
+    eigsh(A, k=1)
 
 
 def test_regression_arpackng_1315():
@@ -637,7 +609,7 @@ def test_regression_arpackng_1315():
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = rng.random((4, 4))
     M_sparse = generate_matrix(4, sparse=True, rng=rng)
@@ -645,8 +617,8 @@ def test_eigs_for_k_greater():
     eig_tuple1 = eig(A, b=M_dense)
     eig_tuple2 = eig(A, b=M_sparse)
 
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
 
         assert_equal(eigs(A, M=M_dense, k=3), eig_tuple1)
         assert_equal(eigs(A, M=M_dense, k=4), eig_tuple1)
@@ -664,7 +636,7 @@ def test_eigs_for_k_greater():
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = generate_matrix_symmetric(4, pos_definite=True, rng=rng)
     M_sparse = generate_matrix_symmetric(
@@ -673,8 +645,8 @@ def test_eigsh_for_k_greater():
     eig_tuple1 = eigh(A, b=M_dense)
     eig_tuple2 = eigh(A, b=M_sparse)
 
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
 
         assert_equal(eigsh(A, M=M_dense, k=4), eig_tuple1)
         assert_equal(eigsh(A, M=M_dense, k=5), eig_tuple1)
@@ -715,3 +687,31 @@ def test_real_eigs_real_k_subset():
             assert_allclose(dist, 0, atol=np.sqrt(eps))
 
             prev_w = w
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_gh24358(dtype):
+    # gh-24358: eigs with which="SR" returned zeros due to nev variable was modifed
+    #  after naupd calls in the C ARPACK implementation. This was due to hitting a
+    # complex valued eig but requesting only one of them.
+
+    # Test the specific issue in gh-24358
+    A = csr_array(np.array([[-1.3, 2.7, 0.2],
+                            [0.8, 4.1, 2.2],
+                            [2.1, 4.4, -1.9]], dtype=dtype))
+    w, z = eigs(A, 1, which="SR")
+    atol = 1e-4 if dtype in [np.float32, np.complex64] else 1e-6
+    assert_allclose(w.real, -2.495689365014214, atol=atol, rtol=0.0)
+    # ARPACK can sometimes pick up the conjugate
+    assert_allclose(np.abs(w.imag), 0.5173365219668336, atol=atol, rtol=0.0)
+    assert_allclose(A @ z, w * z, atol=atol, rtol=0.0)
+
+
+@pytest.mark.parametrize("func", [eigs, eigsh])
+def test_nD(func):
+    """Check that >2-D operators are rejected cleanly."""
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    with pytest.raises(ValueError, match="expected 2-D"):
+        func(A)

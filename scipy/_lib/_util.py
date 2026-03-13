@@ -7,161 +7,66 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
+import os
+import sys
+import textwrap
 from types import ModuleType
-from typing import Literal, TypeAlias, TypeVar
+from typing import Literal, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_numpy, xp_size)
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
+                                   is_marray, xp_size, xp_result_device, xp_result_type)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
-import scipy._lib.array_api_extra as xpx
 
+from numpy.exceptions import AxisError
 
-AxisError: type[Exception]
-ComplexWarning: type[Warning]
-VisibleDeprecationWarning: type[Warning]
-
-if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import (
-        AxisError, ComplexWarning, VisibleDeprecationWarning,
-        DTypePromotionError
-    )
-else:
-    from numpy import (  # type: ignore[attr-defined, no-redef]
-        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
-    )
-    DTypePromotionError = TypeError  # type: ignore
 
 np_long: type
 np_ulong: type
 
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
-    try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                r".*In the future `np\.long` will be defined as.*",
-                FutureWarning,
-            )
-            np_long = np.long  # type: ignore[attr-defined]
-            np_ulong = np.ulong  # type: ignore[attr-defined]
-    except AttributeError:
-            np_long = np.int_
-            np_ulong = np.uint
-else:
-    np_long = np.int_
-    np_ulong = np.uint
+try:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            r".*In the future `np\.long` will be defined as.*",
+            FutureWarning,
+        )
+        np_long = np.long  # type: ignore[attr-defined]
+        np_ulong = np.ulong  # type: ignore[attr-defined]
+except AttributeError:
+        np_long = np.int_
+        np_ulong = np.uint
 
 IntNumber = int | np.integer
 DecimalNumber = float | np.floating | np.integer
 
-copy_if_needed: bool | None
+copy_if_needed: bool | None = None
 
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
-    copy_if_needed = None
-elif np.lib.NumpyVersion(np.__version__) < "1.28.0":
-    copy_if_needed = False
+
+# Wrapped function for inspect.signature for compatibility with Python 3.14+
+# See gh-23913
+#
+# PEP 649/749 allows for underfined annotations at runtime, and added the
+# `annotation_format` parameter to handle these cases.
+# `annotationlib.Format.FORWARDREF` is the closest to previous behavior,
+# returning ForwardRef objects fornew undefined annotations cases.
+#
+# Consider dropping this wrapper when support for Python 3.13 is dropped.
+if sys.version_info >= (3, 14):
+    import annotationlib
+    def wrapped_inspect_signature(callable):
+        """Get a signature object for the passed callable."""
+        return inspect.signature(callable,
+                                 annotation_format=annotationlib.Format.FORWARDREF)
 else:
-    # 2.0.0 dev versions, handle cases where copy may or may not exist
-    try:
-        np.array([1]).__array__(copy=None)  # type: ignore[call-overload]
-        copy_if_needed = None
-    except TypeError:
-        copy_if_needed = False
+    wrapped_inspect_signature = inspect.signature
 
 
-_RNG: TypeAlias = np.random.Generator | np.random.RandomState
-SeedType: TypeAlias = IntNumber | _RNG | None
+_RNG: type = np.random.Generator | np.random.RandomState
+SeedType: type = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
-
-# Since Generator was introduced in numpy 1.17, the following condition is needed for
-# backward compatibility
-try:
-    from numpy.random import Generator as Generator
-except ImportError:
-    class Generator:  # type: ignore[no-redef]
-        pass
-
-
-def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
-    """Return elements chosen from two possibilities depending on a condition
-
-    Equivalent to ``f(*arrays) if cond else fillvalue`` performed elementwise.
-
-    Parameters
-    ----------
-    cond : array
-        The condition (expressed as a boolean array).
-    arrays : tuple of array
-        Arguments to `f` (and `f2`). Must be broadcastable with `cond`.
-    f : callable
-        Where `cond` is True, output will be ``f(arr1[cond], arr2[cond], ...)``
-    fillvalue : object
-        If provided, value with which to fill output array where `cond` is
-        not True.
-    f2 : callable
-        If provided, output will be ``f2(arr1[cond], arr2[cond], ...)`` where
-        `cond` is not True.
-
-    Returns
-    -------
-    out : array
-        An array with elements from the output of `f` where `cond` is True
-        and `fillvalue` (or elements from the output of `f2`) elsewhere. The
-        returned array has data type determined by Type Promotion Rules
-        with the output of `f` and `fillvalue` (or the output of `f2`).
-
-    Notes
-    -----
-    ``xp.where(cond, x, fillvalue)`` requires explicitly forming `x` even where
-    `cond` is False. This function evaluates ``f(arr1[cond], arr2[cond], ...)``
-    only where `cond` is True.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
-    >>> def f(a, b):
-    ...     return a*b
-    >>> _lazywhere(a > 2, (a, b), f, np.nan)
-    array([ nan,  nan,  21.,  32.])
-
-    """
-    xp = array_namespace(cond, *arrays)
-
-    if (f2 is fillvalue is None) or (f2 is not None and fillvalue is not None):
-        raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
-
-    args = xp.broadcast_arrays(cond, *arrays)
-    bool_dtype = xp.asarray([True]).dtype  # numpy 1.xx doesn't have `bool`
-    cond, arrays = xp.astype(args[0], bool_dtype, copy=False), args[1:]
-
-    temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
-
-    if f2 is None:
-        # If `fillvalue` is a Python scalar and we convert to `xp.asarray`, it gets the
-        # default `int` or `float` type of `xp`, so `result_type` could be wrong.
-        # `result_type` should/will handle mixed array/Python scalars;
-        # remove this special logic when it does.
-        if type(fillvalue) in {bool, int, float, complex}:
-            with np.errstate(invalid='ignore'):
-                dtype = (temp1 * fillvalue).dtype
-        else:
-           dtype = xp.result_type(temp1.dtype, fillvalue)
-        out = xp.full(cond.shape, dtype=dtype,
-                      fill_value=xp.asarray(fillvalue, dtype=dtype))
-    else:
-        ncond = ~cond
-        temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
-        dtype = xp.result_type(temp1, temp2)
-        out = xp.empty(cond.shape, dtype=dtype)
-        out = xpx.at(out, ncond).set(temp2)
-
-    out = xpx.at(out, cond).set(temp1)
-
-    return out
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
@@ -202,32 +107,6 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
         temp = tuple(np.extract(cond, arr) for arr in arrays)
         np.place(out, cond, func(*temp))
     return out
-
-
-def _aligned_zeros(shape, dtype=float, order="C", align=None):
-    """Allocate a new ndarray with aligned memory.
-
-    Primary use case for this currently is working around a f2py issue
-    in NumPy 1.9.1, where dtype.alignment is such that np.zeros() does
-    not necessarily create arrays aligned up to it.
-
-    """
-    dtype = np.dtype(dtype)
-    if align is None:
-        align = dtype.alignment
-    if not hasattr(shape, '__len__'):
-        shape = (shape,)
-    size = functools.reduce(operator.mul, shape) * dtype.itemsize
-    buf = np.empty(size + align + 1, np.uint8)
-    offset = buf.__array_interface__['data'][0] % align
-    if offset != 0:
-        offset = align - offset
-    # Note: slices producing 0-size arrays do not necessarily change
-    # data pointer --- so we use and allocate size+1
-    buf = buf[offset:offset+size+1][:-1]
-    data = np.ndarray(shape, dtype, buf, order=order)
-    data.fill(0)
-    return data
 
 
 def _prune_array(array):
@@ -443,6 +322,13 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
 
             return fun(*args, **kwargs)
 
+        # Add the old parameter name to the function signature
+        wrapped_signature = inspect.signature(fun)
+        wrapper.__signature__ = wrapped_signature.replace(parameters=[
+            *wrapped_signature.parameters.values(),
+            inspect.Parameter(old_name, inspect.Parameter.KEYWORD_ONLY, default=None),
+        ])
+
         if replace_doc:
             doc = FunctionDoc(wrapper)
             parameter_names = [param.name for param in doc['Parameters']]
@@ -454,7 +340,7 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
                 new_doc = [_desc] + old_doc_keep
                 _rng_parameter_doc = Parameter('rng', _type, new_doc)
                 doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
-                doc = str(doc).split("\n", 1)[1]  # remove signature
+                doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
                 wrapper.__doc__ = str(doc)
         return wrapper
 
@@ -614,7 +500,7 @@ def getfullargspec_no_self(func):
         Python 2.x, and inspect.signature() under Python 3.x.
 
     """
-    sig = inspect.signature(func)
+    sig = wrapped_inspect_signature(func)
     args = [
         p.name for p in sig.parameters.values()
         if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -677,8 +563,9 @@ class _ScalarFunctionWrapper:
 
         # Make sure the function returns a true scalar
         if not np.isscalar(fx):
+            _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
-                fx = np.asarray(fx).item()
+                fx = _dt.type(np.asarray(fx).item())
             except (TypeError, ValueError) as e:
                 raise ValueError(
                     "The user-provided objective function "
@@ -711,18 +598,26 @@ class MapWrapper:
             self.pool = pool
             self._mapfunc = self.pool
         else:
-            from multiprocessing import Pool
+            from multiprocessing import get_context, get_start_method
+
+            method = get_start_method(allow_none=True)
+
+            if method is None and os.name=='posix' and sys.version_info < (3, 14):
+                # Python 3.13 and older used "fork" on posix, which can lead to
+                # deadlocks. This backports that fix to older Python versions.
+                method = 'forkserver'
+
             # user supplies a number
             if int(pool) == -1:
                 # use as many processors as possible
-                self.pool = Pool()
+                self.pool = get_context(method=method).Pool()
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             elif int(pool) == 1:
                 pass
             elif int(pool) > 1:
                 # use the number of processors requested
-                self.pool = Pool(processes=int(pool))
+                self.pool = get_context(method=method).Pool(processes=int(pool))
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             else:
@@ -758,6 +653,29 @@ class MapWrapper:
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
                             " form f(func, iterable)") from e
+
+
+def _workers_wrapper(func):
+    """
+    Wrapper to deal with setup-cleanup of workers outside a user function via a
+    ContextManager. It saves having to do the setup/tear down with within that
+    function, which can be messy.
+    """
+    @functools.wraps(func)
+    def inner(*args, **kwds):
+        kwargs = kwds.copy()
+        if 'workers' not in kwargs:
+            _workers = map
+        elif 'workers' in kwargs and kwargs['workers'] is None:
+            _workers = map
+        else:
+            _workers = kwargs['workers']
+
+        with MapWrapper(_workers) as mf:
+            kwargs['workers'] = mf
+            return func(*args, **kwargs)
+
+    return inner
 
 
 def rng_integers(gen, low, high=None, size=None, dtype='int64',
@@ -804,7 +722,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         size-shaped array of random integers from the appropriate distribution,
         or a single such random int if size not provided.
     """
-    if isinstance(gen, Generator):
+    if isinstance(gen, np.random.Generator):
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)
     else:
@@ -835,6 +753,13 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         np.random.default_rng = orig_fun
 
 
+@contextmanager
+def ignore_warns(expected_warning, *, match=None):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", match, expected_warning)
+        yield
+
+
 def _rng_html_rewrite(func):
     """Rewrite the HTML rendering of ``np.random.default_rng``.
 
@@ -858,105 +783,11 @@ def _rng_html_rewrite(func):
     return _wrapped
 
 
-def _argmin(a, keepdims=False, axis=None):
-    """
-    argmin with a `keepdims` parameter.
-
-    See https://github.com/numpy/numpy/issues/8710
-
-    If axis is not None, a.shape[axis] must be greater than 0.
-    """
-    res = np.argmin(a, axis=axis)
-    if keepdims and axis is not None:
-        res = np.expand_dims(res, axis=axis)
-    return res
-
-
-def _first_nonnan(a, axis):
-    """
-    Return the first non-nan value along the given axis.
-
-    If a slice is all nan, nan is returned for that slice.
-
-    The shape of the return value corresponds to ``keepdims=True``.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> nan = np.nan
-    >>> a = np.array([[ 3.,  3., nan,  3.],
-                      [ 1., nan,  2.,  4.],
-                      [nan, nan,  9., -1.],
-                      [nan,  5.,  4.,  3.],
-                      [ 2.,  2.,  2.,  2.],
-                      [nan, nan, nan, nan]])
-    >>> _first_nonnan(a, axis=0)
-    array([[3., 3., 2., 3.]])
-    >>> _first_nonnan(a, axis=1)
-    array([[ 3.],
-           [ 1.],
-           [ 9.],
-           [ 5.],
-           [ 2.],
-           [nan]])
-    """
-    k = _argmin(np.isnan(a), axis=axis, keepdims=True)
-    return np.take_along_axis(a, k, axis=axis)
-
-
-def _nan_allsame(a, axis, keepdims=False):
-    """
-    Determine if the values along an axis are all the same.
-
-    nan values are ignored.
-
-    `a` must be a numpy array.
-
-    `axis` is assumed to be normalized; that is, 0 <= axis < a.ndim.
-
-    For an axis of length 0, the result is True.  That is, we adopt the
-    convention that ``allsame([])`` is True. (There are no values in the
-    input that are different.)
-
-    `True` is returned for slices that are all nan--not because all the
-    values are the same, but because this is equivalent to ``allsame([])``.
-
-    Examples
-    --------
-    >>> from numpy import nan, array
-    >>> a = array([[ 3.,  3., nan,  3.],
-    ...            [ 1., nan,  2.,  4.],
-    ...            [nan, nan,  9., -1.],
-    ...            [nan,  5.,  4.,  3.],
-    ...            [ 2.,  2.,  2.,  2.],
-    ...            [nan, nan, nan, nan]])
-    >>> _nan_allsame(a, axis=1, keepdims=True)
-    array([[ True],
-           [False],
-           [False],
-           [False],
-           [ True],
-           [ True]])
-    """
-    if axis is None:
-        if a.size == 0:
-            return True
-        a = a.ravel()
-        axis = 0
-    else:
-        shp = a.shape
-        if shp[axis] == 0:
-            shp = shp[:axis] + (1,)*keepdims + shp[axis + 1:]
-            return np.full(shp, fill_value=True, dtype=bool)
-    a0 = _first_nonnan(a, axis=axis)
-    return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
-
-
 def _contains_nan(
     a: Array,
     nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
     *,
-    xp_omit_okay: bool = False, 
+    xp_omit_okay: bool = False,
     xp: ModuleType | None = None,
 ) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
@@ -1008,9 +839,6 @@ def _contains_nan(
         if is_lazy_array(a):
             msg = "nan_policy='omit' is not supported for lazy arrays."
             raise TypeError(msg)
-        if contains_nan:
-            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
-            raise ValueError(msg)
 
     return contains_nan
 
@@ -1079,17 +907,16 @@ def _rng_spawn(rng, n_children):
     return child_rngs
 
 
-def _get_nan(*data, xp=None):
+def _get_nan(*data, shape=(), xp=None):
     xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
-    data = [xp.asarray(item) for item in data]
-    try:
-        min_float = getattr(xp, 'float16', xp.float32)
-        dtype = xp.result_type(*data, min_float)  # must be at least a float
-    except DTypePromotionError:
-        # fallback to float64
-        dtype = xp.float64
-    return xp.asarray(xp.nan, dtype=dtype)[()]
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
+    device = xp_result_device(*data)
+    res = xp.full(shape, xp.nan, dtype=dtype, device=device)
+    if not shape:
+        res = res[()]
+    # whenever mdhaber/marray#89 is resolved, could just return `res`
+    return res.data if is_marray(xp) else res
 
 
 def normalize_axis_index(axis, ndim):
@@ -1229,6 +1056,7 @@ The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
 "batch" dimensions prepended to the core shape. In this case, the array is treated
 as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+Note that calls with zero-size batches are unsupported and will raise a ``ValueError``.
 """
 
 
@@ -1277,11 +1105,13 @@ def _apply_over_batch(*argdefs):
                     else:
                         arrays.append(kwargs.pop(name))
 
+            xp = array_namespace(*arrays)
+
             # Determine core and batch shapes
             batch_shapes = []
             core_shapes = []
             for i, (array, ndim) in enumerate(zip(arrays, ndims)):
-                array = None if array is None else np.asarray(array)
+                array = None if array is None else xp.asarray(array)
                 shape = () if array is None else array.shape
 
                 if ndim == "1|2":  # special case for `solve`, etc.
@@ -1298,16 +1128,24 @@ def _apply_over_batch(*argdefs):
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
+            # We can't support zero-size batches right now because without data with
+            # which to call the function, the decorator doesn't even know the *number*
+            # of outputs, let alone their core shapes or dtypes.
+            if math.prod(batch_shape) == 0:
+                message = f'`{f.__name__}` does not support zero-size batches.'
+                raise ValueError(message)
+
             # Broadcast arrays to appropriate shape
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
                     continue
-                arrays[i] = np.broadcast_to(array, batch_shape + core_shape)
+                arrays[i] = xp.broadcast_to(array, batch_shape + core_shape)
 
             # Main loop
             results = []
             for index in np.ndindex(batch_shape):
-                result = f(*(array[index] for array in arrays), *other_args, **kwargs)
+                result = f(*((array[index] if array is not None else None)
+                             for array in arrays), *other_args, **kwargs)
                 # Assume `result` is either a tuple or single array. This is easily
                 # generalized by allowing the contributor to pass an `unpack_result`
                 # callable to the decorator factory.
@@ -1317,9 +1155,9 @@ def _apply_over_batch(*argdefs):
 
             # Reshape results
             for i, result in enumerate(results):
-                result = np.stack(result)
+                result = xp.stack(result)
                 core_shape = result.shape[1:]
-                results[i] = np.reshape(result, batch_shape + core_shape)
+                results[i] = xp.reshape(result, batch_shape + core_shape)
 
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
@@ -1328,7 +1166,19 @@ def _apply_over_batch(*argdefs):
 
         doc = FunctionDoc(wrapper)
         doc['Extended Summary'].append(_batch_note.rstrip())
-        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+        wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
         return wrapper
     return decorator
+
+
+def _dedent_for_py313(s):
+    """Apply textwrap.dedent to s for Python versions 3.13 or later."""
+    return s if sys.version_info < (3, 13) else textwrap.dedent(s)
+
+
+def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
+    """Check if two shapes are broadcastable."""
+    return all(
+        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
+    )

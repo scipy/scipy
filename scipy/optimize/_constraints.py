@@ -1,5 +1,6 @@
 """Constraints definition for minimize."""
 from warnings import warn, catch_warnings, simplefilter, filterwarnings
+from types import GenericAlias
 
 import numpy as np
 
@@ -71,13 +72,16 @@ class NonlinearConstraint:
         Here ``v`` is ndarray with shape (m,) containing Lagrange multipliers.
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
-        Default is False. Has no effect for equality constraints.
-    finite_diff_rel_step: None or array_like, optional
+        iterations. A single value sets this property for all components.
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
+    finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation. Default is
         None, which will select a reasonable value automatically depending
         on a finite difference scheme.
-    finite_diff_jac_sparsity: {None, array_like, sparse array}, optional
+    finite_diff_jac_sparsity : {None, array_like, sparse array}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
         difference estimation, its shape must be (m, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity
@@ -153,8 +157,11 @@ class LinearConstraint:
         and ``ub = np.inf`` (no limits).
     keep_feasible : dense array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
-        Default is False. Has no effect for equality constraints.
+        iterations. A single value sets this property for all components.
+        Default is False. Has no effect for equality constraints. Note that
+        finite difference approximation of the Jacobian may still violate
+        the constraint; it is recommended to provide an analytical Jacobian
+        function to handle this case.
     """
     def _input_validation(self):
         if self.A.ndim != 2:
@@ -195,7 +202,7 @@ class LinearConstraint:
 
     def residual(self, x):
         """
-        Calculate the residual between the constraint function and the limits
+        Calculate the residual between the constraint function and the limits.
 
         For a linear constraint of the form::
 
@@ -213,7 +220,7 @@ class LinearConstraint:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns
@@ -250,6 +257,10 @@ class Bounds:
         iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def _input_validation(self):
         try:
             res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
@@ -278,7 +289,7 @@ class Bounds:
         return start + end
 
     def residual(self, x):
-        """Calculate the residual (slack) between the input and the bounds
+        """Calculate the residual (slack) between the input and the bounds.
 
         For a bound constraint of the form::
 
@@ -295,7 +306,7 @@ class Bounds:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns
@@ -340,6 +351,10 @@ class PreparedConstraint:
          Array indicating which components must be kept feasible with a size
          equal to the number of the constraints.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, constraint, x0, sparse_jacobian=None,
                  finite_diff_bounds=(-np.inf, np.inf)):
         if isinstance(constraint, NonlinearConstraint):
@@ -411,7 +426,7 @@ def new_bounds_to_old(lb, ub, n):
     """Convert the new bounds representation to the old one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, ith containing lower and upper bound on a ith
+    containing n tuples, ith containing lower and upper bounds on the ith
     variable.
     If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
     None.
@@ -429,7 +444,7 @@ def old_bound_to_new(bounds):
     """Convert the old bounds representation to the new one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, ith containing lower and upper bound on a ith
+    containing n tuples, ith containing lower and upper bounds on the ith
     variable.
     If any of the entries in lb/ub are None they are replaced by
     -np.inf/np.inf.

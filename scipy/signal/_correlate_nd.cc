@@ -177,53 +177,6 @@ static int _imp_correlate_nd_cmplx(PyArrayNeighborhoodIterObject *curx,
     return 0;
 }
 
-
-static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
-        PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
-        PyArrayIterObject *itz)
-{
-    npy_intp i, j;
-    PyObject *tmp, *tmp2;
-    char *zero;
-    PyArray_CopySwapFunc *copyswap = PyDataType_GetArrFuncs(PyArray_DESCR(curx->ao))->copyswap;
-
-    zero = PyArray_Zero(curx->ao);
-
-    for(i = 0; i < curx->size; ++i) {
-        PyArrayNeighborhoodIter_Reset(curneighx);
-        copyswap(itz->dataptr, zero, 0, NULL);
-
-        for(j = 0; j < curneighx->size; ++j) {
-            /*
-             * compute tmp2 = acc + x * y. Not all objects supporting the
-             * number protocol support inplace operations, so we do it the most
-             * straightforward way.
-             */
-            tmp = PyNumber_Multiply(*((PyObject**)curneighx->dataptr),
-                                    *((PyObject**)ity->dataptr));
-            tmp2 = PyNumber_Add(*((PyObject**)itz->dataptr), tmp);
-            Py_DECREF(tmp);
-
-            /* Update current output item (acc) */
-            Py_DECREF(*((PyObject**)itz->dataptr));
-            *((PyObject**)itz->dataptr) = tmp2;
-
-            PyArrayNeighborhoodIter_Next(curneighx);
-            PyArray_ITER_NEXT(ity);
-        }
-
-        PyArrayNeighborhoodIter_Next(curx);
-
-        PyArray_ITER_NEXT(itz);
-
-        PyArray_ITER_RESET(ity);
-    }
-
-    PyDataMem_FREE(zero);
-
-    return 0;
-}
-
 static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
         PyArrayIterObject *itz, int typenum, int mode)
 {
@@ -338,12 +291,6 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
             break;
         case NPY_CLONGDOUBLE:
             _imp_correlate_nd_cmplx<NPY_CLONGDOUBLE>(curx, curneighx, ity, itz);
-            break;
-
-        /* The object array case does not worth being optimized, since most of
-           the cost is numerical operations, not iterators moving in this case ? */
-        case NPY_OBJECT:
-            _imp_correlate_nd_object(curx, curneighx, ity, itz);
             break;
         default:
             PyErr_SetString(PyExc_ValueError, "Unsupported type");

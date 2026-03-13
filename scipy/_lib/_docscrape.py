@@ -703,7 +703,7 @@ class ClassDoc(NumpyDocString):
                 and not self._should_skip_member(name, self._cls)
                 and (
                     func is None
-                    or isinstance(func, (property, cached_property))
+                    or isinstance(func, property | cached_property)
                     or inspect.isdatadescriptor(func)
                 )
                 and self._is_show_member(name)

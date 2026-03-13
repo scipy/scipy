@@ -1,8 +1,9 @@
 ''' Some tests for the documenting decorator and support functions '''
 
 import sys
+import warnings
 import pytest
-from numpy.testing import assert_equal, suppress_warnings
+from numpy.testing import assert_equal
 
 from scipy._lib import doccer
 
@@ -41,16 +42,16 @@ filled_docstring = \
 
 
 def test_unindent():
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
         assert_equal(doccer.unindent_string(param_doc1), param_doc1)
         assert_equal(doccer.unindent_string(param_doc2), param_doc2)
         assert_equal(doccer.unindent_string(param_doc3), param_doc1)
 
 
 def test_unindent_dict():
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
         d2 = doccer.unindent_dict(doc_dict)
     assert_equal(d2['strtest1'], doc_dict['strtest1'])
     assert_equal(d2['strtest2'], doc_dict['strtest2'])
@@ -58,8 +59,8 @@ def test_unindent_dict():
 
 
 def test_docformat():
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
         udd = doccer.unindent_dict(doc_dict)
         formatted = doccer.docformat(docstring, udd)
         assert_equal(formatted, filled_docstring)
@@ -73,8 +74,8 @@ def test_docformat():
 
 @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
 def test_decorator():
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
         # with unindentation of parameters
         decorator = doccer.filldoc(doc_dict, True)
 
@@ -114,8 +115,8 @@ def test_decorator():
 @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
 def test_inherit_docstring_from():
 
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
 
         class Foo:
             def func(self):

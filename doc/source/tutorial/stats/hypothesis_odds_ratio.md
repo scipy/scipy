@@ -36,7 +36,7 @@ ischemic stoke in women.
 
 The following table summarizes the results of the experiment in which
 participants took aspirin or a placebo on a regular basis for several years.
-Cases of ischemic stroke were recorded::
+Cases of ischemic stroke were recorded:
 
 |                 |    Aspirin    | Control/Placebo |
 |-----------------|---------------|-----------------|

@@ -97,13 +97,16 @@ def csgraph_masked_from_dense(graph,
     ----------
     graph : array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
-    null_value : float or None (optional)
+    null_value : float or None, optional
         Value that denotes non-edges in the graph.  Default is zero.
-    infinity_null : bool
+    nan_null : bool, optional
+        If True (default), then NaN entries are treated as non-edges
+    infinity_null : bool, optional
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
-    nan_null : bool
-        If True (default), then NaN entries are treated as non-edges
+    copy : bool, optional
+        If True (default), then the array data is copied. See `numpy.array` for more
+        details.
 
     Returns
     -------
@@ -185,12 +188,12 @@ def csgraph_from_dense(graph,
     graph : array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
     null_value : float or None (optional)
-        Value that denotes non-edges in the graph.  Default is zero.
+        Value that denotes non-edges in the graph. Default is zero.
+    nan_null : bool
+        If True (default), then NaN entries are treated as non-edges
     infinity_null : bool
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
-    nan_null : bool
-        If True (default), then NaN entries are treated as non-edges
 
     Returns
     -------
@@ -224,7 +227,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     """
     csgraph_to_dense(csgraph, null_value=0)
 
-    Convert a sparse graph representation to a dense representation
+    Convert a sparse graph representation to a dense representation.
 
     .. versionadded:: 0.11.0
 
@@ -342,7 +345,7 @@ def csgraph_to_masked(csgraph):
     """
     csgraph_to_masked(csgraph)
 
-    Convert a sparse graph representation to a masked array representation
+    Convert a sparse graph representation to a masked array representation.
 
     .. versionadded:: 0.11.0
 
@@ -455,12 +458,12 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 4 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 3)	3
+        with 4 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 3)	3
 
     >>> pred = np.array([-9999, 0, 0, 1], dtype=np.int32)
 
@@ -529,7 +532,7 @@ def construct_dist_matrix(graph,
     """
     construct_dist_matrix(graph, predecessors, directed=True, null_value=np.inf)
 
-    Construct distance matrix from a predecessor matrix
+    Construct distance matrix from a predecessor matrix.
 
     .. versionadded:: 0.11.0
 
@@ -557,12 +560,17 @@ def construct_dist_matrix(graph,
 
     Notes
     -----
-    The predecessor matrix is of the form returned by
+    The predecessor matrix is of the form optionally returned by
     `shortest_path`.  Row i of the predecessor matrix contains
     information on the shortest paths from point i: each entry
     predecessors[i, j] gives the index of the previous node in the path from
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
+
+    It should be noted that `shortest_path` only returns distance matrix
+    by default. With ``return_predecessors=True``, it returns a tuple with
+    distance matrix as its first element and predecessors array as second
+    element.
 
     Examples
     --------
@@ -579,12 +587,12 @@ def construct_dist_matrix(graph,
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 4 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 3)	3
+        with 4 stored elements and shape (4, 4)>
+        Coords	Values
+        (0, 1)	1
+        (0, 2)	2
+        (1, 3)	1
+        (2, 3)	3
 
     >>> pred = np.array([[-9999, 0, 0, 2],
     ...                  [1, -9999, 0, 1],
@@ -603,6 +611,9 @@ def construct_dist_matrix(graph,
                            csr_output=False,
                            copy_if_dense=not directed)
     predecessors = np.asarray(predecessors)
+
+    if predecessors.dtype != ITYPE:
+        raise TypeError("Type of predecessors array should be np.int32")
 
     if predecessors.shape != graph.shape:
         raise ValueError("graph and predecessors must have the same shape")

@@ -7,10 +7,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'CloughTocher2DInterpolator',
-    'GradientEstimationWarning',
     'LinearNDInterpolator',
-    'NDInterpolatorBase',
-    'estimate_gradients_2d_global',
 ]
 
 

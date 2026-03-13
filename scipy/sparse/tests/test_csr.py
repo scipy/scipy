@@ -114,6 +114,19 @@ def test_csr_bool_indexing():
     assert (slice_list3 == slice_array3).all()
 
 
+@pytest.mark.xfail_on_32bit("Can't create large array for test")
+@pytest.mark.timeout(2)  # only slow when broken (conversion to 2d index arrays)
+@pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
+def test_fancy_indexing_broadcasts_without_making_dense_2d(cls):
+    # Fixes Issue gh-24339
+    J = np.arange(100_000)
+    I = J.reshape((100_000, 1))
+    S = cls((100_000, 100_000))
+    # checking nnz, but really testing indexing.
+    assert S[I, J].nnz == 0  # 1D row array for columns -> broadcasts to 2D
+    assert S[I, J.reshape(1, -1)].nnz == 0  # 2D row array as index for columns
+
+
 def test_csr_hstack_int64():
     """
     Tests if hstack properly promotes to indices and indptr arrays to np.int64

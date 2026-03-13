@@ -1,11 +1,12 @@
 import sys
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 from scipy._lib._array_api import (
     _asarray, assert_array_almost_equal,
     is_jax, np_compat,
     xp_assert_equal, xp_assert_close,
+    make_xp_test_case,
 )
 
 import pytest
@@ -16,7 +17,7 @@ from . import types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
+# lazy_xp_modules = [ndimage]
 
 
 eps = 1e-12
@@ -33,7 +34,7 @@ ndimage_to_numpy_mode = {
 
 class TestBoundaries:
 
-    @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+    @make_xp_test_case(ndimage.geometric_transform)
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
@@ -54,7 +55,7 @@ class TestBoundaries:
                                         output_shape=(7,), order=1),
             xp.asarray(expected_value))
 
-    @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+    @make_xp_test_case(ndimage.geometric_transform)
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1, 1, 2, 3]),
@@ -75,6 +76,7 @@ class TestBoundaries:
                                         output_shape=(4,)),
             xp.asarray(expected_value))
 
+    @make_xp_test_case(ndimage.map_coordinates)
     @pytest.mark.parametrize('mode', ['mirror', 'reflect', 'grid-mirror',
                                       'grid-wrap', 'grid-constant',
                                       'nearest'])
@@ -103,6 +105,7 @@ class TestBoundaries:
         xp_assert_close(y, expected, rtol=1e-7, atol=atol)
 
 
+@make_xp_test_case(ndimage.spline_filter)
 @pytest.mark.parametrize('order', range(2, 6))
 @pytest.mark.parametrize('dtype', types)
 class TestSpline:
@@ -119,7 +122,8 @@ class TestSpline:
         out = ndimage.spline_filter(data, order=order)
         assert_array_almost_equal(out, xp.asarray([1]))
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='output=dtype is numpy-specific')
     def test_spline03(self, dtype, order, xp):
         dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
@@ -143,7 +147,7 @@ class TestSpline:
         assert_array_almost_equal(out, expected)
 
 
-@skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+@make_xp_test_case(ndimage.geometric_transform)
 @pytest.mark.parametrize('order', range(0, 6))
 class TestGeometricTransform:
 
@@ -422,7 +426,7 @@ class TestGeometricTransform:
         assert_array_almost_equal(out, xp.asarray([5, 7]))
 
 
-@skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+@make_xp_test_case(ndimage.geometric_transform)
 class TestGeometricTransformExtra:
 
     def test_geometric_transform_grid_constant_order1(self, xp):
@@ -500,6 +504,7 @@ class TestGeometricTransformExtra:
         assert_array_almost_equal(out, [1])
 
 
+@make_xp_test_case(ndimage.map_coordinates)
 class TestMapCoordinates:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -619,6 +624,7 @@ class TestMapCoordinates:
             raise pytest.skip('Not enough memory available') from e
 
 
+@make_xp_test_case(ndimage.affine_transform)
 class TestAffineTransform:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -842,10 +848,11 @@ class TestAffineTransform:
     def test_affine_transform24(self, order, xp):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = xp.asarray([4, 1, 3, 2])
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       'The behavior of affine_transform with a 1-D array .* '
-                       'has changed')
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                'The behavior of affine_transform with a 1-D array .* has changed',
+                UserWarning)
             out1 = ndimage.affine_transform(data, xp.asarray([2]), -1, order=order)
         out2 = ndimage.affine_transform(data, xp.asarray([[2]]), -1, order=order)
         assert_array_almost_equal(out1, out2)
@@ -854,10 +861,10 @@ class TestAffineTransform:
     def test_affine_transform25(self, order, xp):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = xp.asarray([4, 1, 3, 2])
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
                        'The behavior of affine_transform with a 1-D array .* '
-                       'has changed')
+                       'has changed', UserWarning)
             out1 = ndimage.affine_transform(data, xp.asarray([0.5]), -1, order=order)
         out2 = ndimage.affine_transform(data, xp.asarray([[0.5]]), -1, order=order)
         assert_array_almost_equal(out1, out2)
@@ -911,10 +918,10 @@ class TestAffineTransform:
         for out in [xp.empty_like(data),
                     xp.empty_like(data).astype(data.dtype.newbyteorder()),
                     data.dtype, data.dtype.newbyteorder()]:
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning,
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
                            'The behavior of affine_transform with a 1-D array '
-                           '.* has changed')
+                           '.* has changed', UserWarning)
                 matrix = xp.asarray([1, 1])
                 returned = ndimage.affine_transform(data, matrix, output=out)
             result = out if returned is None else returned
@@ -998,6 +1005,7 @@ class TestAffineTransform:
         )
 
 
+@make_xp_test_case(ndimage.shift)
 class TestShift:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -1197,6 +1205,7 @@ class TestShift:
         )
 
 
+@make_xp_test_case(ndimage.zoom)
 class TestZoom:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -1233,10 +1242,10 @@ class TestZoom:
                            [9, 10, 11, 12]], dtype=dtype)
         if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
                        'The behavior of affine_transform with a 1-D array .* '
-                       'has changed')
+                       'has changed', UserWarning)
             out = ndimage.affine_transform(data, xp.asarray([0.5, 0.5]), 0,
                                            (6, 8), order=order)
         assert_array_almost_equal(out[::2, ::2], data)
@@ -1299,7 +1308,6 @@ class TestZoom:
         )
 
     @pytest.mark.parametrize('mode', ['constant', 'wrap'])
-    @pytest.mark.thread_unsafe
     def test_zoom_grid_mode_warnings(self, mode, xp):
         # Warn on use of non-grid modes when grid_mode is True
         x = xp.reshape(xp.arange(9, dtype=xp.float64), (3, 3))
@@ -1307,7 +1315,8 @@ class TestZoom:
                           match="It is recommended to use mode"):
             ndimage.zoom(x, 2, mode=mode, grid_mode=True),
 
-    @skip_xp_backends(np_only=True, reason='inplace output= is numpy-specific')
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
     def test_zoom_output_shape(self, xp):
         """Ticket #643"""
         x = xp.reshape(xp.arange(12), (3, 4))
@@ -1321,7 +1330,25 @@ class TestZoom:
         expected = ndimage.zoom(a, factor)
         xp_assert_close(actual, expected)
 
+    @xfail_xp_backends("cupy", reason="CuPy `zoom` needs similar fix.")
+    def test_zoom_1_gh20999(self, xp):
+        # gh-20999 reported that zoom with `zoom=1` (or sequence of ones)
+        # introduced noise. Check that this is resolved.
+        x = xp.eye(3)
+        xp_assert_equal(ndimage.zoom(x, 1), x)
+        xp_assert_equal(ndimage.zoom(x, (1, 1)), x)
 
+    @xfail_xp_backends("cupy", reason="CuPy `zoom` needs similar fix.")
+    @skip_xp_backends("jax.numpy", reason="read-only backend")
+    @xfail_xp_backends("dask.array", reason="numpy round-trip")
+    def test_zoom_1_gh20999_output(self, xp):
+        x = xp.eye(3)
+        output = xp.zeros_like(x)
+        ndimage.zoom(x, 1, output=output)
+        xp_assert_equal(output, x)
+
+
+@make_xp_test_case(ndimage.rotate)
 class TestRotate:
 
     @pytest.mark.parametrize('order', range(0, 6))
