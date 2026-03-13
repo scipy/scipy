@@ -54,6 +54,7 @@ jobs:
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Build
         run: pixi run build-cpu
