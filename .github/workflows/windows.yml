@@ -74,7 +74,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "environment.yml"
 
-      - name: Set rtools location location (mingw-w64)
+      - name: Set rtools location (mingw-w64)
         run: |
           echo "c:\rtools45\ucrt64\bin" >> $env:GITHUB_PATH
 
