@@ -24,7 +24,7 @@ Test with samples with different means:
     Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186389019e-06)  # random
 
 Kolmogorov-Smirnov test for two samples: ks_2samp
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For the example, where both samples are drawn from the same distribution,
 we cannot reject the null hypothesis, since the pvalue is high
