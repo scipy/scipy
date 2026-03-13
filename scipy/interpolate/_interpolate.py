@@ -1,7 +1,8 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
-
+import os
 from math import prod
 from types import GenericAlias
+import warnings
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -19,6 +20,7 @@ from ._interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 
+@xp_capabilities(out_of_scope=True)
 def lagrange(x, w):
     r"""
     Return a Lagrange interpolating polynomial.
@@ -28,6 +30,10 @@ def lagrange(x, w):
 
     Warning: This implementation is numerically unstable. Do not expect to
     be able to use more than about 20 points even if they are chosen optimally.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        `scipy.interpolate.BarycentricInterpolator` instead.
 
     Parameters
     ----------
@@ -92,7 +98,10 @@ def lagrange(x, w):
     >>> plt.show()
 
     """
-
+    _warn_skips = (os.path.dirname(__file__),)
+    msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
+           "`scipy.interpolate.BarycentricInterpolator` instead.")
+    warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     M = len(x)
     p = poly1d(0.0)
     for j in range(M):
@@ -130,7 +139,7 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
-    Class for 2D interpolation (deprecated and removed)
+    Class for 2D interpolation (deprecated and removed).
 
     .. versionremoved:: 1.14.0
 
@@ -219,7 +228,7 @@ class interp1d(_Interpolator1D):
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised unless ``fill_value="extrapolate"``.
     fill_value : array-like or (array-like, array_like) or "extrapolate", optional
-        - if a ndarray (or float), this value will be used to fill in for
+        - if an ndarray (or float), this value will be used to fill in for
           requested points outside of the data range. If not provided, then
           the default is NaN. The array-like must broadcast properly to the
           dimensions of the non-interpolation axes.
@@ -487,7 +496,7 @@ class interp1d(_Interpolator1D):
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
-        # 4. Calculate the slope of regions that each x_new value falls in.
+        # 4. Calculate y_new using de Boor's algorithm for linear interpolation.
         lo = x_new_indices - 1
         hi = x_new_indices
 
@@ -496,13 +505,13 @@ class interp1d(_Interpolator1D):
         y_lo = self._y[lo]
         y_hi = self._y[hi]
 
-        # Note that the following two expressions rely on the specifics of the
+        # Note that the following expression relies on the specifics of the
         # broadcasting semantics.
-        slope = (y_hi - y_lo) / (x_hi - x_lo)[:, None]
-
-        # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new - x_lo)[:, None] + y_lo
-
+        y_new = (
+            ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
+            + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
+            )
+        
         return y_new
 
     def _call_nearest(self, x_new):
@@ -1591,7 +1600,7 @@ class BPoly(_PPolyBase):
         k = max(self._c.shape[0], c.shape[0])
         self._c = self._raise_degree(self._c, k - self._c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
-        return _PPolyBase.extend(self, c, x)
+        _PPolyBase.extend(self, c, x)
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod
@@ -1849,7 +1858,7 @@ class BPoly(_PPolyBase):
         ----------
         c : array_like
             coefficient array, 1-D
-        d : integer
+        d : int
 
         Returns
         -------
@@ -1881,7 +1890,7 @@ class BPoly(_PPolyBase):
 
 class NdPPoly:
     """
-    Piecewise tensor product polynomial
+    Piecewise tensor product polynomial.
 
     The value at point ``xp = (x', y', z', ...)`` is evaluated by first
     computing the interval indices `i` such that::
@@ -2204,7 +2213,7 @@ class NdPPoly:
 
     def integrate_1d(self, a, b, axis, extrapolate=None):
         r"""
-        Compute NdPPoly representation for one dimensional definite integral
+        Compute NdPPoly representation for one dimensional definite integral.
 
         The result is a piecewise polynomial representing the integral:
 

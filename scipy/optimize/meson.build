@@ -34,7 +34,7 @@ rectangular_lsap = static_library('rectangular_lsap',
 )
 
 py3.extension_module('_lsap',
-  ['_lsap.c'],
+  ['_lsapmodule.c'],
   link_with: rectangular_lsap,
   include_directories: '../_lib/src',
   dependencies: np_dep,
@@ -55,7 +55,7 @@ rootfind_lib = static_library('rootfind',
 )
 
 py3.extension_module('_zeros',
-  'zeros.c',
+  '_zerosmodule.c',
   link_with: rootfind_lib,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -64,14 +64,14 @@ py3.extension_module('_zeros',
 )
 
 
-# TODO: link to ILP64 LAPACK
 py3.extension_module('_lbfgsb',
   [
     '_lbfgsbmodule.c',
     'src/lbfgsb.c',
   ],
   include_directories: 'src/',
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [lapack_dep, np_dep],
+  include_directories: ['../_build_utils/src'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -145,7 +145,8 @@ py3.extension_module('_slsqplib',
     'src/slsqp.c',
     'src/nnls.c'
   ],
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [lapack_dep, np_dep],
+  include_directories: ['../_build_utils/src'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'

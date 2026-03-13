@@ -18,6 +18,10 @@ from scipy._lib._array_api import _make_sphinx_capabilities
 # tables since they would be redundant. There are also no docs pages to
 # link entries to.
 ALIASES = {
+    "scipy.cluster.vq": {
+        # Deprecated ~alias of `vq`
+        "py_vq",
+    },
     "scipy.linalg": {
         # Alias of scipy.linalg.solve_continuous_lyapunov
         "solve_lyapunov",
@@ -130,8 +134,10 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     # For now, use _make_sphinx_capabilities because that's where
     # the relevant logic for determining what is and isn't
     # supported based on xp_capabilities_table entries lives.
-    # Perhaps this logic should be decoupled from sphinx.
-    for backend, capabilities in _make_sphinx_capabilities(**entry).items():
+    # This logic should be decoupled from this function due to exceptions; e.g. marray.
+    sphinx_capabilities = _make_sphinx_capabilities(**entry)
+    sphinx_capabilities.pop("marray")
+    for backend, capabilities in sphinx_capabilities.items():
         if backend in {"array_api_strict", "numpy"}:
             continue
         backend = BACKEND_NAMES_MAP.get(backend, backend)
@@ -164,10 +170,13 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     }
 
 
-def is_named_function_like_object(obj):
+def is_inherently_out_of_scope(obj):
+    # modules, exceptions, and things that are not named callables
+    # are inherently out of scope.
     return (
-        not isinstance(obj, ModuleType | type)
-        and callable(obj) and hasattr(obj, "__name__")
+        isinstance(obj, ModuleType)
+        or (isinstance(obj, type) and issubclass(obj, Exception))
+        or not (callable(obj) and hasattr(obj, "__name__"))
     )
 
 
@@ -225,7 +234,7 @@ def make_flat_capabilities_table(
                 # for backwards compatibility reasons.
                 continue
             thing = getattr(module, name)
-            if not is_named_function_like_object(thing):
+            if is_inherently_out_of_scope(thing):
                 continue
             entry = xp_capabilities_table.get(thing, None)
             capabilities = _process_capabilities_table_entry(entry)[backend_type]

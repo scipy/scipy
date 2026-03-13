@@ -537,38 +537,48 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
  * Python module initialization
  */
 
+/* Prevent the name mangling */
 extern "C" {
-
 #include "sparsetools_impl.h"
+}
+
+
+static int
+_sparsetools_module_exec(PyObject *module)
+{
+    (void)module;  /* unused */
+
+    if (_import_array() < 0) { return -1; }
+
+    return 0;
+}
+
+
+static PyModuleDef_Slot _sparsetools_slots[] = {
+    {Py_mod_exec, (void *)_sparsetools_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
 
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_sparsetools",
-    NULL,
-    -1,
-    sparsetools_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    /* m_base     */ PyModuleDef_HEAD_INIT,
+    /* m_name     */ "_sparsetools",
+    /* m_doc      */ NULL,
+    /* m_size     */ 0,
+    /* m_methods  */ sparsetools_methods,
+    /* m_slots    */ _sparsetools_slots,
+    /* m_traverse */ NULL,
+    /* m_clear    */ NULL,
+    /* m_free     */ NULL
 };
+
 
 PyMODINIT_FUNC
 PyInit__sparsetools(void)
 {
-    PyObject *module;
-
-    import_array();
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return module;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
-
-} /* extern "C" */

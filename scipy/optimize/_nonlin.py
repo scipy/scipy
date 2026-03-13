@@ -2,6 +2,7 @@
 # Distributed under the same license as SciPy.
 
 import inspect
+import os
 import sys
 import warnings
 
@@ -120,6 +121,14 @@ _doc_parts = dict(
 def _set_doc(obj):
     if obj.__doc__:
         obj.__doc__ = obj.__doc__ % _doc_parts
+
+
+def _set_doc_class(obj):
+    if obj.__doc__:
+        doc_parts = _doc_parts.copy()
+        doc_parts["params_basic"] = ""
+        doc_parts["params_extra"] = ""
+        obj.__doc__ = obj.__doc__ % doc_parts
 
 
 def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
@@ -1402,7 +1411,7 @@ class KrylovJacobian(Jacobian):
     outer_k : int, optional
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
-    inner_kwargs : kwargs
+    kw : kwargs
         Keyword parameters for the "inner" Krylov solver
         (defined with `method`). Parameter names must start with
         the `inner_` prefix which will be stripped before passing on
@@ -1533,10 +1542,8 @@ class KrylovJacobian(Jacobian):
                     " It will be ignored."
                     "Please check inner method documentation for valid options."
                     + suggestion_msg,
-                    stacklevel=3,
                     category=UserWarning,
-                    # using `skip_file_prefixes` would be a good idea
-                    # and should be added once we drop support for Python 3.11
+                    skip_file_prefixes=(os.path.dirname(__file__),)
                 )
                 # ignore this parameter and continue
                 continue
@@ -1646,3 +1653,5 @@ linearmixing = _nonlin_wrapper('linearmixing', LinearMixing)
 diagbroyden = _nonlin_wrapper('diagbroyden', DiagBroyden)
 excitingmixing = _nonlin_wrapper('excitingmixing', ExcitingMixing)
 newton_krylov = _nonlin_wrapper('newton_krylov', KrylovJacobian)
+_set_doc_class(BroydenFirst)
+_set_doc_class(KrylovJacobian)

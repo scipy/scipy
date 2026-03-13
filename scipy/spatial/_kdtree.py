@@ -99,6 +99,27 @@ class Rectangle:
     """Hyperrectangle class.
 
     Represents a Cartesian product of intervals.
+
+    Parameters
+    ----------
+    maxes : array_like of shape (m,)
+        Upper bounds of the hyperrectangle along each dimension.
+    mins : array_like of shape (m,)
+        Lower bounds of the hyperrectangle along each dimension.
+
+    Attributes
+    ----------
+    maxes : ndarray of shape (m,)
+        Upper bounds for each dimension.
+    mins : ndarray of shape (m,)
+        Lower bounds for each dimension.
+    m : int
+        Dimensionality of the hyperrectangle.
+
+    Notes
+    -----
+    If any element of `maxes` is smaller than the corresponding element in `mins`, the
+    values are swapped automatically.
     """
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
@@ -110,7 +131,13 @@ class Rectangle:
         return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
-        """Total volume."""
+        """Compute the total volume of the hyperrectangle.
+
+        Returns
+        -------
+        vol : float
+            Volume of the hyperrectangle.
+        """
         return np.prod(self.maxes-self.mins)
 
     def split(self, d, split):
@@ -127,6 +154,12 @@ class Rectangle:
         split : float
             Position along axis `d` to split at.
 
+        Returns
+        -------
+        less : Rectangle
+            Rectangle with `d`-th axis less than `split`.
+        greater : Rectangle
+            Rectangle with `d`-th axis greater than `split`.
         """
         mid = np.copy(self.maxes)
         mid[d] = split
@@ -148,6 +181,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Minimum distance.
         """
         return minkowski_distance(
             0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
@@ -165,6 +202,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : ndarray
+            Maximum distance.
         """
         return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
 
@@ -179,6 +220,10 @@ class Rectangle:
         p : float
             Input.
 
+        Returns
+        -------
+        dist : float
+            Minimum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0,
@@ -198,6 +243,10 @@ class Rectangle:
         p : float, optional
             Input.
 
+        Returns
+        -------
+        dist : float
+            Maximum distance between the two hyperrectangles.
         """
         return minkowski_distance(
             0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
@@ -413,7 +462,7 @@ class KDTree(cKDTree):
                shape ``tuple``, containing lists of distances. This behavior
                has been removed, use `query_ball_point` instead.
 
-        i : integer or array of integers
+        i : int or array of integers
             The index of each neighbor in ``self.data``.
             ``i`` is the same shape as d.
             Missing neighbors are indicated with ``self.n``.
@@ -626,7 +675,7 @@ class KDTree(cKDTree):
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : string, optional
+        output_type : str, optional
             Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
             .. versionadded:: 1.6.0
@@ -817,26 +866,37 @@ class KDTree(cKDTree):
         Parameters
         ----------
         other : KDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
+        output_type : str, optional
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
+            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
+            Default: ``'dok_matrix'``.
 
-        output_type : string, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            .. warning:: dok_matrix and coo_matrix are being replaced.
+
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' continue
+               to work, but will go away eventually.
 
             .. versionadded:: 1.6.0
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------
@@ -847,9 +907,9 @@ class KDTree(cKDTree):
         >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
-        >>> kd_tree1 = KDTree(points1)
-        >>> kd_tree2 = KDTree(points2)
-        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> kdtree1 = KDTree(points1)
+        >>> kdtree2 = KDTree(points2)
+        >>> sdm = kdtree1.sparse_distance_matrix(kdtree2, 0.3, output_type="dok_array")
         >>> sdm.toarray()
         array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
            [0.        , 0.        , 0.        , 0.        , 0.        ],
@@ -868,8 +928,7 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        return super().sparse_distance_matrix(
-            other, max_distance, p, output_type)
+        return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
 def distance_matrix(x, y, p=2.0, threshold=1000000):

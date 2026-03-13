@@ -1596,13 +1596,13 @@ class TestMatrixT:
 
         with pytest.raises(
             np.linalg.LinAlgError,
-            match="2-th leading minor of the array is not positive definite",
+            match="Internal potrf return info",
         ):
             matrix_t.rvs(M, U, np.ones((num_cols, num_cols)), df)
 
         with pytest.raises(
             np.linalg.LinAlgError,
-            match="2-th leading minor of the array is not positive definite",
+            match="Internal potrf return info",
         ):
             matrix_t.rvs(M, np.ones((num_rows, num_rows)), V, df)
 
