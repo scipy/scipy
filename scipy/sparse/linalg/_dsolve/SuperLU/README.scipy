@@ -11,7 +11,6 @@ and then apply it:
 
 ```
 cp ~/code/tmp/superlu/SRC/* scipy/sparse/linalg/_dsolve/SuperLU/SRC/
-rm scipy/sparse/linalg/_dsolve/SuperLU/SRC/superlu_config.h
 rm scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h 
 patch -p1 < scipy/sparse/linalg/_dsolve/SuperLU/scipychanges.patch 
 ```
