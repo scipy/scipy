@@ -48,7 +48,7 @@ Without carefully reading the documentation, it is not immediately obvious how t
 
 Likewise, when the proportion multiplied by the number of elements would not result in an integer, is the number to remove rounded up or down?
 
-What if instead of removing a proportion, we want to remove data below and above specified thresholds. It turns out that we cannot achieve this with {func}`trim_mean <scipy.stats.trim_mean>`; we would need to use {func}`tmean <scipy.stats.tmean>` or (the similarly-named, but curiously relegated to a separate namespace) {func}`scipy.stats.mstats.trimmed_mean`, instead.
+What if, instead of removing a proportion, we want to remove data below and above specified thresholds. It turns out that we cannot achieve this with {func}`trim_mean <scipy.stats.trim_mean>`; we would need to use {func}`tmean <scipy.stats.tmean>` or (the similarly-named, but curiously relegated to a separate namespace) {func}`scipy.stats.mstats.trimmed_mean`, instead.
 
 What if we want to remove data outside a "confidence interval" estimate. Do any of these functions offer anything to facilitate that?  No, not really.
 
@@ -411,7 +411,7 @@ else:
 
 +++
 
-So it is also convenience function that simply wraps the functions {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` and {func}`stats.mstats.trima <scipy.stats.mstats.trima>`.
+So it is also a convenience function that simply wraps the functions {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` and {func}`stats.mstats.trima <scipy.stats.mstats.trima>`.
 
 +++
 

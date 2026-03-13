@@ -2,14 +2,14 @@ Comparing two samples
 ---------------------
 
 In the following, we are given two samples, which can come either from the
-same or from different distribution, and we want to test whether these
+same or from different distributions, and we want to test whether these
 samples have the same statistical properties.
 
 
 Comparing means
 ^^^^^^^^^^^^^^^
 
-Test with sample with identical means:
+Test with samples with identical means:
 
     >>> import scipy.stats as stats
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
@@ -17,13 +17,13 @@ Test with sample with identical means:
     >>> stats.ttest_ind(rvs1, rvs2)
     Ttest_indResult(statistic=-0.5489036175088705, pvalue=0.5831943748663959)  # random
 
-Test with sample with different means:
+Test with samples with different means:
 
     >>> rvs3 = stats.norm.rvs(loc=8, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
     Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186389019e-06)  # random
 
-Kolmogorov-Smirnov test for two samples ks_2samp
+Kolmogorov-Smirnov test for two samples: ks_2samp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For the example, where both samples are drawn from the same distribution,

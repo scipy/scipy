@@ -16,7 +16,7 @@ Univariate estimation
 
 We start with a minimal amount of data in order to see how
 :func:`scipy.stats.gaussian_kde` works and what the different options for
-bandwidth selection do. The data sampled from the PDF are shown as blue dashes
+bandwidth selection do. The data samples from the PDF are shown as blue dashes
 at the bottom of the figure (this is called a rug plot):
 
 .. plot::
@@ -63,7 +63,7 @@ get a less smoothed-out result.
    :alt: " "
    :include-source: 0
 
-We see that if we set bandwidth to be very narrow, the obtained estimate for
+We see that if we set the bandwidth to be very narrow, the obtained estimate for
 the probability density function (PDF) is simply the sum of Gaussians around
 each data point.
 
@@ -123,10 +123,10 @@ each feature.
    :include-source: 0
 
 As expected, the KDE is not as close to the true PDF as we would like due to
-the different characteristic size of the two features of the bimodal
+the different characteristic sizes of the two features of the bimodal
 distribution. By halving the default bandwidth (``Scott * 0.5``), we can do
-somewhat better, while using a factor 5 smaller bandwidth than the default
-doesn't smooth enough. What we really need, though, in this case, is a
+somewhat better, while using a bandwidth five times smaller than the default
+does not smooth enough. What we really need, though, in this case, is a
 non-uniform (adaptive) bandwidth.
 
 
@@ -176,5 +176,3 @@ the individual data points on top.
    :align: center
    :alt: "An X-Y plot showing a random scattering of points around a 2-D gaussian. The distribution has a semi-major axis at 45 degrees with a semi-minor axis about half as large. Each point in the plot is highlighted with the outer region in red, then yellow, then green, with the center in blue. "
    :include-source: 0
-
-

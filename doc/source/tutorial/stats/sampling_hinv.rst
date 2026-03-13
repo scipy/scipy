@@ -19,12 +19,12 @@ of values of the CDF and PDF at interval boundaries. This makes it possible to i
 the accuracy by splitting a particular interval without recomputations in unaffected
 intervals. Three types of splines are implemented: linear, cubic, and quintic
 interpolation. For linear interpolation only the CDF is required. Cubic interpolation
-also requires PDF and quintic interpolation PDF and its derivative.
+also requires PDF and quintic interpolation requires the PDF and its derivative.
 
 These splines have to be computed in a setup step. However, it only works for
-distributions with bounded domain; for distributions with unbounded domain the tails
-are chopped off such that the probability for the tail regions is small compared to
-the given u-resolution.
+distributions with a bounded domain; for distributions with an unbounded domain the 
+tails are chopped off such that the probability for the tail regions is small compared 
+to the given u-resolution.
 
 The method is not exact, as it only produces random variates of the approximated
 distribution. Nevertheless, the maximal numerical error in "u-direction" (i.e.
@@ -35,7 +35,7 @@ the u-resolution are possible but may increase the cost for the setup step.
 
 `NumericalInverseHermite` approximates the inverse of a continuous
 statistical distribution's CDF with a Hermite spline. Order of the
-hermite spline can be specified by passing the `order` parameter.
+Hermite spline can be specified by passing the `order` parameter.
 
 As described in [1]_, it begins by evaluating the distribution's PDF and
 CDF at a mesh of quantiles ``x`` within the distribution's support.
@@ -118,7 +118,7 @@ look at its histogram:
    :alt: " "
    :include-source: 0
 
-Given the derivative of the PDF w.r.t the variate (i.e. ``x``), we can use
+Given the derivative of the PDF w.r.t. the variate (i.e. ``x``), we can use
 quintic Hermite interpolation to approximate the PPF by passing the `order`
 parameter:
 
@@ -142,7 +142,7 @@ Higher orders result in a fewer number of intervals:
     (3000, 522)
 
 The u-error can be estimated by calling the `u_error` method. It runs a small
-Monte-Carlo simulation to estimate the u-error. By default, 100,000 samples are
+Monte Carlo simulation to estimate the u-error. By default, 100,000 samples are
 used. This can be changed by passing the `sample_size` argument:
 
     >>> rng1 = NumericalInverseHermite(dist, u_resolution=1e-10)
