@@ -1,6 +1,7 @@
 #cython: wraparound=False
 #cython: boundscheck=False
 #cython: nonecheck=False
+#cython: cdivision=True
 
 """Utility functions for finding peaks in signals."""
 

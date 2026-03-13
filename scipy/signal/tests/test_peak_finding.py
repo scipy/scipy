@@ -613,24 +613,14 @@ class TestPeakWidths:
                 peak_widths(x, peak, prominence_data=prominence_data)
 
     def test_no_zero_division_with_prominence_data(self):
-        """Test with special prominence data that cause zero division error."""
-        x = np.array([ 0, 1 , 1])
+        # Test with special prominence data that cause zero division error
+        # regression test for gh-20720
+        x = np.array([0, 1, 1])
         peak = np.array([1])
-        prominence_data = (
-            np.array([-1.0]),
-            np.array([0]),
-            np.array([2])
-        )
-        result = peak_widths(
-                x,
-                peak,
-                prominence_data=prominence_data
-                )
+        prominence_data = (np.array([-1.0]), np.array([0]), np.array([2]))
+        result = peak_widths(x, peak, prominence_data=prominence_data)
         result_expected = np.asarray([[0.5], [1.5], [1.], [1.5]])
-        xp_assert_equal(
-            result_expected,
-            result,
-        )
+        xp_assert_equal(result_expected, result)
 
     @pytest.mark.filterwarnings("ignore:some peaks have a width of 0")
     def test_intersection_rules(self):
