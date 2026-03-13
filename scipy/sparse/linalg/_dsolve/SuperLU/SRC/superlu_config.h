@@ -21,4 +21,3 @@ typedef int int_t; /* default */
 #endif
 
 #endif /* SUPERLU_CONFIG_H */
-

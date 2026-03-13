@@ -111,7 +111,7 @@ csnode_bmod (
            ABORT("failed to factorize matrix");
        }
 #endif
-	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
 	      &lusup[ufirst], &incx );
 	cgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );

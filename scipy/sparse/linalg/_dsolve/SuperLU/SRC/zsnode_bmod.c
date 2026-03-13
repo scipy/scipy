@@ -111,7 +111,7 @@ zsnode_bmod (
            ABORT("failed to factorize matrix");
        }
 #endif
-	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
 	      &lusup[ufirst], &incx );
 	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
