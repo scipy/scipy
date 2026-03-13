@@ -316,8 +316,12 @@ _desc = (
   If insufficient data remains in the axis slice along which the
   statistic is computed, the corresponding entry of the output will be
   NaN.
-- ``raise``: if a NaN is present, a ``ValueError`` will be raised."""
-    .split('\n'))
+- ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
+For multidimensional input, `nan_policy` is only supported by the NumPy backend;
+otherwise, it is ignored. Other backends may propagate NaNs by default, and they may
+support omitting NaNs by wrapping input with
+`MArray <https://mdhaber.github.io/marray/tutorial.html>`__; see Notes.""".split('\n'))
 _nan_policy_parameter_doc = Parameter(_name, _type, _desc)
 _nan_policy_parameter = inspect.Parameter(_name,
                                           inspect.Parameter.KEYWORD_ONLY,
