@@ -385,6 +385,25 @@ def kstatvar(data, n=2, *, axis=None):
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+
+    As the sample size increases, the estimated variance of the k-statistic converges to zero.
+
+    >>> for i in range(1,8):
+    ...     x = rng.normal(size=10**i)
+    ...     kvar = stats.kstatvar(x,1)
+    ...     print(f"i={i}: {kvar=:.3g}")
+    i=1: kvar=0.0885  # random
+    i=2: kvar=0.0159
+    i=3: kvar=0.00102
+    i=4: kvar=9.99e-05
+    i=5: kvar=9.99e-06
+    i=6: kvar=9.98e-07
+    i=7: kvar=1e-07
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
