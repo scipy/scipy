@@ -513,7 +513,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         _mwu_state.s.set_shapes(n1, n2)
         p = xpx.lazy_apply(_mwu_state.s.sf, xp.astype(U, xp.int64),
                            as_numpy=True, dtype=xp.float64)
-        p = xp.astype(p, x.dtype, copy=False)
+        p = xp.astype(p, x.dtype, copy=False) * f
     elif method == "asymptotic":
         z = _get_mwu_z(U1, n1, n2, t, continuity=use_continuity,
                        alternative=alternative, xp=xp)
