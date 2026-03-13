@@ -142,7 +142,8 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         n_cores = cpu_count(only_physical_cores=True)
         jobs = n_cores
 
-    meson_install_args = meson_install_args + ("--tags=" + tags, )
+    meson_install_args += ("--tags=" + tags, )
+    meson_install_args += ("--skip-subprojects",)
 
     if show_build_log:
         verbose = show_build_log
@@ -443,9 +444,9 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
     if (
         not importlib.util.find_spec("scipy_doctest")
-        or importlib.metadata.version("scipy_doctest") < "1.8.0"
+        or importlib.metadata.version("scipy_doctest") < "2.0.0"
     ):
-        raise ModuleNotFoundError("Please install scipy-doctest>=1.8.0")
+        raise ModuleNotFoundError("Please install scipy-doctest>=2.0.0")
 
     tests = kwargs["tests"]
     if kwargs["submodule"]:
@@ -981,7 +982,7 @@ def _cpu_count_affinity(os_cpu_count):
         except NotImplementedError:
             pass
 
-    # On PyPy and possibly other platforms, os.sched_getaffinity does not exist
+    # On some platforms, os.sched_getaffinity does not exist
     # or raises NotImplementedError, let's try with the psutil if installed.
     try:
         import psutil
@@ -995,10 +996,10 @@ def _cpu_count_affinity(os_cpu_count):
             sys.platform == "linux"
             and os.environ.get("LOKY_MAX_CPU_COUNT") is None
         ):
-            # PyPy does not implement os.sched_getaffinity on Linux which
-            # can cause severe oversubscription problems. Better warn the
-            # user in this particularly pathological case which can wreck
-            # havoc, typically on CI workers.
+            # On Linux no cpu_affinity can cause severe oversubscription
+            # problems. Better warn the user in this particularly
+            # pathological case which can wreck havoc, typically on CI
+            # workers.
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
                 "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT.",

@@ -1,4 +1,5 @@
 from io import StringIO
+import pytest
 import tempfile
 
 import numpy as np
@@ -6,7 +7,7 @@ import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_almost_equal_nulp
 
-from scipy.sparse import coo_array, csc_array, random_array, isspmatrix
+from scipy.sparse import coo_array, csc_array, random_array, sparray, issparse
 
 from scipy.io import hb_read, hb_write
 
@@ -47,11 +48,12 @@ class TestHBReader:
     def test_simple(self):
         m = hb_read(StringIO(SIMPLE), spmatrix=False)
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
-        assert not isspmatrix(m)
+        assert isinstance(m, sparray)
         m = hb_read(StringIO(SIMPLE), spmatrix=True)
-        assert isspmatrix(m)
-        m = hb_read(StringIO(SIMPLE))  # default
-        assert isspmatrix(m)
+        assert issparse(m) and not isinstance(m, sparray)
+        with pytest.deprecated_call(match="The default value for `spmatrix"):
+            m = hb_read(StringIO(SIMPLE))  # default
+            assert issparse(m) and not isinstance(m, sparray)
 
 
 class TestHBReadWrite:

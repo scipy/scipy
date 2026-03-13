@@ -1,24 +1,19 @@
 set -xe
-
-PROJECT_DIR="$1"
 PLATFORM=$(uname -m)
 echo $PLATFORM
 
-# Update license
-cat $PROJECT_DIR/tools/wheels/LICENSE_osx.txt >> $PROJECT_DIR/LICENSE.txt
-
 #########################################################################################
-# Install GFortran + OpenBLAS
+# Install GFortran
 
 if [[ $PLATFORM == "x86_64" ]]; then
   #GFORTRAN=$(type -p gfortran-9)
   #sudo ln -s $GFORTRAN /usr/local/bin/gfortran
   # same version of gfortran as the openblas-libs
   # https://github.com/MacPython/gfortran-install.git
-  curl -L https://github.com/isuruf/gcc/releases/download/gcc-11.3.0-2/gfortran-darwin-x86_64-native.tar.gz -o gfortran.tar.gz
+  curl -L https://github.com/isuruf/gcc/releases/download/gcc-15.2.0/gfortran-darwin-x86_64-native.tar.gz -o gfortran.tar.gz
 
   GFORTRAN_SHA256=$(shasum -a 256 gfortran.tar.gz)
-  KNOWN_SHA256="981367dd0ad4335613e91bbee453d60b6669f5d7e976d18c7bdb7f1966f26ae4  gfortran.tar.gz"
+  KNOWN_SHA256="fb03c1f37bf0258ada6e3e41698e3ad416fff4dad448fd746e01d8ccf1efdc0f  gfortran.tar.gz"
   if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
       echo sha256 mismatch
       exit 1
@@ -58,17 +53,3 @@ if [[ $PLATFORM == "arm64" ]]; then
   sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
   type -p gfortran
 fi
-
-# Install OpenBLAS
-python -m pip install -r requirements/openblas.txt
-python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > $PROJECT_DIR/scipy-openblas.pc
-
-lib_loc=$(python -c"import scipy_openblas32; print(scipy_openblas32.get_lib_dir())")
-# Use the libgfortran from gfortran rather than the one in the wheel
-# since delocate gets confused if there is more than one
-# https://github.com/scipy/scipy/issues/20852
-install_name_tool -change @loader_path/../.dylibs/libgfortran.5.dylib @rpath/libgfortran.5.dylib $lib_loc/libsci*
-install_name_tool -change @loader_path/../.dylibs/libgcc_s.1.1.dylib @rpath/libgcc_s.1.1.dylib $lib_loc/libsci*
-install_name_tool -change @loader_path/../.dylibs/libquadmath.0.dylib @rpath/libquadmath.0.dylib $lib_loc/libsci*
-
-codesign -s - -f $lib_loc/libsci*

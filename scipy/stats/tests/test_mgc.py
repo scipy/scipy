@@ -11,7 +11,7 @@ class TestMGCErrorWarnings:
     """ Tests errors and warnings derived from MGC.
     """
     def test_error_notndarray(self):
-        # raises error if x or y is not a ndarray
+        # raises error if x or y is not an ndarray
         x = np.arange(20)
         y = [5] * 20
         assert_raises(ValueError, stats.multiscale_graphcorr, x, y)

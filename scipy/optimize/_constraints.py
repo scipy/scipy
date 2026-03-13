@@ -202,7 +202,7 @@ class LinearConstraint:
 
     def residual(self, x):
         """
-        Calculate the residual between the constraint function and the limits
+        Calculate the residual between the constraint function and the limits.
 
         For a linear constraint of the form::
 
@@ -220,7 +220,7 @@ class LinearConstraint:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns
@@ -289,7 +289,7 @@ class Bounds:
         return start + end
 
     def residual(self, x):
-        """Calculate the residual (slack) between the input and the bounds
+        """Calculate the residual (slack) between the input and the bounds.
 
         For a bound constraint of the form::
 
@@ -306,7 +306,7 @@ class Bounds:
 
         Parameters
         ----------
-        x: array_like
+        x : array_like
             Vector of independent variables
 
         Returns
@@ -426,7 +426,7 @@ def new_bounds_to_old(lb, ub, n):
     """Convert the new bounds representation to the old one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, ith containing lower and upper bound on a ith
+    containing n tuples, ith containing lower and upper bounds on the ith
     variable.
     If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
     None.
@@ -444,7 +444,7 @@ def old_bound_to_new(bounds):
     """Convert the old bounds representation to the new one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, ith containing lower and upper bound on a ith
+    containing n tuples, ith containing lower and upper bounds on the ith
     variable.
     If any of the entries in lb/ub are None they are replaced by
     -np.inf/np.inf.

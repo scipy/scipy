@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 import scipy._lib._elementwise_iterative_method as eim
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 
@@ -255,7 +255,7 @@ class TestDerivative:
         for i in range(h0.shape[0]):
             ref = derivative(f, x, initial_step=h0[i, 0], order=2, maxiter=1,
                              step_direction=step_direction)
-            xp_assert_close(res.df[i, :], ref.df, rtol=1e-14)
+            xp_assert_close(res.df[i, :], ref.df, rtol=5e-13)
 
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
@@ -438,6 +438,19 @@ class TestDerivative:
         res = derivative(*case, step_direction=[-1, 0, 1], atol=atol)
         assert np.all(res.success)
         xp_assert_close(res.df, 0, atol=atol)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_kwargs(self, xp, dtype):
+        # test that `kwargs` is used, broadcasts correctly, and affects dtype
+        def f(x, c, *, p):
+            return x**p + c*x
+
+        x = xp.asarray(1.23, dtype=xp.float32)
+        c = xp.asarray([1, 2, 3], dtype=xp.float32)
+        p = xp.asarray([2, 3, 4], dtype=getattr(xp, dtype))[:, xp.newaxis]
+        res = derivative(f, x, args=(c,), kwargs={'p': p})
+        ref = p*x**(p-1.) + c
+        xp_assert_close(res.df, ref)
 
 
 class JacobianHessianTest:

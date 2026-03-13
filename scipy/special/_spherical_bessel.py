@@ -1,5 +1,5 @@
 from functools import wraps
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import numpy as np
 from ._ufuncs import (_spherical_jn, _spherical_yn, _spherical_in,
                       _spherical_kn, _spherical_jn_d, _spherical_yn_d,

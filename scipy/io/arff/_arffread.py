@@ -666,9 +666,16 @@ def read_header(ofile):
 
 class MetaData:
     """
-    Small container to keep useful information on a ARFF dataset.
+    Small container to keep useful information on an ARFF dataset.
 
     Knows about attributes names and types.
+
+    Parameters
+    ----------
+    rel : str
+        Name of the relation.
+    attr : list of Attribute
+        Attributes of the dataset.
 
     Methods
     -------

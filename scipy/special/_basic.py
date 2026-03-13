@@ -976,7 +976,7 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute derivatives of real-order modified Bessel function Kv(z)
+    """Compute derivatives of real-order modified Bessel function Kv(z).
 
     Kv(z) is the modified Bessel function of the second kind.
     Derivative is calculated with respect to `z`.
@@ -2453,13 +2453,18 @@ def keip_zeros(nt):
 
 
 def kelvin_zeros(nt):
-    """Compute nt zeros of all Kelvin functions.
+    """Compute `nt` zeros of all Kelvin functions.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute for each function.
 
     Returns
     -------
     zeros : tuple of arrays
-        Length-8 tuple of arrays of length nt.  The tuple contains the arrays of zeros
-        of (ber, bei, ker, kei, ber', bei', ker', kei').
+        Length-8 tuple of arrays of length `nt`.  The tuple contains the arrays of zeros
+        of ``(ber, bei, ker, kei, ber', bei', ker', kei')``.
 
     References
     ----------
@@ -2484,8 +2489,15 @@ def pro_cv_seq(m, n, c):
     """Characteristic values for prolate spheroidal wave functions.
 
     Compute a sequence of characteristic values for the prolate
-    spheroidal wave functions for mode m and n'=m..n and spheroidal
-    parameter c.
+    spheroidal wave functions for mode `m` and n'=m..n and spheroidal
+    parameter `c`.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
 
     Returns
     -------
@@ -2515,6 +2527,13 @@ def obl_cv_seq(m, n, c):
     Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    Parameters
+    ----------
+    m, n : int
+        Non-negative mode parameters.
+    c : float
+        Spheroidal parameter.
 
     Returns
     -------
@@ -3014,7 +3033,7 @@ def factorial(n, exact=False, extend="zero"):
         integer arithmetic, otherwise approximate using the gamma function
         (faster, but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the factorial (see below).
@@ -3075,7 +3094,7 @@ def factorial2(n, exact=False, extend="zero"):
         integer arithmetic, otherwise use above approximation (faster,
         but yields floats instead of integers).
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
         complex extension of the double factorial. This also enables passing
@@ -3135,7 +3154,7 @@ def factorialk(n, k, exact=False, extend="zero"):
         integer arithmetic, otherwise use an approximation (faster,
         but yields floats instead of integers)
         Default is False.
-    extend : string, optional
+    extend : str, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0`` are
         handled - by default they are 0, but it is possible to opt into the complex
         extension of the multifactorial. This enables passing complex values,

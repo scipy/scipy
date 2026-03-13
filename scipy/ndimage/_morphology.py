@@ -333,7 +333,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
         Value at the border in the output array.
     origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated (eroded) in
         the current iteration; if True all pixels are considered as candidates
@@ -434,7 +434,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
         Value at the border in the output array.
     origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated (dilated)
         in the current iteration; if True all pixels are considered as
@@ -582,7 +582,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         Value at the border in the output array.
 
         .. versionadded:: 1.1.0
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
         current iteration; if true all pixels are considered as candidates for
@@ -712,7 +712,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         Value at the border in the output array.
 
         .. versionadded:: 1.1.0
-    brute_force : boolean, optional
+    brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
         current iteration; if true al pixels are considered as candidates for

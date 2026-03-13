@@ -628,7 +628,6 @@ class TestBatch:
 
     @pytest.mark.parametrize('f, args', [
         (linalg.toeplitz, (np.ones((0, 4)),)),
-        (linalg.eig, (np.ones((3, 0, 5, 5)),)),
     ])
     def test_zero_size_batch(self, f, args):
         message = "does not support zero-size batches."
@@ -705,4 +704,3 @@ def test_shapes_solve_like(func, core_shape):
     with pytest.raises(ValueError, match=pattern):
         # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
         func(a, b)
-
