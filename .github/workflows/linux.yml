@@ -482,6 +482,7 @@ jobs:
     # (i.e., we're using it as a binary). This isn't a normal setup, but it's
     # sometimes being used that way - see gh-20535 and gh-24406
     name: build with global meson
+    needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
