@@ -157,7 +157,7 @@ class OdeSolution:
     interpolants : list of DenseOutput with n_segments elements
         Local interpolants. An i-th interpolant is assumed to be defined
         between ``ts[i]`` and ``ts[i + 1]``.
-    alt_segment : boolean
+    alt_segment : bool
         Requests the alternative interpolant segment selection scheme. At each
         solver integration point, two interpolant segments are available. The
         default (False) and alternative (True) behaviours select the segment
@@ -385,7 +385,7 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
 def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     n = y.shape[0]
     n_groups = np.max(groups) + 1
-    h_vecs = np.empty((n_groups, n))
+    h_vecs = np.empty((n_groups, n), dtype=h.dtype)
     for group in range(n_groups):
         e = np.equal(group, groups)
         h_vecs[group] = h * e
@@ -407,12 +407,12 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
         ind, = np.nonzero(diff_too_small)
         new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
-        h_new_all = np.zeros(n)
+        h_new_all = np.zeros(n, dtype=h.dtype)
         h_new_all[ind] = h_new
 
         groups_unique = np.unique(groups[ind])
         groups_map = np.empty(n_groups, dtype=int)
-        h_vecs = np.empty((groups_unique.shape[0], n))
+        h_vecs = np.empty((groups_unique.shape[0], n), dtype=h.dtype)
         for k, group in enumerate(groups_unique):
             e = np.equal(group, groups)
             h_vecs[k] = h_new_all * e

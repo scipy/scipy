@@ -10,7 +10,7 @@ Consider a box containing :math:`M` balls: :math:`n` red and :math:`M-n` blue. W
    :nowrap:
 
     \begin{eqnarray*}
-    p(k;M,n,r) & = & \frac{\left(\begin{array}{c} k+r-1\\ k\end{array}\right)\left(\begin{array}{c} M-r-k\\ n-k\end{array}\right)}{\left(\begin{array}{c} M\\ n\end{array}\right)}\quad 0 \leq k \leq M-n,\\
+    p(k;M,n,r) & = & \frac{\left(\begin{array}{c} k+r-1\\ k\end{array}\right)\left(\begin{array}{c} M-r-k\\ n-k\end{array}\right)}{\left(\begin{array}{c} M\\ n\end{array}\right)}\quad 0 \leq k \leq n,\\
     F(x;M,n,r) & = & \sum_{k=0}^{\left\lfloor x\right\rfloor }p\left(k;M,n,r\right),\\
     \mu & = & \frac{rn}{M-n+1},\\
     \mu_{2} & = & \frac{rn(M+1)}{(M-n+1)(M-n+2)}\left(1-\frac{r}{M-n+1}\right)

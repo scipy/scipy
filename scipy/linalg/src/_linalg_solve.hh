@@ -201,6 +201,42 @@ void solve_slice_tridiag(
     }
 }
 
+// Banded array solve, assumes the data is fed in in the banded structure `ab` already.
+template<typename T>
+inline void solve_slice_banded(
+    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *ab, CBLAS_INT *ipiv, T *b_data, T *work2, void *irwork,
+    CBLAS_INT kl, CBLAS_INT ku, SliceStatus &status
+) {
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT ldab = 2 * kl + ku + 1;
+
+    CBLAS_INT info;
+    char norm = '1';
+    real_type rcond;
+    real_type anorm = norm1_banded(ab, kl, ku, work2, N);
+
+    call_gbtrf(&N, &N, &kl, &ku, ab, &ldab, ipiv, &info);
+    status.lapack_info = (Py_ssize_t)info;
+    if (info == 0) {
+        // gbtrf success, check condition number
+        call_gbcon(&norm, &N, &kl, &ku, ab, &ldab, ipiv, &anorm, &rcond, work2, irwork, &info);
+
+        status.rcond = (double)rcond;
+        if (info >= 0) {
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+
+            // finally, solve
+            call_gbtrs(&trans, &N, &kl, &ku, &NRHS, ab, &ldab, ipiv, b_data, &N, &info);
+            status.is_singular = (info > 0);
+        }
+    }
+    else if (info > 0) {
+        // trf detected singularity
+        status.is_singular = 1;
+    }
+}
+
 
 // Diagonal array solve
 template<typename T>
@@ -240,19 +276,169 @@ inline void solve_slice_diagonal(
 }
 
 
+// Specific implementation for the case of `solve(..., assume_a=banded)` to avoid
+// cluttering the main loop in `_solve` by branching to this function early.
 template<typename T>
 int
-_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, SliceStatusVec& vec_status)
+_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, char trans, int overwrite_a, int overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
+{
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT info;
+    npy_intp *ks = NULL; // For storage of the bandwidths
+    T* buffer = NULL;
+
+    // --------------------------------------------------------------------
+    // Input Array Attributes, duplicate of `_solve()`
+    // --------------------------------------------------------------------
+    T* Am_data = (T *)PyArray_DATA(ap_Am);
+    int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
+    npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
+    npy_intp n = shape[ndim - 1];                // Slice size
+    npy_intp* strides = PyArray_STRIDES(ap_Am);
+    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+
+    T *bm_data = (T *)PyArray_DATA(ap_b);
+    npy_intp ndim_b = PyArray_NDIM(ap_b);
+    npy_intp *shape_b = PyArray_SHAPE(ap_b);
+    npy_intp *strides_b = PyArray_STRIDES(ap_b);
+    npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
+
+    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
+
+    // General allocations
+    CBLAS_INT *ipiv = (CBLAS_INT *)malloc(intn * sizeof(CBLAS_INT));
+    if (ipiv == NULL) {
+        info = -102;
+        return int(info);
+    }
+
+    void *irwork;
+    if constexpr (type_traits<T>::is_complex) {
+        irwork = malloc(intn * sizeof(real_type));
+    } else {
+        irwork = malloc(intn * sizeof(CBLAS_INT));
+    }
+
+    if (irwork == NULL) {
+        free(ipiv);
+        info = -102;
+        return int(info);
+    }
+
+    // Bandwidth detection per slice. Required to first do a pass to find the
+    // maximal `kl` and `ku` to find the minimal size the array will need to
+    // have. To avoid having to call `bandwidth` twice per slice, the results
+    // are stored in these arrays.
+    npy_intp ldab_max = 0;
+    ks = (npy_intp *)malloc(2 * outer_size * sizeof(npy_intp));
+
+    if (ks == NULL) {
+        free(ipiv);
+        free(irwork);
+        info = -102;
+        return (int)info;
+    }
+
+    npy_intp *kls = &ks[0]; // Lower bandwidths
+    npy_intp *kus = &ks[outer_size]; // Upper bandwidths
+    detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
+
+    /*
+     * Chop up buffer in parts:
+     *
+     *   ldab_max * n       3 * n       b_data_size
+     * |---------------|-------------|---------------|
+     * ^               ^             ^
+     * ab              work          b_data
+     *
+     * - `ab` is a buffer holding the "padded" banded form of matrix `a`
+     * - `work` is needed for `gbcon` (fixed size)
+     * - `b_data` is a buffer for the rhs of the system, not needed if `overwrite_b` is set (size = 0 then)
+     */
+    npy_intp b_data_size = overwrite_b ? 0 : n * nrhs;
+    buffer = (T *)malloc((ldab_max * n + 3 * n + b_data_size) * sizeof(T));
+
+    if (buffer == NULL) {
+        free(ipiv);
+        free(irwork);
+        free(ks);
+        info = -102;
+        return int(info);
+    }
+
+    // Chop up buffer
+    T *ab = &buffer[0];
+    T *work = &buffer[ldab_max * n];
+
+    T *b_data = NULL;
+    if (!overwrite_b) {
+        b_data = &buffer[ldab_max * n + 3 * n];
+    } else {
+        b_data = bm_data;
+    }
+
+    // Main loop traversal, taken from `_solve`
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+
+        T* slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+
+        // Directly take into banded storage
+        npy_intp ldab = 2 * kls[idx] + kus[idx] + 1;
+        to_banded(slice_ptr, n, kls[idx], kus[idx], ldab, ab, strides[ndim-2], strides[ndim-1]);
+
+        if (!overwrite_b) {
+            T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
+            copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        }
+        // NB. `overwrite_b` is only set when the input is 2D F-ordered, so no copy needed then.
+        // A generalization to ndim > 2 will also require computing the pointer here.
+
+        // structure is known to be banded
+        init_status(slice_status, idx, St::BANDED);
+        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work, irwork, kls[idx], kus[idx], slice_status);
+
+        if (_detect_problems(slice_status, vec_status) != 0) { goto free_exit_banded; }
+
+        if (!overwrite_b) {
+            // Put result in C-order in return buffer
+            copy_slice_F_to_C(&ret_data[idx * n * nrhs], b_data, n, nrhs);
+        } // If `overwrite_b` is true the result is already set.
+    }
+
+free_exit_banded:
+    free(ipiv);
+    free(irwork);
+    free(ks);
+    free(buffer);
+
+    return 1;
+}
+
+template<typename T>
+int
+_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
-    char trans = transposed ? 'T' : 'N'; 
+    char trans = transposed ? 'T' : 'N';
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
     SliceStatus slice_status;
+
+    // branch early for `assume_a = banded`
+    if (structure == St::BANDED) {
+        return _solve_assume_banded(ap_Am, ap_b, ret_data, trans, overwrite_a, overwrite_b, slice_status, vec_status);
+    }
+
 
     // --------------------------------------------------------------------
     // Input Array Attributes
@@ -275,6 +461,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
 
+
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
@@ -296,16 +483,49 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // gecon needs lwork of at least 4*n
     lwork = (4*n > lwork ? 4*n : lwork);
 
-    T* buffer = (T *)malloc((2*n*n + n*nrhs + 2*n + lwork)*sizeof(T));
+    CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
+    CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
+    CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
+    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork; 
+
+    T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
-    // Chop the buffer into parts
-    T* data = &buffer[0];
-    T* scratch = &buffer[n*n];
+    /*
+     * Chop the buffer into parts:
+     *
+     *    size_a     size_a    size_b     2n     lwork
+     * |----------|---------|----------|------|---------|
+     * ^          ^         ^          ^      ^
+     * scratch    data      data_b     work2  work
+     *
+     * - scrach & data are for A (lhs)
+     * - data_b is for b (rhs)
+     * - work2 is for the tridiag solver, trcon's work array
+     * - work is for all other LAPACK functions
+     *
+     */
 
-    T *data_b = &buffer[2*n*n];
-    T *work2 = &buffer[2*n*n + n*nrhs]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
-    T* work = &buffer[2*n*n + n*nrhs + 2*n];
+    T *scratch = NULL, *data = NULL;
+    if (overwrite_a) {
+        data = (T *)Am_data;
+    }
+    else {
+        scratch = &buffer[0];
+        data = &buffer[buf_size_a];
+    }
+
+    T *data_b = NULL;
+    if(overwrite_b) {
+        // work in-place
+        data_b = ret_data;
+    }
+    else {
+        data_b = &buffer[2*buf_size_a];
+    }
+
+    T *work2 = &buffer[2*buf_size_a + buf_size_b]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
+    T* work = &buffer[2*buf_size_a + buf_size_b + 2*n];
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
@@ -347,14 +567,19 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     // Main loop to traverse the slices
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        // copy the slice
         T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-        swap_cf(scratch, data, n, n, n);
 
-        // copy the r.h.s, too;
-        T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
-        copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        if (!overwrite_a) {
+            // copy the slice
+            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+            swap_cf(scratch, data, n, n, n);
+        }
+
+        if (!overwrite_b) {
+            // copy the r.h.s, too;
+            T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
+            copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+        }
 
         // detect the structure if not given
         slice_structure = structure;
@@ -470,8 +695,10 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             }
         }
 
-        // Swap back to the C order
-        copy_slice_F_to_C(&ret_data[idx*n*nrhs], data_b, n, nrhs);
+        if (!overwrite_b) {
+            // Swap back to the C order
+            copy_slice_F_to_C(&ret_data[idx*n*nrhs], data_b, n, nrhs);
+        }
     }
 
 free_exit:

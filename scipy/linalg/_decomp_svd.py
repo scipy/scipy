@@ -6,7 +6,7 @@ from . import _batched_linalg
 
 # Local imports.
 from ._misc import LinAlgError, _datacopied
-from .lapack import _normalize_lapack_dtype, HAS_ILP64
+from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native, HAS_ILP64
 from scipy.linalg.lapack import get_lapack_funcs   # noqa: F401  (backwards compat)
 from ._decomp import _asarray_validated
 
@@ -92,6 +92,12 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     svdvals : Compute singular values of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
 
+    Notes
+    -----
+    The array argument of this function, `a`, may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Examples
     --------
     >>> import numpy as np
@@ -126,6 +132,14 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> np.allclose(s, s2)
     True
 
+    If the input matrix has more than two dimensions, it is interpreted as a batch of
+    two-dimensional matrices:
+
+    >>> aa = np.stack((a, 2*a))
+    >>> linalg.svdvals(aa)[0] == linalg.svdvals(a)
+    array([ True,  True,  True,  True,  True,  True])
+    >>> linalg.svdvals(aa)[1] == 2 * linalg.svdvals(a)
+    array([ True,  True,  True,  True,  True,  True])
     """
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
@@ -144,10 +158,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
-
-    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # accommodate empty matrix
     if a1.size == 0:
@@ -227,6 +238,12 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     svd : Compute the full singular value decomposition of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
 
+    Notes
+    -----
+    Array argument of this function, `a`, may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Examples
     --------
     >>> import numpy as np
@@ -238,6 +255,14 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     ...               [1.0, 0.0]])
     >>> svdvals(m)
     array([ 4.28091555,  1.63516424])
+
+    If the input matrix has more than two dimensions, it is interpreted as a batch of
+    two-dimensional matrices:
+
+    >>> mm = np.stack((m, 2*m))
+    >>> svdvals(mm)
+    array([[4.28091555, 1.63516424],
+           [8.56183109, 3.27032847]])
 
     We can verify the maximum singular value of `m` by computing the maximum
     length of `m @ u` over all the unit vectors `u` in the (x,y) plane.
@@ -266,7 +291,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     >>> orth = ortho_group.rvs(4)
     >>> svdvals(orth)
     array([ 1.,  1.,  1.,  1.])
-
     """
     return svd(a, compute_uv=0, overwrite_a=overwrite_a,
                check_finite=check_finite)
@@ -328,7 +352,7 @@ def diagsvd(s, M, N):
 @_apply_over_batch(('A', 2))
 def orth(A, rcond=None):
     """
-    Construct an orthonormal basis for the range of A using SVD
+    Construct an orthonormal basis for the range of A using SVD.
 
     Parameters
     ----------
@@ -378,7 +402,7 @@ def orth(A, rcond=None):
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """
-    Construct an orthonormal basis for the null space of A using SVD
+    Construct an orthonormal basis for the null space of A using SVD.
 
     Parameters
     ----------
@@ -492,8 +516,8 @@ def subspace_angles(A, B):
 
     Examples
     --------
-    An Hadamard matrix, which has orthogonal columns, so we expect that
-    the suspace angle to be :math:`\frac{\pi}{2}`:
+    A Hadamard matrix, which has orthogonal columns, so we expect that
+    the subspace angle to be :math:`\frac{\pi}{2}`:
 
     >>> import numpy as np
     >>> from scipy.linalg import hadamard, subspace_angles
