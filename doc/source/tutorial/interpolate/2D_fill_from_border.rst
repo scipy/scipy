@@ -1,4 +1,4 @@
-.. _tutorial-intepolate_2dfillfromborder:
+.. _tutorial-interpolate_2dfillfromborder:
 
 .. currentmodule:: scipy.interpolate
 
@@ -26,8 +26,10 @@ As a concrete example, consider a square with sides of length
 
 .. math::
 
-   \sin(6\pi x/L), y = 0 \text{or} y = L
-   \sin(6\pi y/L), x = 0 \text{or} x = L
+   \begin{cases}
+   \sin(6\pi x/L), &y = 0 \text{ or } y = L \\
+   \sin(6\pi y/L), &x = 0 \text{ or } x = L
+   \end{cases}
 
 That is, a sine wave with three full periods on each side, identical
 on opposite sides of the square.
@@ -55,7 +57,7 @@ Another option is the solution to the Laplace equation.  The Laplace equation is
 
 .. math:: \frac{\partial^2 f}{\partial x^2} + \frac{\partial^2 f}{\partial y^2} = 0.
 
-Solutions to the Laplace equaiton are such that each point has a value
+Solutions to the Laplace equation are such that each point has a value
 close to the mean of the values of the points around it.  As a result,
 solutions to the Laplace equation have no extrema in the interior of
 the region in which they are defined.
@@ -65,7 +67,7 @@ remember some complementary properties of the circular and hyperbolic
 trigonometric functions and verify that the following satisfies the
 Laplace equation:
 
-.. math:: (\sin(6\pi x/L) \cosh(6\pi (y-L/2)/L) + \sin(6\pi y/L)\cosh(6\pi (x-L/2)/L))/\cosh(3\pi)
+.. math:: [\sin(6\pi x/L) \cosh(6\pi (y-L/2)/L) + \sin(6\pi y/L)\cosh(6\pi (x-L/2)/L)]/\cosh(3\pi)
 
 We now plot these functions to get a sense of their behavior.
 
@@ -97,6 +99,8 @@ We now plot these functions to get a sense of their behavior.
    >>> def plot_and_check_filled_image(values, name):
    ...     plt.imshow(values, vmin=-2, vmax=2, cmap="RdBu_r")
    ...     plt.title(name)
+   ...     plt.xticks(range(0, 601, 300))
+   ...     plt.yticks(range(0, 601, 300))
    ...     error = values[mask] - border_values
    ...     error_mean = np.mean(error)
    ...     error_std = np.std(error)
@@ -217,6 +221,8 @@ Simplex tolerance
 The difficulties had with the linear and cubic interpolators arise
 from a floating-point tolerance value: increasing this tolerance will
 also reduce the problem:
+
+.. versionadded:: v1.18.0
 
 .. plot::
    :context: close-figs
