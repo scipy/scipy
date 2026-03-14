@@ -56,6 +56,13 @@ direct(PyObject *self, PyObject *args)
         Py_DECREF(x_seq);
         if (x)
             free(x);
+        if (!PyErr_Occurred()) {
+            if (ret_code == DIRECT_OUT_OF_MEMORY)
+                PyErr_NoMemory();
+            else
+                PyErr_SetString(PyExc_RuntimeError,
+                    "DIRECT optimization failed");
+        }
         return NULL;
     }
     /* DECREF the return value from direct_optimize - we only needed it for error checking */
