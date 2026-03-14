@@ -959,6 +959,14 @@ def test_inheritance(xp):
     mm = MatmatOnly(xp.asarray(np.random.randn(5, 3)))
     assert mm.matvec(xp.asarray(np.random.randn(3))).shape == (5,)
 
+    # gh-18140: rmatmat with only matvec defined should raise NotImplementedError,
+    # not a cryptic TypeError from trying to call None as a function.
+    matvec_only = interface.LinearOperator(
+        matvec=lambda x: x, shape=(1, 1), xp=xp
+    )
+    assert_raises(NotImplementedError, matvec_only.rmatmat, xp.ones((1, 1)))
+    assert_raises(NotImplementedError, matvec_only.rmatvec, xp.ones(1))
+
 
 def test_dtypes_of_operator_sum(xp):
     # gh-6078

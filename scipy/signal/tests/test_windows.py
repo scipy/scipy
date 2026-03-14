@@ -228,6 +228,34 @@ class TestBoxcar:
                         xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.cosine)
+class TestCosine:
+
+    def test_basic(self, xp):
+        xp_assert_close(windows.cosine(6, sym=False, xp=xp),
+                        xp.asarray([0.2225209339563144, 0.6234898018587335,
+                                    0.9009688679024191, 1.0,
+                                    0.9009688679024191, 0.6234898018587336],
+                                   dtype=xp.float64))
+        xp_assert_close(windows.cosine(7, sym=False, xp=xp),
+                        xp.asarray([0.19509032201612825, 0.5555702330196022,
+                                    0.8314696123025452, 0.9807852804032304,
+                                    0.9807852804032304, 0.8314696123025455,
+                                    0.5555702330196022],
+                                   dtype=xp.float64))
+        xp_assert_close(windows.cosine(6, sym=True, xp=xp),
+                        xp.asarray([0.25881904510252074, 0.7071067811865475,
+                                    0.9659258262890682, 0.9659258262890683,
+                                    0.7071067811865476, 0.258819045102521],
+                                   dtype=xp.float64))
+        xp_assert_close(windows.cosine(7, sym=True, xp=xp),
+                        xp.asarray([0.2225209339563144, 0.6234898018587335,
+                                    0.9009688679024191, 1.0,
+                                    0.9009688679024191, 0.6234898018587336,
+                                    0.2225209339563145],
+                                   dtype=xp.float64))
+
+
 cheb_odd_true = [0.200938, 0.107729, 0.134941, 0.165348,
                  0.198891, 0.235450, 0.274846, 0.316836,
                  0.361119, 0.407338, 0.455079, 0.503883,
