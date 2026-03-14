@@ -60,8 +60,9 @@ direct(PyObject *self, PyObject *args)
             if (ret_code == DIRECT_OUT_OF_MEMORY)
                 PyErr_NoMemory();
             else
-                PyErr_SetString(PyExc_RuntimeError,
-                    "DIRECT optimization failed");
+                PyErr_Format(PyExc_RuntimeError,
+                    "DIRECT optimization failed (code %d)",
+                    (int) ret_code);
         }
         return NULL;
     }
