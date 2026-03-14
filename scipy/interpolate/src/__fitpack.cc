@@ -559,7 +559,7 @@ void qr_reduce_periodic(
                             std::tie(A1(j - 1, h1i), H1(it - 1, h1i)) = fprota(c, s, A1(j - 1, h1i), H1(it - 1, h1i));
                         }
 
-                        for( int64_t h1i = 1; h1i <= i2; h1i++ ) {
+                        for( int64_t h1i = 1; h1i < i2; h1i++ ) {
                             H1(it - 1, h1i - 1) = H1(it - 1, h1i);
                         }
                         H1(it - 1, i2 - 1) = 0.0;

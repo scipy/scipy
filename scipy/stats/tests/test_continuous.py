@@ -19,7 +19,7 @@ from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support, Mixture)
+    _generate_domain_support, Mixture, _logexpxmexpy)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats._new_distributions import DiscreteDistribution
 from scipy.stats import Normal, Logistic, Uniform, Binomial
@@ -216,6 +216,7 @@ class TestDistributions:
         with np.errstate(invalid='ignore', divide='ignore'):
             check_support(dist)
             check_moment_funcs(dist, result_shape)  # this needs to get split up
+            check_lmoment_funcs(dist, result_shape)
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
             qrng = qmc.Halton(d=1, seed=rng)
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
@@ -649,14 +650,7 @@ def check_nans_and_edges(dist, fname, arg, res):
     if isinstance(dist, DiscreteDistribution):
         exclude.update({'pdf', 'logpdf'})
 
-    if (
-            fname not in exclude
-            and not (isinstance(dist, Binomial)
-                     and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1)))):
-        # This can fail in degenerate case where Binomial distribution is a point
-        # distribution. Further on, we could factor out an is_degenerate function
-        # for the tests, or think about storing info about degeneracy in the
-        # instances.
+    if fname not in exclude:
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
@@ -764,32 +758,58 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        if not (
-                isinstance(dist, Binomial)
-                and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1))
-        ):
-            # This test will fail for degenerate case where binomial distribution
-            # is a point distribution.
-            check(i, 'standardized', 'general', ref, success=i <= 2)
+        check(i, 'standardized', 'general', ref, success=i <= 2)
         check(i, 'standardized', 'normalize', ref)
 
-    if isinstance(dist, ShiftedScaledDistribution):
-        # logmoment is not fully fleshed out; no need to test
-        # ShiftedScaledDistribution here
+    dist.reset_cache()
+
+
+def check_lmoment_funcs(dist, result_shape):
+    # Perform consistency check for L-moments similar to check_moment_funcs above
+
+    if not isinstance(dist, ContinuousDistribution):
+        message = "L-moments are currently available only for continuous..."
+        with pytest.raises(NotImplementedError, match=message):
+            dist.lmoment(1)
         return
 
-    # logmoment is not very accuate, and it's not public, so skip for now
-    # ### Check Against _logmoment ###
-    # logmean = dist._logmoment(1, logcenter=-np.inf)
-    # for i in range(6):
-    #     ref = np.exp(dist._logmoment(i, logcenter=-np.inf))
-    #     assert_allclose(dist.moment(i, 'raw'), ref, atol=atol*10**i)
-    #
-    #     ref = np.exp(dist._logmoment(i, logcenter=logmean))
-    #     assert_allclose(dist.moment(i, 'central'), ref, atol=atol*10**i)
-    #
-    #     ref = np.exp(dist._logmoment(i, logcenter=logmean, standardized=True))
-    #     assert_allclose(dist.moment(i, 'standardized'), ref, atol=atol*10**i)
+    atol = 2e-9
+
+    def check(order, standardize=False, method=None, ref=None, success=True):
+        if success:
+            res = dist.lmoment(order, standardize=standardize, method=method)
+            assert_allclose(res, ref, atol=atol)
+            assert res.shape == ref.shape
+        else:
+            with pytest.raises(NotImplementedError):
+                dist.lmoment(order, standardize=standardize, method=method)
+
+    ### Check L-Moments ###
+
+    standardize = False
+    for i in range(1, 6):
+        check(i, standardize, 'cache', success=standardize)  # not cached yet
+        ref = dist.lmoment(i, standardize=standardize, method='order_statistics')
+        check_nans_and_edges(dist, 'lmoment', None, ref)
+        assert ref.shape == result_shape
+        check(i, standardize, 'cache', ref, success=True)  # cached now
+        check(i, standardize, 'formula', ref,
+              success=dist._overrides('_lmoment_formula')
+                      and (i < 5 or dist.__class__.__name__ == "Uniform"))
+        check(i, standardize, 'general', ref, success=(i == 1))
+        if dist._overrides('_icdf_formula'):
+            check(i, standardize, 'quadrature_icdf', ref, success=True)
+
+    standardize=True
+    for i in range(3, 6):
+        ref = dist.lmoment(i, standardize=standardize, method='order_statistics')
+        assert ref.shape == result_shape
+        check(i, standardize, 'formula', ref,
+              success=dist._overrides('_lmoment_formula')
+                      and (i < 5 or dist.__class__.__name__ == "Uniform"))
+        check(i, standardize, 'general', ref, success=False)
+        if dist._overrides('_icdf_formula'):
+            check(i, standardize, 'quadrature_icdf', ref, success=True)
 
 
 @pytest.mark.parametrize('family', (Normal,))
@@ -914,11 +934,16 @@ def test_input_validation():
         Test(tol=-1)
 
     message = ("Argument `order` of `Test.moment` must be a "
-               "finite, positive integer.")
+               "finite integer greater than or equal to 0.")
     with pytest.raises(ValueError, match=message):
         Test().moment(-1)
     with pytest.raises(ValueError, match=message):
         Test().moment(np.inf)
+
+    message = ("Argument `order` of `Test.lmoment` must be a "
+               "finite integer greater than or equal to 1.")
+    with pytest.raises(ValueError, match=message):
+        Test().lmoment(0)
 
     message = "Argument `kind` of `Test.moment` must be one of..."
     with pytest.raises(ValueError, match=message):
@@ -995,6 +1020,12 @@ class TestAttributes:
         mean = dist.mean()  # method is 'formula' by default
         cached_mean = dist.mean(method='cache')
         assert_equal(cached_mean, mean)
+
+        # cache is not cleared when used in a TransformedDistribution
+        dist2 = stats.exp(dist)
+        assert_equal(dist.mean(method='cache'), cached_mean)
+        dist2.reset_cache()
+        assert_equal(dist.mean(method='cache'), cached_mean)
 
         # cache is overridden by latest evaluation
         quadrature_mean = dist.mean(method='quadrature')
@@ -1107,8 +1138,7 @@ class TestMakeDistribution:
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
-                'vonmises_line', # continuous
-                'betanbinom', 'logser', 'skellam', 'zipf'}  # discrete
+                'vonmises_line'}  # continuous
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
@@ -1129,7 +1159,8 @@ class TestMakeDistribution:
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance
                          'johnsonsb', 'ksone', 'kstwo',  # tolerance
                          'nchypergeom_wallenius'}  # tolerance
-        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang',  # tolerance
+                        'dlaplace'}  # slight tolerance issue, but only for array shape
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
@@ -1139,6 +1170,7 @@ class TestMakeDistribution:
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
         rng = np.random.default_rng(7548723590230982)
         CustomDistribution = stats.make_distribution(dist)
+        params = {key: np.asarray([val, val]) for key, val in params.items()}
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
@@ -1178,10 +1210,11 @@ class TestMakeDistribution:
             # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
             # new infrastructure. Adjust reference values accordingly.
             a, _ = Y.support()
+            a, p = np.broadcast_arrays(a, p)
             ref_ppf = Y.ppf(p)
-            ref_ppf[p == 0] = a
+            ref_ppf[p == 0] = a[p == 0]
             ref_isf = Y.isf(p)
-            ref_isf[p == 1] = a
+            ref_isf[p == 1] = a[p == 1]
 
             assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
             assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
@@ -1199,7 +1232,7 @@ class TestMakeDistribution:
                 # of the support, and the new infrastructure is slow there (for now).
                 seed = 845298245687345
                 assert_allclose(X.sample(shape=10, rng=seed),
-                                Y.rvs(size=10,
+                                Y.rvs(size=p.shape,
                                       random_state=np.random.default_rng(seed)),
                                 rtol=rtol)
 
@@ -1233,6 +1266,16 @@ class TestMakeDistribution:
                     # can tell the difference between the two
                     return (b - a) / np.log(b/a) + 1e-10
 
+            def lmoment(self, order, *, a, b):
+                s = np.log(b/a)
+                l1 = (b - a) / s
+                l2 = ((s - 2) * b + (s + 2) * a) / s**2
+                l3 = ((s**2 - 6*s + 12) * b - (s**2 + 6*s + 12) * a) / s ** 3
+                l4 = ((s**3 - 12*s**2 + 60*s - 120) * b
+                      + (s**3 + 12*s**2 + 60*s + 120) * a) / s ** 4
+                ls = {1: l1, 2: l2, 3: l3, 4: l4}
+                return ls.get(int(order), None)
+
         LogUniform = stats.make_distribution(MyLogUniform())
 
         X = LogUniform(a=1., b=np.e)
@@ -1259,6 +1302,12 @@ class TestMakeDistribution:
             for order in range(5):
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind))
+        for standardize in [False, True]:
+            for order in range(1, 5):
+                if standardize and order < 3:
+                    continue
+                assert_allclose(X.lmoment(order, standardize=standardize),
+                                Y.lmoment(order, standardize=standardize))
 
         # Confirm that the `sample` and `moment` methods are overriden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
@@ -1268,6 +1317,10 @@ class TestMakeDistribution:
 
         assert_allclose(X.mean(method='formula'), X.mean(method='quadrature'))
         assert not X.mean(method='formula') == X.mean(method='quadrature')
+
+        assert_allclose(X.lmoment(method='formula'),
+                        X.lmoment(method='quadrature_icdf'))
+        assert not X.lmoment(method='formula') == X.lmoment(method='quadrature_icdf')
 
     # pdf and cdf formulas below can warn on boundary of support in some cases.
     # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
@@ -1506,6 +1559,7 @@ class TestTransforms:
         scale = dist.scale
         dist0 = StandardNormal()
         dist_ref = stats.norm(loc=loc, scale=scale)
+        dist_ref_lmoment = Normal(mu=loc, sigma=scale)
 
         x0 = (x - loc) / scale
         y0 = (y - loc) / scale
@@ -1545,6 +1599,12 @@ class TestTransforms:
                                 dist0.moment(i, 'central') * scale**i)
                 assert_allclose(dist.moment(i, 'standardized'),
                                 dist0.moment(i, 'standardized') * np.sign(scale)**i)
+            for i in range(1, 5):
+                assert_allclose(dist.lmoment(i), dist_ref_lmoment.lmoment(i), atol=1e-8)
+                if i >= 3:
+                    assert_allclose(dist.lmoment(i, standardize=True),
+                                    dist_ref_lmoment.lmoment(i, standardize=True),
+                                    atol=1e-8)
 
         # Transform back to the original distribution using all arithmetic
         # operations; check that it behaves as expected.
@@ -1582,6 +1642,11 @@ class TestTransforms:
                 assert_allclose(dist.moment(i, 'central'), dist0.moment(i, 'central'))
                 assert_allclose(dist.moment(i, 'standardized'),
                                 dist0.moment(i, 'standardized'))
+            for i in range(1, 5):
+                assert_allclose(dist.lmoment(i), dist0.lmoment(i))
+                if i >= 3:
+                    assert_allclose(dist.lmoment(i, standardize=True),
+                                    dist0.lmoment(i, standardize=True))
 
             # These are tough to compare because of the way the shape works
             # rng = np.random.default_rng(seed)
@@ -2128,6 +2193,9 @@ class TestMixture:
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind),
                                 atol=1e-15)
+        message = "L-moments are not currently available..."
+        with pytest.raises(NotImplementedError, match=message):
+            X.lmoment(1)
 
         # weak test of `sample`
         shape = (10, 20, 5)
@@ -2183,3 +2251,23 @@ def test_zipfian_distribution_wrapper():
     zdist = Zipfian(a=0.75, n=15)
     # This should not generate any warnings.
     assert_equal(zdist.cdf(15), 1.0)
+
+
+class Test_logexpxmexpy:
+    # Regression tests for some cases that the simplest version of `_logexpmexpy`
+    # did not originally handle correctly.
+
+    def test_x_equals_y(self):
+        # Test x - x == 0 in log-space
+        x = np.asarray(2.)
+        assert_equal(_logexpxmexpy(x, x), -np.inf)
+
+    def test_y_neg_inf(self):
+        # Test x - 0 == x in log-space
+        x, y = np.asarray(2.), np.asarray(-inf)
+        assert_equal(_logexpxmexpy(x, y), x)
+
+    def test_nan(self):
+        # operations involving NaNs should not produce warnings
+        x = np.asarray(np.nan)
+        assert_equal(_logexpxmexpy(x, x), x)

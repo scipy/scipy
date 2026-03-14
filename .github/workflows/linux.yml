@@ -14,7 +14,6 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
-  INSTALLDIR: "build-install"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -44,12 +43,12 @@ jobs:
             python-version: '3.14-dev'
 
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python-version }}
         allow-prereleases: true
@@ -84,7 +83,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      uses:  actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
@@ -107,21 +106,26 @@ jobs:
       shell: bash -l {0}
       run: ccache -s
 
-    - name: Check installation
+    - name: Check installed files
       run: |
-        pushd tools
-        python check_installation.py ${{ env.INSTALLDIR }}
-        ./check_pyext_symbol_hiding.sh ../build
-        popd
+        spin check --installed-files --no-build
+
+    - name: Check symbol hiding
+      run: |
+        spin check --symbol-hiding --no-build
 
     - name: Check usage of install tags
       run: |
-        rm -r ${{ env.INSTALLDIR }}
+        rm -r build-install
         spin build --tags=runtime,python-runtime,devel
-        python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
-        rm -r ${{ env.INSTALLDIR }}
+        python tools/check_installation.py build-install --no-tests
+        rm -r build-install
         spin build --tags=runtime,python-runtime,devel,tests
-        python tools/check_installation.py ${{ env.INSTALLDIR }}
+        spin check --installed-files --no-build
+
+    - name: Check xp markers
+      run: |
+        spin check --xp-markers --no-build
 
     - name: Check build-internal dependencies
       run: ninja -C build -t missingdeps
@@ -149,7 +153,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
 
@@ -208,7 +212,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04  # provides python3.12-dbg
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           
@@ -239,12 +243,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
@@ -295,12 +299,12 @@ jobs:
         python-version: ['3.12']
 
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -326,7 +330,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      uses:  actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -365,7 +369,7 @@ jobs:
     # entries. Unfortunately at this time options: does not seem to listen to
     # --platform linux/i386.
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
 
@@ -405,7 +409,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
@@ -439,6 +443,63 @@ jobs:
           python3.12 -m pytest --pyargs scipy.linalg
           popd
 
+  #################################################################################
+  meson_global_install:
+    # Check that `meson` can be used from anywhere. The environment Meson is
+    # installed in doesn't have to have any other build dependencies in it
+    # (i.e., we're using it as a binary). This isn't a normal setup, but it's
+    # sometimes being used that way - see gh-20535 and gh-24406
+    name: build with global meson
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          fetch-tags: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran pkg-config libopenblas-dev liblapack-dev
+
+      - name: Install global meson
+        run: |
+          python -m pip install meson --break-system-packages
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Setup Python build/test deps
+        run: |
+          python -m pip install -r requirements/build.txt
+          python -m pip install -r requirements/openblas.txt
+          python -m pip install build pytest hypothesis
+          # Remove `meson` from environment
+          python -m pip uninstall meson --yes
+
+      - name: Check we're using global Meson
+        run: |
+          which meson
+
+      - name: Build wheel and install
+        run: |
+          python -m build -wnx
+          python -m pip install dist/*.whl
+
+      - name: Run tests
+        run: |
+          # Just a small subset of tests; this will be fine if the build
+          # succeeds (that's the real purpose of this job)
+          pushd $RUNNER_TEMP
+          python -m pytest --pyargs scipy.linalg
+          popd
+
+  #################################################################################
   free-threaded:
     needs: get_commit_message
     strategy:
@@ -450,12 +511,12 @@ jobs:
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
         fetch-tags: true
 
-    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3.14t-dev'
 
@@ -528,12 +589,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
@@ -541,6 +602,12 @@ jobs:
         run: |
           sudo apt-get -y update
           wget https://apt.llvm.org/llvm.sh
+          expected_hash="d2ccd623e05645d96d85df09d9898a0ae7ba6ec917ae64731f0c1e49573b6426"
+          file_hash=$(sha256sum llvm.sh | cut -d ' ' -f 1)
+          if [ "$file_hash" != "$expected_hash" ]; then
+            echo "Checksum verification failed for llvm.sh. The downloaded file may be corrupted or tampered with."
+            exit 1
+          fi
           chmod u+x llvm.sh
           sudo ./llvm.sh 17
           sudo apt install -y libopenblas-dev liblapack-dev
@@ -564,12 +631,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04-arm
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3.12'
 
@@ -595,3 +662,27 @@ jobs:
         export OMP_NUM_THREADS=2
         cd ..
         pytest --pyargs scipy -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0
+
+  #################################################################################
+  test_without_fortran:
+    name: No Fortran, fast, py3.14/npAny, spin
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
+        with:
+          pixi-version: v0.63.2
+          cache: false
+
+      - name: Build SciPy
+        run: pixi run build --setup-args=-D_without-fortran=true
+
+      - name: Test SciPy
+        run: pixi run test

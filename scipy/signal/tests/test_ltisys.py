@@ -5,13 +5,15 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
-    assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case
+    assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case,
+    xp_result_type
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
+
 from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -952,9 +954,11 @@ class Test_abcd_normalize:
                       self.A, [-1, 5], self.C, self.D)
 
     def test_normalized_matrices_unchanged(self, xp):
-        A_, B_, C_, D_ = map(xp.asarray, (self.A, self.B, self.C, self.D))
-        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => set dtype:
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_, dtype=A_.dtype)
+        A_, B_, C_, D_ = map(
+            lambda t: xp.asarray(t, dtype=xp.float64),
+            (self.A, self.B, self.C, self.D),
+        )
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
@@ -969,11 +973,10 @@ class Test_abcd_normalize:
         assert B.shape[1] == D.shape[1]
 
     def test_zero_dimension_is_not_none1(self, xp):
-        A_ = xp.asarray(self.A)
-        B_ = xp.zeros((2, 0))
-        D_ = xp.zeros((0, 0))
-        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => set dtype:
-        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_, dtype=A_.dtype)
+        A_ = xp.asarray(self.A, dtype=xp.float64)
+        B_ = xp.zeros((2, 0), dtype=xp.float64)
+        D_ = xp.zeros((0, 0), dtype=xp.float64)
+        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(D, D_)
@@ -981,11 +984,10 @@ class Test_abcd_normalize:
         assert C.shape[1] == A_.shape[0]
 
     def test_zero_dimension_is_not_none2(self, xp):
-        A_ = xp.asarray(self.A)
-        B_ = xp.zeros((2, 0))
-        C_ = xp.zeros((0, 2))
-        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => set dtype:
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, dtype=A_.dtype)
+        A_ = xp.asarray(self.A, dtype=xp.float64)
+        B_ = xp.zeros((2, 0), dtype=xp.float64)
+        C_ = xp.zeros((0, 2), dtype=xp.float64)
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
@@ -993,7 +995,10 @@ class Test_abcd_normalize:
         assert D.shape[1] == B_.shape[1]
 
     def test_missing_A(self, xp):
-        B_, C_, D_ = map(xp.asarray, (self.B, self.C, self.D))
+        B_, C_, D_ = map(
+            lambda t: xp.asarray(t, dtype=xp.float64),
+            (self.B, self.C, self.D),
+        )
         A, B, C, D = abcd_normalize(B=B_, C=C_, D=D_)
         assert A.shape[0] == A.shape[1]
         assert A.shape[0] == B.shape[0]
@@ -1007,7 +1012,10 @@ class Test_abcd_normalize:
         assert B.shape == (A_.shape[0], D_.shape[1])
 
     def test_missing_C(self, xp):
-        A_, B_, D_ = map(xp.asarray, (self.A, self.B, self.D))
+        A_, B_, D_ = map(
+            lambda t: xp.asarray(t, dtype=xp.float64),
+            (self.A, self.B, self.D),
+        )
         A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
         assert C.shape[0] == D.shape[0]
         assert C.shape[1] == A.shape[0]
@@ -1070,25 +1078,41 @@ class Test_abcd_normalize:
         A, B = xp.asarray(self.A), xp.asarray(self.B)
         assert_raises(ValueError, abcd_normalize, A=A, B=B)
 
-    def test_param_dtype_exceptions(self):
-        with pytest.raises(ValueError, match="^Parameter dtype='INVALID' must be"):
-            abcd_normalize(self.A, self.B, self.C, self.D, dtype='INVALID')
-        with pytest.raises(ValueError, match="^Parameter dtype=<class 'str'>"):
-            abcd_normalize(self.A, self.B, self.C, self.D, dtype=str)
-        with pytest.raises(ValueError, match="^Parameter dtype="):
-            abcd_normalize(self.A, self.B, self.C, self.D, dtype=np.datetime64)
 
-    def test_param_dtype(self, xp):
-        A, D = xp.asarray(self.A), xp.asarray(self.D)
-        AA, BB, CC, DD = abcd_normalize(A=A, D=D)
-        assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.float64
-
-        AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=xp.int64)
-        assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.int64
-
-        DD_ = 1 + 2j  # converts to complex128
-        AA, BB, CC, DD = abcd_normalize(A=A, D=DD_)
-        assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.complex128
+    @pytest.mark.parametrize(
+        "A_dtype",
+        # A_dtype=None here means to pass None as the value for A
+        [None, "int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "B_dtype",
+        [None, "int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "C_dtype",
+        ["int64", "float32", "float64", "complex64", "complex128"],
+    )
+    @pytest.mark.parametrize(
+        "D_dtype",
+        ["int64", "float32", "float64", "complex64", "complex128"],
+    )
+    # Also check case where one input array has size zero.
+    @pytest.mark.parametrize("D", [[[2.5]], [[]]])
+    def test_dtypes(self, D, A_dtype, B_dtype, C_dtype, D_dtype, xp):
+       
+        args = []
+        for X, X_dtype in zip(
+                [self.A, self.B, self.C, D],
+                [A_dtype, B_dtype, C_dtype, D_dtype]
+        ):
+            args.append(
+                xp.asarray(X, dtype=getattr(xp, X_dtype))
+                if X_dtype is not None else None
+            )
+        A, B, C, D = args
+        expected_dtype = xp_result_type(A, B, C, D, xp=xp, force_floating=True)
+        A, B, C, D = abcd_normalize(A=A, B=B, C=C, D=D)
+        assert A.dtype == B.dtype == C.dtype == D.dtype == expected_dtype
 
 
 class Test_bode:

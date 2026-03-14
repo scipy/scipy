@@ -144,9 +144,9 @@ class lti(LinearTimeInvariant):
         The following gives the number of arguments and the corresponding
         continuous-time subclass that is created:
 
-            * 2: `TransferFunction`:  (numerator, denominator)
-            * 3: `ZerosPolesGain`: (zeros, poles, gain)
-            * 4: `StateSpace`:  (A, B, C, D)
+        * 2: `TransferFunction`:  (numerator, denominator)
+        * 3: `ZerosPolesGain`: (zeros, poles, gain)
+        * 4: `StateSpace`:  (A, B, C, D)
 
         Each argument can be an array or a sequence.
 
@@ -235,21 +235,85 @@ class lti(LinearTimeInvariant):
     def impulse(self, X0=None, T=None, N=None):
         """
         Return the impulse response of a continuous-time system.
-        See `impulse` for details.
+
+        Parameters
+        ----------
+        X0 : array_like, optional
+            Initial state-vector.  Defaults to zero.
+        T : array_like, optional
+            Time points.  Computed if not given.
+        N : int, optional
+            The number of time points to compute (if `T` is not given).
+
+        Returns
+        -------
+        T : ndarray
+            A 1-D array of time points.
+        yout : ndarray
+            A 1-D array containing the impulse response of the system (except for
+            singularities at zero).
+
+        See Also
+        --------
+        impulse : Impulse response of continuous-time LTI systems.
         """
         return impulse(self, X0=X0, T=T, N=N)
 
     def step(self, X0=None, T=None, N=None):
         """
         Return the step response of a continuous-time system.
-        See `step` for details.
+
+        Parameters
+        ----------
+        X0 : array_like, optional
+            Initial state-vector (default is zero).
+        T : array_like, optional
+            Time points (computed if not given).
+        N : int, optional
+            Number of time points to compute if `T` is not given.
+
+        Returns
+        -------
+        T : 1D ndarray
+            Output time points.
+        yout : 1D ndarray
+            Step response of system.
+
+        See Also
+        --------
+        step : Step response of continuous-time LTI systems.
         """
         return step(self, X0=X0, T=T, N=N)
 
     def output(self, U, T, X0=None):
         """
         Return the response of a continuous-time system to input `U`.
-        See `lsim` for details.
+
+        Parameters
+        ----------
+        U : array_like
+            An input array describing the input at each time `T`
+            (interpolation is assumed between given times).  If there are
+            multiple inputs, then each column of the 2D array
+            represents an input.  If U = 0 or None, a zero input is used.
+        T : array_like
+            The time steps at which the input is defined and at which the
+            output is desired.  Must be nonnegative, increasing, and equally spaced.
+        X0 : array_like, optional
+            The initial conditions on the state vector (zero by default).
+
+        Returns
+        -------
+        T : 1D ndarray
+            Time values for the output.
+        yout : 1D ndarray
+            System response.
+        xout : ndarray
+            Time evolution of the state vector.
+
+        See Also
+        --------
+        lsim : Simulate output of continuous-time LTI systems.
         """
         return lsim(self, U, T, X0=X0)
 
@@ -257,8 +321,30 @@ class lti(LinearTimeInvariant):
         """
         Calculate Bode magnitude and phase data of a continuous-time system.
 
-        Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See `bode` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies (in rad/s). Magnitude and phase data is calculated
+            for every value in this array. If not given a reasonable set will be
+            calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+            Defaults to 100.
+
+        Returns
+        -------
+        w : 1D ndarray
+            Frequency array [rad/s]
+        mag : 1D ndarray
+            Magnitude array [dB]
+        phase : 1D ndarray
+            Phase array [deg]
+
+        See Also
+        --------
+        bode : Bode plot data for continuous-time LTI systems.
 
         Examples
         --------
@@ -281,20 +367,61 @@ class lti(LinearTimeInvariant):
         """
         Calculate the frequency response of a continuous-time system.
 
-        Returns a 2-tuple containing arrays of frequencies [rad/s] and
-        complex magnitude.
-        See `freqresp` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies (in rad/s). Magnitude and phase data is
+            calculated for every value in this array. If not given, a reasonable
+            set will be calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+            Defaults to 10000.
+
+        Returns
+        -------
+        w : 1D ndarray
+            Frequency array [rad/s]
+        H : 1D ndarray
+            Array of complex magnitude values
+
+        See Also
+        --------
+        freqresp : Frequency response of continuous-time LTI systems.
         """
         return freqresp(self, w=w, n=n)
 
     def to_discrete(self, dt, method='zoh', alpha=None):
         """Return a discretized version of the current system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
-        sys: instance of `dlti`
+        sys: dlti
+            Discrete version of the current system.
+
+        See Also
+        --------
+        cont2discrete
         """
         raise NotImplementedError('to_discrete is not implemented for this '
                                   'system class.')
@@ -306,17 +433,17 @@ class dlti(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `dlti` class can be instantiated with either 2, 3 or 4 arguments.
         The following gives the number of arguments and the corresponding
         discrete-time subclass that is created:
 
-            * 2: `TransferFunction`:  (numerator, denominator)
-            * 3: `ZerosPolesGain`: (zeros, poles, gain)
-            * 4: `StateSpace`:  (A, B, C, D)
+        * 2: `TransferFunction`:  (numerator, denominator)
+        * 3: `ZerosPolesGain`: (zeros, poles, gain)
+        * 4: `StateSpace`:  (A, B, C, D)
 
         Each argument can be an array or a sequence.
-    dt: float, optional
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to ``True``
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -389,19 +516,19 @@ class dlti(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Create an instance of the appropriate subclass."""
         if cls is dlti:
             N = len(system)
             if N == 2:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete, *system, **kwargs)
+                    TransferFunctionDiscrete, *system, dt=dt)
             elif N == 3:
                 return ZerosPolesGainDiscrete.__new__(ZerosPolesGainDiscrete,
-                                                      *system, **kwargs)
+                                                      *system, dt=dt)
             elif N == 4:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
-                                                  **kwargs)
+                                                  dt=dt)
             else:
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")
@@ -431,21 +558,87 @@ class dlti(LinearTimeInvariant):
     def impulse(self, x0=None, t=None, n=None):
         """
         Return the impulse response of the discrete-time `dlti` system.
-        See `dimpulse` for details.
+
+        Parameters
+        ----------
+        x0 : array_like, optional
+            Initial state-vector.  Defaults to zero.
+        t : array_like, optional
+            Time points. Computed if not given.
+        n : int, optional
+            The number of time points to compute (if `t` is not given).
+
+        Returns
+        -------
+        tout : ndarray
+            Time values for the output, as a 1-D array.
+        yout : tuple of ndarray
+            Impulse response of system.  Each element of the tuple represents
+            the output of the system based on an impulse in each input.
+
+        See Also
+        --------
+        dimpulse : Impulse response of discrete-time LTI systems.
         """
         return dimpulse(self, x0=x0, t=t, n=n)
 
     def step(self, x0=None, t=None, n=None):
         """
         Return the step response of the discrete-time `dlti` system.
-        See `dstep` for details.
+
+        Parameters
+        ----------
+        x0 : array_like, optional
+            Initial state-vector. Defaults to zero.
+        t : array_like, optional
+            Time points. Computed if not given.
+        n : int, optional
+            The number of time points to compute (if `t` is not given).
+
+        Returns
+        -------
+        tout : ndarray
+            Output time points, as a 1-D array.
+        yout : tuple of ndarray
+            Step response of system.  Each element of the tuple represents
+            the output of the system based on a step response to each input.
+
+        See Also
+        --------
+        dstep : Step response of discrete-time LTI systems.
         """
         return dstep(self, x0=x0, t=t, n=n)
 
     def output(self, u, t, x0=None):
         """
         Return the response of the discrete-time system to input `u`.
-        See `dlsim` for details.
+
+        Parameters
+        ----------
+        u : array_like
+            An input array describing the input at each time `t` (interpolation is
+            assumed between given times).  If there are multiple inputs, then each
+            column of the 2D array represents an input.
+        t : array_like, optional
+            The time steps at which the input is defined.  If `t` is given, it
+            must be the same length as `u`, and the final value in `t` determines
+            the number of steps returned in the output.
+        x0 : array_like, optional
+            The initial conditions on the state vector (zero by default).
+
+        Returns
+        -------
+        tout : ndarray
+            Time values for the output, as a 1-D array.
+        yout : ndarray
+            System response, as a 1-D array.
+        xout : ndarray, optional
+            Time-evolution of the state-vector.  Only generated if the input is a
+            `StateSpace` system.
+
+        See Also
+        --------
+        dlsim : Simulate output of discrete-time LTI systems.
         """
         return dlsim(self, u, t, x0=x0)
 
@@ -453,8 +646,33 @@ class dlti(LinearTimeInvariant):
         r"""
         Calculate Bode magnitude and phase data of a discrete-time system.
 
-        Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See `dbode` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies normalized to the Nyquist frequency being π, i.e.,
+            having unit radiant / sample. Magnitude and phase data is calculated for
+            every value in this array. If not given, a reasonable set will be
+            calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+            Defaults to 100.
+
+        Returns
+        -------
+        w : 1D ndarray
+            Array of frequencies normalized to the Nyquist frequency being ``np.pi/dt``
+            with ``dt`` being the sampling interval of the `system` parameter.
+            The unit is rad/s assuming ``dt`` is in seconds.
+        mag : 1D ndarray
+            Magnitude array in dB
+        phase : 1D ndarray
+            Phase array in degrees
+
+        See Also
+        --------
+        dbode : Bode plot data for discrete-time LTI systems.
 
         Examples
         --------
@@ -483,10 +701,31 @@ class dlti(LinearTimeInvariant):
         """
         Calculate the frequency response of a discrete-time system.
 
-        Returns a 2-tuple containing arrays of frequencies [rad/s] and
-        complex magnitude.
-        See `dfreqresp` for details.
+        Parameters
+        ----------
+        w : array_like, optional
+            Array of frequencies (in radians/sample). Magnitude and phase data is
+            calculated for every value in this array. If not given a reasonable
+            set will be calculated.
+        n : int, optional
+            Number of frequency points to compute if `w` is not given. The `n`
+            frequencies are logarithmically spaced in an interval chosen to
+            include the influence of the poles and zeros of the system.
+        whole : bool, optional
+            Normally, if `w` is not given, frequencies are computed from 0 to the
+            Nyquist frequency, pi radians/sample (upper-half of unit-circle). If
+            `whole` is True, compute frequencies from 0 to 2*pi radians/sample.
 
+        Returns
+        -------
+        w : 1D ndarray
+            Frequency array [radians/sample]
+        H : 1D ndarray
+            Array of complex magnitude values
+
+        See Also
+        --------
+        dfreqresp : Frequency response of discrete-time LTI systems.
         """
         return dfreqresp(self, w=w, n=n, whole=whole)
 
@@ -506,15 +745,15 @@ class TransferFunction(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 2: array_like: (numerator, denominator)
-    dt: float, optional
+        * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
+          `ZerosPolesGain`)
+        * 2: array_like: (numerator, denominator)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -567,23 +806,19 @@ class TransferFunction(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Handle object conversion if input is an instance of lti."""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_tf()
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is TransferFunction:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return TransferFunctionContinuous.__new__(
-                    TransferFunctionContinuous,
-                    *system,
-                    **kwargs)
+                    TransferFunctionContinuous, *system)
             else:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete,
-                    *system,
-                    **kwargs)
+                    TransferFunctionDiscrete, *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -751,14 +986,13 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 2: array_like: (numerator, denominator)
+        * 1: `lti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 2: array_like: (numerator, denominator)
 
     See Also
     --------
@@ -802,11 +1036,32 @@ class TransferFunctionContinuous(TransferFunction, lti):
         """
         Returns the discretized `TransferFunction` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `StateSpace`
+
+        See Also
+        --------
+        cont2discrete
         """
         return TransferFunction(*cont2discrete((self.num, self.den),
                                                dt,
@@ -828,15 +1083,14 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 2: array_like: (numerator, denominator)
-    dt: float, optional
+        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 2: array_like: (numerator, denominator)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -898,10 +1152,10 @@ class ZerosPolesGain(LinearTimeInvariant):
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 3: array_like: (zeros, poles, gain)
-    dt: float, optional
+        * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
+          `ZerosPolesGain`)
+        * 3: array_like: (zeros, poles, gain)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -949,24 +1203,21 @@ class ZerosPolesGain(LinearTimeInvariant):
     )
 
     """
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Handle object conversion if input is an instance of `lti`"""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_zpk()
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is ZerosPolesGain:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return ZerosPolesGainContinuous.__new__(
                     ZerosPolesGainContinuous,
-                    *system,
-                    **kwargs)
+                    *system)
             else:
                 return ZerosPolesGainDiscrete.__new__(
                     ZerosPolesGainDiscrete,
-                    *system,
-                    **kwargs
-                    )
+                    *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1099,9 +1350,8 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 3: array_like: (zeros, poles, gain)
+        * 1: `lti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 3: array_like: (zeros, poles, gain)
 
     See Also
     --------
@@ -1138,11 +1388,32 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
         """
         Returns the discretized `ZerosPolesGain` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `ZerosPolesGain`
+
+        See Also
+        --------
+        cont2discrete
         """
         return ZerosPolesGain(
             *cont2discrete((self.zeros, self.poles, self.gain),
@@ -1169,10 +1440,9 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 3: array_like: (zeros, poles, gain)
-    dt: float, optional
+        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 3: array_like: (zeros, poles, gain)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -1234,15 +1504,15 @@ class StateSpace(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 4 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 4: array_like: (A, B, C, D)
-    dt: float, optional
+        * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
+          `ZerosPolesGain`)
+        * 4: array_like: (A, B, C, D)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
@@ -1255,9 +1525,11 @@ class StateSpace(LinearTimeInvariant):
     Notes
     -----
     If the parameter `system` is a tuple (A, B, C, D) with four state space matrices,
-    then those matrices are converted into two-dimensional arrays by calling
-    `abcd_normalize`. Their dtypes will be "complex128" if any of the matrices are
-    complex-valued. Otherwise, they will be of type "float64".
+    then those matrices are converted into two-dimensional arrays of the same dtype
+    by calling `abcd_normalize`. The resulting dtype will be based on NumPy's dtype
+    promotion rules, except in the case where each of `A`, `B`, `C`, and `D` has
+    integer dtype, in which case the resulting dtype will be the default floating point
+    dtype of ``float64``.
 
     Changing the value of properties that are not part of the
     `StateSpace` system representation (such as `zeros` or `poles`) is very
@@ -1321,7 +1593,7 @@ class StateSpace(LinearTimeInvariant):
     __array_priority__ = 100.0
     __array_ufunc__ = None
 
-    def __new__(cls, *system, **kwargs):
+    def __new__(cls, *system, dt=None):
         """Create new StateSpace object and settle inheritance."""
         # Handle object conversion if input is an instance of `lti`
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
@@ -1329,12 +1601,12 @@ class StateSpace(LinearTimeInvariant):
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is StateSpace:
-            if kwargs.get('dt') is None:
+            if dt is None:
                 return StateSpaceContinuous.__new__(StateSpaceContinuous,
-                                                    *system, **kwargs)
+                                                    *system)
             else:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete,
-                                                  *system, **kwargs)
+                                                  *system, dt=dt)
 
         # No special conversion needed
         return super().__new__(cls)
@@ -1593,7 +1865,7 @@ class StateSpace(LinearTimeInvariant):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Additional keywords passed to `ss2zpk`
 
         Returns
@@ -1611,7 +1883,7 @@ class StateSpace(LinearTimeInvariant):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Additional keywords passed to `ss2zpk`
 
         Returns
@@ -1647,14 +1919,13 @@ class StateSpaceContinuous(StateSpace, lti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 4: array_like: (A, B, C, D)
+        * 1: `lti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 4: array_like: (A, B, C, D)
 
     See Also
     --------
@@ -1697,11 +1968,32 @@ class StateSpaceContinuous(StateSpace, lti):
         """
         Returns the discretized `StateSpace` system.
 
-        Parameters: See `cont2discrete` for details.
+        Parameters
+        ----------
+        dt : float
+            The discretization time step.
+        method : str, optional
+            Which method to use:
+
+            * gbt: generalized bilinear transformation
+            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+            * zoh: zero-order hold (default)
+            * foh: first-order hold
+            * impulse: equivalent impulse response
+
+        alpha : float within [0, 1], optional
+            The generalized bilinear transformation weighting parameter, which
+            should only be specified with method="gbt", and is ignored otherwise
 
         Returns
         -------
         sys: instance of `dlti` and `StateSpace`
+
+        See Also
+        --------
+        cont2discrete
         """
         return StateSpace(*cont2discrete((self.A, self.B, self.C, self.D),
                                          dt,
@@ -1721,15 +2013,14 @@ class StateSpaceDiscrete(StateSpace, dlti):
 
     Parameters
     ----------
-    *system: arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
-              `ZerosPolesGain`)
-            * 4: array_like: (A, B, C, D)
-    dt: float, optional
+        * 1: `dlti` system: (`StateSpace`, `TransferFunction` or `ZerosPolesGain`)
+        * 4: array_like: (A, B, C, D)
+    dt : float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
         for example, ``dt=0.1``.
@@ -1778,7 +2069,7 @@ def lsim(system, U, T, X0=None, interp=True):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -2028,10 +2319,10 @@ def impulse(system, X0=None, T=None, N=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     X0 : array_like, optional
         Initial state-vector.  Defaults to zero.
@@ -2098,10 +2389,10 @@ def step(system, X0=None, T=None, N=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     X0 : array_like, optional
         Initial state-vector (default is zero).
@@ -2161,14 +2452,14 @@ def bode(system, w=None, n=100):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     w : array_like, optional
         Array of frequencies (in rad/s). Magnitude and phase data is calculated
@@ -2224,14 +2515,14 @@ def freqresp(system, w=None, n=10000):
 
     Parameters
     ----------
-    system : an instance of the `lti` class or a tuple describing the system.
+    system : an instance of the `lti` class or a tuple describing the system
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1 (instance of `lti`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+        * 1 (instance of `lti`)
+        * 2 (num, den)
+        * 3 (zeros, poles, gain)
+        * 4 (A, B, C, D)
 
     w : array_like, optional
         Array of frequencies (in rad/s). Magnitude and phase data is
@@ -2713,19 +3004,19 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     poles : array_like
         Desired real poles and/or complex conjugates poles.
         Complex poles are only supported with ``method="YT"`` (default).
-    method: {'YT', 'KNV0'}, optional
+    method : {'YT', 'KNV0'}, optional
         Which method to choose to find the gain matrix K. One of:
 
-            - 'YT': Yang Tits
-            - 'KNV0': Kautsky, Nichols, Van Dooren update method 0
+        - 'YT': Yang Tits
+        - 'KNV0': Kautsky, Nichols, Van Dooren update method 0
 
         See References and Notes for details on the algorithms.
-    rtol: float, optional
+    rtol : float, optional
         After each iteration the determinant of the eigenvectors of
         ``A - B*K`` is compared to its previous value, when the relative
         error between these two values becomes lower than `rtol` the algorithm
         stops.  Default is 1e-3.
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations to compute the gain matrix.
         Default is 30.
 
@@ -2733,7 +3024,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     -------
     full_state_feedback : Bunch object
         full_state_feedback is composed of:
-            gain_matrix : 1-D ndarray
+            gain_matrix : 2-D ndarray
                 The closed loop matrix K such as the eigenvalues of ``A-BK``
                 are as close as possible to the requested poles.
             computed_poles : 1-D ndarray

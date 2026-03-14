@@ -364,7 +364,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
     >>> np.allclose(y, ifftn(fftn(y)))
     True
 
-    """
+    """  # numpydoc ignore=RT01
     shape = _good_shape(x, shape, axes)
     return _pocketfft.ifftn(x, shape, axes, None, overwrite_x)
 
@@ -393,7 +393,7 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
            [4, 4, 4, 4, 4]])
     >>> np.allclose(y, ifft2(fft2(y)))
     True
-    """
+    """  # numpydoc ignore=RT01
     return fftn(x,shape,axes,overwrite_x)
 
 
@@ -424,5 +424,5 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     >>> np.allclose(y, fft2(ifft2(y)))
     True
 
-    """
+    """  # numpydoc ignore=RT01
     return ifftn(x,shape,axes,overwrite_x)

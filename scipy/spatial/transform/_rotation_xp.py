@@ -22,9 +22,9 @@ from scipy._lib._array_api import (
     is_jax,
 )
 from scipy._lib._util import broadcastable
-from scipy._lib.array_api_compat import device as xp_device
-from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import device as xp_device
+from scipy._external.array_api_compat import is_array_api_obj
+import scipy._external.array_api_extra as xpx
 
 
 def from_quat(

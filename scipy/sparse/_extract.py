@@ -11,7 +11,7 @@ from ._base import sparray
 
 
 def find(A):
-    """Return the indices and values of the nonzero elements of a matrix
+    """Return the indices and values of the nonzero elements of a matrix.
 
     Parameters
     ----------
@@ -44,7 +44,7 @@ def find(A):
 
 
 def tril(A, k=0, format=None):
-    """Return the lower triangular portion of a sparse array or matrix
+    """Return the lower triangular portion of a sparse array or matrix.
 
     Returns the elements on or below the k-th diagonal of A.
         - k = 0 corresponds to the main diagonal
@@ -55,9 +55,9 @@ def tril(A, k=0, format=None):
     ----------
     A : dense or sparse array or matrix
         Matrix whose lower trianglar portion is desired.
-    k : integer : optional
+    k : int : optional
         The top-most diagonal of the lower triangle.
-    format : string
+    format : str
         Sparse format of the result, e.g. format="csr", etc.
 
     Returns
@@ -111,7 +111,7 @@ def tril(A, k=0, format=None):
 
 
 def triu(A, k=0, format=None):
-    """Return the upper triangular portion of a sparse array or matrix
+    """Return the upper triangular portion of a sparse array or matrix.
 
     Returns the elements on or above the k-th diagonal of A.
         - k = 0 corresponds to the main diagonal
@@ -122,9 +122,9 @@ def triu(A, k=0, format=None):
     ----------
     A : dense or sparse array or matrix
         Matrix whose upper trianglar portion is desired.
-    k : integer : optional
+    k : int : optional
         The bottom-most diagonal of the upper triangle.
-    format : string
+    format : str
         Sparse format of the result, e.g. format="csr", etc.
 
     Returns

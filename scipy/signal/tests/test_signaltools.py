@@ -508,7 +508,6 @@ class TestConvolve2d:
 @make_xp_test_case(fftconvolve)
 class TestFFTConvolve:
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -523,14 +522,13 @@ class TestFFTConvolve:
 
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_real_axes(self, axes, xp):
         a = xp.asarray([1, 2, 3])
         expected = xp.asarray([1, 4, 10, 12, 9.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -556,8 +554,8 @@ class TestFFTConvolve:
         a = xp.asarray([1 + 1j, 2 + 2j, 3 + 3j])
         expected = xp.asarray([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -605,8 +603,8 @@ class TestFFTConvolve:
                           [8, 26, 56, 54, 36],
                           [16, 40, 73, 60, 36]])
 
-        a = xp.asarray(np.tile(a, [2, 1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+        a = xp.tile(a, (2, 1, 1))
+        expected = xp.tile(expected, (2, 1, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -659,8 +657,8 @@ class TestFFTConvolve:
             [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
             ])
 
-        a = xp.asarray(np.tile(a, [2, 1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 1]))
+        a = xp.tile(a, (2, 1, 1))
+        expected = xp.tile(expected, (2, 1, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -668,7 +666,6 @@ class TestFFTConvolve:
         out = fftconvolve(a, a, axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real_same_mode(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -692,7 +689,6 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
     def test_real_same_mode_axes(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -700,10 +696,10 @@ class TestFFTConvolve:
         expected_1 = xp.asarray([35., 41., 47.])
         expected_2 = xp.asarray([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected_1 = xp.asarray(np.tile(expected_1, [2, 1]))
-        expected_2 = xp.asarray(np.tile(expected_2, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected_1 = xp.tile(expected_1, (2, 1))
+        expected_2 = xp.tile(expected_2, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -714,7 +710,6 @@ class TestFFTConvolve:
         out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_valid_mode_real(self, axes, xp):
         # See gh-5897
@@ -738,7 +733,6 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'valid', axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    @skip_xp_backends("torch", reason="dtypes do not match")
     @pytest.mark.parametrize('axes', [1, [1]])
     def test_valid_mode_real_axes(self, axes, xp):
         # See gh-5897
@@ -746,9 +740,9 @@ class TestFFTConvolve:
         b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -784,9 +778,9 @@ class TestFFTConvolve:
         b = xp.asarray([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
         expected = xp.asarray([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (2, 1))
+        expected = xp.tile(expected, (2, 1))
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -798,16 +792,15 @@ class TestFFTConvolve:
         xp_assert_close(out, expected, atol=1.5e-6)
 
     @skip_xp_backends("jax.numpy", reason="mapped axes must have same shape")
-    @skip_xp_backends("torch", reason="dtypes do not match")
     def test_valid_mode_ignore_nonaxes(self, xp):
         # See gh-5897
         a = xp.asarray([3, 2, 1])
         b = xp.asarray([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = xp.asarray([24., 31., 41., 43., 49., 25., 12.])
 
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [1, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1]))
+        a = xp.tile(a, (2, 1))
+        b = xp.tile(b, (1, 1))
+        expected = xp.tile(expected, (2, 1))
 
         out = fftconvolve(a, b, 'valid', axes=1)
         xp_assert_close(out, expected, atol=1.5e-6)
@@ -897,9 +890,9 @@ class TestFFTConvolve:
         expected = xp.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
-        a = xp.asarray(np.tile(a, [2, 1, 3, 1, 1]))
-        b = xp.asarray(np.tile(b, [2, 1, 1, 4, 1]))
-        expected = xp.asarray(np.tile(expected, [2, 1, 3, 4, 1]))
+        a = xp.tile(a, (2, 1, 3, 1, 1))
+        b = xp.tile(b, (2, 1, 1, 4, 1))
+        expected = xp.tile(expected, (2, 1, 3, 4, 1))
 
         out = fftconvolve(a, b, 'full', axes=axes)
         xp_assert_close(out, expected, rtol=1e-10, atol=1e-10)
@@ -2768,18 +2761,39 @@ class TestCorrelate2d:
 @make_xp_test_case(lfilter_zi)
 class TestLFilterZI:
 
+    def test_exceptions(self, xp):
+        """Raise all exceptions in `lfilter_zi`. """
+        with pytest.raises(ValueError, match="^Numerator `b` and Denominator `a` must"):
+             lfilter_zi(b=xp.eye(3), a=1)  # b must be 1-d array
+        with pytest.raises(ValueError, match="^Numerator `b` and Denominator `a` must"):
+             lfilter_zi(b=1, a=xp.eye(3))  # a must be 1-d array
+        with pytest.raises(ValueError, match="^First coefficient of parameter `a` "):
+            lfilter_zi(b=1, a=xp.asarray([0, 0, 0]))
+        with pytest.raises(ValueError, match="^Filter not stable due to sum"):
+            lfilter_zi(b=1, a=xp.asarray([-1, 1, -2, 2]))
+
     @skip_xp_backends(np_only=True, reason='list inputs are numpy specific')
     def test_array_like(self, xp):
         zi_expected = xp.asarray([5.0, -1.0])
         zi = lfilter_zi([1.0, 0.0, 2.0], [1.0, -1.0, 0.5])
         assert_array_almost_equal(zi, zi_expected)
 
-    def test_basic(self, xp):
-        a = xp.asarray([1.0, -1.0, 0.5])
-        b = xp.asarray([1.0, 0.0, 2.0])
-        zi_expected = xp.asarray([5.0, -1.0])
+    @skip_xp_backends("dask.array", reason="FutureWarning emitted")
+    @pytest.mark.parametrize('b, a, zi_expected,',[
+        ([1., 0., 2.],     [1., -1., 0.5],   [5., -1.]),
+        ([1., 2., 3., 4.], [1.,],            [9.,  7.,  4.]),
+        ([1., 9.],         [1., 2., 3., 4.], [0. ,-7., -4.])])
+    def test_basic(self, b, a, zi_expected, xp):
+        b, a, zi_expected = (xp.asarray(v_) for v_ in (b, a, zi_expected))
+
         zi = lfilter_zi(b, a)
         assert_array_almost_equal(zi, zi_expected)
+
+        y = lfilter(b, a, xp.ones(9), zi=zi)[0]  # test for constant filter response
+
+        fill_value = xp.sum(b) / xp.sum(a)
+        y_expected = xp.full_like(y, fill_value=float(fill_value))
+        assert_array_almost_equal(y, y_expected)
 
     def test_scale_invariance(self, xp):
         # Regression test.  There was a bug in which b was not correctly
@@ -3062,9 +3076,8 @@ def test_choose_conv_method_2(xp):
                 assert choose_conv_method(x, h, mode=mode) == 'direct'
 
 
-@skip_xp_backends(np_only=True)
 @pytest.mark.fail_slow(10)
-def test_filtfilt_gust(xp):
+def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
 
@@ -3773,8 +3786,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 
-    @skip_xp_backends(np_only=True)
-    def test_compute_factors(self, xp):
+    def test_compute_factors(self):
         factors, poly = _compute_factors([1, 2, 3], [3, 2, 1])
         assert len(factors) == 3
         assert_almost_equal(factors[0], np.poly([2, 2, 3]))
@@ -3793,8 +3805,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(factors[5], np.poly([1, 1, 1, 2, 2]))
         assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
 
-    @skip_xp_backends(np_only=True)
-    def test_group_poles(self, xp):
+    def test_group_poles(self):
         unique, multiplicity = _group_poles(
             [1.0, 1.001, 1.003, 2.0, 2.003, 3.0], 0.1, 'min')
         xp_assert_close(unique, [1.0, 2.0, 3.0])
@@ -4428,6 +4439,7 @@ class TestSOSFilt:
         return a, b, sos
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions(self, dt, xp):
         a, b, sos = self._get_ab_sos(xp)
 
@@ -4455,6 +4467,7 @@ class TestSOSFilt:
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_2(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.ones(8, dtype=dt)
@@ -4478,6 +4491,7 @@ class TestSOSFilt:
         xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
 
@@ -4545,6 +4559,7 @@ class TestSOSFilt:
             sosfilt(sos, x, zi=zi, axis=1)
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
         sos = signal.butter(6, 0.2, output='sos')
@@ -4559,6 +4574,7 @@ class TestSOSFilt:
         xp_assert_close(y, ss * xp.ones_like(y), rtol=1e-13)
 
     @skip_xp_backends(np_only=True)
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi_2(self, dt, xp):
         # zi as array-like
         dt = getattr(xp, dt)

@@ -198,9 +198,6 @@ class Radau(OdeSolver):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
-    first_step : float or None, optional
-        Initial step size. Default is ``None`` which means that the algorithm
-        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
@@ -224,14 +221,14 @@ class Radau(OdeSolver):
         its element (i, j) is equal to ``d f_i / d y_j``.
         There are three ways to define the Jacobian:
 
-            * If array_like or sparse_matrix, the Jacobian is assumed to
-              be constant.
-            * If callable, the Jacobian is assumed to depend on both
-              t and y; it will be called as ``jac(t, y)`` as necessary.
-              For the 'Radau' and 'BDF' methods, the return value might be a
-              sparse matrix.
-            * If None (default), the Jacobian will be approximated by
-              finite differences.
+        * If array_like or sparse_matrix, the Jacobian is assumed to
+          be constant.
+        * If callable, the Jacobian is assumed to depend on both
+          t and y; it will be called as ``jac(t, y)`` as necessary.
+          For the 'Radau' and 'BDF' methods, the return value might be a
+          sparse matrix.
+        * If None (default), the Jacobian will be approximated by
+          finite differences.
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
@@ -258,12 +255,17 @@ class Radau(OdeSolver):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by this method, but may result in slower
         execution overall in some circumstances (e.g. small ``len(y0)``).
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
+    **extraneous
+        Any additional keyword arguments will be ignored.
 
     Attributes
     ----------
     n : int
         Number of equations.
-    status : string
+    status : str
         Current status of the solver: 'running', 'finished' or 'failed'.
     t_bound : float
         Boundary time.

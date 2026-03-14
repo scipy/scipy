@@ -8,7 +8,7 @@ from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 import scipy.special._ufuncs as scu
 from scipy._lib._util import rng_integers
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -26,9 +26,14 @@ from ._stats_pythran import _poisson_binom
 
 
 class binom_gen(rv_discrete):
-    r"""A binomial discrete random variable.
+    r"""
+    A binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, nbinom, nhypergeom
 
     Notes
     -----
@@ -55,18 +60,15 @@ class binom_gen(rv_discrete):
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
-
-    See Also
-    --------
-    hypergeom, nbinom, nhypergeom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
                 _ShapeInfo("p", False, (0, 1), (True, True))]
 
     def _rvs(self, n, p, size=None, random_state=None):
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _argcheck(self, n, p):
         return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
@@ -114,11 +116,6 @@ class binom_gen(rv_discrete):
             t2 = 6.0/n
             g2 = t1 - t2
         return mu, var, g1, g2
-
-    def _entropy(self, n, p):
-        k = np.r_[0:n + 1]
-        vals = self._pmf(k, n, p)
-        return np.sum(entr(vals), axis=0)
 
 
 binom = binom_gen(name='binom')
@@ -193,9 +190,14 @@ bernoulli = bernoulli_gen(b=1, name='bernoulli')
 
 
 class betabinom_gen(rv_discrete):
-    r"""A beta-binomial discrete random variable.
+    r"""
+    A beta-binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    beta, binom
 
     Notes
     -----
@@ -221,12 +223,7 @@ class betabinom_gen(rv_discrete):
 
     .. versionadded:: 1.4.0
 
-    See Also
-    --------
-    beta, binom
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -235,7 +232,9 @@ class betabinom_gen(rv_discrete):
 
     def _rvs(self, n, a, b, size=None, random_state=None):
         p = random_state.beta(a, b, size)
-        return random_state.binomial(n, p, size)
+        if not np.all(n == np.floor(n)):
+            raise ValueError("`n` must be integral.")
+        return random_state.binomial(np.asarray(n, dtype=int), p, size)
 
     def _get_support(self, n, a, b):
         return 0, n
@@ -278,9 +277,14 @@ betabinom = betabinom_gen(name='betabinom')
 
 
 class nbinom_gen(rv_discrete):
-    r"""A negative binomial discrete random variable.
+    r"""
+    A negative binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, binom, nhypergeom
 
     Notes
     -----
@@ -330,11 +334,6 @@ class nbinom_gen(rv_discrete):
     .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
-
-    See Also
-    --------
-    hypergeom, binom, nhypergeom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -398,9 +397,14 @@ nbinom = nbinom_gen(name='nbinom')
 
 
 class betanbinom_gen(rv_discrete):
-    r"""A beta-negative-binomial discrete random variable.
+    r"""
+    A beta-negative-binomial discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    betabinom : Beta binomial distribution
 
     Notes
     -----
@@ -427,12 +431,7 @@ class betanbinom_gen(rv_discrete):
 
     .. versionadded:: 1.12.0
 
-    See Also
-    --------
-    betabinom : Beta binomial distribution
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
@@ -498,6 +497,10 @@ class geom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    planck
+
     Notes
     -----
     The probability mass function for `geom` is:
@@ -519,12 +522,7 @@ class geom_gen(rv_discrete):
 
     %(after_notes)s
 
-    See Also
-    --------
-    planck
-
     %(example)s
-
     """
 
     def _shape_info(self):
@@ -587,6 +585,10 @@ class hypergeom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    nhypergeom, binom, nbinom
+
     Notes
     -----
     The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
@@ -645,11 +647,6 @@ class hypergeom_gen(rv_discrete):
     And to generate random numbers:
 
     >>> R = hypergeom.rvs(M, n, N, size=10)
-
-    See Also
-    --------
-    nhypergeom, binom, nbinom
-
     """
     def _shape_info(self):
         return [_ShapeInfo("M", True, (0, np.inf), (True, False)),
@@ -746,6 +743,10 @@ class nhypergeom_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
     Notes
     -----
     The symbols used to denote the shape parameters (`M`, `n`, and `r`) are not
@@ -776,6 +777,14 @@ class nhypergeom_gen(rv_discrete):
     PMF of the hypergeometric distribution.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Negative Hypergeometric Distribution on Wikipedia
+           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
+
+    .. [2] Negative Hypergeometric Distribution from
+           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     Examples
     --------
@@ -821,19 +830,6 @@ class nhypergeom_gen(rv_discrete):
     0.06180776620271643
     >>> hypergeom.pmf(k, M, n, k+r-1) * (M - n - (r-1)) / (M - (k+r-1))
     0.06180776620271644
-
-    See Also
-    --------
-    hypergeom, binom, nbinom
-
-    References
-    ----------
-    .. [1] Negative Hypergeometric Distribution on Wikipedia
-           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
-
-    .. [2] Negative Hypergeometric Distribution from
-           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
-
     """
 
     def _shape_info(self):
@@ -1038,6 +1034,10 @@ class planck_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    geom
+
     Notes
     -----
     The probability mass function for `planck` is:
@@ -1054,12 +1054,7 @@ class planck_gen(rv_discrete):
 
     %(after_notes)s
 
-    See Also
-    --------
-    geom
-
     %(example)s
-
     """
     def _shape_info(self):
         return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False))]

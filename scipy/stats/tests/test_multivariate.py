@@ -3043,8 +3043,8 @@ class TestOrthoGroup:
         # Test that the distribution of pairwise distances is close to correct.
         rng = np.random.RandomState(514)
 
-        def random_ortho(dim, random_state=None):
-            u, _s, v = np.linalg.svd(rng.normal(size=(dim, dim)))
+        def random_ortho(dim, random_state):
+            u, _s, v = np.linalg.svd(random_state.normal(size=(dim, dim)))
             return np.dot(u, v)
 
         for dim in range(2, 6):
@@ -3055,7 +3055,7 @@ class TestOrthoGroup:
                     for _ in range(N)
                 ])
                 # Add a bit of noise to account for numeric accuracy.
-                stats += np.random.uniform(-eps, eps, size=stats.shape)
+                stats += rng.uniform(-eps, eps, size=stats.shape)
                 return stats
 
             expected = generate_test_statistics(random_ortho)

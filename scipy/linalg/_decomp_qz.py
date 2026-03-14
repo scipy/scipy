@@ -193,10 +193,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         (alpha, beta). The eigenvalue ``x = (alpha/beta)``.  Alternatively,
         string parameters may be used:
 
-            - 'lhp'   Left-hand plane (x.real < 0.0)
-            - 'rhp'   Right-hand plane (x.real > 0.0)
-            - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
-            - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+        - 'lhp'   Left-hand plane (x.real < 0.0)
+        - 'rhp'   Right-hand plane (x.real > 0.0)
+        - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
+        - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         Defaults to None (no sorting).
     overwrite_a : bool, optional
@@ -341,10 +341,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         complex. The callable must be able to accept a NumPy
         array. Alternatively, string parameters may be used:
 
-            - 'lhp'   Left-hand plane (x.real < 0.0)
-            - 'rhp'   Right-hand plane (x.real > 0.0)
-            - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
-            - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+        - 'lhp'   Left-hand plane (x.real < 0.0)
+        - 'rhp'   Right-hand plane (x.real > 0.0)
+        - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
+        - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         With the predefined sorting functions, an infinite eigenvalue
         (i.e., ``alpha != 0`` and ``beta = 0``) is considered to lie in
