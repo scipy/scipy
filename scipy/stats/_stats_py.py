@@ -2480,28 +2480,33 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-@xp_capabilities(np_only=True)
-def obrientransform(*samples):
+@xp_capabilities()
+def obrientransform(*samples, nan_policy='propagate'):
     """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
     Each array in ``*samples`` is one level of a factor.
-    If `f_oneway` is run on the transformed data and found significant,
-    the variances are unequal.  From Maxwell and Delaney [1]_, p.112.
+    Significant results of `f_oneway` on the transformed data suggest that the
+    variances of the underlying distributions are unequal.
+    See Maxwell and Delaney [1]_, p.112.
 
     Parameters
     ----------
     *samples : array_like
         Any number of arrays.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in a sample, all elements of the
+          transformed sample will be NaN.
+        - ``omit``: NaNs will be omitted when computing reducing statistics for the
+          transform, but NaNs in the sample will remain NaNs in the transformed sample.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
-    obrientransform : ndarray
-        Transformed data for use in an ANOVA.  The first dimension
-        of the result corresponds to the sequence of transformed
-        arrays.  If the arrays given are all 1-D of the same length,
-        the return value is a 2-D array; otherwise it is a 1-D array
-        of type object, with each element being an ndarray.
+    obrientransform : tuple of arrays
+        Transformed arrays for use in ANOVA.
 
     Raises
     ------
@@ -2538,36 +2543,21 @@ def obrientransform(*samples):
     that the variances are different.
 
     """
-    TINY = np.sqrt(np.finfo(float).eps)
+    xp = array_namespace(*samples)
+    n_samples = len(samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    samples = (samples,) if n_samples == 1 else samples
+    return tuple(_xp_obrientransform_one_sample(sample, xp=xp, nan_policy=nan_policy)
+                 for sample in samples)
 
-    # `arrays` will hold the transformed arguments.
-    arrays = []
-    sLast = None
 
-    for sample in samples:
-        a = np.asarray(sample)
-        n = len(a)
-        mu = np.mean(a)
-        sq = (a - mu)**2
-        sumsq = sq.sum()
-
-        # The O'Brien transform.
-        t = ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
-
-        # Check that the mean of the transformed data is equal to the
-        # original variance.
-        var = sumsq / (n - 1)
-        if abs(var - np.mean(t)) > TINY:
-            raise ValueError('Lack of convergence in obrientransform.')
-
-        arrays.append(t)
-        sLast = a.shape
-
-    if sLast:
-        for arr in arrays[:-1]:
-            if sLast != arr.shape:
-                return np.array(arrays, dtype=object)
-    return np.array(arrays)
+def _xp_obrientransform_one_sample(a, *, xp, nan_policy):
+    _contains_nan(a, nan_policy, xp_omit_okay=True)  # handle `nan_policy='raise'`
+    n = xp.asarray(xp.count_nonzero(~xp.isnan(a)), dtype=a.dtype)
+    mu = _xp_mean(a, nan_policy=nan_policy)
+    sq = (a - mu)**2
+    sumsq = _xp_mean(sq, nan_policy=nan_policy) * n
+    return ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
 
 
 @xp_capabilities(marray=True)
