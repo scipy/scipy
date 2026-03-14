@@ -686,7 +686,7 @@ pythran.branch = "pixi"
 # needed at build-time as well as run-time
 numpy = "*"
 blas-devel = { version = "*", build = "*openblas" }
-gfortran = "15.*" # or should we use Flang on osx? Would make `env.FC` target-specific
+gfortran = "15.*"
 
 [feature.asan-build-deps.target.linux.dependencies]
 gxx = "15.*"
@@ -694,15 +694,19 @@ gxx = "15.*"
 [feature.asan-build-deps.target.osx.dependencies]
 cxx-compiler = "*"
 
+[feature.asan.activation.env]
+FC = "ccache $CONDA_PREFIX/bin/gfortran"
+
+[feature.asan.target.osx.activation.env]
+CC = "ccache $CC"
+CXX = "ccache $CXX"
+
+[feature.asan.target.linux.activation.env]
+CC = "ccache $CONDA_PREFIX/bin/gcc"
+CXX = "ccache $CONDA_PREFIX/bin/g++"
+
 [feature.asan.tasks.build-asan]
 cmd = "spin build --asan --build-dir=build-asan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
-env.CC = "ccache cc"
-env.CXX = "ccache c++"
-env.FC = "ccache gfortran"
-# once this works in Pixi:
-# env.CC = "ccache {{ $CC | default('cc') }}"
-# env.CXX = "ccache {{ $CXX | default('c++') }}"
-# env.FC = "ccache {{ $FC | default('gfortran') }}"
 env.ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0"
 description = "Build SciPy, NumPy, and CPython with address sanitizer"
 
