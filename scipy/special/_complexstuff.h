@@ -18,11 +18,14 @@
 
 #if defined(_MSC_VER)
     typedef _Dcomplex _scipy_dz;
-    #define _SCIPY_TO_DZ(z) _Cbuild(((double *)&(z))[0], ((double *)&(z))[1])
+    #ifndef CMPLX
+        #define CMPLX(x, y) _Cbuild(x, y)
+    #endif
 #else
     typedef double complex _scipy_dz;
-    #define _SCIPY_TO_DZ(z) (((double *)&(z))[0] + ((double *)&(z))[1] * I)
 #endif
+
+#define _SCIPY_TO_DZ(z) CMPLX(((double *)&(z))[0], ((double *)&(z))[1])
 
 static inline npy_cdouble _scipy_from_dz(_scipy_dz z) {
     npy_cdouble r;
