@@ -6211,7 +6211,8 @@ def test_ttest_1samp_new(xp):
         xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
 
-@skip_xp_backends(eager_only=True, reason="lazy -> no nan_policy")
+@skip_xp_backends(np_only=True,
+                  reason="`nan_policy='omit'` is NumPy-only w/ multidimensional input")
 @make_xp_test_case(stats.ttest_1samp)
 def test_ttest_1samp_new_omit(xp):
     rng = np.random.default_rng(4008400329)

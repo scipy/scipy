@@ -633,10 +633,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 res = hypotest_fun_out(*samples, axis=-1, **kwds)
                 res = result_to_tuple(res, n_out)
 
-                if is_lazy_array(x) or contains_nan:
+                if override['nan_propagation'] and (is_lazy_array(x) or contains_nan):
                     nan_out = xp.any(xp.isnan(x), axis=-1)
-                    res = ((xpx.at(res_i)[nan_out].set(xp.nan, copy=True)
-                            if hasattr(res_i, 'shape') else res_i) for res_i in res)
+                    res = ((xp.where(nan_out, xp.nan, res_i) if hasattr(res_i, 'shape')
+                            else res_i) for res_i in res)
 
                 res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
