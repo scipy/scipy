@@ -78,7 +78,7 @@ jobs:
       uses: ./.github/ccache
       with:
         workflow_name: ${{ github.workflow }}
-        job_name: ${{ github.job }}
+        job_name: ${{ github.job }}-${{ matrix.python-version }}
 
     - name: Setup build and install scipy
       run: |
@@ -213,25 +213,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
-            gfortran libgmp-dev libmpfr-dev libmpc-dev ccache
+            gfortran libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-
-      - name: Set up ccache
-        uses: ./.github/ccache
-        with:
-          workflow_name: ${{ github.workflow }}
-          job_name: ${{ github.job }}
 
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
           python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
-
-      - name: Ccache performance
-        shell: bash -l {0}
-        run: ccache -s
 
       - name: Testing SciPy
         run: |
@@ -267,7 +257,7 @@ jobs:
 
       - name: Setup Python build deps
         run: |
-          pip install build meson-python ninja pythran pybind11 cython numpy
+          pip install meson-python ninja pythran pybind11 cython numpy
 
 
       - name: Set up ccache
@@ -282,8 +272,9 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
-          python -m pip install dist/scipy*.whl
+          CC="ccache gcc-9" CXX="ccache g++-9" FC="ccache gfortran-9" python -m pip install . -v \
+              --no-build-isolation -Cbuild-dir=build \
+              -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
 
       - name: Ccache performance
         shell: bash -l {0}
@@ -378,19 +369,7 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install Ubuntu dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran \
-          lcov ccache
-
-    - name: Set up ccache
-      uses: ./.github/ccache
-      with:
-        workflow_name: ${{ github.workflow }}
-        job_name: ${{ github.job }}
-
-    - name: build + test
+    - name: build + test in i686 container
       run: |
         set -exuo pipefail
         docker pull quay.io/pypa/manylinux2014_i686
@@ -409,14 +388,11 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==2.0.0 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir && \
+        python -m pip install cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"
-
-    - name: Ccache performance
-      shell: bash -l {0}
-      run: ccache -s
 
   #################################################################################
   distro_multiple_pythons:
