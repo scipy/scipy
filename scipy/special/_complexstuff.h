@@ -23,6 +23,9 @@
     #endif
 #else
     typedef double complex _scipy_dz;
+    #ifndef CMPLX
+        #define CMPLX(x, y) __builtin_complex((double)(x), (double)(y))
+    #endif
 #endif
 
 #define _SCIPY_TO_DZ(z) CMPLX(((double *)&(z))[0], ((double *)&(z))[1])
