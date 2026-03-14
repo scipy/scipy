@@ -1,14 +1,14 @@
 #include "src/_common_array_utils.h"
 
-void matrix_exponential_s(PyArrayObject* a, float* restrict result, int* info);
-void matrix_exponential_d(PyArrayObject* a, double* restrict result, int* info);
-void matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, int* info);
-void matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, int* info);
+void matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info);
+void matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info);
+void matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info);
+void matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info);
 
-void matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
-void matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
-void matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
-void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
+void matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* view_as_complex);
+void matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* view_as_complex);
+void matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
+void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 
@@ -41,7 +41,8 @@ capsule_destructor(PyObject *capsule) {
 */
 static PyObject*
 recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
-    int isComplex = 0, isIllconditioned = 0, isSingular = 0, info = 0;
+    int isComplex = 0, isIllconditioned = 0, isSingular = 0;
+    CBLAS_INT info = 0;
     PyArrayObject *ap_Am = NULL;
     void* mem_ret = NULL;
     PyArrayObject* ap_ret = NULL;
@@ -119,7 +120,10 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
         // Internal failure memory or LAPACK error, fail and return the error code in info
         free(mem_ret);
         Py_INCREF(Py_None);
-        return Py_BuildValue("Niii", Py_None, isIllconditioned, isSingular, info);
+        return Py_BuildValue(
+            "Niin", Py_None, isIllconditioned,
+            isSingular, (Py_ssize_t)info
+        );
     }
 
     if (!isComplex)
@@ -170,13 +174,16 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
     }
 
     // Return the result
-    return Py_BuildValue("Niii", PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
+    return Py_BuildValue(
+        "Niin", PyArray_Return(ap_ret), isIllconditioned,
+        isSingular, (Py_ssize_t)info
+    );
 }
 
 
 static PyObject*
 matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
-    int info = 0;
+    CBLAS_INT info = 0;
     PyArrayObject *ap_a=NULL;
     void* mem_ret = NULL;
 
@@ -238,7 +245,7 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
         // Internal failure memory or LAPACK error, fail and return the error code in info
         free(mem_ret);
         Py_INCREF(Py_None);
-        return Py_BuildValue("Ni", Py_None, info);
+        return Py_BuildValue("Nn", Py_None, (Py_ssize_t)info);
     }
 
     PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, input_type, mem_ret);
@@ -262,7 +269,7 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
     }
 
     // Return the result
-    return Py_BuildValue("Ni", PyArray_Return(ap_ret), info);
+    return Py_BuildValue("Nn", PyArray_Return(ap_ret), (Py_ssize_t)info);
 }
 
 
