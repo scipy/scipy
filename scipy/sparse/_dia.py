@@ -553,6 +553,18 @@ class dia_array(_dia_base, sparray):
     addition, subtraction, multiplication, division, and matrix power.
     Sparse arrays with DIAgonal storage do not support slicing.
 
+    Understanding the ``data`` array format:
+
+    - Sub-diagonals (negative offsets) are left-aligned among themselves and
+      with the main diagonal, while super-diagonals (positive offsets) are
+      right-aligned among themselves and with the main diagonal.
+    - Each column ``data[:, j]`` becomes a (subset of) column ``j`` of the
+      sparse array.
+    - When ``offsets`` is a decreasing range, the ``data`` array format is
+      consistent with the BLAS/LAPACK general band format. This allows for
+      efficient interoperability with banded matrix operations from
+      ``scipy.linalg.blas``.
+
     Examples
     --------
 
@@ -584,6 +596,28 @@ class dia_array(_dia_base, sparray):
            [0., 0., 0., ..., 2., 1., 0.],
            [0., 0., 0., ..., 1., 2., 1.],
            [0., 0., 0., ..., 0., 1., 2.]])
+
+    Example showing BLAS/LAPACK general band format compatibility:
+
+    >>> data = (np.array([[1., 2., 3., 4., 5.]]) +
+    ...         np.array([[10], [20], [30], [40]]))
+    >>> offsets = [1, 0, -1, -2]
+    >>> A = dia_array((data, offsets), shape=(5, 5))
+    >>> A.toarray()
+    array([[21., 12.,  0.,  0.,  0.],
+           [31., 22., 13.,  0.,  0.],
+           [41., 32., 23., 14.,  0.],
+           [ 0., 42., 33., 24., 15.],
+           [ 0.,  0., 43., 34., 25.]])
+
+    The data array can be used directly with BLAS banded matrix operations:
+
+    >>> from scipy.linalg.blas import dgbmv
+    >>> x = np.array([-1., 1., -2., 3., 5.])
+    >>> y_sparse = A @ x
+    >>> y_blas = dgbmv(m=5, n=5, kl=2, ku=1, alpha=1., a=data, x=x)
+    >>> np.allclose(y_sparse, y_blas)
+    True
     """  # numpydoc ignore=PR01
 
 
@@ -636,6 +670,18 @@ class dia_matrix(spmatrix, _dia_base):
     addition, subtraction, multiplication, division, and matrix power.
     Sparse matrices with DIAgonal storage do not support slicing.
 
+    Understanding the ``data`` array format:
+
+    - Sub-diagonals (negative offsets) are left-aligned among themselves and
+      with the main diagonal, while super-diagonals (positive offsets) are
+      right-aligned among themselves and with the main diagonal.
+    - Each column ``data[:, j]`` becomes a (subset of) column ``j`` of the
+      sparse matrix.
+    - When ``offsets`` is a decreasing range, the ``data`` array format is
+      consistent with the BLAS/LAPACK general band format. This allows for
+      efficient interoperability with banded matrix operations from
+      ``scipy.linalg.blas``.
+
     Examples
     --------
 
@@ -667,4 +713,26 @@ class dia_matrix(spmatrix, _dia_base):
            [0., 0., 0., ..., 2., 1., 0.],
            [0., 0., 0., ..., 1., 2., 1.],
            [0., 0., 0., ..., 0., 1., 2.]])
+
+    Example showing BLAS/LAPACK general band format compatibility:
+
+    >>> data = (np.array([[1., 2., 3., 4., 5.]]) +
+    ...         np.array([[10], [20], [30], [40]]))
+    >>> offsets = [1, 0, -1, -2]
+    >>> A = dia_matrix((data, offsets), shape=(5, 5))
+    >>> A.toarray()
+    array([[21., 12.,  0.,  0.,  0.],
+           [31., 22., 13.,  0.,  0.],
+           [41., 32., 23., 14.,  0.],
+           [ 0., 42., 33., 24., 15.],
+           [ 0.,  0., 43., 34., 25.]])
+
+    The data array can be used directly with BLAS banded matrix operations:
+
+    >>> from scipy.linalg.blas import dgbmv
+    >>> x = np.array([-1., 1., -2., 3., 5.])
+    >>> y_sparse = A @ x
+    >>> y_blas = dgbmv(m=5, n=5, kl=2, ku=1, alpha=1., a=data, x=x)
+    >>> np.allclose(y_sparse, y_blas)
+    True
     """
