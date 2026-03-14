@@ -104,6 +104,21 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
+    Examples
+    ----------
+
+    >>> from scipy import stats
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> x = rng.normal(0,1,size=100)
+    >>> y = rng.normal(5,3,size=100)
+
+    Test the null hypothesis that x and y are sampled from the same distribution.
+
+    >>> tstat,pval = stats.epps_singleton_2samp(x,y)
+    >>> print(f"{tstat=:.3g}, {pval=:.3g}")
+    tstat=660, pval=1.43e-141  # random
+
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
