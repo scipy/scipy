@@ -1,12 +1,5 @@
 r"""
-==================================
-Constants (:mod:`scipy.constants`)
-==================================
-
-.. currentmodule:: scipy.constants
-
 Physical and mathematical constants and units.
-
 
 Mathematical constants
 ======================
