@@ -578,7 +578,8 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         if True in nonrelevant_parameters or False not in relevant_parameters:
             raise NotImplementedError("skip non-relevant case")
 
-        # TODO: fix failing benchmarks (Aug. 2023), skipped for now
+        # These benchmarks fail (not just slow); needs investigation.
+        # See gh-19389 for details.
         if ((dist_name == "pareto" and loc_fixed and scale_fixed)
                 or (dist_name == "invgauss" and loc_fixed)):
             raise NotImplementedError("skip failing benchmark")
