@@ -118,6 +118,7 @@ print(incdir)
       check: true
     ).stdout().strip()
   endif
+  incdir_pythran = incdir_pythran.replace('\\', '/')
   pythran_dep = declare_dependency(
     include_directories: incdir_pythran,
   )
@@ -766,7 +767,7 @@ endforeach
 conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
-conf_data.set('PYTHON_PATH', py3.full_path())
+conf_data.set('PYTHON_PATH', py3.full_path().replace('\\', '/'))
 conf_data.set('PYTHON_VERSION', py3.language_version())
 
 # Dependencies information
@@ -779,7 +780,7 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_INCLUDEDIR', dep.get_variable('includedir', default_value: 'unknown'))
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
-    conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
+    conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown').replace('\\', '/'))
     conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach
