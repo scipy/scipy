@@ -20,6 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
+    signed_graph_variant="standard",
 ):
     """
     Return the Laplacian of a directed graph.
@@ -69,6 +70,33 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
+    signed_graph_variant : 'standard', 'opposing' or 'unsigned'
+        This option only has an effect when the graph contains negative edge weights;
+        it does nothing for graphs with all non-negative weights.
+        The Laplacian is always assembled as :math:`L = D - A`,
+        but D and A are replaced as described below.
+        See [2]_ for a detailed discussion of each variant:
+
+        * 'standard': No modification of edge weights when computing D or A.
+          This is called "repelling" in [2]_:
+
+            - :math:`D_i = \\sum_j G_{ij}`
+            - :math:`A_{ij} = G_{ij}`
+
+        * 'opposing': Absolute value only for the degree computation,
+          so that positive and negative weights cannot cancel out.
+          see [3]_ for a discussion of this variant:
+
+            - :math:`D_i = \\sum_j |G_{ij}|`
+            - :math:`A_{ij} = G_{ij}`
+
+        * 'unsigned': Absolute value for both degree and adjacency,
+          discarding all sign information:
+
+            - :math:`D_i = \\sum_j |G_{ij}|`
+            - :math:`A_{ij} = |G_{ij}|`
+
+        Default: 'standard'.
 
     Returns
     -------
@@ -115,6 +143,18 @@ def laplacian(
     References
     ----------
     .. [1] Laplacian matrix. https://en.wikipedia.org/wiki/Laplacian_matrix
+    .. [2] Shi, Guodong and Altafini, Claudio and Baras, John S. (2019).
+           Dynamics over Signed Networks,
+           SIAM Review 61(2), 229-257
+           :doi:`10.1137/17M1134172`
+    .. [3] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch
+           and Jürgen Lerner and Ernesto W. De Luca
+           and Sahin Albayrak. (2010).
+           Spectral Analysis of Signed Graphs for Clustering,
+           Prediction and Visualization.
+           In Proceedings of the 2010 SIAM International Conference
+           on Data Mining (SDM), 559-570.
+           :doi:`10.1137/1.9781611972801.49`
 
     Examples
     --------
@@ -271,6 +311,59 @@ def laplacian(
            [-1.,  2., -1.],
            [-1., -1.,  2.]])
 
+    The signed graph, where edge weights can cancel each other out:
+
+    >>> G = np.array([[0, 1, -1],
+    ...               [1, 0,  1],
+    ...               [-1, 1, 0]])
+    >>> G
+    array([[ 0,  1, -1],
+           [ 1,  0,  1],
+           [-1,  1,  0]])
+
+    Setting ``signed_graph_variant="standard"`` (default),
+    positive and negative edge weights cancel during degree computation:
+
+    >>> L_standard, d_standard = csgraph.laplacian(G, return_diag=True)
+    >>> L_standard
+    array([[ 0, -1,  1],
+           [-1,  2, -1],
+           [ 1, -1,  0]])
+    >>> d_standard
+    array([0, 2, 0])
+
+    Setting ``signed_graph_variant="opposing"`` prevents cancellation
+    for the degree computation by summing absolute edge weights:
+
+    >>> L_opposing, d_opposing = csgraph.laplacian(
+    ...     G,
+    ...     return_diag=True,
+    ...     signed_graph_variant="opposing",
+    ... )
+    >>> L_opposing
+    array([[ 2, -1, 1],
+           [-1,  2, -1],
+           [1, -1,  2]])
+    >>> d_opposing
+    array([2, 2, 2])
+
+    Setting ``signed_graph_variant="unsigned"`` uses absolute value
+    for both degree and adjacency, discarding all sign information.
+    This is same as
+    ``csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="standard")``:
+
+    >>> L_unsigned, d_unsigned = csgraph.laplacian(
+    ...     G,
+    ...     return_diag=True,
+    ...     signed_graph_variant="unsigned",
+    ... )
+    >>> L_unsigned
+    array([[ 2, -1, -1],
+           [-1,  2, -1],
+           [-1, -1,  2]])
+    >>> d_unsigned
+    array([2, 2, 2])
+
     The Laplacian matrix is used for
     spectral data clustering and embedding
     as well as for spectral graph partitioning.
@@ -365,6 +458,7 @@ def laplacian(
         form=form,
         dtype=dtype,
         symmetrized=symmetrized,
+        signed_graph_variant=signed_graph_variant,
     )
     if is_pydata_sparse:
         lap = pydata_sparse_cls.from_scipy_sparse(lap)
@@ -404,19 +498,41 @@ def _linearoperator(mv, shape, dtype):
     return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
-def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse_flo(
+        graph, normed, axis, copy, form, dtype,
+        symmetrized, signed_graph_variant,
+):
     # The keyword argument `copy` is unused and has no effect here.
     del copy
 
     if dtype is None:
         dtype = graph.dtype
 
+    if signed_graph_variant == "unsigned":
+        # Discard the sign of edge weights.
+        if graph.format in ('lil', 'dok'):
+            graph = graph.tocoo()
+        np.abs(graph.data, out=graph.data)
+
     graph_sum = np.asarray(graph.sum(axis=axis)).ravel()
-    graph_diagonal = graph.diagonal()
-    diag = graph_sum - graph_diagonal
     if symmetrized:
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
-        diag = graph_sum - graph_diagonal - graph_diagonal
+    graph_diagonal = graph.diagonal()
+
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
+        diag = graph_sum - graph_diagonal
+        if symmetrized:
+            diag -= graph_diagonal
+    elif signed_graph_variant == "opposing":
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
+        graph_abs = np.abs(graph)
+        graph_diagonal_abs = np.abs(graph_diagonal)
+        diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
+        if symmetrized:
+            diag += np.ravel(graph_abs.sum(axis=1 - axis)) - graph_diagonal_abs
+    else:
+        raise ValueError(f"Invalid signed_graph_variant: {signed_graph_variant!r}")
 
     if normed:
         isolated_node_mask = diag == 0
@@ -446,7 +562,10 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse(
+        graph, normed, axis, copy, form, dtype,
+        symmetrized, signed_graph_variant,
+):
     # The keyword argument `form` is unused and has no effect here.
     del form
 
@@ -461,10 +580,30 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
         if copy:
             needs_copy = True
 
-    if symmetrized:
-        m += m.T.conj()
+    if signed_graph_variant == "unsigned":
+        # Discard the sign of edge weights.
+        if copy:
+            m = np.abs(m)
+        else:
+            np.abs(m.data, out=m.data)
 
-    w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
+        if symmetrized:
+            m += m.T.conj()
+        w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
+    elif signed_graph_variant == "opposing":
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
+        m_abs = np.abs(m)
+        m_diagonal_abs = m_abs.diagonal()
+        w = np.asarray(m_abs.sum(axis=axis)).ravel() - m_diagonal_abs
+        if symmetrized:
+            # m_abs.T == np.abs(m.T.conj())
+            w += np.ravel(m_abs.T.sum(axis=axis)) - m_diagonal_abs
+            m += m.T.conj()
+    else:
+        raise ValueError(f"Invalid signed_graph_variant: {signed_graph_variant!r}")
+
     if normed:
         m = m.tocoo(copy=needs_copy)
         isolated_node_mask = (w == 0)
@@ -484,7 +623,10 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
     return m.astype(dtype, copy=False), w.astype(dtype)
 
 
-def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_dense_flo(
+        graph, normed, axis, copy, form, dtype,
+        symmetrized, signed_graph_variant,
+):
 
     if copy:
         m = np.array(graph)
@@ -494,12 +636,29 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = m.dtype
 
+    if signed_graph_variant == "unsigned":
+        # Discard the sign of edge weights.
+        np.abs(m, out=m)
+
     graph_sum = m.sum(axis=axis)
-    graph_diagonal = m.diagonal()
-    diag = graph_sum - graph_diagonal
     if symmetrized:
         graph_sum += m.sum(axis=1 - axis)
-        diag = graph_sum - graph_diagonal - graph_diagonal
+    graph_diagonal = m.diagonal()
+
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
+        diag = graph_sum - graph_diagonal
+        if symmetrized:
+            diag -= graph_diagonal
+    elif signed_graph_variant == "opposing":
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
+        graph_abs = np.abs(graph)
+        graph_diagonal_abs = np.abs(graph_diagonal)
+        diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
+        if symmetrized:
+            diag += np.ravel(graph_abs.sum(axis=1 - axis)) - graph_diagonal_abs
+    else:
+        raise ValueError(f"Invalid signed_graph_variant: {signed_graph_variant!r}")
 
     if normed:
         isolated_node_mask = diag == 0
@@ -529,7 +688,10 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_dense(
+        graph, normed, axis, copy, form, dtype,
+        symmetrized, signed_graph_variant,
+):
 
     if form != "array":
         raise ValueError(f'{form!r} must be "array"')
@@ -545,10 +707,28 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = m.dtype
 
-    if symmetrized:
-        m += m.T.conj()
     np.fill_diagonal(m, 0)
-    w = m.sum(axis=axis)
+
+    if signed_graph_variant == "unsigned":
+        # Discard the sign of edge weights.
+        np.abs(m, out=m)
+
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
+        if symmetrized:
+            m += m.T.conj()
+        w = m.sum(axis=axis)
+    elif signed_graph_variant == "opposing":
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
+        m_abs = np.abs(m)
+        w = m_abs.sum(axis=axis)
+        if symmetrized:
+            # m_abs.T == np.abs(m.T.conj())
+            w += m_abs.T.sum(axis=axis)
+            m += m.T.conj()
+    else:
+        raise ValueError(f"Invalid signed_graph_variant: {signed_graph_variant!r}")
+
     if normed:
         isolated_node_mask = (w == 0)
         w = np.where(isolated_node_mask, 1, np.sqrt(w))
