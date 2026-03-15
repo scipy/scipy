@@ -249,6 +249,16 @@ endif
 _args_blas_lapack = []
 accelerate_flag = []
 generate_blas_wrappers = false
+
+# If an exact MKL .pc name with 'ilp64' is given and use-ilp64 is true,
+# derive the LP64 .pc name by replacing 'ilp64' with 'lp64' in the name.
+# The original ILP64 name is saved for the ILP64 detection pass below.
+_blas_name_ilp64 = ''
+if use_ilp64 and blas_name.contains('ilp64')
+  _blas_name_ilp64 = blas_name
+  blas_name = blas_name.replace('ilp64', 'lp64')
+endif
+
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
@@ -374,7 +384,16 @@ if use_ilp64
   endif
 
   # Run the detection
-  if uses_mkl
+  if _blas_name_ilp64 != ''
+    # Exact MKL .pc name was given — use it directly via pkg-config
+    blas_ilp64 = dependency(_blas_name_ilp64)
+    lapack_ilp64 = blas_ilp64
+    _args_blas_ilp64 += [
+      '-DBLAS_SYMBOL_SUFFIX=_64',
+      '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
+    ]
+    c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
+  elif uses_mkl
     mkl_uses_sdl = false   # FIXME, why
     if mkl_uses_sdl
       mkl_opts = ['sdl: true']
@@ -784,6 +803,15 @@ foreach name, dep : dependency_map
   endif
 endforeach
 
+
+# Resolve cython-blas-abi for config: 'auto' follows use-ilp64
+_cython_blas_abi = get_option('cython-blas-abi')
+if _cython_blas_abi == 'auto'
+  _cython_blas_ilp64 = use_ilp64
+else
+  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
+endif
+conf_data.set('BLAS_CYTHON_ILP64', _cython_blas_ilp64.to_string())
 
 configure_file(
   input: '__config__.py.in',

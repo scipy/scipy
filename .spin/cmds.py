@@ -661,11 +661,16 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     '--symbol-hiding', default=False, is_flag=True,
     help='Check whether symbol hiding in extension modules is correct (GCC-only)')
 @click.option(
+    '--loaded-sharedlibs', default=False, is_flag=True,
+    help='Show shared libraries loaded by numpy/scipy imports')
+@click.option(
     '--no-build', default=False, is_flag=True,
     help='Build SciPy before running checks')
 @meson.build_dir_option
+@click.argument('extra_args', nargs=-1)
 @click.pass_context
-def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=None):
+def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no_build,
+          build_dir=None, extra_args=()):
     """🔧  Run checks specific to the SciPy code base.
 
     Exactly one check can be run at once. Example:
@@ -682,7 +687,7 @@ def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=N
     #
     # These checks, unlike the `lint` ones, are allowed (but don't have to) require
     # building or importing `scipy`.
-    options = [xp_markers, installed_files, symbol_hiding]
+    options = [xp_markers, installed_files, symbol_hiding, loaded_sharedlibs]
     if not sum(options) == 1:
         click.secho(
             f"Exactly one option to `check` should be given, found {sum(options)} - "
@@ -716,6 +721,11 @@ def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=N
         script = os.path.join(os.path.abspath('tools'),
                               'check_pyext_symbol_hiding.sh')
         util.run([script, install_dir])
+
+    if loaded_sharedlibs:
+        cmd = [sys.executable, os.path.join('tools', 'verify_loaded_sharedlibs.py')]
+        cmd.extend(extra_args)
+        util.run(cmd)
 
 
 # From scipy: benchmarks/benchmarks/common.py
