@@ -4,6 +4,7 @@ description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
 
 
 ### Environments ###
@@ -144,6 +145,10 @@ features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
 features = ["gha-update"]
 no-default-feature = true
 
+[environments.asan]
+features = ["asan-build-deps", "run-deps", "test-deps", "asan"]
+solve-group = "asan"
+
 
 ### Default dependencies (included in all environments) ###
 
@@ -168,11 +173,12 @@ ninja = "*"
 meson = "*"
 meson-python = "*"
 cython = "*"
-pythran = "*"
 pybind11 = "*"
+pythran = "*"
 # needed at build-time as well as run-time
 numpy = "*"
 blas-devel = "*"
+
 
 [feature.build-deps.target.unix.dependencies]
 compilers = "*"
@@ -208,7 +214,11 @@ pytest-xdist = "*"
 threadpoolctl = "*"
 pooch = "*"
 mpmath = "*"
-gmpy2 = "*"
+
+[feature.test-deps.target.unix.dependencies]
+# to make solvable with Python>3.14
+gmpy2.git = "https://github.com/lucascolley/gmpy2.git"
+gmpy2.branch = "pixi"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
 [feature.test-tasks.tasks.test]
@@ -650,6 +660,61 @@ cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
 
+
+[feature.asan]
+platforms = ["osx-arm64", "linux-64"]
+
+[feature.asan.dependencies]
+python.git = "https://github.com/python/cpython.git"
+python.subdirectory = "Tools/pixi-packages/asan"
+
+numpy.git = "https://github.com/ngoldbaum/numpy.git"
+numpy.subdirectory = "pixi-packages/asan"
+numpy.branch = "tsan-ft-pixi"
+
+[feature.asan-build-deps.dependencies]
+ccache = "*"
+pkg-config = "*"
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pybind11 = "*"
+# to make solvable with Python>3.14
+pythran.git = "https://github.com/lucascolley/pythran.git"
+pythran.branch = "pixi"
+# needed at build-time as well as run-time
+numpy = "*"
+blas-devel = { version = "*", build = "*openblas" }
+gfortran = "15.*"
+
+[feature.asan-build-deps.target.linux.dependencies]
+gxx = "15.*"
+
+[feature.asan-build-deps.target.osx.dependencies]
+cxx-compiler = "*"
+
+[feature.asan.activation.env]
+FC = "ccache $CONDA_PREFIX/bin/gfortran"
+
+[feature.asan.target.osx.activation.env]
+CC = "ccache $CC"
+CXX = "ccache $CXX"
+
+[feature.asan.target.linux.activation.env]
+CC = "ccache $CONDA_PREFIX/bin/gcc"
+CXX = "ccache $CONDA_PREFIX/bin/g++"
+
+[feature.asan.tasks.build-asan]
+cmd = "spin build --asan --build-dir=build-asan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env.ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0"
+description = "Build SciPy, NumPy, and CPython with address sanitizer"
+
+[feature.asan.tasks.test-asan]
+cmd = "spin test --no-build --build-dir=build-asan --no-capture -m 'not fail_asan'"
+depends-on = "build-asan"
+env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0"
+description = "Test SciPy with address sanitizer"
 
 ### Alternative python versions ###
 
