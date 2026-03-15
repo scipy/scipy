@@ -60,7 +60,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     minkowski, rogerstanimoto,
                                     russellrao, seuclidean,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
-from scipy._lib._util import np_long, np_ulong
+from scipy._lib._util import np_long, np_ulong, _apply_over_batch
 from scipy.conftest import skip_xp_invalid_arg
 
 
@@ -1883,21 +1883,6 @@ def test_euclideans():
     assert_almost_equal(wsqeuclidean(x1, x2), 3.0, decimal=14)
     assert_almost_equal(weuclidean(x1, x2), np.sqrt(3), decimal=14)
 
-    # Check flattening for (1, N) or (N, 1) inputs
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        weuclidean(x1[np.newaxis, :], x2[np.newaxis, :]), np.sqrt(3)
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        wsqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :])
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        wsqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis])
-
-    # Distance metrics only defined for vectors (= 1-D)
-    x = np.arange(4).reshape(2, 2)
-    with pytest.raises(ValueError):
-        weuclidean(x, x)
-    with pytest.raises(ValueError):
-        wsqeuclidean(x, x)
-
     # Another check, with random data.
     rs = np.random.RandomState(1234567890)
     x = rs.rand(10)
@@ -2282,3 +2267,30 @@ class TestChebyshev:
         assert_equal(chebyshev(x, y, w), 0)
         assert_equal(pdist([x, y], 'chebyshev', w=w), [0])
         assert_equal(cdist([x], [y], 'chebyshev', w=w), [[0]])
+
+
+@pytest.mark.parametrize(
+    "func,p",
+    [
+        (minkowski, 1),
+        (minkowski, 2),
+        (minkowski, 3.5),
+        (minkowski, np.inf),
+        (euclidean, None),
+        (sqeuclidean, None),
+    ],
+)
+@pytest.mark.parametrize("weights", [True, False])
+def test_distance_nd(func, p, weights):
+    rng = np.random.default_rng(6738657865438)
+    ref_func = _apply_over_batch(('u', 1), ('v', 1), ('p', 1), ('w', 1))(func)
+
+    u = rng.random((5, 2, 4))
+    v = rng.random((2, 4))
+    w = rng.random(4) if weights else None
+    kwargs = {'w': w} if p is None else {'p': p, 'w': w}
+
+    res = func(u, v, **kwargs)
+    ref = ref_func(u, v, **kwargs)
+
+    assert_allclose(res, ref)
