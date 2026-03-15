@@ -10858,40 +10858,38 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
-    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
+    
     r = xpx.apply_where(
         ~degenerate,
         (ssxym, ssxm, ssym),
         lambda ssxym, ssxm, ssym: xp.clip(ssxym / xp.sqrt(ssxm * ssym), -1.0, 1.0),
-        lambda ssxym, ssxm, ssym: xp.where(ssxym==0, NaN, 0.0)
+        lambda ssxym, ssxm, ssym: xp.where(
+            ssxym==0,
+            xp.full_like(ssxym, xp.nan, dtype=ssxym.dtype),
+            xp.full_like(ssxym, 0, dtype=ssxym.dtype),
+        ),
     )
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if not is_marray(xp) and n == 2:
-        # handle case when only two points are passed in
-        one = xp.asarray(1.0, dtype=r.dtype)
-        prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
-        slope_stderr = xp.zeros_like(r)
-        intercept_stderr = xp.zeros_like(r)
-    else:
-        df = n - 2  # Number of degrees of freedom
-        # n-2 degrees of freedom because 2 has been used up
-        # to estimate the mean and standard deviation
-        t = r * xp.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-
-        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
-        prob = _get_pvalue(t, dist, alternative, xp=xp)
-        prob = prob[()] if prob.ndim == 0 else prob
-
-        slope_stderr = xp.sqrt((1 - r**2) * ssym / ssxm / df)
-
-        # Also calculate the standard error of the intercept
-        # The following relationship is used:
-        #   ssxm = mean( (x-mean(x))^2 )
-        #        = ssx - sx*sx
-        #        = mean( x^2 ) - mean(x)^2
-        intercept_stderr = slope_stderr * xp.sqrt(ssxm + xmean**2)
+    
+    df = n - 2  # Number of degrees of freedom
+    # n-2 degrees of freedom because 2 has been used up
+    # to estimate the mean and standard deviation
+    t = r * xp.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
+    
+    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+    prob = _get_pvalue(t, dist, alternative, xp=xp)
+    prob = prob[()] if prob.ndim == 0 else prob
+    
+    slope_stderr = xp.sqrt((1 - r**2) * ssym / ssxm / df)
+    
+    # Also calculate the standard error of the intercept
+    # The following relationship is used:
+    #   ssxm = mean( (x-mean(x))^2 )
+    #        = ssx - sx*sx
+    #        = mean( x^2 ) - mean(x)^2
+    intercept_stderr = slope_stderr * xp.sqrt(ssxm + xmean**2)
 
     outputs = slope, intercept, r, prob, slope_stderr, intercept_stderr
     outputs = (output[()] if output.ndim == 0 else output for output in outputs)
