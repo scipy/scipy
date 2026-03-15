@@ -2046,9 +2046,9 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     R : (M, N) or (N, N) array_like
         Upper triangular matrix from the qr decomposition of A.
     u : (M,) or (M, k) array_like
-        Left update vector
+        Left update vector.
     v : (N,) or (N, k) array_like
-        Right update vector
+        Right update vector.
     overwrite_qruv : bool, optional
         If True, consume Q, R, u, and v, if possible, while performing the
         update, otherwise make copies as necessary. Defaults to False.
@@ -2061,9 +2061,9 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     Returns
     -------
     Q1 : ndarray
-        Updated unitary/orthogonal factor
+        Updated unitary/orthogonal factor.
     R1 : ndarray
-        Updated upper triangular factor
+        Updated upper triangular factor.
 
     See Also
     --------
@@ -2246,7 +2246,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
 
     # limit p to at most max(n, m)
     if p > n or p > m:
-        raise ValueError('Update rank larger than np.dot(Q, R).')
+        raise ValueError('Update rank greater than rank(Q @ R).')
 
     u1 = validate_array(u1, chkfinite)
     v1 = validate_array(v1, chkfinite)
@@ -2291,6 +2291,14 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
                         <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
                 {{endfor}}
     else:
+        if m > n and p > m - n:
+            # For full QR factors with m > n, the rank-p update algorithm
+            # requires p <= m - n. When p > m - n, extract economic factors,
+            # perform the update, then reconstruct the full QR decomposition.
+            k = min(m, n)
+            q_thin, r_thin = qr_update(q1[:, :k], r1[:k, :], u1, v1)
+            # Compute updated matrix and obtain full QR decomposition
+            return np.linalg.qr(q_thin @ r_thin, mode="complete")
         if m == 1:
             if p == 1:
                 r1 += q1.conj() * u1 * v1.T.conj()
