@@ -129,36 +129,30 @@ cdef inline double eval_sh_jacobi_l(Py_ssize_t n, double p, double q, double x) 
 #-----------------------------------------------------------------------------
 
 @cython.cdivision(True)
-cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcept nogil:
-    cdef double a, b, c, d
-    cdef number_t g
-
-    d = xsf_gamma(n+2*alpha)/xsf_gamma(1+n)/xsf_gamma(2*alpha)
-    a = -n
-    b = n + 2*alpha
-    c = alpha + 0.5
-    g = (1-x)/2.0
-    return d * hyp2f1(a, b, c, g)
-
-@cython.cdivision(True)
 cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexcept nogil:
     cdef Py_ssize_t kk
     cdef Py_ssize_t a, b
     cdef double p, d
     cdef double k
+    cdef int sign
 
     if isnan(alpha) or isnan(x):
         return NAN
 
+    if alpha == 0.0:
+        return 0.0
     if n < 0:
         return 0.0
-    elif n == 0:
+    if n == 0:
         return 1.0
-    elif n == 1:
+    if n == 1:
         return 2*alpha*x
-    elif alpha == 0.0:
-        return eval_gegenbauer(n, alpha, x)
-    elif fabs(x) < 1e-5:
+
+    # Symmetry property: C_n^alpha(-x) = (-1)^n C_n^alpha(x) for integer n
+    sign = -1 if (x < 0 and (n & 1)) else 1
+    x = fabs(x)
+    
+    if fabs(x) < 1e-5:
         # Power series rather than recurrence due to loss of precision
         # http://functions.wolfram.com/Polynomials/GegenbauerC3/02/
         a = n//2
@@ -178,7 +172,7 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
             if fabs(d) < 1e-20*fabs(p):
                 # converged
                 break
-        return p
+        return sign * p
     else:
         d = x - 1
         p = x
@@ -189,9 +183,28 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
 
         if fabs(alpha/n) < 1e-8:
             # avoid loss of precision
-            return 2*alpha/n * p
+            return sign * 2*alpha/n * p
         else:
-            return xsf_binom(n+2*alpha-1, n)*p
+            return sign * xsf_binom(n+2*alpha-1, n)*p
+
+@cython.cdivision(True)
+cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcept nogil:
+    cdef long long ni
+
+    # If n is an integer, use more stable `eval_gegenbauer_l`
+    ni = <long long> n
+    if number_t is double and n == ni:
+        return <number_t> eval_gegenbauer_l(<Py_ssize_t> ni, alpha, <double> x)
+
+    cdef double a, b, c, d
+    cdef number_t g
+    
+    d = xsf_gamma(n+2*alpha)/xsf_gamma(1+n)/xsf_gamma(2*alpha)
+    a = -n
+    b = n + 2*alpha
+    c = alpha + 0.5
+    g = (1-x)/2.0
+    return d * hyp2f1(a, b, c, g)
 
 #-----------------------------------------------------------------------------
 # Chebyshev 1st kind (T)
