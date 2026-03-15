@@ -284,6 +284,21 @@ class TestNfev:
         x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
         assert info['nfev'] == self.nfev.c
 
+    @pytest.mark.parametrize('method', ['hybr', 'lm'])
+    def test_root_njev(self, method):
+        # gh-24767: njev was off by one when a user-supplied Jacobian is given
+        njev_actual = 0
+
+        def zero_jac(y):
+            nonlocal njev_actual
+            njev_actual += 1
+            return 2 * y
+
+        njev_actual = 0
+        solution = optimize.root(self.zero_f, np.array([100.0]),
+                                 jac=zero_jac, method=method)
+        assert solution.njev == njev_actual
+
 
 class TestLeastSq:
     def setup_method(self):
@@ -319,6 +334,22 @@ class TestLeastSq:
         assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
+
+    def test_njev(self):
+        # gh-24767: njev was off by one when a user-supplied Jacobian is given
+        njev_actual = 0
+
+        def jac_counter(_p, _y, x):
+            nonlocal njev_actual
+            njev_actual += 1
+            return -np.vstack([x**2, x, np.ones_like(x)]).T
+
+        p0 = array([0, 0, 0])
+        _, _, infodict, _, ier = leastsq(
+            self.residuals, p0, args=(self.y_meas, self.x),
+            Dfun=jac_counter, full_output=True)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
+        assert infodict['njev'] == njev_actual
 
     def test_full_output(self):
         p0 = array([[0,0,0]])
