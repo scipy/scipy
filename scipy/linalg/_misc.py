@@ -2,6 +2,7 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
 from .lapack import get_lapack_funcs
+from scipy._lib._util import _deprecate_dtypes
 
 __all__ = ['LinAlgError', 'LinAlgWarning', 'norm']
 
@@ -146,6 +147,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
+    _deprecate_dtypes('norm', a)
 
     if a.size and a.dtype.char in 'fdFD' and axis is None and not keepdims:
 
