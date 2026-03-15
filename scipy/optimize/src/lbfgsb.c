@@ -155,9 +155,9 @@ static inline void save_local_vars(
     CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave
 );
 static inline void save_vars(
-    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
-    double stmax, double width, double width1, int* isave, double* dsave
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave
 );
 
 static double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
@@ -3455,9 +3455,9 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
 }
 
 static inline void save_vars(
-    int brackt, int stage, double ginit, double gtest, double gx, double gy,
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
     double finit, double fx, double fy, double stx, double sty, double stmin,
-    double stmax, double width, double width1, int* isave, double* dsave) {
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave) {
     if (brackt)
     {
         isave[0] = 1;
