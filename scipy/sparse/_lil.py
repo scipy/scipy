@@ -268,12 +268,75 @@ class _lil_base(_spbase, IndexMixin):
                                     self.rows, self.data,
                                     i, j, x)
 
-    def _set_arrayXarray_sparse(self, row, col, x):
-        # Fall back to densifying x
-        x = np.asarray(x.toarray(), dtype=self.dtype)
+    def _clear_cells(self, row, col):
+        # the indexing result of self[row, col] is 1D, so the call to nonzero
+        # is performed on a 1D sparse matrix, therefore nonzero rows are
+        # irrelevant
+        nz_cols = self[row, col].nonzero()[-1]
+        mapped_nnz_rows = row[nz_cols]
+        mapped_nnz_cols = col[nz_cols]
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                           self.rows, self.data,
+                                           mapped_nnz_rows, mapped_nnz_cols,
+                                           np.zeros_like(mapped_nnz_rows))
+
+    def _densify_set(self, row, col, x):
+        x = x.toarray()
         x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
+    def _set_arrayXarray_sparse(self, row, col, x):
+        x_nrows, x_ncols = x.shape
+        if x_nrows == x_ncols == 1:
+            self._densify_set(row, col, x)
+            return
+        elif (not isinstance(row, np.ndarray) or row.ndim != 2 or
+              not isinstance(col, np.ndarray) or col.ndim != 2):
+            self._densify_set(row, col, x)
+            return
+
+        # clear the block
+        self._clear_cells(row.reshape(-1), col.reshape(-1))
+
+        # extract sparsity structure from x
+        x_row_indices, x_col_indices = x.nonzero()
+        row = row[x_row_indices, x_col_indices]
+        col = col[x_row_indices, x_col_indices]
+        # write in the locations specified by the sparsity structure
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                           self.rows, self.data, row, col,
+                                           x.data)
+
+
+    def _set_sliceXslice_sparse(self, r0, r1, rstep, c0, c1, cstep, x):
+        nrows = len(range(r0, r1, rstep))
+        ncols = len(range(c0, c1, cstep))
+
+        if nrows <= 0 or ncols <= 0:
+            return  # empty block, nothing to do
+
+        # Clear the block
+        _csparsetools.lil_clear_slice_block(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    r0, r1,rstep, c0, c1, cstep)
+        
+        # Extract nnz structure from RHS and map to absolute indices
+        x_coo = x.tocoo()
+
+        if x.nnz == 0:
+            return
+
+        # Map relative nnz positions in the block to absolute matrix coordinates
+        target_rows = r0 + rstep * x_coo.row
+        target_cols = c0 + cstep * x_coo.col
+        vals = x_coo.data
+
+        # Insert only the nnz values
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                        self.rows, self.data,
+                                        target_rows, target_cols,
+                                        vals)
+    
     def __setitem__(self, key, x):
         if isinstance(key, tuple) and len(key) == 2:
             row, col = key
@@ -295,6 +358,18 @@ class _lil_base(_spbase, IndexMixin):
                 self.rows = x.rows
                 self.data = x.data
                 return
+            # Fast path for sparse*sparse assignment (by a slice)
+            if (isinstance(row, slice) and isinstance(col, slice) and issparse(x)):
+                # normalize slices
+                r0, r1, rstep = row.indices(self.shape[0])
+                c0, c1, cstep = col.indices(self.shape[1])
+                nrows = len(range(r0, r1, rstep))
+                ncols = len(range(c0, c1, cstep))
+
+                # ensure x has compatible shape
+                if x.shape == (nrows, ncols):
+                    return self._set_sliceXslice_sparse(r0, r1, rstep, c0, c1, cstep, x)
+
         # Everything else takes the normal path.
         IndexMixin.__setitem__(self, key, x)
 
