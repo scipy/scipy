@@ -4733,6 +4733,24 @@ class TestKSOneSample:
         xp_assert_equal(res.statistic_location, xp.asarray(ref_location))
         xp_assert_equal(res.statistic_sign, xp.asarray(ref_sign, dtype=xp.int8))
 
+    def test_invalid_method_raises(self):
+        # gh-24737: unrecognized method strings must raise ValueError, not
+        # silently fall through to the 'approx' else-clause.
+        rng = np.random.default_rng(42)
+        x = rng.standard_normal(10)
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.ks_1samp(x, special.ndtr, method='any_other_string')
+        # must fire for one-sided alternatives too, not just two-sided
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.ks_1samp(x, special.ndtr, method='typo',
+                           alternative='greater')
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.ks_1samp(x, special.ndtr, method='typo',
+                           alternative='less')
+        # kstest wrapper must also raise
+        with pytest.raises(ValueError, match="Invalid value for method"):
+            stats.kstest(x, stats.norm.cdf, method='any_other_string')
+
     # missing: no test that uses *args
 
 
