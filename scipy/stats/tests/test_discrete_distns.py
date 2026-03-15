@@ -15,6 +15,7 @@ from numpy.testing import (
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
+from scipy.stats.tests._rvs_util import TailBinner
 
 
 # The expected values were computed with Wolfram Alpha, using
@@ -404,6 +405,58 @@ class TestZipfian:
         n = 1e100
         p = zipfian.pmf(10, a, n)
         assert_equal(p, np.nan)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize('a', [1e-6, 0.5, 1.25, 1.75])
+    @pytest.mark.parametrize('n', [10000, 500000])
+    def test_rvs_mean_var_biggish_n(self, a, n):
+        # This is a fairly crude test of the zipfian random variate generator.
+        # For a single sample of size `num_samples`, check that the sample
+        # mean and variance are close to the expected mean and variance.
+        rng = np.random.default_rng(121263137472525314065)
+        num_samples = 10000000
+        x = zipfian.rvs(a, n, size=num_samples, random_state=rng)
+        sample_mean = np.mean(x)
+        sample_var = np.var(x, ddof=1)
+        ref_mean, ref_var = zipfian.stats(a, n, moments='mv')
+        assert_allclose(sample_mean, ref_mean, rtol=0.01)
+        assert_allclose(sample_var, ref_var, rtol=0.05)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize('a', [0, 1e-8, 0.1, 0.95, 1.0, 1.05, 2.125, 5.0, 8.0])
+    @pytest.mark.parametrize('n', [10, 40, 1000])
+    def test_rvs_stats_and_distribution(self, a, n):
+        # Power-divergence test with lambda_=0 is the "log ratio test", a slight
+        # variation of the chi-square test that is still asymptotically chi-square
+        # distributed.  The tests also checks that the mean and variance of each
+        # generated sample are close to the expected values.
+        rng = np.random.default_rng(121263137472525314065)
+        num_samples = 1000000
+        k = np.arange(1, n + 1)
+        expected = num_samples * zipfian.pmf(k, a, n)
+        binner = TailBinner(expected, minfreq=200)
+        ref_mean, ref_var = zipfian.stats(a, n, moments='mv')
+        pvalues = []
+        num_trials = 15
+        for i in range(num_trials):
+            x = zipfian.rvs(a, n, size=num_samples, random_state=rng)
+            b = np.bincount(x, minlength=n + 1)[1:]
+            binned_sample = binner.tail_bin(b)
+            result = stats.power_divergence(binned_sample, binner.binned_expected,
+                                            lambda_=0)
+            pvalues.append(result.pvalue)
+            sample_mean = np.mean(x)
+            sample_var = np.var(x, ddof=1)
+            assert_allclose(sample_mean, ref_mean, rtol=0.05)
+            assert_allclose(sample_var, ref_var, rtol=0.1)
+        pvalues = np.array(pvalues)
+        # We have num_trials p-values.  The following are some rough checks
+        # that should detect egregious errors, while allowing for a single very
+        # small p-value.
+        pmin = pvalues.min()
+        assert pmin > 1e-5, "A p-value is unexpectedly very low"
+        pmean = np.mean(pvalues)
+        assert pmean > 0.25, "mean(pvalues) is unexpectedly low"
 
 
 class TestNCH:
