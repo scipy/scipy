@@ -12,7 +12,7 @@ from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
-from scipy.sparse import coo_matrix, csc_matrix
+from scipy.sparse import coo_array, csc_array
 
 
 def fun_zero(t, y):
@@ -51,7 +51,7 @@ def jac_rational(t, y):
 
 
 def jac_rational_sparse(t, y):
-    return csc_matrix([
+    return csc_array([
         [0, 1 / t],
         [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
          (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
@@ -118,7 +118,7 @@ def medazko_sparsity(n):
     cols = np.hstack(cols)
     rows = np.hstack(rows)
 
-    return coo_matrix((np.ones_like(cols), (cols, rows)))
+    return coo_array((np.ones_like(cols), (cols, rows)))
 
 
 def fun_complex(t, y):
@@ -130,7 +130,7 @@ def jac_complex(t, y):
 
 
 def jac_complex_sparse(t, y):
-    return csc_matrix(jac_complex(t, y))
+    return csc_array(jac_complex(t, y))
 
 
 def sol_complex(t):
@@ -337,7 +337,7 @@ def test_integration_const_jac():
     y0 = [0, 2]
     t_span = [0, 2]
     J = jac_linear()
-    J_sparse = csc_matrix(J)
+    J_sparse = csc_array(J)
 
     for method, jac in product(['Radau', 'BDF'], [J, J_sparse]):
         res = solve_ivp(fun_linear, t_span, y0, rtol=rtol, atol=atol,
