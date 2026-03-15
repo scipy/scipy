@@ -24,6 +24,8 @@ at the top-level directory.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
+
 /*
 #ifndef __STDC__
 #include <malloc.h>
@@ -47,7 +49,7 @@ at the top-level directory.
  *   #endif                                                                                    
  * Versions 4.x and earlier do not include a #define'd version numbers.                        
  */
-#define SUPERLU_MAJOR_VERSION     6
+#define SUPERLU_MAJOR_VERSION     7
 #define SUPERLU_MINOR_VERSION     0
 #define SUPERLU_PATCH_VERSION     1
 
@@ -86,8 +88,8 @@ at the top-level directory.
 #define SUPERLU_FREE(addr) USER_FREE(addr)
 
 #define CHECK_MALLOC(where) {                 \
-    extern int superlu_malloc_total;        \
-    printf("%s: malloc_total %d Bytes\n",     \
+    extern int64_t superlu_malloc_total;        \
+    printf("%s: malloc_total %lld Bytes\n",     \
 	   where, superlu_malloc_total); \
 }
 
@@ -108,7 +110,7 @@ at the top-level directory.
 /***********************************************************************
  * Constants 
  ***********************************************************************/
-#define EMPTY	(-1)
+#define SLU_EMPTY	(-1)
 /*#define NO	(-1)*/
 #define FALSE	0
 #define TRUE	1
@@ -155,7 +157,7 @@ typedef unsigned char Logical;
  * Fact   (fact_t)
  *        Specifies whether or not the factored form of the matrix
  *        A is supplied on entry, and if not, how the matrix A should
- *        be factorizaed.
+ *        be factorized.
  *        = DOFACT: The matrix A will be factorized from scratch, and the
  *             factors will be stored in L and U.
  *        = SamePattern: The matrix A will be factorized assuming
@@ -376,9 +378,9 @@ extern void    Destroy_Dense_Matrix(SuperMatrix *);
 extern void    get_perm_c(int, SuperMatrix *, int *);
 extern void    set_default_options(superlu_options_t *options);
 extern void    ilu_set_default_options(superlu_options_t *options);
-extern void    sp_preorder (superlu_options_t *, SuperMatrix*, int*, int*,
-			    SuperMatrix*);
-extern void    superlu_abort_and_exit(char*);
+extern void    sp_preorder (const superlu_options_t *, SuperMatrix*, int*, int*,
+                            SuperMatrix*);
+extern void    superlu_abort_and_exit(const char*);
 extern void    *superlu_malloc (size_t);
 extern int     *int32Malloc (int);
 extern int     *int32Calloc (int);
@@ -387,14 +389,14 @@ extern int_t   *intCalloc (int_t);
 extern void    superlu_free (void*);
 extern void    SetIWork (int, int, int, int *, int **, int **, int_t **xplore,
                          int **, int **, int_t **xprune, int **);
-extern int     sp_coletree (int_t *, int_t *, int_t *, int, int, int *);
-extern void    relax_snode (const int, int *, const int, int *, int *);
+extern int     sp_coletree (const int_t *, const int_t *, const int_t *, int, int, int *);
+extern void    relax_snode (const int, const int *, const int, int *, int *);
 extern void    heap_relax_snode (const int, int *, const int, int *, int *);
-extern int     mark_relax(int, int *, int *, int_t *, int_t *, int_t *, int *);
+extern int     mark_relax(int, const int *, const int *, const int_t *, const int_t *, const int_t *, int *);
 extern void    countnz(const int n, int_t *xprune, int_t *nnzL, int_t *nnzU, GlobalLU_t *);
 extern void    ilu_countnz (const int, int_t *, int_t *, GlobalLU_t *);
 extern void    fixupL (const int, const int *, GlobalLU_t *);
-extern void    ilu_relax_snode (const int, int *, const int, int *,
+extern void    ilu_relax_snode (const int, const int *, const int, int *,
 				int *, int *);
 extern void    ilu_heap_relax_snode (const int, int *, const int, int *,
 				     int *, int*);
@@ -406,16 +408,16 @@ extern int     sp_ienv (int);
 extern int     xerbla_ (char *, int *);
 extern void    ifill (int *, int, int);
 extern void    snode_profile (int, int *);
-extern void    super_stats (int, int *);
-extern void    check_repfnz(int, int, int, int *);
-extern void    PrintSumm (char *, int, int, int);
+extern void    super_stats (int, const int *);
+extern void    check_repfnz(int, int, int, const int *);
+extern void    PrintSumm (const char *, int, int, int);
 extern void    StatInit(SuperLUStat_t *);
 extern void    StatPrint (SuperLUStat_t *);
 extern void    StatFree(SuperLUStat_t *);
-extern void    print_panel_seg(int, int, int, int, int *, int *);
-extern void    print_int_vec(char *what, int n, int *vec);
-extern void    slu_PrintInt10(char *name, int len, int *x);
-extern void    check_perm(char *what, int n, int *perm);
+extern void    print_panel_seg(int, int, int, int, const int *, const int *);
+extern void    print_int_vec(const char *what, int n, const int *vec);
+extern void    slu_PrintInt10(const char *name, int len, const int *x);
+extern void    check_perm(const char *what, int n, const int *perm);
 
 #ifdef __cplusplus
   }

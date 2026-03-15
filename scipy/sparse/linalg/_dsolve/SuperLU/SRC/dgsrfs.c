@@ -171,13 +171,6 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     int      isave[3];
 
     extern int dlacon2_(int *, double *, double *, int *, double *, int *, int []);
-#ifdef _CRAY
-    extern int SCOPY(int *, double *, int *, double *, int *);
-    extern int SSAXPY(int *, double *, double *, int *, double *, int *);
-#else
-    extern int dcopy_(int *, double *, int *, double *, int *);
-    extern int daxpy_(int *, double *, double *, int *, double *, int *);
-#endif
 
     Astore = A->Store;
     Aval   = Astore->nzval;
