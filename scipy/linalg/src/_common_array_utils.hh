@@ -1335,7 +1335,9 @@ detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, 
 
         bandwidth_strided(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
 
-        if (2 * kl[idx] + ku[idx] + 1 > *ldab_max) { *ldab_max = 2 * kl[idx] + ku[idx] + 1; }
+        if (2 * kl[idx] + ku[idx] + 1 > *ldab_max) {
+            *ldab_max = 2 * kl[idx] + ku[idx] + 1;
+        }
     }
 }
 
