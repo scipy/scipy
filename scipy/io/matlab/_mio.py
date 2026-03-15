@@ -161,6 +161,12 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
 
     Notes
     -----
+    **Thread-safety:** MATLAB file operations are NOT thread-safe. Do not access
+    the same .mat file from multiple threads concurrently. Instead, use one of:
+    (1) Serialize access with external synchronization (e.g., ``threading.Lock``),
+    or (2) Have each thread open its own independent file handle. See
+    :ref:`scipy_thread_safety` for more details.
+
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
 
     You will need an HDF5 Python library to read MATLAB 7.3 format mat
@@ -310,6 +316,14 @@ def savemat(file_name, mdict,
         If 'column', write 1-D NumPy arrays as column vectors.
         If 'row', write 1-D NumPy arrays as row vectors.
 
+    Notes
+    -----
+    **Thread-safety:** MATLAB file operations are NOT thread-safe. Do not access
+    the same .mat file from multiple threads concurrently. Instead, use one of:
+    (1) Serialize access with external synchronization (e.g., ``threading.Lock``),
+    or (2) Have each thread open its own independent file handle. See
+    :ref:`scipy_thread_safety` for more details.
+
     Examples
     --------
     >>> from scipy.io import savemat
@@ -362,6 +376,12 @@ def whosmat(file_name, appendmat=True, **kwargs):
 
     Notes
     -----
+    **Thread-safety:** MATLAB file operations are NOT thread-safe. Do not access
+    the same .mat file from multiple threads concurrently. Instead, use one of:
+    (1) Serialize access with external synchronization (e.g., ``threading.Lock``),
+    or (2) Have each thread open its own independent file handle. See
+    :ref:`scipy_thread_safety` for more details.
+
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
 
     You will need an HDF5 python library to read matlab 7.3 format mat

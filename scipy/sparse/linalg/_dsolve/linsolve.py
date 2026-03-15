@@ -49,9 +49,19 @@ def use_solver(**kwargs):
 
     Notes
     -----
+    **Thread-safety:** This function uses thread-local storage to maintain
+    per-thread solver preferences. Each thread can independently call
+    ``use_solver()`` to configure its own preferred solver without affecting
+    other threads. This is implemented using `threading.local` and provides
+    thread-safe configuration without requiring locks or synchronization.
+
+    Note that thread-safety of UMFPACK usage also depends on the thread-safety
+    properties of the underlying `scikit-umfpack` package. SuperLU is always
+    available as a thread-safe fallback.
+
     The default sparse solver is UMFPACK when available
     (``scikits.umfpack`` is installed). This can be changed by passing
-    useUmfpack = False, which then causes the always present SuperLU
+    ``useUmfpack=False``, which then causes the always present SuperLU
     based solver to be used.
 
     UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If

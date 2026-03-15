@@ -177,6 +177,14 @@ class ode:
           Maximum order used by the integrator,
           order <= 12 for Adams, <= 5 for BDF.
 
+        **Thread-safety:** The VODE integrator is NOT thread-safe. Do not share
+        a single integrator instance across multiple threads. Instead, use one of:
+        (1) Create separate integrator instances in each thread
+        :ref:`term-thread-local`
+        or (2) use :ref:`term-externally-synchronized` shared integrator
+        synchronization (e.g., `threading.Lock`). See :ref:`scipy_thread_safety`
+        for more details.
+
     "zvode"
 
         Complex-valued Variable-coefficient Ordinary Differential Equation
@@ -242,6 +250,12 @@ class ode:
           (default 0)
         - ixpr : int
           Whether to generate extra printing at method switches (default False).
+
+        **Thread-safety:** The LSODA integrator is thread-safe because each
+        integrator instance maintains its own isolated state struct. Multiple
+        threads can concurrently perform independent integrations, each using
+        its own integrator instance.
+        See :ref:`scipy_thread_safety` for more details.
 
     "dopri5"
 

@@ -55,6 +55,14 @@ def mminfo(source):
     symmetry : str
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
 
+    Notes
+    -----
+    **Thread-safety:** Matrix Market file operations are NOT thread-safe. Do not
+    access the same file from multiple threads concurrently. Instead, use one of:
+    (1) Serialize access with external synchronization (e.g., `threading.Lock`),
+    or (2) Have each thread open its own independent file handle. See
+    :ref:`scipy_thread_safety` for more details.
+
     Examples
     --------
     >>> from io import StringIO
@@ -107,6 +115,14 @@ def mmread(source, *, spmatrix=_NoValue):
     a : ndarray or coo_array or coo_matrix
         Dense or sparse array depending on the matrix format in the
         Matrix Market file.
+
+    Notes
+    -----
+    **Thread-safety:** Matrix Market file operations are NOT thread-safe. Do not
+    access the same file from multiple threads concurrently. Instead, use one of:
+    (1) Serialize access with external synchronization (e.g., `threading.Lock`),
+    or (2) Have each thread open its own independent file handle. See
+    :ref:`scipy_thread_safety` for more details.
 
     Examples
     --------
@@ -162,6 +178,14 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
+
+    Notes
+    -----
+    **Thread-safety:** Matrix Market file operations are NOT thread-safe. Do not
+    access the same file from multiple threads concurrently. Instead, use one of:
+    (1) Serialize access with external synchronization (e.g., `threading.Lock`),
+    or (2) Have each thread open its own independent file handle. See
+    :ref:`scipy_thread_safety` for more details.
 
     Examples
     --------

@@ -97,6 +97,16 @@ Arff files (:mod:`scipy.io.arff`)
    MetaData
    ArffError
    ParseArffError
+
+Concurrency Notes
+-----------------
+
+Many IO routine are not thread safe thread-safe for multiple writers and need to be
+:ref:`term-externally-synchronized`.For details on thread-safety, see
+:ref:`scipy_thread_safety`.
+
+
+
 """
 # matfile read and write
 from .matlab import loadmat, savemat, whosmat

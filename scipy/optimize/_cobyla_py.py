@@ -72,6 +72,14 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 
     Notes
     -----
+    **Thread-safety:** Each COBYLA optimizer instance is thread-safe for
+    independent concurrent optimizations. Multiple threads can call fmin_cobyla
+    or minimize with method='COBYLA' with different initial points and objective
+    functions simultaneously. However, the objective function and constraint
+    functions must themselves be thread-safe if they access shared state. Do not
+    share a single optimizer state across threads. See :ref:`scipy_thread_safety`
+    for more details.
+
     This algorithm is based on linear approximations to the objective
     function and each constraint. We briefly describe the algorithm.
 
@@ -221,6 +229,13 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             Python version from the PRIMA package, with bug fixes and
             improvements being made.
 
+    Notes
+    -----
+    **Thread-safety:** Each call to this function is thread-safe for independent
+    concurrent optimizations. Multiple threads can simultaneously call this function
+    with different initial points and objective functions. However, the objective
+    function and constraint functions must be thread-safe if they access shared
+    state. See :ref:`scipy_thread_safety` for more details.
 
     References
     ----------
