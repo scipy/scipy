@@ -29,6 +29,7 @@ runs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         key: ${{ inputs.workflow_name }}-${{ inputs.job_name}}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
         restore-keys: ${{ inputs.workflow_name }}-${{ inputs.job_name }}-ccache-linux-
+      post: ../ccache-stats
     - name: Setup compiler cache
       # Run just the restore if not running on main
       if: ${{ github.ref != 'refs/heads/main' }}
@@ -37,3 +38,4 @@ runs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         key: ${{ inputs.workflow_name }}-${{ inputs.job_name}}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
         restore-keys: ${{ inputs.workflow_name }}-${{ inputs.job_name }}-ccache-linux-
+      post: ../ccache-stats

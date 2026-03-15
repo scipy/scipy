@@ -1,0 +1,16 @@
+name: Ccache stats
+description: Print ccache statistics from action
+
+inputs:
+  who-to-greet: # id of input
+    description: Who to greet
+    required: true
+    default: World
+
+outputs:
+  stats: # id of output
+    description: The stats from ccache
+
+runs:
+  using: node24
+  main: "dist/index.js"
