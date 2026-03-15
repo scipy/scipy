@@ -53,23 +53,23 @@ struct ARNAUD_state_s {
     float aup2_rnorm;        /** naup2 internal compute           internal              */
     enum ARNAUD_which which; /** naupd flow control               input                 */
     enum ARNAUD_ido ido;     /** naupd flow control               input/output          */
-    int info;                /** problem outcome,                 input/output          */
+    CBLAS_INT info;                /** problem outcome,                 input/output          */
     int bmat;                /** problem parameter, boolean       input                 */
     int mode;                /** problem parameter,               input                 */
-    int n;                   /** problem parameter,               input                 */
-    int ncv;                 /** problem parameter,               input                 */
-    int nev;                 /** problem parameter,               input                 */
+    CBLAS_INT n;             /** problem parameter,               input                 */
+    CBLAS_INT ncv;           /** problem parameter,               input                 */
+    CBLAS_INT nev;           /** problem parameter,               input                 */
     int shift;               /** problem parameter, boolean       input                 */
-    int maxiter;             /** problem parameter,               input                 */
-    int nconv;               /** problem outcome,                 output                */
-    int iter;                /** problem intermediate,            internal              */
-    int np;                  /** problem intermediate,            internal              */
+    int maxiter;       /** problem parameter,               input                 */
+    CBLAS_INT nconv;         /** problem outcome,                 output                */
+    int iter;          /** problem intermediate,            internal              */
+    CBLAS_INT np;            /** problem intermediate,            internal              */
     int getv0_first;         /** getv0 flow control               internal              */
-    int getv0_iter;          /** getv0 flow control               internal              */
-    int getv0_itry;          /** getv0 flow control               internal              */
+    int getv0_iter;    /** getv0 flow control               internal              */
+    int getv0_itry;    /** getv0 flow control               internal              */
     int getv0_orth;          /** getv0 flow control               internal              */
-    int aitr_iter;           /** naitr flow control               internal              */
-    int aitr_j;              /** naitr flow control               internal              */
+    CBLAS_INT aitr_iter;     /** naitr flow control               internal              */
+    CBLAS_INT aitr_j;        /** naitr flow control               internal              */
     int aitr_orth1;          /** naitr flow control               internal              */
     int aitr_orth2;          /** naitr flow control               internal              */
     int aitr_restart;        /** naitr flow control               internal              */
@@ -80,11 +80,11 @@ struct ARNAUD_state_s {
     int aup2_iter;           /** naupd2 flow control              internal              */
     int aup2_getv0;          /** naupd2 flow control              internal              */
     int aup2_cnorm;          /** naupd2 flow control              internal              */
-    int aup2_kplusp;         /** naupd2 flow control              internal              */
-    int aup2_nev;            /** naupd2 working nev variable      internal              */
-    int aup2_nev0;           /** naupd2 internal compute          internal              */
-    int aup2_np0;            /** naupd2 internal compute          internal              */
-    int aup2_numcnv;         /** naupd2 internal compute          internal              */
+    CBLAS_INT aup2_kplusp;   /** naupd2 flow control              internal              */
+    CBLAS_INT aup2_nev;      /** naupd2 working nev variable      internal              */
+    CBLAS_INT aup2_nev0;     /** naupd2 internal compute          internal              */
+    CBLAS_INT aup2_np0;      /** naupd2 internal compute          internal              */
+    CBLAS_INT aup2_numcnv;   /** naupd2 internal compute          internal              */
     int aup2_update;         /** naupd2 flow control              internal              */
     int aup2_ushift;         /** naupd2 flow control              internal              */
 };
@@ -110,23 +110,23 @@ struct ARNAUD_state_d {
     double aup2_rnorm;       /** naup2 internal compute           internal              */
     enum ARNAUD_which which; /** naupd flow control               input                 */
     enum ARNAUD_ido ido;     /** naupd flow control               input/output          */
-    int info;                /** problem outcome,                 input/output          */
+    CBLAS_INT info;                /** problem outcome,                 input/output          */
     int bmat;                /** problem parameter, boolean       input                 */
     int mode;                /** problem parameter,               input                 */
-    int n;                   /** problem parameter,               input                 */
-    int ncv;                 /** problem parameter,               input                 */
-    int nev;                 /** problem parameter,               input                 */
+    CBLAS_INT n;             /** problem parameter,               input                 */
+    CBLAS_INT ncv;           /** problem parameter,               input                 */
+    CBLAS_INT nev;           /** problem parameter,               input                 */
     int shift;               /** problem parameter, boolean       input                 */
-    int maxiter;             /** problem parameter,               input                 */
-    int nconv;               /** problem outcome,                 output                */
-    int iter;                /** problem intermediate,            internal              */
-    int np;                  /** problem intermediate,            internal              */
+    int maxiter;       /** problem parameter,               input                 */
+    CBLAS_INT nconv;         /** problem outcome,                 output                */
+    int iter;          /** problem intermediate,            internal              */
+    CBLAS_INT np;            /** problem intermediate,            internal              */
     int getv0_first;         /** getv0 flow control               internal              */
-    int getv0_iter;          /** getv0 flow control               internal              */
-    int getv0_itry;          /** getv0 flow control               internal              */
+    int getv0_iter;    /** getv0 flow control               internal              */
+    int getv0_itry;    /** getv0 flow control               internal              */
     int getv0_orth;          /** getv0 flow control               internal              */
-    int aitr_iter;           /** naitr flow control               internal              */
-    int aitr_j;              /** naitr flow control               internal              */
+    CBLAS_INT aitr_iter;     /** naitr flow control               internal              */
+    CBLAS_INT aitr_j;        /** naitr flow control               internal              */
     int aitr_orth1;          /** naitr flow control               internal              */
     int aitr_orth2;          /** naitr flow control               internal              */
     int aitr_restart;        /** naitr flow control               internal              */
@@ -137,11 +137,11 @@ struct ARNAUD_state_d {
     int aup2_iter;           /** naupd2 flow control              internal              */
     int aup2_getv0;          /** naupd2 flow control              internal              */
     int aup2_cnorm;          /** naupd2 flow control              internal              */
-    int aup2_kplusp;         /** naupd2 flow control              internal              */
-    int aup2_nev;            /** naupd2 working nev variable      internal              */
-    int aup2_nev0;           /** naupd2 internal compute          internal              */
-    int aup2_np0;            /** naupd2 internal compute          internal              */
-    int aup2_numcnv;         /** naupd2 internal compute          internal              */
+    CBLAS_INT aup2_kplusp;   /** naupd2 flow control              internal              */
+    CBLAS_INT aup2_nev;      /** naupd2 working nev variable      internal              */
+    CBLAS_INT aup2_nev0;     /** naupd2 internal compute          internal              */
+    CBLAS_INT aup2_np0;      /** naupd2 internal compute          internal              */
+    CBLAS_INT aup2_numcnv;   /** naupd2 internal compute          internal              */
     int aup2_update;         /** naupd2 flow control              internal              */
     int aup2_ushift;         /** naupd2 flow control              internal              */
 };
@@ -162,7 +162,7 @@ struct ARNAUD_state_d {
  * @param workd    Work array, float, >= 3*n; workspace for user-supplied operations (input/output).
  * @param workl    Work array, float, >= 3*ncv*(ncv+2); internal solver workspace (input/output).
  */
-void ARNAUD_snaupd(struct ARNAUD_state_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+void ARNAUD_snaupd(struct ARNAUD_state_s *V, float* resid, float* v, CBLAS_INT ldv, CBLAS_INT* ipntr, float* workd, float* workl);
 
 /**
  * @brief Main reverse communication loop for solving the standard or generalized
@@ -178,7 +178,7 @@ void ARNAUD_snaupd(struct ARNAUD_state_s *V, float* resid, float* v, int ldv, in
  * @param workd    Work array, double, >= 3*n; workspace for user-supplied operations (input/output).
  * @param workl    Work array, double, >= 3*ncv*(ncv+2); internal solver workspace (input/output).
  */
-void ARNAUD_dnaupd(struct ARNAUD_state_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
+void ARNAUD_dnaupd(struct ARNAUD_state_d *V, double* resid, double* v, CBLAS_INT ldv, CBLAS_INT* ipntr, double* workd, double* workl);
 
 /**
  * @brief Main reverse communication loop for solving the standard or generalized
@@ -195,7 +195,7 @@ void ARNAUD_dnaupd(struct ARNAUD_state_d *V, double* resid, double* v, int ldv, 
  * @param workl    Work array, float complex, >= 3*ncv*(ncv+2); internal solver workspace (input/output).
  * @param rwork    Work array, float, >= 3*ncv; additional workspace for real valued computations (input/output).
  */
-void ARNAUD_cnaupd(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid, ARNAUD_CPLXF_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLXF_TYPE* workd, ARNAUD_CPLXF_TYPE* workl, float* rwork);
+void ARNAUD_cnaupd(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid, ARNAUD_CPLXF_TYPE* v, CBLAS_INT ldv, CBLAS_INT* ipntr, ARNAUD_CPLXF_TYPE* workd, ARNAUD_CPLXF_TYPE* workl, float* rwork);
 
 /**
  * @brief Main reverse communication loop for solving the standard or generalized
@@ -212,7 +212,7 @@ void ARNAUD_cnaupd(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid, ARNAUD_CP
  * @param workl    Work array, double complex, >= 3*ncv*(ncv+2); internal solver workspace (input/output).
  * @param rwork    Work array, double, >= 3*ncv; additional workspace for real valued computations (input/output).
  */
-void ARNAUD_znaupd(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid, ARNAUD_CPLX_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLX_TYPE* workd, ARNAUD_CPLX_TYPE* workl, double* rwork);
+void ARNAUD_znaupd(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid, ARNAUD_CPLX_TYPE* v, CBLAS_INT ldv, CBLAS_INT* ipntr, ARNAUD_CPLX_TYPE* workd, ARNAUD_CPLX_TYPE* workl, double* rwork);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the matrix in single precision.
@@ -235,7 +235,7 @@ void ARNAUD_znaupd(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid, ARNAUD_CPL
  * @param workd    Work array, float, >= 3*n; workspace (input).
  * @param workl    Work array, float, >= 3*ncv*(ncv+2); holds the results of snaupd (input/output).
  */
-void ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select, float* dr, float* di, float* z, int ldz, float sigmar, float sigmai, float* workev, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+void ARNAUD_sneupd(struct ARNAUD_state_s *V, CBLAS_INT rvec, CBLAS_INT howmny, CBLAS_INT* select, float* dr, float* di, float* z, CBLAS_INT ldz, float sigmar, float sigmai, float* workev, float* resid, float* v, CBLAS_INT ldv, CBLAS_INT* ipntr, float* workd, float* workl);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the matrix in double precision.
@@ -258,7 +258,7 @@ void ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select, 
  * @param workd    Work array, double, >= 3*n; workspace (input).
  * @param workl    Work array, double, >= 3*ncv*(ncv+2); holds the results of dnaupd (input/output).
  */
-void ARNAUD_dneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select, double* dr, double* di, double* z, int ldz, double sigmar, double sigmai, double* workev, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
+void ARNAUD_dneupd(struct ARNAUD_state_d *V, CBLAS_INT rvec, CBLAS_INT howmny, CBLAS_INT* select, double* dr, double* di, double* z, CBLAS_INT ldz, double sigmar, double sigmai, double* workev, double* resid, double* v, CBLAS_INT ldv, CBLAS_INT* ipntr, double* workd, double* workl);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the matrix in single precision complex arithmetic.
@@ -280,7 +280,7 @@ void ARNAUD_dneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select, 
  * @param workl    Work array, float complex, >= 3*ncv*(ncv+2); holds the results of cnaupd (input/output).
  * @param rwork    Work array, float, >= 3*ncv; additional workspace for real valued computations (input/output).
  */
-void ARNAUD_cneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select, ARNAUD_CPLXF_TYPE* d, ARNAUD_CPLXF_TYPE* z, int ldz, ARNAUD_CPLXF_TYPE sigma, ARNAUD_CPLXF_TYPE* workev, ARNAUD_CPLXF_TYPE* resid, ARNAUD_CPLXF_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLXF_TYPE* workd, ARNAUD_CPLXF_TYPE* workl, float* rwork);
+void ARNAUD_cneupd(struct ARNAUD_state_s *V, CBLAS_INT rvec, CBLAS_INT howmny, CBLAS_INT* select, ARNAUD_CPLXF_TYPE* d, ARNAUD_CPLXF_TYPE* z, CBLAS_INT ldz, ARNAUD_CPLXF_TYPE sigma, ARNAUD_CPLXF_TYPE* workev, ARNAUD_CPLXF_TYPE* resid, ARNAUD_CPLXF_TYPE* v, CBLAS_INT ldv, CBLAS_INT* ipntr, ARNAUD_CPLXF_TYPE* workd, ARNAUD_CPLXF_TYPE* workl, float* rwork);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the matrix in double precision complex arithmetic.
@@ -302,7 +302,7 @@ void ARNAUD_cneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select, 
  * @param workl    Work array, double complex, >= 3*ncv*(ncv+2); holds the results of znaupd (input/output).
  * @param rwork    Work array, float, >= 3*ncv; additional workspace for real valued computations (input/output).
  */
-void ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select, ARNAUD_CPLX_TYPE* d, ARNAUD_CPLX_TYPE* z, int ldz, ARNAUD_CPLX_TYPE sigma, ARNAUD_CPLX_TYPE* workev, ARNAUD_CPLX_TYPE* resid, ARNAUD_CPLX_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLX_TYPE* workd, ARNAUD_CPLX_TYPE* workl, double* rwork);
+void ARNAUD_zneupd(struct ARNAUD_state_d *V, CBLAS_INT rvec, CBLAS_INT howmny, CBLAS_INT* select, ARNAUD_CPLX_TYPE* d, ARNAUD_CPLX_TYPE* z, CBLAS_INT ldz, ARNAUD_CPLX_TYPE sigma, ARNAUD_CPLX_TYPE* workev, ARNAUD_CPLX_TYPE* resid, ARNAUD_CPLX_TYPE* v, CBLAS_INT ldv, CBLAS_INT* ipntr, ARNAUD_CPLX_TYPE* workd, ARNAUD_CPLX_TYPE* workl, double* rwork);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the symmetric matrix in single precision.
@@ -315,7 +315,7 @@ void ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select, 
  * @param workd    Work array, float, >= 3*n; workspace (input/output).
  * @param workl    Work array, float, >= ncv*(ncv+8); holds the results of snaupd (input/output).
  */
-void ARNAUD_ssaupd(struct ARNAUD_state_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+void ARNAUD_ssaupd(struct ARNAUD_state_s *V, float* resid, float* v, CBLAS_INT ldv, CBLAS_INT* ipntr, float* workd, float* workl);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the symmetric matrix in double precision.
@@ -328,7 +328,7 @@ void ARNAUD_ssaupd(struct ARNAUD_state_s *V, float* resid, float* v, int ldv, in
  * @param workd    Work array, double, >= 3*n; workspace (input/output).
  * @param workl    Work array, double, >= ncv*(ncv+8); holds the results of dnaupd (input/output).
  */
-void ARNAUD_dsaupd(struct ARNAUD_state_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
+void ARNAUD_dsaupd(struct ARNAUD_state_d *V, double* resid, double* v, CBLAS_INT ldv, CBLAS_INT* ipntr, double* workd, double* workl);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the symmetric matrix in single precision arithmetic.
@@ -348,7 +348,7 @@ void ARNAUD_dsaupd(struct ARNAUD_state_d *V, double* resid, double* v, int ldv, 
  * @param workd    Work array, float complex, >= 3*n; workspace (input).
  * @param workl    Work array, float complex, >= 3*ncv*(ncv+2); holds the results of ssaupd (input/output).
  */
-void ARNAUD_sseupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select, float* d, float* z, int ldz, float sigma, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+void ARNAUD_sseupd(struct ARNAUD_state_s *V, CBLAS_INT rvec, CBLAS_INT howmny, CBLAS_INT* select, float* d, float* z, CBLAS_INT ldz, float sigma, float* resid, float* v, CBLAS_INT ldv, CBLAS_INT* ipntr, float* workd, float* workl);
 
 /**
  * @brief Computes the eigenvalues and eigenvectors of the symmetric matrix in double precision arithmetic.
@@ -368,6 +368,6 @@ void ARNAUD_sseupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select, 
  * @param workd    Work array, double complex, >= 3*n; workspace (input).
  * @param workl    Work array, double complex, >= 3*ncv*(ncv+2); holds the results of dsaupd (input/output).
  */
-void ARNAUD_dseupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select, double* d, double* z, int ldz, double sigma, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
+void ARNAUD_dseupd(struct ARNAUD_state_d *V, CBLAS_INT rvec, CBLAS_INT howmny, CBLAS_INT* select, double* d, double* z, CBLAS_INT ldz, double sigma, double* resid, double* v, CBLAS_INT ldv, CBLAS_INT* ipntr, double* workd, double* workl);
 
 #endif

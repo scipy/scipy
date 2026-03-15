@@ -40,6 +40,7 @@ import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
+from scipy.linalg.lapack import HAS_ILP64
 from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
@@ -54,6 +55,8 @@ __all__ = ['eigs', 'eigsh', 'ArpackError', 'ArpackNoConvergence']
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
 _ndigits = {'f': 5, 'd': 12, 'F': 5, 'D': 12}
+
+_ARPACK_INT_DTYPE = np.int64 if HAS_ILP64 else np.int32
 
 DNAUPD_ERRORS = {
     0: "Normal exit.",
@@ -594,7 +597,7 @@ class _SymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(11, dtype=np.int32)
+        self.ipntr = np.zeros(11, dtype=_ARPACK_INT_DTYPE)
 
     def iterate(self):
         self._arpack_solver(self.arpack_dict, self.resid, self.v, self.ipntr,
@@ -648,7 +651,7 @@ class _SymmetricArpackParams(_ArpackParams):
         ierr = 0
         self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT["A"]  # return all eigenvectors
-        sselect = np.zeros(self.ncv, dtype=np.int32)
+        sselect = np.zeros(self.ncv, dtype=_ARPACK_INT_DTYPE)
         d = np.zeros(self.k, dtype=self.tp)
         z = np.zeros((self.n, self.ncv), dtype=self.tp, order='F')
 
@@ -788,7 +791,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _NAUPD_ERRORS[ltr]
         self.extract_infodict = _NEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(14, dtype=np.int32)
+        self.ipntr = np.zeros(14, dtype=_ARPACK_INT_DTYPE)
 
         if self.tp in 'FD':
             self.rwork = np.zeros(self.ncv, dtype=self.tp.lower())
@@ -855,7 +858,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         ierr = 0
         self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT['A']  # return all eigenvectors
-        sselect = np.zeros(self.ncv, dtype=np.int32)
+        sselect = np.zeros(self.ncv, dtype=_ARPACK_INT_DTYPE)
         sigmar = float(np.real(self.sigma))
         sigmai = float(np.imag(self.sigma))
         workev = np.zeros(3 * self.ncv, self.tp)

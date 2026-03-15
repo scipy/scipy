@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <complex.h>
+#include "npy_cblas.h"
 
 
 #if defined(_MSC_VER)

@@ -5,6 +5,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
+#include "npy_cblas.h"
 #include "arnaud/include/arnaud/arnaud.h"
 
 #if defined(_MSC_VER)
@@ -19,14 +20,15 @@ static PyObject* arpack_error_obj;
 
 // The following macros are used to define the field names in the ARPACK struct.
 #define STRUCT_INEXACT_FIELD_NAMES X(tol) X(getv0_rnorm0) X(aitr_betaj) X(aitr_rnorm1) X(aitr_wnorm) X(aup2_rnorm)
-#define STRUCT_INT_FIELD_NAMES X(ido) X(which) X(bmat) X(info) X(iter) X(maxiter) X(mode) \
-                               X(n) X(nconv) X(ncv) X(nev) X(np) \
-                               X(shift) X(getv0_first) X(getv0_iter) X(getv0_itry) X(getv0_orth) \
-                               X(aitr_iter) X(aitr_j) X(aitr_orth1) X(aitr_orth2) X(aitr_restart) \
-                               X(aitr_step3) X(aitr_step4) X(aitr_ierr) X(aup2_initv) X(aup2_iter) \
-                               X(aup2_getv0) X(aup2_cnorm) X(aup2_kplusp) X(aup2_nev) X(aup2_nev0) X(aup2_np0) \
-                               X(aup2_numcnv) X(aup2_update) X(aup2_ushift)
-#define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_INEXACT_FIELD_NAMES
+#define STRUCT_INT_FIELD_NAMES X(info) X(n) X(nconv) X(ncv) X(nev) X(np) \
+                               X(aitr_iter) X(aitr_j) X(aup2_kplusp) X(aup2_nev) X(aup2_nev0) X(aup2_np0) \
+                               X(aup2_numcnv)
+#define STRUCT_PLAIN_INT_FIELD_NAMES X(ido) X(which) X(bmat) X(iter) X(maxiter) X(mode) X(shift) \
+                               X(getv0_first) X(getv0_iter) X(getv0_itry) X(getv0_orth) \
+                               X(aitr_orth1) X(aitr_orth2) X(aitr_restart) X(aitr_step3) X(aitr_step4) \
+                               X(aitr_ierr) X(aup2_initv) X(aup2_iter) X(aup2_getv0) X(aup2_cnorm) \
+                               X(aup2_update) X(aup2_ushift)
+#define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_PLAIN_INT_FIELD_NAMES STRUCT_INEXACT_FIELD_NAMES
 
 // Error reporting macro
 #define ARPACK_ERROR(func_name, field_name, operation) \
@@ -56,6 +58,17 @@ pack_dict_to_state_s(PyObject* dict, struct ARNAUD_state_s* vars, const char* fu
     STRUCT_INEXACT_FIELD_NAMES
     #undef X
 
+    // Pack CBLAS integer fields
+    #define X(name) \
+        do { \
+            PyObject* field_obj = PyDict_GetItemString(dict, #name); \
+            if (!field_obj) { ARPACK_ERROR(func_name, #name, "Missing required"); return -1; } \
+            vars->name = (CBLAS_INT)PyLong_AsSsize_t(field_obj); \
+            if (PyErr_Occurred()) { ARPACK_ERROR(func_name, #name, "Failed to convert"); return -1; } \
+        } while(0);
+    STRUCT_INT_FIELD_NAMES
+    #undef X
+
     // Pack integer fields
     #define X(name) \
         do { \
@@ -64,7 +77,7 @@ pack_dict_to_state_s(PyObject* dict, struct ARNAUD_state_s* vars, const char* fu
             vars->name = (int)PyLong_AsLong(field_obj); \
             if (PyErr_Occurred()) { ARPACK_ERROR(func_name, #name, "Failed to convert"); return -1; } \
         } while(0);
-    STRUCT_INT_FIELD_NAMES
+    STRUCT_PLAIN_INT_FIELD_NAMES
     #undef X
 
     return 0;
@@ -90,6 +103,17 @@ pack_dict_to_state_d(PyObject* dict, struct ARNAUD_state_d* vars, const char* fu
     STRUCT_INEXACT_FIELD_NAMES
     #undef X
 
+    // Pack CBLAS integer fields
+    #define X(name) \
+        do { \
+            PyObject* field_obj = PyDict_GetItemString(dict, #name); \
+            if (!field_obj) { ARPACK_ERROR(func_name, #name, "Missing required"); return -1; } \
+            vars->name = (CBLAS_INT)PyLong_AsSsize_t(field_obj); \
+            if (PyErr_Occurred()) { ARPACK_ERROR(func_name, #name, "Failed to convert"); return -1; } \
+        } while(0);
+    STRUCT_INT_FIELD_NAMES
+    #undef X
+
     // Pack integer fields
     #define X(name) \
         do { \
@@ -98,7 +122,7 @@ pack_dict_to_state_d(PyObject* dict, struct ARNAUD_state_d* vars, const char* fu
             vars->name = (int)PyLong_AsLong(field_obj); \
             if (PyErr_Occurred()) { ARPACK_ERROR(func_name, #name, "Failed to convert"); return -1; } \
         } while(0);
-    STRUCT_INT_FIELD_NAMES
+    STRUCT_PLAIN_INT_FIELD_NAMES
     #undef X
 
     return 0;
@@ -127,6 +151,20 @@ unpack_state_s_to_dict(const struct ARNAUD_state_s* vars, PyObject* dict, const 
     STRUCT_INEXACT_FIELD_NAMES
     #undef X
 
+    // Unpack CBLAS integer fields
+    #define X(name) \
+        do { \
+            PyObject* tmp_obj = PyLong_FromSsize_t((Py_ssize_t)vars->name); \
+            if ((!tmp_obj) || (PyDict_SetItemString(dict, #name, tmp_obj) < 0)) { \
+                Py_XDECREF(tmp_obj); \
+                ARPACK_ERROR(func_name, #name, "Failed to set"); \
+                return -1; \
+            } \
+            Py_DECREF(tmp_obj); \
+        } while(0);
+    STRUCT_INT_FIELD_NAMES
+    #undef X
+
     // Unpack integer fields
     #define X(name) \
         do { \
@@ -138,7 +176,7 @@ unpack_state_s_to_dict(const struct ARNAUD_state_s* vars, PyObject* dict, const 
             } \
             Py_DECREF(tmp_obj); \
         } while(0);
-    STRUCT_INT_FIELD_NAMES
+    STRUCT_PLAIN_INT_FIELD_NAMES
     #undef X
 
     return 0;
@@ -167,6 +205,20 @@ unpack_state_d_to_dict(const struct ARNAUD_state_d* vars, PyObject* dict, const 
     STRUCT_INEXACT_FIELD_NAMES
     #undef X
 
+    // Unpack CBLAS integer fields
+    #define X(name) \
+        do { \
+            PyObject* tmp_obj = PyLong_FromSsize_t((Py_ssize_t)vars->name); \
+            if ((!tmp_obj) || (PyDict_SetItemString(dict, #name, tmp_obj) < 0)) { \
+                Py_XDECREF(tmp_obj); \
+                ARPACK_ERROR(func_name, #name, "Failed to set"); \
+                return -1; \
+            } \
+            Py_DECREF(tmp_obj); \
+        } while(0);
+    STRUCT_INT_FIELD_NAMES
+    #undef X
+
     // Unpack integer fields
     #define X(name) \
         do { \
@@ -178,7 +230,7 @@ unpack_state_d_to_dict(const struct ARNAUD_state_d* vars, PyObject* dict, const 
             } \
             Py_DECREF(tmp_obj); \
         } while(0);
-    STRUCT_INT_FIELD_NAMES
+    STRUCT_PLAIN_INT_FIELD_NAMES
     #undef X
 
     return 0;
@@ -209,7 +261,7 @@ snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
     float* resid = PyArray_DATA(ap_resid);
     float* v = PyArray_DATA(ap_v);
     float* workd = PyArray_DATA(ap_workd);
@@ -252,7 +304,7 @@ dnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
     double* resid = (double*)PyArray_DATA(ap_resid);
     double* v = (double*)PyArray_DATA(ap_v);
     double* workd = (double*)PyArray_DATA(ap_workd);
@@ -297,7 +349,7 @@ cnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
     ARNAUD_CPLXF_TYPE* resid = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_resid);
     ARNAUD_CPLXF_TYPE* v = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_v);
     ARNAUD_CPLXF_TYPE* workd = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_workd);
@@ -343,7 +395,7 @@ znaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
     ARNAUD_CPLX_TYPE* resid = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_resid);
     ARNAUD_CPLX_TYPE* v = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_v);
     ARNAUD_CPLX_TYPE* workd = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_workd);
@@ -405,8 +457,8 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* select = PyArray_DATA(ap_select);
     float* dr = (float*)PyArray_DATA(ap_dr);
     float* di = (float*)PyArray_DATA(ap_di);
     float* workev = (float*)PyArray_DATA(ap_workev);
@@ -472,8 +524,8 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* select = PyArray_DATA(ap_select);
     double* dr = (double*)PyArray_DATA(ap_dr);
     double* di = (double*)PyArray_DATA(ap_di);
     double* workev = (double*)PyArray_DATA(ap_workev);
@@ -537,8 +589,8 @@ cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* select = PyArray_DATA(ap_select);
     ARNAUD_CPLXF_TYPE* d = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_d);
     ARNAUD_CPLXF_TYPE* workev = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_workev);
     ARNAUD_CPLXF_TYPE* z = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_z);
@@ -602,8 +654,8 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* select = PyArray_DATA(ap_select);
     ARNAUD_CPLX_TYPE* d = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_d);
     ARNAUD_CPLX_TYPE* workev = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_workev);
     ARNAUD_CPLX_TYPE* z = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_z);
@@ -652,7 +704,7 @@ ssaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
     float* resid = PyArray_DATA(ap_resid);
     float* v = PyArray_DATA(ap_v);
     float* workd = PyArray_DATA(ap_workd);
@@ -694,7 +746,7 @@ dsaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
     double* resid = (double*)PyArray_DATA(ap_resid);
     double* v = (double*)PyArray_DATA(ap_v);
     double* workd = (double*)PyArray_DATA(ap_workd);
@@ -747,8 +799,8 @@ sseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* select = PyArray_DATA(ap_select);
     float* d = (float*)PyArray_DATA(ap_d);
     float* z = (float*)PyArray_DATA(ap_z);
     float* resid = (float*)PyArray_DATA(ap_resid);
@@ -805,8 +857,8 @@ dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    CBLAS_INT* ipntr = PyArray_DATA(ap_ipntr);
+    CBLAS_INT* select = PyArray_DATA(ap_select);
     double* d = (double*)PyArray_DATA(ap_d);
     double* z = (double*)PyArray_DATA(ap_z);
     double* resid = (double*)PyArray_DATA(ap_resid);
@@ -1082,5 +1134,6 @@ PyInit__arpacklib(void)
 
 
 #undef STRUCT_FIELD_NAMES
+#undef STRUCT_PLAIN_INT_FIELD_NAMES
 #undef STRUCT_INT_FIELD_NAMES
 #undef STRUCT_INEXACT_FIELD_NAMES
