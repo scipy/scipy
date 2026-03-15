@@ -7,6 +7,7 @@ py3.install_sources([
     'ivp.py',
     'lsoda.py',
     'radau.py',
+    'sabm.py',
     'rk.py'
   ],
   subdir: 'scipy/integrate/_ivp'
