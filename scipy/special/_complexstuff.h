@@ -24,7 +24,15 @@
 #else
     typedef double complex _scipy_dz;
     #ifndef CMPLX
-        #define CMPLX(x, y) __builtin_complex((double)(x), (double)(y))
+        #if defined(__has_builtin)
+            #if __has_builtin(__builtin_complex)
+                #define CMPLX(x, y) __builtin_complex((double)(x), (double)(y))
+            #endif
+        #endif
+        #ifndef CMPLX
+            /* Last resort: type-pun via union to avoid real + imag*I pitfalls */
+            #define CMPLX(x, y) ((union { double a[2]; double complex z; }){{(x), (y)}}).z
+        #endif
     #endif
 #endif
 
