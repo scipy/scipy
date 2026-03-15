@@ -412,6 +412,26 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 if kwarg in marker.kwargs:
                     raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
 
+        elif len(marker.args) == 2 and isinstance(marker.args[1], bool | type(None)):
+            # condition is provided:
+            #   1. check it
+            #   2. reason is required (similar to pytest's xfail/skipif)
+            backend, condition = marker.args
+
+            if backend not in xp_known_backends:
+                raise ValueError(f"Unknown backend: {backend}; "
+                                 f"must be one of {list(xp_known_backends)}")
+
+            if condition:
+                reason = marker.kwargs.get("reason")
+                # reason overrides the ones from cpu_only, np_only, and eager_only.
+                # This is regardless of order of appearence of the markers.
+                reasons[backend].insert(0, reason)
+
+            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+                if kwarg in marker.kwargs:
+                    raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
+
         elif len(marker.args) > 1:
             raise ValueError(
                 f"Please specify only one backend per marker: {marker.args}"
@@ -438,11 +458,13 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
         ...
 
         @skip_xp_backends(backend, *, reason=None)
+        @skip_xp_backends(backend, condition, /, *, reason='skip because condition')
         @skip_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @skip_xp_backends(*, np_only=True, exceptions=(), reason=None)
 
         @xfail_xp_backends(backend, *, reason=None)
+        @xfail_xp_backends(backend, condition, /, *, reason='xfail because condition')
         @xfail_xp_backends(*, cpu_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, eager_only=True, exceptions=(), reason=None)
         @xfail_xp_backends(*, np_only=True, exceptions=(), reason=None)
