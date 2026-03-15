@@ -625,6 +625,12 @@
             "pdtrik_double": "dd->d"
         }
     },
+    "_poisson_ppf": {
+        "boost_special_functions.h++": {
+            "poisson_ppf_float": "ff->f",
+            "poisson_ppf_double": "dd->d"
+        }
+    },
     "poch": {
         "xsf_wrappers.h": {
             "cephes_poch": "dd->d"
