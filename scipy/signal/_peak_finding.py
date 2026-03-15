@@ -869,7 +869,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     Examples
     --------
     To demonstrate this function's usage we use a signal `x` supplied with
-    SciPy (see `scipy.datasets.electrocardiogram`). Let's find all peaks (local
+    SciPy (see `scipy.datasets.electrocardiogram`). Note that this dataset
+    requires the optional dependency `pooch` to download the data. It can
+    be installed with ``pip install pooch``. Let's find all peaks (local
     maxima) in `x` whose amplitude lies above 0.
 
     >>> import numpy as np
