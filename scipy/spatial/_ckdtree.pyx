@@ -903,10 +903,11 @@ cdef class cKDTree:
 
         Returns
         -------
-        results : list or array of lists
+        results : list or array of list or int or array of int
             If `x` is a single point, returns a list of the indices of the
             neighbors of `x`. If `x` is an array of points, returns an object
             array of shape tuple containing lists of neighbors.
+            If return_length=True, returns an numpy.in64 or array of numpy.int64 respectively.
 
         Notes
         -----
