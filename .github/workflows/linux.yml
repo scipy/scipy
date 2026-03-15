@@ -633,15 +633,15 @@ jobs:
         spin test -t $TEST_SUBMODULES -- --parallel-threads=4 --skip-thread-unsafe=true
 
   #################################################################################
-  clang-17-build-only:
+  clang-18-build-only:
     # Purpose is to check for warnings in builds with latest clang.
     # We do not run the test suite here.
-    name: Clang-17 build-only (-Werror)
+    name: Clang-18 build-only (-Werror)
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -655,15 +655,6 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          wget https://apt.llvm.org/llvm.sh
-          expected_hash="d2ccd623e05645d96d85df09d9898a0ae7ba6ec917ae64731f0c1e49573b6426"
-          file_hash=$(sha256sum llvm.sh | cut -d ' ' -f 1)
-          if [ "$file_hash" != "$expected_hash" ]; then
-            echo "Checksum verification failed for llvm.sh. The downloaded file may be corrupted or tampered with."
-            exit 1
-          fi
-          chmod u+x llvm.sh
-          sudo ./llvm.sh 17
           sudo apt install -y libopenblas-dev liblapack-dev
 
       - name: Setup Python build deps
@@ -673,8 +664,10 @@ jobs:
 
       - name: Build wheel, check for compiler warnings
         run: |
+          # if clang-18 isn't installed this should fail
+          clang-18 --version
           # specify which compilers to use using environment variables
-          CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
+          CC=clang-18 CXX=clang++-18 FC=gfortran python -m build -wnx -Csetup-args=--werror
 
   #################################################################################
   test_aarch64:
