@@ -11,6 +11,9 @@ with safe_import():
 with safe_import():
     from scipy.sparse import csr_matrix
 
+with safe_import():
+    from scipy.interpolate._regrid_python import regrid_python
+
 
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
@@ -249,6 +252,47 @@ class BivariateSpline(Benchmark):
     def time_lsq_bivariate_spline(self, n_samples):
         interpolate.LSQBivariateSpline(self.x, self.y, self.z,
                                        self.xknots.flat, self.yknots.flat)
+
+
+class RectBivariateSplineVsRegridPython(Benchmark):
+    """
+    Compare RectBivariateSpline vs regrid_python fit time.
+
+    Includes interpolation-like small s cases (where regrid_python tends
+    to be faster) and a moderate smoothing case.
+    """
+    param_names = ["size", "s"]
+    params = [
+        [(256, 512), (512, 512), (512, 1024)],
+        [1e-12, 3.0],
+    ]
+
+    def setup(self, size, s):
+        nx, ny = size
+        rng = np.random.default_rng(0)
+        self.x = np.linspace(0.0, 4.0, nx, dtype=float)
+        self.y = np.linspace(0.0, 4.0, ny, dtype=float)
+
+        X, Y = np.meshgrid(self.x, self.y, indexing="ij")
+        self.z = (
+            np.sin(X) * np.cos(Y)
+            + 0.2 * np.sin(2 * X + 0.5) * np.cos(1.5 * Y - 0.3)
+            + 0.05 * rng.normal(size=(nx, ny))
+        ).astype(float)
+        self.s = s
+        self.kx = 3
+        self.ky = 3
+
+    def time_rect_bivariate_spline(self, size, s):
+        interpolate.RectBivariateSpline(
+            self.x, self.y, self.z, kx=self.kx, ky=self.ky, s=self.s,
+            maxit=30
+        )
+
+    def time_regrid_python(self, size, s):
+        regrid_python(
+            self.x, self.y, self.z, kx=self.kx, ky=self.ky, s=self.s
+        )
 
 
 class Interpolate(Benchmark):
