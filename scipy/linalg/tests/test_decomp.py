@@ -18,8 +18,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           subspace_angles, hadamard, eigvalsh_tridiagonal,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
-from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
-                                 dsbevd, dsbevx, zhbevd, zhbevx)
+from scipy.linalg.lapack import get_lapack_funcs
 
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -559,6 +558,8 @@ class TestEigBanded:
     def test_dsbev(self):
         """Compare dsbev eigenvalues and eigenvectors with
            the result of linalg.eig."""
+        dsbev = get_lapack_funcs('sbev', dtype=np.float64, ilp64="preferred")
+
         w, evec, info = dsbev(self.bandmat_sym, compute_v=1)
         evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
@@ -567,6 +568,8 @@ class TestEigBanded:
     def test_dsbevd(self):
         """Compare dsbevd eigenvalues and eigenvectors with
            the result of linalg.eig."""
+        dsbevd = get_lapack_funcs('sbevd', dtype=np.float64, ilp64="preferred")
+
         w, evec, info = dsbevd(self.bandmat_sym, compute_v=1)
         evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
@@ -576,6 +579,8 @@ class TestEigBanded:
         """Compare dsbevx eigenvalues and eigenvectors
            with the result of linalg.eig."""
         N, N = shape(self.sym_mat)
+        dsbevx = get_lapack_funcs('sbevx', dtype=np.float64, ilp64="preferred")
+
         # Achtung: Argumente 0.0,0.0,range?
         w, evec, num, ifail, info = dsbevx(self.bandmat_sym, 0.0, 0.0, 1, N,
                                            compute_v=1, range=2)
@@ -586,6 +591,8 @@ class TestEigBanded:
     def test_zhbevd(self):
         """Compare zhbevd eigenvalues and eigenvectors
            with the result of linalg.eig."""
+        zhbevd = get_lapack_funcs('hbevd', dtype=np.complex128, ilp64="preferred")
+
         w, evec, info = zhbevd(self.bandmat_herm, compute_v=1)
         evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_herm_lin)
@@ -595,6 +602,8 @@ class TestEigBanded:
         """Compare zhbevx eigenvalues and eigenvectors
            with the result of linalg.eig."""
         N, N = shape(self.herm_mat)
+        zhbevx = get_lapack_funcs('hbevx', dtype=np.complex128, ilp64="preferred")
+
         # Achtung: Argumente 0.0,0.0,range?
         w, evec, num, ifail, info = zhbevx(self.bandmat_herm, 0.0, 0.0, 1, N,
                                            compute_v=1, range=2)
@@ -705,6 +714,8 @@ class TestEigBanded:
     def test_dgbtrf(self):
         """Compare dgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
+        dgbtrf = get_lapack_funcs('gbtrf', dtype=np.float64, ilp64="preferred")
+
         M, N = shape(self.real_mat)
         lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
 
@@ -720,6 +731,8 @@ class TestEigBanded:
         """Compare zgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
         M, N = shape(self.comp_mat)
+        zgbtrf = get_lapack_funcs('gbtrf', dtype=np.complex128, ilp64="preferred")
+
         lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
 
         # extract matrix u from lu_symm_band
@@ -733,6 +746,9 @@ class TestEigBanded:
     def test_dgbtrs(self):
         """Compare dgbtrs  solutions for linear equation system  A*x = b
            with solutions of linalg.solve."""
+        dgbtrf, dgbtrs = get_lapack_funcs(
+            ('gbtrf', 'gbtrs'), dtype=np.float64, ilp64="preferred"
+        )
 
         lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
         y, info = dgbtrs(lu_symm_band, self.KL, self.KU, self.b, ipiv)
@@ -743,6 +759,9 @@ class TestEigBanded:
     def test_zgbtrs(self):
         """Compare zgbtrs  solutions for linear equation system  A*x = b
            with solutions of linalg.solve."""
+        zgbtrf, zgbtrs = get_lapack_funcs(
+            ('gbtrf', 'gbtrs'), dtype=np.complex128, ilp64="preferred"
+        )
 
         lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
         y, info = zgbtrs(lu_symm_band, self.KL, self.KU, self.bc, ipiv)
@@ -1907,7 +1926,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
         r, *other = qr(a, mode='r', pivoting=pivoting)
         assert_equal(r.shape, (m, n))
@@ -1916,7 +1935,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
         q, r, *other = qr(a, mode='economic', pivoting=pivoting)
         assert_equal(q.shape, (m, k))
@@ -1927,7 +1946,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
         (raw, tau), r, *other = qr(a, mode='raw', pivoting=pivoting)
         assert_equal(raw.shape, (m, n))
@@ -1940,7 +1959,7 @@ class TestQR:
         if pivoting:
             p, = other
             assert_equal(p.shape, (n,))
-            assert_equal(p.dtype, np.int32)
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):

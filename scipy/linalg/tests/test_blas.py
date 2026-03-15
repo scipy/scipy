@@ -14,11 +14,23 @@ from numpy import (arange, triu, tril, zeros, tril_indices, ones,
 
 import scipy
 from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
+from scipy.linalg.blas import HAS_ILP64, HAS_LP64
 
 try:
     from scipy.linalg import _cblas as cblas
 except ImportError:
     cblas = None
+
+try:
+    from scipy.linalg import _fblas as fblas
+except ImportError:
+    fblas = None
+
+try:
+    from scipy.linalg import _fblas_64 as fblas_64
+except ImportError:
+    fblas_64 = None
+
 
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
@@ -64,6 +76,40 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'z')
 
 
+def test_get_blas_funcs_ilp_preferred():
+    # "preferred" mean ILP64 if available LP64 otherwise
+    gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64="preferred")
+    assert gemm.int_dtype == np.int64 if HAS_ILP64 else np.int32
+    assert gemm.module_name == 'fblas_64' if HAS_ILP64 else 'fblas'
+
+    # default is "preferred"
+    gemm = get_blas_funcs('gemm', (np.eye(3),))
+    assert gemm.int_dtype == np.int64 if HAS_ILP64 else np.int32
+    assert gemm.module_name == 'fblas_64' if HAS_ILP64 else 'fblas'
+
+
+def test_get_blas_funcs_ilp_true():
+    # True is ILP64 or fail if not available
+    if HAS_ILP64:
+        gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
+        assert gemm.int_dtype == np.int64
+        assert gemm.module_name == 'fblas_64'
+    else:
+        with pytest.raises(RuntimeError):
+            get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
+
+
+def test_get_blas_funcs_ilp_false():
+    # False is LP64 or fail if not available
+    if HAS_LP64:
+        gemm = get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
+        assert gemm.int_dtype == np.int32
+        assert gemm.module_name == 'fblas'
+    else:
+        with pytest.raises(RuntimeError):
+            get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
+
+
 def test_get_blas_funcs_alias():
     # check alias for get_blas_funcs
     f, g = get_blas_funcs(('nrm2', 'dot'), dtype=np.complex64)
@@ -75,29 +121,47 @@ def test_get_blas_funcs_alias():
     assert f is h
 
 
-def parametrize_blas(mod, func_name, prefixes):
-    if mod is None:
-        return pytest.mark.skip(reason="cblas not available")
+def _dt_from_prefix(prefix):
+    """Array dtype from a blas-style prefix."""
+    if prefix.startswith('i'):
+        prefix = prefix[1:]   # isamax, idamax etc
+    elif prefix in ['sc', 'dz']:
+        prefix = prefix[0]   # scasum, dzasum
+    elif prefix in ['cs', 'zd']:
+        prefix = prefix[0]  # zdscal, csscal
+
+    dt_map = {'z': np.complex128, 'c': np.complex64, 'd': np.float64, 's': np.float32}
+    return dt_map[prefix]
+
+
+def parametrize_blas(func_name, prefixes, modules=None):
+    if modules is None:
+        modules = [(fblas, "fblas"), (fblas_64, "fblas_64")]
+
     params = []
-    for prefix in prefixes:
-        if 'z' in prefix:
-            dtype = np.complex128
-        elif 'c' in prefix:
-            dtype = np.complex64
-        elif 'd' in prefix:
-            dtype = np.float64
-        else:
-            assert 's' in prefix
-            dtype = np.float32
+    for mod, mod_name in modules:
+        for prefix in prefixes:
+            dtype = _dt_from_prefix(prefix)
+            if mod is None:
+                param_ = pytest.param(
+                    None, dtype,
+                    id=f"{mod_name}.{prefix}{func_name}",
+                    marks=pytest.mark.skip(reason=f"{mod_name} is not available")
+                )
+            else:
+                # Fetch the BLAS function from the BLAS module. NB: if the name is not
+                # found in the module, it's a hard failure (all names must be present).
+                f = getattr(mod, prefix + func_name)
+                param_ = pytest.param(f, dtype, id=f"{mod_name}.{prefix}{func_name}")
 
-        f = getattr(mod, prefix + func_name)
-        params.append(pytest.param(f, dtype, id=prefix + func_name))
+            params.append(param_)
 
-    return pytest.mark.parametrize("f,dtype", params)
+    return pytest.mark.parametrize("f, dtype", params)
 
 
 class TestCBLAS1Simple:
-    @parametrize_blas(cblas, "axpy", "sdcz")
+
+    @parametrize_blas("axpy", "sdcz", modules=[(cblas, "cblas")])
     def test_axpy(self, f, dtype):
         assert_array_almost_equal(f([1, 2, 3], [2, -1, 3], a=5),
                                   [7, 9, 18])
@@ -108,7 +172,7 @@ class TestCBLAS1Simple:
 
 class TestFBLAS1Simple:
 
-    @parametrize_blas(fblas, "axpy", "sdcz")
+    @parametrize_blas("axpy", "sdcz")
     def test_axpy(self, f, dtype):
         assert_array_almost_equal(f([1, 2, 3], [2, -1, 3], a=5),
                                   [7, 9, 18])
@@ -116,43 +180,43 @@ class TestFBLAS1Simple:
             assert_array_almost_equal(f([1, 2j, 3], [2, -1, 3], a=5),
                                       [7, 10j-1, 18])
 
-    @parametrize_blas(fblas, "copy", "sdcz")
+    @parametrize_blas("copy", "sdcz")
     def test_copy(self, f, dtype):
         assert_array_almost_equal(f([3, 4, 5], [8]*3), [3, 4, 5])
         if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f([3, 4j, 5+3j], [8]*3), [3, 4j, 5+3j])
 
-    @parametrize_blas(fblas, "asum", ["s", "d", "sc", "dz"])
+    @parametrize_blas("asum", ["s", "d", "sc", "dz"])
     def test_asum(self, f, dtype):
         assert_almost_equal(f([3, -4, 5]), 12)
         if dtype in COMPLEX_DTYPES:
             assert_almost_equal(f([3j, -4, 3-4j]), 14)
 
-    @parametrize_blas(fblas, "dot", "sd")
+    @parametrize_blas("dot", "sd")
     def test_dot(self, f, dtype):
         assert_almost_equal(f([3, -4, 5], [2, 5, 1]), -9)
 
-    @parametrize_blas(fblas, "dotu", "cz")
+    @parametrize_blas("dotu", "cz")
     def test_dotu(self, f, dtype):
         assert_almost_equal(f([3j, -4, 3-4j], [2, 3, 1]), -9+2j)
 
-    @parametrize_blas(fblas, "dotc", "cz")
+    @parametrize_blas("dotc", "cz")
     def test_dotc(self, f, dtype):
         assert_almost_equal(f([3j, -4, 3-4j], [2, 3j, 1]), 3-14j)
 
-    @parametrize_blas(fblas, "nrm2", ["s", "d", "sc", "dz"])
+    @parametrize_blas("nrm2", ["s", "d", "sc", "dz"])
     def test_nrm2(self, f, dtype):
         assert_almost_equal(f([3, -4, 5]), math.sqrt(50))
         if dtype in COMPLEX_DTYPES:
             assert_almost_equal(f([3j, -4, 3-4j]), math.sqrt(50))
 
-    @parametrize_blas(fblas, "scal", ["s", "d", "cs", "zd"])
+    @parametrize_blas("scal", ["s", "d", "cs", "zd"])
     def test_scal(self, f, dtype):
         assert_array_almost_equal(f(2, [3, -4, 5]), [6, -8, 10])
         if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f(3, [3j, -4, 3-4j]), [9j, -12, 9-12j])
 
-    @parametrize_blas(fblas, "swap", "sdcz")
+    @parametrize_blas("swap", "sdcz")
     def test_swap(self, f, dtype):
         x, y = [2, 3, 1], [-2, 3, 7]
         x1, y1 = f(x, y)
@@ -165,7 +229,7 @@ class TestFBLAS1Simple:
             assert_array_almost_equal(x1, y)
             assert_array_almost_equal(y1, x)
 
-    @parametrize_blas(fblas, "amax", ["is", "id", "ic", "iz"])
+    @parametrize_blas("amax", ["is", "id", "ic", "iz"])
     def test_amax(self, f, dtype):
         assert_equal(f([-2, 4, 3]), 1)
         if dtype in COMPLEX_DTYPES:
@@ -175,7 +239,7 @@ class TestFBLAS1Simple:
 
 
 class TestFBLAS2Simple:
-    @parametrize_blas(fblas, "gemv", "sdcz")
+    @parametrize_blas("gemv", "sdcz")
     def test_gemv(self, f, dtype):
         assert_array_almost_equal(f(3, [[3]], [-4]), [-36])
         assert_array_almost_equal(f(3, [[3]], [-4], 3, [5]), [-21])
@@ -184,7 +248,7 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(f(3j, [[3-4j]], [-4], 3, [5j]),
                                       [-48-21j])
 
-    @parametrize_blas(fblas, "ger", "sd")
+    @parametrize_blas("ger", "sd")
     def test_ger(self, f, dtype):
         assert_array_almost_equal(f(1, [1, 2], [3, 4]), [[3, 4], [6, 8]])
         assert_array_almost_equal(f(2, [1, 2, 3], [3, 4]),
@@ -197,21 +261,21 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(f(2, [1j, 2j, 3j], [3j, 4j]),
                                       [[6, 8], [12, 16], [18, 24]])
 
-    @parametrize_blas(fblas, "geru", "cz")
+    @parametrize_blas("geru", "cz")
     def test_geru(self, f, dtype):
         assert_array_almost_equal(f(1, [1j, 2], [3, 4]),
                                   [[3j, 4j], [6, 8]])
         assert_array_almost_equal(f(-2, [1j, 2j, 3j], [3j, 4j]),
                                   [[6, 8], [12, 16], [18, 24]])
 
-    @parametrize_blas(fblas, "gerc", "cz")
+    @parametrize_blas("gerc", "cz")
     def test_gerc(self, f, dtype):
         assert_array_almost_equal(f(1, [1j, 2], [3, 4]),
                                   [[3j, 4j], [6, 8]])
         assert_array_almost_equal(f(2, [1j, 2j, 3j], [3j, 4j]),
                                   [[6, 8], [12, 16], [18, 24]])
 
-    @parametrize_blas(fblas, "syr", "sdcz")
+    @parametrize_blas("syr", "sdcz")
     def test_syr(self, f, dtype):
         x = np.arange(1, 5, dtype='d')
         resx = np.triu(x[:, np.newaxis] * x)
@@ -262,7 +326,7 @@ class TestFBLAS2Simple:
         assert_raises(Exception, f, 1.0, x, lower=2)
         assert_raises(Exception, f, 1.0, x, a=np.zeros((2, 2), 'd', 'F'))
 
-    @parametrize_blas(fblas, "her", "cz")
+    @parametrize_blas("her", "cz")
     def test_her(self, f, dtype):
         x = np.arange(1, 5, dtype='d')
         z = np.arange(1, 9, dtype='d').view('D')
@@ -295,7 +359,7 @@ class TestFBLAS2Simple:
         assert_raises(Exception, f, 1.0, x, lower=2)
         assert_raises(Exception, f, 1.0, x, a=np.zeros((2, 2), 'd', 'F'))
 
-    @parametrize_blas(fblas, "syr2", "sd")
+    @parametrize_blas("syr2", "sd")
     def test_syr2(self, f, dtype):
         x = np.arange(1, 5, dtype='d')
         y = np.arange(5, 9, dtype='d')
@@ -337,7 +401,7 @@ class TestFBLAS2Simple:
         assert_raises(Exception, f, 1.0, x, y, lower=2)
         assert_raises(Exception, f, 1.0, x, y, a=np.zeros((2, 2), 'd', 'F'))
 
-    @parametrize_blas(fblas, "her2", "cz")
+    @parametrize_blas("her2", "cz")
     def test_her2(self, f, dtype):
         x = np.arange(1, 9, dtype='d').view('D')
         y = np.arange(9, 17, dtype='d').view('D')
@@ -386,8 +450,8 @@ class TestFBLAS2Simple:
         assert_raises(Exception, f, 1.0, x, y,
                       a=np.zeros((2, 2), 'd', 'F'))
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_gbmv(self, dtype):
+    @parametrize_blas("gbmv", "sdcz")
+    def test_gbmv(self, f, dtype):
         rng = np.random.default_rng(1234)
         n = 7
         m = 5
@@ -409,7 +473,7 @@ class TestFBLAS2Simple:
         y = rng.random(m).astype(dtype)
         alpha, beta = dtype(3), dtype(-5)
 
-        func, = get_blas_funcs(('gbmv',), dtype=dtype)
+        func = f
         y1 = func(m=m, n=n, ku=ku, kl=kl, alpha=alpha, a=Ab,
                   x=x, y=y, beta=beta)
         y2 = alpha * A.dot(x) + beta * y
@@ -420,8 +484,14 @@ class TestFBLAS2Simple:
         y2 = alpha * A.T.dot(y) + beta * x
         assert_array_almost_equal(y1, y2)
 
+    @pytest.mark.parametrize("ilp64", [True, False])
     @pytest.mark.parametrize("dtype", DTYPES)
-    def test_sbmv_hbmv(self, dtype):
+    def test_sbmv_hbmv(self, dtype, ilp64):
+        mod = fblas_64 if ilp64 else fblas
+        if mod is None:
+            mod_name = "fblas_64" if ilp64 else "fblas"
+            pytest.skip(f"{mod_name} is not available")
+
         rng = np.random.default_rng(1234)
         n = 6
         k = 2
@@ -437,10 +507,10 @@ class TestFBLAS2Simple:
         A = A.astype(dtype)
         if dtype in COMPLEX_DTYPES:
             A += A.conj().T
-            func, = get_blas_funcs(('hbmv',), dtype=dtype)
+            func, = get_blas_funcs(('hbmv',), dtype=dtype, ilp64="preferred")
         else:
             A += A.T
-            func, = get_blas_funcs(('sbmv',), dtype=dtype)
+            func, = get_blas_funcs(('sbmv',), dtype=dtype, ilp64="preferred")
 
         Ab[-1, :] = diag(A)
         x = rng.random(n).astype(dtype)
@@ -451,11 +521,17 @@ class TestFBLAS2Simple:
         y2 = alpha * A.dot(x) + beta * y
         assert_array_almost_equal(y1, y2)
 
+    @pytest.mark.parametrize("ilp64", [True, False])
     @pytest.mark.parametrize("fname,dtype", [
         *[('spmv', dtype) for dtype in REAL_DTYPES + COMPLEX_DTYPES],
         *[('hpmv', dtype) for dtype in COMPLEX_DTYPES],
     ])
-    def test_spmv_hpmv(self, fname, dtype):
+    def test_spmv_hpmv(self, fname, dtype, ilp64):
+        mod = fblas_64 if ilp64 else fblas
+        if mod is None:
+            mod_name = "fblas_64" if ilp64 else "fblas"
+            pytest.skip(f"{mod_name} is not available")
+
         rng = np.random.default_rng(1234)
         n = 3
         A = rng.random((n, n)).astype(dtype)
@@ -470,7 +546,7 @@ class TestFBLAS2Simple:
         ylong = ones(2*n).astype(dtype)
         alpha, beta = dtype(1.25), dtype(2)
 
-        func, = get_blas_funcs((fname,), dtype=dtype)
+        func, = get_blas_funcs((fname,), dtype=dtype, ilp64="preferred")
         y1 = func(n=n, alpha=alpha, ap=Ap, x=x, y=y, beta=beta)
         y2 = alpha * A.dot(x) + beta * y
         assert_array_almost_equal(y1, y2)
@@ -482,11 +558,17 @@ class TestFBLAS2Simple:
         assert_array_almost_equal(y1[3::2], y2)
         assert_almost_equal(y1[4], ylong[4])
 
+    @pytest.mark.parametrize("ilp64", [True, False])
     @pytest.mark.parametrize("fname,dtype", [
         *[('spr', dtype) for dtype in REAL_DTYPES + COMPLEX_DTYPES],
         *[('hpr', dtype) for dtype in COMPLEX_DTYPES],
     ])
-    def test_spr_hpr(self, fname, dtype):
+    def test_spr_hpr(self, fname, dtype, ilp64):
+        mod = fblas_64 if ilp64 else fblas
+        if mod is None:
+            mod_name = "fblas_64" if ilp64 else "fblas"
+            pytest.skip(f"{mod_name} is not available")
+
         rng = np.random.default_rng(1234)
         n = 3
         A = rng.random((n, n)).astype(dtype)
@@ -499,10 +581,10 @@ class TestFBLAS2Simple:
 
         alpha = np.finfo(dtype).dtype.type(2.5)
         if fname == 'hpr':
-            func, = get_blas_funcs(('hpr',), dtype=dtype)
+            func, = get_blas_funcs(('hpr',), dtype=dtype, ilp64="preferred")
             y2 = alpha * x[:, None].dot(x[None, :].conj()) + A
         else:
-            func, = get_blas_funcs(('spr',), dtype=dtype)
+            func, = get_blas_funcs(('spr',), dtype=dtype, ilp64="preferred")
             y2 = alpha * x[:, None].dot(x[None, :]) + A
 
         y1 = func(n=n, alpha=alpha, ap=Ap, x=x)
@@ -511,18 +593,24 @@ class TestFBLAS2Simple:
         y1f[c, r] = y1.conj() if fname == 'hpr' else y1
         assert_array_almost_equal(y1f, y2)
 
+    @pytest.mark.parametrize("ilp64", [True, False])
     @pytest.mark.parametrize("dtype", DTYPES)
-    def test_spr2_hpr2(self, dtype):
+    def test_spr2_hpr2(self, dtype, ilp64):
+        mod = fblas_64 if ilp64 else fblas
+        if mod is None:
+            mod_name = "fblas_64" if ilp64 else "fblas"
+            pytest.skip(f"{mod_name} is not available")
+
         rng = np.random.default_rng(1234)
         n = 3
         A = rng.random((n, n)).astype(dtype)
         if dtype in COMPLEX_DTYPES:
             A += rng.random((n, n))*1j
             A += A.conj().T
-            func, = get_blas_funcs(('hpr2',), dtype=dtype)
+            func, = get_blas_funcs(('hpr2',), dtype=dtype, ilp64="preferred")
         else:
             A += A.T
-            func, = get_blas_funcs(('spr2',), dtype=dtype)
+            func, = get_blas_funcs(('spr2',), dtype=dtype, ilp64="preferred")
 
         c, r = tril_indices(n)
         Ap = A[r, c]
@@ -538,8 +626,8 @@ class TestFBLAS2Simple:
         y1f[[1, 2, 2], [0, 0, 1]] = y1[[1, 3, 4]].conj()
         assert_array_almost_equal(y1f, y2)
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_tbmv(self, dtype):
+    @parametrize_blas('tbmv', 'sdcz')
+    def test_tbmv(self, f, dtype):
         rng = np.random.default_rng(1234)
         n = 10
         k = 3
@@ -557,7 +645,8 @@ class TestFBLAS2Simple:
         Ab = zeros((k+1, n), dtype=dtype)
         for row in range(k+1):
             Ab[-row-1, row:] = diag(A, k=row)
-        func, = get_blas_funcs(('tbmv',), dtype=dtype)
+        #func, = get_blas_funcs(('tbmv',), dtype=dtype)
+        func = f
 
         y1 = func(k=k, a=Ab, x=x)
         y2 = A.dot(x)
@@ -576,8 +665,8 @@ class TestFBLAS2Simple:
         y2 = A.conj().T.dot(x)
         assert_array_almost_equal(y1, y2)
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_tbsv(self, dtype):
+    @parametrize_blas('tbsv', 'sdcz')
+    def test_tbsv(self, f, dtype):
         rng = np.random.default_rng(12345)
         n = 6
         k = 3
@@ -595,7 +684,7 @@ class TestFBLAS2Simple:
         Ab = zeros((k+1, n), dtype=dtype)
         for row in range(k+1):
             Ab[-row-1, row:] = diag(A, k=row)
-        func, = get_blas_funcs(('tbsv',), dtype=dtype)
+        func = f
 
         y1 = func(k=k, a=Ab, x=x)
         y2 = solve(A, x)
@@ -614,8 +703,8 @@ class TestFBLAS2Simple:
         y2 = solve(A.conj().T, x)
         assert_array_almost_equal(y1, y2)
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_tpmv(self, dtype):
+    @parametrize_blas('tpmv', 'sdcz')
+    def test_tpmv(self, f, dtype):
         rng = np.random.default_rng(1234)
         n = 10
         x = rng.random(n).astype(dtype)
@@ -628,7 +717,7 @@ class TestFBLAS2Simple:
         # Form the packed storage
         c, r = tril_indices(n)
         Ap = A[r, c]
-        func, = get_blas_funcs(('tpmv',), dtype=dtype)
+        func = f
 
         y1 = func(n=n, ap=Ap, x=x)
         y2 = A.dot(x)
@@ -647,8 +736,8 @@ class TestFBLAS2Simple:
         y2 = A.conj().T.dot(x)
         assert_array_almost_equal(y1, y2)
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_tpsv(self, dtype):
+    @parametrize_blas('tpsv', 'sdcz')
+    def test_tpsv(self, f, dtype):
         rng = np.random.default_rng(1234)
         n = 10
         x = rng.random(n).astype(dtype)
@@ -661,7 +750,7 @@ class TestFBLAS2Simple:
         # Form the packed storage
         c, r = tril_indices(n)
         Ap = A[r, c]
-        func, = get_blas_funcs(('tpsv',), dtype=dtype)
+        func = f
 
         y1 = func(n=n, ap=Ap, x=x)
         y2 = solve(A, x)
@@ -680,13 +769,13 @@ class TestFBLAS2Simple:
         y2 = solve(A.conj().T, x)
         assert_array_almost_equal(y1, y2)
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_trmv(self, dtype):
+    @parametrize_blas('trmv', 'sdcz')
+    def test_trmv(self, f, dtype):
         rng = np.random.default_rng(1234)
         n = 3
         A = (rng.random((n, n))+eye(n)).astype(dtype)
         x = rng.random(3).astype(dtype)
-        func, = get_blas_funcs(('trmv',), dtype=dtype)
+        func = f
 
         y1 = func(a=A, x=x)
         y2 = triu(A).dot(x)
@@ -705,13 +794,13 @@ class TestFBLAS2Simple:
         y2 = triu(A).conj().T.dot(x)
         assert_array_almost_equal(y1, y2)
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_trsv(self, dtype):
+    @parametrize_blas('trsv', 'sdcz')
+    def test_trsv(self, f, dtype):
         rng = np.random.default_rng(1234)
         n = 15
         A = (rng.random((n, n))+eye(n)).astype(dtype)
         x = rng.random(n).astype(dtype)
-        func, = get_blas_funcs(('trsv',), dtype=dtype)
+        func = f
 
         y1 = func(a=A, x=x)
         y2 = solve(triu(A), x)
@@ -736,7 +825,7 @@ class TestFBLAS2Simple:
 
 
 class TestFBLAS3Simple:
-    @parametrize_blas(fblas, "gemm", "sdcz")
+    @parametrize_blas("gemm", "sdcz")
     def test_gemm(self, f, dtype):
         assert_array_almost_equal(f(3, [3], [-4]), [[-36]])
         assert_array_almost_equal(f(3, [3], [-4], 3, [5]), [-21])
@@ -756,7 +845,7 @@ class TestBLAS3Symm:
         self.t = np.array([[2., -1., 8.],
                            [3., 0., 9.]])
 
-    @parametrize_blas(fblas, "symm", "sdcz")
+    @parametrize_blas("symm", "sdcz")
     def test_symm(self, f, dtype):
         res = f(a=self.a, b=self.b, c=self.c, alpha=1., beta=1.)
         assert_array_almost_equal(res, self.t)
@@ -768,7 +857,7 @@ class TestBLAS3Symm:
                 alpha=1., beta=1.)
         assert_array_almost_equal(res, self.t.T)
 
-    @parametrize_blas(fblas, "symm", "sdcz")
+    @parametrize_blas("symm", "sdcz")
     def test_symm_wrong_side(self, f, dtype):
         """`side=1` means C <- B*A, hence shapes of A and B are to be
         compatible. Otherwise, f2py exception is raised.
@@ -777,7 +866,7 @@ class TestBLAS3Symm:
         with pytest.raises(Exception):
             f(a=self.a, b=self.b, alpha=1, side=1)
 
-    @parametrize_blas(fblas, "symm", "sdcz")
+    @parametrize_blas("symm", "sdcz")
     def test_symm_wrong_uplo(self, f, dtype):
         """SYMM only considers the upper/lower part of A. Hence setting
         wrong value for `lower` (default is lower=0, meaning upper triangle)
@@ -800,7 +889,7 @@ class TestBLAS3Syrk:
         self.tt = np.array([[5., 6.],
                             [6., 13.]])
 
-    @parametrize_blas(fblas, "syrk", "sdcz")
+    @parametrize_blas("syrk", "sdcz")
     def test_syrk(self, f, dtype):
         c = f(a=self.a, alpha=1.)
         assert_array_almost_equal(np.triu(c), np.triu(self.t))
@@ -817,7 +906,7 @@ class TestBLAS3Syrk:
 
     # prints '0-th dimension must be fixed to 3 but got 5',
     # FIXME: suppress?
-    @parametrize_blas(fblas, "syrk", "sdcz")
+    @parametrize_blas("syrk", "sdcz")
     def test_syrk_wrong_c(self, f, dtype):
         # FIXME narrow down to _fblas.error
         with pytest.raises(Exception):
@@ -839,7 +928,7 @@ class TestBLAS3Syr2k:
         self.tt = np.array([[0., 1.],
                             [1., 6]])
 
-    @parametrize_blas(fblas, "syr2k", "sdcz")
+    @parametrize_blas("syr2k", "sdcz")
     def test_syr2k(self, f, dtype):
         c = f(a=self.a, b=self.b, alpha=1.)
         assert_array_almost_equal(np.triu(c), np.triu(self.t))
@@ -855,7 +944,7 @@ class TestBLAS3Syr2k:
         assert_array_almost_equal(np.triu(c), np.triu(self.tt))
 
     # prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress?
-    @parametrize_blas(fblas, "syr2k", "sdcz")
+    @parametrize_blas("syr2k", "sdcz")
     def test_syr2k_wrong_c(self, f, dtype):
         with pytest.raises(Exception):
             f(a=self.a, b=self.b, alpha=1., c=np.zeros((15, 8)))
@@ -869,34 +958,34 @@ class TestSyHe:
         self.sigma_y = np.array([[0., -1.j],
                                  [1.j, 0.]])
 
-    @parametrize_blas(fblas, "symm", "zc")
+    @parametrize_blas("symm", "zc")
     def test_symm(self, f, dtype):
         # NB: a is symmetric w/upper diag of ONLY
         res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
         assert_array_almost_equal(np.triu(res), np.diag([1, -1]))
 
-    @parametrize_blas(fblas, "hemm", "zc")
+    @parametrize_blas("hemm", "zc")
     def test_hemm(self, f, dtype):
         # NB: a is hermitian w/upper diag of ONLY
         res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
         assert_array_almost_equal(np.triu(res), np.diag([1, 1]))
 
-    @parametrize_blas(fblas, "syrk", "zc")
+    @parametrize_blas("syrk", "zc")
     def test_syrk(self, f, dtype):
         res = f(a=self.sigma_y, alpha=1.)
         assert_array_almost_equal(np.triu(res), np.diag([-1, -1]))
 
-    @parametrize_blas(fblas, "herk", "zc")
+    @parametrize_blas("herk", "zc")
     def test_herk(self, f, dtype):
         res = f(a=self.sigma_y, alpha=1.)
         assert_array_almost_equal(np.triu(res), np.diag([1, 1]))
 
-    @parametrize_blas(fblas, "syr2k", "zc")
+    @parametrize_blas("syr2k", "zc")
     def test_syr2k_zr(self, f, dtype):
         res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
         assert_array_almost_equal(np.triu(res), 2.*np.diag([-1, -1]))
 
-    @parametrize_blas(fblas, "her2k", "zc")
+    @parametrize_blas("her2k", "zc")
     def test_her2k_zr(self, f, dtype):
         res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
         assert_array_almost_equal(np.triu(res), 2.*np.diag([1, 1]))
@@ -918,9 +1007,9 @@ class TestTRMM:
         self.b2 = np.array([[1, 4], [2, 5], [3, 6], [7, 8], [9, 10]],
                            order="f")
 
-    @pytest.mark.parametrize("dtype", DTYPES)
-    def test_side(self, dtype):
-        trmm = get_blas_funcs("trmm", dtype=dtype)
+    @parametrize_blas("trmm", "zc")
+    def test_side(self, f, dtype):
+        trmm = f
         # Provide large A array that works for side=1 but not 0 (see gh-10841)
         assert_raises(Exception, trmm, 1.0, self.a2, self.b2)
         res = trmm(1.0, self.a2.astype(dtype), self.b2.astype(dtype),
@@ -929,7 +1018,7 @@ class TestTRMM:
         assert_allclose(res, self.b2 @ self.a2[:k, :k], rtol=0.,
                         atol=100*np.finfo(dtype).eps)
 
-    @parametrize_blas(fblas, "trmm", "sdcz")
+    @parametrize_blas("trmm", "sdcz")
     def test_ab(self, f, dtype):
         result = f(1., self.a, self.b)
         # default a is upper triangular
@@ -937,14 +1026,14 @@ class TestTRMM:
                              [ 5.,  6., -2.]])
         assert_array_almost_equal(result, expected)
 
-    @parametrize_blas(fblas, "trmm", "sdcz")
+    @parametrize_blas("trmm", "sdcz")
     def test_ab_lower(self, f, dtype):
         result = f(1., self.a, self.b, lower=True)
         expected = np.array([[ 3.,  4., -1.],
                              [-1., -2.,  0.]])  # now a is lower triangular
         assert_array_almost_equal(result, expected)
 
-    @parametrize_blas(fblas, "trmm", "sdcz")
+    @parametrize_blas("trmm", "sdcz")
     def test_b_overwrites(self, f, dtype):
         # BLAS *trmm modifies B argument in-place.
         # Here the default is to copy, but this can be overridden
@@ -964,11 +1053,11 @@ class TestTRMM:
         assert_array_almost_equal(bcopy, result)
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_trsm(dtype):
+@parametrize_blas("trsm", "sdcz")
+def test_trsm(f, dtype):
     rng = np.random.default_rng(1234)
     tol = np.finfo(dtype).eps*1000
-    func, = get_blas_funcs(('trsm',), dtype=dtype)
+    func = f #, = get_blas_funcs(('trsm',), dtype=dtype)
 
     # Test protection against size mismatches
     A = rng.random((4, 5)).astype(dtype)
@@ -1027,11 +1116,13 @@ def test_gh_169309():
     assert_allclose(actual, expected)
 
 
+@pytest.mark.xfail(HAS_ILP64, reason='does not fail with ILP64 MKL')
 def test_dnrm2_neg_incx():
     # check that dnrm2(..., incx < 0) raises
     # XXX: remove the test after the lowest supported BLAS implements
     # negative incx (new in LAPACK 3.10)
     x = np.repeat(10, 9)
     incx = -1
+    dnrm2 = scipy.linalg.blas.get_blas_funcs('nrm2', (x,), ilp64='preferred')
     with assert_raises(fblas.__fblas_error):
-        scipy.linalg.blas.dnrm2(x, 5, 3, incx)
+        dnrm2(x, 5, 3, incx)

@@ -30,6 +30,20 @@ This module contains low-level functions from the BLAS library.
    It is possible to cause crashes by mis-using them,
    so prefer using the higher-level routines in `scipy.linalg`.
 
+.. note::
+
+    Prefer using ``get_blas_funcs`` to importing the bare functions directly.
+    If you do, for example, ``from scipy.linalg.blas import dgemm``, the ``dgemm``
+    function may be either LP64 or ILP64, depending on how SciPy is built.
+
+    The following is more robust:
+
+    >>> from scipy.linalg.blas import get_blas_funcs
+    >>> dgemm = get_blas_funcs('gemm', dtype='float64', ilp64='preferred')
+    >>> dgemm.int_dtype
+    dtype('int32')    # may vary
+
+
 Finding functions
 -----------------
 
@@ -220,14 +234,17 @@ __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
 import numpy as np
 import functools
+from scipy.__config__ import CONFIG
 
+# TODO: fold to __config__
 from scipy.linalg import _fblas
+HAS_LP64 = True
+
 try:
     from scipy.linalg import _cblas
 except ImportError:
     _cblas = None
 
-from scipy.__config__ import CONFIG
 HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
 del CONFIG
 _fblas_64 = None
@@ -337,7 +354,7 @@ def find_best_blas_type(arrays=(), dtype=None):
 def _get_funcs(names, arrays, dtype,
                lib_name, fmodule, cmodule,
                fmodule_name, cmodule_name, alias,
-               ilp64=False):
+               ilp64="preferred"):
     """
     Return available BLAS/LAPACK functions.
 
@@ -393,7 +410,7 @@ def _memoize_get_funcs(func):
     func.memo = memo
 
     @functools.wraps(func)
-    def getter(names, arrays=(), dtype=None, ilp64=False):
+    def getter(names, arrays=(), dtype=None, ilp64="preferred"):
         key = (names, dtype, ilp64)
         for array in arrays:
             # cf. find_blas_funcs
@@ -420,7 +437,7 @@ def _memoize_get_funcs(func):
 
 
 @_memoize_get_funcs
-def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
+def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     """Return available BLAS function objects from names.
 
     Arrays are used to determine the optimal prefix of BLAS routines.
@@ -440,25 +457,30 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
 
     ilp64 : {True, False, 'preferred'}, optional
         Whether to return ILP64 routine variant.
-        Choosing 'preferred' returns ILP64 routine if available,
-        and otherwise the 32-bit routine. Default: False
+        Choosing ``'preferred'`` returns ILP64 routine if available,
+        and otherwise the 32-bit (LP64) routine. Default: ``'preferred'``.
 
     Returns
     -------
     funcs : list
         List containing the found function(s).
 
+    Raises
+    ------
+    RuntimeError
+        If the requested LP64/ILP64 variant is not available.
+
+    See Also
+    --------
+    scipy.linalg.lapack.get_lapack_funcs
+        a similar routine for selecting LAPACK functions.
 
     Notes
     -----
-    This routine automatically chooses between Fortran/C
-    interfaces. Fortran code is used whenever possible for arrays with
-    column major order. In all other cases, C code is preferred.
-
     In BLAS, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
-    matrix. These can be one of {'s', 'd', 'c', 'z'} for the NumPy
-    types {float32, float64, complex64, complex128} respectively.
+    matrix. These can be one of ``{'s', 'd', 'c', 'z'}`` for the NumPy
+    types ``{float32, float64, complex64, complex128}`` respectively.
     The code and the dtype are stored in attributes `typecode` and `dtype`
     of the returned functions.
 
@@ -467,14 +489,37 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
     >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
-    >>> a = rng.random((3,2))
+    >>> a = rng.random((3, 2))
     >>> x_gemv = LA.get_blas_funcs('gemv', (a,))
+
+    Note that ``x_gemv`` string representation shows the exact BLAS function with the
+    prefix (here, ``d-`` because ``a`` is double precision real):
+
+    >>> x_gemv
+    <fortran function dgemv>
+
+    The BLAS variant information is also available from the ``typecode`` attribute:
+
     >>> x_gemv.typecode
     'd'
-    >>> x_gemv = LA.get_blas_funcs('gemv',(a*1j,))
+
+    For double precision complex arrays, we select the ``z-`` variant, ``zgemv``
+
+    >>> x_gemv = LA.get_blas_funcs('gemv', (a*1j,))
     >>> x_gemv.typecode
     'z'
 
+    If you want to select a specific BLAS variant instead of relying on array types, use
+    the ``dtype=`` argument:
+
+    >>> LA.get_blas_funcs('gemv', dtype=np.float32)
+    <fortran function sgemv>
+
+    The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
+    and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):
+
+    >>> x_gemv.int_dtype
+    dtype('int32')   # may vary
     """
     if isinstance(ilp64, str):
         if ilp64 == 'preferred':
