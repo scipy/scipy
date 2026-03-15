@@ -5619,10 +5619,14 @@ class Test_ttest_ind_common:
         assert_allclose(statistics, res.statistic)
         assert_allclose(pvalues, res.pvalue)
 
+    @make_xp_test_case(stats.ttest_ind)
+    @skip_xp_backends('dask.array', reason="different message when nan_policy='raise'")
     @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
                              ids=["trim", "basic"])
     @pytest.mark.parametrize("axis", [-1, 0])
-    def test_nans_on_axis(self, kwds, axis):
+    def test_nans_on_axis(self, kwds, axis, xp):
+        if not is_numpy(xp) and kwds:
+            pytest.skip("`trim` is currently compatible with NumPy only.")
         # confirm that with `nan_policy='propagate'`, NaN results are returned
         # on the correct location
         rng = np.random.default_rng(363836384995579937222)
@@ -5632,9 +5636,12 @@ class Test_ttest_ind_common:
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
 
+        a = xp.asarray(a)
+        b = xp.asarray(b)
+
         # arbitrarily use `np.sum` as a baseline for which indices should be
         # NaNs
-        expected = np.isnan(np.sum(a + b, axis=axis))
+        expected = xp.isnan(xp.sum(a + b, axis=axis))
         # multidimensional inputs to `t.sf(np.abs(t), df)` with NaNs on some
         # indices throws an warning. See issue gh-13844
         with warnings.catch_warnings(), np.errstate(invalid="ignore"):
@@ -5642,10 +5649,23 @@ class Test_ttest_ind_common:
                 "ignore", "invalid value encountered in less_equal", RuntimeWarning)
             warnings.filterwarnings("ignore", "Precision loss occurred", RuntimeWarning)
             res = stats.ttest_ind(a, b, axis=axis, **kwds)
-        p_nans = np.isnan(res.pvalue)
-        assert_array_equal(p_nans, expected)
-        statistic_nans = np.isnan(res.statistic)
-        assert_array_equal(statistic_nans, expected)
+        p_nans = xp.isnan(res.pvalue)
+        xp_assert_equal(p_nans, expected)
+        statistic_nans = xp.isnan(res.statistic)
+        xp_assert_equal(statistic_nans, expected)
+
+        # test nan_policy='raise'
+        message = ("nan_policy='raise' is not supported..." if is_lazy_array(a)
+                   else "The input contains nan values")
+        with pytest.raises((ValueError, TypeError), match=message):
+            res = stats.ttest_ind(a, b, axis=axis, nan_policy='raise', **kwds)
+
+        # test that nan_policy='omit' raised for non-NumPy backends
+        if is_numpy(xp):
+            return
+        message = "Use of `nan_policy='omit'` is incompatible with multidimensional..."
+        with pytest.raises(NotImplementedError, match=message):
+            res = stats.ttest_ind(a, b, axis=axis, nan_policy='omit', **kwds)
 
 
 class Test_ttest_trim:
@@ -6191,7 +6211,8 @@ def test_ttest_1samp_new(xp):
         xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
 
-@skip_xp_backends(eager_only=True, reason="lazy -> no nan_policy")
+@skip_xp_backends(np_only=True,
+                  reason="`nan_policy='omit'` is NumPy-only w/ multidimensional input")
 @make_xp_test_case(stats.ttest_1samp)
 def test_ttest_1samp_new_omit(xp):
     rng = np.random.default_rng(4008400329)
