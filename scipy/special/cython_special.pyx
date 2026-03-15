@@ -1361,6 +1361,8 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_log_ndtr(double x) nogil
     npy_cdouble xsf_clog_ndtr(npy_cdouble x) nogil
     double xsf_ndtri(double x) nogil
+    double special_nrdtrimn(double p, double std, double x) nogil
+    double special_nrdtrisd(double mean, double p, double x) nogil
     double xsf_owens_t(double h, double a) nogil
     double xsf_pdtr(double k, double m) nogil
     double xsf_pdtrc(double k, double m) nogil
@@ -1715,14 +1717,6 @@ cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 from ._cdflib_wrappers cimport nctdtrinc as _func_nctdtrinc
 ctypedef double _proto_nctdtrinc_t(double, double, double) noexcept nogil
 cdef _proto_nctdtrinc_t *_proto_nctdtrinc_t_var = &_func_nctdtrinc
-
-from ._cdflib_wrappers cimport nrdtrimn as _func_nrdtrimn
-ctypedef double _proto_nrdtrimn_t(double, double, double) noexcept nogil
-cdef _proto_nrdtrimn_t *_proto_nrdtrimn_t_var = &_func_nrdtrimn
-
-from ._cdflib_wrappers cimport nrdtrisd as _func_nrdtrisd
-ctypedef double _proto_nrdtrisd_t(double, double, double) noexcept nogil
-cdef _proto_nrdtrisd_t *_proto_nrdtrisd_t_var = &_func_nrdtrisd
 
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
@@ -3203,11 +3197,11 @@ cpdef double ndtri(double x0) noexcept nogil:
 
 cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrimn"""
-    return _func_nrdtrimn(x0, x1, x2)
+    return special_nrdtrimn(x0, x1, x2)
 
 cpdef double nrdtrisd(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrisd"""
-    return _func_nrdtrisd(x0, x1, x2)
+    return special_nrdtrisd(x0, x1, x2)
 
 cdef void obl_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.obl_ang1"""
