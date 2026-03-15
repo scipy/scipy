@@ -860,14 +860,16 @@ class _CustomLinearOperator(LinearOperator):
     def __init__(
         self,
         shape,
-        matvec,
+        matvec=None,
         rmatvec=None,
         matmat=None,
         dtype=None,
         rmatmat=None,
         xp=None,
     ):
-        super().__init__(dtype, shape, xp)
+        if matvec is None and matmat is None:
+            raise ValueError("At least one of matvec and matmat must be provided.")
+        super().__init__(dtype=dtype, shape=shape, xp=xp)
 
         self.args = ()
 
@@ -885,13 +887,16 @@ class _CustomLinearOperator(LinearOperator):
             return super()._matmat(X)
 
     def _matvec(self, x):
-        return self.__matvec_impl(x)
+        if self.__matvec_impl is not None:
+            return self.__matvec_impl(x)
+        else:
+            return super()._matvec(x)
 
     def _rmatvec(self, x):
-        func = self.__rmatvec_impl
-        if func is None:
-            raise NotImplementedError("rmatvec is not defined")
-        return self.__rmatvec_impl(x)
+        if self.__rmatvec_impl is not None:
+            return self.__rmatvec_impl(x)
+        else:
+            return super()._rmatvec(x)
 
     def _rmatmat(self, X):
         if self.__rmatmat_impl is not None:
@@ -900,6 +905,9 @@ class _CustomLinearOperator(LinearOperator):
             return super()._rmatmat(X)
 
     def _adjoint(self):
+        if self.__rmatvec_impl is None and self.__rmatmat_impl is None:
+            raise ValueError("Cannot compute adjoint without rmatvec or rmatmat implementation.")
+
         return _CustomLinearOperator(
             shape=(*self.shape[:-2], self.shape[-1], self.shape[-2]),
             matvec=self.__rmatvec_impl,
@@ -909,6 +917,11 @@ class _CustomLinearOperator(LinearOperator):
             dtype=self.dtype,
             xp=self._xp,
         )
+    
+    def _transpose(self):
+        if self.__rmatvec_impl is None and self.__rmatmat_impl is None:
+            raise ValueError("Cannot compute transpose without rmatvec or rmatmat implementation.")
+        return super()._transpose()
 
 
 class _AdjointLinearOperator(LinearOperator):
@@ -1160,7 +1173,7 @@ class IdentityOperator(LinearOperator):
 
 
 @xp_capabilities()
-def aslinearoperator(A):
+def aslinearoperator(A) -> LinearOperator:
     """Return `A` as a `LinearOperator`.
 
     See the `LinearOperator` documentation for additional information.
@@ -1175,7 +1188,11 @@ def aslinearoperator(A):
         - `scipy.sparse` array
           (e.g. `~scipy.sparse.csr_array`, `~scipy.sparse.lil_array`, etc.)
         - `LinearOperator`
-        - An object with ``.shape`` and ``.matvec`` attributes
+        - An object with attributes 
+           - ``shape``
+           - ``matvec`` and/or ``matmat``
+           - ``rmatvec`` and/or ``rmatmat`` (optional)
+           - ``dtype ``(optional)
 
     Returns
     -------
@@ -1215,19 +1232,15 @@ def aslinearoperator(A):
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
-    if hasattr(A, "shape") and hasattr(A, "matvec"):
-        rmatvec = None
-        rmatmat = None
-        dtype = None
+    if hasattr(A, "shape") and (hasattr(A, 'matvec') or hasattr(A, 'matmat')):
+        matvec  = getattr(A, 'matvec',  None)
+        rmatvec = getattr(A, 'rmatvec', None)
+        matmat  = getattr(A, 'matmat',  None)
+        rmatmat = getattr(A, 'rmatmat', None)
+        dtype   = getattr(A, 'dtype',   None)
 
-        if hasattr(A, "rmatvec"):
-            rmatvec = A.rmatvec
-        if hasattr(A, "rmatmat"):
-            rmatmat = A.rmatmat
-        if hasattr(A, "dtype"):
-            dtype = A.dtype
         return LinearOperator(
-            A.shape, A.matvec, rmatvec=rmatvec, rmatmat=rmatmat, dtype=dtype
+            shape=A.shape, matvec=matvec, matmat=matmat, rmatvec=rmatvec, rmatmat=rmatmat, dtype=dtype
         )
 
-    raise TypeError("type not understood")
+    raise TypeError(f'type {type(A)} not understood, object must have either 1) __aslinearoperator__ or 2) shape and matvec or matmat attributes')
