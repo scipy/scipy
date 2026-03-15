@@ -220,6 +220,7 @@ jobs:
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
+          # Note: we are testing installion via sdist, so can't use `ccache` in this job
           python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
 
@@ -372,6 +373,7 @@ jobs:
     - name: build + test in i686 container
       run: |
         set -exuo pipefail
+        # Note: `ccache` not used because it isn't available on i686 CentOS 7
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
