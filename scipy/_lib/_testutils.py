@@ -11,6 +11,7 @@ import subprocess
 import sys
 import sysconfig
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
@@ -337,10 +338,11 @@ def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
     """
     Run a given function concurrently across a given number of threads.
 
-    This is equivalent to using a ThreadPoolExecutor, but using the threading
-    primitives instead. This function ensures that the closure passed by
-    parameter gets called concurrently by setting up a barrier before it gets
-    called before any of the threads.
+    This function ensures that the closure passed by parameter gets called
+    concurrently by setting up a barrier before it gets called before any of the
+    threads.
+
+    Returns a list of values returned by the worker threads.
 
     Arguments
     ---------
@@ -353,21 +355,22 @@ def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
         Variable number of positional arguments to pass to the function.
     **kwargs: dict
         Keyword arguments to pass to the function.
+
     """
     barrier = threading.Barrier(n_workers)
 
     def closure(i, *args, **kwargs):
         barrier.wait()
-        fn(i, *args, **kwargs)
+        return fn(i, *args, **kwargs)
 
-    workers = []
-    for i in range(0, n_workers):
-        workers.append(threading.Thread(
-            target=closure,
-            args=(i,) + args, kwargs=kwargs))
+    with ThreadPoolExecutor(max_workers=n_workers) as tpe:
+        try:
+            futures = []
+            for i in range(0, n_workers):
+                futures.append(tpe.submit(closure, i, *args, **kwargs))
+        finally:
+            if len(futures) < n_workers:
+                # to avoid deadlocks if spawning failed for some reason
+                barrier.abort()
 
-    for worker in workers:
-        worker.start()
-
-    for worker in workers:
-        worker.join()
+    return [f.result() for f in futures]
