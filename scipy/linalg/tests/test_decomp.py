@@ -2037,6 +2037,26 @@ class TestQR:
             if q.size != 0: # sanity check to prevent `q.T @ q` from being all zero
                 assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]))
 
+    def test_raw_flags(self):
+        # internally, the implementation manipulates strides and flags; make sure
+        # that strides and flags are consistent
+        n = 3
+        a = np.eye(n, dtype=np.float32)
+        aa = np.stack([a, 2*a])
+
+        # 2D:
+        q = qr(a, mode="raw")[0][0]
+        itemsize = q.dtype.itemsize
+        assert q.strides == (itemsize, itemsize*n)    # F-ordered
+        assert q.flags.f_contiguous
+        assert q.flags.c_contiguous is False
+
+        # Batched case: core dims F-ordered
+        qq = qr(aa, mode="raw")[0][0]
+        assert qq.strides == (n*n*itemsize, itemsize, itemsize*n)
+        assert qq.flags.f_contiguous is False
+        assert q.flags.c_contiguous is False
+
     @pytest.mark.parametrize("dtype", DTYPES)
     def test_smoke_economic(self, dtype):
         # smoke test to check if buffer size if not all too large

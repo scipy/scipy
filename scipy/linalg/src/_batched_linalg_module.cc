@@ -327,8 +327,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         strides_Q[ndim-2] = sizeof_T;
         strides_Q[ndim-1] = M * sizeof_T;
 
-        PyArray_UpdateFlags(ap_Q, NPY_ARRAY_C_CONTIGUOUS);
-        PyArray_UpdateFlags(ap_Q, NPY_ARRAY_F_CONTIGUOUS);
+        PyArray_UpdateFlags(ap_Q, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS);
     }
 
     // Set all elements to 0 immediately as the pivots are also used as inputs in `geqp3`.
