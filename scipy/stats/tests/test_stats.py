@@ -1316,6 +1316,13 @@ class TestCorrSpearmanr:
         expected = [0.865895477, 0.866100381, 0.866100381]
         assert_allclose([res1, res2, res3], expected)
 
+    #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
+    #    should appear on the diagonal and the total should be 899999955.
+    #    If the table cannot hold these values, forget about working with
+    #    census data.  You can also tabulate HUGE against TINY.  There is no
+    #    reason a tabulation program should not be able to distinguish
+    #    different values regardless of their magnitude.
+
 
 class TestCorrSpearmanr2:
     """Some further tests of the spearmanr function."""
