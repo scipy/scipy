@@ -10877,8 +10877,8 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
 
-    df = n - 2
-    valid = df > 0
+    df = xp.asarray(n - 2, dtype=r.dtype)
+    valid = xp.asarray(df > 0, dtype=xp.bool)
 
     t = xpx.apply_where(
         valid,
