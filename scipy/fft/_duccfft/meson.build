@@ -25,19 +25,14 @@ endif
 duccfft_args = duccfft_threads
 
 
-# TODO: grab a `duccfft_dep` from a subproject
-incdir = include_directories('../../_lib/ducc/src')
-py3.extension_module('pyduccfft',
-  '../../_lib/ducc/src/ducc0/infra/string_utils.cc',
-  '../../_lib/ducc/src/ducc0/infra/threading.cc',
-  '../../_lib/ducc/src/ducc0/infra/mav.cc',
-  'pyduccfft.cxx',
-  cpp_args: duccfft_args,
-  dependencies: [fft_deps, pybind11_dep],
-  include_directories: incdir,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/fft/_duccfft',
+py3.extension_module(
+    'pyduccfft',
+    'pyduccfft.cxx',
+    cpp_args: duccfft_args,
+    dependencies: [fft_deps, pybind11_dep, duccfft_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/fft/_duccfft',
 )
 
 

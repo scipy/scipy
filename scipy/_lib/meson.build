@@ -1,7 +1,3 @@
-if not fs.exists('ducc/README.md')
-  error('Missing the `ducc` submodule! Run `git submodule update --init` to fix this.')
-endif
-
 _lib_pxd = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_ccallback_c.pxd'),

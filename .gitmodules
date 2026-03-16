@@ -34,6 +34,3 @@
 	path = subprojects/xsf
 	url = https://github.com/scipy/xsf.git
 
-[submodule "scipy/_lib/ducc"]
-	path = scipy/_lib/ducc
-	url = https://gitlab.mpcdf.mpg.de/mtr/ducc.git
