@@ -41,7 +41,7 @@ class TestVariation:
 
     @pytest.mark.parametrize('nan_policy, expected',
                              [('propagate', np.nan),
-                              ('omit', np.sqrt(20/3)/4)])
+                              ('omit', math.sqrt(20/3)/4)])
     @skip_xp_backends(eager_only=True, reason='lazy -> limited nan_policy support')
     def test_variation_nan(self, nan_policy, expected, xp):
         x = xp.arange(10.)
@@ -68,8 +68,8 @@ class TestVariation:
 
     @skip_xp_backends("dask.array", reason='needs `_axis_nan_policy`')
     @pytest.mark.parametrize('axis, expected',
-                             [(0, np.empty((1, 0))),
-                              (1, np.full((5, 1), fill_value=np.nan))])
+                             [(0, np.empty((1, 0)).tolist()),
+                              (1, np.full((5, 1), fill_value=np.nan).tolist())])
     def test_keepdims_size0(self, axis, expected, xp):
         x = xp.zeros((5, 0))
         if axis == 1:

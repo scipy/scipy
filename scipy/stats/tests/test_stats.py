@@ -2807,7 +2807,7 @@ class TestSEM:
     def test_sem_nan_policy(self, xp):
         x = xp.arange(10.)
         x[9] = xp.nan
-        xp_assert_equal(stats.sem(x, nan_policy='omit'), xp.asarray(0.9128709291752769))
+        xp_assert_close(stats.sem(x, nan_policy='omit'), xp.asarray(0.9128709291752769))
         message = "The input contains nan values"
         with pytest.raises(ValueError, match=message):
             stats.sem(x, nan_policy='raise')
@@ -4717,7 +4717,6 @@ class TestKSOneSample:
         xp_assert_equal(res.statistic_sign, xp.asarray(ref_sign, dtype=xp.int8))
 
     # missing: no test that uses *args
-
 
 @make_xp_test_case(stats.ks_2samp)
 class TestKSTwoSamples:
@@ -6640,7 +6639,7 @@ class TestObrientransform:
                                          1.6086, 5.2817, 11.0538])
         expected = np.repeat(transformed_values, reps)
         result = stats.obrientransform(xp.asarray(data))
-        xp_assert_close(result[0][:], xp.asarray(expected), rtol=1e-3)
+        xp_assert_close(result[0][:], xp.asarray(expected.tolist()), rtol=1e-3)
 
     def test_nan_policy(self, xp):
         rng = np.random.default_rng(4284359689201882838835)
