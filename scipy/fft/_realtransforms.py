@@ -713,5 +713,28 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     type. DST type 1 and 4 are their own inverse and DSTs 2 and 3 are each
     other's inverses.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import fft
+    >>> import matplotlib.pyplot as plt
+
+    Generate frequency domain data for a sequence with a
+    lower-frequency, higher-amplitude component and a higher-frequency,
+    lower-amplitude component.
+
+    >>> Xk = np.zeros(100)
+    >>> Xk[5] = 300
+    >>> Xk[99] = 200
+
+    Calculate the inverse discrete sine transform of ``Xk`` and plot
+    the results.
+
+    >>> xn = fft.idst(Xk)
+    >>> plt.plot(xn)
+    >>> plt.show()
+
+    The plot shows ``xn`` with identifiable components.
+
     """
     return (Dispatchable(x, np.ndarray),)
