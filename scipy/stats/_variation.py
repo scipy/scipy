@@ -6,6 +6,7 @@ from scipy._lib._array_api import (
     xp_capabilities,
     xp_device,
     _count_nonmasked,
+    xp_promote,
 )
 import scipy._external.array_api_extra as xpx
 
@@ -102,7 +103,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
 
     """
     xp = array_namespace(a)
-    a = xp.asarray(a)
+    a = xp_promote(a, force_floating=True, xp=xp)
 
     # `nan_policy` and `keepdims` are handled by `_axis_nan_policy`
     if axis is None:
