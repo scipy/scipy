@@ -872,6 +872,12 @@ class TestGMRES:
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20
+    
+    def test_gmres_maxiter_zero(self):
+        A = np.eye(3)
+        b = np.ones(3)
+        with pytest.raises(ValueError, match='maxiter must be an integer not less than'):
+            gmres(A, b, maxiter=0)
 
 
 def test_nD(solver, xp):

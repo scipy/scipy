@@ -4,6 +4,7 @@ from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
 from scipy._lib._array_api import xp_capabilities
+from scipy._lib._util import (_validate_int)
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
@@ -717,6 +718,8 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
 
     if maxiter is None:
         maxiter = n*10
+    # Check maxiter if a value is given
+    _validate_int(maxiter, 'maxiter', minimum=1)
 
     if restart is None:
         restart = 20
