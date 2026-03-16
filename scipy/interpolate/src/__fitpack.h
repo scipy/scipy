@@ -1,15 +1,11 @@
 #pragma once
-#include <Python.h>
-/* npy_cblas.h includes python.h */
 #include <iostream>
 #include <cinttypes>
 #include <tuple>
 #include <vector>
 #include <string>
 #include <limits>
-
-#include "../_build_utils/src/npy_cblas.h"
-#include "../_build_utils/src/fortran_defs.h"
+#include "../_build_utils/src/_ilp64_defines.h"
 
 #define DLARTG BLAS_FUNC(dlartg)
 

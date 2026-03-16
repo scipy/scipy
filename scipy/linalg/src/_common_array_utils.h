@@ -5,7 +5,7 @@
 #include "Python.h"
 #include <math.h>
 #include "numpy/arrayobject.h"
-#include "npy_cblas.h"
+#include "_ilp64_defines.h"
 
 #if defined(_MSC_VER)
     #include <complex.h>

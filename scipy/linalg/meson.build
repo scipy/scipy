@@ -272,7 +272,7 @@ py3.extension_module('_internal_matfuncs',
     'src/_matfuncs_expm.c',
     'src/_matfuncs_sqrtm.c'
   ],
-  include_directories: ['src/', '../_build_utils/src'],  # for npy_cblas.h
+  include_directories: ['src/', '../_build_utils/src'],  # for _ilp64_defines.h
   dependencies: [np_dep, lapack_dep],
   install: true,
   subdir: 'scipy/linalg'

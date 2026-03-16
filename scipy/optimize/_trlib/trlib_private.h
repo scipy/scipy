@@ -29,7 +29,7 @@
 /* #undef TRLIB_MEASURE_SUBTIME */
 
 #include "numpy/arrayobject.h"
-#include "npy_cblas.h"
+#include "_ilp64_defines.h"
 
 #include "trlib.h"
 #include <math.h>
