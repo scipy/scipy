@@ -19,6 +19,7 @@ py3.extension_module('_rigid_transform_cy',
 py3.install_sources([
     '__init__.py',
     '_rigid_transform.py',
+    '_rigid_transform_xp.py',
     '_rotation.py',
     '_rotation_groups.py',
     '_rotation_spline.py',

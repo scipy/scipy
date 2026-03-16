@@ -455,7 +455,7 @@
         fmax, &ifeasiblef, &iinfesiblef, ierror, args, jones,
         force_stop);
     if (!ret) {
-        return NULL;
+        goto cleanup;
     }
 /* +-----------------------------------------------------------------------+ */
 /* | Added error checking.                                                 | */
@@ -595,11 +595,15 @@
 /* +-----------------------------------------------------------------------+ */
 /* | JG 01/22/01 Added variable to keep track of the maximum value found.  | */
 /* +-----------------------------------------------------------------------+ */
-        direct_dirsamplef_(c__, arrayi, &delta, &help, &start, length,
+        Py_XDECREF(ret);  /* DECREF previous return value before getting new one */
+        ret = direct_dirsamplef_(c__, arrayi, &delta, &help, &start, length,
             logfile, f, &ifree, &maxi, point, fcn, &x[
             1], x_seq, &l[1], minf, &minpos, &u[1], n, &MAXFUNC, &
             MAXDEEP, &oops, &fmax, &ifeasiblef, &iinfesiblef,
             args, force_stop);
+        if (!ret) {
+            goto cleanup;
+        }
         if (force_stop && *force_stop) {
              *ierror = -102;
              *numiter = t;
@@ -773,8 +777,10 @@
         PyObject* callback_py = PyObject_CallObject(callback, arg_tuple);
         Py_DECREF(arg_tuple);
         if( !callback_py ) {
-            return NULL;
+            ret = NULL;
+            goto cleanup;
         }
+        Py_DECREF(callback_py);  /* DECREF the callback's return value */
     }
 /* L10: */
     }

@@ -18,7 +18,9 @@ from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
-                       check_shape, check_reshape_kwargs, isscalarlike, isdense)
+                       check_shape, isscalarlike,
+                       isintlike, isdense)
+from ._index import _validate_indices, _broadcast_arrays
 
 import operator
 
@@ -125,9 +127,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         new_col = np.asarray(new_col, dtype=self.coords[-1].dtype)
         self.coords = self.coords[:-1] + (new_col,)
 
-    def reshape(self, *args, **kwargs):
-        shape = check_shape(args, self.shape, allow_nd=self._allow_nd)
-        order, copy = check_reshape_kwargs(kwargs)
+    def reshape(self, *shape, order="C", copy=False):
+        shape = check_shape(shape, self.shape, allow_nd=self._allow_nd)
 
         # Return early if reshape is not required
         if shape == self.shape:
@@ -243,6 +244,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               shape=permuted_shape, copy=copy)
 
     transpose.__doc__ = _spbase.transpose.__doc__
+    
+    @property
+    def mT(self):
+        if (n := self.ndim) < 2:
+            raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
+        axes = None if n == 2 else tuple(range(n - 2)) + (-1, -2)
+        return self.transpose(axes=axes)
+    
+    mT.__doc__ = _spbase.mT.__doc__
 
     def resize(self, *shape) -> None:
         shape = check_shape(shape, allow_nd=self._allow_nd)
@@ -312,9 +322,19 @@ class _coo_base(_data_matrix, _minmax_mixin):
     toarray.__doc__ = _spbase.toarray.__doc__
 
     def tocsc(self, copy=False):
-        """Convert this array/matrix to Compressed Sparse Column format
+        """Convert this array/matrix to Compressed Sparse Column format.
 
         Duplicate entries will be summed together.
+
+        Parameters
+        ----------
+        copy : bool, optional
+            Unused.
+
+        Returns
+        -------
+        csc array/matrix
+            The converted array/matrix in CSC format.
 
         Examples
         --------
@@ -345,9 +365,20 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return x
 
     def tocsr(self, copy=False):
-        """Convert this array/matrix to Compressed Sparse Row format
+        """Convert this array/matrix to Compressed Sparse Row format.
 
         Duplicate entries will be summed together.
+
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant csr_array/matrix.
+
+        Returns
+        -------
+        csr array/matrix
+            The converted array/matrix in CSR format.
 
         Examples
         --------
@@ -524,8 +555,247 @@ class _coo_base(_data_matrix, _minmax_mixin):
             coords = self.coords
         return self.__class__((data, coords), shape=self.shape, dtype=data.dtype)
 
+    def __getitem__(self, key):
+        index, new_shape, arr_int_pos, none_pos = _validate_indices(
+            key, self.shape, self.format
+        )
+        # handle int, slice and int-array indices
+        index_mask = np.ones(len(self.data), dtype=np.bool_)
+        slice_coords = []
+        arr_coords = []
+        arr_indices = []
+        for i, (idx, co) in enumerate(zip(index, self.coords)):
+            if isinstance(idx, int):
+                index_mask &= (co == idx)
+            elif isinstance(idx, slice):
+                if idx == slice(None):
+                    slice_coords.append(co)
+                else:
+                    start, stop, step = idx.indices(self.shape[i])
+                    if step != 1:
+                        if step < 0:
+                            in_range = (co <= start) & (co > stop)
+                        else:
+                            in_range = (co >= start) & (co < stop)
+                        new_ix, m = np.divmod(co - start, step)
+                        index_mask &= (m == 0) & in_range
+                    else:
+                        in_range = (co >= start) & (co < stop)
+                        new_ix = co - start
+                        index_mask &= in_range
+                    slice_coords.append(new_ix)
+            else:  # array
+                arr_coords.append(co)
+                arr_indices.append(idx)
+        # shortcut for scalar output
+        if new_shape == ():
+            return self.data[index_mask].sum().astype(self.dtype, copy=False)
+
+        new_coords = [co[index_mask] for co in slice_coords]
+        new_data = self.data[index_mask]
+
+        # handle array indices
+        if arr_indices:
+            arr_indices = _broadcast_arrays(*arr_indices)
+            arr_shape = arr_indices[0].shape  # already broadcast in validate_indices
+            # There are three dimensions required to check array indices against coords
+            # Their lengths are described as:
+            # a) number of indices that are arrays - arr_dim
+            # b) number of coords to check - masked_nnz (already masked by slices)
+            # c) size of the index arrays - arr_size
+            # Note for this, integer indices are treated like slices, not like arrays.
+            #
+            # Goal:
+            # Find new_coords and index positions that match across all arr_dim axes.
+            # Approach: Track matches using bool array. Size: masked_nnz by arr_size.
+            # True means all arr_indices match at that coord and index position.
+            # Equate with broadcasting and check for all equal across (arr_dim) axis 0.
+            # 1st array is "keyarr" (arr_dim by 1 by arr_size) from arr_indices.
+            # 2nd array is "arr_coords" (arr_dim by masked_nnz by 1) from arr_coords.
+            keyarr = np.array(arr_indices).reshape(len(arr_indices), 1, -1)
+            arr_coords = np.array([co[index_mask] for co in arr_coords])[:, :, None]
+            found = (keyarr == arr_coords).all(axis=0)
+            arr_co, arr_ix = found.nonzero()
+            new_data = new_data[arr_co]
+            new_coords = [co[arr_co] for co in new_coords]
+            new_arr_coords = list(np.unravel_index(arr_ix, shape=arr_shape))
+
+            # check for contiguous positions of array and int indices
+            if len(arr_int_pos) == arr_int_pos[-1] - arr_int_pos[0] + 1:
+                # Contiguous. Put all array index shape at pos of array indices
+                pos = arr_int_pos[0]
+                new_coords = new_coords[:pos] + new_arr_coords + new_coords[pos:]
+            else:
+                # Not contiguous. Put all array coords at front
+                new_coords = new_arr_coords + new_coords
+
+        if none_pos:
+            if new_coords:
+                coord_like = np.zeros_like(new_coords[0])
+            else:
+                coord_like = np.zeros(len(new_data), dtype=self.coords[0].dtype)
+            new_coords.insert(none_pos[0], coord_like)
+            for i in none_pos[1:]:
+                new_coords.insert(i, coord_like.copy())
+        return coo_array((new_data, new_coords), shape=new_shape, dtype=self.dtype)
+
+    def __setitem__(self, key, x):
+        # enact self[key] = x
+        index, new_shape, arr_int_pos, none_pos = _validate_indices(
+            key, self.shape, self.format
+        )
+
+        # remove None's at beginning of index. Should not impact indexing coords
+        # and will mistakenly align with x_coord columns if not removed.
+        if none_pos:
+            new_shape = list(new_shape)
+            for j in none_pos[::-1]:
+                new_shape.pop(j)
+            new_shape = tuple(new_shape)
+
+        # broadcast arrays
+        if arr_int_pos:
+            index = list(index)
+            arr_pos = {i: arr for i in arr_int_pos if not isintlike(arr := index[i])}
+            arr_indices = _broadcast_arrays(*arr_pos.values())
+            for i, arr in zip(arr_pos, arr_indices):
+                index[i] = arr
+
+        # get coords and data from x
+        if issparse(x):
+            if 0 in x.shape:
+                return  # Nothing to set.
+            x_data, x_coords = _get_sparse_data_and_coords(x, new_shape, self.dtype)
+        else:
+            x = np.asarray(x, dtype=self.dtype)
+            if x.size == 0:
+                return  # Nothing to set.
+            x_data, x_coords = _get_dense_data_and_coords(x, new_shape)
+
+        # Approach:
+        # Set indexed values to zero (drop from `self.coords` and `self.data`)
+        # create new coords and data arrays for setting nonzeros
+        # concatenate old (undropped) values with new coords and data
+
+        old_data, old_coords = self._zero_many(index)
+
+        if len(x_coords) == 1 and len(x_coords[0]) == 0:
+            self.data, self.coords = old_data, old_coords
+            # leave self.has_canonical_format unchanged
+            return
+
+        # To process array indices, need the x_coords for those axes
+        # and need to ravel the array part of x_coords to build new_coords
+        # Along the way, Find pos and shape of array-index portion of key.
+        # arr_shape is None and pos = -1 when no arrays are used as indices.
+        arr_shape = None
+        pos = -1
+        if arr_int_pos:
+            # Get arr_shape if any arrays are in the index.
+            # Also ravel the corresponding x_coords.
+            for idx in index:
+                if not isinstance(idx, slice) and not isintlike(idx):
+                    arr_shape = idx.shape
+
+                    # Find x_coord pos of integer and array portion of index.
+                    # If contiguous put int and array axes at pos of those indices.
+                    # If not contiguous, put all int and array axes at pos=0.
+                    if len(arr_int_pos) == (arr_int_pos[-1] - arr_int_pos[0] + 1):
+                        pos = arr_int_pos[0]
+                    else:
+                        pos = 0
+
+                    # compute the raveled coords of the array part of x_coords.
+                    # Used to build the new coords from the index arrays.
+                    x_arr_coo = x_coords[pos:pos + len(arr_shape)]
+                    # could use np.ravel_multi_index but _ravel_coords avoids overflow
+                    x_arr_coo_ravel = _ravel_coords(x_arr_coo, arr_shape)
+                    break
+
+        # find map from x_coord slice axes to index axes
+        x_ax = 0
+        x_axes = {}
+        for i, idx in enumerate(index):
+            if i == pos:
+                x_ax += len(arr_shape)
+            if isinstance(idx, slice):
+                x_axes[i] = x_ax
+                x_ax += 1
+
+        # Build new_coords and new_data
+        new_coords = [None] * self.ndim
+        new_nnz = len(x_data)
+        for i, idx in enumerate(index):
+            if isintlike(idx):
+                new_coords[i] = (np.broadcast_to(idx, (new_nnz,)))
+                continue
+            elif isinstance(idx, slice):
+                start, stop, step = idx.indices(self.shape[i])
+                new_coords[i] = (start + x_coords[x_axes[i]] * step)
+            else:  # array idx
+                new_coords[i] = idx.ravel()[x_arr_coo_ravel]
+        # seems like a copy is prudent when setting data in this array
+        new_data = x_data.copy()
+
+        # deduplicate entries created by multiple coords matching in the array index
+        # NumPy does not specify which value is put into the spot (last one assigned)
+        # so only one value should appear if we want to match NumPy.
+        # If matching NumPy is not crucial, we could make dups a feature where
+        # integer array indices  with repeated indices creates duplicate values.
+        # Not doing that here. We are just removing duplicates (keep 1st data found)
+        new_coords = np.array(new_coords)
+        _, ind = np.unique(new_coords, axis=1, return_index=True)
+
+        # update values with stack of old and new data and coords.
+        self.data = np.hstack([old_data, new_data[ind]])
+        self.coords = tuple(np.hstack(c) for c in zip(old_coords, new_coords[:, ind]))
+        self.has_canonical_format = False
+
+    def _zero_many(self, index):
+        # handle int, slice and integer-array indices
+        # index_mask accumulates a bool array of nonzeros that match index
+        index_mask=np.ones(len(self.data), dtype=np.bool_)
+        arr_coords = []
+        arr_indices = []
+        for i, (idx, co) in enumerate(zip(index, self.coords)):
+            if isinstance(idx, int):
+                index_mask &= (co == idx)
+            elif isinstance(idx, slice) and idx != slice(None):
+                start, stop, step = idx.indices(self.shape[i])
+                if step != 1:
+                    if step < 0:
+                        in_range = (co <= start) & (co > stop)
+                    else:
+                        in_range = (co >= start) & (co < stop)
+                    m = np.mod(co - start, step)
+                    index_mask &= (m == 0) & in_range
+                else:
+                    in_range = (co >= start) & (co < stop)
+                    index_mask &= in_range
+            elif isinstance(idx, slice) and idx == slice(None):
+                # slice is full axis so no changes to index_mask
+                pass
+            else:  # array
+                arr_coords.append(co)
+                arr_indices.append(idx)
+
+        # match array indices with masked coords. See comments in __getitem__
+        if arr_indices:
+            keyarr = np.array(arr_indices).reshape(len(arr_indices), 1, -1)
+            arr_coords = np.array([co[index_mask] for co in arr_coords])[:, :, None]
+            found = (keyarr == arr_coords).all(axis=0)
+            arr_coo, _ = found.nonzero()
+            arr_index_mask = np.zeros_like(index_mask)
+            arr_index_mask[index_mask.nonzero()[0][arr_coo]] = True
+            index_mask &= arr_index_mask
+
+        # remove matching coords and data to set them to zero
+        pruned_coords = [co[~index_mask] for co in self.coords]
+        pruned_data = self.data[~index_mask]
+        return pruned_data, pruned_coords
+
     def sum_duplicates(self) -> None:
-        """Eliminate duplicate entries by adding them together
+        """Eliminate duplicate entries by adding them together.
 
         This is an *in place* operation
         """
@@ -555,9 +825,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return coords, data
 
     def eliminate_zeros(self):
-        """Remove zero entries from the array/matrix
+        """Remove zero entries from the array/matrix.
 
-        This is an *in place* operation
+        This is an *in place* operation.
         """
         mask = self.data != 0
         self.data = self.data[mask]
@@ -820,7 +1090,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Parameters
         ----------
-        other : array_like (dense or sparse)
+        other : array_like or sparse array
             Second array
 
         Returns
@@ -952,9 +1222,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Parameters
         ----------
-        a, b : array_like
-            Tensors to "dot".
-
+        other : array_like
+            Tensor to "dot".
         axes : int or (2,) array_like
             * integer_like
               If an int N, sum over the last N axes of `a` and the first N axes
@@ -1256,6 +1525,68 @@ def _extract_block_diag(self, shape):
     return coo_array((data, tuple(new_coords)), shape=shape)
 
 
+def _get_sparse_data_and_coords(x, new_shape, dtype):
+    x = x.tocoo()
+    x.sum_duplicates()
+
+    x_coords = list(x.coords)
+    x_data = x.data.astype(dtype, copy=False)
+    x_shape = x.shape
+
+    if new_shape == x_shape:
+        return x_data, x_coords
+
+    # broadcasting needed
+    len_diff = len(new_shape) - len(x_shape)
+    if len_diff > 0:
+        # prepend ones to shape of x to match ndim
+        x_shape = [1] * len_diff + list(x_shape)
+        coord_zeros = np.zeroslike(x_coords[0])
+        x_coords = tuple([coord_zeros] * len_diff + x_coords)
+    # taking away axes (squeezing) is not part of broadcasting, but long
+    # spmatrix history of using 2d vectors in 1d space, so we manually
+    # squeeze the front and back axes here to be compatible
+    if len_diff < 0:
+        for _ in range(-len_diff):
+            if x_shape[0] == 1:
+                x_shape = x_shape[1:]
+                x_coords = x_coords[1:]
+            elif x_shape[-1] == 1:
+                x_shape = x_shape[:-1]
+                x_coords = x_coords[:-1]
+            else:
+                raise ValueError("shape mismatch in assignment")
+    # broadcast with copy (will need to copy eventually anyway)
+    tot_expand = 1
+    for i, (nn, nx) in enumerate(zip(new_shape, x_shape)):
+        if nn == nx:
+            continue
+        if nx != 1:
+            raise ValueError("shape mismatch in assignment")
+        x_nnz = len(x_coords[0])
+        x_coords[i] = np.repeat(np.arange(nn), x_nnz)
+        for j, co in enumerate(x_coords):
+            if j == i:
+                continue
+            x_coords[j] = np.tile(co, nn)
+        tot_expand *= nn
+    x_data = np.tile(x_data.ravel(), tot_expand)
+    return x_data, x_coords
+
+
+def _get_dense_data_and_coords(x, new_shape):
+    if x.shape != new_shape:
+        x = np.broadcast_to(x.squeeze(), new_shape)
+    # shift scalar input to 1d so has coords
+    if new_shape == ():
+        x_coords = tuple([np.array([0])] * len(new_shape))
+        x_data = x.ravel()
+    else:
+        x_coords = x.nonzero()
+        x_data = x[x_coords]
+    return x_data, x_coords
+
+
 def _process_axes(ndim_a, ndim_b, axes):
     if isinstance(axes, int):
         if axes < 1 or axes > min(ndim_a, ndim_b):
@@ -1376,22 +1707,28 @@ class coo_array(_coo_base, sparray):
 
     Attributes
     ----------
-    dtype : dtype
-        Data type of the sparse array
-    shape : tuple of integers
-        Shape of the sparse array
-    ndim : int
-        Number of dimensions of the sparse array
-    nnz
-    size
-    data
+    data : ndarray
         COO format data array of the sparse array
-    coords
+    coords : tuple of ndarray
         COO format tuple of index arrays
     has_canonical_format : bool
         Whether the matrix has sorted coordinates and no duplicates
-    format
-    T
+    dtype : dtype
+        Data type of the array
+    shape : tuple of integers
+        Shape of the array
+    ndim : int
+        Number of dimensions of the array
+    format : str
+        Three letter code for the format of the array storage, e.g. 'coo'
+    nnz : int
+        Number of values stored in the array
+    size : int
+        Number of values stored in the array
+    T : coo_array
+        The transpose of the array
+    mT : coo_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -1457,7 +1794,7 @@ class coo_array(_coo_base, sparray):
            [0, 0, 0, 0],
            [0, 0, 0, 1]])
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class coo_matrix(spmatrix, _coo_base):
@@ -1488,24 +1825,28 @@ class coo_matrix(spmatrix, _coo_base):
 
     Attributes
     ----------
+    data : ndarray
+        COO format data array of the sparse matrix
+    coords : tuple of ndarray
+        COO format tuple of index matrix
+    has_canonical_format : bool
+        Whether the matrix has sorted coordinates and no duplicates
     dtype : dtype
         Data type of the matrix
-    shape : 2-tuple
+    shape : tuple of integers
         Shape of the matrix
     ndim : int
-        Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        COO format data array of the matrix
-    row
-        COO format row index array of the matrix
-    col
-        COO format column index array of the matrix
-    has_canonical_format : bool
-        Whether the matrix has sorted indices and no duplicates
-    format
-    T
+        Number of dimensions of the matrix
+    format : str
+        Three letter code for the format of the matrix storage, e.g. 'coo'
+    nnz : int
+        Number of values stored in the matrix
+    size : int
+        Number of values stored in the matrix
+    T : coo_matrix
+        The transpose of the matrix
+    mT : coo_matrix
+        The matrix transpose
 
     Notes
     -----
@@ -1579,3 +1920,9 @@ class coo_matrix(spmatrix, _coo_base):
             # storing nnz coordinates for 2D COO matrix.
             state['coords'] = (state.pop('row'), state.pop('col'))
         self.__dict__.update(state)
+
+    def __getitem__(self, key):
+        raise TypeError("'coo_matrix' object is not subscriptable")
+
+    def __setitem__(self, key, x):
+        raise TypeError("'coo_matrix' object does not support item assignment")

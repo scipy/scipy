@@ -9,20 +9,21 @@ from scipy.optimize._trustregion_exact import (
     singular_leading_submatrix,
     IterativeSubproblem)
 from scipy.linalg import (svd, get_lapack_funcs, det, qr, norm)
-from numpy.testing import (assert_array_equal,
+from numpy.testing import (assert_allclose, assert_array_equal,
                            assert_equal, assert_array_almost_equal)
 
 
-def random_entry(n, min_eig, max_eig, case):
+def random_entry(n, min_eig, max_eig, case, rng=None):
+    rng = np.random.default_rng(rng)
 
     # Generate random matrix
-    rand = np.random.uniform(-1, 1, (n, n))
+    rand = rng.uniform(low=-1, high=1, size=(n, n))
 
     # QR decomposition
     Q, _, _ = qr(rand, pivoting='True')
 
     # Generate random eigenvalues
-    eigvalues = np.random.uniform(min_eig, max_eig, n)
+    eigvalues = rng.uniform(low=min_eig, high=max_eig, size=n)
     eigvalues = np.sort(eigvalues)[::-1]
 
     # Generate matrix
@@ -33,12 +34,12 @@ def random_entry(n, min_eig, max_eig, case):
     # to the case is being tested.
     if case == 'hard':
         g = np.zeros(n)
-        g[:-1] = np.random.uniform(-1, 1, n-1)
+        g[:-1] = rng.uniform(low=-1, high=1, size=n-1)
         g = np.dot(Q, g)
     elif case == 'jac_equal_zero':
         g = np.zeros(n)
     else:
-        g = np.random.uniform(-1, 1, n)
+        g = rng.uniform(low=-1, high=1, size=n)
 
     return A, g
 
@@ -201,6 +202,19 @@ class TestIterativeSubproblem:
 
         assert_array_almost_equal(-s, subprob.lambda_current)
 
+    def test_gh20244(self):
+        g = [20, -10]
+        H = [[15, 0], [0, 5]]
+
+        subprob = IterativeSubproblem(x=np.zeros(2), fun=lambda _: 0,
+                                      jac=lambda _: np.array(g),
+                                      hess=lambda _: np.array(H), k_easy=1e-6,
+                                      k_hard=1e-9)
+        p, hits_boundary = subprob.solve(1.0)
+
+        assert_allclose(p, [-0.77472957,  0.63229272])
+        assert hits_boundary
+
     def test_for_interior_convergence(self):
 
         H = [[1.812159, 0.82687265, 0.21838879, -0.52487006, 0.25436988],
@@ -275,8 +289,7 @@ class TestIterativeSubproblem:
     @pytest.mark.thread_unsafe(reason="fails in parallel")
     @pytest.mark.fail_slow(10)
     def test_for_random_entries(self):
-        # Seed
-        np.random.seed(1)
+        rng = np.random.default_rng(1)
 
         # Dimension
         n = 5
@@ -295,7 +308,7 @@ class TestIterativeSubproblem:
             for min_eig, max_eig in eig_limits:
                 # Generate random symmetric matrix H with
                 # eigenvalues between min_eig and max_eig.
-                H, g = random_entry(n, min_eig, max_eig, case)
+                H, g = random_entry(n, min_eig, max_eig, case, rng=rng)
 
                 # Trust radius
                 trust_radius_list = [0.1, 0.3, 0.6, 0.8, 1, 1.2, 3.3, 5.5, 10]

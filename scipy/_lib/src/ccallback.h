@@ -209,14 +209,14 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
     }
     else if (capsule != NULL ||
              (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-              PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0)))) {
+              PyCapsule_CheckExact(PyTuple_GetItem(callback_obj, 0)))) {
         /* PyCapsule in LowLevelCallable (or parse result from above) */
         void *ptr, *user_data;
         ccallback_signature_t *sig;
         const char *name;
 
         if (capsule == NULL) {
-            capsule = PyTuple_GET_ITEM(callback_obj, 0);
+            capsule = PyTuple_GetItem(callback_obj, 0);
         }
 
         name = PyCapsule_GetName(capsule);

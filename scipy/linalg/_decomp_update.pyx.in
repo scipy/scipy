@@ -1201,6 +1201,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus, int k):
     cdef int us[2]
     cdef int ldu, p
 
+    us = [0, 0]
     if cnp.PyArray_CHKFLAGS(q, cnp.NPY_ARRAY_F_CONTIGUOUS):
         qvoid = extract(q, qs)
         if u.ndim == 1:
@@ -1400,7 +1401,7 @@ cdef void* extract(cnp.ndarray arr, int* arrs) noexcept:
 def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
               check_finite=True):
     """
-    QR downdate on row or column deletions
+    QR downdate on row or column deletions.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A`` where ``p`` rows or columns have been removed
@@ -1416,7 +1417,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
         Index of the first row or column to delete.
     p : int, optional
         Number of rows or columns to delete, defaults to 1.
-    which: {'row', 'col'}, optional
+    which : {'row', 'col'}, optional
         Determines if rows or columns will be deleted, defaults to 'row'
     overwrite_qr : bool, optional
         If True, consume Q and R, overwriting their contents with their
@@ -1617,7 +1618,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 @cython.embedsignature(True)
 def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_finite=True):
     """
-    QR update on row or column insertions
+    QR update on row or column insertions.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A`` where rows or columns have been inserted starting
@@ -1633,7 +1634,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
         Rows or columns to insert
     k : int
         Index before which `u` is to be inserted.
-    which: {'row', 'col'}, optional
+    which : {'row', 'col'}, optional
         Determines if rows or columns will be inserted, defaults to 'row'
     rcond : float
         Lower bound on the reciprocal condition number of ``Q`` augmented with
@@ -2032,7 +2033,7 @@ RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     """
-    Rank-k QR update
+    Rank-k QR update.
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
     factorization of ``A + u v**T`` for real ``A`` or ``A + u v**H``

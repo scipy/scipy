@@ -17,6 +17,7 @@ dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 def test_wrap_radians(xp):
     x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, math.pi+1])
@@ -314,6 +315,17 @@ class TestLogSumExp:
         # result is log of negative number
         b = xp.asarray([1.88190708, 2.84174795, -3.85016884])
         xp_assert_close(logsumexp(a, b=b), xp.asarray(xp.nan))
+
+    @pytest.mark.parametrize("a, b, sign_ref",
+                             [([np.inf], None, 1.),
+                              ([np.inf], [-1.], -1.)])
+    def test_gh23548(self, xp, a, b, sign_ref):
+        # gh-23548 reported that `logsumexp` with `return_sign=True` returned a sign
+        # of NaN with infinite reals
+        a, b = xp.asarray(a), xp.asarray(b) if b is not None else None
+        val, sign = logsumexp(a, b=b, return_sign=True)
+        assert xp.isinf(val)
+        xp_assert_equal(sign, xp.asarray(sign_ref))
 
 
 @make_xp_test_case(softmax)

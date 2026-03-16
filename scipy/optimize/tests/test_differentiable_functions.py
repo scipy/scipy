@@ -1,5 +1,4 @@
 import pytest
-import platform
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
@@ -439,6 +438,20 @@ class TestScalarFunction(TestCase):
                             None, (-np.inf, np.inf))
         res = sf.fun(x0)
         assert res.dtype == np.float32
+
+        # checks that ScalarFunction.fun returns a value with the same float
+        # precision as the unwrapped function would call.
+        def fun(x):
+            return x**4 - x
+
+        x0 = np.array([1.2], dtype=np.float32)
+        sf = ScalarFunction(fun, x0, (), '2-point', lambda x: None,
+                            None, (-np.inf, np.inf))
+        fx = sf.fun(x0)
+        assert fun(x0).dtype == np.float32
+        assert fx.dtype == np.float32
+        # check that the round trip cast works as intended
+        assert_equal(fx, fun(x0))
 
 
 class ExVectorialFunction:
@@ -981,10 +994,6 @@ def test_IdentityVectorFunction():
     assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_ScalarFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     ex = ExScalarFunction()
@@ -994,10 +1003,6 @@ def test_ScalarFunctionNoReferenceCycle():
         pass
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_VectorFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     ex = ExVectorialFunction()
@@ -1007,10 +1012,6 @@ def test_VectorFunctionNoReferenceCycle():
         pass
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == "PyPy",
-    reason="assert_deallocate not available on PyPy"
-)
 def test_LinearVectorFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     A_dense = np.array([

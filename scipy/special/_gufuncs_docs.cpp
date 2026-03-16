@@ -56,14 +56,14 @@ const char *lqmn_doc = R"(
     )";
 
 const char *rctj_doc = R"(
-    Compute Ricatti-Bessel function of the first kind and its derivative.
+    Compute Riccati-Bessel function of the first kind and its derivative.
 
-    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    The Riccati-Bessel function of the first kind is defined as :math:`x
     j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
     kind of order :math:`n`.
 
     This function computes the value and first derivative of the
-    Ricatti-Bessel function for all orders up to and including `n`.
+    Riccati-Bessel function for all orders up to and including `n`.
 
     Parameters
     ----------
@@ -96,9 +96,9 @@ const char *rctj_doc = R"(
     )";
 
 const char *rcty_doc = R"(
-    Compute Ricatti-Bessel function of the second kind and its derivative.
+    Compute Riccati-Bessel function of the second kind and its derivative.
 
-    The Ricatti-Bessel function of the second kind is defined as :math:`x
+    The Riccati-Bessel function of the second kind is defined as :math:`x
     y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
     kind of order :math:`n`.
 

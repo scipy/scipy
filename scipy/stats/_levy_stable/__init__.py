@@ -10,7 +10,7 @@ from scipy import integrate
 from scipy.integrate._quadrature import _builtincoeffs
 from scipy import interpolate
 from scipy.interpolate import RectBivariateSpline
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import scipy.special as sc
 from .._distn_infrastructure import rv_continuous, _ShapeInfo, rv_continuous_frozen
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
@@ -281,7 +281,14 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
             for exp_height in [100, 10, 5]
             # exp_height = 1 is handled by peak
         ]
-        intg_points = [0, peak] + tail_points
+        # Symmetry is used to ensure x > zeta as above. Integration 
+        # becomes numerically unstable so let `quad` handle 
+        # integration points
+        if beta != -1:
+            intg_points = [0, peak] + tail_points
+        else:
+            intg_points = None
+
         intg, *ret = integrate.quad(
             integrand,
             -xi,
@@ -651,9 +658,18 @@ class levy_stable_gen(rv_continuous):
     .. math::
 
         \varphi(t, \alpha, \beta, c, \mu) =
-        e^{it\mu -|ct|^{\alpha}(1-i\beta\operatorname{sign}(t)\Phi(\alpha, t))}
+        e^{it\mu -|ct|^{\alpha}(1-i\beta\operatorname{sign}(t)\Phi)}
 
-    where two different parameterizations are supported. The first :math:`S_1`:
+    where
+
+    - :math:`\alpha` is the stability parameter (:math:`0 < \alpha \le 2`),
+    - :math:`\beta` is the skewness parameter (:math:`-1 \le \beta \le 1`),
+    - :math:`c` is the scale parameter (:math:`c > 0`),
+    - :math:`\mu` is the location parameter (:math:`-\infty < \mu < \infty`).
+
+    Two parameterizations of :math:`\Phi` are supported.
+
+    The :math:`S_1` parameterization (default):
 
     .. math::
 
@@ -662,7 +678,7 @@ class levy_stable_gen(rv_continuous):
                 -{\frac {2}{\pi }}\log |t|&\alpha =1
                 \end{cases}
 
-    The second :math:`S_0`:
+    The :math:`S_0` parameterization:
 
     .. math::
 
@@ -679,7 +695,7 @@ class levy_stable_gen(rv_continuous):
 
         f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(t)e^{-ixt}\,dt
 
-    where :math:`-\infty < t < \infty`. This integral does not have a known
+    where :math:`-\infty < x < \infty`. This integral does not have a known
     closed form.
 
     `levy_stable` generalizes several distributions.  Where possible, they

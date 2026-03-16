@@ -14,13 +14,15 @@ project(
   ],
 )
 
+fs = import('fs')
+
 meson.add_dist_script('tools/trim_sdist_content.py')
 
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
-min_numpy_version = '1.26.4'  # keep in sync with pyproject.toml
-min_python_version = '3.11'   # keep in sync with pyproject.toml
+min_numpy_version = '2.0.0'  # keep in sync with pyproject.toml
+min_python_version = '3.12'   # keep in sync with pyproject.toml
 
 python_version = py3.language_version()
 if python_version.version_compare(f'<@min_python_version@')
@@ -84,24 +86,26 @@ if host_machine.system() == 'os400'
   add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp', 'fortran'])
 endif
 
-# Adding at project level causes many spurious -lgfortran flags.
-add_languages('fortran', native: false)
-ff = meson.get_compiler('fortran')
-if ff.get_id() == 'gcc'
-  # -std=legacy is not supported by all Fortran compilers, but very useful with
-  # gfortran since it avoids a ton of warnings that we don't care about.
-  # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
-  add_project_arguments('-std=legacy', language: 'fortran')
-endif
+if not get_option('_without-fortran')
+  # Adding at project level causes many spurious -lgfortran flags.
+  add_languages('fortran', native: false)
+  ff = meson.get_compiler('fortran')
+  if ff.get_id() == 'gcc'
+    # -std=legacy is not supported by all Fortran compilers, but very useful with
+    # gfortran since it avoids a ton of warnings that we don't care about.
+    # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
+    add_project_arguments('-std=legacy', language: 'fortran')
+  endif
 
-if ff.has_argument('-Wno-conversion')
-  add_project_arguments('-Wno-conversion', language: 'fortran')
-endif
+  if ff.has_argument('-Wno-conversion')
+    add_project_arguments('-Wno-conversion', language: 'fortran')
+  endif
 
-if ff.get_id() == 'llvm-flang'
-  add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['fortran'])
-  # -Wall warnings are visible because Meson's warning_level defaults to 1 (-Wall)
-  # LLVM tracking issue: https://github.com/llvm/llvm-project/issues/89888
+  if ff.get_id() == 'llvm-flang'
+    add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['fortran'])
+    # -Wall warnings are visible because Meson's warning_level defaults to 1 (-Wall)
+    # LLVM tracking issue: https://github.com/llvm/llvm-project/issues/89888
+  endif
 endif
 
 if cc.get_id() == 'clang-cl'
@@ -122,6 +126,13 @@ if host_machine.system() == 'darwin'
   endif
 endif
 
+if get_option('b_sanitize') != 'none'
+  if cc.get_id() == 'clang'
+    ignore_file = meson.current_source_dir() / 'tools' / 'asan-ignore.txt'
+    add_global_arguments('-fsanitize-ignorelist=' + ignore_file, language: ['c', 'cpp'])
+  endif
+endif
+
 # Intel compilers default to fast-math, so disable it if we detect Intel
 # compilers. A word of warning: this may not work with the conda-forge
 # compilers, because those have the annoying habit of including lots of flags
@@ -129,28 +140,31 @@ endif
 # detection logic below. You have to remove the wrong flags (only `-isystem`
 # is actually needed, everything else shouldn't be there).
 _intel_cflags = []
-_intel_fflags = []
 if cc.get_id() in ['intel', 'intel-llvm']
   _intel_cflags += cc.get_supported_arguments('-fp-model=strict')
 elif cc.get_id() in ['intel-cl', 'intel-llvm-cl']
   _intel_cflags += cc.get_supported_arguments('/fp:strict')
 endif
-if ff.get_id() in ['intel', 'intel-llvm']
-  _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
-  minus0_arg = ['-assume', 'minus0']
-  if ff.has_multi_arguments(minus0_arg)
-    _intel_fflags += minus0_arg
-  endif
-elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
-  # Intel Fortran on Windows does things differently, so deal with that
-  # (also specify dynamic linking and the right name mangling)
-  _intel_fflags = ff.get_supported_arguments(
-    '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore',
-    '/assume:minus0'
-  )
-endif
 add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
-add_global_arguments(_intel_fflags, language: 'fortran')
+
+if not get_option('_without-fortran')
+  _intel_fflags = []
+  if ff.get_id() in ['intel', 'intel-llvm']
+    _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
+    minus0_arg = ['-assume', 'minus0']
+    if ff.has_multi_arguments(minus0_arg)
+      _intel_fflags += minus0_arg
+    endif
+  elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
+    # Intel Fortran on Windows does things differently, so deal with that
+    # (also specify dynamic linking and the right name mangling)
+    _intel_fflags = ff.get_supported_arguments(
+      '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore',
+      '/assume:minus0'
+    )
+  endif
+  add_global_arguments(_intel_fflags, language: 'fortran')
+endif
 
 # Hide symbols when building on Linux with GCC. For Python extension modules,
 # we only need `PyInit_*` to be public, anything else may cause problems. So we
@@ -174,20 +188,64 @@ tempita = find_program('scipy/_build_utils/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran
-  pythran = find_program('pythran', native: true, version: '>=0.14.0')
-  # xsimd is unvendored from pythran by conda-forge, and due to a compiler
-  # activation bug the default <prefix>/include/ may not be visible (see
-  # gh-15698). Hence look for xsimd explicitly.
-  xsimd_dep = dependency('xsimd', required: false)
+  pythran = find_program('pythran', native: true, version: '>=0.18.1')
 endif
 
-fs = import('fs')
+# Subprojects
+if not fs.exists('subprojects/array_api_compat/array_api_compat/README.md')
+  error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/array_api_extra/README.md')
+  error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/cobyqa/README.rst')
+  error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/pocketfft/README.md')
+  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('subprojects/unuran/README.md')
+  error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
+endif
 if not fs.exists('subprojects/xsf/README.md')
   error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
 endif
 
+external_dir = 'scipy/_external'
+
+array_api_compat = subproject('array_api_compat')
+array_api_compat_sources = array_api_compat.get_variable('sources')
+foreach prefix, files : array_api_compat_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+array_api_extra = subproject('array_api_extra')
+array_api_extra_sources = array_api_extra.get_variable('sources')
+foreach prefix, files : array_api_extra_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+cobyqa = subproject('cobyqa')
+cobyqa_sources = cobyqa.get_variable('sources')
+foreach prefix, files : cobyqa_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+pyprima = subproject('pyprima')
+pyprima_sources = pyprima.get_variable('sources')
+foreach prefix, files : pyprima_sources
+  py3.install_sources(files, subdir: external_dir / prefix)
+endforeach
+
+pocketfft = subproject('pocketfft')
+pocketfft_dep = pocketfft.get_variable('pocketfft_dep')
+
+unuran = subproject('unuran')
+
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
+
+# System libraries / subprojects
 
 use_system_libraries = get_option('use-system-libraries')
 all_system_libraries = false
@@ -198,18 +256,18 @@ if use_system_libraries.contains('none')
 elif use_system_libraries.contains('all')
   all_system_libraries = true
 elif use_system_libraries.contains('auto')
-  auto_system_libraries = true 
+  auto_system_libraries = true
 endif
 
 if all_system_libraries or use_system_libraries.contains('boost.math')
-  boost_math_dep = dependency('boost', version : '1.88.0')
+  boost_math_dep = dependency('boost', version : '1.89.0')
 elif auto_system_libraries
   boost_math_dep = dependency(
-    'boost', version : '1.88.0',
+    'boost', version : '1.89.0',
     fallback : ['boost_math', 'boost_math_dep']
   )
 else
-  boost_math = subproject('boost_math', version : '1.88.0')
+  boost_math = subproject('boost_math', version : '1.89.0')
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 

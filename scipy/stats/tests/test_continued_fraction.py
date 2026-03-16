@@ -14,6 +14,7 @@ from scipy.stats._continued_fraction import _continued_fraction
 # n = int(xp.real(xp_ravel(n))[0])
 # (at some point in here the shape becomes nan)
 @pytest.mark.skip_xp_backends('dask.array', reason="dask has issues with the shapes")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestContinuedFraction:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10)
@@ -25,8 +26,6 @@ class TestContinuedFraction:
             y = x
         else:
             y = -x**2
-        if np.isscalar(y) and np.__version__ < "2.0":
-            y = np.full_like(x, y)  # preserve dtype pre NEP 50
         return y
 
     def b1(self, n, x=1.5):
@@ -35,8 +34,6 @@ class TestContinuedFraction:
         else:
             one = x/x  # gets array of correct type, dtype, and shape
             y = one * (2*n - 1)
-        if np.isscalar(y) and np.__version__ < "2.0":
-            y = np.full_like(x, y)  # preserve dtype pre NEP 50
         return y
 
     def log_a1(self, n, x):
@@ -113,8 +110,6 @@ class TestContinuedFraction:
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_log(self, shape, dtype, xp):
-        if (np.__version__ < "2") and (dtype == 'float32'):
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         np_dtype = getattr(np, dtype)
         rng = np.random.default_rng(2435908729190400)
         x = rng.random(shape).astype(np_dtype)

@@ -516,6 +516,13 @@ def test_yen_negative_weights():
     assert_allclose(distances, [-2.])
 
 
+@pytest.mark.parametrize('source, sink', [(0, -1), (10000, 1), (2, 6)])
+def test_yen_source_sink_validation(source, sink):
+    # directed_G has shape (6, 6)
+    with pytest.raises(ValueError, match="must have 0 <="):
+        yen(directed_G, source, sink, 2)
+
+
 @pytest.mark.parametrize("min_only", (True, False))
 @pytest.mark.parametrize("directed", (True, False))
 @pytest.mark.parametrize("return_predecessors", (True, False))

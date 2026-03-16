@@ -336,6 +336,8 @@ double xsf_chdtrc(double df, double x);
 double xsf_chdtri(double df, double y);
 double xsf_gdtr(double a, double b, double x);
 double xsf_gdtrc(double a, double b, double x);
+double special_gdtria(double p, double b, double x);
+double special_gdtrix(double a, double b, double p);
 double xsf_gdtrib(double a, double p, double x);
 double xsf_kolmogorov(double x);
 double xsf_kolmogc(double x);

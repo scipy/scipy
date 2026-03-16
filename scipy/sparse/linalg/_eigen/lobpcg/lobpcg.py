@@ -52,8 +52,7 @@ def _as2d(ar):
     if ar.ndim == 2:
         return ar
     else:  # Assume 1!
-        aux = np.asarray(ar)
-        aux.shape = (ar.shape[0], 1)
+        aux = np.asarray(ar).reshape((ar.shape[0], 1))
         return aux
 
 
@@ -219,7 +218,7 @@ def lobpcg(
         Whether to return iterative eigenvalue history.
     retResidualNormsHistory : bool, default: False
         Whether to return iterative history of residual norms.
-    restartControl : int, optional.
+    restartControl : int, optional
         Iterations restart if the residuals jump ``2**restartControl`` times
         compared to the smallest recorded in ``retResidualNormsHistory``.
         The default is ``restartControl=20``, making the restarts rare for
@@ -548,6 +547,7 @@ def lobpcg(
                     raise ValueError(
                         f"The shape {A.shape} of the primary matrix\n"
                         f"defined by a callable object is wrong.\n"
+                        f"Expected {(n, n)}."
                     )
             elif issparse(A):
                 A = A.toarray()

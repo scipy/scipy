@@ -73,6 +73,14 @@ cdef inline number_t eval_jacobi(double n, double alpha, double beta, number_t x
     cdef double a, b, c, d
     cdef number_t g
 
+    if alpha == -1 and abs(beta) == 1:
+        if n == 0:
+            return 1.0
+        elif n == 1:
+            return 0.5 * (1.0 + beta) * (x - 1.0)
+        elif n > 1:
+            return ((n + beta) / (2.0 * n)) * (x - 1) * eval_jacobi(n - 1, 1, beta, x)
+
     d = xsf_binom(n+alpha, n)
     a = -n
     b = n + alpha + beta + 1
@@ -92,6 +100,8 @@ cdef inline double eval_jacobi_l(Py_ssize_t n, double alpha, double beta, double
         return 1.0
     elif n == 1:
         return 0.5*(2*(alpha+1)+(alpha+beta+2)*(x-1))
+    elif alpha == -1 and abs(beta) == 1:
+        return ((n + beta) / (2.0 * n)) * (x - 1) * eval_jacobi(n - 1, 1, beta, x)
     else:
         d = (alpha+beta+2)*(x - 1) / (2*(alpha+1))
         p = d + 1
@@ -165,7 +175,7 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
             p += d
             d *= -4*x**2 * (a - kk) * (-a + alpha + kk + n) / (
                 (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
-            if fabs(d) == 1e-20*fabs(p):
+            if fabs(d) < 1e-20*fabs(p):
                 # converged
                 break
         return p
@@ -341,7 +351,7 @@ cdef inline double eval_legendre_l(Py_ssize_t n, double x) noexcept nogil:
             p += d
             d *= -2 * x**2 * (a - kk) * (2*n + 1 - 2*a + 2*kk) / (
                 (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
-            if fabs(d) == 1e-20*fabs(p):
+            if fabs(d) < 1e-20*fabs(p):
                 # converged
                 break
         return p

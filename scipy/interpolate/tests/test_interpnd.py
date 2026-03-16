@@ -452,3 +452,87 @@ class TestCloughTocher2DInterpolator:
         w2 = ip(p2)
         xp_assert_close(w1, v1)
         xp_assert_close(w2, v2)
+
+
+@pytest.mark.parametrize("simplex_tolerance", [1, 10])
+@pytest.mark.parametrize(
+    "interpolation_class",
+    [interpnd.LinearNDInterpolator, interpnd.CloughTocher2DInterpolator]
+)
+def test_interp_from_boundary(interpolation_class, simplex_tolerance):
+    """Test that SciPy can interpolate to a regular grid from the boundary.
+
+    Based on gh-21910
+    """
+    coords = np.block(
+        [[0, np.arange(400, 500), np.zeros(100), 800],
+         [0, np.zeros(100), np.arange(400, 500), 800]]
+    )
+    values = np.ones(202)
+    interpolator = interpolation_class(coords.T, values)
+    results = interpolator(
+        np.mgrid[:500, :500].T, simplex_tolerance=simplex_tolerance
+    )
+    num_nans = np.count_nonzero(np.isnan(results))
+    if simplex_tolerance == 1:
+        # The default tolerance doesn't work when filling from a
+        # dense boundary
+        assert num_nans > 0
+    else:
+        # The larger tolerance allows QHull to assign a simplex
+        # for each point
+        assert num_nans == 0
+
+
+@pytest.mark.parametrize("simplex_tolerance", [1, 10])
+@pytest.mark.parametrize(
+    "interpolator_factory",
+    [interpnd.CloughTocher2DInterpolator, interpnd.LinearNDInterpolator]
+)
+def test_reproduction_NaN_on_points_linear_combination(
+    simplex_tolerance, interpolator_factory
+):
+    """Test that SciPy can interpolate to the edge of a triangle.
+
+    Based on gh-22831
+    """
+    inputs = np.array([[ 0.       ,  0.       ],
+                      [ 0.       ,  0.008016],
+                      [ 3.       , -2.       ]])
+    values = np.ones(len(inputs))
+    # Create the interpolator
+    interpolator = interpolator_factory(inputs, values)
+    t1 = 0.6
+    p1 = inputs[0]
+    p2 = inputs[2]
+    point_on_edge = p1 + t1 * (p2 - p1)
+    value = interpolator(*point_on_edge, simplex_tolerance=simplex_tolerance)
+    if simplex_tolerance == 1:
+        assert np.isnan(value)
+    else:
+        assert np.isfinite(value)
+
+@pytest.mark.parametrize("simplex_tolerance", [1, 10])
+@pytest.mark.parametrize(
+    "interpolator_factory",
+    [interpnd.CloughTocher2DInterpolator, interpnd.LinearNDInterpolator]
+)
+def test_reproduction_NaN_on_input_points(
+        simplex_tolerance, interpolator_factory
+):
+    """Test that SciPy can interpolate to the input points.
+
+    Based on gh-21279.
+    Should probably be generalized to a hypothesis test.
+    """
+    inputs = np.array([[-0.004167550182114899, 0.3422659245670766],
+                       [-0.0015600025635140293, 0.2293516674374961],
+                       [-0.0014546640482194341, 0.22508674815327132],
+                       [-0.0014520968885052055, 0.2212277697065949]])
+    values = np.ones_like(inputs[:, 0])
+    interpolator = interpolator_factory(inputs, values)
+    results = interpolator(inputs, simplex_tolerance=simplex_tolerance)
+    if simplex_tolerance == 1:
+        assert np.any(np.isnan(results))
+    else:
+        assert np.all(np.isfinite(results))

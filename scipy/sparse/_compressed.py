@@ -498,16 +498,19 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if (self.ndim == 2 and not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
-            res_dtype = get_sum_dtype(self.dtype)
-            ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
-
-            major_index, value = self._minor_reduce(np.add)
+            
+            res_dtype = get_sum_dtype(self.dtype) if dtype is None else dtype
+            self_to_reduce = self.astype(res_dtype, copy=False)
+            
+            # Fast path: reduce along minor axis
+            ret = np.zeros(len(self_to_reduce.indptr) - 1, dtype=res_dtype)
+            major_index, value = self_to_reduce._minor_reduce(np.add)
             ret[major_index] = value
-            ret = self._ascontainer(ret)
+            ret = self_to_reduce._ascontainer(ret)
             if axis % 2 == 1:
                 ret = ret.T
 
-            return ret.sum(axis=(), dtype=dtype, out=out)
+            return ret.sum(axis=(), dtype=res_dtype, out=out)
         else:
             return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 
@@ -585,7 +588,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape, dtype=self.dtype)
 
-        row_nnz = (self.indptr[indices + 1] - self.indptr[indices]).astype(idx_dtype)
+        self_indptr = self.indptr.astype(idx_dtype, copy=False)
+        self_indices = self.indices.astype(idx_dtype, copy=False)
+
+        row_nnz = self_indptr[indices + 1] - self_indptr[indices]
         res_indptr = np.zeros(M + 1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
 
@@ -595,8 +601,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_row_index(
             M,
             indices,
-            self.indptr.astype(idx_dtype, copy=False),
-            self.indices.astype(idx_dtype, copy=False),
+            self_indptr,
+            self_indices,
             self.data,
             res_indices,
             res_data
@@ -804,23 +810,29 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.data[offsets] = x
             return
 
-        mask = (offsets >= 0)
+        is_existing = (offsets >= 0)
+        N_new = len(is_existing) - np.count_nonzero(is_existing)
+
         # Boundary between csc and convert to coo
         # The value 0.001 is justified in gh-19962#issuecomment-1920499678
-        if self.nnz - mask.sum() < self.nnz * 0.001:
+        if N_new < self.nnz * 0.001:
             # replace existing entries
-            self.data[offsets[mask]] = x[mask]
+            self.data[offsets[is_existing]] = x[is_existing]
             # create new entries
-            mask = ~mask
-            i = i[mask]
-            j = j[mask]
-            self._insert_many(i, j, x[mask])
+            is_new = np.logical_not(is_existing, out=is_existing)
+            del is_existing
+            self._insert_many(i[is_new], j[is_new], x[is_new])
         else:
             # convert to coo for _set_diag
+            do_sort = self.has_sorted_indices
             coo = self.tocoo()
             coo._setdiag(values, k)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, _ = arrays
+            # Sort the indices (like in _insert_many)
+            if do_sort:
+                self.has_sorted_indices = False  # force a sort
+                self.sort_indices()
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self._shape_as_2d)
@@ -1014,7 +1026,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     ##############################################################
 
     def eliminate_zeros(self):
-        """Remove zero entries from the array/matrix
+        """Remove zero entries from the array/matrix.
 
         This is an *in place* operation.
         """
@@ -1052,7 +1064,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.has_sorted_indices = True
 
     def sum_duplicates(self):
-        """Eliminate duplicate entries by adding them together
+        """Eliminate duplicate entries by adding them together.
 
         This is an *in place* operation.
         """
@@ -1088,7 +1100,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
 
     def sorted_indices(self):
-        """Return a copy of this array/matrix with sorted indices
+        """Return a copy of this array/matrix with sorted indices.
+
+        Returns
+        -------
+        sparse array/matrix
+            A copy of this array/matrix with sorted indices.
         """
         A = self.copy()
         A.sort_indices()
@@ -1099,7 +1116,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # return self.toother().toother()
 
     def sort_indices(self):
-        """Sort the indices of this array/matrix *in place*
+        """Sort the indices of this array/matrix *in place*.
         """
         if not self.has_sorted_indices:
             M = len(self.indptr) - 1

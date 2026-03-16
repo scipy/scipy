@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (array_namespace, is_cupy, is_numpy, xp_ravel,
                                    xp_size, make_xp_test_case)
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
@@ -850,7 +850,8 @@ class TestFindRoot:
             find_root(func, bracket)
 
         # raised by `np.broadcast, but the traceback is readable IMO
-        message = "...not be broadcast..."  # all messages include this part
+        # all messages include this part
+        message = "(not be broadcast|Attempting to broadcast a dimension of length)"
         with pytest.raises((ValueError, RuntimeError), match=message):
             bracket = xp.asarray([-2, -3]), xp.asarray([3, 4, 5])
             find_root(func, bracket)

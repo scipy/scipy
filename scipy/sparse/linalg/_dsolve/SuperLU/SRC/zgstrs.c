@@ -91,7 +91,7 @@ at the top-level directory.
 
 void
 zgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
-        int *perm_c, int *perm_r, SuperMatrix *B,
+        const int *perm_c, const int *perm_r, SuperMatrix *B,
         SuperLUStat_t *stat, int *info)
 {
 
@@ -113,7 +113,7 @@ zgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     int      jcol, n, ldb, nrhs;
     doublecomplex   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void zprint_soln(int n, int nrhs, doublecomplex *soln);
+    void zprint_soln(int n, int nrhs, const doublecomplex *soln);
 
     /* Test input parameters ... */
     *info = 0;
@@ -344,7 +344,7 @@ zgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
  * Diagnostic print of the solution vector 
  */
 void
-zprint_soln(int n, int nrhs, doublecomplex *soln)
+zprint_soln(int n, int nrhs, const doublecomplex *soln)
 {
     int i;
 

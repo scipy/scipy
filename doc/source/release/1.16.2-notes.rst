@@ -1,0 +1,68 @@
+==========================
+SciPy 1.16.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.16.2 is a bug-fix release with no new features
+compared to 1.16.1. This is the first stable release of
+SciPy to provide Windows on ARM wheels on PyPI.
+
+
+
+Authors
+=======
+* Name (commits)
+* Dietrich Brunn (1)
+* Ralf Gommers (6)
+* Adam Jones (1)
+* Gleb Khmyznikov (1) +
+* Jost Migenda (1) +
+* newyork_loki (1)
+* Nick ODell (3)
+* Dimitri Papadopoulos Orfanos (1)
+* Ilhan Polat (2)
+* Tyler Reddy (26)
+* Mugunthan Selvanayagam (1) +
+* Shuhei Watanabe (1) +
+
+    A total of 12 people contributed to this release.
+    People with a "+" by their names contributed a patch for the first time.
+    This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.16.2
+------------------------
+
+* `#21562 <https://github.com/scipy/scipy/issues/21562>`__: BLD: Windows Arm builds
+* `#22244 <https://github.com/scipy/scipy/issues/22244>`__: MAINT: specify lower bound for ``pytest`` in ``pyproject.toml``
+* `#22825 <https://github.com/scipy/scipy/issues/22825>`__: CI: new GH runners available for macOS 15 and Windows 2025
+* `#23411 <https://github.com/scipy/scipy/issues/23411>`__: BUG: signal.periodogram: memory leak
+* `#23428 <https://github.com/scipy/scipy/issues/23428>`__: Incomplete license terms for sub components since version 1.16.0...
+* `#23429 <https://github.com/scipy/scipy/issues/23429>`__: BUG: optimize.nnls: memory leak
+* `#23430 <https://github.com/scipy/scipy/issues/23430>`__: BUG: optimize: missing error checking for slsqp inputs
+* `#23458 <https://github.com/scipy/scipy/issues/23458>`__: CI: CUDA compilation failures for all cupy tests
+* `#23474 <https://github.com/scipy/scipy/issues/23474>`__: BUG: signal.lombscargle(precenter=True) modifies input array...
+* `#23564 <https://github.com/scipy/scipy/issues/23564>`__: CI: macOS conda-forge job failing because of scikit-umfpack upgrade
+
+
+Pull requests for 1.16.2
+------------------------
+
+* `#23122 <https://github.com/scipy/scipy/pull/23122>`__: BLD: Windows Arm64 wheel support
+* `#23133 <https://github.com/scipy/scipy/pull/23133>`__: CI: validate build on Win-ARM64
+* `#23154 <https://github.com/scipy/scipy/pull/23154>`__: CI: bump OpenBLAS and cibuildwheel versions
+* `#23402 <https://github.com/scipy/scipy/pull/23402>`__: REL, MAINT: prepare for SciPy 1.16.2
+* `#23403 <https://github.com/scipy/scipy/pull/23403>`__: BUG: Skip installing gmpy2(test deps) for Win-ARM64
+* `#23414 <https://github.com/scipy/scipy/pull/23414>`__: BUG: signal: Avoid unbounded cache for ShortTimeFFT
+* `#23435 <https://github.com/scipy/scipy/pull/23435>`__: MAINT: ensure Qhull license file gets included in wheels
+* `#23442 <https://github.com/scipy/scipy/pull/23442>`__: BUG: fix regression for non-integer ``maxiter`` in SLSQP
+* `#23452 <https://github.com/scipy/scipy/pull/23452>`__: MAINT: Update licensing of bundled software
+* `#23457 <https://github.com/scipy/scipy/pull/23457>`__: BUG: signal.ShortTimeFFT: Remove ``@lru_cache`` decorators
+* `#23471 <https://github.com/scipy/scipy/pull/23471>`__: BUG: optimize: fix the incompatible dtypes in L-BFGS-B
+* `#23475 <https://github.com/scipy/scipy/pull/23475>`__: BUG: signal.lombscargle: replace in-place input adjustments
+* `#23488 <https://github.com/scipy/scipy/pull/23488>`__: MAINT: Bump CuPy to 13.6.0 to fix GPU CI
+* `#23495 <https://github.com/scipy/scipy/pull/23495>`__: MAINT: add lower bound for pytest
+* `#23540 <https://github.com/scipy/scipy/pull/23540>`__: MAINT, BLD: ignore meson wraplock
+* `#23563 <https://github.com/scipy/scipy/pull/23563>`__: BUG: fix memory leaks in ``optimize.nnls`` and ``linalg.sqrtm``
+* `#23576 <https://github.com/scipy/scipy/pull/23576>`__: CI: pin scikit-umfpack to 0.3.3 to avoid failures, 0.4.2 is broken.

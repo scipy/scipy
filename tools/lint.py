@@ -119,7 +119,7 @@ def run_cython_lint_all():
 
 
 def check_ruff_version():
-    min_version = packaging.version.parse('0.0.292')
+    min_version = packaging.version.parse('0.12.0')
     res = subprocess.run(
         ['ruff', '--version'],
         stdout=subprocess.PIPE,
@@ -127,7 +127,7 @@ def check_ruff_version():
     )
     version = res.stdout.replace('ruff ', '')
     if packaging.version.parse(version) < min_version:
-        raise RuntimeError("Linting requires `ruff>=0.0.292`. Please upgrade `ruff`.")
+        raise RuntimeError("Linting requires `ruff>=0.12.0`. Please upgrade `ruff`.")
 
 
 def main():

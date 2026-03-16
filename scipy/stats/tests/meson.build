@@ -27,6 +27,7 @@ py3.install_sources([
     'test_mstats_extras.py',
     'test_multicomp.py',
     'test_multivariate.py',
+    'test_new_distributions.py',
     'test_odds_ratio.py',
     'test_qmc.py',
     'test_quantile.py',
@@ -45,3 +46,5 @@ py3.install_sources([
 )
 
 subdir('data')
+subdir('test_generation')
+

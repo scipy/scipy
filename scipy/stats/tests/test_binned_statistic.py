@@ -60,22 +60,6 @@ class TestBinnedStatistic:
 
         assert_allclose(stat1, stat2)
 
-    def test_non_finite_inputs_and_int_bins(self):
-        # if either `values` or `sample` contain np.inf or np.nan throw
-        # see issue gh-9010 for more
-        x = self.x
-        u = self.u
-        orig = u[0]
-        u[0] = np.inf
-        assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
-        # need to test for non-python specific ints, e.g. np.int8, np.int64
-        assert_raises(ValueError, binned_statistic, u, x, 'std',
-                      bins=np.int64(10))
-        u[0] = np.nan
-        assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
-        # replace original value, u belongs the class
-        u[0] = orig
-
     def test_1d_result_attributes(self):
         x = self.x
         v = self.v
@@ -159,9 +143,9 @@ class TestBinnedStatistic:
 
     def test_1d_range_keyword(self):
         # Regression test for gh-3063, range can be (min, max) or [(min, max)]
-        np.random.seed(9865)
+        rng = np.random.default_rng(6823616729)
         x = np.arange(30)
-        data = np.random.random(30)
+        data = rng.random(30)
 
         mean, bins, _ = binned_statistic(x[:15], data[:15])
         mean_range, bins_range, _ = binned_statistic(x, data, range=[(0, 14)])
@@ -479,8 +463,9 @@ class TestBinnedStatistic:
 
     def test_dd_binned_statistic_result(self):
         # NOTE: tests the reuse of bin_edges from previous call
-        x = np.random.random((10000, 3))
-        v = np.random.random(10000)
+        rng = np.random.default_rng(8111360615)
+        x = rng.random((10000, 3))
+        v = rng.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = (bins, bins, bins)
 
@@ -494,8 +479,9 @@ class TestBinnedStatistic:
         assert_allclose(stat, stat2)
 
     def test_dd_zero_dedges(self):
-        x = np.random.random((10000, 3))
-        v = np.random.random(10000)
+        rng = np.random.default_rng(1132724173)
+        x = rng.random((10000, 3))
+        v = rng.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = np.append(bins, 1)
         bins = (bins, bins, bins)
@@ -566,3 +552,51 @@ class TestBinnedStatistic:
         ref = np.array([ref_statistic(v[~i]), ref_statistic(v[i])])
         assert_allclose(stat, ref)
         assert stat.dtype == np.result_type(ref.dtype, np.float64)
+
+    @pytest.mark.parametrize('bins', [10, (10, 10, 10), [np.arange(10)]*3])
+    def test_nan_gh17154(self, bins):
+        # gh-17154 reported that `binned_statistic_dd` raised an error when `samples`
+        # contains NaNs and argued that this was an inappropriate default. gh-23751
+        # decided that it was indeed an appropriate choice, and went further, ensuring
+        # that the same error would be raised regardless of how `bins` is specified.
+
+        # Generate a samples (with NaNs) and values
+        rng = np.random.default_rng(529847529874529829)
+        samples = rng.standard_normal(size=(100, 3))
+        values = rng.standard_normal(100)
+        i = rng.random(samples.shape) < 0.05
+        samples[i] = np.nan
+
+        message = "The sample on which `values` is to be binned..."
+        with pytest.raises(ValueError, match=message):
+            binned_statistic_dd(samples, values)
+
+    def test_inf_gh17154(self):
+        # While addressing gh-17154, it seemed that `inf`s should not be ignored
+        # entirely; rather, values corresponding with `inf`s can always be in outlier
+        # bins.
+
+        # Generate a samples (with infs) and values
+        rng = np.random.default_rng(529847529874529829)
+        samples = rng.standard_normal(size=(100, 3))
+        values = rng.standard_normal(100)
+        i_pinf = rng.random(samples.shape) < 0.05
+        samples[i_pinf] = np.inf
+        i_ninf = rng.random(samples.shape) < 0.05
+        samples[i_ninf] = -np.inf
+
+        # Compute results
+        res = binned_statistic_dd(samples, values)
+
+        # Compute reference values (with bins computed ignoring infs)
+        i_inf = i_pinf | i_ninf
+        temp = samples.copy()
+        temp[i_inf] = 0
+        low = np.min(temp, axis=0)
+        high = np.max(temp, axis=0)
+        ref = binned_statistic_dd(samples, values, range=list(zip(low, high)))
+
+        # Compare results against reference values
+        np.testing.assert_allclose(res[0], ref[0])
+        np.testing.assert_allclose(res[1], ref[1])
+        np.testing.assert_allclose(res[2], ref[2])

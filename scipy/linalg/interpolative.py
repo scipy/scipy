@@ -563,6 +563,7 @@ def reconstruct_matrix_from_id(B, idx, proj):
     :class:`numpy.ndarray`
         Reconstructed matrix.
     """
+    B = np.atleast_2d(_C_contiguous_copy(B))
     if _is_real(B):
         return _backend.idd_reconid(B, idx, proj)
     else:

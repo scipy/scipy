@@ -458,7 +458,8 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(logpdf, logpdf2, decimal=12)
 
     # There are more points than data
-    gkde = stats.gaussian_kde(xs, weights=np.random.rand(len(xs)))
+    rng = np.random.default_rng(4531935345)
+    gkde = stats.gaussian_kde(xs, weights=rng.random(len(xs)))
     pdf = np.log(gkde.evaluate(xn))
     pdf2 = gkde.logpdf(xn)
     assert_almost_equal(pdf, pdf2, decimal=12)

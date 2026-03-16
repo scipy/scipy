@@ -284,9 +284,10 @@ class TestCorr:
         assert_allclose(p, 0.9977404035446)
 
         # intuitive test (with obvious positive correlation)
+        rng = np.random.default_rng(9607138567)
         n = 100
         x = np.linspace(0, 5, n)
-        y = 0.1*x + np.random.rand(n)  # y is positively correlated w/ x
+        y = 0.1*x + rng.random(n)  # y is positively correlated w/ x
 
         stat1, p1 = mstats.spearmanr(x, y)
 
@@ -389,6 +390,29 @@ class TestCorr:
         attributes = ('correlation', 'pvalue')
         check_named_results(result, attributes, ma=True)
 
+    def test_overflow_gh6061(self):
+        # Regression test for GitHub issue #6061 - Overflow on Windows
+        x = np.arange(2000, dtype=float)
+        x = np.ma.masked_greater(x, 1995)
+        y = np.arange(2000, dtype=float)
+        y = np.concatenate((y[1000:], y[:1000]))
+        assert_(np.isfinite(stats.mstats.kendalltau(x,y)[1]))
+
+    def test_kendalltau_vs_mstats_basic(self):
+        rng = np.random.RandomState(42)
+        for s in range(3, 10):
+            a = []
+            # Generate rankings with ties
+            for i in range(s):
+                a += [i]*i
+            b = list(a)
+            rng.shuffle(a)
+            rng.shuffle(b)
+            expected = mstats.kendalltau(a, b)
+            actual = stats.kendalltau(a, b)
+            assert_almost_equal(actual[0], expected[0])
+            assert_almost_equal(actual[1], expected[1])
+
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     @pytest.mark.slow
@@ -420,11 +444,11 @@ class TestCorr:
         # nan_policy='omit' matches behavior of stats.kendalltau
         # Accuracy of the alternatives is tested in stats/tests/test_stats.py
 
-        np.random.seed(0)
+        rng = np.random.default_rng(8755235945)
         n = 50
-        x = np.random.rand(n)
-        y = np.random.rand(n)
-        mask = np.random.rand(n) > 0.5
+        x = rng.random(n)
+        y = rng.random(n)
+        mask = rng.random(n) > 0.5
 
         x_masked = ma.array(x, mask=mask)
         y_masked = ma.array(y, mask=mask)
@@ -541,7 +565,7 @@ class TestTrimming:
         assert_equal(trimx.count(), 48)
         assert_equal(trimx._mask, [1]*16 + [0]*34 + [1]*20 + [0]*14 + [1]*16)
         x._mask = nomask
-        x.shape = (10,10)
+        x = x.reshape((10,10))
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
 
@@ -910,6 +934,44 @@ class TestMisc:
         attributes = ('statistic', 'pvalue')
         check_named_results(result, attributes, ma=True)
 
+        # copied from `test_stats.py`
+        array = np.ma.asarray
+        x1 = [array([0.763, 0.599, 0.954, 0.628, 0.882, 0.936, 0.661,
+                     0.583, 0.775, 1.0, 0.94, 0.619, 0.972, 0.957]),
+              array([0.768, 0.591, 0.971, 0.661, 0.888, 0.931, 0.668,
+                     0.583, 0.838, 1.0, 0.962, 0.666, 0.981, 0.978]),
+              array([0.771, 0.590, 0.968, 0.654, 0.886, 0.916, 0.609,
+                     0.563, 0.866, 1.0, 0.965, 0.614, 0.9751, 0.946]),
+              array([0.798, 0.569, 0.967, 0.657, 0.898, 0.931, 0.685,
+                     0.625, 0.875, 1.0, 0.962, 0.669, 0.975, 0.970])]
+
+        # From "Bioestadistica para las ciencias de la salud" Xf=18.95 p<0.001:
+        # x2 = [array([4, 3, 5, 3, 5, 3, 2, 5, 4, 4, 4, 3]),
+        #       array([2, 2, 1, 2, 3, 1, 2, 3, 2, 1, 1, 3]),
+        #       array([2, 4, 3, 3, 4, 3, 3, 4, 4, 1, 2, 1]),
+        #       array([3, 5, 4, 3, 4, 4, 3, 3, 3, 4, 4, 4])]
+
+        # From Jerrorl H. Zar, "Biostatistical Analysis"(example 12.6),
+        # Xf=10.68, 0.005 < p < 0.01:
+        # Probability from this example is inexact
+        # using Chisquare approximation of Friedman Chisquare.
+        x3 = [array([7.0, 9.9, 8.5, 5.1, 10.3]),
+              array([5.3, 5.7, 4.7, 3.5, 7.7]),
+              array([4.9, 7.6, 5.5, 2.8, 8.4]),
+              array([8.8, 8.9, 8.1, 3.3, 9.1])]
+
+        # test using mstats
+        assert_array_almost_equal(mstats.friedmanchisquare(*x1),
+                                  (10.2283464566929, 0.0167215803284414))
+
+        # the following fails
+        # assert_array_almost_equal(mstats.friedmanchisquare(*x2),
+        #                           (18.9428571428571, 0.000280938375189499))
+
+        assert_array_almost_equal(mstats.friedmanchisquare(*x3),
+                                  (10.68, 0.0135882729582176))
+        assert_raises(ValueError, mstats.friedmanchisquare, x3[0], x3[1])
+
 
 def test_regress_simple():
     # Regress a line with sinusoidal noise. Test for #1273.
@@ -934,8 +996,9 @@ def test_regress_simple():
 
 
 def test_linregress_identical_x():
+    rng = np.random.default_rng(74578245698)
     x = np.zeros(10)
-    y = np.random.random(10)
+    y = rng.random(10)
     msg = "Cannot calculate a linear regression if all x values are identical"
     with assert_raises(ValueError, match=msg):
         mstats.linregress(x, y)
@@ -956,6 +1019,8 @@ class TestTheilslopes:
         # Test for correct masking.
         y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
         slope, intercept, lower, upper = mstats.theilslopes(y)
+        # These reference values are incorrect. With 100 masked, the outputs
+        # should be the same as above.
         assert_almost_equal(slope, 1./3)
         assert_almost_equal(intercept, 2./3)
 
@@ -983,7 +1048,7 @@ class TestTheilslopes:
 
     def test_theilslopes_warnings(self):
         # Test `theilslopes` with degenerate input; see gh-15943
-        msg = "All `x` coordinates.*|Mean of empty slice.|invalid value encountered.*"
+        msg = "All `x` coordinates.*|Mean of empty slice|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=msg):
             res = mstats.theilslopes([0, 1], [0, 0])
             assert np.all(np.isnan(res))
@@ -1259,9 +1324,11 @@ class TestKruskal:
 
 # TODO: for all ttest functions, add tests with masked array inputs
 class TestTtest_rel:
+    def setup_method(self):
+        self.rng = np.random.default_rng(9373599542)
+
     def test_vs_nonmasked(self):
-        np.random.seed(1234567)
-        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+        outcome = self.rng.standard_normal((20, 4)) + [0, 0, 1, 2]
 
         # 1-D inputs
         res1 = stats.ttest_rel(outcome[:, 0], outcome[:, 1])
@@ -1281,8 +1348,7 @@ class TestTtest_rel:
         assert_allclose(res2, res3)
 
     def test_fully_masked(self):
-        np.random.seed(1234567)
-        outcome = ma.masked_array(np.random.randn(3, 2),
+        outcome = ma.masked_array(self.rng.standard_normal((3, 2)),
                                   mask=[[1, 1, 1], [0, 0, 0]])
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1294,8 +1360,7 @@ class TestTtest_rel:
                 assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
-        np.random.seed(1234567)
-        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+        outcome = self.rng.standard_normal((20, 4)) + [0, 0, 1, 2]
 
         res = mstats.ttest_rel(outcome[:, 0], outcome[:, 1])
         attributes = ('statistic', 'pvalue')
@@ -1353,9 +1418,11 @@ class TestTtest_rel:
 
 
 class TestTtest_ind:
+    def setup_method(self):
+        self.rng = np.random.default_rng(4776115069)
+
     def test_vs_nonmasked(self):
-        np.random.seed(1234567)
-        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+        outcome = self.rng.standard_normal((20, 4)) + [0, 0, 1, 2]
 
         # 1-D inputs
         res1 = stats.ttest_ind(outcome[:, 0], outcome[:, 1])
@@ -1383,8 +1450,8 @@ class TestTtest_ind:
         assert_allclose(res4, res5)
 
     def test_fully_masked(self):
-        np.random.seed(1234567)
-        outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
+        outcome = ma.masked_array(self.rng.standard_normal((3, 2)),
+                                  mask=[[1, 1, 1], [0, 0, 0]])
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "invalid value encountered in absolute", RuntimeWarning)
@@ -1395,8 +1462,7 @@ class TestTtest_ind:
                 assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
-        np.random.seed(1234567)
-        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+        outcome = self.rng.standard_normal((20, 4)) + [0, 0, 1, 2]
 
         res = mstats.ttest_ind(outcome[:, 0], outcome[:, 1])
         attributes = ('statistic', 'pvalue')
@@ -1450,9 +1516,11 @@ class TestTtest_ind:
 
 
 class TestTtest_1samp:
+    def setup_method(self):
+        self.rng = np.random.default_rng(6043813830)
+
     def test_vs_nonmasked(self):
-        np.random.seed(1234567)
-        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+        outcome = self.rng.standard_normal((20, 4)) + [0, 0, 1, 2]
 
         # 1-D inputs
         res1 = stats.ttest_1samp(outcome[:, 0], 1)
@@ -1460,8 +1528,7 @@ class TestTtest_1samp:
         assert_allclose(res1, res2)
 
     def test_fully_masked(self):
-        np.random.seed(1234567)
-        outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
+        outcome = ma.masked_array(self.rng.standard_normal(3), mask=[1, 1, 1])
         expected = (np.nan, np.nan)
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1472,8 +1539,7 @@ class TestTtest_1samp:
                 assert_array_equal(t, expected)
 
     def test_result_attributes(self):
-        np.random.seed(1234567)
-        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+        outcome = self.rng.standard_normal((20, 4)) + [0, 0, 1, 2]
 
         res = mstats.ttest_1samp(outcome[:, 0], 1)
         attributes = ('statistic', 'pvalue')
@@ -1837,7 +1903,8 @@ class TestCompareWithStats:
 
     def test_skewtest_2D_notmasked(self):
         # a normal ndarray is passed to the masked function
-        x = np.random.random((20, 2)) * 20.
+        rng = np.random.default_rng(2790153686)
+        x = rng.random((20, 2)) * 20.
         r = stats.skewtest(x)
         rm = stats.mstats.skewtest(x)
         assert_allclose(np.asarray(r), np.asarray(rm))
@@ -1897,7 +1964,7 @@ class TestCompareWithStats:
     def test_obrientransform(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            r = stats.obrientransform(x)
+            r = np.stack(stats.obrientransform(x))
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
 

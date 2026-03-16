@@ -47,7 +47,7 @@ def diff(x,order=1,period=None, _cache=_cache):
 
     For odd order and even ``len(x)``, the Nyquist mode is taken zero.
 
-    """
+    """  # numpydoc ignore=RT01
     if isinstance(_cache, threading.local):
         if not hasattr(_cache, 'diff_cache'):
             _cache.diff_cache = {}
@@ -163,7 +163,7 @@ def itilbert(x,h,period=None, _cache=_cache):
 
     For more details, see `tilbert`.
 
-    """
+    """  # numpydoc ignore=RT01
     if isinstance(_cache, threading.local):
         if not hasattr(_cache, 'itilbert_cache'):
             _cache.itilbert_cache = {}
@@ -268,7 +268,7 @@ def ihilbert(x, _cache=_cache):
       y_j = -sqrt(-1)*sign(j) * x_j
       y_0 = 0
 
-    """
+    """  # numpydoc ignore=RT01
     if isinstance(_cache, threading.local):
         if not hasattr(_cache, 'ihilbert_cache'):
             _cache.ihilbert_cache = {}
@@ -349,7 +349,7 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
     ----------
     x : array_like
         Input array.
-    a,b : float
+    a, b : float
         Defines the parameters of the sinh/cosh pseudo-differential
         operator.
     period : float, optional
@@ -360,7 +360,7 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
     ``sc_diff(cs_diff(x,a,b),b,a) == x``
     For even ``len(x)``, the Nyquist mode of x is taken as zero.
 
-    """
+    """  # numpydoc ignore=RT01
     if isinstance(_cache, threading.local):
         if not hasattr(_cache, 'sc_diff_cache'):
             _cache.sc_diff_cache = {}
@@ -404,7 +404,7 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
     ----------
     x : array_like
         The array to take the pseudo-derivative from.
-    a,b
+    a, b
         Defines the parameters of the sinh/sinh pseudo-differential
         operator.
     period : float, optional
@@ -414,7 +414,7 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
     -----
     ``ss_diff(ss_diff(x,a,b),b,a) == x``
 
-    """
+    """  # numpydoc ignore=RT01
     if isinstance(_cache, threading.local):
         if not hasattr(_cache, 'ss_diff_cache'):
             _cache.ss_diff_cache = {}
@@ -457,7 +457,7 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
     ----------
     x : array_like
         The array to take the pseudo-derivative from.
-    a,b : float
+    a, b : float
         Defines the parameters of the sinh/sinh pseudo-differential
         operator.
     period : float, optional
@@ -517,7 +517,7 @@ def shift(x, a, period=None, _cache=_cache):
         Defines the parameters of the sinh/sinh pseudo-differential
     period : float, optional
         The period of the sequences x and y. Default period is ``2*pi``.
-    """
+    """  # numpydoc ignore=RT01
     if isinstance(_cache, threading.local):
         if not hasattr(_cache, 'shift_cache'):
             _cache.shift_cache = {}

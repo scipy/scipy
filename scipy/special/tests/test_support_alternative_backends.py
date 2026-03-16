@@ -12,8 +12,8 @@ from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
                                    make_xp_pytest_param, make_xp_test_case,
                                    get_native_namespace_name)
-from scipy._lib.array_api_compat import numpy as np
-import scipy._lib.array_api_extra as xpx
+from scipy._external.array_api_compat import numpy as np
+import scipy._external.array_api_extra as xpx
 
 
 # Run all tests in this module in the Array API CI, including those without
@@ -48,12 +48,6 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
 
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
-
-    if (
-            f_name == "sinc" and "float32" in dtypes
-            and version.parse(np.__version__) < version.parse("2")
-    ):
-        pytest.xfail("https://github.com/numpy/numpy/issues/11204")
 
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
@@ -400,3 +394,11 @@ def test_chdtr_gh21311(xp):
     ref = special.chdtr(v, x)
     res = special.chdtr(xp.asarray(v), xp.asarray(x))
     xp_assert_close(res, xp.asarray(ref))
+
+
+@make_xp_test_case(special.fdtrc)
+def test_mixed_arrays_and_python_scalars(xp):
+    # Tests that the delegation infrastructure respects NEP50.
+    res = special.fdtrc(1.1, 2., xp.asarray(1., dtype=xp.float32))
+    ref = xp.asarray(0.4349004, dtype=xp.float32)
+    xp_assert_close(res, ref)

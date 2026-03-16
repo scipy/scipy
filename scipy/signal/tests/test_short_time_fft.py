@@ -95,13 +95,17 @@ def test_closest_STFT_dual_window_roundtrip(win_name, m, hop, sym_win, scaled):
     d2, s2 = closest_STFT_dual_window(win, hop, scaled=scaled)  # equals d1, s1
     d3, s3 = closest_STFT_dual_window(d1, hop, win * s1, scaled=True)  # roundtrip
 
-    # Validate default for parameter `desired_dual` works (hard coded => assert ok):
-    xp_assert_equal(d2, d1, err_msg="Default for parameter `desired_dual` is not ok!")
-    assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
+    # (d1, s1) == (d2, s2) should hold, but the BLAS backend used to calculate the inner
+    # product in `closest_STFT_dual_window` does not guarantee exact reproducibility
+    # due to indeterministic summation order during parallel execution. Hence, only
+    # approximate equality is verified. Consult NumPy 29873 issue for discussion.
+    res = np.finfo(win.dtype).resolution  # 1e-15 for float64
+    err_msg = "Default for parameter `desired_dual` is not ok!"
+    xp_assert_close(d2, d1, atol=res, err_msg=err_msg)
+    xp_assert_close(s2, s1, atol=res, err_msg=err_msg)
 
-    res = np.finfo(win.dtype).resolution * 5
-    xp_assert_close(s1*s3, 1., atol=res, err_msg="Invalid Scale factors")
-    xp_assert_close(d3, win, atol=res, err_msg="Roundtrip failed!")
+    xp_assert_close(s1*s3, 1., atol=res*5, err_msg="Invalid Scale factors")
+    xp_assert_close(d3, win, atol=res*5, err_msg="Roundtrip failed!")
 
     if scaled:  # check that scaling factor is correct:
         d3, _ = closest_STFT_dual_window(win, hop, np.ones(m) * s1, scaled=False)
@@ -532,11 +536,15 @@ def test_border_values():
     assert SFT.p_max(10) == 4
     assert SFT.k_max(10) == 16
     assert SFT.upper_border_begin(10) == (4, 2)
+    assert SFT.upper_border_begin(10) == (4, 2)  # needed to test caching
     # Raise exceptions:
     with pytest.raises(ValueError, match="^Parameter n must be"):
         SFT.upper_border_begin(3)
     with pytest.raises(ValueError, match="^Parameter n must be"):
         SFT._post_padding(3)
+    with pytest.raises(RuntimeError):
+        SFT._hop = -1  # illegal hop interval
+        SFT.upper_border_begin(8)
 
 def test_border_values_exotic():
     """Ensure that the border calculations are correct for windows with
@@ -574,6 +582,11 @@ def test_t():
     SFT.fs = 1/8
     assert SFT.fs == 1/8
     assert SFT.T == 8
+    with pytest.raises(ValueError):
+        # noinspection PyTypeChecker
+        SFT.t(1.5)  # only integers allowed
+    with pytest.raises(ValueError):
+        SFT.t(-1)  # only positive `n` allowed
 
 
 @pytest.mark.parametrize('fft_mode, f',

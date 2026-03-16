@@ -1,9 +1,9 @@
-fs = import('fs')
-
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
-if is_mingw and ff.get_id() != 'gcc'
-  error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+if not get_option('_without-fortran')
+  if is_mingw and ff.get_id() != 'gcc'
+    error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+  endif
 endif
 
 cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
@@ -31,12 +31,9 @@ thread_dep = dependency('threads', required: false)
 
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
-# Will work for numpy>=2.0, hence not required (it'll be a while until 2.0 is
-# our minimum supported version). Using this now to be able to detect the
-# version easily for >=2.0.
-_numpy_dep = dependency('numpy', required: false)
+_numpy_dep = dependency('numpy')
 f2py_freethreading_arg = []
-if _numpy_dep.found() and _numpy_dep.version().version_compare('>=2.1.0')
+if _numpy_dep.version().version_compare('>=2.1.0')
   f2py_freethreading_arg = ['--free-threading']
   message('f2py free-threading enabled')
 else
@@ -97,9 +94,6 @@ incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
-npymath_path = _incdir_numpy_abs / '..' / 'lib'
-npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 # Pythran include directory and build flags
@@ -126,7 +120,6 @@ print(incdir)
   endif
   pythran_dep = declare_dependency(
     include_directories: incdir_pythran,
-    dependencies: xsimd_dep,
   )
 else
   pythran_dep = []
@@ -394,7 +387,7 @@ if use_ilp64
        '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
      ]
      c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
-elif uses_accelerate
+  elif uses_accelerate
     blas_ilp64 = dependency('accelerate')
     lapack_ilp64 = blas_ilp64
     _args_blas_ilp64 += ['-DACCELERATE_NEW_LAPACK']
@@ -448,8 +441,8 @@ elif uses_accelerate
 else
   # we're not using ILP64; user code will link to the always-available LP64 blas/lapack
   # (all users must use preprocessor macros BLAS_NAME to handle the two options)
-  blas_dep = blas
-  lapack_dep = lapack
+  blas_dep = blas_lp64_dep
+  lapack_dep = lapack_lp64_dep
   c_flags_ilp64 = []
 endif
 
@@ -580,6 +573,7 @@ _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
 _cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
+_cpp_Wno_maybe_uninitialized = cpp.get_supported_arguments('-Wno-maybe-uninitialized')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
 _cpp_Wno_switch = cpp.get_supported_arguments('-Wno-switch')
@@ -599,51 +593,54 @@ cpp_args_pythran += [
   _cpp_Wno_int_in_bool_context,
 ]
 
-# Fortran warning flags
-_fflag_Wno_argument_mismatch = ff.get_supported_arguments('-Wno-argument-mismatch')
-_fflag_Wno_conversion = ff.get_supported_arguments('-Wno-conversion')
-_fflag_Wno_intrinsic_shadow = ff.get_supported_arguments('-Wno-intrinsic-shadow')
-_fflag_Wno_maybe_uninitialized = ff.get_supported_arguments('-Wno-maybe-uninitialized')
-_fflag_Wno_surprising = ff.get_supported_arguments('-Wno-surprising')
-_fflag_Wno_uninitialized = ff.get_supported_arguments('-Wno-uninitialized')
-_fflag_Wno_unused_dummy_argument = ff.get_supported_arguments('-Wno-unused-dummy-argument')
-_fflag_Wno_unused_label = ff.get_supported_arguments('-Wno-unused-label')
-_fflag_Wno_unused_variable = ff.get_supported_arguments('-Wno-unused-variable')
-_fflag_Wno_tabs = ff.get_supported_arguments('-Wno-tabs')
-# The default list of warnings to ignore from Fortran code. There is a lot of
-# old, vendored code that is very bad and we want to compile it silently (at
-# least with GCC and Clang)
-fortran_ignore_warnings = ff.get_supported_arguments(
- _fflag_Wno_argument_mismatch,
- _fflag_Wno_conversion,
- _fflag_Wno_maybe_uninitialized,
- _fflag_Wno_unused_dummy_argument,
- _fflag_Wno_unused_label,
- _fflag_Wno_unused_variable,
- _fflag_Wno_tabs,
-)
+if not get_option('_without-fortran')
+  # Fortran warning flags
+  _fflag_Wno_argument_mismatch = ff.get_supported_arguments('-Wno-argument-mismatch')
+  _fflag_Wno_conversion = ff.get_supported_arguments('-Wno-conversion')
+  _fflag_Wno_intrinsic_shadow = ff.get_supported_arguments('-Wno-intrinsic-shadow')
+  _fflag_Wno_maybe_uninitialized = ff.get_supported_arguments('-Wno-maybe-uninitialized')
+  _fflag_Wno_surprising = ff.get_supported_arguments('-Wno-surprising')
+  _fflag_Wno_uninitialized = ff.get_supported_arguments('-Wno-uninitialized')
+  _fflag_Wno_unused_dummy_argument = ff.get_supported_arguments('-Wno-unused-dummy-argument')
+  _fflag_Wno_unused_label = ff.get_supported_arguments('-Wno-unused-label')
+  _fflag_Wno_unused_variable = ff.get_supported_arguments('-Wno-unused-variable')
+  _fflag_Wno_tabs = ff.get_supported_arguments('-Wno-tabs')
+  # The default list of warnings to ignore from Fortran code. There is a lot of
+  # old, vendored code that is very bad and we want to compile it silently (at
+  # least with GCC and Clang)
+  fortran_ignore_warnings = ff.get_supported_arguments(
+   _fflag_Wno_argument_mismatch,
+   _fflag_Wno_conversion,
+   _fflag_Wno_maybe_uninitialized,
+   _fflag_Wno_unused_dummy_argument,
+   _fflag_Wno_unused_label,
+   _fflag_Wno_unused_variable,
+   _fflag_Wno_tabs,
+  )
 
-# Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
-# code uses preprocessor statements, add this compile flag to it.
+  # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
+  # code uses preprocessor statements, add this compile flag to it.
 
-# Gfortran does run the preprocessor for .F files, and PROPACK is the only
-# component which needs the preprocessor (unless we need symbol renaming for
-# blas_symbol_suffix).
-_fflag_preprocess = []
-_gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
-if ff.has_multi_arguments(_gfortran_preprocess)
-  _fflag_preprocess = _gfortran_preprocess
-else
-  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
+  # Gfortran does run the preprocessor for .F files, and PROPACK is the only
+  # component which needs the preprocessor (unless we need symbol renaming for
+  # blas_symbol_suffix).
+  _fflag_preprocess = []
+  _gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
+  if ff.has_multi_arguments(_gfortran_preprocess)
+    _fflag_preprocess = _gfortran_preprocess
+  else
+    _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
+  endif
+  if use_ilp64
+    _fflag_ilp64 = []
+    # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
+    # default, all other known compilers use `-i8`
+    _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
+  endif
 endif
 
-_fflag_ilp64 = []
 f2py_ilp64_opts = []
 if use_ilp64
-  # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
-  # default, all other known compilers use `-i8`
-  _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
-
   # Write out a mapping file for f2py for defaulting to ILP64
   conf_data = configuration_data()
   if cc.sizeof('long') == 8
@@ -671,11 +668,12 @@ else
   use_math_defines = []
 endif
 
-# Determine whether it is necessary to link libatomic. This could be the case
-# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# Determine whether it is necessary to link libatomic (required for HiGHS, see
+# gh-17777) This could be the case on, e.g., 32-bit platforms when atomic
+# operations are used on 64-bit types.
+# We do want this exact logic to minimize the number of cases where we use
+# `-latomic`, we can't switch to the builtin `dependency('atomic')` support.
 # The check is copied from Mesa <https://www.mesa3d.org/>.
-# Note that this dependency is not desired, it came in with a HiGHS update.
-# We should try to get rid of it. For discussion, see gh-17777.
 null_dep = dependency('', required : false)
 atomic_dep = null_dep
 code_non_lockfree = '''
@@ -717,8 +715,12 @@ compilers = {
   'C': cc,
   'CPP': cpp,
   'CYTHON': meson.get_compiler('cython'),
-  'FORTRAN': meson.get_compiler('fortran')
 }
+if get_option('_without-fortran')
+  compilers += {'FORTRAN': meson.get_compiler('c')}
+else
+  compilers += {'FORTRAN': meson.get_compiler('fortran')}
+endif
 
 machines = {
   'HOST': host_machine,
@@ -733,14 +735,19 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
-  conf_data.set(name + '_COMP_ARGS', ', '.join(
-      get_option(name.to_lower() + '_args')
+  if get_option('_without-fortran') and name == 'FORTRAN'
+    conf_data.set('FORTRAN_COMP_ARGS', 'n/a')
+    conf_data.set('FORTRAN_COMP_LINK_ARGS', 'n/a')
+  else
+    conf_data.set(name + '_COMP_ARGS', ', '.join(
+        get_option(name.to_lower() + '_args')
+      )
     )
-  )
-  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
-      get_option(name.to_lower() + '_link_args')
+    conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+        get_option(name.to_lower() + '_link_args')
+      )
     )
-  )
+  endif
 endforeach
 # Add `pythran` information if present
 if use_pythran
@@ -756,7 +763,7 @@ foreach name, machine : machines
   conf_data.set(name + '_CPU_SYSTEM', machine.system())
 endforeach
 
-conf_data.set('CROSS_COMPILED', meson.is_cross_build())
+conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
 conf_data.set('PYTHON_PATH', py3.full_path())
@@ -765,7 +772,7 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 # Dependencies information
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
-  conf_data.set(name + '_FOUND', dep.found())
+  conf_data.set(name + '_FOUND', dep.found().to_string())
   if dep.found()
     conf_data.set(name + '_VERSION', dep.version())
     conf_data.set(name + '_TYPE_NAME', dep.type_name())
@@ -773,8 +780,10 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
     conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
+    conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach
+
 
 configure_file(
   input: '__config__.py.in',
@@ -828,6 +837,7 @@ if use_ilp64
   )
 endif
 
+subdir('_external')
 subdir('_lib')
 subdir('special')
 subdir('linalg')
@@ -845,6 +855,8 @@ subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')
-subdir('odr')
+if not get_option('_without-fortran')
+  subdir('odr')
+endif
 subdir('datasets')
 subdir('misc')

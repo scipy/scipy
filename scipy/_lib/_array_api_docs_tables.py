@@ -18,6 +18,10 @@ from scipy._lib._array_api import _make_sphinx_capabilities
 # tables since they would be redundant. There are also no docs pages to
 # link entries to.
 ALIASES = {
+    "scipy.cluster.vq": {
+        # Deprecated ~alias of `vq`
+        "py_vq",
+    },
     "scipy.linalg": {
         # Alias of scipy.linalg.solve_continuous_lyapunov
         "solve_lyapunov",
@@ -130,8 +134,10 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     # For now, use _make_sphinx_capabilities because that's where
     # the relevant logic for determining what is and isn't
     # supported based on xp_capabilities_table entries lives.
-    # Perhaps this logic should be decoupled from sphinx.
-    for backend, capabilities in _make_sphinx_capabilities(**entry).items():
+    # This logic should be decoupled from this function due to exceptions; e.g. marray.
+    sphinx_capabilities = _make_sphinx_capabilities(**entry)
+    sphinx_capabilities.pop("marray")
+    for backend, capabilities in sphinx_capabilities.items():
         if backend in {"array_api_strict", "numpy"}:
             continue
         backend = BACKEND_NAMES_MAP.get(backend, backend)
@@ -164,10 +170,13 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     }
 
 
-def is_named_function_like_object(obj):
+def is_inherently_out_of_scope(obj):
+    # modules, exceptions, and things that are not named callables
+    # are inherently out of scope.
     return (
-        not isinstance(obj, ModuleType | type)
-        and callable(obj) and hasattr(obj, "__name__")
+        isinstance(obj, ModuleType)
+        or (isinstance(obj, type) and issubclass(obj, Exception))
+        or not (callable(obj) and hasattr(obj, "__name__"))
     )
 
 
@@ -225,7 +234,7 @@ def make_flat_capabilities_table(
                 # for backwards compatibility reasons.
                 continue
             thing = getattr(module, name)
-            if not is_named_function_like_object(thing):
+            if is_inherently_out_of_scope(thing):
                 continue
             entry = xp_capabilities_table.get(thing, None)
             capabilities = _process_capabilities_table_entry(entry)[backend_type]
@@ -238,7 +247,7 @@ def make_flat_capabilities_table(
 
 def calculate_table_statistics(
     flat_table: list[dict[str, str]]
-) -> dict[str, tuple[dict[str, str], bool]]:
+) -> dict[str, dict[str, str]]:
     """Get counts of what is supported per module.
 
     Parameters
@@ -248,16 +257,13 @@ def calculate_table_statistics(
 
     Returns
     -------
-    dict[str, tuple[dict[str, str], bool]]
-        dict mapping module names to 2-tuples containing an inner dict and a
+    dict[str, dict[str, str]]
+        dict mapping module names to inner dicts.
         bool. The inner dicts have a key "total" along with keys for each
         backend column of the supplied flat capabilities table. The value
         corresponding to total is the total count of functions in the given
         module, and the value associated to the other keys is the count of
-        functions that support that particular backend. The bool is False if
-        the calculation may be innacurate due to missing xp_capabilities
-        decorators, and True if all functions for that particular module have
-        been decorated with xp_capabilities.
+        functions that support that particular backend.
     """
     if not flat_table:
         return []
@@ -265,9 +271,6 @@ def calculate_table_statistics(
     counter = defaultdict(lambda: defaultdict(int))
 
     S = BackendSupportStatus
-    # Keep track of which modules have functions with missing xp_capabilities
-    # decorators so this information can be passed back to the caller.
-    missing_xp_capabilities = set()
     for entry in flat_table:
         entry = entry.copy()
         entry.pop("function")
@@ -286,9 +289,4 @@ def calculate_table_statistics(
                 # set up to return information needed to put asterisks next
                 # to percentages impacted by missing xp_capabilities decorators.
                 current_counter[key] += 1 if value == S.YES else 0
-                if value == S.UNKNOWN:
-                    missing_xp_capabilities.add(module)
-    return {
-        key: (dict(value), key not in missing_xp_capabilities)
-        for key, value in counter.items()
-    }
+    return dict(counter)

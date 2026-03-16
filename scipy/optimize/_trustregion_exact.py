@@ -28,6 +28,11 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
     gtol : float
         Gradient norm must be less than ``gtol`` before successful
         termination.
+    subproblem_maxiter : int, optional
+        Maximum number of iterations to perform per subproblem. Only affects
+        trust-exact. Default is 25.
+
+        .. versionadded:: 1.17.0
     """
     if jac is None:
         raise ValueError('Jacobian is required for trust region '
@@ -381,6 +386,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         # Update damping factor
                         lambda_current = lambda_new
                         already_factorized = True
+                        U = c
                     else:  # Unsuccessful factorization
                         # Update uncertainty bounds
                         lambda_lb = max(lambda_lb, lambda_new)

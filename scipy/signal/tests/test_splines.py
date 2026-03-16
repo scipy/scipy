@@ -23,6 +23,7 @@ def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
     return c0 * rsupk * (np.cos(omega * k) + gamma * np.sin(omega * k))
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestSymIIR:
 
     @skip_xp_backends(np_only=True, reason="_ic functions are private and numpy-only")
@@ -63,7 +64,7 @@ class TestSymIIR:
         xp_assert_close(symiirorder1_ic(x, b, precision), expected,
                         atol=2e-6, rtol=2e-7)
 
-        # Check the conditions for a exponential decreasing signal with base 2.
+        # Check the conditions for an exponential decreasing signal with base 2.
         # Same conditions hold, as the product of 0.5^n * 0.85^n is
         # still a geometric series
         b_d = xp.asarray(b, dtype=dtype)
@@ -110,7 +111,7 @@ class TestSymIIR:
                 c_precision = 1e-11
 
         # Test for a low-pass filter with c0 = 0.15 and z1 = 0.85
-        # using an unit step over 200 samples.
+        # using a unit step over 200 samples.
         c0 = 0.15
         z1 = 0.85
         n = 200
@@ -124,7 +125,7 @@ class TestSymIIR:
 
         # Forward pass
         # The transfer function for the system 1 / (1 - z1 * z^-1) when
-        # applied to an unit step with initial conditions y0 is
+        # applied to a unit step with initial conditions y0 is
         # 1 / (1 - z1 * z^-1) * (z^-1 / (1 - z^-1) + y0)
 
         # Solving the inverse Z-transform for the given expression yields:

@@ -171,13 +171,6 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     int      isave[3];
 
     extern int slacon2_(int *, float *, float *, int *, float *, int *, int []);
-#ifdef _CRAY
-    extern int SCOPY(int *, float *, int *, float *, int *);
-    extern int SSAXPY(int *, float *, float *, int *, float *, int *);
-#else
-    extern int scopy_(int *, float *, int *, float *, int *);
-    extern int saxpy_(int *, float *, float *, int *, float *, int *);
-#endif
 
     Astore = A->Store;
     Aval   = Astore->nzval;

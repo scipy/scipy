@@ -65,16 +65,20 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
           tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
-    MESON_ARGS are passed through e.g.:
+    MESON_ARGS can be passed via `--setup-args` e.g.:
 
-    spin build -- -Dpkg_config_path=/lib64/pkgconfig
+        spin build --setup-args=-Dpkg_config_path=/lib64/pkgconfig
 
     The package is installed to build-install
 
-    By default builds for release, to be able to use a debugger set CFLAGS
-    appropriately. For example, for linux use
+    By default builds for release.
+    To use alternative build types, you can set the corresponding flags in `-Dc_args`.
+    For example, for a debug build, use:
 
-    CFLAGS="-O0 -g" spin build
+        spin build --setup-args=-Dc_args="-O0 -g"
+
+    Note that `-Dbuildtype=debug` is not sufficient when using default compilers from
+    conda-forge, as this will not override the `-O2` set by the compiler activation.
     """
     MESON_ARGS = "meson_args"
     MESON_COMPILE_ARGS = "meson_compile_args"
@@ -138,7 +142,8 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         n_cores = cpu_count(only_physical_cores=True)
         jobs = n_cores
 
-    meson_install_args = meson_install_args + ("--tags=" + tags, )
+    meson_install_args += ("--tags=" + tags, )
+    meson_install_args += ("--skip-subprojects",)
 
     if show_build_log:
         verbose = show_build_log
@@ -149,6 +154,10 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                        "jobs": jobs,
                        "verbose": verbose,
                        **kwargs})
+
+
+build_cmd = build
+
 
 @click.option(
     '--durations', '-d', default=None, metavar="NUM_TESTS",
@@ -299,9 +308,13 @@ def _set_pythonpath(pythonpath):
 def python(*, parent_callback, pythonpath, **kwargs):
     """🐍 Launch Python shell with PYTHONPATH set
 
-    OPTIONS are passed through directly to Python, e.g.:
+    OPTIONS refers to the spin command options (see below).
 
-    spin python -c 'import sys; print(sys.path)'
+    The optional PYTHON_ARGS, which must be separated from the
+    spin command options with `--`, are passed directly through to
+    the Python command.  For example,
+
+    spin python -- -c 'import sys; print(sys.path)'
     """
     _set_pythonpath(pythonpath)
     parent_callback(**kwargs)
@@ -313,9 +326,13 @@ def python(*, parent_callback, pythonpath, **kwargs):
 def ipython(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch IPython shell with PYTHONPATH set
 
-    OPTIONS are passed through directly to IPython, e.g.:
+    OPTIONS refers to the spin command options (see below).
 
-    spin ipython -i myscript.py
+    The optional IPYTHON_ARGS, which must be separated from the
+    spin command options with `--`, are passed directly through to
+    the IPython command.  For example,
+
+    spin ipython -- -i myscript.py
     """
     _set_pythonpath(pythonpath)
     parent_callback(**kwargs)
@@ -427,9 +444,9 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
     if (
         not importlib.util.find_spec("scipy_doctest")
-        or importlib.metadata.version("scipy_doctest") < "1.8.0"
+        or importlib.metadata.version("scipy_doctest") < "2.0.0"
     ):
-        raise ModuleNotFoundError("Please install scipy-doctest>=1.8.0")
+        raise ModuleNotFoundError("Please install scipy-doctest>=2.0.0")
 
     tests = kwargs["tests"]
     if kwargs["submodule"]:
@@ -483,6 +500,11 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
 
     os.environ['PYTHONPATH'] = install_dir
     util.run(cmd)
+
+    cmd_numpydoc_lint =  [f'{sys.executable}',
+        os.path.join('tools', 'numpydoc_lint.py')
+    ]
+    util.run(cmd_numpydoc_lint)
 
 @click.command()
 @click.argument(
@@ -626,6 +648,76 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     ]
     util.run(cmd_check_test_name)
 
+
+@click.command()
+@click.option(
+    '--xp-markers', default=False, is_flag=True,
+    help='For each function using `xp_capabilities`, ensure non-numpy backends are '
+         'actually tested')
+@click.option(
+    '--installed-files', default=False, is_flag=True,
+    help='Ensure all test and stub files are installed correctly.')
+@click.option(
+    '--symbol-hiding', default=False, is_flag=True,
+    help='Check whether symbol hiding in extension modules is correct (GCC-only)')
+@click.option(
+    '--no-build', default=False, is_flag=True,
+    help='Build SciPy before running checks')
+@meson.build_dir_option
+@click.pass_context
+def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=None):
+    """🔧  Run checks specific to the SciPy code base.
+
+    Exactly one check can be run at once. Example:
+
+      \b
+      spin check --xp-markers
+
+    """
+    # Checks are typically useful enough to run in CI or maintain a custom script for,
+    # but not deserving of their own top-level command in the spin CLI interface.
+    #
+    # We only run a single check per invocation, since they're so different and not all
+    # checks are expected to pass on all platforms.
+    #
+    # These checks, unlike the `lint` ones, are allowed (but don't have to) require
+    # building or importing `scipy`.
+    options = [xp_markers, installed_files, symbol_hiding]
+    if not sum(options) == 1:
+        click.secho(
+            f"Exactly one option to `check` should be given, found {sum(options)} - "
+            "exiting",
+            fg="bright_red",
+        )
+        sys.exit(1)
+
+    if not no_build:
+        click.secho(
+                "Invoking `build` prior to running checks:",
+                bold=True, fg="bright_green"
+            )
+        ctx.invoke(build)
+
+    build_dir = os.path.abspath(build_dir)
+    install_dir = meson._get_site_packages(build_dir)
+    os.environ['PYTHONPATH'] = install_dir
+
+    if xp_markers:
+        os.environ['SCIPY_ARRAY_API'] = '1'
+        cmd = [sys.executable, os.path.join('tools', 'check_xp_untested.py')]
+        util.run(cmd)
+
+    if installed_files:
+        cmd = [sys.executable, os.path.join('tools', 'check_installation.py'),
+               install_dir]
+        util.run(cmd)
+
+    if symbol_hiding:
+        script = os.path.join(os.path.abspath('tools'),
+                              'check_pyext_symbol_hiding.sh')
+        util.run([script, install_dir])
+
+
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):
     """
@@ -730,10 +822,11 @@ def _dirty_git_working_dir():
         "'jax.numpy', 'dask.array')."
     )
 )
+@meson.build_option
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build, build_dir=None, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -775,11 +868,12 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if not compare:
         # No comparison requested; we build and benchmark the current version
 
-        click.secho(
-            "Invoking `build` prior to running benchmarks:",
-            bold=True, fg="bright_green"
-        )
-        ctx.invoke(build)
+        if build:
+            click.secho(
+                "Invoking `build` prior to running benchmarks:",
+                bold=True, fg="bright_green"
+            )
+            ctx.invoke(build_cmd, build_dir=build_dir)
 
         meson._set_pythonpath(build_dir)
 
@@ -888,7 +982,7 @@ def _cpu_count_affinity(os_cpu_count):
         except NotImplementedError:
             pass
 
-    # On PyPy and possibly other platforms, os.sched_getaffinity does not exist
+    # On some platforms, os.sched_getaffinity does not exist
     # or raises NotImplementedError, let's try with the psutil if installed.
     try:
         import psutil
@@ -902,10 +996,10 @@ def _cpu_count_affinity(os_cpu_count):
             sys.platform == "linux"
             and os.environ.get("LOKY_MAX_CPU_COUNT") is None
         ):
-            # PyPy does not implement os.sched_getaffinity on Linux which
-            # can cause severe oversubscription problems. Better warn the
-            # user in this particularly pathological case which can wreck
-            # havoc, typically on CI workers.
+            # On Linux no cpu_affinity can cause severe oversubscription
+            # problems. Better warn the user in this particularly
+            # pathological case which can wreck havoc, typically on CI
+            # workers.
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
                 "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT.",

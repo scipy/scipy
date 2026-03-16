@@ -70,7 +70,7 @@ int ilu_ddrop_row(
 			     * if lastc == 1, there is one more column after
 			     * the working supernode. */ )
 {
-    register int i, j, k, m1;
+    register int i, k, m1;
     register int nzlc; /* number of nonzeros in column last+1 */
     int_t xlusup_first, xlsub_first;
     int m, n; /* m x n is the size of the supernode */
@@ -144,7 +144,7 @@ int ilu_ddrop_row(
 				&lusup[xlusup_first + m - 1], &m);
 			break;
 		    case SMILU_3:
-			for (j = 0; j < n; j++)
+			for (int j = 0; j < n; j++)
 			    lusup[xlusup_first + (m - 1) + j * m] +=
 				    fabs(lusup[xlusup_first + i + j * m]);
 			break;
@@ -160,7 +160,7 @@ int ilu_ddrop_row(
 		dswap_(&n, &lusup[xlusup_first + m1], &m,
 			&lusup[xlusup_first + i], &m);
 		if (milu == SMILU_3)
-		    for (j = 0; j < n; j++) {
+		    for (int j = 0; j < n; j++) {
 			lusup[xlusup_first + m1 + j * m] =
 				fabs(lusup[xlusup_first + m1 + j * m]);
                     }
@@ -210,7 +210,6 @@ int ilu_ddrop_row(
 	{
 	    if (temp[i] <= tol)
 	    {
-		register int j;
 		r++;
 		/* drop the current row and move the last undropped row here */
 		if (r > 1) /* add to last row */
@@ -224,7 +223,7 @@ int ilu_ddrop_row(
 				    &lusup[xlusup_first + m - 1], &m);
 			    break;
 			case SMILU_3:
-			    for (j = 0; j < n; j++)
+			    for (int j = 0; j < n; j++)
 				lusup[xlusup_first + (m - 1) + j * m] +=
 					fabs(lusup[xlusup_first + i + j * m]);
 			    break;
@@ -240,7 +239,7 @@ int ilu_ddrop_row(
 		    dswap_(&n, &lusup[xlusup_first + m1], &m,
 			    &lusup[xlusup_first + i], &m);
 		    if (milu == SMILU_3)
-			for (j = 0; j < n; j++) {
+			for (int j = 0; j < n; j++) {
 			    lusup[xlusup_first + m1 + j * m] =
 				    fabs(lusup[xlusup_first + m1 + j * m]);
                         }
@@ -265,13 +264,12 @@ int ilu_ddrop_row(
 	return 0;
     }
 
-    /* add dropped entries to the diagnal */
+    /* add dropped entries to the diagonal */
     if (milu != SILU)
     {
-	register int j;
 	double t;
 	double omega;
-	for (j = 0; j < n; j++)
+	for (int j = 0; j < n; j++)
 	{
 	    t = lusup[xlusup_first + (m - 1) + j * m];
             if (t == zero) continue;
@@ -313,7 +311,7 @@ int ilu_ddrop_row(
 
     /* Remove dropped entries from the memory and fix the pointers. */
     m1 = m - r;
-    for (j = 1; j < n; j++)
+    for (int j = 1; j < n; j++)
     {
 	register int tmp1, tmp2;
 	tmp1 = xlusup_first + j * m1;

@@ -115,7 +115,7 @@ classes from the `scipy.interpolate` module.
     >>> ius = InterpolatedUnivariateSpline(x, y)
     >>> yi = ius(xi)
 
-    >>> fix, (ax1, ax2) = plt.subplots(2, 1)
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1)
     >>> ax1.plot(x, y, 'bo')
     >>> ax1.plot(xi, yi, 'g')
     >>> ax1.plot(xi, np.sin(xi), 'r')

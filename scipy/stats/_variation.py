@@ -5,14 +5,14 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_capabilities,
     xp_device,
-    _length_nonmasked,
+    _count_nonmasked,
 )
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
@@ -43,9 +43,9 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         Defines how to handle when input contains ``nan``.
         The following options are available:
 
-          * 'propagate': return ``nan``
-          * 'raise': raise an exception
-          * 'omit': perform the calculation with ``nan`` values omitted
+        * 'propagate': return ``nan``
+        * 'raise': raise an exception
+        * 'omit': perform the calculation with ``nan`` values omitted
 
         The default is 'propagate'.
     ddof : int, optional
@@ -109,7 +109,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         a = xp.reshape(a, (-1,))
         axis = 0
 
-    n = xp.asarray(_length_nonmasked(a, axis=axis), dtype=a.dtype, device=xp_device(a))
+    n = xp.asarray(_count_nonmasked(a, axis=axis), dtype=a.dtype, device=xp_device(a))
 
     with (np.errstate(divide='ignore', invalid='ignore'), warnings.catch_warnings()):
         warnings.simplefilter("ignore")

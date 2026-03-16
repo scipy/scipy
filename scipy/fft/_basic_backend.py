@@ -51,7 +51,7 @@ def _execute_1D(func_str, duccfft_func, x, n, axis, norm, overwrite_x, workers, 
 
 def _execute_nD(func_str, duccfft_func, x, s, axes, norm, overwrite_x, workers, plan):
     xp = array_namespace(x)
-    
+
     if is_numpy(xp):
         x = np.asarray(x)
         return duccfft_func(x, s=s, axes=axes, norm=norm,

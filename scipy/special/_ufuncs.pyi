@@ -257,6 +257,7 @@ _cosine_invcdf: np.ufunc
 _cospi: np.ufunc
 _ellip_harm: np.ufunc
 _factorial: np.ufunc
+_gen_harmonic: np.ufunc
 _igam_fac: np.ufunc
 _kolmogc: np.ufunc
 _kolmogci: np.ufunc
@@ -266,6 +267,7 @@ _lanczos_sum_expg_scaled: np.ufunc
 _lgam1p: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
+_normalized_gen_harmonic: np.ufunc
 _riemann_zeta: np.ufunc
 _scaled_exp1: np.ufunc
 _sf_error_test_function: np.ufunc

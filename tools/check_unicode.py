@@ -16,7 +16,7 @@ from get_submodule_paths import get_submodule_paths
 #
 # BEGIN_INCLUDE_RST (do not change this line!)
 latin1_letters = set(chr(cp) for cp in range(192, 256))
-greek_letters = set('αβγδεζηθικλμνξoπρστυϕχψω' + 'ΓΔΘΛΞΠΣϒΦΨΩ')
+greek_letters = set('αβγδεζηθικλμνξπρστυϕχψω' + 'ΓΔΘΛΞΠΣϒΦΨΩ')
 box_drawing_chars = set(chr(cp) for cp in range(0x2500, 0x2580))
 extra_symbols = set('®ő∫≠≥≤±∞²³·→√✅⛔⚠️')
 allowed = latin1_letters | greek_letters | box_drawing_chars | extra_symbols

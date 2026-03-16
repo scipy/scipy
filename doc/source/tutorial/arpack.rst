@@ -225,8 +225,7 @@ the dense matrix:
    >>> class Diagonal(LinearOperator):
    ...     def __init__(self, diag, dtype='float32'):
    ...         self.diag = diag
-   ...         self.shape = (len(self.diag), len(self.diag))
-   ...         self.dtype = np.dtype(dtype)
+   ...         super().__init__(dtype=dtype, shape=(diag.size, diag.size))
    ...     def _matvec(self, x):
    ...         return self.diag*x
    ...     def _rmatvec(self, x):
@@ -264,8 +263,7 @@ same first derivative to an input signal:
     >>> class FirstDerivative(LinearOperator):
     ...     def __init__(self, N, dtype='float32'):
     ...         self.N = N
-    ...         self.shape = (self.N, self.N)
-    ...         self.dtype = np.dtype(dtype)
+    ...         super().__init__(dtype=dtype, shape=(N, N))
     ...     def _matvec(self, x):
     ...         y = np.zeros(self.N, self.dtype)
     ...         y[1:-1] = (0.5*x[2:]-0.5*x[0:-2])

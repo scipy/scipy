@@ -182,7 +182,7 @@ b.shape
 
 At first glance, it might seem that the core shape of `b` is still `(5,)`, and we have simply performed the operation with a batch shape of `(2,)`. However, if this were the case, the batch shape of `b` would be *prepended* to the core shape, resulting in `b` and the output having shape `(2, 5)`. Thinking more carefully, it is correct to consider the core dimensionality of both inputs and the output to be 2; the batch shape is `()`.
 
-Likewise, whenever `b` has more than two dimensions, the core dimensionality of `b` and the output is considered to be 2. For example, to solve a batch of three entirely separate linear systems, each with only one right hand side, `b` must be provided as a three-dimensional array: one dimensions for the batch shape (`(3,)`) and two for the core shape (`(5, 1)`).
+Likewise, whenever `b` has more than two dimensions, the core dimensionality of `b` and the output is considered to be 2. For example, to solve a batch of three entirely separate linear systems, each with only one right hand side, `b` must be provided as a three-dimensional array: one dimension for the batch shape (`(3,)`) and two for the core shape (`(5, 1)`).
 
 ```{code-cell} ipython3
 A = rng.random((3, 5, 5))

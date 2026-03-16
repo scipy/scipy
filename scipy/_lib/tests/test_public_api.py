@@ -13,7 +13,7 @@ import pytest
 
 import scipy
 
-from scipy._lib._public_api import PUBLIC_MODULES
+from scipy._lib._public_api import PUBLIC_MODULES, _without_fortran
 from scipy.conftest import xp_available_backends
 
 
@@ -38,7 +38,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.pseudo_diffs',
     'scipy.fftpack.realtransforms',
     'scipy.integrate.dop',
-    'scipy.integrate.lsoda',
     'scipy.integrate.odepack',
     'scipy.integrate.quadpack',
     'scipy.integrate.vode',
@@ -147,6 +146,10 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.stats.stats',
 ]
 
+if _without_fortran:
+    PRIVATE_BUT_PRESENT_MODULES.remove('scipy.odr.models')
+    PRIVATE_BUT_PRESENT_MODULES.remove('scipy.odr.odrpack')
+
 
 def is_unexpected(name):
     """Check if this needs to be considered."""
@@ -165,7 +168,8 @@ def is_unexpected(name):
 SKIP_LIST = [
     'scipy.conftest',
     'scipy.version',
-    'scipy.special.libsf_error_state'
+    'scipy.special.libsf_error_state',
+    'scipy.integrate.lsoda'
 ]
 
 
@@ -221,7 +225,8 @@ SKIP_LIST_2 = [
     'scipy.math',
     'scipy.random',
     'scipy.ctypeslib',
-    'scipy.ma'
+    'scipy.ma',
+    'scipy.integrate.lsoda'
 ]
 
 
@@ -305,7 +310,6 @@ def test_api_importable():
                           ('scipy.fftpack.pseudo_diffs', None),
                           ('scipy.fftpack.realtransforms', None),
                           ('scipy.integrate.dop', None),
-                          ('scipy.integrate.lsoda', None),
                           ('scipy.integrate.odepack', None),
                           ('scipy.integrate.quadpack', None),
                           ('scipy.integrate.vode', None),
@@ -346,8 +350,6 @@ def test_api_importable():
                           ('scipy.ndimage.interpolation', None),
                           ('scipy.ndimage.measurements', None),
                           ('scipy.ndimage.morphology', None),
-                          ('scipy.odr.models', None),
-                          ('scipy.odr.odrpack', None),
                           ('scipy.optimize.cobyla', None),
                           ('scipy.optimize.lbfgsb', None),
                           ('scipy.optimize.linesearch', None),
