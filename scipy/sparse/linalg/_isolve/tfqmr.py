@@ -3,6 +3,7 @@ import numpy as np
 from scipy._lib._array_api import xp_capabilities
 from .iterative import _get_atol_rtol
 from .utils import make_system
+from scipy._lib._util import (_validate_int)
 
 
 __all__ = ['tfqmr']
@@ -92,6 +93,8 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     True
     """
 
+    # Check maxiter
+    _validate_int(maxiter, 'maxiter', minimum=1)
     # Check data type
     dtype = A.dtype
     if np.issubdtype(dtype, np.int64):
