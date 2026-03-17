@@ -99,7 +99,6 @@ def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
        - `numpy.ma.MaskedArray`
        - `numpy.matrix`
        - NumPy arrays which do not have a boolean or numerical dtype
-       - `scipy.sparse` arrays
 
     3. Coerce array-likes to NumPy arrays and check their dtype.
        Note that non-scalar array-likes can't be mixed with non-NumPy Array

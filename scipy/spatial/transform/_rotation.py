@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from types import EllipsisType, ModuleType, NotImplementedType
+from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
 
 import numpy as np
 
@@ -401,6 +401,9 @@ class Rotation:
     output formats supported, consult the individual method's examples.
 
     """
+    
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(
         self,

@@ -94,9 +94,6 @@ incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
-npymath_path = _incdir_numpy_abs / '..' / 'lib'
-npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 # Pythran include directory and build flags

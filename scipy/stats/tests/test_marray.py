@@ -336,6 +336,7 @@ def test_directional_stats(xp, axis):
 @pytest.mark.parametrize('fun, kwargs', [
     make_xp_pytest_param(stats.wilcoxon,
                          {'method': 'asymptotic', 'zero_method': 'zsplit'}),
+    make_xp_pytest_param(stats.cramervonmises, {'cdf': stats.norm.cdf}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_one_sample_tests(fun, kwargs, axis, xp):
@@ -545,6 +546,20 @@ def test_rankdata(axis, xp):
     ref = stats.rankdata(*narrays, nan_policy='omit', axis=axis)
     xp_assert_close(res.data[~res.mask], xp.asarray(ref[~np.isnan(ref)]))
     xp_assert_close(res.mask, xp.asarray(np.isnan(ref)))
+
+
+@make_xp_test_case(stats.obrientransform)
+@skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
+@pytest.mark.parametrize('n_arrays', [1, 3])
+def test_obrientransform(dtype, n_arrays, xp):
+    # obrientransform is not yet vectorized
+    mxp, marrays, narrays = get_arrays(n_arrays, dtype=dtype, shape=(25,), xp=xp)
+    res = stats.obrientransform(*marrays)
+    ref = stats.obrientransform(*narrays, nan_policy='omit')
+    for res_i, ref_i in zip(res, ref):
+        xp_assert_close(res_i.data[~res_i.mask],
+                        xp.asarray(ref_i[~np.isnan(ref_i)], dtype=getattr(xp, dtype)))
 
 
 @pytest.mark.parametrize('f', [

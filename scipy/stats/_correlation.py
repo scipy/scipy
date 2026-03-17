@@ -246,7 +246,7 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     return SignificanceResult(xi, pvalue)
 
 
-@xp_capabilities(cpu_only=True, exceptions=['jax.numpy'],
+@xp_capabilities(cpu_only=True, exceptions=['jax.numpy'], marray=True,
     skip_backends=[('dask.array', 'not supported by rankdata (take_along_axis)')],
 )
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
@@ -388,7 +388,8 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
 
 @xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
                                 ("jax.numpy", "non-concrete boolean indexing"),
-                                ('cupy', 'no rankdata (xp.repeats limitation)')])
+                                ('cupy', 'no rankdata (xp.repeats limitation)')],
+                 marray=True)
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
@@ -510,7 +511,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
 
 
 @xp_capabilities(skip_backends=[("dask.array", "no take_along_axis"),
-                                ("jax.numpy", "quantile needs lazy nan_policy")])
+                                ("jax.numpy", "quantile needs lazy nan_policy")],
+                 marray=True)
 @_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,

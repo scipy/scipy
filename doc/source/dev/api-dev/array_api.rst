@@ -111,6 +111,13 @@ located on the CPU. Additionally, some backends can have major caveats; in the e
 the function will fail when running inside ``jax.jit``.
 Additional caveats may be listed in the docstring of the function.
 
+Some functions also note support for `MArray <https://mdhaber.github.io/marray/tutorial.html>`__,
+a library that add a "missing data" awareness to the array library of your choice. MArray
+is not an independent array library; rather, it wraps the namespace of an array API
+compatible library to add "mask" support. Consequently, where MArray support is noted,
+it is supported in conjunction with all backend/device combinations marked as supported
+in the capabilities table.
+
 While the elements of the table marked with "n/a" are inherently out of scope, we are
 continually working on filling in the rest.
 Dask wrapping around backends other than NumPy (notably, CuPy) is currently out of scope
@@ -326,6 +333,73 @@ details that SciPy should not rely upon. In general, support for eager-mode is n
 target, and it is not considered a good use of developer time to put significant effort
 into enabling eager-only support.
 
+.. _dev-arrayapi_marray_support:
+
+A note on MArray support
+````````````````````````
+MArray wraps array API compatible namespaces, so it is common for an array API compatible
+function to execute *without warnings or errors* provided MArray input. **This does
+necessarily mean that the function supports MArray input.** The mask of MArrays is used
+to denote missing values; therefore, to consider a function compatible with MArray,
+numerical output with masked input must equal the numerical output expected if the
+masked values were removed entirely. MArray provides primitives to facilitate this,
+but typically, implementations must be generalized to ensure that this property holds.
+
+For instance, suppose that the function ``mean`` were not defined by the array API
+standard, and it had been implemented in SciPy as::
+
+  def mean(x, axis=0):
+      xp = array_namespace(x)
+      n = x.shape[axis]
+      return xp.sum(x, axis=axis) / n
+
+This implementation assumes that the denominator used to normalize the sum will be the
+same for each axis-slice: the length of the array along the ``axis``. This assumption
+is not valid for an array with masked values. Although MArray will ensure that masked
+values are not considered when computing the sum, the implementation still needs to be
+generalized to normalize by the *number of non-masked elements* in a slice::
+
+  from scipy._lib._array_api import _count_nonmasked
+
+  def mean(x, axis=0):
+      xp = array_namespace(x)
+      # n = x.shape[axis]
+      n = _count_nonmasked(x, axis=axis, keepdims=True, xp=xp)
+      return xp.sum(x, axis=axis) / n
+
+Using counts of non-masked elements instead of slice lengths was by far the most common
+generalization needed to add MArray support throughout `scipy.stats`, and for many
+functions, it was the only generalization needed. Other common changes included:
+
+- separate consideration of *both* the length along an axis and the count of non-masked
+  values (e.g., see `scipy.stats.cramervonmises_2samp`),
+- sharing a common mask between "paired-data" input arrays using
+  ``scipy._lib._array_api._share_masks`` (e.g., see `scipy.stats.spearmanrho`),
+- using ``scipy._lib._array_api._masked_apply`` to evaluate an elementwise function
+  on all data, then re-applying the common mask of the inputs to the output (e.g., see
+  `scipy.stats.cramervonmises`), and
+- distinguishing between (built-in) ``sum``, which propagates a mask, and ``xp.sum``,
+  which ignores masked values (e.g., see `scipy.stats.chisquare`).
+
+In most cases, use of ``_count_nonmasked``, ``_share_masks``, and ``_masked_apply`` has
+been sufficient to generalize functions without treating MArray input as a special case
+or accessing the ``mask`` or ``data`` attributes of an MArray directly. In exceptional
+cases, ``scipy._lib._array_api.is_marray`` is available to determine when the namespace
+has been wrapped with MArray, and the namespace of the underlying array library
+can be accessed using the ``_xp`` attribute of an MArray variable (e.g. see
+`scipy.stats.mode`).
+
+.. warning::
+
+  NumPy masked arrays tend to mask the output of calculations that would otherwise
+  return infinite or NaN output. This is unsafe because subsequent calculations will
+  treat these "invalid" outputs as "missing", erroneously producing seemingly valid
+  numerical output when the correct calculation would propagate the infinite or NaN
+  value. When adding MArray support to SciPy functions, ensure that masked values of
+  the output arise due to masked input (e.g., the output of an elementwise function on
+  a masked input value is masked; the output of a reducing function on an all-masked
+  slice is masked) and *only* due to masked input.
+
 .. _dev-arrayapi_default_dtype:
 
 Default Datatypes
@@ -424,6 +498,8 @@ signature::
       # specific capabilities for use when when xp_capabilities is
       # applied to a class with varying capabilities per method
       method_capabilities=None,
+      # Whether the function supports MArrays (used only in documentation)
+      marray=False,
   ):
 
 This is available in ``scipy._lib._array_api`` and can be applied to functions,
@@ -687,6 +763,14 @@ best demonstrated with an example::
     """
   )
 
+.. _dev-arrayapi_marray:
+
+``marray``
+``````````
+Use ``marray=True`` to document support for MArrays below the backend capabilities
+table. Unless noted in ``extra_note``, MArrays are understood to be supported by
+all features of the function and in conjunction with all supported backends.
+
 Applying ``xp_capabilities`` to classes
 ```````````````````````````````````````
 
@@ -841,7 +925,6 @@ below::
 pytest marks which can be used with the ``pytestmark = ...`` variable
 to set marks for all tests in a file.
 
-
 **Strict checks:**
 
 The ``xp`` fixture should almost always be used along with ``make_xp_test_case``
@@ -874,6 +957,21 @@ relevant ``xp_capabilities`` entries, one should use ``reason="private"``.::
   pytest.mark.uses_xp_capabilities(False, reason="private")
   def test_private_toto_helper(xp):
       ...
+
+MArray testing
+``````````````
+
+Note that tests for MArray support are not added automatically by any of the mechanisms
+above; support must be tested manually. A common pattern is property-based testing:
+rather than testing the output of a function with particular MArray input against
+manually calculated reference values, compare the output of the function with
+randomly-generated MArray input against the output of a reference implementation,
+such as the same function with ``nan_policy='omit'`` or with the masked data removed
+programmatically. For reducing functions, it is also important to test the behavior of
+the function when some slices have insufficient (e.g. zero or one) element remaining
+after masked elements have been removed. Typically, MArray tests use the ``xp`` fixture
+to test MArray used *in conjunction* with all array backends supported by the function
+being tested. See ``scipy/stats/tests/test_marray.py`` for examples.
 
 Directly adding pytest markers
 ``````````````````````````````

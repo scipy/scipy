@@ -1890,24 +1890,66 @@ nbinom_cdf_double(double x, double r, double p)
     return nbinom_cdf_wrap(x, r, p);
 }
 
-template<typename Real>
+// Neg. binomial distribution quantile is wrapped once
+// for special.nbdtrik
+// and once for stats due to different rounding policies
+template<typename Real, typename Policy>
 Real
-nbinom_ppf_wrap(const Real x, const Real r, const Real p)
+nbdtrik_wrap(const Real x, const Real n, const Real p, const Policy& policy_)
 {
-    return boost::math::quantile(
-        boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+    if (std::isnan(x) || std::isnan(n) || std::isnan(p)) {
+        return NAN;
+    }
+    if (n < 0 || p < 0 || p > 1 || x < 0 || x > 1) {
+        sf_error("nbdtrik", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+         y = boost::math::quantile(
+            boost::math::negative_binomial_distribution<Real, Policy>(n, p), x);
+    } catch (const std::domain_error& e) {
+        sf_error("nbdtrik", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("nbdtrik", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("nbdtrik", SF_ERROR_UNDERFLOW, NULL);
+        y = 0; 
+    } catch (...) {
+        sf_error("nbdtrik", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("nbdtrik", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
-nbinom_ppf_float(float x, float r, float p)
+nbdtrik_float(float x, float n, float p)
 {
-    return nbinom_ppf_wrap(x, r, p);
+    return nbdtrik_wrap(x, n, p, SpecialPolicy());
 }
 
 double
-nbinom_ppf_double(double x, double r, double p)
+nbdtrik_double(double x, double n, double p)
 {
-    return nbinom_ppf_wrap(x, r, p);
+    return nbdtrik_wrap(x, n, p, SpecialPolicy());
+}
+
+float 
+nbinom_ppf_float(float x, float n, float p)
+{
+    return nbdtrik_wrap(x, n, p, StatsPolicy());
+}
+
+double
+nbinom_ppf_double(double x, double n, double p)
+{
+    return nbdtrik_wrap(x, n, p, StatsPolicy());
 }
 
 template<typename Real>
