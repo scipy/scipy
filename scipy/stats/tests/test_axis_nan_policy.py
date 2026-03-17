@@ -19,6 +19,7 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy._lib._util import AxisError
+from scipy._lib._array_api import make_xp_test_case
 from scipy.conftest import skip_xp_invalid_arg
 
 
@@ -1472,13 +1473,14 @@ def test_array_like_input(dtype):
     assert res.count == 2
 
 
-def test__broadcast_concatenate():
+@make_xp_test_case(stats._axis_nan_policy._broadcast_concatenate)
+def test__broadcast_concatenate(xp):
     # test that _broadcast_concatenate properly broadcasts arrays along all
     # axes except `axis`, then concatenates along axis
     rng = np.random.default_rng(7544340069)
-    a = rng.random((5, 4, 4, 3, 1, 6))
-    b = rng.random((4, 1, 8, 2, 6))
-    c = stats._axis_nan_policy._broadcast_concatenate((a, b), axis=-3)
+    a = xp.asarray(rng.random((5, 4, 4, 3, 1, 6)))
+    b = xp.asarray(rng.random((4, 1, 8, 2, 6)))
+    c = stats._axis_nan_policy._broadcast_concatenate((a, b), axis=-3, xp=xp)
     # broadcast manually as an independent check
     a = np.tile(a, (1, 1, 1, 1, 2, 1))
     b = np.tile(b[None, ...], (5, 1, 4, 1, 1, 1))

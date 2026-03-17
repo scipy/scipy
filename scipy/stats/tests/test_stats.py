@@ -8,7 +8,6 @@
 """
 import math
 import os
-import re
 import warnings
 from collections import namedtuple
 from itertools import product
