@@ -1316,13 +1316,6 @@ class TestCorrSpearmanr:
         expected = [0.865895477, 0.866100381, 0.866100381]
         assert_allclose([res1, res2, res3], expected)
 
-    #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
-    #    should appear on the diagonal and the total should be 899999955.
-    #    If the table cannot hold these values, forget about working with
-    #    census data.  You can also tabulate HUGE against TINY.  There is no
-    #    reason a tabulation program should not be able to distinguish
-    #    different values regardless of their magnitude.
-
 
 class TestCorrSpearmanr2:
     """Some further tests of the spearmanr function."""
@@ -5049,8 +5042,8 @@ class TestKSTwoSamples:
         assert res.statistic_sign == ref_sign
 
 
-@pytest.mark.filterwarnings('ignore:divide by zero:RuntimeWarning')  # dask
-@pytest.mark.filterwarnings('ignore:invalid value:RuntimeWarning')  # dask
+@pytest.mark.filterwarnings('ignore:divide by zero:RuntimeWarning:dask')
+@pytest.mark.filterwarnings('ignore:invalid value:RuntimeWarning:dask')
 @make_xp_test_case(stats.ttest_rel)
 class TestTTestRel:
     def test_ttest_rel_xp(self, xp):
