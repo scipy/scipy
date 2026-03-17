@@ -873,7 +873,7 @@ class TestSpsolveTriangular:
                 rng = np.random.default_rng(789002319)
                 rvs = rng.random
                 A = random_array((n, n), density=0.1, format='lil', dtype=dtype,
-                                 random_state=rng, data_rvs=rvs)
+                                 random_state=rng, data_sampler=rvs)
                 if lower:
                     A = tril(A, format="lil")
                 else:
