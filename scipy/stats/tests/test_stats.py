@@ -5586,18 +5586,18 @@ class TestTTestIndResampling:
             stats.ttest_ind(x, y, method='migratory')
 
 
+@make_xp_test_case(stats.ttest_ind)
 class TestTTestIndCommon:
     # for tests that are performed on variations of the t-test (e.g. trimmed)
-    @pytest.mark.xslow()
     @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
                              ids=["trim", "basic"])
     @pytest.mark.parametrize('equal_var', [True, False],
                              ids=['equal_var', 'unequal_var'])
-    def test_ttest_many_dims(self, kwds, equal_var):
-        # Test that test works on many-dimensional arrays
+    def test_ttest_many_dims_fast(self, kwds, equal_var, xp):
+        # Test that ttest_ind works on many-dimensional arrays
         rng = np.random.default_rng(3815288136)
-        a = rng.random((5, 4, 4, 7, 1, 6))
-        b = rng.random((4, 1, 8, 2, 6))
+        a = xp.asarray(rng.random((5, 4, 4, 7, 1, 6)).tolist())
+        b = xp.asarray(rng.random((4, 1, 8, 2, 6)).tolist())
         res = stats.ttest_ind(a, b, axis=-3, **kwds)
 
         # compare fully-vectorized t-test against t-test on smaller slice
@@ -5605,19 +5605,32 @@ class TestTTestIndCommon:
         a2 = a[i, :, j, :, 0, :]
         b2 = b[:, 0, :, k, :]
         res2 = stats.ttest_ind(a2, b2, axis=-2, **kwds)
-        assert_equal(res.statistic[i, :, j, k, :],
-                     res2.statistic)
-        assert_equal(res.pvalue[i, :, j, k, :],
-                     res2.pvalue)
+        xp_assert_close(res.statistic[i, :, j, k, :], res2.statistic)
+        xp_assert_close(res.pvalue[i, :, j, k, :], res2.pvalue)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
+                             ids=["trim", "basic"])
+    @pytest.mark.parametrize('equal_var', [True, False],
+                             ids=['equal_var', 'unequal_var'])
+    @skip_xp_backends('array_api_strict', reason="indexing in test is too fancy")
+    @skip_xp_backends('jax.numpy', reason="indexing in test is too fancy")
+    @skip_xp_backends('dask.array', reason="too slow")
+    def test_ttest_many_dims_full(self, kwds, equal_var, xp):
         # compare against t-test on one axis-slice at a time
+        rng = np.random.default_rng(3815288136)
+        a = rng.random((5, 4, 4, 7, 1, 6)).tolist()
+        b = rng.random((4, 1, 8, 2, 6)).tolist()
+        res = stats.ttest_ind(xp.asarray(a), xp.asarray(b), axis=-3, **kwds)
 
         # manually broadcast with tile; move axis to end to simplify
         x = np.moveaxis(np.tile(a, (1, 1, 1, 1, 2, 1)), -3, -1)
         y = np.moveaxis(np.tile(b, (5, 1, 4, 1, 1, 1)), -3, -1)
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
+
         shape = x.shape[:-1]
-        statistics = np.zeros(shape)
-        pvalues = np.zeros(shape)
+        statistics = xp.zeros(shape)
+        pvalues = xp.zeros(shape)
         for indices in product(*(range(i) for i in shape)):
             xi = x[indices]  # use tuple to index single axis slice
             yi = y[indices]
@@ -5625,13 +5638,13 @@ class TestTTestIndCommon:
             statistics[indices] = res3.statistic
             pvalues[indices] = res3.pvalue
 
-        assert_allclose(statistics, res.statistic)
-        assert_allclose(pvalues, res.pvalue)
+        xp_assert_close(res.statistic, statistics)
+        xp_assert_close(res.pvalue, pvalues)
 
     @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
                              ids=["trim", "basic"])
     @pytest.mark.parametrize("axis", [-1, 0])
-    def test_nans_on_axis(self, kwds, axis):
+    def test_nans_on_axis(self, kwds, axis, xp):
         # confirm that with `nan_policy='propagate'`, NaN results are returned
         # on the correct location
         rng = np.random.default_rng(363836384995579937222)
@@ -5640,10 +5653,11 @@ class TestTTestIndCommon:
         # set some indices in `a` and `b` to be `np.nan`.
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
+        a, b = xp.asarray(a.tolist()), xp.asarray(b.tolist())
 
-        # arbitrarily use `np.sum` as a baseline for which indices should be
-        # NaNs
-        expected = np.isnan(np.sum(a + b, axis=axis))
+        # arbitrarily use `np.sum` as a baseline for which indices should be NaNs
+        expected = xp.isnan(xp.sum(a + b, axis=axis))
+
         # multidimensional inputs to `t.sf(np.abs(t), df)` with NaNs on some
         # indices throws an warning. See issue gh-13844
         with warnings.catch_warnings(), np.errstate(invalid="ignore"):
@@ -5651,10 +5665,11 @@ class TestTTestIndCommon:
                 "ignore", "invalid value encountered in less_equal", RuntimeWarning)
             warnings.filterwarnings("ignore", "Precision loss occurred", RuntimeWarning)
             res = stats.ttest_ind(a, b, axis=axis, **kwds)
-        p_nans = np.isnan(res.pvalue)
-        assert_array_equal(p_nans, expected)
-        statistic_nans = np.isnan(res.statistic)
-        assert_array_equal(statistic_nans, expected)
+
+        p_nans = xp.isnan(res.pvalue)
+        xp_assert_equal(p_nans, expected)
+        statistic_nans = xp.isnan(res.statistic)
+        xp_assert_equal(statistic_nans, expected)
 
 
 @make_xp_test_case(stats.ttest_ind)
