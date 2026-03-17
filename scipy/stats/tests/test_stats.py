@@ -40,13 +40,8 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-<<<<<<< fix-describe-bool-gh24847
-                                   xp_swapaxes, xp_result_type, is_cupy, is_jax,
-                                   xp_copy, xp_promote)
-=======
                                    xp_swapaxes, xp_result_type, is_jax,
-                                   xp_copy, make_xp_pytest_param)
->>>>>>> main
+                                   xp_copy, xp_promote, make_xp_pytest_param)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
