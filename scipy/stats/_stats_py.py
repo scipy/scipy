@@ -10858,67 +10858,34 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
-    
+    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
     r = xpx.apply_where(
         ~degenerate,
         (ssxym, ssxm, ssym),
         lambda ssxym, ssxm, ssym: xp.clip(ssxym / xp.sqrt(ssxm * ssym), -1.0, 1.0),
-        lambda ssxym, ssxm, ssym: xp.where(
-            ssxym==0,
-            xp.full_like(ssxym, xp.nan, dtype=ssxym.dtype),
-            xp.full_like(ssxym, 0, dtype=ssxym.dtype),
-        ),
+        lambda ssxym, ssxm, ssym: xp.where(ssxym==0, NaN, 0.0)
     )
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
+    with np.errstate(invalid='ignore', divide='ignore'):
+        df = n - 2  # Number of degrees of freedom
+        # n-2 degrees of freedom because 2 has been used up
+        # to estimate the mean and standard deviation
+        t = r * xp.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
 
-    df = xp.asarray(n - 2, dtype=r.dtype)
-    valid = xp.asarray(df > 0, dtype=xp.bool)
+        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+        prob = _get_pvalue(t, dist, alternative, xp=xp)
+        prob = prob[()] if prob.ndim == 0 else prob
 
-    t = xpx.apply_where(
-        valid,
-        (r, df),
-        lambda r, df: r * xp.sqrt(df / ((1.0 - r + TINY) * (1.0 + r + TINY))),
-        fill_value = xp.nan,
-    )
+        slope_stderr = xp.sqrt((1 - r**2) * ssym / ssxm / df)
 
-    prob = xpx.apply_where(
-        valid,
-        (t, df),
-        lambda t, df: _get_pvalue(
-            t, _SimpleStudentT(xp.asarray(df, dtype=t.dtype)), alternative, xp=xp
-        ),
-        fill_value=xp.nan,
-    )
-
-    slope_stderr = xpx.apply_where(
-        valid,
-        (r, ssym, ssxm, df),
-        lambda r, ssym, ssxm, df: xp.sqrt((1 - r **2) * ssym / ssxm / df),
-        fill_value=xp.nan,
-    )
-
-    # Also calculate the standard error of the intercept
-    # The following relationship is used:
-    #   ssxm = mean( (x-mean(x))^2 )
-    #        = ssx - sx*sx
-    #        = mean( x^2 ) - mean(x)^2
-        
-    intercept_stderr = xpx.apply_where(
-        valid,
-        (slope_stderr, ssxm, xmean),
-        lambda slope_stderr, ssxm, xmean:
-        slope_stderr * xp.sqrt(ssxm + xmean**2),
-        fill_value=xp.nan,
-    )
-    
         # Also calculate the standard error of the intercept
         # The following relationship is used:
         #   ssxm = mean( (x-mean(x))^2 )
         #        = ssx - sx*sx
         #        = mean( x^2 ) - mean(x)^2
-
+        intercept_stderr = slope_stderr * xp.sqrt(ssxm + xmean**2)
 
     outputs = slope, intercept, r, prob, slope_stderr, intercept_stderr
     outputs = (output[()] if output.ndim == 0 else output for output in outputs)
