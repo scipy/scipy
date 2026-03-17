@@ -5186,29 +5186,25 @@ def test_ttest_rel():
         assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
-@make_xp_test_case(stats.ttest_rel)
-@skip_xp_backends(eager_only=True, reason='lazy -> limited nan_policy support')
-def test_ttest_rel_nan_2nd_arg(xp):
+def test_ttest_rel_nan_2nd_arg():
     # regression test for gh-6134: nans in the second arg were not handled
-    x = xp.asarray([np.nan, 2.0, 3.0, 4.0])
-    y = xp.asarray([1.0, 2.0, 1.0, 2.0])
+    x = [np.nan, 2.0, 3.0, 4.0]
+    y = [1.0, 2.0, 1.0, 2.0]
 
     r1 = stats.ttest_rel(x, y, nan_policy='omit')
     r2 = stats.ttest_rel(y, x, nan_policy='omit')
-    xp_assert_close(r2.statistic, -r1.statistic, atol=1e-15)
-    xp_assert_close(r2.pvalue, r1.pvalue, atol=1e-15)
+    assert_allclose(r2.statistic, -r1.statistic, atol=1e-15)
+    assert_allclose(r2.pvalue, r1.pvalue, atol=1e-15)
 
     # NB: arguments are paired when NaNs are dropped
     r3 = stats.ttest_rel(y[1:], x[1:])
-    xp_assert_close(r2.statistic, r3.statistic, atol=1e-15)
-    xp_assert_close(r2.pvalue, r3.pvalue, atol=1e-15)
+    assert_allclose(r2, r3, atol=1e-15)
 
     # .. and this is consistent with R. R code:
     # x = c(NA, 2.0, 3.0, 4.0)
     # y = c(1.0, 2.0, 1.0, 2.0)
-    # t.test(x, y, paired=TRUE),
-    xp_assert_close(r2.statistic, xp.asarray(-2.), atol=1e-4)
-    xp_assert_close(r2.pvalue, xp.asarray(0.1835), atol=1e-4)
+    # t.test(x, y, paired=TRUE)
+    assert_allclose(r2, (-2, 0.1835), atol=1e-4)
 
 
 def test_ttest_rel_empty_1d_returns_nan():
