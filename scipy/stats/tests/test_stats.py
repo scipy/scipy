@@ -5470,8 +5470,10 @@ class TestTTestInd:
         assert np.isnan(p)
 
 
+@make_xp_test_case(stats.ttest_ind)
+@skip_xp_backends('dask.array', reason="Dask doesn't support ResamplingMethods")
 @pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
-class TestTTestIndPermutation:
+class TestTTestIndResampling:
     N = 20
 
     # data for most tests
@@ -5513,10 +5515,10 @@ class TestTTestIndPermutation:
 
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("shape", [(12,), (2, 12)])
-    def test_permutation_method(self, alternative, shape):
+    def test_permutation_method(self, alternative, shape, xp):
         rng = np.random.default_rng(2348934579834565)
-        x = rng.random(size=shape)
-        y = rng.random(size=13)
+        x = xp.asarray(rng.random(size=shape).tolist())
+        y = xp.asarray(rng.random(size=13).tolist())
 
         kwargs = dict(n_resamples=999)
 
@@ -5527,29 +5529,32 @@ class TestTTestIndPermutation:
 
         # Use `permutation_test` directly
         def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
-        rng =  np.random.default_rng(348934579834565)
+        rng = np.random.default_rng(348934579834565)
         ref = stats.permutation_test((x, y), statistic, axis=-1, rng=rng,
                                      alternative=alternative, **kwargs)
 
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
 
         # Sanity check against theoretical t-test
         ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
-        assert_equal(res.statistic, ref.statistic)
-        assert_allclose(res.pvalue, ref.pvalue, rtol=3e-2)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue, rtol=3e-2)
 
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("shape", [(12,), (2, 12)])
-    def test_monte_carlo_method(self, alternative, shape):
+    def test_monte_carlo_method(self, alternative, shape, xp):
         rng = np.random.default_rng(2348934579834565)
-        x = rng.random(size=shape)
-        y = rng.random(size=13)
+        x = xp.asarray(rng.random(size=shape).tolist())
+        y = xp.asarray(rng.random(size=13).tolist())
 
         kwargs = dict(n_resamples=999)
 
         # Use `monte_carlo` directly
-        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        def statistic(x, y, axis):
+            x, y = xp.asarray(x), xp.asarray(y)
+            return stats.ttest_ind(x, y, axis=axis).statistic
+
         rng = np.random.default_rng(348934579834565)
         rvs = [rng.standard_normal, rng.standard_normal]
         ref = stats.monte_carlo_test((x, y), rvs=rvs, statistic=statistic, axis=-1,
@@ -5560,24 +5565,25 @@ class TestTTestIndPermutation:
         rvs = [rng.standard_normal, rng.standard_normal]
         method = stats.MonteCarloMethod(rvs=rvs, **kwargs)
         res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
 
         # Passing `rng` instead of `rvs`
         method = stats.MonteCarloMethod(rng=348934579834565, **kwargs)
         res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
 
         # Sanity check against theoretical t-test
         ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
-        assert_equal(res.statistic, ref.statistic)
-        assert_allclose(res.pvalue, ref.pvalue, rtol=6e-2)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue, rtol=6e-2)
 
-    def test_resampling_input_validation(self):
+    def test_resampling_input_validation(self, xp):
         message = "`method` must be an instance of `PermutationMethod`, an instance..."
         with pytest.raises(ValueError, match=message):
-            stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
+            x, y = xp.asarray([1, 2, 3]), xp.asarray([4, 5, 6])
+            stats.ttest_ind(x, y, method='migratory')
 
 
 class TestTTestIndCommon:

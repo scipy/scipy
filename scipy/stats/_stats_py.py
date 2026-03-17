@@ -6760,10 +6760,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                    "of `MonteCarloMethod`, or None (default).")
         raise ValueError(message)
 
-    if not is_numpy(xp) and method is not None:
-        message = "Use of resampling methods is compatible only with NumPy arrays."
-        raise NotImplementedError(message)
-
     result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
     NaN = _get_nan(a, b, shape=result_shape, xp=xp)
     if xp_size(a) == 0 or xp_size(b) == 0:
@@ -6800,7 +6796,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     else:
         # nan_policy is taken care of by axis_nan_policy decorator
         ttest_kwargs = dict(equal_var=equal_var, trim=trim)
-        t, prob = _ttest_resampling(a, b, axis, alternative, ttest_kwargs, method)
+        t, prob = _ttest_resampling(a, b, axis, alternative,
+                                    ttest_kwargs, method, xp=xp)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = xp.broadcast_to(df, t.shape)
@@ -6811,8 +6808,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                        standard_error=denom, estimate=estimate)
 
 
-def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method):
+def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method, *, xp):
     def statistic(x, y, axis):
+        x, y = xp.asarray(x), xp.asarray(y)
         return ttest_ind(x, y, axis=axis, **ttest_kwargs).statistic
 
     test = (permutation_test if isinstance(method, PermutationMethod)
