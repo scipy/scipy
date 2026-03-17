@@ -2064,7 +2064,7 @@ const char *fresnel_doc = R"(
     >>> C
     array([0.09999753, 0.7798934 , 0.49989869, 0.4999999 , 0.5       ])
 
-    Next, we verify the following relations to the error function:
+    Next, we verify the following relation to the error function:
 
     .. math::
 
