@@ -2260,12 +2260,14 @@ class TestRegression:
         y = xp.arange(3, 5)
         result = stats.linregress(x, y)
 
-        # Non-horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(0.0))
+        xp_assert_close(result.slope, xp.asarray(1.0))
+        xp_assert_close(result.intercept, xp.asarray(3.0))
+        xp_assert_close(result.rvalue, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_regress_two_inputs_horizontal_line(self, xp):
         # Regress a horizontal line formed by two points.
@@ -2274,11 +2276,14 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(1.0))
+        xp_assert_close(result.slope, xp.asarray(0.0))
+        xp_assert_close(result.intercept, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.rvalue, NaN)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_nist_norris(self, xp):
         # If this causes a lint failure in the future, please note the history of
@@ -2319,6 +2324,22 @@ class TestRegression:
         # match with results from numpy polyfit
         xp_assert_close(result.slope, xp.asarray(poly[0]))
         xp_assert_close(result.intercept, xp.asarray(poly[1]))
+
+    def test_linregress_two_points_nan_inference(self, xp):
+        # Test for gh-24684
+        x = xp.asarray([0., 1.])
+        y = xp.asarray([0., 1.])
+
+        res = stats.linregress(x, y)
+
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.pvalue, NaN)
+        xp_assert_equal(res.stderr, NaN)
+        xp_assert_equal(res.intercept_stderr, NaN)
+
+        # Point estimates should still be correct
+        xp_assert_close(res.slope, xp.asarray(1.0))
+        xp_assert_close(res.intercept, xp.asarray(0.0))
 
     def test_empty_input(self, xp):
         with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
