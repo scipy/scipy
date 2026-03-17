@@ -189,6 +189,7 @@ def test_csr_hstack_int64():
     assert X_hs_32.indices.dtype == np.int32
     assert X_hs_32.indices.max() == max_int32 - 1
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
 def test_mixed_index_dtype_int_indexing(cls):
     # https://github.com/scipy/scipy/issues/20182
