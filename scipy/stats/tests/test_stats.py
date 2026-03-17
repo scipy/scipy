@@ -5152,8 +5152,8 @@ class TestTTestRel:
         xp_assert_close(t, xp.asarray(tr))
 
         t, p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
-        assert_allclose(p, xp.asarray(pr/2))
-        assert_allclose(t, xp.asarray(tr))
+        xp_assert_close(p, xp.asarray(pr/2))
+        xp_assert_close(t, xp.asarray(tr))
 
     def test_nan_policy_propagate(self, xp):
         # check nan policy
@@ -5448,41 +5448,64 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
+    @skip_xp_backends(eager_only=True, reason='lazy -> limited nan_policy support')
+    def test_special_cases(self, xp):
+        # check nan policy
+        rng = np.random.default_rng(22199381)
+        x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
+        y = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
+        x[500] = np.nan
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
 
-    def test_ttest_ind_nan_policy(self):
+        res = stats.ttest_ind(x, y)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
+
+        # test zero division problem
+        with eager_warns(RuntimeWarning, match="Precision loss occurred", xp=xp):
+            t, p = stats.ttest_ind(xp.asarray([0, 0, 0]), xp.asarray([1, 1, 1]))
+        xp_assert_equal(t, xp.asarray(-xp.inf))
+        xp_assert_equal(p, xp.asarray(0.))
+
+        x = xp.asarray([0, 0, 0])
+        res = stats.ttest_ind(x, x)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
+
+        # check that nan in input array result in nan output
+        anan = xp.asarray([[1, np.nan], [-1, 1]])
+        res = stats.ttest_ind(anan, xp.zeros((2, 2)))
+        xp_assert_equal(res.statistic, xp.asarray([0, xp.nan]))
+        xp_assert_equal(res.pvalue, xp.asarray([1, xp.nan]))
+
+    @skip_xp_backends(eager_only=True, reason='lazy -> limited nan_policy support')
+    def test_ttest_ind_nan_policy(self, xp):
+        rng = np.random.default_rng(61481957)
+        x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
+        y = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
+        x[500] = np.nan
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
+
+        res = stats.ttest_ind(x, y, nan_policy='omit')
+        ref = stats.ttest_ind(x[~xp.isnan(x)], y, nan_policy='omit')
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
+
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.ttest_ind(x, y, nan_policy='raise')
+
+        message = "nan_policy must be one of"
+        with pytest.raises(ValueError, match=message):
+            stats.ttest_ind(x, y, nan_policy='foobar')
+
+    def test_3D_nan_policy_omit(self):  # ND nan_policy='omit' is NumPy only
         rvs1 = np.linspace(5, 105, 100)
         rvs2 = np.linspace(1, 100, 100)
         rvs1_2D = np.array([rvs1, rvs2])
         rvs2_2D = np.array([rvs2, rvs1])
         rvs1_3D = np.dstack([rvs1_2D, rvs1_2D, rvs1_2D])
         rvs2_3D = np.dstack([rvs2_2D, rvs2_2D, rvs2_2D])
-
-        # check nan policy
-        rng = np.random.RandomState(12345678)
-        x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
-        x[500] = np.nan
-        y = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
-
-        with np.errstate(invalid="ignore"):
-            assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
-
-        assert_array_almost_equal(stats.ttest_ind(x, y, nan_policy='omit'),
-                                  (0.24779670949091914, 0.80434267337517906))
-        assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='raise')
-        assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
-
-        # test zero division problem
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
-        assert_equal((np.abs(t), p), (np.inf, 0))
-
-        with np.errstate(invalid="ignore"):
-            assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
-
-            # check that nan in input array result in nan output
-            anan = np.array([[1, np.nan], [-1, 1]])
-            assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
-                         ([0, np.nan], [1, np.nan]))
 
         rvs1_3D[:, :, 10:15] = np.nan
         rvs2_3D[:, :, 6:12] = np.nan
@@ -5507,7 +5530,7 @@ class TestTTestInd:
         assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
-    def test_ttest_ind_scalar(self):
+    def test_ttest_ind_scalar(self):  # ttest_ind for scalar input is legacy/np-only
         # test scalars
         with warnings.catch_warnings(), np.errstate(invalid="ignore"):
             warnings.filterwarnings(
