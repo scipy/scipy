@@ -1478,9 +1478,10 @@ def test__broadcast_concatenate(xp):
     # test that _broadcast_concatenate properly broadcasts arrays along all
     # axes except `axis`, then concatenates along axis
     rng = np.random.default_rng(7544340069)
-    a = xp.asarray(rng.random((5, 4, 4, 3, 1, 6)))
-    b = xp.asarray(rng.random((4, 1, 8, 2, 6)))
-    c = stats._axis_nan_policy._broadcast_concatenate((a, b), axis=-3, xp=xp)
+    a = rng.random((5, 4, 4, 3, 1, 6))
+    b = rng.random((4, 1, 8, 2, 6))
+    arrays = (xp.asarray(a), xp.asarray(b))
+    c = stats._axis_nan_policy._broadcast_concatenate(arrays, axis=-3, xp=xp)
     # broadcast manually as an independent check
     a = np.tile(a, (1, 1, 1, 1, 2, 1))
     b = np.tile(b[None, ...], (5, 1, 4, 1, 1, 1))
