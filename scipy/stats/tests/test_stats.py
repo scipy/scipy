@@ -6101,8 +6101,6 @@ class TestTTestIndFromStats:
         xp_assert_equal(res.pvalue, NaN)
 
 
-@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @make_xp_test_case(stats.ttest_1samp)
 class TestTTest1Samp:
     def _convert_pvalue_alternative(self, t, p, alt, xp):
@@ -6176,12 +6174,12 @@ class TestTTest1Samp:
             xp_assert_equal(res.statistic, xp.asarray([0., xp.nan]))
             xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
-        @skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
-        def test_ttest_1samp_new_omit(self, xp):
-            rng = np.random.default_rng(4008400329)
-            n1, n2, n3 = (5, 10, 15)
-            rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3), random_state=rng)
-            rvn1 = xp.asarray(rvn1)
+    @skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
+    def test_ttest_1samp_new_omit(self, xp):
+        rng = np.random.default_rng(4008400329)
+        n1, n2, n3 = (5, 10, 15)
+        rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3), random_state=rng)
+        rvn1 = xp.asarray(rvn1)
 
         rvn1[0:2, 1:3, 4:8] = xp.nan
 
