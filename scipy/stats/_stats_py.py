@@ -8019,10 +8019,10 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
     data_all = xp.concat((data1, data2), axis=-1)
     batch_shape = data_all.shape[:-1]
+    dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
 
     if is_marray(xp):
         # Previously, we used this algorithm for all backends:
-        dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
         n1 = xp.astype(_count_nonmasked(data1, axis=-1), dtype)
         n2 = xp.astype(_count_nonmasked(data2, axis=-1), dtype)
         cdf1 = xp.astype(_xp_searchsorted(data1, data_all, side='right'), dtype)
@@ -8036,8 +8036,10 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
         # We want the ECDF of each sample evaluated at *all* the points in the pooled
         # sample. The values each ECDF can assume are given by:
-        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
-        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1, dtype=dtype),
+                                    batch_shape + (n1 + 1,))
+        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1, dtype=dtype),
+                                    batch_shape + (n2 + 1,))
         # Now we "just" need to know how many times each of these values *will* be
         # assumed when we evaluate the ECDFs at all points in the pooled sample.
         # These counts are given by the differences between consecutive ("min" or "max")
@@ -10869,13 +10871,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if not is_marray(xp) and n == 2:
-        # handle case when only two points are passed in
-        one = xp.asarray(1.0, dtype=r.dtype)
-        prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
-        slope_stderr = xp.zeros_like(r)
-        intercept_stderr = xp.zeros_like(r)
-    else:
+    with np.errstate(invalid='ignore', divide='ignore'):
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation

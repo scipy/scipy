@@ -40,8 +40,13 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
+<<<<<<< fix-describe-bool-gh24847
                                    xp_swapaxes, xp_result_type, is_cupy, is_jax,
                                    xp_copy, xp_promote)
+=======
+                                   xp_swapaxes, xp_result_type, is_jax,
+                                   xp_copy, make_xp_pytest_param)
+>>>>>>> main
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
@@ -191,23 +196,23 @@ class TestTrimmedStats:
         res = stats.tmin(x, lowerlimit=4, axis=1)
         xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
 
-    @skip_xp_backends(np_only=True,
-                      reason="Only NumPy arrays support scalar input/`nan_policy`.")
-    @make_xp_test_case(stats.tmin)
-    def test_tmin_scalar_and_nanpolicy(self, xp):
-        assert_equal(stats.tmin(4), 4)
+    @pytest.mark.parametrize('tfun', [stats.tmin, stats.tmax])
+    def test_tmin_tmax_scalar_input(self, tfun):  # scalar inputs are NumPy only
+        assert_equal(tfun(4), 4)
 
-        x = np.arange(10.)
-        x[9] = np.nan
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
-            assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
-            msg = "The input contains nan values"
-            with assert_raises(ValueError, match=msg):
-                stats.tmin(x, nan_policy='raise')
-            msg = "nan_policy must be one of..."
-            with assert_raises(ValueError, match=msg):
-                stats.tmin(x, nan_policy='foobar')
+    @skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
+    @pytest.mark.parametrize('tfun, ref', [make_xp_pytest_param(stats.tmin, 0.),
+                                           make_xp_pytest_param(stats.tmax, 9.)])
+    def test_tmin_tmax_nanpolicy(self, tfun, ref, xp):
+        x = xp.arange(10.)
+        x[8] = xp.nan
+        xp_assert_equal(tfun(x, nan_policy='omit'), xp.asarray(ref))
+        msg = "The input contains nan values"
+        with assert_raises(ValueError, match=msg):
+            tfun(x, nan_policy='raise')
+        msg = "nan_policy must be one of..."
+        with assert_raises(ValueError, match=msg):
+            tfun(x, nan_policy='foobar')
 
     @make_xp_test_case(stats.tmax)
     def test_tmax(self, xp):
@@ -233,24 +238,6 @@ class TestTrimmedStats:
             x = xp.reshape(xp.arange(16), (4, 4))
             res = stats.tmax(x, upperlimit=11, axis=1)
             xp_assert_equal(res, xp.asarray([3, 7, 11, np.nan]))
-
-    @skip_xp_backends(np_only=True,
-                      reason="Only NumPy arrays support scalar input/`nan_policy`.")
-    @make_xp_test_case(stats.tmax)
-    def test_tmax_scalar_and_nanpolicy(self, xp):
-        assert_equal(stats.tmax(4), 4)
-
-        x = np.arange(10.)
-        x[6] = np.nan
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
-            assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
-            msg = "The input contains nan values"
-            with assert_raises(ValueError, match=msg):
-                stats.tmax(x, nan_policy='raise')
-            msg = "nan_policy must be one of..."
-            with assert_raises(ValueError, match=msg):
-                stats.tmax(x, nan_policy='foobar')
 
     @make_xp_test_case(stats.tmin, stats.tmax)
     def test_tmin_tmax_int_dtype(self, xp):
@@ -402,11 +389,11 @@ class TestPearsonrWilkinson:
 
 @make_xp_test_case(stats.pearsonr)
 class TestPearsonr:
-    def test_pearsonr_result_attributes(self):
-        res = stats.pearsonr(X, X)
+    def test_pearsonr_result_attributes(self, xp):
+        res = stats.pearsonr(xp.asarray(X), xp.asarray(X))
         attributes = ('correlation', 'pvalue')
-        check_named_results(res, attributes)
-        assert_equal(res.correlation, res.statistic)
+        check_named_results(res, attributes, xp=xp)
+        xp_assert_equal(res.correlation, res.statistic)
 
     def test_r_almost_exactly_pos1(self, xp):
         a = xp.arange(3.0)
@@ -447,7 +434,7 @@ class TestPearsonr:
             xp_assert_close(p, xp.asarray(xp.nan))
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
-    def test_near_constant_input(self, xp, dtype):
+    def test_near_constant_input(self, dtype, xp):
         npdtype = getattr(np, dtype)
         dtype = getattr(xp, dtype)
         # Near constant input (but not constant):
@@ -2260,12 +2247,14 @@ class TestRegression:
         y = xp.arange(3, 5)
         result = stats.linregress(x, y)
 
-        # Non-horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(0.0))
+        xp_assert_close(result.slope, xp.asarray(1.0))
+        xp_assert_close(result.intercept, xp.asarray(3.0))
+        xp_assert_close(result.rvalue, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_regress_two_inputs_horizontal_line(self, xp):
         # Regress a horizontal line formed by two points.
@@ -2274,11 +2263,14 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(1.0))
+        xp_assert_close(result.slope, xp.asarray(0.0))
+        xp_assert_close(result.intercept, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.rvalue, NaN)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_nist_norris(self, xp):
         # If this causes a lint failure in the future, please note the history of
@@ -2319,6 +2311,22 @@ class TestRegression:
         # match with results from numpy polyfit
         xp_assert_close(result.slope, xp.asarray(poly[0]))
         xp_assert_close(result.intercept, xp.asarray(poly[1]))
+
+    def test_linregress_two_points_nan_inference(self, xp):
+        # Test for gh-24684
+        x = xp.asarray([0., 1.])
+        y = xp.asarray([0., 1.])
+
+        res = stats.linregress(x, y)
+
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.pvalue, NaN)
+        xp_assert_equal(res.stderr, NaN)
+        xp_assert_equal(res.intercept_stderr, NaN)
+
+        # Point estimates should still be correct
+        xp_assert_close(res.slope, xp.asarray(1.0))
+        xp_assert_close(res.intercept, xp.asarray(0.0))
 
     def test_empty_input(self, xp):
         with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
@@ -2819,14 +2827,17 @@ class TestSEM:
         x = xp.where(x == 9, xp.nan, x)
         xp_assert_equal(stats.sem(x), xp.asarray(xp.nan))
 
-    @skip_xp_backends(np_only=True,
-                      reason='`nan_policy` only supports NumPy backend')
+    @skip_xp_backends(eager_only=True, reason='lazy -> reduced nan_policy capabilities')
     def test_sem_nan_policy(self, xp):
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.sem(x, nan_policy='omit'), 0.9128709291752769)
-        assert_raises(ValueError, stats.sem, x, nan_policy='raise')
-        assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
+        x = xp.arange(10.)
+        x[9] = xp.nan
+        xp_assert_close(stats.sem(x, nan_policy='omit'), xp.asarray(0.9128709291752769))
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.sem(x, nan_policy='raise')
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.sem(x, nan_policy='foobar')
 
 
 @make_xp_test_case(stats.zmap)
@@ -3149,19 +3160,18 @@ class TestMedianAbsDeviation:
         mad_expected = xp.asarray([0.435, 0.5, 0.45, 0.4])
         xp_assert_close(mad, mad_expected)
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy="omit"')
     def test_mad_nan_omit(self, xp):
         mad = stats.median_abs_deviation(xp.asarray(self.dat_nan), nan_policy='omit')
         xp_assert_close(mad, xp.asarray(0.34))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_axis_and_nan(self, xp):
         x = xp.asarray([[1.0, 2.0, 3.0, 4.0, np.nan],
                         [1.0, 4.0, 5.0, 8.0, 9.0]])
         mad = stats.median_abs_deviation(x, axis=1)
         xp_assert_close(mad, xp.asarray([np.nan, 3.0]))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy="omit"')
     def test_nan_policy_omit_with_inf(self, xp):
         z = xp.asarray([1, 3, 4, 6, 99, np.nan, np.inf])
         mad = stats.median_abs_deviation(z, nan_policy='omit')
@@ -3176,7 +3186,6 @@ class TestMedianAbsDeviation:
             mad = stats.median_abs_deviation(x, axis=axis)
         xp_assert_close(mad, xp.full_like(xp.sum(x, axis=axis), fill_value=xp.nan))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     @pytest.mark.parametrize('nan_policy, expected',
                              [('omit', [np.nan, 1.5, 1.5]),
                               ('propagate', [np.nan, np.nan, 1.5])])
@@ -3242,7 +3251,7 @@ class TestIQR:
         stats.iqr(d, None, (30, 20), 1.0)
         stats.iqr(d, None, (25, 75), 1.5, 'propagate')
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='lazy -> reduced nan_policy capabilities')
     def test_api_eager(self, xp):
         d = xp.ones((5, 5))
         stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
@@ -3411,7 +3420,7 @@ class TestIQR:
         assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
         assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='lazy -> reduced nan_policy capabilitiesy')
     def test_nanpolicy(self, xp):
         x = xp.reshape(xp.arange(15.0), (3, 5))
 
@@ -3440,7 +3449,7 @@ class TestIQR:
         with pytest.raises(ValueError, match=message):
             stats.iqr(x, nan_policy='barfood')
 
-    @pytest.mark.skip_xp_backends(np_only=True,
+    @skip_xp_backends(np_only=True,
         reason="nan_policy w/ multidimensional arrays only available w/ NumPy")
     def test_nanpolicy_nd(self, xp):
         x = xp.reshape(xp.arange(15.0), (3, 5))
@@ -3462,7 +3471,6 @@ class TestIQR:
         xp_assert_close(stats.iqr(x, scale='normal'), xp.asarray(7 / 1.3489795))
         xp_assert_equal(stats.iqr(x, scale=2.0), xp.asarray(3.5))
 
-    @skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
     def test_scale_with_nans(self, xp):
         x = xp.reshape(xp.arange(15.0), (3, 5))
         x = xpx.at(x)[1, 2].set(xp.nan)
@@ -3476,7 +3484,7 @@ class TestIQR:
         with pytest.raises(ValueError, match=message):
             stats.iqr(x, scale='foobar')
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
+    @skip_xp_backends("jax.numpy", reason="lazy -> reduced nan_policy capabilities")
     def test_scale_nan_policy_omit(self, xp):
         x = xp.reshape(xp.arange(15.0), (3, 5))
         x = xpx.at(x)[1, 2].set(xp.nan)
@@ -3485,8 +3493,6 @@ class TestIQR:
                         xp.asarray(7.5 / 1.3489795))
         xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), xp.asarray(3.75))
 
-    @pytest.mark.skip_xp_backends(np_only=True,
-        reason="nan_policy w/ multidimensional arrays only available w/ NumPy")
     def test_scale_nanpolicy_nd(self, xp):
         # axis=1 chosen to show behavior with both nans and without
         x = xp.reshape(xp.arange(15.0), (3, 5))
@@ -3611,7 +3617,8 @@ class TestMoments:
     @pytest.mark.parametrize('expect, order', [(0, 1), (1, 0)])
     def test_constant_moments(self, dtype, expect, order, xp):
         if dtype=='complex128' and is_torch(xp):
-            pytest.skip()
+            message = "torch can't round complex input; data-apis/array-api-compat#407"
+            pytest.skip(message)
         dtype = getattr(xp, dtype)
         rng = np.random.default_rng(3824693518)
         x = xp.asarray(rng.random(5), dtype=dtype)
@@ -4733,8 +4740,6 @@ class TestKSOneSample:
         xp_assert_equal(res.statistic_location, xp.asarray(ref_location))
         xp_assert_equal(res.statistic_sign, xp.asarray(ref_sign, dtype=xp.int8))
 
-    # missing: no test that uses *args
-
 
 @make_xp_test_case(stats.ks_2samp)
 class TestKSTwoSamples:
@@ -5029,7 +5034,6 @@ class TestKSTwoSamples:
             res = stats.ks_2samp(data1, data2, alternative='less')
             xp_assert_close(res.pvalue, xp.asarray(0., dtype=dtype), atol=1e-14)
 
-    @skip_xp_backends("torch", reason="precision issues")
     @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_2samp])
     @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
                              [('greater', 5.9, 5.9, +1),
@@ -6085,7 +6089,7 @@ class TestTTestIndFromStats:
         xp_assert_equal(res.pvalue, NaN)
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
+@skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
@@ -6191,7 +6195,7 @@ def test_ttest_1samp_new(xp):
         xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
 
-@skip_xp_backends(eager_only=True, reason="lazy -> no nan_policy")
+@skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
 @make_xp_test_case(stats.ttest_1samp)
 def test_ttest_1samp_new_omit(xp):
     rng = np.random.default_rng(4008400329)
@@ -6217,7 +6221,7 @@ def test_ttest_1samp_new_omit(xp):
 
 
 @make_xp_test_case(stats.ttest_1samp)
-@pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+@skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
     # if the user wants to test multiple null hypotheses simultaneously,
@@ -6661,18 +6665,16 @@ class TestObrientransform:
         xp_assert_close(res[0], ref[0, ...])
         xp_assert_close(res[1], ref[1, ...])
 
-    @skip_xp_backends("dask.array", reason="trouble with xp.repeat")
     def test_reference(self, xp):
         # Example from "O'Brien Test for Homogeneity of Variance" by Herve Abdi.
-        values = xp.arange(5, 11)
+        values = np.arange(5, 11)
         reps = [5, 11, 9, 3, 2, 2]
-        reps = reps if is_cupy(xp) else xp.asarray(reps)
-        data = xp.repeat(values, reps)
-        transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
+        data = np.repeat(values, reps)
+        transformed_values = np.asarray([3.1828, 0.5591, 0.0344,
                                          1.6086, 5.2817, 11.0538])
-        expected = xp.repeat(transformed_values, reps)
-        result = stats.obrientransform(data)
-        xp_assert_close(result[0][:], expected, rtol=1e-3)
+        expected = np.repeat(transformed_values, reps)
+        result = stats.obrientransform(xp.asarray(data))
+        xp_assert_close(result[0][:], xp.asarray(expected.tolist()), rtol=1e-3)
 
     def test_nan_policy(self, xp):
         rng = np.random.default_rng(4284359689201882838835)
@@ -7444,7 +7446,7 @@ class TestTrimMean:
         with pytest.raises(ValueError, match="Proportion too big."):
             stats.trim_mean(a, 0.6)
 
-    @pytest.mark.skip_xp_backends('dask.array', reason="lazy -> no _axis_nan_policy")
+    @skip_xp_backends('dask.array', reason="lazy -> no _axis_nan_policy")
     def test_empty_input(self, xp):
         # empty input
         with pytest.warns(SmallSampleWarning, match='too small'):
@@ -7751,13 +7753,13 @@ class TestAlexanderGovern:
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
 
-    @skip_xp_backends(eager_only=True, reason="lazy -> no nan_policy")
+    @skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
     def test_nan_policy_raise(self, xp):
         args = xp.asarray([1., 2., 3., 4.]), xp.asarray([1., xp.nan])
         with assert_raises(ValueError, match="The input contains nan values"):
             stats.alexandergovern(*args, nan_policy='raise')
 
-    @skip_xp_backends(eager_only=True, reason="lazy -> no nan_policy")
+    @skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
     def test_nan_policy_omit(self, xp):
         args_nan = xp.asarray([1, 2, 3, xp.nan, 4]), xp.asarray([1, xp.nan, 19, 25])
         args_no_nan = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 19, 25])
@@ -7912,7 +7914,7 @@ class TestFOneWay:
         xp_assert_equal(f, xp.asarray(expected[0]))
         xp_assert_equal(p, xp.asarray(expected[1]))
 
-    @pytest.mark.skip_xp_backends('dask.array', reason='needs _axis_nan_policy')
+    @skip_xp_backends('dask.array', reason='needs _axis_nan_policy')
     @pytest.mark.parametrize('axis', [-2, -1, 0, 1])
     def test_2d_inputs(self, axis, xp):
         a = np.array([[1, 4, 3, 3],
@@ -7959,7 +7961,7 @@ class TestFOneWay:
             xp_assert_close(f[j], xp.asarray(fj))
             xp_assert_close(p[j], xp.asarray(pj))
 
-    @pytest.mark.skip_xp_backends('dask.array', reason='needs _axis_nan_policy')
+    @skip_xp_backends('dask.array', reason='needs _axis_nan_policy')
     def test_3d_inputs(self, xp):
         # Some 3-d arrays. (There is nothing special about the values.)
         a = xp.reshape(1/xp.arange(1.0, 4*5*7 + 1., dtype=xp.float64), (4, 5, 7))
@@ -8005,7 +8007,7 @@ class TestFOneWay:
             xp_assert_equal(result.statistic, xp.asarray(xp.nan))
             xp_assert_equal(result.pvalue, xp.asarray(xp.nan))
 
-    @pytest.mark.skip_xp_backends('dask.array', reason='lazy->reduced input validation')
+    @skip_xp_backends('dask.array', reason='lazy->reduced input validation')
     @pytest.mark.parametrize('args', [(), ([1, 2, 3],)])
     def test_too_few_inputs(self, args, xp):
         args = [xp.asarray(arg) for arg in args]
@@ -8013,7 +8015,7 @@ class TestFOneWay:
         with pytest.raises(TypeError, match=message):
             stats.f_oneway(*args)
 
-    @pytest.mark.skip_xp_backends('dask.array', reason='lazy->reduced input validation')
+    @skip_xp_backends('dask.array', reason='lazy->reduced input validation')
     def test_axis_error(self, xp):
         a = xp.ones((3, 4))
         b = xp.ones((5, 4))
@@ -8101,7 +8103,7 @@ class TestKruskal:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='needs jax-ml/jax#34628')
     def test_nan_policy_propagate(self, xp):
         x = xp.arange(10.)
         x = xpx.at(x)[9].set(xp.nan)
@@ -8110,7 +8112,7 @@ class TestKruskal:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='lazy -> reduced nan_policy capabilities')
     def test_nan_policy_omit_raise(self, xp):
         x = xp.arange(10.)
         x = xpx.at(x)[9].set(xp.nan)
@@ -8700,7 +8702,7 @@ class TestBrunnerMunzel:
         xp_assert_equal(statistic, xp.asarray(xp.nan))
         xp_assert_equal(pvalue, xp.asarray(xp.nan))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='needs jax-ml/jax#34628')
     def test_brunnermunzel_nan_input_propagate(self, xp):
         X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, xp.nan])
         Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])
@@ -8712,7 +8714,7 @@ class TestBrunnerMunzel:
         xp_assert_equal(u2, xp.asarray(xp.nan))
         xp_assert_equal(p2, xp.asarray(xp.nan))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='lazy -> reduced nan_policy capabilities')
     def test_brunnermunzel_nan_input_raise(self, xp):
         X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, xp.nan])
         Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])
@@ -8726,7 +8728,7 @@ class TestBrunnerMunzel:
         with pytest.raises(ValueError, match=message):
             stats.brunnermunzel(Y, X, alternative, distribution, nan_policy)
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    @skip_xp_backends('jax.numpy', reason='lazy -> reduced nan_policy capabilities')
     def test_brunnermunzel_nan_input_omit(self, xp):
         X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan])
         Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])
