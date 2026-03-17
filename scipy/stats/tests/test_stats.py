@@ -5463,8 +5463,10 @@ class TestTTestInd:
         assert np.isnan(p)
 
 
+@make_xp_test_case(stats.ttest_ind)
+@skip_xp_backends('dask.array', reason="Dask doesn't support ResamplingMethods")
 @pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
-class TestTTestIndPermutation:
+class TestTTestIndResampling:
     N = 20
 
     # data for most tests
@@ -5506,10 +5508,10 @@ class TestTTestIndPermutation:
 
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("shape", [(12,), (2, 12)])
-    def test_permutation_method(self, alternative, shape):
+    def test_permutation_method(self, alternative, shape, xp):
         rng = np.random.default_rng(2348934579834565)
-        x = rng.random(size=shape)
-        y = rng.random(size=13)
+        x = xp.asarray(rng.random(size=shape).tolist())
+        y = xp.asarray(rng.random(size=13).tolist())
 
         kwargs = dict(n_resamples=999)
 
@@ -5520,29 +5522,32 @@ class TestTTestIndPermutation:
 
         # Use `permutation_test` directly
         def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
-        rng =  np.random.default_rng(348934579834565)
+        rng = np.random.default_rng(348934579834565)
         ref = stats.permutation_test((x, y), statistic, axis=-1, rng=rng,
                                      alternative=alternative, **kwargs)
 
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
 
         # Sanity check against theoretical t-test
         ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
-        assert_equal(res.statistic, ref.statistic)
-        assert_allclose(res.pvalue, ref.pvalue, rtol=3e-2)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue, rtol=3e-2)
 
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("shape", [(12,), (2, 12)])
-    def test_monte_carlo_method(self, alternative, shape):
+    def test_monte_carlo_method(self, alternative, shape, xp):
         rng = np.random.default_rng(2348934579834565)
-        x = rng.random(size=shape)
-        y = rng.random(size=13)
+        x = xp.asarray(rng.random(size=shape).tolist())
+        y = xp.asarray(rng.random(size=13).tolist())
 
         kwargs = dict(n_resamples=999)
 
         # Use `monte_carlo` directly
-        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        def statistic(x, y, axis):
+            x, y = xp.asarray(x), xp.asarray(y)
+            return stats.ttest_ind(x, y, axis=axis).statistic
+
         rng = np.random.default_rng(348934579834565)
         rvs = [rng.standard_normal, rng.standard_normal]
         ref = stats.monte_carlo_test((x, y), rvs=rvs, statistic=statistic, axis=-1,
@@ -5553,38 +5558,39 @@ class TestTTestIndPermutation:
         rvs = [rng.standard_normal, rng.standard_normal]
         method = stats.MonteCarloMethod(rvs=rvs, **kwargs)
         res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
 
         # Passing `rng` instead of `rvs`
         method = stats.MonteCarloMethod(rng=348934579834565, **kwargs)
         res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
 
         # Sanity check against theoretical t-test
         ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
-        assert_equal(res.statistic, ref.statistic)
-        assert_allclose(res.pvalue, ref.pvalue, rtol=6e-2)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue, rtol=6e-2)
 
-    def test_resampling_input_validation(self):
+    def test_resampling_input_validation(self, xp):
         message = "`method` must be an instance of `PermutationMethod`, an instance..."
         with pytest.raises(ValueError, match=message):
-            stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
+            x, y = xp.asarray([1, 2, 3]), xp.asarray([4, 5, 6])
+            stats.ttest_ind(x, y, method='migratory')
 
 
+@make_xp_test_case(stats.ttest_ind)
 class TestTTestIndCommon:
     # for tests that are performed on variations of the t-test (e.g. trimmed)
-    @pytest.mark.xslow()
     @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
                              ids=["trim", "basic"])
     @pytest.mark.parametrize('equal_var', [True, False],
                              ids=['equal_var', 'unequal_var'])
-    def test_ttest_many_dims(self, kwds, equal_var):
-        # Test that test works on many-dimensional arrays
+    def test_ttest_many_dims_fast(self, kwds, equal_var, xp):
+        # Test that ttest_ind works on many-dimensional arrays
         rng = np.random.default_rng(3815288136)
-        a = rng.random((5, 4, 4, 7, 1, 6))
-        b = rng.random((4, 1, 8, 2, 6))
+        a = xp.asarray(rng.random((5, 4, 4, 7, 1, 6)).tolist())
+        b = xp.asarray(rng.random((4, 1, 8, 2, 6)).tolist())
         res = stats.ttest_ind(a, b, axis=-3, **kwds)
 
         # compare fully-vectorized t-test against t-test on smaller slice
@@ -5592,19 +5598,32 @@ class TestTTestIndCommon:
         a2 = a[i, :, j, :, 0, :]
         b2 = b[:, 0, :, k, :]
         res2 = stats.ttest_ind(a2, b2, axis=-2, **kwds)
-        assert_equal(res.statistic[i, :, j, k, :],
-                     res2.statistic)
-        assert_equal(res.pvalue[i, :, j, k, :],
-                     res2.pvalue)
+        xp_assert_close(res.statistic[i, :, j, k, :], res2.statistic)
+        xp_assert_close(res.pvalue[i, :, j, k, :], res2.pvalue)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
+                             ids=["trim", "basic"])
+    @pytest.mark.parametrize('equal_var', [True, False],
+                             ids=['equal_var', 'unequal_var'])
+    @skip_xp_backends('array_api_strict', reason="indexing in test is too fancy")
+    @skip_xp_backends('jax.numpy', reason="indexing in test is too fancy")
+    @skip_xp_backends('dask.array', reason="too slow")
+    def test_ttest_many_dims_full(self, kwds, equal_var, xp):
         # compare against t-test on one axis-slice at a time
+        rng = np.random.default_rng(3815288136)
+        a = rng.random((5, 4, 4, 7, 1, 6)).tolist()
+        b = rng.random((4, 1, 8, 2, 6)).tolist()
+        res = stats.ttest_ind(xp.asarray(a), xp.asarray(b), axis=-3, **kwds)
 
         # manually broadcast with tile; move axis to end to simplify
         x = np.moveaxis(np.tile(a, (1, 1, 1, 1, 2, 1)), -3, -1)
         y = np.moveaxis(np.tile(b, (5, 1, 4, 1, 1, 1)), -3, -1)
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
+
         shape = x.shape[:-1]
-        statistics = np.zeros(shape)
-        pvalues = np.zeros(shape)
+        statistics = xp.zeros(shape)
+        pvalues = xp.zeros(shape)
         for indices in product(*(range(i) for i in shape)):
             xi = x[indices]  # use tuple to index single axis slice
             yi = y[indices]
@@ -5612,13 +5631,13 @@ class TestTTestIndCommon:
             statistics[indices] = res3.statistic
             pvalues[indices] = res3.pvalue
 
-        assert_allclose(statistics, res.statistic)
-        assert_allclose(pvalues, res.pvalue)
+        xp_assert_close(res.statistic, statistics)
+        xp_assert_close(res.pvalue, pvalues)
 
     @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
                              ids=["trim", "basic"])
     @pytest.mark.parametrize("axis", [-1, 0])
-    def test_nans_on_axis(self, kwds, axis):
+    def test_nans_on_axis(self, kwds, axis, xp):
         # confirm that with `nan_policy='propagate'`, NaN results are returned
         # on the correct location
         rng = np.random.default_rng(363836384995579937222)
@@ -5627,10 +5646,11 @@ class TestTTestIndCommon:
         # set some indices in `a` and `b` to be `np.nan`.
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
+        a, b = xp.asarray(a.tolist()), xp.asarray(b.tolist())
 
-        # arbitrarily use `np.sum` as a baseline for which indices should be
-        # NaNs
-        expected = np.isnan(np.sum(a + b, axis=axis))
+        # arbitrarily use `np.sum` as a baseline for which indices should be NaNs
+        expected = xp.isnan(xp.sum(a + b, axis=axis))
+
         # multidimensional inputs to `t.sf(np.abs(t), df)` with NaNs on some
         # indices throws an warning. See issue gh-13844
         with warnings.catch_warnings(), np.errstate(invalid="ignore"):
@@ -5638,19 +5658,20 @@ class TestTTestIndCommon:
                 "ignore", "invalid value encountered in less_equal", RuntimeWarning)
             warnings.filterwarnings("ignore", "Precision loss occurred", RuntimeWarning)
             res = stats.ttest_ind(a, b, axis=axis, **kwds)
-        p_nans = np.isnan(res.pvalue)
-        assert_array_equal(p_nans, expected)
-        statistic_nans = np.isnan(res.statistic)
-        assert_array_equal(statistic_nans, expected)
+
+        p_nans = xp.isnan(res.pvalue)
+        xp_assert_equal(p_nans, expected)
+        statistic_nans = xp.isnan(res.statistic)
+        xp_assert_equal(statistic_nans, expected)
 
 
+@make_xp_test_case(stats.ttest_ind)
 class TestTTestTrimmed:
     params = [
-        [[1, 2, 3], [1.1, 2.9, 4.2], 0.53619490753126731, -0.6864951273557258,
-         .2],
-        [[56, 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
+        [[1., 2., 3.], [1.1, 2.9, 4.2], 0.53619490753126731, -0.6864951273557258, .2],
+        [[56., 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
          0.00998909252078421, 4.591598691181999, .2],
-        [[56, 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
+        [[56., 128.6, 12., 123.8, 64.34, 78., 763.3], [1.1, 2.9, 4.2],
          0.10512380092302633, 2.832256715395378, .32],
         [[2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9],
          [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1],
@@ -5664,8 +5685,9 @@ class TestTTestTrimmed:
           -0.4300008, 3.0431921, 1.6035947, 0.5285634, -0.7649405, 1.5575896,
           1.3670797, 1.1726023], 0.005293305834235, -3.0983317739483, .2]]
 
-    @pytest.mark.parametrize("a,b,pr,tr,trim", params)
-    def test_ttest_compare_r(self, a, b, pr, tr, trim):
+    @pytest.mark.parametrize("a, b, pr, tr, trim", params)
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_ttest_compare_r(self, a, b, pr, tr, trim, dtype, xp):
         '''
         Using PairedData's yuen.t.test method. Something to note is that there
         are at least 3 R packages that come with a trimmed t-test method, and
@@ -5696,15 +5718,18 @@ class TestTTestTrimmed:
         trimmed mean of x trimmed mean of y
         2.000000000000000 2.73333333333333
         '''
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        a, b = xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype)
         statistic, pvalue = stats.ttest_ind(a, b, trim=trim, equal_var=False)
-        assert_allclose(statistic, tr, atol=1e-15)
-        assert_allclose(pvalue, pr, atol=1e-15)
+        xp_assert_close(statistic, xp.asarray(tr, dtype=dtype))
+        xp_assert_close(pvalue, xp.asarray(pr, dtype=dtype))
 
-    def test_compare_SAS(self):
+    def test_compare_SAS(self, xp):
         # Source of the data used in this test:
         # https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
         a = [12, 14, 18, 25, 32, 44, 12, 14, 18, 25, 32, 44]
         b = [17, 22, 14, 12, 30, 29, 19, 17, 22, 14, 12, 30, 29, 19]
+        a, b = xp.asarray(a), xp.asarray(b)
         # In this paper, a trimming percentage of 5% is used. However,
         # in their implementation, the number of values trimmed is rounded to
         # the nearest whole number. However, consistent with
@@ -5712,10 +5737,10 @@ class TestTTestTrimmed:
         # whole number. In this example, the paper notes that 1 value is
         # trimmed off of each side. 9% replicates this amount of trimming.
         statistic, pvalue = stats.ttest_ind(a, b, trim=.09, equal_var=False)
-        assert_allclose(pvalue, 0.514522, atol=1e-6)
-        assert_allclose(statistic, 0.669169, atol=1e-6)
+        xp_assert_close(pvalue, xp.asarray(0.514522), atol=1e-6)
+        xp_assert_close(statistic, xp.asarray(0.669169), atol=1e-6)
 
-    def test_equal_var(self):
+    def test_equal_var(self, xp):
         '''
         The PairedData library only supports unequal variances. To compare
         samples with equal variances, the multicon library is used.
@@ -5736,16 +5761,17 @@ class TestTTestTrimmed:
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
+        a, b = xp.asarray(a), xp.asarray(b)
         # `equal_var=True` is default
         statistic, pvalue = stats.ttest_ind(a, b, trim=.2)
-        assert_allclose(pvalue, 0.00113508833897713, atol=1e-10)
-        assert_allclose(statistic, -4.246116897032513, atol=1e-10)
+        xp_assert_close(pvalue, xp.asarray(0.00113508833897713))
+        xp_assert_close(statistic, xp.asarray(-4.246116897032513))
 
     @pytest.mark.parametrize('alt,pr,tr',
                              (('greater', 0.9985605452443, -4.2461168970325),
                               ('less', 0.001439454755672, -4.2461168970325),),
                              )
-    def test_alternatives(self, alt, pr, tr):
+    def test_alternatives(self, alt, pr, tr, xp):
         '''
         > library(PairedData)
         > a <- c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9)
@@ -5755,28 +5781,17 @@ class TestTTestTrimmed:
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
-
+        a, b = xp.asarray(a), xp.asarray(b)
         statistic, pvalue = stats.ttest_ind(a, b, trim=.2, equal_var=False,
                                             alternative=alt)
-        assert_allclose(pvalue, pr, atol=1e-10)
-        assert_allclose(statistic, tr, atol=1e-10)
-
-    @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
-    @make_xp_test_case(stats.ttest_ind)
-    def test_permutation_not_implement_for_xp(self, xp):
-        message = "Use of `trim` is compatible only with NumPy arrays."
-        a, b = xp.arange(10), xp.arange(10)+1
-        if is_numpy(xp):  # no error
-            stats.ttest_ind(a, b, trim=0.1)
-        else:  # NotImplementedError
-            with pytest.raises(NotImplementedError, match=message):
-                stats.ttest_ind(a, b, trim=0.1)
+        xp_assert_close(pvalue, xp.asarray(pr))
+        xp_assert_close(statistic, xp.asarray(tr))
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
-    def test_trim_bounds_error(self, trim):
+    def test_trim_bounds_error(self, trim, xp):
         match = "Trimming percentage should be 0 <= `trim` < .5."
         with assert_raises(ValueError, match=match):
-            stats.ttest_ind([1, 2], [2, 1], trim=trim)
+            stats.ttest_ind(xp.asarray([1, 2]), xp.asarray([2, 1]), trim=trim)
 
 
 @make_xp_test_case(stats.ttest_ind)
