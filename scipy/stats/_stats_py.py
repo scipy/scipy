@@ -6779,12 +6779,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
         m1 = xp.mean(a, axis=axis)
         m2 = xp.mean(b, axis=axis)
     else:
-        message = "Use of `trim` is compatible only with NumPy arrays."
-        if not is_numpy(xp):
-            raise NotImplementedError(message)
-
-        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
-        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
+        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis, xp=xp)
+        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis, xp=xp)
 
     if equal_var:
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
@@ -6830,12 +6826,12 @@ def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method, *, xp):
     return res.statistic, res.pvalue
 
 
-def _ttest_trim_var_mean_len(a, trim, axis):
+def _ttest_trim_var_mean_len(a, trim, axis, *, xp):
     """Variance, mean, and length of winsorized input along specified axis"""
     # for use with `ttest_ind` when trimming.
     # further calculations in this test assume that the inputs are sorted.
     # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
-    a = np.sort(a, axis=axis)
+    a = xp.sort(a, axis=axis)
 
     # `g` is the number of elements to be replaced on each tail, converted
     # from a percentage amount of trimming
@@ -6844,7 +6840,7 @@ def _ttest_trim_var_mean_len(a, trim, axis):
 
     # Calculate the Winsorized variance of the input samples according to
     # specified `g`
-    v = _calculate_winsorized_variance(a, g, axis)
+    v = _calculate_winsorized_variance(a, g, axis, xp=xp)
 
     # the total number of elements in the trimmed samples
     n -= 2 * g
@@ -6854,16 +6850,16 @@ def _ttest_trim_var_mean_len(a, trim, axis):
     return v, m, n
 
 
-def _calculate_winsorized_variance(a, g, axis):
+def _calculate_winsorized_variance(a, g, axis, *, xp):
     """Calculates g-times winsorized variance along specified axis"""
     # it is expected that the input `a` is sorted along the correct axis
     if g == 0:
-        return _var(a, ddof=1, axis=axis)
+        return _var(a, ddof=1, axis=axis, xp=xp)
     # move the intended axis to the end that way it is easier to manipulate
-    a_win = np.moveaxis(a, axis, -1)
+    a_win = xp.moveaxis(a, axis, -1)
 
     # save where NaNs are for later use.
-    nans_indices = np.any(np.isnan(a_win), axis=-1)
+    nans_indices = xp.any(xp.isnan(a_win), axis=-1)
 
     # Winsorization and variance calculation are done in one step in [4]
     # (1-3), but here winsorization is done first; replace the left and
@@ -6872,20 +6868,20 @@ def _calculate_winsorized_variance(a, g, axis):
     # `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}` on the
     # right. Zero-indexing turns `g + 1` to `g`, and `n - g` to `- g - 1` in
     # array indexing.
-    a_win[..., :g] = a_win[..., [g]]
-    a_win[..., -g:] = a_win[..., [-g - 1]]
+    a_win = xpx.at(a_win)[..., :g].set(a_win[..., g:g+1])
+    a_win = xpx.at(a_win)[..., -g:].set(a_win[..., -g - 1:-g])
 
     # Determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
     # page 369, beginning of page 370). This is converted to NumPy's format,
     # `n - ddof` for use with `np.var`. The result is converted to an
     # array to accommodate indexing later.
-    var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
+    var_win = xp.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1, xp=xp))
 
     # with `nan_policy='propagate'`, NaNs may be completely trimmed out
     # because they were sorted into the tail of the array. In these cases,
     # replace computed variances with `np.nan`.
-    var_win[nans_indices] = np.nan
+    var_win = xpx.at(var_win)[nans_indices].set(xp.nan)
     return var_win
 
 

@@ -5657,13 +5657,13 @@ class TestTTestIndCommon:
         assert_array_equal(statistic_nans, expected)
 
 
+@make_xp_test_case(stats.ttest_ind)
 class TestTTestTrimmed:
     params = [
-        [[1, 2, 3], [1.1, 2.9, 4.2], 0.53619490753126731, -0.6864951273557258,
-         .2],
-        [[56, 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
+        [[1., 2., 3.], [1.1, 2.9, 4.2], 0.53619490753126731, -0.6864951273557258, .2],
+        [[56., 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
          0.00998909252078421, 4.591598691181999, .2],
-        [[56, 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
+        [[56., 128.6, 12., 123.8, 64.34, 78., 763.3], [1.1, 2.9, 4.2],
          0.10512380092302633, 2.832256715395378, .32],
         [[2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9],
          [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1],
@@ -5677,8 +5677,9 @@ class TestTTestTrimmed:
           -0.4300008, 3.0431921, 1.6035947, 0.5285634, -0.7649405, 1.5575896,
           1.3670797, 1.1726023], 0.005293305834235, -3.0983317739483, .2]]
 
-    @pytest.mark.parametrize("a,b,pr,tr,trim", params)
-    def test_ttest_compare_r(self, a, b, pr, tr, trim):
+    @pytest.mark.parametrize("a, b, pr, tr, trim", params)
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_ttest_compare_r(self, a, b, pr, tr, trim, dtype, xp):
         '''
         Using PairedData's yuen.t.test method. Something to note is that there
         are at least 3 R packages that come with a trimmed t-test method, and
@@ -5709,15 +5710,18 @@ class TestTTestTrimmed:
         trimmed mean of x trimmed mean of y
         2.000000000000000 2.73333333333333
         '''
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        a, b = xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype)
         statistic, pvalue = stats.ttest_ind(a, b, trim=trim, equal_var=False)
-        assert_allclose(statistic, tr, atol=1e-15)
-        assert_allclose(pvalue, pr, atol=1e-15)
+        xp_assert_close(statistic, xp.asarray(tr, dtype=dtype))
+        xp_assert_close(pvalue, xp.asarray(pr, dtype=dtype))
 
-    def test_compare_SAS(self):
+    def test_compare_SAS(self, xp):
         # Source of the data used in this test:
         # https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
         a = [12, 14, 18, 25, 32, 44, 12, 14, 18, 25, 32, 44]
         b = [17, 22, 14, 12, 30, 29, 19, 17, 22, 14, 12, 30, 29, 19]
+        a, b = xp.asarray(a), xp.asarray(b)
         # In this paper, a trimming percentage of 5% is used. However,
         # in their implementation, the number of values trimmed is rounded to
         # the nearest whole number. However, consistent with
@@ -5725,10 +5729,10 @@ class TestTTestTrimmed:
         # whole number. In this example, the paper notes that 1 value is
         # trimmed off of each side. 9% replicates this amount of trimming.
         statistic, pvalue = stats.ttest_ind(a, b, trim=.09, equal_var=False)
-        assert_allclose(pvalue, 0.514522, atol=1e-6)
-        assert_allclose(statistic, 0.669169, atol=1e-6)
+        xp_assert_close(pvalue, xp.asarray(0.514522), atol=1e-6)
+        xp_assert_close(statistic, xp.asarray(0.669169), atol=1e-6)
 
-    def test_equal_var(self):
+    def test_equal_var(self, xp):
         '''
         The PairedData library only supports unequal variances. To compare
         samples with equal variances, the multicon library is used.
@@ -5749,16 +5753,17 @@ class TestTTestTrimmed:
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
+        a, b = xp.asarray(a), xp.asarray(b)
         # `equal_var=True` is default
         statistic, pvalue = stats.ttest_ind(a, b, trim=.2)
-        assert_allclose(pvalue, 0.00113508833897713, atol=1e-10)
-        assert_allclose(statistic, -4.246116897032513, atol=1e-10)
+        xp_assert_close(pvalue, xp.asarray(0.00113508833897713))
+        xp_assert_close(statistic, xp.asarray(-4.246116897032513))
 
     @pytest.mark.parametrize('alt,pr,tr',
                              (('greater', 0.9985605452443, -4.2461168970325),
                               ('less', 0.001439454755672, -4.2461168970325),),
                              )
-    def test_alternatives(self, alt, pr, tr):
+    def test_alternatives(self, alt, pr, tr, xp):
         '''
         > library(PairedData)
         > a <- c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9)
@@ -5768,28 +5773,17 @@ class TestTTestTrimmed:
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
-
+        a, b = xp.asarray(a), xp.asarray(b)
         statistic, pvalue = stats.ttest_ind(a, b, trim=.2, equal_var=False,
                                             alternative=alt)
-        assert_allclose(pvalue, pr, atol=1e-10)
-        assert_allclose(statistic, tr, atol=1e-10)
-
-    @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
-    @make_xp_test_case(stats.ttest_ind)
-    def test_permutation_not_implement_for_xp(self, xp):
-        message = "Use of `trim` is compatible only with NumPy arrays."
-        a, b = xp.arange(10), xp.arange(10)+1
-        if is_numpy(xp):  # no error
-            stats.ttest_ind(a, b, trim=0.1)
-        else:  # NotImplementedError
-            with pytest.raises(NotImplementedError, match=message):
-                stats.ttest_ind(a, b, trim=0.1)
+        xp_assert_close(pvalue, xp.asarray(pr))
+        xp_assert_close(statistic, xp.asarray(tr))
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
-    def test_trim_bounds_error(self, trim):
+    def test_trim_bounds_error(self, trim, xp):
         match = "Trimming percentage should be 0 <= `trim` < .5."
         with assert_raises(ValueError, match=match):
-            stats.ttest_ind([1, 2], [2, 1], trim=trim)
+            stats.ttest_ind(xp.asarray([1, 2]), xp.asarray([2, 1]), trim=trim)
 
 
 @make_xp_test_case(stats.ttest_ind)
