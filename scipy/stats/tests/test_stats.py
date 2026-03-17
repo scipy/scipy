@@ -2048,7 +2048,8 @@ class TestWeightedTau:
     def test_segfault_issue_9710(self):
         # https://github.com/scipy/scipy/issues/9710
         # This test was created to check segfault
-        # In issue SEGFAULT only repros in optimized builds after calling the function twice
+        # In issue SEGFAULT only repros in optimized builds after calling
+        # the function twice
         message = "One or more sample arguments is too small"
         with pytest.warns(SmallSampleWarning, match=message):
             stats.weightedtau([1], [1.0])
