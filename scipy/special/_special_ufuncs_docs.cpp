@@ -2069,12 +2069,12 @@ const char *fresnel_doc = R"(
     .. math::
 
         C(z) + i S(z) = \frac{1 + i}{2}
-        \operatorname{erf}\left(\frac{\sqrt{pi}(1 - i)}{\sqrt{2}} z\right).
+        \operatorname{erf}\left(\frac{\sqrt{\pi}(1 - i)}{2} z\right).
 
 
     >>> z = np.linspace(-10, 10)
     >>> S, C = fresnel(z)
-    >>> RHS = (1 + 1j)/2 * erf((np.sqrt(np.pi)/2)*(1 - 1j)*z)
+    >>> RHS = (1 + 1j)/2 * erf((np.sqrt(np.pi)*(1 - 1j))/2*z)
     >>> np.allclose(C + 1j*S, RHS)
     True
 
@@ -2086,8 +2086,8 @@ const char *fresnel_doc = R"(
     >>> fig, ax = plt.subplots()
     >>> ax.plot(C, S)
     >>> ax.set_aspect('equal')
-    >>> ax.set_xlabel('C(z)')
-    >>> ax.set_ylabel('S(z)')
+    >>> ax.set_xlabel('$C(z)$')
+    >>> ax.set_ylabel('$S(z)$')
     >>> plt.show()
     )";
 
