@@ -1356,8 +1356,7 @@ class TestFligner:
         xp_assert_close(Xsq1, Xsq2)
         xp_assert_close(pval1, pval2)
 
-    @pytest.mark.skip_xp_backends(np_only=True,
-                                  reason="inconsistent tie-breaking across backends")
+    @skip_xp_backends(np_only=True, reason="inconsistent tie-breaking across backends")
     def test_trimmed_nonregression(self, xp):
         # This is a non-regression test
         # Expected results are *not* from an external gold standard,
@@ -1982,7 +1981,7 @@ class TestWilcoxon:
         xp_assert_equal(stats.wilcoxon(d, method="asymptotic").pvalue, xp.asarray(p))
 
     @pytest.mark.xslow
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @skip_xp_backends("jax.numpy", reason="lazy -> limited `method` choices")
     def test_auto_permutation_edge_case(self, xp):
         # Check that `PermutationMethod()` is used and results are deterministic when
         # `method='auto'`, there are zeros or ties in `d = x-y`, and `len(d) <= 13`.
@@ -3150,7 +3149,7 @@ class TestCircFuncs:
     @pytest.mark.parametrize('circfunc', [stats.circmean,
                                           stats.circvar,
                                           stats.circstd])
-    def test_circmean_axis(self, xp, circfunc):
+    def test_circmean_axis(self, circfunc, xp):
         x = xp.asarray([[355, 5, 2, 359, 10, 350],
                         [351, 7, 4, 352, 9, 349],
                         [357, 9, 8, 358, 4, 356.]])
