@@ -73,12 +73,11 @@ jobs:
         with:
           python-version: 3.12
 
-      - name: win_amd64 - install rtools
+      - name: win_amd64 - configure rtools
         if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
         run: |
           # mingw-w64
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
-          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+          echo "c:\rtools45\ucrt64\bin;" >> $env:GITHUB_PATH
 
       - name: Set environment variables for ARM64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'

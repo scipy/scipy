@@ -66,14 +66,16 @@ jobs:
           key: install-${{ env.WINDOWS_HPC_URL }}-${{ env.WINDOWS_BASEKIT_URL }}-compiler
       - name: Install oneAPI Base kit
         if: steps.cache-install.outputs.cache-hit != 'true'
+        shell: cmd /C call {0}
         run: |
           echo %WINDOWS_BASEKIT_URL%
-          tools/install_intel_oneAPI_windows.bat %WINDOWS_BASEKIT_URL% "" 491dbc593cbcf02570b2ccc1f31656e2aa6fd195bd3191e5d111b1dafb35a45c  # 2025.0.1.28
+          tools\install_intel_oneAPI_windows.bat "%WINDOWS_BASEKIT_URL%" "" "491dbc593cbcf02570b2ccc1f31656e2aa6fd195bd3191e5d111b1dafb35a45c"  &REM 2025.0.1.28
       - name: Install oneAPI HPC kit
         if: steps.cache-install.outputs.cache-hit != 'true'
+        shell: cmd /C call {0}
         run: |
           echo %WINDOWS_HPC_URL%
-          tools/install_intel_oneAPI_windows.bat %WINDOWS_HPC_URL% "" dfbf8487f6ee5b9c1bb2cad19f2ef8dd842529a533670ce21582d39c303bf979  # 2025.0.1.48
+          tools\install_intel_oneAPI_windows.bat "%WINDOWS_HPC_URL%" "" "dfbf8487f6ee5b9c1bb2cad19f2ef8dd842529a533670ce21582d39c303bf979"  &REM 2025.0.1.48
 
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0

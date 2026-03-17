@@ -40,7 +40,8 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes, xp_result_type, xp_copy, is_jax)
+                                   xp_swapaxes, xp_result_type, is_cupy, is_jax,
+                                   xp_copy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
@@ -2259,12 +2260,14 @@ class TestRegression:
         y = xp.arange(3, 5)
         result = stats.linregress(x, y)
 
-        # Non-horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(0.0))
+        xp_assert_close(result.slope, xp.asarray(1.0))
+        xp_assert_close(result.intercept, xp.asarray(3.0))
+        xp_assert_close(result.rvalue, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_regress_two_inputs_horizontal_line(self, xp):
         # Regress a horizontal line formed by two points.
@@ -2273,11 +2276,14 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Horizontal line
-        xp_assert_close(result.pvalue, xp.asarray(1.0))
+        xp_assert_close(result.slope, xp.asarray(0.0))
+        xp_assert_close(result.intercept, xp.asarray(1.0))
 
-        # Zero error through two points
-        xp_assert_close(result.stderr, xp.asarray(0.0))
-        xp_assert_close(result.intercept_stderr, xp.asarray(0.0))
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(result.rvalue, NaN)
+        xp_assert_equal(result.pvalue, NaN)
+        xp_assert_equal(result.stderr, NaN)
+        xp_assert_equal(result.intercept_stderr, NaN)
 
     def test_nist_norris(self, xp):
         # If this causes a lint failure in the future, please note the history of
@@ -2318,6 +2324,22 @@ class TestRegression:
         # match with results from numpy polyfit
         xp_assert_close(result.slope, xp.asarray(poly[0]))
         xp_assert_close(result.intercept, xp.asarray(poly[1]))
+
+    def test_linregress_two_points_nan_inference(self, xp):
+        # Test for gh-24684
+        x = xp.asarray([0., 1.])
+        y = xp.asarray([0., 1.])
+
+        res = stats.linregress(x, y)
+
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.pvalue, NaN)
+        xp_assert_equal(res.stderr, NaN)
+        xp_assert_equal(res.intercept_stderr, NaN)
+
+        # Point estimates should still be correct
+        xp_assert_close(res.slope, xp.asarray(1.0))
+        xp_assert_close(res.intercept, xp.asarray(0.0))
 
     def test_empty_input(self, xp):
         with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
@@ -6608,47 +6630,79 @@ class TestPointBiserialR:
         xp_assert_equal(res.correlation, res.statistic)
 
 
-def test_obrientransform():
-    # A couple tests calculated by hand.
-    x1 = np.array([0, 2, 4])
-    t1 = stats.obrientransform(x1)
-    expected = [7, -2, 7]
-    assert_allclose(t1[0], expected)
+@make_xp_test_case(stats.obrientransform)
+class TestObrientransform:
+    def test_basic(self, xp):
+        # A couple tests calculated by hand.
+        x1 = xp.asarray([0, 2, 4])
+        t1 = stats.obrientransform(x1)
+        expected = xp.asarray([7., -2., 7.])
+        xp_assert_close(t1[0][:], expected)
 
-    x2 = np.array([0, 3, 6, 9])
-    t2 = stats.obrientransform(x2)
-    expected = np.array([30, 0, 0, 30])
-    assert_allclose(t2[0], expected)
+        x2 = xp.asarray([0, 3, 6, 9])
+        t2 = stats.obrientransform(x2)
+        expected = xp.asarray([30., 0., 0., 30.])
+        xp_assert_close(t2[0][:], expected)
 
-    # Test two arguments.
-    a, b = stats.obrientransform(x1, x2)
-    assert_equal(a, t1[0])
-    assert_equal(b, t2[0])
+        # Test two arguments.
+        a, b = stats.obrientransform(x1, x2)
+        xp_assert_close(a, t1[0][:])
+        xp_assert_close(b, t2[0][:])
 
-    # Test three arguments.
-    a, b, c = stats.obrientransform(x1, x2, x1)
-    assert_equal(a, t1[0])
-    assert_equal(b, t2[0])
-    assert_equal(c, t1[0])
+        # Test three arguments.
+        a, b, c = stats.obrientransform(x1, x2, x1)
+        xp_assert_close(a, t1[0][:])
+        xp_assert_close(b, t2[0][:])
+        xp_assert_close(c, t1[0][:])
 
-    # This is a regression test to check np.var replacement.
-    # The author of this test didn't separately verify the numbers.
-    x1 = np.arange(5)
-    result = np.array(
-      [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
-       [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
-    assert_array_almost_equal(stats.obrientransform(x1, 2*x1), result, decimal=8)
+    def test_something(self, xp):
+        # This is a regression test to check np.var replacement.
+        # The author of this test didn't separately verify the numbers.
+        x1 = xp.arange(5)
+        ref = xp.asarray(
+          [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
+           [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
+        res = stats.obrientransform(x1, 2*x1)
+        xp_assert_close(res[0], ref[0, ...])
+        xp_assert_close(res[1], ref[1, ...])
 
-    # Example from "O'Brien Test for Homogeneity of Variance"
-    # by Herve Abdi.
-    values = range(5, 11)
-    reps = np.array([5, 11, 9, 3, 2, 2])
-    data = np.repeat(values, reps)
-    transformed_values = np.array([3.1828, 0.5591, 0.0344,
-                                   1.6086, 5.2817, 11.0538])
-    expected = np.repeat(transformed_values, reps)
-    result = stats.obrientransform(data)
-    assert_array_almost_equal(result[0], expected, decimal=4)
+    @skip_xp_backends("dask.array", reason="trouble with xp.repeat")
+    def test_reference(self, xp):
+        # Example from "O'Brien Test for Homogeneity of Variance" by Herve Abdi.
+        values = xp.arange(5, 11)
+        reps = [5, 11, 9, 3, 2, 2]
+        reps = reps if is_cupy(xp) else xp.asarray(reps)
+        data = xp.repeat(values, reps)
+        transformed_values = xp.asarray([3.1828, 0.5591, 0.0344,
+                                         1.6086, 5.2817, 11.0538])
+        expected = xp.repeat(transformed_values, reps)
+        result = stats.obrientransform(data)
+        xp_assert_close(result[0][:], expected, rtol=1e-3)
+
+    def test_nan_policy(self, xp):
+        rng = np.random.default_rng(4284359689201882838835)
+        x = rng.random(10)
+        x[3] = np.nan
+        x = xp.asarray(x)
+
+        # nan_policy='raise'
+        if not is_lazy_array(x):
+            with pytest.raises(ValueError, match="The input contains nan values"):
+                stats.obrientransform(x, nan_policy='raise')
+        else:
+            with pytest.raises(TypeError, match="nan_policy='raise' is not supported"):
+                stats.obrientransform(x, nan_policy='raise')
+
+        # nan_policy='propagate'
+        res = stats.obrientransform(x, nan_policy='propagate')[0]
+        xp_assert_equal(res, xp.full_like(x, xp.nan))
+
+        # nan_policy='omit'
+        i = xp.isnan(x)
+        res = stats.obrientransform(x, nan_policy='omit')[0]
+        ref = stats.obrientransform(x[~i])[0]
+        xp_assert_equal(res[i], x[i])
+        xp_assert_close(res[~i], ref)
 
 
 def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,

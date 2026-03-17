@@ -5206,30 +5206,11 @@ add_newdoc("nbdtrik",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
-
-    Formula 26.5.26 of [2]_ or [3]_,
-
-    .. math::
-        \sum_{j=k + 1}^\infty {{n + j - 1}
-        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
-
-    is used to reduce calculation of the cumulative distribution function to
-    that of a regularized incomplete beta :math:`I`.
-
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `k`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [3] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.E24
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

@@ -84,7 +84,7 @@ spruneL(
 	do_prune = FALSE;
 
 	/* Don't prune with a zero U-segment */
- 	if ( repfnz[irep] == EMPTY )
+ 	if ( repfnz[irep] == SLU_EMPTY )
 		continue;
 
      	/* If a snode overlaps with the next panel, then the U-segment 
@@ -119,9 +119,9 @@ spruneL(
 
 	        while ( kmin <= kmax ) {
 
-	    	    if ( perm_r[lsub[kmax]] == EMPTY ) 
+	    	    if ( perm_r[lsub[kmax]] == SLU_EMPTY ) 
 			kmax--;
-		    else if ( perm_r[lsub[kmin]] != EMPTY )
+		    else if ( perm_r[lsub[kmin]] != SLU_EMPTY )
 			kmin++;
 		    else { /* kmin below pivrow (not yet pivoted), and kmax
                             * above pivrow: interchange the two subscripts
