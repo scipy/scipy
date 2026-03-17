@@ -1534,6 +1534,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    device=xp_device(a))
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
+    a = xp_promote(a, force_floating=True, xp=xp)
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)
     v = v[()] if v.ndim == 0 else v

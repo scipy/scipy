@@ -41,7 +41,7 @@ from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
                                    xp_swapaxes, xp_result_type, is_cupy, is_jax,
-                                   xp_copy)
+                                   xp_copy, xp_promote)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
@@ -6389,6 +6389,22 @@ class TestDescribe:
         message = "The input must not be empty."
         with pytest.raises(ValueError, match=message):
             stats.describe(xp.asarray([]))
+    
+    @skip_xp_backends("array_api_strict", reason="min/max don't accept boolean input")
+    def test_boolean_input_gh24847(self, xp):
+        # gh-24847 reported that `describe` failed with boolean input
+        rng = np.random.default_rng(3248923598734583)
+        n = 20
+        x = xp.asarray(rng.random(n) < 0.5)
+        res = stats.describe(x)
+        xp_assert_equal(res.nobs, xp.asarray(n, dtype=xp.int64))
+        xp_assert_equal(res.minmax[0], xp.min(x))
+        xp_assert_equal(res.minmax[1], xp.max(x))
+        x = xp_promote(x, force_floating=True, xp=xp)
+        xp_assert_close(res.mean, xp.mean(x))
+        xp_assert_close(res.variance, xp.var(x, correction=1))
+        xp_assert_close(res.skewness, stats.skew(x))
+        xp_assert_close(res.kurtosis, stats.kurtosis(x))
 
 
 class NormalityTests:
