@@ -2003,7 +2003,8 @@ def _qr_reduce_py(a_p, y, startrow=1):
     """This is a python counterpart of the `_qr_reduce` routine,
     declared in interpolate/src/__fitpack.h
     """
-    from scipy.linalg.lapack import dlartg
+    from scipy.linalg.lapack import get_lapack_funcs
+    dlartg = get_lapack_funcs('lartg', dtype=np.float64, ilp64='preferred')
 
     # unpack the packed format
     a = a_p.a

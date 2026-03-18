@@ -1534,6 +1534,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    device=xp_device(a))
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
+    a = xp_promote(a, force_floating=True, xp=xp)
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)
     v = v[()] if v.ndim == 0 else v
@@ -2480,28 +2481,33 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-@xp_capabilities(np_only=True)
-def obrientransform(*samples):
+@xp_capabilities()
+def obrientransform(*samples, nan_policy='propagate'):
     """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
     Each array in ``*samples`` is one level of a factor.
-    If `f_oneway` is run on the transformed data and found significant,
-    the variances are unequal.  From Maxwell and Delaney [1]_, p.112.
+    Significant results of `f_oneway` on the transformed data suggest that the
+    variances of the underlying distributions are unequal.
+    See Maxwell and Delaney [1]_, p.112.
 
     Parameters
     ----------
     *samples : array_like
         Any number of arrays.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in a sample, all elements of the
+          transformed sample will be NaN.
+        - ``omit``: NaNs will be omitted when computing reducing statistics for the
+          transform, but NaNs in the sample will remain NaNs in the transformed sample.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
-    obrientransform : ndarray
-        Transformed data for use in an ANOVA.  The first dimension
-        of the result corresponds to the sequence of transformed
-        arrays.  If the arrays given are all 1-D of the same length,
-        the return value is a 2-D array; otherwise it is a 1-D array
-        of type object, with each element being an ndarray.
+    obrientransform : tuple of arrays
+        Transformed arrays for use in ANOVA.
 
     Raises
     ------
@@ -2538,36 +2544,21 @@ def obrientransform(*samples):
     that the variances are different.
 
     """
-    TINY = np.sqrt(np.finfo(float).eps)
+    xp = array_namespace(*samples)
+    n_samples = len(samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    samples = (samples,) if n_samples == 1 else samples
+    return tuple(_xp_obrientransform_one_sample(sample, xp=xp, nan_policy=nan_policy)
+                 for sample in samples)
 
-    # `arrays` will hold the transformed arguments.
-    arrays = []
-    sLast = None
 
-    for sample in samples:
-        a = np.asarray(sample)
-        n = len(a)
-        mu = np.mean(a)
-        sq = (a - mu)**2
-        sumsq = sq.sum()
-
-        # The O'Brien transform.
-        t = ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
-
-        # Check that the mean of the transformed data is equal to the
-        # original variance.
-        var = sumsq / (n - 1)
-        if abs(var - np.mean(t)) > TINY:
-            raise ValueError('Lack of convergence in obrientransform.')
-
-        arrays.append(t)
-        sLast = a.shape
-
-    if sLast:
-        for arr in arrays[:-1]:
-            if sLast != arr.shape:
-                return np.array(arrays, dtype=object)
-    return np.array(arrays)
+def _xp_obrientransform_one_sample(a, *, xp, nan_policy):
+    _contains_nan(a, nan_policy, xp_omit_okay=True)  # handle `nan_policy='raise'`
+    n = xp.asarray(xp.count_nonzero(~xp.isnan(a)), dtype=a.dtype)
+    mu = _xp_mean(a, nan_policy=nan_policy)
+    sq = (a - mu)**2
+    sumsq = _xp_mean(sq, nan_policy=nan_policy) * n
+    return ((n - 1.5) * n * sq - 0.5 * sumsq) / ((n - 1) * (n - 2))
 
 
 @xp_capabilities(marray=True)
@@ -6769,10 +6760,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                    "of `MonteCarloMethod`, or None (default).")
         raise ValueError(message)
 
-    if not is_numpy(xp) and method is not None:
-        message = "Use of resampling methods is compatible only with NumPy arrays."
-        raise NotImplementedError(message)
-
     result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
     NaN = _get_nan(a, b, shape=result_shape, xp=xp)
     if xp_size(a) == 0 or xp_size(b) == 0:
@@ -6792,12 +6779,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
         m1 = xp.mean(a, axis=axis)
         m2 = xp.mean(b, axis=axis)
     else:
-        message = "Use of `trim` is compatible only with NumPy arrays."
-        if not is_numpy(xp):
-            raise NotImplementedError(message)
-
-        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
-        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
+        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis, xp=xp)
+        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis, xp=xp)
 
     if equal_var:
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
@@ -6809,7 +6792,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     else:
         # nan_policy is taken care of by axis_nan_policy decorator
         ttest_kwargs = dict(equal_var=equal_var, trim=trim)
-        t, prob = _ttest_resampling(a, b, axis, alternative, ttest_kwargs, method)
+        t, prob = _ttest_resampling(a, b, axis, alternative,
+                                    ttest_kwargs, method, xp=xp)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = xp.broadcast_to(df, t.shape)
@@ -6820,8 +6804,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                        standard_error=denom, estimate=estimate)
 
 
-def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method):
+def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method, *, xp):
     def statistic(x, y, axis):
+        x, y = xp.asarray(x), xp.asarray(y)
         return ttest_ind(x, y, axis=axis, **ttest_kwargs).statistic
 
     test = (permutation_test if isinstance(method, PermutationMethod)
@@ -6841,12 +6826,12 @@ def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method):
     return res.statistic, res.pvalue
 
 
-def _ttest_trim_var_mean_len(a, trim, axis):
+def _ttest_trim_var_mean_len(a, trim, axis, *, xp):
     """Variance, mean, and length of winsorized input along specified axis"""
     # for use with `ttest_ind` when trimming.
     # further calculations in this test assume that the inputs are sorted.
     # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
-    a = np.sort(a, axis=axis)
+    a = xp.sort(a, axis=axis)
 
     # `g` is the number of elements to be replaced on each tail, converted
     # from a percentage amount of trimming
@@ -6855,7 +6840,7 @@ def _ttest_trim_var_mean_len(a, trim, axis):
 
     # Calculate the Winsorized variance of the input samples according to
     # specified `g`
-    v = _calculate_winsorized_variance(a, g, axis)
+    v = _calculate_winsorized_variance(a, g, axis, xp=xp)
 
     # the total number of elements in the trimmed samples
     n -= 2 * g
@@ -6865,16 +6850,16 @@ def _ttest_trim_var_mean_len(a, trim, axis):
     return v, m, n
 
 
-def _calculate_winsorized_variance(a, g, axis):
+def _calculate_winsorized_variance(a, g, axis, *, xp):
     """Calculates g-times winsorized variance along specified axis"""
     # it is expected that the input `a` is sorted along the correct axis
     if g == 0:
-        return _var(a, ddof=1, axis=axis)
+        return _var(a, ddof=1, axis=axis, xp=xp)
     # move the intended axis to the end that way it is easier to manipulate
-    a_win = np.moveaxis(a, axis, -1)
+    a_win = xp.moveaxis(a, axis, -1)
 
     # save where NaNs are for later use.
-    nans_indices = np.any(np.isnan(a_win), axis=-1)
+    nans_indices = xp.any(xp.isnan(a_win), axis=-1)
 
     # Winsorization and variance calculation are done in one step in [4]
     # (1-3), but here winsorization is done first; replace the left and
@@ -6883,20 +6868,20 @@ def _calculate_winsorized_variance(a, g, axis):
     # `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}` on the
     # right. Zero-indexing turns `g + 1` to `g`, and `n - g` to `- g - 1` in
     # array indexing.
-    a_win[..., :g] = a_win[..., [g]]
-    a_win[..., -g:] = a_win[..., [-g - 1]]
+    a_win = xpx.at(a_win)[..., :g].set(a_win[..., g:g+1])
+    a_win = xpx.at(a_win)[..., -g:].set(a_win[..., -g - 1:-g])
 
     # Determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
     # page 369, beginning of page 370). This is converted to NumPy's format,
     # `n - ddof` for use with `np.var`. The result is converted to an
     # array to accommodate indexing later.
-    var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
+    var_win = xp.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1, xp=xp))
 
     # with `nan_policy='propagate'`, NaNs may be completely trimmed out
     # because they were sorted into the tail of the array. In these cases,
     # replace computed variances with `np.nan`.
-    var_win[nans_indices] = np.nan
+    var_win = xpx.at(var_win)[nans_indices].set(xp.nan)
     return var_win
 
 
@@ -8028,10 +8013,10 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
     data_all = xp.concat((data1, data2), axis=-1)
     batch_shape = data_all.shape[:-1]
+    dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
 
     if is_marray(xp):
         # Previously, we used this algorithm for all backends:
-        dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
         n1 = xp.astype(_count_nonmasked(data1, axis=-1), dtype)
         n2 = xp.astype(_count_nonmasked(data2, axis=-1), dtype)
         cdf1 = xp.astype(_xp_searchsorted(data1, data_all, side='right'), dtype)
@@ -8045,8 +8030,10 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
         # We want the ECDF of each sample evaluated at *all* the points in the pooled
         # sample. The values each ECDF can assume are given by:
-        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
-        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1, dtype=dtype),
+                                    batch_shape + (n1 + 1,))
+        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1, dtype=dtype),
+                                    batch_shape + (n2 + 1,))
         # Now we "just" need to know how many times each of these values *will* be
         # assumed when we evaluate the ECDFs at all points in the pooled sample.
         # These counts are given by the differences between consecutive ("min" or "max")
@@ -10878,13 +10865,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if not is_marray(xp) and n == 2:
-        # handle case when only two points are passed in
-        one = xp.asarray(1.0, dtype=r.dtype)
-        prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
-        slope_stderr = xp.zeros_like(r)
-        intercept_stderr = xp.zeros_like(r)
-    else:
+    with np.errstate(invalid='ignore', divide='ignore'):
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation

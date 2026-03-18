@@ -13,14 +13,15 @@ at the top-level directory.
  * \brief Header file for real operations
  * 
  * <pre> 
- * -- SuperLU routine (version 4.1) --
+ * -- SuperLU routine (version 7.0.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November, 2010
+ * August 2024
  * 
  * Global data structures used in LU factorization -
  * 
- *   nsuper: #supernodes = nsuper + 1, numbered [0, nsuper].
+ *   nsuper: \#supernodes = nsuper + 1, numbered [0, nsuper].
  *   (xsup,supno): supno[i] is the supernode no to which i belongs;
  *	xsup(s) points to the beginning of the s-th supernode.
  *	e.g.   supno 0 1 2 2 3 3 3 4 4 4 4 4   (n=12)
@@ -54,7 +55,7 @@ at the top-level directory.
  *	values.
  *
  *	The last column structures (for pruning) will be removed
- *	after the numercial LU factorization phase.
+ *	after the numerical LU factorization phase.
  *
  *   (xlusup,lusup): lusup[*] contains the numerical values of the
  *	rectangular supernodes; xlusup[j] points to the starting
@@ -175,7 +176,7 @@ extern void    zreadmt (int *, int *, int_t *, doublecomplex **, int_t **, int_t
 extern void    zGenXtrue (int, int, doublecomplex *, int);
 extern void    zFillRHS (trans_t, int, doublecomplex *, int, SuperMatrix *,
 			  SuperMatrix *);
-extern void    zgstrs (trans_t, SuperMatrix *, SuperMatrix *, int *, int *,
+extern void    zgstrs (trans_t, SuperMatrix *, SuperMatrix *, const int *, const int *,
                         SuperMatrix *, SuperLUStat_t*, int *);
 /* ILU */
 extern void    zgsitrf (superlu_options_t*, SuperMatrix*, int, int, int*,
@@ -246,6 +247,7 @@ extern int     ilu_zQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 extern void    zreadhb(FILE *, int *, int *, int_t *, doublecomplex **, int_t **, int_t **);
 extern void    zreadrb(int *, int *, int_t *, doublecomplex **, int_t **, int_t **);
 extern void    zreadtriple(int *, int *, int_t *, doublecomplex **, int_t **, int_t **);
+extern void    zreadtriple_noheader(int *, int *, int_t *, doublecomplex **, int_t **, int_t **);
 extern void    zreadMM(FILE *, int *, int *, int_t *, doublecomplex **, int_t **, int_t **);
 extern void    zfill (doublecomplex *, int, doublecomplex);
 extern void    zinf_norm_error (int, SuperMatrix *, doublecomplex *);
@@ -257,19 +259,21 @@ extern void    zPrint_CompCol_Matrix(char *, SuperMatrix *);
 extern void    zPrint_SuperNode_Matrix(char *, SuperMatrix *);
 extern void    zPrint_Dense_Matrix(char *, SuperMatrix *);
 extern void    zprint_lu_col(char *, int, int, int_t *, GlobalLU_t *);
-extern int     print_double_vec(char *, int, double *);
+extern int     print_doublecomplex_vec(const char *, int, const doublecomplex *);
 extern void    zcheck_tempv(int, doublecomplex *);
 
 /*! \brief BLAS */
 
-extern int zgemm_(const char*, const char*, const int*, const int*, const int*,
+extern void zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
+extern void zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
+extern void zgemm_(const char*, const char*, const int*, const int*, const int*,
                   const doublecomplex*, const doublecomplex*, const int*, const doublecomplex*,
 		  const int*, const doublecomplex*, doublecomplex*, const int*);
-extern int ztrsv_(char*, char*, char*, int*, doublecomplex*, int*,
+extern void ztrsv_(char*, char*, char*, int*, doublecomplex*, int*,
                   doublecomplex*, int*);
-extern int ztrsm_(char*, char*, char*, char*, int*, int*,
+extern void ztrsm_(char*, char*, char*, char*, int*, int*,
                   doublecomplex*, doublecomplex*, int*, doublecomplex*, int*);
-extern int zgemv_(char *, int *, int *, doublecomplex *, doublecomplex *a, int *,
+extern void zgemv_(char *, int *, int *, doublecomplex *, doublecomplex *a, int *,
                   doublecomplex *, int *, doublecomplex *, doublecomplex *, int *);
 
 extern void zusolve(int, int, doublecomplex*, doublecomplex*);

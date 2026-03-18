@@ -751,6 +751,7 @@ Available functions
 - :py:func:`~scipy.special.nbdtrik`::
 
         double nbdtrik(double, double, double)
+        float nbdtrik(float, float, float)
 
 - :py:func:`~scipy.special.nbdtrin`::
 
@@ -1694,10 +1695,6 @@ cdef _proto_nbdtrc_unsafe_t *_proto_nbdtrc_unsafe_t_var = &_func_nbdtrc_unsafe
 from ._legacy cimport nbdtri_unsafe as _func_nbdtri_unsafe
 ctypedef double _proto_nbdtri_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_nbdtri_unsafe_t *_proto_nbdtri_unsafe_t_var = &_func_nbdtri_unsafe
-
-from ._cdflib_wrappers cimport nbdtrik as _func_nbdtrik
-ctypedef double _proto_nbdtrik_t(double, double, double) noexcept nogil
-cdef _proto_nbdtrik_t *_proto_nbdtrik_t_var = &_func_nbdtrik
 
 from ._cdflib_wrappers cimport ncfdtridfd as _func_ncfdtridfd
 ctypedef double _proto_ncfdtridfd_t(double, double, double, double) noexcept nogil
@@ -3072,16 +3069,21 @@ cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     else:
         return NAN
 
-cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.nbdtrik"""
-    return _func_nbdtrik(x0, x1, x2)
-
 cpdef df_number_t nbdtrin(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrin"""
     if df_number_t is float:
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_invn_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbinom_invn_double)(x0, x1, x2)
+    else:
+        return NAN
+
+cpdef df_number_t nbdtrik(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.nbdtrik"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nbdtrik_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nbdtrik_double)(x0, x1, x2)
     else:
         return NAN
 

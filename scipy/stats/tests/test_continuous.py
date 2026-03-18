@@ -288,7 +288,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -302,7 +302,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_icomplement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -1495,6 +1495,36 @@ class TestMakeDistribution:
         assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
         assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
+
+    @pytest.mark.slow  # just in case
+    @settings(max_examples=20)  # no need for more
+    @given(data=strategies.data())
+    def test_draw_distribution(self, data):
+        # `draw_distribution_from_family` is a private function right now, but we will
+        # want that functionality to be public someday. It was broken for custom
+        # distributions because the `typical` parameter of the support was ignored.
+        # Check that this is resolved.
+        rng = np.random.default_rng(8465652168548465121)
+        u_typical = tuple(np.sort(rng.standard_normal(2)))
+        s_typical = tuple(np.sort(rng.random(2)*2))
+        x_typical = tuple(np.sort(rng.standard_normal(2)))
+
+        class MyNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': u_typical},
+                          's': {'endpoints': (0, np.inf), 'typical': s_typical}}
+            support = {'endpoints': (-np.inf, np.inf), 'typical': x_typical}
+
+            def pdf(self, x, a, b):
+                return 1 / (x * (np.log(b) - np.log(a)))
+
+        family = stats.make_distribution(MyNormal())
+        proportions = (1.0, 0., 0., 0.)
+        tmp = draw_distribution_from_family(family, data, rng, proportions, min_side=1)
+        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+        assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
+        assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
+        assert x_typical[0] < np.min(x) and np.max(x) < x_typical[1]
 
 
 class TestTransforms:
