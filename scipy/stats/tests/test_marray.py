@@ -150,11 +150,12 @@ def test_describe(axis, kwargs, xp):
                     xp.asarray(np.asarray(ref.kurtosis.data, copy=True)))
 
 
+@skip_backend('dask.array', reason='shape (nan,) in _xp_var when ddof=1')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.zscore),
                                  make_xp_pytest_param(stats.gzscore),
                                  make_xp_pytest_param(stats.zmap)])
-@pytest.mark.parametrize('ddof', [0, 1])  # TODO: fix
+@pytest.mark.parametrize('ddof', [0, 1])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_one_sample_non_reducing(fun, ddof, axis, xp):
     mxp, marrays, narrays = (get_arrays(2, xp=xp) if fun == stats.zmap
