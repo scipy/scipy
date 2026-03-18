@@ -5303,8 +5303,8 @@ class TestTTestRel:
         b = xp.empty((5, 8, 1))
         result = stats.ttest_rel(a, b, axis=1)
         assert isinstance(result, stats._stats_py.TtestResult)
-        assert result.statistic.shape ==(5, 0)
-        assert result.pvalue.shape ==(5, 0)
+        assert result.statistic.shape == (5, 0)
+        assert result.pvalue.shape == (5, 0)
 
     @skip_xp_backends("jax.numpy", reason="needs stdtrit; lazy->can't use root finder")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
