@@ -101,7 +101,7 @@ ilu_dcopy_to_ucol(
 
 	if ( ksupno != jsupno ) { /* Should go into ucol[] */
 	    kfnz = repfnz[krep];
-	    if ( kfnz != EMPTY ) {	/* Nonzero U-segment */
+	    if ( kfnz != SLU_EMPTY ) {	/* Nonzero U-segment */
 
 		fsupc = xsup[ksupno];
 		isub = xlsub[fsupc] + kfnz - fsupc;

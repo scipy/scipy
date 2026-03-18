@@ -46,7 +46,7 @@ at the top-level directory.
  *
  *    Performs numeric block updates (sup-panel) in topological order.
  *    It features: col-col, 2cols-col, 3cols-col, and sup-col updates.
- *    Special processing on the supernodal portion of L\\U[*,j]
+ *    Special processing on the supernodal portion of L\U[*,j]
  *
  *    Before entering this routine, the original nonzeros in the panel 
  *    were already copied into the spa[m,w].
@@ -152,7 +152,7 @@ spanel_bmod (
 		 repfnz_col += m, dense_col += m, TriTmp += ldaTmp ) {
 
 		kfnz = repfnz_col[krep];
-		if ( kfnz == EMPTY ) continue;	/* Skip any zero segment */
+		if ( kfnz == SLU_EMPTY ) continue;	/* Skip any zero segment */
 	    
 		segsze = krep - kfnz + 1;
 		luptr = xlusup[fsupc];
@@ -221,6 +221,12 @@ spanel_bmod (
 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #else
+#if SCIPY_FIX
+		   if (nsupr < segsze) {
+			/* Fail early rather than passing in invalid parameters to TRSV. */
+			ABORT("failed to factorize matrix");
+		   }
+#endif
 		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
@@ -250,7 +256,7 @@ spanel_bmod (
 		     repfnz_col += m, dense_col += m, TriTmp += ldaTmp) {
 		    
 		    kfnz = repfnz_col[krep];
-		    if ( kfnz == EMPTY ) continue; /* Skip any zero segment */
+		    if ( kfnz == SLU_EMPTY ) continue; /* Skip any zero segment */
 		    
 		    segsze = krep - kfnz + 1;
 		    if ( segsze <= 3 ) continue;   /* skip unrolled cases */
@@ -301,7 +307,7 @@ spanel_bmod (
 	    for (jj = jcol; jj < jcol + w; jj++,
 		 repfnz_col += m, dense_col += m, TriTmp += ldaTmp) {
 		kfnz = repfnz_col[krep];
-		if ( kfnz == EMPTY ) continue; /* Skip any zero segment */
+		if ( kfnz == SLU_EMPTY ) continue; /* Skip any zero segment */
 		
 		segsze = krep - kfnz + 1;
 		if ( segsze <= 3 ) continue; /* skip unrolled cases */
@@ -325,7 +331,7 @@ spanel_bmod (
 		 repfnz_col += m, dense_col += m) {
 		
 		kfnz = repfnz_col[krep];
-		if ( kfnz == EMPTY ) continue;	/* Skip any zero segment */
+		if ( kfnz == SLU_EMPTY ) continue;	/* Skip any zero segment */
 		
 		segsze = krep - kfnz + 1;
 		luptr = xlusup[fsupc];
