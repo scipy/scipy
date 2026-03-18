@@ -5546,7 +5546,8 @@ def pointbiserialr(x, y, *, axis=0):
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2,
-                 marray=True)
+                 marray=True, extra_note=("`nan_policy='propagate'` is "
+                                          "incompatible with MArray input."))
 def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
                alternative='two-sided', axis=None, keepdims=False):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.

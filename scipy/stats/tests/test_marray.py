@@ -443,7 +443,7 @@ def test_ks_2samp(fun, method, alternative, axis, xp):
 
 @make_xp_test_case(stats.kendalltau)
 class TestKendallTau:
-    @pytest.mark.parametrize('method', ['exact'])  # TODO: fix asymptotic
+    @pytest.mark.parametrize('method', ['asymptotic', 'exact'])
     @pytest.mark.parametrize('variant', ['b', 'c'])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize('axis', [0, 1, None])
