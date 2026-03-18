@@ -260,6 +260,7 @@ class BSpline:
 
         xp = array_namespace(c, t)
         xp_bspline_cls = _get_xp_bspline_cls(xp)
+        self._asarray = xp.asarray
 
         if xp_bspline_cls is not None:
             obj = xp_bspline_cls(t, c, k, extrapolate=extrapolate, axis=axis)
@@ -270,7 +271,7 @@ class BSpline:
             return
 
         self._delegate_to = None
-        self._asarray = xp.asarray
+
 
         self.k = operator.index(k)
         self._c = np.asarray(c)
@@ -320,6 +321,8 @@ class BSpline:
     def _construct_from_xp(cls, xp_bspline):
         self = object.__new__(cls)
         self._delegate_to = xp_bspline
+        xp = array_namespace(xp_bspline.t)
+        self._asarray = xp.asarray
         self.k = xp_bspline.k
         self.axis = xp_bspline.axis
         self.extrapolate = xp_bspline.extrapolate
@@ -335,16 +338,17 @@ class BSpline:
         xp = array_namespace(t, c)
         xp_bspline_cls = _get_xp_bspline_cls(xp)
 
+        if xp_bspline_cls is not None:
+            return cls._construct_from_xp(
+                xp_bspline_cls.construct_fast(
+                    t, c, k, extrapolate=extrapolate, axis=axis
+                )
+            )
+
         self = object.__new__(cls)
         self.k = k
         self.axis = axis
         self.extrapolate = extrapolate
-
-        if xp_bspline_cls is not None:
-            self._delegate_to = xp_bspline_cls.construct_fast(
-                t, c, k, extrapolate=extrapolate, axis=axis
-            )
-            return self
 
         self._delegate_to = None
         self._t, self._c = np.asarray(t), np.asarray(c)
