@@ -1989,7 +1989,7 @@ class Rotation:
         Approximate equality for a single rotation:
 
         >>> p.approx_equal(q[0])
-        False
+        np.False_
         """
         cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
         backend = select_backend(self._xp, cython_compatible=cython_compatible)
