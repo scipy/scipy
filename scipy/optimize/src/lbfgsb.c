@@ -866,13 +866,14 @@ LINE333:
     // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
     cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
            cnstnd, &info);
-    if (info != 0) { goto LINE444; }
 
-    // Call the direct method.
-    subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
-          head, &iword, wa, wn, &info);
-
-LINE444:
+    if (info == 0)
+    {
+        // Call the direct method.
+        subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
+              head, &iword, wa, wn, &info);
+    }
+    
     if (info != 0)
     {
         // singular triangular system detected;
