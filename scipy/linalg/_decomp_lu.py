@@ -10,7 +10,7 @@ from scipy._lib._util import _apply_over_batch
 
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
-from .lapack import get_lapack_funcs, _normalize_lapack_dtype
+from .lapack import get_lapack_funcs, _normalize_lapack_dtype, HAS_ILP64
 from ._decomp_lu_cython import lu_dispatcher
 
 
@@ -111,7 +111,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     # accommodate empty arrays
     if a1.size == 0:
         lu = np.empty_like(a1)
-        piv = np.arange(0, dtype=np.int32)
+        piv = np.arange(0, dtype=np.int64 if HAS_ILP64 else np.int32)
         return lu, piv
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
