@@ -3620,7 +3620,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values.
@@ -3695,18 +3695,27 @@ def trim_mean(a, proportiontocut, axis=0):
         a = xp_ravel(a)
         axis = 0
 
-    nobs = a.shape[axis]
-    lowercut = int(proportiontocut * nobs)
+    nobs = _count_nonmasked(a, axis=axis, keepdims=True, xp=xp)
+    lowercut = proportiontocut * nobs
+    nobs, lowercut = ((nobs, int(lowercut)) if not is_marray(xp)
+                      else (xp.astype(nobs, xp.int64), xp.astype(lowercut, xp.int64)))
     uppercut = nobs - lowercut
-    if (lowercut > uppercut):
+    if not is_marray(xp) and (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
     atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
             else xp.sort(a, axis=axis))
 
-    sl = [slice(None)] * atmp.ndim
-    sl[axis] = slice(lowercut, uppercut)
-    trimmed = xp_promote(atmp[tuple(sl)], force_floating=True, xp=xp)
+    if is_marray(xp):
+        indices = xp.arange(a.shape[-1])  # axis_nan_policy decorator -> axis=-1
+        mask = (indices < lowercut) | (indices >= (nobs - lowercut)) | atmp.mask
+        trimmed = xp.asarray(atmp.data, mask=mask.data)
+    else:
+        sl = [slice(None)] * atmp.ndim
+        sl[axis] = slice(lowercut, uppercut)
+        trimmed = atmp[tuple(sl)]
+
+    trimmed = xp_promote(trimmed, force_floating=True, xp=xp)
     return xp.mean(trimmed, axis=axis)
 
 

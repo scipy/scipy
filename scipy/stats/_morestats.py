@@ -3349,9 +3349,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True,
-                 extra_note="Option ``center='trimmed'`` is incompatible with MArray."
-                 )
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3462,9 +3460,6 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
             return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
-        if is_marray(xp):
-            message = "`center='trimmed'` is incompatible with MArray."
-            raise ValueError(message)
 
         def func(x):
             # keepdims=True doesn't currently work for Dask
@@ -3505,8 +3500,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
                                 ('cupy', 'no rankdata')],
-                 marray=True,
-                 extra_note="Option ``center='trimmed'`` is incompatible with MArray.")
+                 marray=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3629,10 +3623,6 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
             return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
-
-        if is_marray(xp):
-            message = "`center='trimmed'` is incompatible with MArray."
-            raise ValueError(message)
 
         def func(x):
             # keepdims=True doesn't currently work for lazy arrays

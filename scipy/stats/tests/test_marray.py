@@ -54,7 +54,7 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), all_unique=Tru
     make_xp_pytest_param(stats.hmean, {}),
     make_xp_pytest_param(stats.pmean, {'p': 2}),
     make_xp_pytest_param(stats.expectile, {'alpha': 0.4}),
-    make_xp_pytest_param(_xp_mean, {})
+    make_xp_pytest_param(_xp_mean, {}),
 ])
 @pytest.mark.parametrize('weighted', [False, True])
 @pytest.mark.parametrize('axis', [0, 1, None])
@@ -106,6 +106,7 @@ def test_one_sample_weighted_reducing(fun, kwargs, weighted, axis, xp):
      make_xp_pytest_param(stats.iqr, {'rng': (10, 90), 'scale': 'normal'}),
      make_xp_pytest_param(stats.median_abs_deviation, {}),
      make_xp_pytest_param(stats.median_abs_deviation, {'scale': 'normal'}),
+     make_xp_pytest_param(stats.trim_mean, {'proportiontocut': 0.1}),
      ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_one_sample_reducing(fun, kwargs, axis, xp):
@@ -473,13 +474,13 @@ class TestKendallTau:
     make_xp_pytest_param(stats.alexandergovern, {}),
     make_xp_pytest_param(stats.levene, {'center': 'median'}),
     make_xp_pytest_param(stats.levene, {'center': 'mean'}),
-    # make_xp_pytest_param(stats.levene, {'center': 'trimmed'}),  # TODO
+    make_xp_pytest_param(stats.levene, {'center': 'trimmed'}),
     make_xp_pytest_param(stats.f_oneway, {'equal_var': True}),
     make_xp_pytest_param(stats.f_oneway, {'equal_var': False}),
     make_xp_pytest_param(stats.kruskal, {}),
     make_xp_pytest_param(stats.fligner, {'center': 'median'}),
     make_xp_pytest_param(stats.fligner, {'center': 'mean'}),
-    # make_xp_pytest_param(stats.fligner, {'center': 'trimmed'}),  # TODO
+    make_xp_pytest_param(stats.fligner, {'center': 'trimmed'}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_k_sample_tests(fun, kwargs, axis, xp):
@@ -609,14 +610,3 @@ def test_obrientransform(dtype, n_arrays, xp):
     for res_i, ref_i in zip(res, ref):
         xp_assert_close(res_i.data[~res_i.mask],
                         xp.asarray(ref_i[~np.isnan(ref_i)], dtype=getattr(xp, dtype)))
-
-
-@pytest.mark.parametrize('f', [
-    make_xp_pytest_param(stats.levene),
-    make_xp_pytest_param(stats.fligner),
-])
-def test_center_trimmed(f, xp):
-    mxp, marrays, narrays = get_arrays(3, xp=xp)
-    message = "`center='trimmed'` is incompatible with MArray."
-    with pytest.raises(ValueError, match=message):
-        f(*marrays, center='trimmed', axis=-1)
