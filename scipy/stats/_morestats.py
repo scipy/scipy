@@ -3176,7 +3176,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
 
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
-    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    rank, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
@@ -3701,7 +3701,7 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     x = xp.sort(x, axis=-1)
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
-    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
+    _, _, a = _stats_py._rankdata(x, method='average', return_ties=True)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
     a = xp.concat((a, zeros), axis=-1)
@@ -3837,7 +3837,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
-    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
 
     if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)

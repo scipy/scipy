@@ -8047,7 +8047,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         # assumed when we evaluate the ECDFs at all points in the pooled sample.
         # These counts are given by the differences between consecutive ("min" or "max")
         # ranks corresponding with the observations in the (sorted) samples.
-        ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)
+        ranks, data_all, _ = _rankdata(data_all, method='min', return_sorted=True)
         ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
         one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
                       device=xp_device(ranks))
@@ -8601,7 +8601,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
-    ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    ranked, _, t = _rankdata(alldata, method='average', return_ties=True)
     counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
               for sample in samples]
     totaln = sum(counts)
@@ -8708,7 +8708,7 @@ def friedmanchisquare(*samples, axis=0):
     # The transpose flips this so we can work with axis-slices along -1. This is a
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
-    data, t = _rankdata(data, method='average', return_ties=True)
+    data, _, t = _rankdata(data, method='average', return_ties=True)
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
@@ -10266,7 +10266,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     contains_nan = _contains_nan(x, nan_policy)
 
     x = xp_swapaxes(x, axis, -1, xp=xp)
-    ranks = _rankdata(x, method, xp=xp)
+    ranks, _, _ = _rankdata(x, method, xp=xp)
 
     # JIT won't allow use of `contains_nan` for control flow here, so we always have to
     # run this with JIT.
@@ -10295,7 +10295,10 @@ def _order_ranks(ranks, j, *, xp):
 
 
 def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
-    # Rank data `x` by desired `method`; `return_ties`/`return_sorted` data  if desired
+    # Rank data `x` by desired `method`. For methods other than 'ordinal':
+    # - `return_sorted=True` ensures that the second output is sorted `x`
+    # - `return_ties=True` ensures that the third output is tie data
+    # Otherwise, the second/third output will be None.
     xp = array_namespace(x) if xp is None else xp
     dtype = xp_result_type(x, force_floating=True, xp=xp)
 
@@ -10303,33 +10306,24 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         import jax.scipy.stats as jax_stats
         ranks = jax_stats.rankdata(x, method=method, axis=-1)
         ranks = xp.astype(ranks, dtype, copy=False)
-        out = [ranks]
         y = xp.sort(x, axis=-1) if (return_ties or return_sorted) else None
-        if return_sorted:
-            out.append(y)
+        t = None
         if return_ties:
             max_ranks = jax_stats.rankdata(y, method='max', axis=-1)
             t = xp.diff(max_ranks, axis=-1, prepend=0)
             t = xp.astype(t, dtype, copy=False)
-            out.append(t)
-        return out[0] if len(out) == 1 else tuple(out)
+        return ranks, y, t
 
     if is_marray(xp):
         data, mask = x.data, x.mask
         uxp = array_namespace(data)
         data = uxp.where(mask, uxp.nan, data)
-        # TODO: have `_rankdata` always return three items, but allow them
-        #       to be `None` if they are not needed by the calling function.
-        #       Arguments controlling the number of outputs is a pain.
-        ranks, sorted, ties = _rankdata(data, method, True, True, xp=uxp)
-        out = [xp.asarray(ranks, mask=mask)]
-        if return_sorted or return_ties:
-            mask_sorted = uxp.isnan(sorted)
-        if return_sorted:
-            out.append(xp.asarray(sorted, mask=mask_sorted))
-        if return_ties:
-            out.append(xp.asarray(ties, mask=mask_sorted))
-        return out[0] if len(out) == 1 else tuple(out)
+        ranks, sorted, ties = _rankdata(data, method, return_sorted, return_ties, uxp)
+        ranks = xp.asarray(ranks, mask=mask)
+        mask_sorted = uxp.isnan(sorted) if (return_sorted or return_ties) else None
+        sorted = xp.asarray(sorted, mask=mask_sorted) if return_sorted else None
+        ties = xp.asarray(ties, mask=mask_sorted) if return_ties else None
+        return ranks, sorted, ties
 
     shape = x.shape
 
@@ -10339,7 +10333,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties or sorted data
+        ranks = _order_ranks(ordinal_ranks, j, xp=xp)
+        return (ranks, None, None)
 
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
@@ -10365,14 +10360,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     ranks = xp.reshape(xp.repeat(ranks, counts), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
-    if not (return_sorted or return_ties):
-        return ranks
 
-    out = [ranks]
-
-    if return_sorted:
-        out.append(y)
-
+    t = None
     if return_ties:
         # Tie information is returned in a format that is useful to functions that
         # rely on this (private) function. Example:
@@ -10392,9 +10381,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=dtype)
         t = xpx.at(t)[i].set(xp.astype(counts, dtype, copy=False))
-        out.append(t)
 
-    return out
+    return ranks, y, t
 
 
 @xp_capabilities(marray=True,

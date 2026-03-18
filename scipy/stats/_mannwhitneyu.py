@@ -454,7 +454,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     n2 = _count_nonmasked(y, axis=-1, xp=xp)
 
     # Follows [2]
-    ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
+    ranks, _, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
     ranks = xp.astype(ranks, x.dtype, copy=False)
     t = xp.astype(t, x.dtype, copy=False)
     R1 = xp.sum(ranks[..., :x.shape[-1]], axis=-1)         # method 2, step 2

@@ -700,8 +700,8 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     # we don't actually need ranks, so an enhancement could be to have
     # `rankdata` return only the second output. In the meantime, use the
     # least expensive `method`.
-    _, nxreps = _rankdata(x, method='min', return_ties=True)
-    _, nyreps = _rankdata(y, method='min', return_ties=True)
+    _, _, nxreps = _rankdata(x, method='min', return_ties=True)
+    _, _, nyreps = _rankdata(y, method='min', return_ties=True)
     nt = xp.count_nonzero(xp.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
     nt = xp.asarray(nt, dtype=y.dtype)
     ny = _count_nonmasked(y, keepdims=True, axis=-1)                    # n in Sen 1968

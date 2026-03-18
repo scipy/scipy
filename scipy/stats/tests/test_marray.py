@@ -589,7 +589,7 @@ def test_entropy(qk, base, axis, xp):
 
 @make_xp_test_case(stats.rankdata)
 @skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
-@pytest.mark.parametrize('method', ['average', 'min', 'max', 'dense'])  # TODO: ordinal
+@pytest.mark.parametrize('method', ['average', 'min', 'max', 'dense', 'ordinal'])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_rankdata(method, axis, xp):
     mxp, marrays, narrays = get_arrays(1, xp=xp)
