@@ -964,7 +964,11 @@ class TestGetWindow:
 class TestGeneralGaussian():
       
     def test_basic(self, xp):
-         #Testing against hard-coded data
+        # Testing against hard-coded values computed using:
+        #   n = np.arange(0, M) - (M - 1.0) / 2.0
+        #   w = np.exp(-0.5 * abs(n / sigma) ** (2 * p))
+        # For sym=False, M is extended by 1 and the last sample is dropped.
+        # For sym=True (default), M is used directly.
         xp_assert_close(windows.general_gaussian(7, 1, 1, xp=xp), xp.asarray([0.011108997, 0.135335283,
                     0.60653066,  1.,  0.60653066,  0.135335283, 0.011108997],dtype=xp.float64 ), atol=1e-9)
         xp_assert_close(windows.general_gaussian(6, 1.5, 2, xp=xp), xp.asarray([0.376603451, 0.809824679,
@@ -986,6 +990,38 @@ class TestGeneralGaussian():
         #Testing that if M is even, the peak is less than 1.0
         w = windows.general_gaussian(6, p=1.5, sig=2.0, xp=xp)
         assert float(xp.max(w)) < 1.0
+
+    def test_len_edge_cases(self, xp):
+        # Testing that the length edge cases are handled correctly by the window function
+        assert len(windows.general_gaussian(0, 1, 1, xp=xp)) == 0  # length = 0 should return an empty array
+        xp_assert_close(windows.general_gaussian(1, 1, 1, xp=xp), xp.asarray([1.0], dtype=xp.float64))  # length = 1 should return an array of length 1 containing 1.0
+        with pytest.raises(ValueError):
+            windows.general_gaussian(-1, 1, 1, xp=xp)  # negative values should raise an error
+
+
+@make_xp_test_case(windows.cosine)
+class TestCosine():
+    def test_basic(self, xp):
+        #   Hardcoded values were computed using:
+        #   M = 8  (M+1 for sym=False, then drop last sample)
+        #   w = np.sin(np.pi / M * (np.arange(M) + .5))
+        #   For sym=True (default), M is used directly.
+        xp_assert_close(windows.cosine(6, xp=xp), xp.asarray([0.258819045, 0.707106781,
+                    0.965925826,  0.965925826,  0.707106781,  0.258819045],dtype=xp.float64 ), atol=1e-9)
+        xp_assert_close(windows.cosine(7, xp=xp), xp.asarray([0.222520934, 0.623489802,
+                    0.900968868,  1.,  0.900968868,  0.623489802, 0.222520934 ],dtype=xp.float64 ), atol=1e-9)
+        xp_assert_close(windows.cosine(7, False, xp=xp), xp.asarray([0.195090322, 0.555570233,
+                    0.831469612,  0.98078528,  0.98078528,  0.831469612, 0.555570233 ],dtype=xp.float64 ), atol=1e-9)
+        xp_assert_close(windows.cosine(4, False, xp=xp), xp.asarray([0.309016994, 0.809016994,
+                    1.,  0.809016994],dtype=xp.float64 ), atol=1e-9)
+        
+    def test_len_edge_cases(self, xp):
+        #Testing that the length edge cases are handled correctly by the window function
+        assert len(windows.cosine(0, xp=xp)) == 0 #length = 0 should return an empty array
+        xp_assert_close(windows.cosine(1, xp=xp), xp.asarray([1.0], dtype=xp.float64)) #length = 1 should return an array of length 1 containing 1.0
+        with pytest.raises(ValueError):
+            windows.cosine(-1, xp=xp) # negative values should return an error
+
 
 
 
