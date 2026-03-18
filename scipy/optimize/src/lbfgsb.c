@@ -745,7 +745,14 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
                 BLAS_FUNC(dcopy)(&n, r, &one_int, g, &one_int);
                 *f = fold;
             }
-            goto LINE999;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         }
     }
 
@@ -773,7 +780,14 @@ LINE111:
     {
         *task = CONVERGENCE;
         *task_msg = CONV_GRAD;
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
     // ----------------- the beginning of the loop --------------------------
@@ -911,7 +925,14 @@ LINE666:
             *task = ABNORMAL;
             *task_msg = NO_MSG;
             iter++;
-            goto LINE999;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         } else {
             // Refresh the lbfgs memory and restart the iteration.
             if (info == 0) { nfgv--; }
@@ -960,7 +981,14 @@ LINE777:
         // Terminate the algorithm.
         *task = CONVERGENCE;
         *task_msg = CONV_GRAD;
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
     ddum = fmax(fmax(fabs(fold), fabs(*f)), 1.0);
     if ((fold - *f) <= tol*ddum)
@@ -970,7 +998,14 @@ LINE777:
         *task_msg = CONV_F;
         if (iback >= 10) { info = -5; }
         // i.e. to issue a warning if iback > 10 in the line search.
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
     // Compute d=newx-oldx, r=newg-oldg, rr=y'y and dr=y's.
@@ -1037,9 +1072,6 @@ LINE777:
 LINE888:
     // -------------------- the end of the loop -----------------------------
     goto LINE222;
-
-LINE999:
-    ;
 
     save_local_vars(
         prjctd, cnstnd, boxed, updatd, nintol,

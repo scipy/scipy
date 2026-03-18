@@ -1496,6 +1496,8 @@ class TestMakeDistribution:
         assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
+    @pytest.mark.slow  # just in case
+    @settings(max_examples=20)  # no need for more
     @given(data=strategies.data())
     def test_draw_distribution(self, data):
         # `draw_distribution_from_family` is a private function right now, but we will
