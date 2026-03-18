@@ -1,8 +1,8 @@
 #include "arnaud_n_double_complex.h"
 #include <float.h>
 
-typedef ARNAUD_INT ARNAUD_compare_cfunc(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
-typedef ARNAUD_INT ARNAUD_compare_rfunc(const double, const double);
+typedef int ARNAUD_compare_cfunc(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+typedef int ARNAUD_compare_rfunc(const double, const double);
 
 static const double unfl = DBL_MIN;    // 2.2250738585072014e-308
 // static const double ovfl = DBL_MAX; // 1.0 / 2.2250738585072014e-308;
@@ -16,12 +16,12 @@ static void znapps(ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAU
 static void zneigh(double*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, double*, ARNAUD_INT*);
 static void zngets(struct ARNAUD_state_d*, ARNAUD_INT*, ARNAUD_INT*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*);
 static void zsortc(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, ARNAUD_CPLX_TYPE* x, ARNAUD_CPLX_TYPE* y);
-static ARNAUD_INT sortc_LM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
-static ARNAUD_INT sortc_SM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
-static ARNAUD_INT sortc_LR(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
-static ARNAUD_INT sortc_SR(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
-static ARNAUD_INT sortc_LI(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
-static ARNAUD_INT sortc_SI(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_LM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_SM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_LR(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_SR(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_LI(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_SI(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
 
 enum ARNAUD_neupd_type {
     REGULAR,
@@ -1811,12 +1811,12 @@ zsortc(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, AR
 }
 
 
-static ARNAUD_INT sortc_LM(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cabs(x) > cabs(y)); }
-static ARNAUD_INT sortc_SM(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cabs(x) < cabs(y)); }
-static ARNAUD_INT sortc_LR(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (creal(x) > creal(y)); }
-static ARNAUD_INT sortc_SR(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (creal(x) < creal(y)); }
-static ARNAUD_INT sortc_LI(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
-static ARNAUD_INT sortc_SI(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
+static int sortc_LM(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cabs(x) > cabs(y)); }
+static int sortc_SM(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cabs(x) < cabs(y)); }
+static int sortc_LR(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (creal(x) > creal(y)); }
+static int sortc_SR(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (creal(x) < creal(y)); }
+static int sortc_LI(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
+static int sortc_SI(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
 
 
 // zdotc is the complex conjugate dot product of two complex vectors.

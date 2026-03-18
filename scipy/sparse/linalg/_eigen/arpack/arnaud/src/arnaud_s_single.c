@@ -1,12 +1,12 @@
 #include "arnaud_s_single.h"
 #include <float.h>
 
-typedef ARNAUD_INT ARNAUD_compare_rfunc(const float, const float);
+typedef int ARNAUD_compare_rfunc(const float, const float);
 
-static ARNAUD_INT sortr_LM(const float, const float);
-static ARNAUD_INT sortr_SM(const float, const float);
-static ARNAUD_INT sortr_LA(const float, const float);
-static ARNAUD_INT sortr_SA(const float, const float);
+static int sortr_LM(const float, const float);
+static int sortr_SM(const float, const float);
+static int sortr_LA(const float, const float);
+static int sortr_SA(const float, const float);
 
 static const float unfl = FLT_MIN;    // 1.1754943508222875e-38;
 static const float ulp = FLT_EPSILON; // 1.1920928955078125e-07;
@@ -2229,7 +2229,7 @@ sstqrb(ARNAUD_INT n, float* d, float* e, float* z, float* work, ARNAUD_INT* info
 }
 
 
-ARNAUD_INT sortr_LM(const float x1, const float x2) { return (fabsf(x1) > fabsf(x2)); }
-ARNAUD_INT sortr_SM(const float x1, const float x2) { return (fabsf(x1) < fabsf(x2)); }
-ARNAUD_INT sortr_LA(const float x1, const float x2) { return (x1 > x2); }
-ARNAUD_INT sortr_SA(const float x1, const float x2) { return (x1 < x2); }
+int sortr_LM(const float x1, const float x2) { return (fabsf(x1) > fabsf(x2)); }
+int sortr_SM(const float x1, const float x2) { return (fabsf(x1) < fabsf(x2)); }
+int sortr_LA(const float x1, const float x2) { return (x1 > x2); }
+int sortr_SA(const float x1, const float x2) { return (x1 < x2); }

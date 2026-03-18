@@ -18,11 +18,9 @@
 #ifdef HAVE_BLAS_ILP64
     #define ARNAUD_PyLong_As(obj)   (ARNAUD_INT)PyLong_AsLongLong(obj)
     #define ARNAUD_PyLong_From(val) PyLong_FromLongLong((long long)(val))
-    #define ARNAUD_NPY_INT          NPY_INT64
 #else
     #define ARNAUD_PyLong_As(obj)   (ARNAUD_INT)PyLong_AsLong(obj)
     #define ARNAUD_PyLong_From(val) PyLong_FromLong((long)(val))
-    #define ARNAUD_NPY_INT          NPY_INT32
 #endif
 
 static PyObject* arpack_error_obj;

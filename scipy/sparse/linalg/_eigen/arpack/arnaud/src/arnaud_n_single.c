@@ -1,14 +1,14 @@
 #include "arnaud_n_single.h"
 #include <float.h>
 
-typedef ARNAUD_INT ARNAUD_compare_cfunc(const float, const float, const float, const float);
+typedef int ARNAUD_compare_cfunc(const float, const float, const float, const float);
 
-static ARNAUD_INT sortc_LM(const float, const float, const float, const float);
-static ARNAUD_INT sortc_SM(const float, const float, const float, const float);
-static ARNAUD_INT sortc_LR(const float, const float, const float, const float);
-static ARNAUD_INT sortc_SR(const float, const float, const float, const float);
-static ARNAUD_INT sortc_LI(const float, const float, const float, const float);
-static ARNAUD_INT sortc_SI(const float, const float, const float, const float);
+static int sortc_LM(const float, const float, const float, const float);
+static int sortc_SM(const float, const float, const float, const float);
+static int sortc_LR(const float, const float, const float, const float);
+static int sortc_SR(const float, const float, const float, const float);
+static int sortc_LI(const float, const float, const float, const float);
+static int sortc_SI(const float, const float, const float, const float);
 
 static const float unfl = FLT_MIN;    // 1.1754943508222875e-38;
 // static const float ovfl = FLT_MAX; // 1.0 / 1.1754943508222875e-38;
@@ -2062,40 +2062,40 @@ ssortc(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, fl
 
 
 // The void casts are to avoid compiler warnings for unused parameters
-ARNAUD_INT
+int
 sortc_LM(const float xre, const float xim, const float xreigap, const float ximigap)
 {
     return (hypotf(xre, xim) > hypotf(xreigap, ximigap));
 }
 
-ARNAUD_INT
+int
 sortc_SM(const float xre, const float xim, const float xreigap, const float ximigap)
 {
     return (hypotf(xre, xim) < hypotf(xreigap, ximigap));
 }
 
-ARNAUD_INT
+int
 sortc_LR(const float xre, const float xim, const float xreigap, const float ximigap)
 {
     (void)xim; (void)ximigap;
     return (xre > xreigap);
 }
 
-ARNAUD_INT
+int
 sortc_SR(const float xre, const float xim, const float xreigap, const float ximigap)
 {
     (void)xim; (void)ximigap;
     return (xre < xreigap);
 }
 
-ARNAUD_INT
+int
 sortc_LI(const float xre, const float xim, const float xreigap, const float ximigap)
 {
     (void)xre; (void)xreigap;
     return (fabsf(xim) > fabsf(ximigap));
 }
 
-ARNAUD_INT
+int
 sortc_SI(const float xre, const float xim, const float xreigap, const float ximigap)
 {
     (void)xre; (void)xreigap;

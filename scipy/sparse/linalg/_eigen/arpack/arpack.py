@@ -41,14 +41,14 @@ from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye_array, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.linalg.lapack import HAS_ILP64
-
-_int_dtype = np.int64 if HAS_ILP64 else np.int32
 from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
 from scipy.sparse.linalg import gmres, splu
 
 from . import _arpacklib
+
+_int_dtype = np.int64 if HAS_ILP64 else np.int32
 
 __docformat__ = "restructuredtext en"
 
