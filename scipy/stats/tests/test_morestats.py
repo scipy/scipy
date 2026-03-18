@@ -1321,13 +1321,12 @@ class TestBinomTest:
         xp_assert_close(ci.low, xp.asarray(ci_low))
         xp_assert_close(ci.high, xp.asarray(ci_high))
 
-
-class TestBinomTestMore:
-    def test_binomtest(self):
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest(self, xp):
         # precision tests compared to R for ticket:986
-        pp = np.concatenate((np.linspace(0.1, 0.2, 5),
-                             np.linspace(0.45, 0.65, 5),
-                             np.linspace(0.85, 0.95, 5)))
+        pp = xp.concat((xp.linspace(0.1, 0.2, 5),
+                        xp.linspace(0.45, 0.65, 5),
+                        xp.linspace(0.85, 0.95, 5)))
         n = 501
         x = 450
         results = [0.0, 0.0, 1.0159969301994141e-304,
@@ -1338,13 +1337,13 @@ class TestBinomTestMore:
                    0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
                    2.6102587134694721e-006]
 
-        for p, res in zip(pp, results):
-            assert_allclose(stats.binomtest(x, n, p).pvalue, res, rtol=1e-12)
+        xp_assert_close(stats.binomtest(x, n, pp).pvalue, xp.asarray(results))
 
-        assert_allclose(stats.binomtest(50, 100, 0.1).pvalue,
-                        5.8320387857343647e-024, rtol=1e-12)
+        xp_assert_close(stats.binomtest(50, 100, xp.asarray(0.1)).pvalue,
+                        xp.asarray(5.8320387857343647e-024))
 
-    def test_binomtest2(self):
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest2(self, xp):
         # test added for issue #2384
         res2 = [
             [1.0, 1.0],
@@ -1364,15 +1363,20 @@ class TestBinomTestMore:
              0.001953125]
         ]
         for k in range(1, 11):
-            res1 = [stats.binomtest(v, k, 0.5).pvalue for v in range(k + 1)]
-            assert_almost_equal(res1, res2[k-1], decimal=10)
+            v = xp.arange(k+1, dtype=xp.float64)
+            res1 = stats.binomtest(v, k, 0.5).pvalue
+            xp_assert_close(res1, xp.asarray(res2[k-1], dtype=xp.float64))
 
-    def test_binomtest3(self):
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest3(self, xp):
         # test added for issue #2384
         # test when x == n*p and neighbors
-        res3 = [stats.binomtest(v, v*k, 1./k).pvalue
-                for v in range(1, 11) for k in range(2, 11)]
-        assert_equal(res3, np.ones(len(res3), int))
+        v = xp.arange(1., 11.)[:, xp.newaxis]
+        k = xp.arange(2., 11.)
+        shape = (v.shape[0], k.shape[0])
+
+        res3 = stats.binomtest(v, v*k, 1./k).pvalue
+        xp_assert_close(res3, xp.ones(shape))
 
         # > bt=c()
         # > for(i in as.single(1:10)) {
@@ -1381,7 +1385,7 @@ class TestBinomTestMore:
         # +         print(c(i+1, k*i,(1/k)))
         # +     }
         # + }
-        binom_testm1 = np.array([
+        binom_testm1 = xp.asarray([
              0.5, 0.5555555555555556, 0.578125, 0.5904000000000003,
              0.5981224279835393, 0.603430543396034, 0.607304096221924,
              0.610255656871054, 0.612579511000001, 0.625, 0.670781893004115,
@@ -1421,7 +1425,7 @@ class TestBinomTestMore:
         # +     }
         # + }
 
-        binom_testp1 = np.array([
+        binom_testp1 = xp.asarray([
              0.5, 0.259259259259259, 0.26171875, 0.26272, 0.2632244513031551,
              0.2635138663069203, 0.2636951804161073, 0.2638162407564354,
              0.2639010709000002, 0.625, 0.4074074074074074, 0.42156982421875,
@@ -1452,13 +1456,15 @@ class TestBinomTestMore:
              0.736270323773157, 0.737718376096348
             ])
 
-        res4_p1 = [stats.binomtest(v+1, v*k, 1./k).pvalue
-                   for v in range(1, 11) for k in range(2, 11)]
-        res4_m1 = [stats.binomtest(v-1, v*k, 1./k).pvalue
-                   for v in range(1, 11) for k in range(2, 11)]
+        k, v = xp.asarray(k, dtype=xp.float64), xp.asarray(v, dtype=xp.float64)
+        binom_testp1 = xp.reshape(xp.asarray(binom_testp1, dtype=xp.float64), shape)
+        binom_testm1 = xp.reshape(xp.asarray(binom_testm1, dtype=xp.float64), shape)
 
-        assert_almost_equal(res4_p1, binom_testp1, decimal=13)
-        assert_almost_equal(res4_m1, binom_testm1, decimal=13)
+        res4_p1 = stats.binomtest(v+1, v*k, 1./k).pvalue
+        res4_m1 = stats.binomtest(v-1, v*k, 1./k).pvalue
+
+        xp_assert_close(res4_p1, binom_testp1)
+        xp_assert_close(res4_m1, binom_testm1)
 
 
 @make_xp_test_case(stats.fligner)
