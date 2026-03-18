@@ -99,12 +99,16 @@ _bspline_extra_note = (
         "design_matrix": dict(np_only=True),
         "from_power_basis": dict(np_only=True),
         "insert_knot": dict(
-            cpu_only=True, jax_jit=False, skip_backends=[("dask.array", "")]
+            cpu_only=True,
+            jax_jit=False,
+            skip_backends=[
+                ("dask.array", "https://github.com/scipy/scipy/issues/24205")
+            ]
         ),
     },
     skip_backends=[
         ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
+         "https://github.com/scipy/scipy/issues/24205")
     ],
     extra_note=_bspline_extra_note,
 )
