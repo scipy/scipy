@@ -612,6 +612,7 @@ class BSpline:
 
         """
         if self._delegate_to is not None:
+            x = self._asarray(x)
             return self._delegate_to(x, nu=nu, extrapolate=extrapolate)
 
         if extrapolate is None:
