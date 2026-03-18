@@ -430,12 +430,13 @@ class TestSoftmax:
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_softmax_inf_inputs(self, xp_input, expected, axis, dtype, xp):
         dtype = getattr(xp, dtype)
+        rtol = 1e-6 if dtype == xp.float32 else 1e-13
         # If exactly one +inf is present along the reduction axis, the output is 1
         # at that position and 0 elsewhere - see gh-23225
         xp_assert_close(
             softmax(xp.asarray(xp_input, dtype=dtype), axis=axis),
             xp.asarray(expected, dtype=dtype),
-            rtol=1e-13,
+            rtol=rtol,
         )
 
     @pytest.mark.parametrize(
@@ -504,10 +505,11 @@ class TestSoftmax:
         # If multiple +inf values are present, or if all values are -inf along the
         # reduction axis, the output is NaN along that slice - see gh-23225
         dtype = getattr(xp, dtype)
+        rtol = 1e-6 if dtype == xp.float32 else 1e-13
         x = xp.asarray(xp_input, dtype=dtype)
         with pytest.warns(RuntimeWarning, match=warning):
             result = softmax(x, axis=axis)
-        xp_assert_close(result, xp.asarray(expected, dtype=dtype), rtol=1e-13)
+        xp_assert_close(result, xp.asarray(expected, dtype=dtype), rtol=rtol)
 
 
 @make_xp_test_case(log_softmax)
