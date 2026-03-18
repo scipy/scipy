@@ -285,6 +285,10 @@ def softmax(x, axis=None):
     The implementation uses shifting to avoid overflow. See [1]_ for more
     details.
 
+    If exactly one ``+inf`` is present along the reduction axis, the output is 1 at that
+    position and 0 elsewhere. If multiple ``+inf`` values are present, or if all values
+    are ``-inf`` along the reduction axis, the output is ``NaN`` along that slice.
+
     .. versionadded:: 1.2.0
 
     References
