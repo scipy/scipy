@@ -83,6 +83,11 @@ _bspline_extra_note = (
     """The methods ``design_matrix`` and ``from_power_basis`` are currently
     NumPy only. `insert_knot`` is currently not supported with CuPy.
 
+    If the spline is called on an array ``x`` with namespace different from the
+    namespace ``xp`` of the knots ``t`` and coefficients ``c``, an attempt will
+    be made to coerce ``x`` to the ``xp`` namespace. Mixing namespaces in this
+    way is not recommended.
+
     """
 )
 
