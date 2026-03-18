@@ -575,13 +575,14 @@ def test_slopes_intercepts(f, method, axis, xp):
 
 
 @make_xp_test_case(stats.entropy)
+@skip_backend('dask.array', reason="Dask doesn't like the /= when base is not None.")
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('qk', [False, True])
 @pytest.mark.parametrize('base', [None, 2])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_entropy(qk, base, axis, xp):
     mxp, marrays, narrays = get_arrays(2 if qk else 1, xp=xp)
-    res = stats.entropy(*marrays, base=base, axis=axis)  # TODO: fix dask?
+    res = stats.entropy(*marrays, base=base, axis=axis)
     ref = stats.entropy(*narrays, base=base, nan_policy='omit', axis=axis)
     xp_assert_close(res.data, xp.asarray(ref))
 
