@@ -93,7 +93,7 @@ def test_one_sample_weighted_reducing(fun, kwargs, weighted, axis, xp):
      make_xp_pytest_param(stats.gstd, {}),
      make_xp_pytest_param(stats.gstd, {'ddof': 2}),
      make_xp_pytest_param(_xp_var, {}),
-     make_xp_pytest_param(_xp_var, {'correction': 1, 'keepdims': True}),  # TODO: fix
+     make_xp_pytest_param(_xp_var, {'correction': 1, 'keepdims': True}),
      make_xp_pytest_param(stats.variation, {}),
      make_xp_pytest_param(stats.variation, {'ddof': 1}),
      make_xp_pytest_param(stats.tmean, dict(limits=(0.1, 0.9))),
