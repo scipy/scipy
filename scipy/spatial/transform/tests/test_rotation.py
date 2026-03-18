@@ -1275,7 +1275,7 @@ def test_approx_equal_single_rotation(xp):
     assert p.approx_equal(q[3])
     assert not p.approx_equal(q[0])
     # Regression test for gh-24769: single approx_equal should return a bool
-    assert isinstance(p.approx_equal(q[0]), bool) or not is_numpy(xp)
+    assert isinstance(p.approx_equal(q[0]), np.bool_) or not is_numpy(xp)
 
     # test passing atol and using degrees
     assert not p.approx_equal(q[3], atol=1e-10)

@@ -1952,7 +1952,7 @@ class Rotation:
 
     def approx_equal(
         self, other: Rotation, atol: float | None = None, degrees: bool = False
-    ) -> Array | bool:
+    ) -> Array | np.bool_:
         """Determine if another rotation is approximately equal to this one.
 
         Equality is measured by calculating the smallest angle between the
@@ -1972,8 +1972,8 @@ class Rotation:
 
         Returns
         -------
-        approx_equal : Array or bool
-            Whether the rotations are approximately equal, bool if object
+        approx_equal : Array or np.bool_
+            Whether the rotations are approximately equal, np.bool_ if object
             contains a single numpy rotation and Array if object contains multiple
             rotations or is from another library.
 
@@ -1997,7 +1997,7 @@ class Rotation:
             self._quat, other._quat, atol=atol, degrees=degrees
         )
         if self._single and other._single:
-            return bool(approx_equal[0])
+            return approx_equal[0]
         return approx_equal
 
     def mean(
