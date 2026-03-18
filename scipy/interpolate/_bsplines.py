@@ -1061,6 +1061,11 @@ class BSpline:
         array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
 
         """
+        if self._delegate_to is not None:
+            # insert_knot isn't available in CuPy as of version 14 causing this to
+            # raise with an AttributeError.
+            return self._construct_from_xp(self._delegate_to.insert_knot(x, m=m))
+
         x = float(x)
 
         if x < self._t[self.k] or x > self._t[-self.k-1]:
