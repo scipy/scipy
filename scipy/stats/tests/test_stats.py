@@ -5246,7 +5246,7 @@ class TestTTestRel:
     @skip_xp_backends(eager_only=True, reason="lazy -> limited nan_policy support")
     def test_ttest_rel_nan_2nd_arg(self, xp):
         # regression test for gh-6134: nans in the second arg were not handled
-        x = xp.asarray([np.nan, 2.0, 3.0, 4.0])
+        x = xp.asarray([xp.nan, 2.0, 3.0, 4.0])
         y = xp.asarray([1.0, 2.0, 1.0, 2.0])
 
         r1 = stats.ttest_rel(x, y, nan_policy='omit')
