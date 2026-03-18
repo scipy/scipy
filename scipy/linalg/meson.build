@@ -184,6 +184,7 @@ py3.extension_module('_decomp_interpolative',
 py3.extension_module('_batched_linalg',
   [
     'src/_common_array_utils.hh',
+    'src/_linalg_lu_det.hh',
     'src/_linalg_inv.hh',
     'src/_linalg_solve.hh',
     'src/_npymath.hh',
@@ -239,15 +240,6 @@ cython_lapack = py3.extension_module('cython_lapack',
   dependencies: [lapack_lp64_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
-  subdir: 'scipy/linalg'
-)
-
-py3.extension_module('_decomp_lu_cython',
-  linalg_cython_gen.process('_decomp_lu_cython.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
   subdir: 'scipy/linalg'
 )
 
@@ -316,7 +308,6 @@ python_sources = [
   '_decomp_cossin.py',
   '_decomp_ldl.py',
   '_decomp_lu.py',
-  '_decomp_lu_cython.pyi',
   '_decomp_polar.py',
   '_decomp_qr.py',
   '_decomp_qz.py',
