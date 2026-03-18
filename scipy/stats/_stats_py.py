@@ -10904,6 +10904,7 @@ def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
     return M0 * (1 + 0.5 * p * (ln2_avg - ln_avg * ln_avg))
 
 
+@xp_capabilities()
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
              dtype=None, warn=True, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
@@ -11051,6 +11052,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     return res[()] if res.ndim == 0 else res
 
 
+@xp_capabilities()
 def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propagate',
             dtype=None, xp=None):
     # an array-api compatible function for variance with scipy.stats interface
