@@ -1269,7 +1269,7 @@ static char doc_eig[] = ("eigenvalue solver.");
 static char doc_cholesky[] = ("Cholesky factorization.");
 static char doc_qr[] = ("Compute the qr decomposition.");
 
-static struct PyMethodDef inv_module_methods[] = {
+static struct PyMethodDef module_methods[] = {
   {"_det", _linalg_det, METH_VARARGS, doc_det},
   {"_lu", _linalg_lu, METH_VARARGS, doc_lu},
   {"_inv", _linalg_inv, METH_VARARGS, doc_inv},
@@ -1296,7 +1296,7 @@ static int module_exec(PyObject *module) {
     return 0;
 }
 
-static PyModuleDef_Slot _batched_linalg_slots[] = {
+static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, (void *)module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
 #if PY_VERSION_HEX >= 0x030d00f0
@@ -1305,13 +1305,19 @@ static PyModuleDef_Slot _batched_linalg_slots[] = {
     {0, NULL}
 };
 
+
+
+// No designated initializers under /std:c++17.
 static struct PyModuleDef moduledef = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_batched_linalg",
-    .m_doc = NULL,
-    .m_size = 0,
-    .m_methods = inv_module_methods,
-    .m_slots = _batched_linalg_slots
+    PyModuleDef_HEAD_INIT,                        /* m_base */
+    "_batched_linalg",                            /* m_name */
+    "Linear algebra extension module for SciPy",  /* m_doc */
+    0,                                            /* m_size */
+    module_methods,                               /* m_methods */
+    module_slots,                                 /* m_slots */
+    NULL,                                         /* m_traverse */
+    NULL,                                         /* m_clear */
+    NULL                                          /* m_free */
 };
 
 PyMODINIT_FUNC
