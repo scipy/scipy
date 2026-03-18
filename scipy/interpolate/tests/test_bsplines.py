@@ -11,7 +11,7 @@ import sys
 import numpy as np
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
-    xp_ravel, _xp_copy_to_numpy
+    xp_ravel, _xp_copy_to_numpy, array_namespace
 )
 import scipy._external.array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -105,6 +105,11 @@ class TestBSpline:
 
         expected = xp.where(xx < 1., xp.asarray(3., dtype=xp.float64), 4.0)
         xp_assert_close(b(xx), expected)
+
+    def test_attributes_have_correct_namespace(self, xp):
+        b = BSpline(t=xp.asarray([0, 1., 2]), c=xp.asarray([3., 4]), k=0)
+        assert array_namespace(b.t) is xp
+        assert array_namespace(b.c) is xp
 
     def test_degree_0(self):
         xx = np.linspace(0, 1, 10)
