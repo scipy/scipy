@@ -9458,7 +9458,7 @@ class TestLMoment:
         xp_assert_close(res, ref)
 
 
-@pytest.mark.uses_xp_capabilities(False, reason="private")
+@make_xp_test_case(_xp_mean)
 class TestXP_Mean:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('weights', [None, True])
@@ -9600,7 +9600,7 @@ class TestXP_Mean:
         xp_assert_close(res, xp.asarray(ref))
 
 
-@pytest.mark.uses_xp_capabilities(False, reason="private")
+@make_xp_test_case(_xp_var)
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])

@@ -369,7 +369,7 @@ def test_wilcoxon(n_samples, zero_method, correction, alternative, method, axis,
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
 
 
-@make_xp_test_case(stats.wilcoxon)
+@make_xp_test_case(stats.mannwhitneyu)
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('use_continuity', [False, True])
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
