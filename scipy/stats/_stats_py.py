@@ -7610,6 +7610,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     # `_axis_nan_policy` decorator ensures `axis=-1`
     xp = array_namespace(x)
     mode = method
+    if mode not in ['auto', 'exact', 'approx', 'asymp']:
+        raise ValueError(
+            f"Invalid value for method: {mode!r}. "
+            f"Must be one of 'auto', 'exact', 'approx', 'asymp'."
+        )
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)

@@ -387,7 +387,7 @@ def test_mannwhitneyu(use_continuity, alternative, method, axis, xp):
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.ks_1samp),
                                  make_xp_pytest_param(stats.kstest)])
-@pytest.mark.parametrize('method', ['exact', 'approx', 'asymptotic'])  # auto == exact
+@pytest.mark.parametrize('method', ['exact', 'approx', 'asymp'])  # auto == exact
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_ks_1samp(fun, method, alternative, axis, xp):
