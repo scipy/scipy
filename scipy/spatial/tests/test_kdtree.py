@@ -473,7 +473,7 @@ def test_query_ball_point_multithreaded_explicit(kdtree_type):
     serial_results = tree.query_ball_point(all_search_points, radius)
     # the results from concurrent searching the tree should match the results
     # from searching the same set of points in one thread
-    assert_array_equal(np.concatenate(results).sort(), serial_results.sort())
+    assert_array_equal(np.sort(np.concatenate(results)), np.sort(serial_results))
 
 
 class two_trees_consistency:
