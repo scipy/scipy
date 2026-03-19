@@ -82,7 +82,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     Parameters
     ----------
     signal : ndarray
-        A rank-1 array at least of length ``order + 1`` representing equidistant data
+        A one-dimensional array of at length ``order + 1`` representing equidistant data
         points of a signal, e.g. a time series with constant time lag.
     
     lamb : str or float, optional
@@ -94,14 +94,14 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
         The order of the difference penalty, must be at least 1.
 
     weights : ndarray, option
-        A rank-1 array of case weights with the same lenght as `signal`.
+        A one-dimensional array of case weights with the same length as `signal`.
         ``None`` is equivalent to an array of all ones, ``np.ones_like(signal)``.
 
     Returns
     -------
      res : _RichResult
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
-        following attributes.
+        following attributes:
 
         x : ndarray
             The WH smoothed signal.
@@ -121,7 +121,8 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
         \operatorname{argmin}_{x_i} \sum_i^n w_i (y_i - x_i)^2
         + \lambda \sum_i^{n-p} (\Delta^p x_i)^2 \,,
 
-    with forward difference :math:`\Delta x_i = x_{i+1} - x_i` and
+    where :math:`\Delta^p` is the forward difference operator of order :math:`p`,
+    :math:`\Delta x_i = x_{i+1} - x_i` and
     :math:`\Delta^2 x_i = \Delta(\Delta x_i) = x_{i+2} - 2x_{i+1} + x_i`.
     For every input value :math:`y_i`, it generates a smoothed value :math:`x_i`.
 
@@ -179,7 +180,9 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
     """
     if order < 1 or int(order) != order:
-        raise ValueError("Parameter order must be an integer larger equal 1.")
+        raise ValueError(
+            "Parameter order must be an integer larger than or equal to 1."
+        )
 
     signal = np.asarray(signal)
     if signal.ndim != 1:
@@ -233,7 +236,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
 
 def _polynomial_fit(y, lamb, order=2, weights=None, calc_logdet=False):
-    """Polynomial fit equivalent to WH for lamb -> intifity."""
+    """Polynomial fit equivalent to WH for lamb -> infinity."""
     n = len(y)
     x_range = np.arange(n)
     poly = np.polynomial.Polynomial.fit(x=x_range, y=y, deg=order - 1, w=weights)
@@ -446,13 +449,9 @@ def _reml(lamb, y, order, weights=None):
     Parameters
     ----------
     lamb : penalty
-
     y : signal
-
     x : smoothed signal
-
     order : oder of the difference penalty.
-
     weights : case weights
 
     Returns
