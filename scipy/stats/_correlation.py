@@ -698,7 +698,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     z = float(special.ndtri(alpha / 2.))
     # This implements (2.6) from Sen (1968)
     # we don't actually need ranks, so an enhancement could be to have
-    # `rankdata` return only the second output. In the meantime, use the
+    # `rankdata` return only the third output. In the meantime, use the
     # least expensive `method`.
     _, _, nxreps = _rankdata(x, method='min', return_ties=True)
     _, _, nyreps = _rankdata(y, method='min', return_ties=True)
