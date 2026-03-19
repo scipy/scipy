@@ -8,7 +8,7 @@ import pytest
 class TestNNLS:
     def setup_method(self):
         self.rng = np.random.default_rng(1685225766635251)
-
+    
     def test_nnls(self):
         a = np.arange(25.0).reshape(-1, 5)
         x = np.arange(5.0)
@@ -16,6 +16,13 @@ class TestNNLS:
         x, res = nnls(a, y)
         assert res < 1e-7
         assert np.linalg.norm((a @ x) - y) < 1e-7
+        
+    def test_nnls_empty(self):
+        a = np.zeros((2, 0))
+        y = np.ones((2,))
+        x, res = nnls(a, y)
+        assert res == np.linalg.norm(y)
+        assert x.size == 0
 
     def test_nnls_tall(self):
         a = self.rng.uniform(low=-10, high=10, size=[50, 10])
