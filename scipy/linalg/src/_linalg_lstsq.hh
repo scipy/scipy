@@ -115,7 +115,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         init_status(slice_status, idx, St::GENERAL);
 
         // copy the slices to `data` in F order. If `overwrite_x` is enabled the data
-        // if already in place, so no need to.
+        // is already in place, so no need to.
         if (!overwrite_a) {
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
             copy_slice_F(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
@@ -277,7 +277,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         init_status(slice_status, idx, St::GENERAL);
 
         // copy data to buffers in F order. NB. `overwrite_x` is only enabled for 2D
-        // F-contigous data, so the input would already be in place.
+        // F-contiguous data, so the input would already be in place.
         if (!overwrite_a) {
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
             copy_slice_F(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
@@ -433,7 +433,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     for (npy_intp idx = 0; idx < outer_size; idx++){
         init_status(slice_status, idx, St::GENERAL);
 
-        // copy the slices to buffers in F order. `overwrite_x` only enabled for 2D F-contigous
+        // copy the slices to buffers in F order. `overwrite_x` only enabled for 2D F-contiguous
         // inputs, so the data is already in place then.
         if (!overwrite_a) {
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);

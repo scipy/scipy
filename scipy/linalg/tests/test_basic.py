@@ -2337,8 +2337,12 @@ class TestLstsq:
         self, overwrite_kw, overwrite_b_kw, driver, dtype, shape, nrhs, order
     ):
         rng = np.random.default_rng(seed=12345)
-        a = rng.normal(size=shape).astype(dtype=dtype, order=order)
-        b = rng.normal(size=(shape[0], nrhs)).astype(dtype=dtype, order=order)
+        if dtype is not int:
+            a = np.asarray(rng.normal(size=shape), order=order)
+            b = np.asarray(rng.normal(size=(shape[0], nrhs)), order=order)
+        else: # avoid issues with singularity
+            a = np.asarray(rng.integers(1000, size=shape), order=order)
+            b = np.asarray(rng.integers(1000, size=(shape[0], nrhs)), order=order)
 
         a_ref = np.copy(a)
         b_ref = np.copy(b)
@@ -2347,9 +2351,20 @@ class TestLstsq:
             a, b, **overwrite_kw, **overwrite_b_kw, lapack_driver=driver
         )
 
+        # validate solution
+        if shape[0] >= shape[1]:
+            x_ref = solve(a_ref.T @ a_ref, a_ref.T @ b_ref)
+        else:
+            x_ref = a_ref.T @ solve(a_ref @ a_ref.T, b_ref)
+
+        assert_allclose(x_ref, x, atol=1e-12)
+
         overwrite_a = overwrite_kw.get("overwrite_a", False)
         overwrite_a = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
 
+        # Classical conditions: F_contiguity + should not be overwritten internally.
+        # Complemented by the fact that LAPACK requires a `b` of at least `max(m, n)`,
+        # hence if this is not the case `b` can not be used directly.
         overwrite_b = overwrite_b_kw.get("overwrite_b", False)
         overwrite_b = (
             overwrite_b and

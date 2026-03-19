@@ -1419,7 +1419,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     else:
         cond = float(cond)
 
-    x, rank, S, err_lst = _batched_linalg._lstsq(a1, b1, cond, driver, overwrite_a, overwrite_b)
+    x, rank, S, err_lst = _batched_linalg._lstsq(
+        a1, b1, cond, driver, overwrite_a, overwrite_b
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
