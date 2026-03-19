@@ -1529,7 +1529,7 @@ class TestMakeDistribution:
     @pytest.mark.parametrize('p', [None, ()])
     def test_no_parameters(self, p):
         # To create a distribution without parameters, it is natural to try an empty
-        # dictionary (since a dictionary with with entries is valid if there is only
+        # dictionary (since a dictionary with entries is valid if there is only
         # one parameterization), but that didn't work; only an empty tuple (no
         # parameterizations) worked originally. Check that this is resolved.
         class MyStandardNormal:
