@@ -363,6 +363,14 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     -----
     The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
     condition number than `A`, see [2]_.
+    
+    `A`, `b`, `x0`, and `M` may have additional "batch" dimensions prepended to
+    the core shape. In this case, the array is treated as a
+    batch of slices of the core shape; see :ref:`linalg_batch`.
+    The core shape of `A` and `M`  is ``(N, N)``,
+    while the core shape of `b` and `x0` is ``(N,)``.
+    'Column vector' input of shape ``(N, 1)`` is restricted to
+    the un-batched case.
 
     `A`, `b`, `x0`, and `M` may have additional "batch" dimensions prepended to
     the core shape. In this case, the array is treated as a
