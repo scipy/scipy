@@ -3620,7 +3620,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values.
@@ -3695,18 +3695,27 @@ def trim_mean(a, proportiontocut, axis=0):
         a = xp_ravel(a)
         axis = 0
 
-    nobs = a.shape[axis]
-    lowercut = int(proportiontocut * nobs)
+    nobs = _count_nonmasked(a, axis=axis, keepdims=True, xp=xp)
+    lowercut = proportiontocut * nobs
+    nobs, lowercut = ((nobs, int(lowercut)) if not is_marray(xp)
+                      else (xp.astype(nobs, xp.int64), xp.astype(lowercut, xp.int64)))
     uppercut = nobs - lowercut
-    if (lowercut > uppercut):
+    if not is_marray(xp) and (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
     atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
             else xp.sort(a, axis=axis))
 
-    sl = [slice(None)] * atmp.ndim
-    sl[axis] = slice(lowercut, uppercut)
-    trimmed = xp_promote(atmp[tuple(sl)], force_floating=True, xp=xp)
+    if is_marray(xp):
+        indices = xp.arange(a.shape[-1])  # axis_nan_policy decorator -> axis=-1
+        mask = (indices < lowercut) | (indices >= (nobs - lowercut)) | atmp.mask
+        trimmed = xp.asarray(atmp.data, mask=mask.data)
+    else:
+        sl = [slice(None)] * atmp.ndim
+        sl[axis] = slice(lowercut, uppercut)
+        trimmed = atmp[tuple(sl)]
+
+    trimmed = xp_promote(trimmed, force_floating=True, xp=xp)
     return xp.mean(trimmed, axis=axis)
 
 
@@ -5537,7 +5546,8 @@ def pointbiserialr(x, y, *, axis=0):
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2,
-                 marray=True)
+                 marray=True, extra_note=("`nan_policy='propagate'` is "
+                                          "incompatible with MArray input."))
 def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
                alternative='two-sided', axis=None, keepdims=False):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
@@ -8038,7 +8048,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         # assumed when we evaluate the ECDFs at all points in the pooled sample.
         # These counts are given by the differences between consecutive ("min" or "max")
         # ranks corresponding with the observations in the (sorted) samples.
-        ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)
+        ranks, data_all, _ = _rankdata(data_all, method='min', return_sorted=True)
         ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
         one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
                       device=xp_device(ranks))
@@ -8592,7 +8602,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
-    ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    ranked, _, t = _rankdata(alldata, method='average', return_ties=True)
     counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
               for sample in samples]
     totaln = sum(counts)
@@ -8699,7 +8709,7 @@ def friedmanchisquare(*samples, axis=0):
     # The transpose flips this so we can work with axis-slices along -1. This is a
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
-    data, t = _rankdata(data, method='average', return_ties=True)
+    data, _, t = _rankdata(data, method='average', return_ties=True)
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
@@ -10257,7 +10267,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     contains_nan = _contains_nan(x, nan_policy)
 
     x = xp_swapaxes(x, axis, -1, xp=xp)
-    ranks = _rankdata(x, method, xp=xp)
+    ranks, _, _ = _rankdata(x, method, xp=xp)
 
     # JIT won't allow use of `contains_nan` for control flow here, so we always have to
     # run this with JIT.
@@ -10286,7 +10296,10 @@ def _order_ranks(ranks, j, *, xp):
 
 
 def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
-    # Rank data `x` by desired `method`; `return_ties`/`return_sorted` data  if desired
+    # Rank data `x` by desired `method`. For methods other than 'ordinal':
+    # - `return_sorted=True` ensures that the second output is sorted `x`
+    # - `return_ties=True` ensures that the third output is tie data
+    # Otherwise, the second/third output will be None.
     xp = array_namespace(x) if xp is None else xp
     dtype = xp_result_type(x, force_floating=True, xp=xp)
 
@@ -10294,33 +10307,24 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         import jax.scipy.stats as jax_stats
         ranks = jax_stats.rankdata(x, method=method, axis=-1)
         ranks = xp.astype(ranks, dtype, copy=False)
-        out = [ranks]
         y = xp.sort(x, axis=-1) if (return_ties or return_sorted) else None
-        if return_sorted:
-            out.append(y)
+        t = None
         if return_ties:
             max_ranks = jax_stats.rankdata(y, method='max', axis=-1)
             t = xp.diff(max_ranks, axis=-1, prepend=0)
             t = xp.astype(t, dtype, copy=False)
-            out.append(t)
-        return out[0] if len(out) == 1 else tuple(out)
+        return ranks, y, t
 
     if is_marray(xp):
         data, mask = x.data, x.mask
         uxp = array_namespace(data)
         data = uxp.where(mask, uxp.nan, data)
-        # TODO: have `_rankdata` always return three items, but allow them
-        #       to be `None` if they are not needed by the calling function.
-        #       Arguments controlling the number of outputs is a pain.
-        ranks, sorted, ties = _rankdata(data, method, True, True, xp=uxp)
-        out = [xp.asarray(ranks, mask=mask)]
-        if return_sorted or return_ties:
-            mask_sorted = uxp.isnan(sorted)
-        if return_sorted:
-            out.append(xp.asarray(sorted, mask=mask_sorted))
-        if return_ties:
-            out.append(xp.asarray(ties, mask=mask_sorted))
-        return out[0] if len(out) == 1 else tuple(out)
+        ranks, sorted, ties = _rankdata(data, method, return_sorted, return_ties, uxp)
+        ranks = xp.asarray(ranks, mask=mask)
+        mask_sorted = uxp.isnan(sorted) if (return_sorted or return_ties) else None
+        sorted = xp.asarray(sorted, mask=mask_sorted) if return_sorted else None
+        ties = xp.asarray(ties, mask=mask_sorted) if return_ties else None
+        return ranks, sorted, ties
 
     shape = x.shape
 
@@ -10330,7 +10334,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties or sorted data
+        ranks = _order_ranks(ordinal_ranks, j, xp=xp)
+        return (ranks, None, None)
 
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
@@ -10356,14 +10361,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     ranks = xp.reshape(xp.repeat(ranks, counts), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
-    if not (return_sorted or return_ties):
-        return ranks
 
-    out = [ranks]
-
-    if return_sorted:
-        out.append(y)
-
+    t = None
     if return_ties:
         # Tie information is returned in a format that is useful to functions that
         # rely on this (private) function. Example:
@@ -10383,9 +10382,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=dtype)
         t = xpx.at(t)[i].set(xp.astype(counts, dtype, copy=False))
-        out.append(t)
 
-    return out
+    return ranks, y, t
 
 
 @xp_capabilities(marray=True,
@@ -10904,6 +10902,7 @@ def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
     return M0 * (1 + 0.5 * p * (ln2_avg - ln_avg * ln_avg))
 
 
+@xp_capabilities()
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
              dtype=None, warn=True, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
@@ -11051,6 +11050,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     return res[()] if res.ndim == 0 else res
 
 
+@xp_capabilities()
 def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propagate',
             dtype=None, xp=None):
     # an array-api compatible function for variance with scipy.stats interface
@@ -11073,7 +11073,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        n = _count_nonmasked(x, axis, xp=xp)
+        n = _count_nonmasked(x, axis, xp=xp, keepdims=keepdims)
         # Or two lines with ternaries : )
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]
