@@ -73,6 +73,7 @@ class TestBSplines:
         xp_assert_close(signal.spline_filter(data_array_real, 0),
                         result_array_real)
 
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9758")
     @make_xp_test_case(signal.spline_filter)
     def test_spline_filter_complex(self, xp):
         rng = np.random.RandomState(12457)

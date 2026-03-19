@@ -53,102 +53,120 @@ enum StatusMsg {
 // Internal functions
 
 static void mainlb(
-    int n, int m, double* x, double* l, double* u,
-    int* nbd, double* f, double* g, double factr, double pgtol,
+    CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
+    CBLAS_INT* nbd, double* f, double* g, double factr, double pgtol,
     double* ws, double* wy, double* sy, double* ss, double* wt, double* wn,
     double* snd, double* z, double* r, double* d, double* t, double* xp,
-    double* wa, int* index, int* iwhere, int* indx2, int* task, int* task_msg,
-    int* lsave, int* isave, double* dsave, int maxls, int* ln_task, int* ln_taskmsg
+    double* wa, CBLAS_INT* index, CBLAS_INT* iwhere, CBLAS_INT* indx2, CBLAS_INT* task, CBLAS_INT* task_msg,
+    CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave, CBLAS_INT maxls, CBLAS_INT* ln_task, CBLAS_INT* ln_taskmsg
 );
 static void active(
-    int n, double* l, double* u, int* nbd, double* x,
-    int* iwhere, int* prjctd, int* cnstnd, int* boxed
+    CBLAS_INT n, double* l, double* u, CBLAS_INT* nbd, double* x,
+    CBLAS_INT* iwhere, CBLAS_INT* prjctd, CBLAS_INT* cnstnd, CBLAS_INT* boxed
 );
 static void bmv(
-    int m, double* sy, double* wt, int col,
-    double* v, double* p, int* info
+    CBLAS_INT m, double* sy, double* wt, CBLAS_INT col,
+    double* v, double* p, CBLAS_INT* info
 );
 static void cauchy(
-    int n, double* x, double* l, double* u,
-    int* nbd, double *g, int* iorder, int* iwhere, double* t,
-    double* d, double* xcp, int m, double* wy, double* ws,
-    double* sy, double* wt, double theta, int col,
-    int head, double* p, double* c, double* wbp, double* v, int* nseg,
-    double sbgnrm, int* info
+    CBLAS_INT n, double* x, double* l, double* u,
+    CBLAS_INT* nbd, double *g, CBLAS_INT* iorder, CBLAS_INT* iwhere, double* t,
+    double* d, double* xcp, CBLAS_INT m, double* wy, double* ws,
+    double* sy, double* wt, double theta, CBLAS_INT col,
+    CBLAS_INT head, double* p, double* c, double* wbp, double* v, CBLAS_INT* nseg,
+    double sbgnrm, CBLAS_INT* info
 );
 static void cmprlb(
-    int n, int m, double* x, double* g,
+    CBLAS_INT n, CBLAS_INT m, double* x, double* g,
     double* ws, double* wy, double* sy, double* wt,
-    double* z, double* r, double* wa, int* index,
-    double theta, int col, int head, int nfree,
-    int cnstnd, int* info
+    double* z, double* r, double* wa, CBLAS_INT* index,
+    double theta, CBLAS_INT col, CBLAS_INT head, CBLAS_INT nfree,
+    CBLAS_INT cnstnd, CBLAS_INT* info
 );
 static void errclb(
-    int n, int m, double factr, double* l,
-    double* u, int* nbd, int* task, int* task_msg, int* info, int* k
+    CBLAS_INT n, CBLAS_INT m, double factr, double* l,
+    double* u, CBLAS_INT* nbd, CBLAS_INT* task, CBLAS_INT* task_msg, CBLAS_INT* info, CBLAS_INT* k
 );
 static void formk(
-    int n, int nsub, int* ind, int nenter,
-    int ileave, int* indx2, int iupdat, int updatd,
-    double* wn, double* wn1, int m, double* ws, double* wy,
-    double* sy, double theta, int col, int head,
-    int* info
+    CBLAS_INT n, CBLAS_INT nsub, CBLAS_INT* ind, CBLAS_INT nenter,
+    CBLAS_INT ileave, CBLAS_INT* indx2, CBLAS_INT iupdat, CBLAS_INT updatd,
+    double* wn, double* wn1, CBLAS_INT m, double* ws, double* wy,
+    double* sy, double theta, CBLAS_INT col, CBLAS_INT head,
+    CBLAS_INT* info
 );
 static void formt(
-    int m, double* wt, double* sy, double* ss, int col,
-    double theta, int* info
+    CBLAS_INT m, double* wt, double* sy, double* ss, CBLAS_INT col,
+    double theta, CBLAS_INT* info
 );
 static void freev(
-    int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
-    int* iwhere, int* wrk, int updatd, int cnstnd,
-    int iter
+    CBLAS_INT n, CBLAS_INT* nfree, CBLAS_INT* idx, CBLAS_INT* nenter, CBLAS_INT* ileave, CBLAS_INT* idx2,
+    CBLAS_INT* iwhere, CBLAS_INT* wrk, CBLAS_INT updatd, CBLAS_INT cnstnd,
+    CBLAS_INT iter
 );
-static void hpsolb(int n, double* t, int* iorder, int iheap);
+static void hpsolb(CBLAS_INT n, double* t, CBLAS_INT* iorder, CBLAS_INT iheap);
 static void lnsrlb(
-    int n, double* l, double* u, int* nbd, double* x,
+    CBLAS_INT n, double* l, double* u, CBLAS_INT* nbd, double* x,
     double f, double* fold, double *gd, double *gdold, double* g,
     double* d, double* r, double* t, double* z, double* stp, double* dnorm,
-    double* dtd, double* xstep, double* stpmx, int iter, int* ifun,
-    int* iback, int* nfgv, int* info, int* task, int* task_msg, int boxed,
-    int cnstnd, int* isave, double* dsave, int* temp_task, int* temp_task_msg
+    double* dtd, double* xstep, double* stpmx, CBLAS_INT iter, CBLAS_INT* ifun,
+    CBLAS_INT* iback, CBLAS_INT* nfgv, CBLAS_INT* info, CBLAS_INT* task, CBLAS_INT* task_msg, CBLAS_INT boxed,
+    CBLAS_INT cnstnd, CBLAS_INT* isave, double* dsave, CBLAS_INT* temp_task, CBLAS_INT* temp_task_msg
 );
 static void matupd(
-    int n, int m, double* ws, double *wy, double* sy, double* ss,
-    double* d, double* r, int* itail, int iupdat, int* col,
-    int* head, double* theta, double rr, double dr, double stp,
+    CBLAS_INT n, CBLAS_INT m, double* ws, double *wy, double* sy, double* ss,
+    double* d, double* r, CBLAS_INT* itail, CBLAS_INT iupdat, CBLAS_INT* col,
+    CBLAS_INT* head, double* theta, double rr, double dr, double stp,
     double dtd
 );
 static void projgr(
-    int n, double* l, double* u, int* nbd,
+    CBLAS_INT n, double* l, double* u, CBLAS_INT* nbd,
     double* x, double* g, double* sbgnrm
 );
 static void subsm(
-    int n, int m, int nsub, int* ind, double* l,
-    double* u, int* nbd, double* x, double* d, double* xp,
+    CBLAS_INT n, CBLAS_INT m, CBLAS_INT nsub, CBLAS_INT* ind, double* l,
+    double* u, CBLAS_INT* nbd, double* x, double* d, double* xp,
     double* ws, double* wy, double theta, double* xx,
-    double* gg, int col, int head, int* iword, double* wv,
-    double* wn, int* info
+    double* gg, CBLAS_INT col, CBLAS_INT head, CBLAS_INT* iword, double* wv,
+    double* wn, CBLAS_INT* info
 );
 
 // Line search functions
 static void dcsrch(
     double f, double g, double* stp, double ftol,
     double gtol, double xtol, double stpmin,
-    double stpmax, int* task, int* task_msg, int* isave, double* dsave
+    double stpmax, CBLAS_INT* task, CBLAS_INT* task_msg, CBLAS_INT* isave, double* dsave
 );
-static void dcstep (
+static void dcstep(
     double* stx, double* fx, double* dx, double* sty, double* fy, double* dy,
-    double* stp, double fp, double dp, int* brackt,
+    double* stp, double fp, double dp, CBLAS_INT* brackt,
     double stpmin, double stpmax
+);
+
+// Helper functions
+static inline void save_local_vars(
+    CBLAS_INT prjctd, CBLAS_INT cnstnd, CBLAS_INT boxed, CBLAS_INT updatd,
+    CBLAS_INT nintol,
+    CBLAS_INT iback, CBLAS_INT nskip, CBLAS_INT head, CBLAS_INT col, CBLAS_INT itail,
+    CBLAS_INT iter, CBLAS_INT iupdat, CBLAS_INT nseg, CBLAS_INT nfgv, CBLAS_INT info,
+    CBLAS_INT ifun, CBLAS_INT iword, CBLAS_INT nfree, CBLAS_INT nact, CBLAS_INT ileave,
+    CBLAS_INT nenter,
+    double theta, double fold, double tol, double dnorm, double gd,
+    double stpmx, double sbgnrm, double stp, double gdold, double dtd,
+    CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave
+);
+static inline void save_vars(
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
+    double finit, double fx, double fy, double stx, double sty, double stmin,
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave
 );
 
 static double epsmach = 2.220446049250313e-016;  /* np.finfo(np.float64).eps  */
 
 
 void
-setulb(int n, int m, double* x, double* l, double* u, int* nbd, double* f,
-       double* g, double factr, double pgtol, double* wa, int* iwa, int* task,
-       int* lsave, int* isave, double* dsave, int maxls, int* ln_task)
+setulb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u, CBLAS_INT* nbd, double* f,
+       double* g, double factr, double pgtol, double* wa, CBLAS_INT* iwa, CBLAS_INT* task,
+       CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave, CBLAS_INT maxls, CBLAS_INT* ln_task)
 {
     //     ************
     //
@@ -329,7 +347,7 @@ setulb(int n, int m, double* x, double* l, double* u, int* nbd, double* f,
     //
     //     ************
     //
-    int lws, lr, lz, lt, ld, lxp, lwa, lwy, lsy, lss, lwt, lwn, lsnd;
+    CBLAS_INT lws, lr, lz, lt, ld, lxp, lwa, lwy, lsy, lss, lwt, lwn, lsnd;
 
     if (task[0] == START)
     {
@@ -375,14 +393,69 @@ setulb(int n, int m, double* x, double* l, double* u, int* nbd, double* f,
 }
 
 
+static inline void save_local_vars(
+    CBLAS_INT prjctd, CBLAS_INT cnstnd, CBLAS_INT boxed, CBLAS_INT updatd,
+    CBLAS_INT nintol,
+    CBLAS_INT iback, CBLAS_INT nskip, CBLAS_INT head, CBLAS_INT col, CBLAS_INT itail,
+    CBLAS_INT iter, CBLAS_INT iupdat, CBLAS_INT nseg, CBLAS_INT nfgv, CBLAS_INT info,
+    CBLAS_INT ifun, CBLAS_INT iword, CBLAS_INT nfree, CBLAS_INT nact, CBLAS_INT ileave,
+    CBLAS_INT nenter,
+    double theta, double fold, double tol, double dnorm, double gd,
+    double stpmx, double sbgnrm, double stp, double gdold, double dtd,
+    CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave
+)
+{
+    // Save local variables
+    lsave[0]  = prjctd;
+    lsave[1]  = cnstnd;
+    lsave[2]  = boxed;
+    lsave[3]  = updatd;
+
+    isave[0]  = nintol;
+    isave[3]  = iback;
+    isave[4]  = nskip;
+    isave[5]  = head;
+    isave[6]  = col;
+    isave[7]  = itail;
+    isave[8]  = iter;
+    isave[9]  = iupdat;
+    isave[11] = nseg;
+    isave[12] = nfgv;
+    isave[13] = info;
+    isave[14] = ifun;
+    isave[15] = iword;
+    isave[16] = nfree;
+    isave[17] = nact;
+    isave[18] = ileave;
+    isave[19] = nenter;
+
+    dsave[0]  = theta;
+    dsave[1]  = fold;
+    dsave[2]  = tol;
+    dsave[3]  = dnorm;
+    // dsave[4]  = epsmch;
+    // dsave[5]  = cpu1;
+    // dsave[6]  = cachyt;
+    // dsave[7]  = sbtime;
+    // dsave[8]  = lnscht;
+    // dsave[9]  = time1;
+    dsave[10] = gd;
+    dsave[11] = stpmx;
+    dsave[12] = sbgnrm;
+    dsave[13] = stp;
+    dsave[14] = gdold;
+    dsave[15] = dtd;
+}
+
+
 void
-mainlb(int n, int m, double* x, double* l, double* u,
-       int* nbd, double* f, double* g, double factr, double pgtol,
+mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
+       CBLAS_INT* nbd, double* f, double* g, double factr, double pgtol,
        double* ws, double* wy, double* sy, double* ss, double* wt, double* wn,
        double* snd, double* z, double* r, double* d, double* t, double* xp,
-       double* wa, int* index, int* iwhere, int* indx2, int* task,
-       int* task_msg, int* lsave, int* isave, double* dsave, int maxls,
-       int* temp_task, int* temp_taskmsg)
+       double* wa, CBLAS_INT* index, CBLAS_INT* iwhere, CBLAS_INT* indx2, CBLAS_INT* task,
+       CBLAS_INT* task_msg, CBLAS_INT* lsave, CBLAS_INT* isave, double* dsave, CBLAS_INT maxls,
+       CBLAS_INT* temp_task, CBLAS_INT* temp_taskmsg)
 {
     //     ************
     //
@@ -562,12 +635,12 @@ mainlb(int n, int m, double* x, double* l, double* u,
     //
     //
     //     ************
-    int prjctd, cnstnd, boxed, updatd, wrk;
-    int i, k, nintol, iback, nskip, head, col, iter, itail, iupdat;
-    int nseg, nfgv, info, ifun, iword, nfree, nact, ileave, nenter;
+    CBLAS_INT prjctd, cnstnd, boxed, updatd, wrk;
+    CBLAS_INT i, k, nintol, iback, nskip, head, col, iter, itail, iupdat;
+    CBLAS_INT nseg, nfgv, info, ifun, iword, nfree, nact, ileave, nenter;
     double theta, fold, dr, rr, tol, xstep, sbgnrm, stpmx, ddum, dnorm, dtd;
     double gd, gdold, stp;
-    int one_int = 1;
+    CBLAS_INT one_int = 1;
 
     stpmx = 0.0;
 
@@ -668,11 +741,18 @@ mainlb(int n, int m, double* x, double* l, double* u,
         {
             if (*task_msg == STOP_CPU)
             {
-                dcopy_(&n, t, &one_int, x, &one_int);
-                dcopy_(&n, r, &one_int, g, &one_int);
+                BLAS_FUNC(dcopy)(&n, t, &one_int, x, &one_int);
+                BLAS_FUNC(dcopy)(&n, r, &one_int, g, &one_int);
                 *f = fold;
             }
-            goto LINE999;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         }
     }
 
@@ -681,7 +761,14 @@ mainlb(int n, int m, double* x, double* l, double* u,
     *task_msg = FG_START;
 
     // Return to the driver to calculate f and g, then reenter at 111
-    goto LINE1000;
+    save_local_vars(
+        prjctd, cnstnd, boxed, updatd, nintol,
+        iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+        ifun, iword, nfree, nact, ileave, nenter,
+        theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+        lsave, isave, dsave
+    );
+    return;
 
 LINE111:
     nfgv = 1;
@@ -693,7 +780,14 @@ LINE111:
     {
         *task = CONVERGENCE;
         *task_msg = CONV_GRAD;
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
     // ----------------- the beginning of the loop --------------------------
@@ -702,7 +796,7 @@ LINE222:
 
     if ((!cnstnd) && (col > 0))
     {
-        dcopy_(&n, x, &one_int, z, &one_int);
+        BLAS_FUNC(dcopy)(&n, x, &one_int, z, &one_int);
         wrk = updatd;
         nseg = 0;
         goto LINE333;
@@ -772,13 +866,14 @@ LINE333:
     // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
     cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
            cnstnd, &info);
-    if (info != 0) { goto LINE444; }
 
-    // Call the direct method.
-    subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
-          head, &iword, wa, wn, &info);
-
-LINE444:
+    if (info == 0)
+    {
+        // Call the direct method.
+        subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
+              head, &iword, wa, wn, &info);
+    }
+    
     if (info != 0)
     {
         // singular triangular system detected;
@@ -813,8 +908,8 @@ LINE666:
 
     if ((info != 0) || (iback >= maxls))
     {
-        dcopy_(&n, t, &one_int, x, &one_int);
-        dcopy_(&n, r, &one_int, g, &one_int);
+        BLAS_FUNC(dcopy)(&n, t, &one_int, x, &one_int);
+        BLAS_FUNC(dcopy)(&n, r, &one_int, g, &one_int);
         *f = fold;
 
         if (col == 0)
@@ -831,7 +926,14 @@ LINE666:
             *task = ABNORMAL;
             *task_msg = NO_MSG;
             iter++;
-            goto LINE999;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         } else {
             // Refresh the lbfgs memory and restart the iteration.
             if (info == 0) { nfgv--; }
@@ -847,7 +949,14 @@ LINE666:
         }
     } else if ((*task == FG) && (*task_msg == FG_LNSRCH)) {
         // Return to the driver for calculating f and g; renter at 666.
-        goto LINE1000;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     } else {
         // Calculate and print out the quantities related to the new X.
         iter++;
@@ -855,7 +964,14 @@ LINE666:
         // Compute the infinity norm of the projected (-)gradient.
         projgr(n, l, u, nbd, x, g, &sbgnrm);
 
-        goto LINE1000;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
 LINE777:
@@ -866,7 +982,14 @@ LINE777:
         // Terminate the algorithm.
         *task = CONVERGENCE;
         *task_msg = CONV_GRAD;
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
     ddum = fmax(fmax(fabs(fold), fabs(*f)), 1.0);
     if ((fold - *f) <= tol*ddum)
@@ -876,7 +999,14 @@ LINE777:
         *task_msg = CONV_F;
         if (iback >= 10) { info = -5; }
         // i.e. to issue a warning if iback > 10 in the line search.
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
     // Compute d=newx-oldx, r=newg-oldg, rr=y'y and dr=y's.
@@ -885,7 +1015,7 @@ LINE777:
         r[i] = g[i] - r[i];
     }
     // 42
-    rr = pow(dnrm2_(&n, r, &one_int), 2.0);
+    rr = pow(BLAS_FUNC(dnrm2)(&n, r, &one_int), 2.0);
 
     if (stp == 1.0)
     {
@@ -893,7 +1023,7 @@ LINE777:
         ddum = -gdold;
     } else {
         dr = (gd - gdold)*stp;
-        dscal_(&n, &stp, d, &one_int);
+        BLAS_FUNC(dscal)(&n, &stp, d, &one_int);
         ddum = -gdold*stp;
     }
 
@@ -944,58 +1074,20 @@ LINE888:
     // -------------------- the end of the loop -----------------------------
     goto LINE222;
 
-LINE999:
-    ;
-
-LINE1000:
-    // Save local variables
-    lsave[0]  = prjctd;
-    lsave[1]  = cnstnd;
-    lsave[2]  = boxed;
-    lsave[3]  = updatd;
-
-    isave[0]  = nintol;
-    isave[3]  = iback;
-    isave[4]  = nskip;
-    isave[5]  = head;
-    isave[6]  = col;
-    isave[7]  = itail;
-    isave[8]  = iter;
-    isave[9]  = iupdat;
-    isave[11] = nseg;
-    isave[12] = nfgv;
-    isave[13] = info;
-    isave[14] = ifun;
-    isave[15] = iword;
-    isave[16] = nfree;
-    isave[17] = nact;
-    isave[18] = ileave;
-    isave[19] = nenter;
-
-    dsave[0]  = theta;
-    dsave[1]  = fold;
-    dsave[2]  = tol;
-    dsave[3]  = dnorm;
-    // dsave[4]  = epsmch;
-    // dsave[5]  = cpu1;
-    // dsave[6]  = cachyt;
-    // dsave[7]  = sbtime;
-    // dsave[8]  = lnscht;
-    // dsave[9]  = time1;
-    dsave[10] = gd;
-    dsave[11] = stpmx;
-    dsave[12] = sbgnrm;
-    dsave[13] = stp;
-    dsave[14] = gdold;
-    dsave[15] = dtd;
-
+    save_local_vars(
+        prjctd, cnstnd, boxed, updatd, nintol,
+        iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+        ifun, iword, nfree, nact, ileave, nenter,
+        theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+        lsave, isave, dsave
+    );
     return;
 }
 
 
 void
-active(int n, double* l, double* u, int* nbd, double* x,
-       int* iwhere, int* prjctd, int* cnstnd, int* boxed)
+active(CBLAS_INT n, double* l, double* u, CBLAS_INT* nbd, double* x,
+       CBLAS_INT* iwhere, CBLAS_INT* prjctd, CBLAS_INT* cnstnd, CBLAS_INT* boxed)
 {
     //     ************
     //
@@ -1023,7 +1115,7 @@ active(int n, double* l, double* u, int* nbd, double* x,
     //
     //
     //     ************
-    int i;
+    CBLAS_INT i;
 
     // Initialize nbdd, prjctd, cnstnd, and boxed.
     *prjctd = 0;
@@ -1081,7 +1173,7 @@ active(int n, double* l, double* u, int* nbd, double* x,
 
 
 void
-bmv(int m, double* sy, double* wt, int col, double* v, double* p, int* info)
+bmv(CBLAS_INT m, double* sy, double* wt, CBLAS_INT col, double* v, double* p, CBLAS_INT* info)
 {
     //     ************
     //
@@ -1140,7 +1232,7 @@ bmv(int m, double* sy, double* wt, int col, double* v, double* p, int* info)
     //
     //
     //     ************
-    int i, k, i2, one_int = 1;
+    CBLAS_INT i, k, i2, one_int = 1;
     double ssum;
     char *uplo = "U", *trans = "T", *diag = "N";
 
@@ -1166,7 +1258,7 @@ bmv(int m, double* sy, double* wt, int col, double* v, double* p, int* info)
 
     // Solve the triangular system
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
-    dtrtrs_(uplo, trans, diag, &col, &one_int, wt, &m, &p[col], &col, info);
+    BLAS_FUNC(dtrtrs)(uplo, trans, diag, &col, &one_int, wt, &m, &p[col], &col, info);
     if (*info != 0) { return; }
 
     // Solve D^(1/2)p1=v1.
@@ -1182,7 +1274,7 @@ bmv(int m, double* sy, double* wt, int col, double* v, double* p, int* info)
     // solve J^Tp2=p2.
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
     trans = "N";
-    dtrtrs_(uplo, trans, diag, &col, &one_int, wt, &m, &p[col], &col, info);
+    BLAS_FUNC(dtrtrs)(uplo, trans, diag, &col, &one_int, wt, &m, &p[col], &col, info);
     if (*info != 0) { return; }
 
     // compute p1=-D^(-1/2)(p1-D^(-1/2)L'p2)
@@ -1211,12 +1303,12 @@ bmv(int m, double* sy, double* wt, int col, double* v, double* p, int* info)
 
 
 void
-cauchy(int n, double* x, double* l, double* u,
-       int* nbd, double *g, int* iorder, int* iwhere, double* t,
-       double* d, double* xcp, int m, double* wy, double* ws,
-       double* sy, double* wt, double theta, int col,
-       int head, double* p, double* c, double* wbp, double* v,
-       int* nseg, double sbgnrm, int* info)
+cauchy(CBLAS_INT n, double* x, double* l, double* u,
+       CBLAS_INT* nbd, double *g, CBLAS_INT* iorder, CBLAS_INT* iwhere, double* t,
+       double* d, double* xcp, CBLAS_INT m, double* wy, double* ws,
+       double* sy, double* wt, double theta, CBLAS_INT col,
+       CBLAS_INT head, double* p, double* c, double* wbp, double* v,
+       CBLAS_INT* nseg, double sbgnrm, CBLAS_INT* info)
 {
     //     ************
     //
@@ -1393,8 +1485,8 @@ cauchy(int n, double* x, double* l, double* u,
     //
     //
     //     ************
-    int bnded, xlower, xupper;
-    int i, j, col2, nfree, nbreak, pointr, ibp, nleft, ibkmin, iter, one_int = 1;
+    CBLAS_INT bnded, xlower, xupper;
+    CBLAS_INT i, j, col2, nfree, nbreak, pointr, ibp, nleft, ibkmin, iter, one_int = 1;
     double f1, f2, dt, dtm, tsum, dibp, zibp, dibp2, bkmin, tu, tl, wmc, wmp;
     double wmw, tj, tj0, neggi, f2_org;
 
@@ -1404,7 +1496,7 @@ cauchy(int n, double* x, double* l, double* u,
 
     if (sbgnrm <= 0.0)
     {
-        dcopy_(&n, x, &one_int, xcp, &one_int);
+        BLAS_FUNC(dcopy)(&n, x, &one_int, xcp, &one_int);
         return;
     }
     bnded = 1;
@@ -1498,10 +1590,10 @@ cauchy(int n, double* x, double* l, double* u,
     if (theta != 1.0)
     {
         // Complete the initialization of p for theta not= one.
-        dscal_(&col, &theta, &p[col], &one_int);
+        BLAS_FUNC(dscal)(&col, &theta, &p[col], &one_int);
     }
     // Initialize GCP xcp = x.
-    dcopy_(&n, x, &one_int, xcp, &one_int);
+    BLAS_FUNC(dcopy)(&n, x, &one_int, xcp, &one_int);
     if ((nbreak == -1) && (nfree == n))
     {
         // is a zero vector, return with the initial xcp as GCP.
@@ -1520,20 +1612,19 @@ cauchy(int n, double* x, double* l, double* u,
     if (col > 0) {
         bmv(m, sy, wt, col, p, v, info);
         if (*info != 0) { return; }
-        f2 = f2 - ddot_(&col2, v, &one_int, p, &one_int);
+        f2 = f2 - BLAS_FUNC(ddot)(&col2, v, &one_int, p, &one_int);
     }
     dtm = -f1 / f2;
     tsum = 0.0;
     *nseg = 1;
 
-    // If there are no breakpoints, locate the GCP and return.
-    if (nbreak == -1) { goto LINE888; }
     nleft = nbreak;
     iter = 0;
     tj = 0.0;
 
     // ------------------- the beginning of the loop -------------------------
-    while (1)
+    // If there are no breakpoints, we skip the loop, locate the GCP and return.
+    while (nbreak > -1)
     {
         // Find the next smallest breakpoint;
         // compute dt = t(nleft) - t(nleft + 1).
@@ -1565,7 +1656,19 @@ cauchy(int n, double* x, double* l, double* u,
         dt = tj - tj0;
 
         // If a minimizer is within this interval, locate the GCP and return.
-        if (dtm < dt) { goto LINE888; }
+        if (dtm < dt) {
+            if (dtm <= 0.0) { dtm = 0.0; }
+            tsum = tsum + dtm;
+            // Move free variables (i.e. the ones w/o breakpoints) and the variables
+            // whose breakpoints haven't been reached.
+            BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
+
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+
+            return;
+        }
 
         // Otherwise fix one variable and reset the corresponding component
         // of d to zero.
@@ -1586,7 +1689,10 @@ cauchy(int n, double* x, double* l, double* u,
         if (nleft == -1 && nbreak == n) {
             // All n variables are fixed, return with xcp as GCP.
             dtm = dt;
-            goto LINE999;
+            // Update c = c + dtm*p = W'(x^c - x)
+            // which will be used in computing r = Z'(B(x^c - x) + g).
+            if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
+            return;
         }
 
         // Update the derivative information.
@@ -1600,7 +1706,7 @@ cauchy(int n, double* x, double* l, double* u,
         f2 = f2 - theta*dibp2;
         if (col > 0) {
             // Update c = c + dt*p.
-            daxpy_(&col2, &dt, p, &one_int, c, &one_int);
+            BLAS_FUNC(daxpy)(&col2, &dt, p, &one_int, c, &one_int);
             // Choose wbp, the row of W corresponding to the breakpoint encountered.
             pointr = head;
             for (j = 0; j < col; j++) {
@@ -1613,12 +1719,12 @@ cauchy(int n, double* x, double* l, double* u,
             // Compute (wbp)Mc, (wbp)Mp, and (wbp)M(wbp)'.
             bmv(m, sy, wt, col, wbp, v, info);
             if (*info != 0) { return; }
-            wmc = ddot_(&col2, c, &one_int, v, &one_int);
-            wmp = ddot_(&col2, p, &one_int, v, &one_int);
-            wmw = ddot_(&col2, wbp, &one_int, v, &one_int);
+            wmc = BLAS_FUNC(ddot)(&col2, c, &one_int, v, &one_int);
+            wmp = BLAS_FUNC(ddot)(&col2, p, &one_int, v, &one_int);
+            wmw = BLAS_FUNC(ddot)(&col2, wbp, &one_int, v, &one_int);
             // Update p = p - dibp*wbp.
             dibp = -dibp;
-            daxpy_(&col2, &dibp, wbp, &one_int, p, &one_int);
+            BLAS_FUNC(daxpy)(&col2, &dibp, wbp, &one_int, p, &one_int);
             dibp = -dibp;
 
             // Complete updating f1 and f2 while col > 0.
@@ -1642,30 +1748,26 @@ cauchy(int n, double* x, double* l, double* u,
 
     // ------------------- the end of the loop -------------------------------
 
-LINE888:
     if (dtm <= 0.0) { dtm = 0.0; }
     tsum = tsum + dtm;
-
     // Move free variables (i.e. the ones w/o breakpoints) and the variables
     // whose breakpoints haven't been reached.
-    daxpy_(&n, &tsum, d, &one_int, xcp, &one_int);
+    BLAS_FUNC(daxpy)(&n, &tsum, d, &one_int, xcp, &one_int);
 
-LINE999:
     // Update c = c + dtm*p = W'(x^c - x)
     // which will be used in computing r = Z'(B(x^c - x) + g).
-
-    if (col > 0) { daxpy_(&col2, &dtm, p, &one_int, c, &one_int); }
+    if (col > 0) { BLAS_FUNC(daxpy)(&col2, &dtm, p, &one_int, c, &one_int); }
 
     return;
 }
 
 
 void
-cmprlb(int n, int m, double* x, double* g,
+cmprlb(CBLAS_INT n, CBLAS_INT m, double* x, double* g,
        double* ws, double* wy, double* sy, double* wt,
-       double* z, double* r, double* wa, int* index,
-       double theta, int col, int head, int nfree,
-       int cnstnd, int* info)
+       double* z, double* r, double* wa, CBLAS_INT* index,
+       double theta, CBLAS_INT col, CBLAS_INT head, CBLAS_INT nfree,
+       CBLAS_INT cnstnd, CBLAS_INT* info)
 {
     //     ************
     //
@@ -1690,7 +1792,7 @@ cmprlb(int n, int m, double* x, double* g,
     //
     //
     //     ************
-    int i, j, k, pointr;
+    CBLAS_INT i, j, k, pointr;
     double a1, a2;
 
     if ((!cnstnd) && (col > 0))
@@ -1728,9 +1830,9 @@ cmprlb(int n, int m, double* x, double* g,
 
 
 void
-errclb(int n, int m, double factr, double* l,
-       double* u, int* nbd, int* task, int* task_msg, int* info,
-       int* k)
+errclb(CBLAS_INT n, CBLAS_INT m, double factr, double* l,
+       double* u, CBLAS_INT* nbd, CBLAS_INT* task, CBLAS_INT* task_msg, CBLAS_INT* info,
+       CBLAS_INT* k)
 {
     //     ************
     //
@@ -1750,7 +1852,7 @@ errclb(int n, int m, double factr, double* l,
     //
     //
     //     ************
-    int i;
+    CBLAS_INT i;
 
     // Check the input arguments for errors.
     if (n <= 0) { *task = ERROR; *task_msg = ERROR_N; }
@@ -1785,10 +1887,10 @@ errclb(int n, int m, double factr, double* l,
 
 
 void
-formk(int n, int nsub, int* ind, int nenter, int ileave,
-      int* indx2, int iupdat, int updatd, double* wn,
-      double* wn1, int m, double* ws, double* wy,
-      double* sy, double theta, int col, int head, int* info)
+formk(CBLAS_INT n, CBLAS_INT nsub, CBLAS_INT* ind, CBLAS_INT nenter, CBLAS_INT ileave,
+      CBLAS_INT* indx2, CBLAS_INT iupdat, CBLAS_INT updatd, double* wn,
+      double* wn1, CBLAS_INT m, double* ws, double* wy,
+      double* sy, double theta, CBLAS_INT col, CBLAS_INT head, CBLAS_INT* info)
 {
     //     ************
     //
@@ -1912,8 +2014,8 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
     //
     //
     //     ************
-    int m2, ipntr, jpntr, iy, is, jy, js, is1, js1, k1, i, k, col2, pbegin, pend;
-    int dbegin, dend, upcl, one_int = 1, temp_int;
+    CBLAS_INT m2, ipntr, jpntr, iy, is, jy, js, is1, js1, k1, i, k, col2, pbegin, pend;
+    CBLAS_INT dbegin, dend, upcl, one_int = 1, temp_int;
     double temp1, temp2, temp3, temp4;
     char *uplo = "U", *trans = "T", *diag = "N";
 
@@ -1932,10 +2034,10 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
             {
                 js = m + jy;
                 temp_int = m - (jy + 1);
-                dcopy_(&temp_int, &wn1[(jy + 1) + 2*m*(jy + 1)], &one_int, &wn1[jy + 2*m*jy], &one_int);
-                dcopy_(&temp_int, &wn1[(js + 1) + 2*m*(js + 1)], &one_int, &wn1[js + 2*m*js], &one_int);
+                BLAS_FUNC(dcopy)(&temp_int, &wn1[(jy + 1) + 2*m*(jy + 1)], &one_int, &wn1[jy + 2*m*jy], &one_int);
+                BLAS_FUNC(dcopy)(&temp_int, &wn1[(js + 1) + 2*m*(js + 1)], &one_int, &wn1[js + 2*m*js], &one_int);
                 temp_int = m - 1;
-                dcopy_(&temp_int, &wn1[(m + 1) + 2*m*(jy + 1)], &one_int, &wn1[m + 2*m*jy], &one_int);
+                BLAS_FUNC(dcopy)(&temp_int, &wn1[(m + 1) + 2*m*(jy + 1)], &one_int, &wn1[m + 2*m*jy], &one_int);
             }
             // 10
         }
@@ -2119,14 +2221,14 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
     //                      with L' stored in the upper triangle of wn.
 
     // dpotrf(uplo, n, a, lda, info)
-    dpotrf_(uplo, &col, wn, &m2, info);
+    BLAS_FUNC(dpotrf)(uplo, &col, wn, &m2, info);
     if (*info != 0) { *info = -1; return; }
 
     // Then form L^-1(-L_a'+R_z') in the (1,2) block.
     col2 = 2*col;
 
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
-    dtrtrs_(uplo, trans, diag, &col, &col, wn, &m2, &wn[m2*col], &m2, info);
+    BLAS_FUNC(dtrtrs)(uplo, trans, diag, &col, &col, wn, &m2, &wn[m2*col], &m2, info);
 
     // Form S'AA'S*theta + (L^-1(-L_a'+R_z'))'L^-1(-L_a'+R_z') in the upper
     //  triangle of (2,2) block of wn.
@@ -2134,14 +2236,14 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
     {
         for (js = is; js < col2; js++)
         {
-            wn[is + m2*js] = wn[is + m2*js] + ddot_(&col, &wn[m2*is], &one_int, &wn[m2*js], &one_int);
+            wn[is + m2*js] = wn[is + m2*js] + BLAS_FUNC(ddot)(&col, &wn[m2*is], &one_int, &wn[m2*js], &one_int);
         }
         // 74
     }
     // 72
 
     // dpotrf(uplo, n, a, lda, info)
-    dpotrf_(uplo, &col, &wn[col + m2*col], &m2, info);
+    BLAS_FUNC(dpotrf)(uplo, &col, &wn[col + m2*col], &m2, info);
     if (*info != 0) { *info = -2; }
 
     return;
@@ -2149,8 +2251,8 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
 
 
 void
-formt(int m, double* wt, double* sy, double* ss, int col,
-      double theta, int* info)
+formt(CBLAS_INT m, double* wt, double* sy, double* ss, CBLAS_INT col,
+      double theta, CBLAS_INT* info)
 {
     //     ************
     //
@@ -2177,7 +2279,7 @@ formt(int m, double* wt, double* sy, double* ss, int col,
     //
     //
     //     ************
-    int i, j, k, k1;
+    CBLAS_INT i, j, k, k1;
     double ddum;
     char *uplo = "U";
 
@@ -2208,7 +2310,7 @@ formt(int m, double* wt, double* sy, double* ss, int col,
 
     // Cholesky factorize T to J*J' with J' stored in the upper triangle of wt.
     // dpotrf(uplo, n, a, lda, info)
-    dpotrf_(uplo, &col, wt, &m, info);
+    BLAS_FUNC(dpotrf)(uplo, &col, wt, &m, info);
     if (*info != 0) { *info = -3; }
 
     return;
@@ -2216,9 +2318,9 @@ formt(int m, double* wt, double* sy, double* ss, int col,
 
 
 void
-freev(int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
-      int* iwhere, int* wrk, int updatd, int cnstnd,
-      int iter)
+freev(CBLAS_INT n, CBLAS_INT* nfree, CBLAS_INT* idx, CBLAS_INT* nenter, CBLAS_INT* ileave, CBLAS_INT* idx2,
+      CBLAS_INT* iwhere, CBLAS_INT* wrk, CBLAS_INT updatd, CBLAS_INT cnstnd,
+      CBLAS_INT iter)
 {
     //     ************
     //
@@ -2257,7 +2359,7 @@ freev(int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
     //
     //
     //     ************
-    int i, iact, k;
+    CBLAS_INT i, iact, k;
 
     // in formk
     // nenter will be used as exclusive upper bound
@@ -2314,7 +2416,7 @@ freev(int n, int* nfree, int* idx, int* nenter, int* ileave, int* idx2,
 
 
 void
-hpsolb(int n, double* t, int* iorder, int iheap)
+hpsolb(CBLAS_INT n, double* t, CBLAS_INT* iorder, CBLAS_INT iheap)
 {
     //     ************
     //
@@ -2357,7 +2459,7 @@ hpsolb(int n, double* t, int* iorder, int iheap)
     //     in collaboration with R.H. Byrd, P. Lu-Chen and J. Nocedal.
     //
     //     ************
-    int i, j, k, indxin, indxout;
+    CBLAS_INT i, j, k, indxin, indxout;
     double ddum, out;
 
     if (iheap == 0)
@@ -2437,13 +2539,13 @@ hpsolb(int n, double* t, int* iorder, int iheap)
 
 
 void
-lnsrlb(int n, double* l, double* u, int* nbd, double* x,
+lnsrlb(CBLAS_INT n, double* l, double* u, CBLAS_INT* nbd, double* x,
        double f, double* fold, double *gd, double *gdold, double* g,
        double* d, double* r, double* t, double* z, double* stp, double* dnorm,
-       double* dtd, double* xstep, double* stpmx, int iter, int* ifun,
-       int* iback, int* nfgv, int* info, int* task, int* task_msg,
-       int boxed, int cnstnd, int* isave, double* dsave, int* temp_task,
-       int* temp_taskmsg)
+       double* dtd, double* xstep, double* stpmx, CBLAS_INT iter, CBLAS_INT* ifun,
+       CBLAS_INT* iback, CBLAS_INT* nfgv, CBLAS_INT* info, CBLAS_INT* task, CBLAS_INT* task_msg,
+       CBLAS_INT boxed, CBLAS_INT cnstnd, CBLAS_INT* isave, double* dsave, CBLAS_INT* temp_task,
+       CBLAS_INT* temp_taskmsg)
 {
     //     **********
     //
@@ -2470,70 +2572,72 @@ lnsrlb(int n, double* l, double* u, int* nbd, double* x,
     //
     //
     //     **********
-    int i, one_int = 1;
+    CBLAS_INT i, one_int = 1;
     double a1, a2, ftol = 1e-3, gtol = 0.9, xtol = 0.1;
-    if (*task_msg == FG_LNSRCH) { goto LINE556; }
 
-    *dnorm = dnrm2_(&n, d, &one_int);
-    *dtd = pow(*dnorm, 2.0);
+    if (*task_msg != FG_LNSRCH) {
 
-    // Determine the maximum step length.
-    *stpmx = 1.0e+10;
-    if (cnstnd)
-    {
-        if (iter == 0)
+        *dnorm = BLAS_FUNC(dnrm2)(&n, d, &one_int);
+        *dtd = pow(*dnorm, 2.0);
+
+        // Determine the maximum step length.
+        *stpmx = 1.0e+10;
+        if (cnstnd)
         {
-            *stpmx = 1.0;
-        } else {
-            for (i = 0; i < n; i++)
+            if (iter == 0)
             {
-                a1 = d[i];
-                if (nbd[i] != 0)
+                *stpmx = 1.0;
+            } else {
+                for (i = 0; i < n; i++)
                 {
-                    if ((a1 < 0.0) && (nbd[i] <= 2))
+                    a1 = d[i];
+                    if (nbd[i] != 0)
                     {
-                        a2 = l[i] - x[i];
-                        if (a2 >= 0.0)
+                        if ((a1 < 0.0) && (nbd[i] <= 2))
                         {
-                            *stpmx = 0.0;
-                        } else if (a1*(*stpmx) < a2) {
-                            *stpmx = a2 / a1;
-                        }
-                    } else if ((a1 > 0.0) && (nbd[i] >= 2)) {
-                        a2 = u[i] - x[i];
-                        if (a2 <= 0.0)
-                        {
-                            *stpmx = 0.0;
-                        } else if (a1*(*stpmx) > a2) {
-                            *stpmx = a2 / a1;
+                            a2 = l[i] - x[i];
+                            if (a2 >= 0.0)
+                            {
+                                *stpmx = 0.0;
+                            } else if (a1*(*stpmx) < a2) {
+                                *stpmx = a2 / a1;
+                            }
+                        } else if ((a1 > 0.0) && (nbd[i] >= 2)) {
+                            a2 = u[i] - x[i];
+                            if (a2 <= 0.0)
+                            {
+                                *stpmx = 0.0;
+                            } else if (a1*(*stpmx) > a2) {
+                                *stpmx = a2 / a1;
+                            }
                         }
                     }
                 }
+                // 43
             }
-            // 43
         }
+
+        if ((iter == 0) && (!(boxed)))
+        {
+            *stp = fmin(1.0 / (*dnorm), *stpmx);
+        } else {
+            *stp = 1.0;
+        }
+
+        for (i = 0; i < n; i++)
+        {
+            t[i] = x[i];
+            r[i] = g[i];
+        }
+
+        *fold = f;  // Later used in mainlb, see control flow after returning from this function.
+        *ifun = 0;
+        *iback = 0;
+        *temp_task = START;
+        *temp_taskmsg = NO_MSG;
     }
 
-    if ((iter == 0) && (!(boxed)))
-    {
-        *stp = fmin(1.0 / (*dnorm), *stpmx);
-    } else {
-        *stp = 1.0;
-    }
-
-    for (i = 0; i < n; i++)
-    {
-        t[i] = x[i];
-        r[i] = g[i];
-    }
-
-    *fold = f;  // Later used in mainlb, see control flow after returning from this function.
-    *ifun = 0;
-    *iback = 0;
-    *temp_task = START;
-    *temp_taskmsg = NO_MSG;
-LINE556:
-    *gd = ddot_(&n, g, &one_int, d, &one_int);
+    *gd = BLAS_FUNC(ddot)(&n, g, &one_int, d, &one_int);
     if (*ifun == 0)
     {
         *gdold = *gd;
@@ -2558,7 +2662,7 @@ LINE556:
         if (*stp == 1.0)
         {
             // for (i = 0; i < n; i++) { x[i] = z[i]; }
-            dcopy_(&n, z, &one_int, x, &one_int);
+            BLAS_FUNC(dcopy)(&n, z, &one_int, x, &one_int);
         } else {
             for (i = 0; i < n; i++)
             {
@@ -2579,9 +2683,9 @@ LINE556:
 
 
 void
-matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
-       double* d, double* r, int* itail, int iupdat, int* col,
-       int* head, double* theta, double rr, double dr, double stp,
+matupd(CBLAS_INT n, CBLAS_INT m, double* ws, double *wy, double* sy, double* ss,
+       double* d, double* r, CBLAS_INT* itail, CBLAS_INT iupdat, CBLAS_INT* col,
+       CBLAS_INT* head, double* theta, double rr, double dr, double stp,
        double dtd)
 {
     //     ************
@@ -2607,7 +2711,7 @@ matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
     //
     //
     //     ************
-    int j, pointr, temp_int, one_int = 1;
+    CBLAS_INT j, pointr, temp_int, one_int = 1;
 
     // Set pointers for matrices WS and WY.
     if (iupdat <= m)
@@ -2620,8 +2724,8 @@ matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
     }
 
     // Update matrices WS and WY.
-    dcopy_(&n, d, &one_int, &ws[(*itail) * n], &one_int);
-    dcopy_(&n, r, &one_int, &wy[(*itail) * n], &one_int);
+    BLAS_FUNC(dcopy)(&n, d, &one_int, &ws[(*itail) * n], &one_int);
+    BLAS_FUNC(dcopy)(&n, r, &one_int, &wy[(*itail) * n], &one_int);
 
     // Set theta=yy/ys.
     *theta = rr / dr;
@@ -2632,9 +2736,9 @@ matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
     {
         for (j = 1; j < *col; j++)
         {
-            dcopy_(&j, &ss[1 + m*j], &one_int, &ss[m*(j-1)], &one_int);
+            BLAS_FUNC(dcopy)(&j, &ss[1 + m*j], &one_int, &ss[m*(j-1)], &one_int);
             temp_int = *col - j;
-            dcopy_(&temp_int, &sy[j + m*j], &one_int, &sy[(j-1) + m*(j-1)], &one_int);
+            BLAS_FUNC(dcopy)(&temp_int, &sy[j + m*j], &one_int, &sy[(j-1) + m*(j-1)], &one_int);
         }
         // 50
     }
@@ -2643,8 +2747,8 @@ matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
     pointr = *head;
     for (j = 0; j < *col - 1; j++)
     {
-        sy[*col - 1 + m*j] = ddot_(&n, d, &one_int, &wy[pointr*n], &one_int);
-        ss[j + m*(*col - 1)] = ddot_(&n, &ws[pointr*n], &one_int, &d[0], &one_int);
+        sy[*col - 1 + m*j] = BLAS_FUNC(ddot)(&n, d, &one_int, &wy[pointr*n], &one_int);
+        ss[j + m*(*col - 1)] = BLAS_FUNC(ddot)(&n, &ws[pointr*n], &one_int, &d[0], &one_int);
         pointr = (pointr + 1) % m;
     }
     // 51
@@ -2657,7 +2761,7 @@ matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
 
 
 void
-projgr(int n, double* l, double* u, int* nbd,
+projgr(CBLAS_INT n, double* l, double* u, CBLAS_INT* nbd,
        double* x, double* g, double* sbgnrm)
 {
     //     ************
@@ -2679,7 +2783,7 @@ projgr(int n, double* l, double* u, int* nbd,
     //
     //
     //     ************
-    int i;
+    CBLAS_INT i;
     double gi;
 
     *sbgnrm = 0.0;
@@ -2709,11 +2813,11 @@ projgr(int n, double* l, double* u, int* nbd,
 }
 
 
-void subsm(int n, int m, int nsub, int* ind,
-           double* l, double* u, int* nbd, double* x,
+void subsm(CBLAS_INT n, CBLAS_INT m, CBLAS_INT nsub, CBLAS_INT* ind,
+           double* l, double* u, CBLAS_INT* nbd, double* x,
            double* d, double* xp, double* ws, double* wy,
-           double theta, double* xx, double* gg, int col,
-           int head, int* iword, double* wv, double* wn, int* info)
+           double theta, double* xx, double* gg, CBLAS_INT col,
+           CBLAS_INT head, CBLAS_INT* iword, double* wv, double* wn, CBLAS_INT* info)
 {
     //     **********************************************************************
     //
@@ -2891,7 +2995,7 @@ void subsm(int n, int m, int nsub, int* ind,
     //
     //
     //     ************
-    int pointr, m2, col2, ibd, jy, js, i, j, k, one_int = 1;
+    CBLAS_INT pointr, m2, col2, ibd, jy, js, i, j, k, one_int = 1;
     double alpha, xk, dk, temp, temp1, temp2, dd_p;
     char *uplo = "U", *trans = "T", *diag = "N";
 
@@ -2921,13 +3025,13 @@ void subsm(int n, int m, int nsub, int* ind,
     col2 = 2*col;
 
     // dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
-    dtrtrs_(uplo, trans, diag, &col2, &one_int, wn, &m2, wv, &m2, info);
+    BLAS_FUNC(dtrtrs)(uplo, trans, diag, &col2, &one_int, wn, &m2, wv, &m2, info);
     if (*info != 0) { return; }
 
     for (i = 0; i < col; i++) { wv[i] = -wv[i]; }
 
     trans = "N";
-    dtrtrs_(uplo, trans, diag, &col2, &one_int, wn, &m2, wv, &m2, info);
+    BLAS_FUNC(dtrtrs)(uplo, trans, diag, &col2, &one_int, wn, &m2, wv, &m2, info);
     if (*info != 0) { return; }
 
     // Compute d = (1/theta)d + (1/theta**2)Z'W wv.
@@ -2948,14 +3052,14 @@ void subsm(int n, int m, int nsub, int* ind,
 
     temp = 1.0 / theta;
     // n, da, dx, incx
-    dscal_(&nsub, &temp, d, &one_int);
+    BLAS_FUNC(dscal)(&nsub, &temp, d, &one_int);
 
     // -----------------------------------------------------
     // Let us try the projection, d is the Newton direction.
 
     *iword = 0;
     // for (i = 0; i < n; i++) { xp[i] = x[i]; }
-    dcopy_(&n, x, &one_int, xp, &one_int);
+    BLAS_FUNC(dcopy)(&n, x, &one_int, xp, &one_int);
 
     for (i = 0; i < nsub; i++)
     {
@@ -2998,7 +3102,7 @@ void subsm(int n, int m, int nsub, int* ind,
     if (dd_p > 0.0)
     {
         // for (i = 0; i < n; i++) { x[i] = xp[i]; }
-        dcopy_(&n, xp, &one_int, x, &one_int);
+        BLAS_FUNC(dcopy)(&n, xp, &one_int, x, &one_int);
     } else {
         return;
     }
@@ -3067,8 +3171,8 @@ void subsm(int n, int m, int nsub, int* ind,
 
 void
 dcsrch(double f, double g, double* stp, double ftol, double gtol,
-       double xtol, double stpmin, double stpmax, int* task,
-       int* task_msg, int* isave, double* dsave)
+       double xtol, double stpmin, double stpmax, CBLAS_INT* task,
+       CBLAS_INT* task_msg, CBLAS_INT* isave, double* dsave)
 {
     //     **********
     //
@@ -3202,7 +3306,7 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     //     Brett M. Averick, Richard G. Carter, and Jorge J. More'.
     //
     //     **********
-    int brackt, stage;
+    CBLAS_INT brackt, stage;
     double finit, ftest, fm, fx, fxm, fy, fym, ginit, gtest, gm, gx, gxm, gy;
     double gym, stx, sty, stmin, stmax, width, width1;
     double xtrapl = 1.1;
@@ -3250,8 +3354,9 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
 
         *task = FG;
         *task_msg = NO_MSG;
-        goto SAVEVARS;
-
+        save_vars(brackt, stage, ginit, gtest, gx, gy, finit, fx, fy, stx, sty, stmin,
+                  stmax, width, width1, isave, dsave);
+        return;
     } else {
         // Restore local variables.
         if (isave[0] == 1) {
@@ -3308,7 +3413,9 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     // Test for termination.
     if ((*task == WARNING) || (*task == CONVERGENCE))
     {
-        goto SAVEVARS;
+        save_vars(brackt, stage, ginit, gtest, gx, gy, finit, fx, fy, stx, sty, stmin,
+                  stmax, width, width1, isave, dsave);
+        return;
     }
 
     // A modified function is used to predict the step during the first stage if
@@ -3375,8 +3482,15 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     // Obtain another function and derivative.
     *task = FG;
     *task_msg = NO_MSG;
+    save_vars(brackt, stage, ginit, gtest, gx, gy, finit, fx, fy, stx, sty, stmin,
+              stmax, width, width1, isave, dsave);
+    return;
+}
 
-SAVEVARS:
+static inline void save_vars(
+    CBLAS_INT brackt, CBLAS_INT stage, double ginit, double gtest, double gx, double gy,
+    double finit, double fx, double fy, double stx, double sty, double stmin,
+    double stmax, double width, double width1, CBLAS_INT* isave, double* dsave) {
     if (brackt)
     {
         isave[0] = 1;
@@ -3405,7 +3519,7 @@ SAVEVARS:
 
 void
 dcstep (double* stx, double* fx, double* dx, double* sty, double* fy, double* dy,
-        double* stp, double fp, double dp, int* brackt,
+        double* stp, double fp, double dp, CBLAS_INT* brackt,
         double stpmin, double stpmax)
 {
     //     **********

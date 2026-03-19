@@ -2307,7 +2307,7 @@ add_newdoc("eval_jacobi",
     .. math::
 
         P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2)
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - x)/2)
 
     where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree
@@ -2320,18 +2320,18 @@ add_newdoc("eval_jacobi",
         determined via the relation to the Gauss hypergeometric
         function.
     alpha : array_like
-        Parameter
+        Parameter.
     beta : array_like
-        Parameter
+        Parameter.
     x : array_like
-        Points at which to evaluate the polynomial
+        Points at which to evaluate the polynomial.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     P : scalar or ndarray
-        Values of the Jacobi polynomial
+        Values of the Jacobi polynomial.
 
     See Also
     --------
@@ -2403,17 +2403,18 @@ add_newdoc("eval_gegenbauer",
     r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
-    Evaluate Gegenbauer polynomial at a point.
+    Evaluate Gegenbauer (ultraspherical) polynomial at a point.
 
     The Gegenbauer polynomials can be defined via the Gauss
     hypergeometric function :math:`{}_2F_1` as
 
     .. math::
 
-        C_n^{(\alpha)} = \frac{(2\alpha)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
+        C_n^{(\alpha)}(x) = \frac{(2\alpha)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - x)/2).
 
-    When :math:`n` is an integer the result is a polynomial of degree
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
     :math:`n`. See 22.5.46 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
@@ -2423,16 +2424,16 @@ add_newdoc("eval_gegenbauer",
         determined via the relation to the Gauss hypergeometric
         function.
     alpha : array_like
-        Parameter
+        Parameter.
     x : array_like
-        Points at which to evaluate the Gegenbauer polynomial
+        Points at which to evaluate the Gegenbauer polynomial.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     C : scalar or ndarray
-        Values of the Gegenbauer polynomial
+        Values of the Gegenbauer polynomial.
 
     See Also
     --------
@@ -5205,30 +5206,11 @@ add_newdoc("nbdtrik",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
-
-    Formula 26.5.26 of [2]_ or [3]_,
-
-    .. math::
-        \sum_{j=k + 1}^\infty {{n + j - 1}
-        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
-
-    is used to reduce calculation of the cumulative distribution function to
-    that of a regularized incomplete beta :math:`I`.
-
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `k`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [3] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.E24
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

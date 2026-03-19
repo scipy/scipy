@@ -42,6 +42,11 @@ DEF DTYPE_EPS = 1E-15
 class NegativeCycleError(Exception):
     """
     Negative cycle in graph.
+
+    Parameters
+    ----------
+    message : str
+        Error message.
     """
     def __init__(self, message=''):
         Exception.__init__(self, message)
@@ -1548,10 +1553,12 @@ def yen(
                                      csgraphT.indptr, johnson_dist_array)
             csrT_data = csgraphT.data
 
+    indices, indptr = safely_cast_index_arrays(csgraph, ITYPE, "csgraph")
+    indicesT, indptrT = safely_cast_index_arrays(csgraphT, ITYPE, "csgraph")
     _yen(
         source, sink,
-        csr_data, csgraph.indices, csgraph.indptr,
-        csrT_data, csgraphT.indices, csgraphT.indptr,
+        csr_data, indices, indptr,
+        csrT_data, indicesT, indptrT,
         dist_array, predecessor_matrix,
     )
     if has_negative_weights:

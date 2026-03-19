@@ -305,7 +305,7 @@ class TestDifferentialEntropy:
 
     @methods
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
-    def test_dtypes_gh21192(self, xp, method, dtype):
+    def test_dtypes_gh21192(self, method, dtype, xp):
         # gh-21192 noted a change in the output of method='ebrahimi'
         # with integer input. Check that the output is consistent regardless
         # of input dtype.

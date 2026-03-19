@@ -15,7 +15,6 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.io import netcdf_file
-from scipy._lib._gcutils import IS_PYPY, break_cycles
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -105,8 +104,8 @@ def test_read_write_files():
 
         # To read the NetCDF file we just created::
         with netcdf_file('simple.nc') as f:
-            # Using mmap is the default (but not on pypy)
-            assert_equal(f.use_mmap, not IS_PYPY)
+            # Using mmap is the default
+            assert f.use_mmap
             check_simple(f)
             assert_equal(f._attributes['appendRan'], 1)
 
@@ -135,12 +134,6 @@ def test_read_write_files():
 
         # Read file from fileobj, with mmap
         with warnings.catch_warnings():
-            if IS_PYPY:
-                warnings.filterwarnings(
-                    "ignore",
-                    "Cannot close a netcdf_file opened with mmap=True.*",
-                    RuntimeWarning
-                )
             with open('simple.nc', 'rb') as fobj:
                 with netcdf_file(fobj, mmap=True) as f:
                     assert_(f.use_mmap)
@@ -161,10 +154,6 @@ def test_read_write_files():
             assert_equal(f.variables['app_var'][:], 42)
 
     finally:
-        if IS_PYPY:
-            # windows cannot remove a dead file held by a mmap
-            # that has not been collected in PyPy
-            break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
 
@@ -361,13 +350,12 @@ def test_ticket_1720():
 def test_mmaps_segfault():
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
 
-    if not IS_PYPY:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            with netcdf_file(filename, mmap=True) as f:
-                x = f.variables['lat'][:]
-                # should not raise warnings
-                del x
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with netcdf_file(filename, mmap=True) as f:
+            x = f.variables['lat'][:]
+            # should not raise warnings
+            del x
 
     def doit():
         with netcdf_file(filename, mmap=True) as f:

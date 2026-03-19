@@ -580,7 +580,7 @@ def from_rotvec(rotvec, bint degrees=False):
     # If a single vector is given, convert it to a 2D 1 x 3 matrix but
     # set self._single to True so that we can return appropriate objects
     # in the `as_...` methods
-    cdef double[:, :] crotvec
+    cdef const double[:, :] crotvec
     if rotvec.shape == (3,):
         crotvec = rotvec[None, :]
         is_single = True
@@ -1075,7 +1075,7 @@ def reduce(double[:, :] quat, left=None, right=None):
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double[:, :]:
+def apply(double[:, :] quat, const double[:, :] vectors, bint inverse=False) -> double[:, :]:
     cdef Py_ssize_t n_vectors = len(vectors)
     cdef Py_ssize_t n_rotations = len(quat)
 

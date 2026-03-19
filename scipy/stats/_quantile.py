@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_promote,
     xp_device,
-    _length_nonmasked,
+    _count_nonmasked,
     is_torch,
     is_lazy_array,
 )
@@ -101,32 +101,29 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     n_zero_weight = (n_zero_weight if n_zero_weight is None
                      else xp.moveaxis(n_zero_weight, axis, -1))
 
-    n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
+    n = _count_nonmasked(y, -1, xp=xp, keepdims=True)
     n = n if n_zero_weight is None else n - n_zero_weight
 
-    # Ideally this code will always be run for lazy arrays, but JAX JIT is having
-    # some trouble. For now, it's useful to have the rest of `quantile` working with
-    # JIX, so we can come back to this later.
-    if not is_lazy_array(y) and contains_nans:
+    if is_lazy_array(y) or contains_nans:
         nans = xp.isnan(y)
 
         # Note that if length along `axis` were 0 to begin with,
         # it is now length 1 and filled with NaNs.
         if nan_policy == 'propagate':
-            nan_out = xp.any(nans, axis=-1)
+            nan_out = xp.any(nans, axis=-1, keepdims=True)
         else:  # 'omit'
             n_int = n - xp.count_nonzero(nans, axis=-1, keepdims=True)
             n = xp.astype(n_int, dtype)
             # NaNs are produced only if slice is empty after removing NaNs
-            nan_out = xp.any(n == 0, axis=-1)
+            nan_out = n == 0
             n = xpx.at(n, nan_out).set(y.shape[-1])  # avoids pytorch/pytorch#146211
 
-        if xp.any(nan_out):
-            y = xp.asarray(y, copy=True)  # ensure writable
-            y = xpx.at(y, nan_out).set(xp.nan)
-        elif xp.any(nans) and method == 'harrell-davis':
+        if (is_lazy_array(nans) or xp.any(nans)) and (method == 'harrell-davis'):
             y = xp.asarray(y, copy=True)  # ensure writable
             y = xpx.at(y, nans).set(0)  # any non-nan will prevent NaN from propagating
+        if is_lazy_array(nan_out) or xp.any(nan_out):
+            y = xp.asarray(y, copy=True)  # ensure writable
+            y = xpx.at(y, xp.broadcast_to(nan_out, y.shape)).set(xp.nan)
 
     n = xp.asarray(n, dtype=dtype, device=xp_device(y))
 

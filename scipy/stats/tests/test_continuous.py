@@ -19,7 +19,7 @@ from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support, Mixture)
+    _generate_domain_support, Mixture, _logexpxmexpy)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats._new_distributions import DiscreteDistribution
 from scipy.stats import Normal, Logistic, Uniform, Binomial
@@ -288,7 +288,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -302,7 +302,7 @@ class TestDistributions:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_icomplement_safe(self, method_name):
-        X = stats.Normal()
+        X = stats.Normal(mu=1, sigma=2)
         X.tol = 1e-12
         p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -650,14 +650,7 @@ def check_nans_and_edges(dist, fname, arg, res):
     if isinstance(dist, DiscreteDistribution):
         exclude.update({'pdf', 'logpdf'})
 
-    if (
-            fname not in exclude
-            and not (isinstance(dist, Binomial)
-                     and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1)))):
-        # This can fail in degenerate case where Binomial distribution is a point
-        # distribution. Further on, we could factor out an is_degenerate function
-        # for the tests, or think about storing info about degeneracy in the
-        # instances.
+    if fname not in exclude:
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
@@ -765,13 +758,7 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        if not (
-                isinstance(dist, Binomial)
-                and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1))
-        ):
-            # This test will fail for degenerate case where binomial distribution
-            # is a point distribution.
-            check(i, 'standardized', 'general', ref, success=i <= 2)
+        check(i, 'standardized', 'general', ref, success=i <= 2)
         check(i, 'standardized', 'normalize', ref)
 
     dist.reset_cache()
@@ -1034,6 +1021,12 @@ class TestAttributes:
         cached_mean = dist.mean(method='cache')
         assert_equal(cached_mean, mean)
 
+        # cache is not cleared when used in a TransformedDistribution
+        dist2 = stats.exp(dist)
+        assert_equal(dist.mean(method='cache'), cached_mean)
+        dist2.reset_cache()
+        assert_equal(dist.mean(method='cache'), cached_mean)
+
         # cache is overridden by latest evaluation
         quadrature_mean = dist.mean(method='quadrature')
         cached_mean = dist.mean(method='cache')
@@ -1145,8 +1138,7 @@ class TestMakeDistribution:
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
-                'vonmises_line', # continuous
-                'betanbinom', 'logser', 'skellam', 'zipf'}  # discrete
+                'vonmises_line'}  # continuous
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
@@ -1167,7 +1159,8 @@ class TestMakeDistribution:
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance
                          'johnsonsb', 'ksone', 'kstwo',  # tolerance
                          'nchypergeom_wallenius'}  # tolerance
-        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang',  # tolerance
+                        'dlaplace'}  # slight tolerance issue, but only for array shape
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
@@ -1177,6 +1170,7 @@ class TestMakeDistribution:
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
         rng = np.random.default_rng(7548723590230982)
         CustomDistribution = stats.make_distribution(dist)
+        params = {key: np.asarray([val, val]) for key, val in params.items()}
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
@@ -1216,10 +1210,11 @@ class TestMakeDistribution:
             # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
             # new infrastructure. Adjust reference values accordingly.
             a, _ = Y.support()
+            a, p = np.broadcast_arrays(a, p)
             ref_ppf = Y.ppf(p)
-            ref_ppf[p == 0] = a
+            ref_ppf[p == 0] = a[p == 0]
             ref_isf = Y.isf(p)
-            ref_isf[p == 1] = a
+            ref_isf[p == 1] = a[p == 1]
 
             assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
             assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
@@ -1237,7 +1232,7 @@ class TestMakeDistribution:
                 # of the support, and the new infrastructure is slow there (for now).
                 seed = 845298245687345
                 assert_allclose(X.sample(shape=10, rng=seed),
-                                Y.rvs(size=10,
+                                Y.rvs(size=p.shape,
                                       random_state=np.random.default_rng(seed)),
                                 rtol=rtol)
 
@@ -1566,6 +1561,36 @@ class TestMakeDistribution:
         assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
         assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
+
+    @pytest.mark.slow  # just in case
+    @settings(max_examples=20)  # no need for more
+    @given(data=strategies.data())
+    def test_draw_distribution(self, data):
+        # `draw_distribution_from_family` is a private function right now, but we will
+        # want that functionality to be public someday. It was broken for custom
+        # distributions because the `typical` parameter of the support was ignored.
+        # Check that this is resolved.
+        rng = np.random.default_rng(8465652168548465121)
+        u_typical = tuple(np.sort(rng.standard_normal(2)))
+        s_typical = tuple(np.sort(rng.random(2)*2))
+        x_typical = tuple(np.sort(rng.standard_normal(2)))
+
+        class MyNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': u_typical},
+                          's': {'endpoints': (0, np.inf), 'typical': s_typical}}
+            support = {'endpoints': (-np.inf, np.inf), 'typical': x_typical}
+
+            def pdf(self, x, a, b):
+                return 1 / (x * (np.log(b) - np.log(a)))
+
+        family = stats.make_distribution(MyNormal())
+        proportions = (1.0, 0., 0., 0.)
+        tmp = draw_distribution_from_family(family, data, rng, proportions, min_side=1)
+        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+        assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
+        assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
+        assert x_typical[0] < np.min(x) and np.max(x) < x_typical[1]
 
 
 class TestTransforms:
@@ -2322,3 +2347,23 @@ def test_zipfian_distribution_wrapper():
     zdist = Zipfian(a=0.75, n=15)
     # This should not generate any warnings.
     assert_equal(zdist.cdf(15), 1.0)
+
+
+class Test_logexpxmexpy:
+    # Regression tests for some cases that the simplest version of `_logexpmexpy`
+    # did not originally handle correctly.
+
+    def test_x_equals_y(self):
+        # Test x - x == 0 in log-space
+        x = np.asarray(2.)
+        assert_equal(_logexpxmexpy(x, x), -np.inf)
+
+    def test_y_neg_inf(self):
+        # Test x - 0 == x in log-space
+        x, y = np.asarray(2.), np.asarray(-inf)
+        assert_equal(_logexpxmexpy(x, y), x)
+
+    def test_nan(self):
+        # operations involving NaNs should not produce warnings
+        x = np.asarray(np.nan)
+        assert_equal(_logexpxmexpy(x, x), x)

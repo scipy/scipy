@@ -179,7 +179,6 @@ class TestQuantile:
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
-    @skip_xp_backends("jax.numpy", reason='currently incompatible with JIT')
     @pytest.mark.filterwarnings("ignore:torch.searchsorted:UserWarning")
     @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
                       exceptions=['cupy', 'jax.numpy'])
@@ -313,7 +312,6 @@ class TestQuantile:
         ref = np.quantile(x, p, method=method, weights=weights)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
-    @skip_xp_backends("jax.numpy", reason='currently incompatible with JIT')
     @pytest.mark.parametrize('method',
         ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation', 'hazen',
          'interpolated_inverted_cdf', 'linear','median_unbiased', 'normal_unbiased',
@@ -364,6 +362,24 @@ class TestQuantile:
         res = stats.quantile(x, p, weights=weights, method=method)
         ref = stats.quantile(x, p, method=method)
         xp_assert_close(res, ref)
+
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
+                      exceptions=['cupy', 'jax.numpy'])
+    def test_all_nan_harrell_davis_gh24707(self, xp):
+        # While working on gh-24707, there was a case in which if *all* elements of one
+        # slice were NaN, only some elements of another slice were NaN, and
+        # `nan_policy='omit'`, then the NaNs would not be ignored in the other slice.
+        # The same test case could fail with `nan_policy='propagate'` for a different
+        # reason, if the fix were not made carefully. Check that both these cases are
+        # resolved.
+        kwargs = dict(method='harrell-davis', axis=-1)
+        x = xp.asarray([[xp.nan, xp.nan, xp.nan], [xp.nan, 2, 3]])
+
+        res = stats.quantile(x, 0.5, **kwargs, nan_policy='omit')
+        xp_assert_close(res, xp.asarray([xp.nan, 2.5]))
+
+        res = stats.quantile(x, 0.5, **kwargs, nan_policy='propagate')
+        xp_assert_close(res, xp.asarray([xp.nan, xp.nan]))
 
 
 @_apply_over_batch(('a', 1), ('v', 1))
