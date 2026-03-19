@@ -1,6 +1,7 @@
 #pragma once
 #include <cstring>
 #include <cstdint>
+#include <type_traits>
 #include "npy_cblas.h"
 
 constexpr int LU_MAX_NDIM = 64;
@@ -13,9 +14,15 @@ constexpr int LU_MAX_NDIM = 64;
 /**
  * @brief Dispatch to the appropriate LAPACK ?getrf routine based on type.
  *
- * Uses the extern "C" declarations from _common_array_utils.hh (included
- * before this header), casting std::complex types to npy_complex types
- * which are ABI-compatible.
+ * This header does not declare its own extern "C" getrf symbols — it reuses
+ * the declarations from _common_array_utils.hh (which must be included first).
+ * Those declarations use npy_complex types, so std::complex pointers are
+ * reinterpret_cast'd here; the types are ABI-compatible.
+ *
+ * We provide our own template wrapper (rather than using call_getrf from
+ * _common_array_utils.hh) because call_getrf's overloads take npy_complex
+ * parameters, and this header works exclusively with std::complex types
+ * to keep NumPy dependencies out of the C++ logic.
  *
  * @param[in]     m     Number of rows.
  * @param[in]     n     Number of columns.
@@ -53,7 +60,7 @@ struct LU_Context {
     int64_t     num_of_slices;    ///< Product of batch dimensions (shape[0..ndim-3]).
     CBLAS_INT   m, n;             ///< Rows and columns of each 2D slice.
     CBLAS_INT   *perm;            ///< Output permutation buffer, num_of_slices * m elements.
-    CBLAS_INT   *ipiv;            ///< Pivot scratch buffer, m elements (reused across slices).
+    CBLAS_INT   *ipiv;            ///< Pivot scratch buffer, min(m,n) elements (reused across slices).
     int         ndim;             ///< Number of dimensions in the input array.
     bool        permute_l;        ///< If true, apply P to L and discard the permutation.
     bool        overwrite_a;      ///< If true, input buffer is used directly as getrf workspace.
@@ -96,17 +103,14 @@ void copy_strided_to_f(const T *src, T *dst, CBLAS_INT m, CBLAS_INT n, CBLAS_INT
  */
 inline void ipiv_to_perm(CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_INT mn)
 {
-    // Apply the swap sequence to an identity permutation
+    // Apply the swap sequence in reverse to get the inverse permutation
+    // directly, without extra scratch. Forward swaps give P, reverse gives P⁻¹.
     for (CBLAS_INT i = 0; i < m; i++) perm[i] = i;
-    for (CBLAS_INT i = 0; i < mn; i++) {
-        CBLAS_INT tmp = perm[ipiv[i] - 1];
-        perm[ipiv[i] - 1] = perm[i];
-        perm[i] = tmp;
+    for (CBLAS_INT i = mn - 1; i >= 0; i--) {
+        CBLAS_INT tmp = perm[i];
+        perm[i] = perm[ipiv[i] - 1];
+        perm[ipiv[i] - 1] = tmp;
     }
-
-    // Invert: ipiv[perm[i]] = i, then copy back
-    for (CBLAS_INT i = 0; i < m; i++) ipiv[perm[i]] = i;
-    for (CBLAS_INT i = 0; i < m; i++) perm[i] = ipiv[i];
 }
 
 
@@ -150,7 +154,7 @@ void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, CBLAS_INT m, CBLAS_INT
  *                           Overwritten by ?getrf. Reused as scratch for permute_rows.
  * @param[out]    l_out      Row-major m*min(m,n) buffer, pre-zeroed by caller.
  * @param[out]    u_out      Row-major min(m,n)*n buffer, pre-zeroed by caller.
- * @param[in,out] ipiv       Scratch buffer, at least m elements. Contents destroyed.
+ * @param[in,out] ipiv       Scratch buffer, at least min(m,n) elements. Contents destroyed.
  * @param[out]    perm       Output permutation, m elements.
  * @param[in]     m          Number of rows.
  * @param[in]     n          Number of columns.
@@ -293,13 +297,25 @@ T det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
     if (*info < 0) { return T(0); }
     if (*info > 0) { return T(0); }
 
-    T det = T(1);
+    // Accumulate in promoted precision to avoid overflow/underflow
+    // for single-precision types (float32 -> float64, complex64 -> complex128).
+    using acc_type = std::conditional_t<
+        std::is_same_v<T, float>,
+        double,
+        std::conditional_t<
+            std::is_same_v<T,std::complex<float>>,
+            std::complex<double>,
+            T
+        >
+    >;
+
+    acc_type det = acc_type(1);
     CBLAS_INT swaps = 0;
     for (CBLAS_INT k = 0; k < n; k++) {
-        det *= f_buf[k * (n + 1)];  // diagonal element (k,k) in column-major
+        det *= static_cast<acc_type>(f_buf[k * (n + 1)]);  // diagonal (k,k) in column-major
         if (ipiv[k] != k + 1) { swaps++; }
     }
-    return (swaps % 2) ? -det : det;
+    return static_cast<T>((swaps % 2) ? -det : det);
 }
 
 

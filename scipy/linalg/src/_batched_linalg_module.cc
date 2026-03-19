@@ -978,7 +978,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Allocate scratch buffers (reused across slices)
     scratch = PyMem_Malloc(m * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc(m * sizeof(CBLAS_INT));
+    ipiv = (CBLAS_INT*)PyMem_Malloc(minmn * sizeof(CBLAS_INT));
     slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
     if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
 
@@ -1048,7 +1048,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (info < 0) {
-        PyErr_SetString(PyExc_RuntimeError, get_err_mesg("lu", "getrf", info).c_str());
+        PyErr_SetString(PyExc_ValueError, get_err_mesg("lu", "getrf", info).c_str());
         goto fail;
     }
 
@@ -1066,6 +1066,9 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // the permutation is already applied to L.
     if (permute_l) {
         Py_DECREF(ap_perm);
+        // Return an empty int32 array instead of None so the return type is
+        // always (ndarray, ndarray, ndarray) — avoids Optional in type stubs.
+        // int32 since the array has zero elements; no overflow concern.
         npy_intp zero = 0;
         ap_perm = (PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0);
         if (!ap_perm) { PyErr_NoMemory(); goto fail; }
@@ -1191,7 +1194,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (info < 0) {
-        PyErr_SetString(PyExc_RuntimeError, get_err_mesg("det", "getrf", info).c_str());
+        PyErr_SetString(PyExc_ValueError, get_err_mesg("det", "getrf", info).c_str());
         goto fail;
     }
 
