@@ -20,7 +20,7 @@ compilers = ["c", "cxx", "fortran"]
 c_compiler = ["clang-cl"] 
 cxx_compiler = ["clang-cl"]
 fortran_compiler = ["flang"]
-fortran_compiler_version = ["21.*"]
+fortran_compiler_version = ["22.*"]
 
 [package.host-dependencies]
 uv = "*"
