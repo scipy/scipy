@@ -47,7 +47,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
     logdet = 0.0
 
     if a1.shape[0] == 2:
-        ptsv, = get_lapack_funcs(("ptsv",), (a1, b1))
+        ptsv = get_lapack_funcs("ptsv", (a1, b1), ilp64="preferred")
         # We assume lower=True and real arrays
         d = a1[0, :]
         e = a1[1, :-1]
@@ -56,7 +56,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
         if calc_logdet and info == 0:
             logdet = np.log(d).sum()
     else:
-        pbsv, = get_lapack_funcs(("pbsv",), (a1, b1))
+        pbsv = get_lapack_funcs("pbsv", (a1, b1), ilp64="preferred")
         # pbsv uses Cholesky LL', returns c=L in ab-storage format
         c, x, info = pbsv(a1, b1, lower=True, overwrite_ab=overwrite_ab,
                           overwrite_b=overwrite_b)
