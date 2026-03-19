@@ -1445,6 +1445,47 @@ def sos2zpk(sos):
     The number of zeros and poles returned will be ``n_sections * 2``
     even if some of these are (effectively) zero.
 
+    See Also
+    --------
+    zpk2sos : Convert zeros, poles, and gain to SOS format.
+    sosfilt : Filter data using second-order sections.
+    tf2zpk : Convert transfer function to zeros, poles, and gain.
+
+    Examples
+    --------
+    Design a 4th order low-pass Butterworth digital filter with a
+    normalized cutoff frequency of 0.15 and obtain its SOS representation:
+
+    >>> from scipy import signal
+    >>> import numpy as np
+    >>> sos = signal.butter(4, 0.15, output='sos')
+
+    Convert the SOS representation to zeros, poles, and gain:
+
+    >>> z, p, k = signal.sos2zpk(sos)
+    >>> z
+    array([-1.+0.j, -1.+0.j, -1.+0.j, -1.+0.j])
+    >>> len(z)
+    4
+
+    Note that ``n_sections * 2`` zeros and poles are always returned.
+    For a 4th order filter represented as 2 second-order sections,
+    this is ``2 * 2 = 4``:
+
+    >>> len(p)
+    4
+
+    The gain of the system:
+
+    >>> k
+    0.0017826099919254043
+
+    Verify the round trip by converting back to SOS format:
+
+    >>> sos_reconstructed = signal.zpk2sos(z, p, k)
+    >>> np.allclose(sos, sos_reconstructed)
+    True
+
     .. versionadded:: 0.16.0
     """
     xp = array_namespace(sos)
