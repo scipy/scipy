@@ -8,7 +8,7 @@ import pytest
 class TestNNLS:
     def setup_method(self):
         self.rng = np.random.default_rng(1685225766635251)
-    
+
     def test_nnls(self):
         a = np.arange(25.0).reshape(-1, 5)
         x = np.arange(5.0)
