@@ -867,8 +867,7 @@ class TestBLAS3Symm:
         """`side=1` means C <- B*A, hence shapes of A and B are to be
         compatible. Otherwise, f2py exception is raised.
         """
-        # FIXME narrow down to _fblas.error
-        with pytest.raises(Exception):
+        with pytest.raises(FBLAS_ERROR):
             f(a=self.a, b=self.b, alpha=1, side=1)
 
     @parametrize_blas("symm", "sdcz")
@@ -914,7 +913,7 @@ class TestBLAS3Syrk:
     @parametrize_blas("syrk", "sdcz")
     def test_syrk_wrong_c(self, f, dtype):
         # FIXME narrow down to _fblas.error
-        with pytest.raises(Exception):
+        with pytest.raises(FBLAS_ERROR):
             f(a=self.a, alpha=1., c=np.ones((5, 8)))
         # if C is supplied, it must have compatible dimensions
 
@@ -948,10 +947,9 @@ class TestBLAS3Syr2k:
         c = f(a=self.a, b=self.b, alpha=1., trans=1)
         assert_array_almost_equal(np.triu(c), np.triu(self.tt))
 
-    # prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress?
     @parametrize_blas("syr2k", "sdcz")
     def test_syr2k_wrong_c(self, f, dtype):
-        with pytest.raises(Exception):
+        with pytest.raises(FBLAS_ERROR):
             f(a=self.a, b=self.b, alpha=1., c=np.zeros((15, 8)))
         # if C is supplied, it must have compatible dimensions
 

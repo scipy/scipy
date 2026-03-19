@@ -172,9 +172,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         raise ValueError('A subproblem solving strategy is required for '
                          'trust-region methods')
     if not (0 <= eta < 0.25):
-        raise Exception('invalid acceptance stringency')
+        raise ValueError('invalid acceptance stringency')
     if max_trust_radius <= 0:
-        raise Exception('the max trust radius must be positive')
+        raise ValueError('the max trust radius must be positive')
     if initial_trust_radius <= 0:
         raise ValueError('the initial trust radius must be positive')
     if initial_trust_radius >= max_trust_radius:
