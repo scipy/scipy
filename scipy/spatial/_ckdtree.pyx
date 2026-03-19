@@ -559,9 +559,8 @@ cdef class cKDTree:
             cdef cKDTreeNode n
             cdef ckdtree *cself = self.cself
             cdef call_once_wrapper wrapper
-            if self._python_tree is None:
-                wrapper = call_once_wrapper(self)
-                py_safe_call_object_once(self.flag, wrapper)
+            wrapper = call_once_wrapper(self)
+            py_safe_call_object_once(self.flag, wrapper)
             return self._python_tree
 
     def __cinit__(cKDTree self):
