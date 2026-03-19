@@ -1406,12 +1406,20 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
     b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
+    a_copy = np.copy(a1)
+    b_copy = np.copy(b1)
+
+    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
+    overwrite_b = (
+        overwrite_b and (b1.ndim == 2) and b1.flags["F_CONTIGUOUS"] and m >= n
+    ) # Only overwrite when overdetermined system, otherwise ldb will be > m
+
     if cond is None:
         cond = np.finfo(a1.dtype).eps
     else:
         cond = float(cond)
 
-    x, rank, S, err_lst = _batched_linalg._lstsq(a1, b1, cond, driver)
+    x, rank, S, err_lst = _batched_linalg._lstsq(a1, b1, cond, driver, overwrite_a, overwrite_b)
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
@@ -1419,7 +1427,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     residuals = np.asarray([], dtype=x.dtype)
     if m > n:
         # can get the residuals from the GELSS/GELSD output instead, if _really_ wanted
-        res = b1 - a1 @ x
+        res = b_copy - a_copy @ x
         residuals = np.sum(res * res.conj(), axis=len(batch_shape))
 
     if b_is_1D:

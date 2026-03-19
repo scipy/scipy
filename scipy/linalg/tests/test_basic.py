@@ -2326,6 +2326,41 @@ class TestLstsq:
         with pytest.raises(ValueError, match="Input array"):
             lstsq(np.ones(3), np.ones(3))
 
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("driver", ["gelss", "gelsd", "gelsy"])
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("shape", [(4, 3), (3, 4)])
+    @pytest.mark.parametrize("nrhs", [1, 5])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite(
+        self, overwrite_kw, overwrite_b_kw, driver, dtype, shape, nrhs, order
+    ):
+        rng = np.random.default_rng(seed=12345)
+        a = rng.normal(size=shape).astype(dtype=dtype, order=order)
+        b = rng.normal(size=(shape[0], nrhs)).astype(dtype=dtype, order=order)
+
+        a_ref = np.copy(a)
+        b_ref = np.copy(b)
+
+        x, res, rank, S = lstsq(
+            a, b, **overwrite_kw, **overwrite_b_kw, lapack_driver=driver
+        )
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_a = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+        overwrite_b = (
+            overwrite_b and
+            (dtype is not int) and
+            b.flags["F_CONTIGUOUS"] and
+            shape[0] >= shape[1]
+        )
+
+        assert np.all(a_ref == a) != overwrite_a
+        assert np.all(b_ref == b) != overwrite_b
+
 
 class TestPinv:
     def test_simple_real(self):
