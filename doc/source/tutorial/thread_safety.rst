@@ -31,9 +31,9 @@ informative error. For example, `scipy.integrate.ode` may raise an
 ``IntegratorConcurrencyError`` for integration methods that do not support
 parallel execution.
 
-The KDTree in `scipy.spatial.kdtree` is also thread-safe, because there is no
-interface to mutate the KDTree after creating it. It is safe to query the
-KDTree simultaneously from multiple threads.
+The KDTree provided by `scipy.spatial` is also thread-safe, because there is no
+interface to mutate the KDTree after creating it. It is safe to query the KDTree
+simultaneously from multiple threads.
 
 SciPy offers a couple of data structures, namely sparse arrays and matrices in
 `scipy.sparse`, that are *mutable*. These data structures are *currently not
