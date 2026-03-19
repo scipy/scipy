@@ -27,7 +27,7 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_device,
     xp_ravel,
-    _length_nonmasked,
+    _count_nonmasked,
     is_lazy_array,
 )
 
@@ -235,7 +235,7 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -324,7 +324,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -341,7 +341,7 @@ def kstat(data, n=2, *, axis=None):
         raise ValueError("Should not be here.")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -385,13 +385,32 @@ def kstatvar(data, n=2, *, axis=None):
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(92366746)
+
+    As the sample size increases, the estimated variance of the k-statistic converges
+    to zero.
+
+    >>> for n in np.astype(np.logspace(1, 6, 6), int):
+    ...     x = rng.normal(size=n)
+    ...     kvar = stats.kstatvar(x, 1)
+    ...     print(f"{n=:<8}: {kvar=:.3g}")
+    n=10      : kvar=0.0954
+    n=100     : kvar=0.00974
+    n=1000    : kvar=0.000962
+    n=10000   : kvar=0.0001
+    n=100000  : kvar=9.94e-06
+    n=1000000 : kvar=9.99e-07
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -3157,7 +3176,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
 
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
-    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    rank, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
@@ -3210,7 +3229,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
@@ -3298,7 +3317,7 @@ def bartlett(*samples, axis=0):
         samples = _broadcast_arrays(samples, axis=axis, xp=xp)
         samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp),
+    Ni = [xp.asarray(_count_nonmasked(sample, axis=-1, xp=xp),
                      dtype=sample.dtype, device=xp_device(sample))
           for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
@@ -3330,7 +3349,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3443,10 +3462,11 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     else:  # center == 'trimmed'
 
         def func(x):
-            # keepdims=True doesn't currently work for lazy arrays
+            # keepdims=True doesn't currently work for Dask
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    Nis = [sample.shape[-1] for sample in samples]
+    Nis = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+           for sample in samples]
     Ycis = [func(sample) for sample in samples]
     Ntot = sum(Nis)
 
@@ -3467,16 +3487,20 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
+    dfd = xp.squeeze(dfd, axis=-1) if is_marray(xp) else dfd
     dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
-    return LeveneResult(W[()], pval[()])
+    W = W[()] if W.ndim == 0 else W
+    pval = pval[()] if pval.ndim == 0 else pval
+    return LeveneResult(W, pval)
 
 
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')])
+                                ('cupy', 'no rankdata')],
+                 marray=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3604,8 +3628,11 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
             # keepdims=True doesn't currently work for lazy arrays
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    ni = [sample.shape[-1] for sample in samples]
+    lengths = [sample.shape[-1] for sample in samples]
+    ni = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+          for sample in samples]
     N = sum(ni)
+    ni = [xp.squeeze(ni_, axis=-1) for ni_ in ni] if is_marray(xp) else ni
 
     # Implementation follows [3] pg 355 F-K.
     Xibar = [func(sample) for sample in samples]
@@ -3615,7 +3642,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
-    splits = list(itertools.accumulate(ni, initial=0))
+    splits = list(itertools.accumulate(lengths, initial=0))
     Ai = [a_Ni[..., i:j] for i, j in zip(splits[:-1], splits[1:])]
     Aibar = [xp.mean(Ai_, axis=-1) for Ai_ in Ai]
     abar = xp.mean(a_Ni, axis=-1)
@@ -3674,7 +3701,7 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     x = xp.sort(x, axis=-1)
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
-    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
+    _, _, a = _stats_py._rankdata(x, method='average', return_ties=True)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
     a = xp.concat((a, zeros), axis=-1)
@@ -3810,7 +3837,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
-    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
 
     if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
@@ -3850,7 +3877,11 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                 cpu_only=True)  # null distribution is CPU only
+                 cpu_only=True,  # null distribution is CPU only
+                 marray=True,
+                 extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "
+                             "compatible with MArrays. "
+                             "``method='auto'`` is incompatible with JAX arrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -4325,7 +4356,7 @@ def _circfuncs_common(samples, period, xp=None):
     return samples, sin_samp, cos_samp
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4419,7 +4450,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return (res * (period / (2.0 * pi)) - low) % period + low
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4514,7 +4545,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4648,7 +4679,7 @@ class DirectionalStats:
                 f" mean_resultant_length={self.mean_resultant_length})")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def directional_stats(samples, *, axis=0, normalize=True):
     """
     Computes sample statistics for directional data.

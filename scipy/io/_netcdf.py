@@ -130,7 +130,7 @@ class netcdf_file:
     Notes
     -----
     This module is derived from
-    `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
+    `pupynere <https://github.com/stcorp/pupynere>`_.
     The major advantage of this module over other modules is that it doesn't
     require the code to be linked to the NetCDF libraries. However, for a more
     recent version of the NetCDF standard and additional features, please consider
@@ -140,7 +140,7 @@ class netcdf_file:
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <https://www.unidata.ucar.edu/software/netcdf/guide_toc.html>`__. There
+    <https://docs.unidata.ucar.edu/netcdf-c/current/>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions
@@ -152,7 +152,7 @@ class netcdf_file:
     uses and any attributes such as data units, along with containing the data
     values for the variable. It is good practice to include a
     variable that is the same name as a dimension to provide the values for
-    that axes. Lastly, the attributes section would contain additional
+    that axis. Lastly, the attributes section would contain additional
     information such as the name of the file creator or the instrument used to
     collect the data.
 
@@ -172,7 +172,7 @@ class netcdf_file:
     (default for read-only), arrays returned by it refer to data
     directly on the disk. The file should not be closed, and cannot be cleanly
     closed when asked, if such arrays are alive. You may want to copy data arrays
-    obtained from mmapped Netcdf file if they are to be processed after the file
+    obtained from mmapped NetCDF file if they are to be processed after the file
     is closed, see the example below.
 
     Examples

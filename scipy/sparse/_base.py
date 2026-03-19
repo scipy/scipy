@@ -398,6 +398,19 @@ class _spbase(SparseABC):
     def T(self):
         """Transpose."""
         return self.transpose()
+    
+    @property
+    def mT(self):
+        """Matrix transpose.
+        
+        See Also
+        --------
+        scipy.sparse.matrix_transpose : equivalent function
+        """
+        if (n := self.ndim) < 2:
+            raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
+        assert n == 2
+        return self.transpose()
 
     @property
     def real(self):
@@ -498,6 +511,11 @@ class _spbase(SparseABC):
     def multiply(self, other):
         """Element-wise multiplication by another array/matrix.
 
+        Parameters
+        ----------
+        other : sparse array or array_like
+            Array to multiply by.
+
         Returns
         -------
         sparse array/matrix
@@ -593,6 +611,11 @@ class _spbase(SparseABC):
     def maximum(self, other):
         """Element-wise maximum between this and another array/matrix.
 
+        Parameters
+        ----------
+        other : array_like or sparse array
+            Array to compare against.
+
         Returns
         -------
         sparse array/matrix or ndarray
@@ -606,6 +629,11 @@ class _spbase(SparseABC):
     def minimum(self, other):
         """Element-wise minimum between this and another array/matrix.
 
+        Parameters
+        ----------
+        other : array_like or sparse array
+            Array to compare against.
+
         Returns
         -------
         sparse array/matrix or ndarray
@@ -618,6 +646,11 @@ class _spbase(SparseABC):
 
     def dot(self, other):
         """Ordinary dot product.
+
+        Parameters
+        ----------
+        other : array_like or sparse array
+            Array to take dot product with.
 
         Returns
         -------
@@ -644,6 +677,14 @@ class _spbase(SparseABC):
 
     def power(self, n, dtype=None):
         """Element-wise power.
+
+        Parameters
+        ----------
+        n : scalar
+            `n` is a non-zero scalar (nonzero avoids dense ones creation)
+            If zero power is desired, special case it to use `numpy.ones`
+        dtype : dtype, optional
+            If `dtype` is not specified, the current dtype will be preserved.
 
         Returns
         -------
@@ -1270,8 +1311,11 @@ class _spbase(SparseABC):
     def tocsr(self, copy=False):
         """Convert this array/matrix to Compressed Sparse Row format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant csr_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant csr_array/matrix.
 
         Returns
         -------
@@ -1283,8 +1327,11 @@ class _spbase(SparseABC):
     def todok(self, copy=False):
         """Convert this array/matrix to Dictionary Of Keys format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant dok_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant dok_array/matrix.
 
         Returns
         -------
@@ -1296,8 +1343,11 @@ class _spbase(SparseABC):
     def tocoo(self, copy=False):
         """Convert this array/matrix to COOrdinate format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant coo_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant coo_array/matrix.
 
         Returns
         -------
@@ -1309,8 +1359,11 @@ class _spbase(SparseABC):
     def tolil(self, copy=False):
         """Convert this array/matrix to List of Lists format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant lil_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant lil_array/matrix.
 
         Returns
         -------
@@ -1322,8 +1375,11 @@ class _spbase(SparseABC):
     def todia(self, copy=False):
         """Convert this array/matrix to sparse DIAgonal format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant dia_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant dia_array/matrix.
 
         Returns
         -------
@@ -1335,11 +1391,14 @@ class _spbase(SparseABC):
     def tobsr(self, blocksize=None, copy=False):
         """Convert this array/matrix to Block Sparse Row format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant bsr_array/matrix.
-
-        When blocksize=(R, C) is provided, it will be used for construction of
-        the bsr_array/matrix.
+        Parameters
+        ----------
+        blocksize : tuple of ints, optional
+            When ``blocksize=(R, C)`` is provided, it will be used for construction of
+            the bsr_array/matrix.
+        copy : bool, option
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant bsr_array/matrix.
 
         Returns
         -------
@@ -1351,8 +1410,11 @@ class _spbase(SparseABC):
     def tocsc(self, copy=False):
         """Convert this array/matrix to Compressed Sparse Column format.
 
-        With copy=False, the data/indices may be shared between this array/matrix and
-        the resultant csc_array/matrix.
+        Parameters
+        ----------
+        copy : bool, optional
+            With ``copy=False``, the data/indices may be shared between this
+            array/matrix and the resultant csc_array/matrix.
 
         Returns
         -------
@@ -1416,6 +1478,13 @@ class _spbase(SparseABC):
 
         # Mimic numpy's casting.
         res_dtype = get_sum_dtype(self.dtype)
+
+        if dtype is not None:
+            # Before casting to the requested dtype, canonicalize duplicates and zeros.
+            if hasattr(self, 'sum_duplicates'):
+                self.sum_duplicates()
+            temp = self.astype(dtype, copy=False).sum(axis=axis, dtype=None, out=out)
+            return temp.astype(dtype, copy=False)
 
         # Note: all valid 1D axis values are canonically `None`.
         if axis is None:

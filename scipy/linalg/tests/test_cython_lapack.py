@@ -6,14 +6,21 @@ from scipy.linalg import lapack
 class TestLamch:
 
     def test_slamch(self):
+        lapack_slamch = lapack.get_lapack_funcs(
+            'lamch', dtype='float32', ilp64='preferred'
+        )
         for c in [b'e', b's', b'b', b'p', b'n', b'r', b'm', b'u', b'l', b'o']:
             assert_allclose(cython_lapack._test_slamch(c),
-                            lapack.slamch(c))
+                            lapack_slamch(c))
 
     def test_dlamch(self):
+        lapack_dlamch = lapack.get_lapack_funcs(
+            'lamch', dtype='float64', ilp64='preferred'
+        )
+
         for c in [b'e', b's', b'b', b'p', b'n', b'r', b'm', b'u', b'l', b'o']:
             assert_allclose(cython_lapack._test_dlamch(c),
-                            lapack.dlamch(c))
+                            lapack_dlamch(c))
 
     def test_complex_ladiv(self):
         cx = .5 + 1.j

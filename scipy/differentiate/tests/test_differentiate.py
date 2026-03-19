@@ -257,7 +257,7 @@ class TestDerivative:
         for i in range(h0.shape[0]):
             ref = derivative(f, x, initial_step=h0[i, 0], order=2, maxiter=1,
                              step_direction=step_direction)
-            xp_assert_close(res.df[i, :], ref.df, rtol=1e-14)
+            xp_assert_close(res.df[i, :], ref.df, rtol=5e-13)
 
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface

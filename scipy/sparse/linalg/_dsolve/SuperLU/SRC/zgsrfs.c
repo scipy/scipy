@@ -171,13 +171,6 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     int      isave[3];
 
     extern int zlacon2_(int *, doublecomplex *, doublecomplex *, double *, int *, int []);
-#ifdef _CRAY
-    extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
-    extern int CSAXPY(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
-#else
-    extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
-    extern int zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
-#endif
 
     Astore = A->Store;
     Aval   = Astore->nzval;

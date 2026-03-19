@@ -68,6 +68,29 @@ class BenchPPoly(Benchmark):
         self.pp(self.xp)
 
 
+class BenchBSpline(Benchmark):
+    param_names = ['npts']
+    params = [10, 100, 1000, 10000]
+
+    def setup(self, npts):
+        rng = np.random.default_rng(1234)
+        self.k = 3
+        self.n = 55
+
+        self.t = np.sort(rng.random(self.n + self.k + 1))
+        self.c = rng.random(self.n)
+
+        self.bspl = interpolate.BSpline(self.t, self.c, self.k)
+        self.xp = np.linspace(self.t[self.k], self.t[-self.k-1], npts)
+
+    def time_evaluation(self, npts):
+        self.bspl(self.xp)
+
+    def time_creation(self, npts):
+        interpolate.BSpline(self.t, self.c, self.k)
+
+
+
 class GridData(Benchmark):
     param_names = ['n_grids', 'method']
     params = [
