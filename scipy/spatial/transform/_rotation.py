@@ -1972,8 +1972,8 @@ class Rotation:
 
         Returns
         -------
-        approx_equal : Array or numpy.bool
-            Whether the rotations are approximately equal, np.bool_ if object
+        approx_equal : Array or `numpy.bool`
+            Whether the rotations are approximately equal, `numpy.bool` if object
             contains a single numpy rotation and Array if object contains multiple
             rotations or is from another library.
 
