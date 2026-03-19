@@ -6,7 +6,7 @@ from scipy.linalg._cythonized_array_utils cimport (
     np_complex_numeric_t,
     np_numeric_t
     )
-from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
+from scipy.linalg.cython_lapack cimport blas_int, sgetrf, dgetrf, cgetrf, zgetrf
 from libc.stdlib cimport malloc, free
 from scipy._lib._util import _apply_over_batch
 

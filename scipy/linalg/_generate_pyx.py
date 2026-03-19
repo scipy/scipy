@@ -71,11 +71,55 @@ example, in a ``meson.build`` file when using Meson::
         ...
     )
 
+
+ILP64 support
+-------------
+
+All integer parameters in this module use the ``blas_int`` type, which is
+a typedef for either ``int`` (LP64, the default) or ``int64_t`` (ILP64),
+depending on how SciPy was built. The build configuration can be checked
+at runtime via ``scipy.show_config()`` - look for the ``blas_cython_ilp64``
+entry.
+
+Downstream packages that want to support both LP64 and ILP64 builds of SciPy
+should follow this pattern:
+
+1. Use ``blas_int`` for all integer variables passed to BLAS functions.
+2. For backwards compatibility with scipy <=1.17.0 (if desired), perform a
+   **build-time check** for whether ``blas_int`` is available, and typedef
+   it as ``int`` otherwise. Example for Meson:
+
+.. code::
+
+    # Check if scipy's cython_blas exports blas_int (ILP64 support).
+    _blas_int_conf = configuration_data()
+    if cython.compiles('from scipy.linalg.cython_blas cimport blas_int')
+      _blas_int_conf.set('BLAS_INT_DEF', 'from scipy.linalg.cython_blas cimport blas_int')
+    else
+      _blas_int_conf.set('BLAS_INT_DEF', 'ctypedef int blas_int')
+    endif
+
+    _blas_int_pxi = configure_file(
+      input: '_blas_int.pxi.in',
+      output: '_blas_int.pxi',
+      configuration: _blas_int_conf,
+    )
+
+With the file ``_blas_int.pxi.in`` containing the single line::
+
+    @BLAS_INT_DEF@
+
+
+``cython_blas`` API
+-------------------
+
+Integer type:
+
+- blas_int: type alias for either ``int`` or ``int64_t``
+
 Raw function pointers (Fortran-style pointer arguments):
 
 - {}
-
-
 """
 
 # Within SciPy, these wrappers can be used via relative or absolute cimport.
@@ -96,7 +140,11 @@ from numpy cimport npy_complex64, npy_complex128
 
 '''
 
-lapack_pyx_preamble = '''"""
+lapack_pyx_preamble = '''# cython: boundscheck = False
+# cython: wraparound = False
+# cython: cdivision = True
+
+"""
 LAPACK functions for Cython
 ===========================
 
@@ -112,11 +160,55 @@ fixed-api auxiliary routines.
 These wrappers do not check for alignment of arrays.
 Alignment should be checked before these wrappers are used.
 
+
+ILP64 support
+-------------
+
+All integer parameters in this module use the ``blas_int`` type, which is
+a typedef for either ``int`` (LP64, the default) or ``int64_t`` (ILP64),
+depending on how SciPy was built. The build configuration can be checked
+at runtime via ``scipy.show_config()`` - look for the ``blas_cython_ilp64``
+entry.
+
+Downstream packages that want to support both LP64 and ILP64 builds of SciPy
+should follow this pattern:
+
+1. Use ``blas_int`` for all integer variables passed to LAPACK functions.
+2. For backwards compatibility with scipy <=1.17.0 (if desired), perform a
+   **build-time check** for whether ``blas_int`` is available, and typedef
+   it as ``int`` otherwise. Example for Meson:
+
+.. code::
+
+    # Check if scipy's cython_lapack exports blas_int (ILP64 support).
+    _blas_int_conf = configuration_data()
+    if cython.compiles('from scipy.linalg.cython_lapack cimport blas_int')
+      _blas_int_conf.set('BLAS_INT_DEF', 'from scipy.linalg.cython_lapack cimport blas_int')
+    else
+      _blas_int_conf.set('BLAS_INT_DEF', 'ctypedef int blas_int')
+    endif
+
+    _blas_int_pxi = configure_file(
+      input: '_blas_int.pxi.in',
+      output: '_blas_int.pxi',
+      configuration: _blas_int_conf,
+    )
+
+With the file ``_blas_int.pxi.in`` containing the single line::
+
+    @BLAS_INT_DEF@
+
+
+``cython_lapack`` API
+---------------------
+
+Integer type:
+
+- blas_int: type alias for either ``int`` or ``int64_t``
+
 Raw function pointers (Fortran-style pointer arguments):
 
 - {}
-
-
 """
 
 # Within SciPy, these wrappers can be used via relative or absolute cimport.
@@ -138,14 +230,14 @@ from numpy cimport npy_complex64, npy_complex128
 cdef extern from "_lapack_subroutines.h":
     # Function pointer type declarations for
     # gees and gges families of functions.
-    ctypedef bint _cselect1(npy_complex64*)
-    ctypedef bint _cselect2(npy_complex64*, npy_complex64*)
-    ctypedef bint _dselect2(d*, d*)
-    ctypedef bint _dselect3(d*, d*, d*)
-    ctypedef bint _sselect2(s*, s*)
-    ctypedef bint _sselect3(s*, s*, s*)
-    ctypedef bint _zselect1(npy_complex128*)
-    ctypedef bint _zselect2(npy_complex128*, npy_complex128*)
+    ctypedef blas_int _cselect1(npy_complex64*)
+    ctypedef blas_int _cselect2(npy_complex64*, npy_complex64*)
+    ctypedef blas_int _dselect2(d*, d*)
+    ctypedef blas_int _dselect3(d*, d*, d*)
+    ctypedef blas_int _sselect2(s*, s*)
+    ctypedef blas_int _sselect3(s*, s*, s*)
+    ctypedef blas_int _zselect1(npy_complex128*)
+    ctypedef blas_int _zselect2(npy_complex128*, npy_complex128*)
 
 '''
 
@@ -158,37 +250,37 @@ cdef inline bint _is_contiguous(double[:,:] a, int axis) noexcept nogil:
 
 cpdef float complex _test_cdotc(float complex[:] cx, float complex[:] cy) noexcept nogil:
     cdef:
-        int n = cx.shape[0]
-        int incx = cx.strides[0] // sizeof(cx[0])
-        int incy = cy.strides[0] // sizeof(cy[0])
+        blas_int n = cx.shape[0]
+        blas_int incx = cx.strides[0] // sizeof(cx[0])
+        blas_int incy = cy.strides[0] // sizeof(cy[0])
     return cdotc(&n, &cx[0], &incx, &cy[0], &incy)
 
 cpdef float complex _test_cdotu(float complex[:] cx, float complex[:] cy) noexcept nogil:
     cdef:
-        int n = cx.shape[0]
-        int incx = cx.strides[0] // sizeof(cx[0])
-        int incy = cy.strides[0] // sizeof(cy[0])
+        blas_int n = cx.shape[0]
+        blas_int incx = cx.strides[0] // sizeof(cx[0])
+        blas_int incy = cy.strides[0] // sizeof(cy[0])
     return cdotu(&n, &cx[0], &incx, &cy[0], &incy)
 
 cpdef double _test_dasum(double[:] dx) noexcept nogil:
     cdef:
-        int n = dx.shape[0]
-        int incx = dx.strides[0] // sizeof(dx[0])
+        blas_int n = dx.shape[0]
+        blas_int incx = dx.strides[0] // sizeof(dx[0])
     return dasum(&n, &dx[0], &incx)
 
 cpdef double _test_ddot(double[:] dx, double[:] dy) noexcept nogil:
     cdef:
-        int n = dx.shape[0]
-        int incx = dx.strides[0] // sizeof(dx[0])
-        int incy = dy.strides[0] // sizeof(dy[0])
+        blas_int n = dx.shape[0]
+        blas_int incx = dx.strides[0] // sizeof(dx[0])
+        blas_int incy = dy.strides[0] // sizeof(dy[0])
     return ddot(&n, &dx[0], &incx, &dy[0], &incy)
 
-cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
+cpdef blas_int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
                 double[:,:] c) except -1 nogil:
     cdef:
         char *transa
         char *transb
-        int m, n, k, lda, ldb, ldc
+        blas_int m, n, k, lda, ldb, ldc
         double *a0=&a[0,0]
         double *b0=&b[0,0]
         double *c0=&c[0,0]
@@ -264,90 +356,94 @@ cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
 
 cpdef double _test_dnrm2(double[:] x) noexcept nogil:
     cdef:
-        int n = x.shape[0]
-        int incx = x.strides[0] // sizeof(x[0])
+        blas_int n = x.shape[0]
+        blas_int incx = x.strides[0] // sizeof(x[0])
     return dnrm2(&n, &x[0], &incx)
 
 cpdef double _test_dzasum(double complex[:] zx) noexcept nogil:
     cdef:
-        int n = zx.shape[0]
-        int incx = zx.strides[0] // sizeof(zx[0])
+        blas_int n = zx.shape[0]
+        blas_int incx = zx.strides[0] // sizeof(zx[0])
     return dzasum(&n, &zx[0], &incx)
 
 cpdef double _test_dznrm2(double complex[:] x) noexcept nogil:
     cdef:
-        int n = x.shape[0]
-        int incx = x.strides[0] // sizeof(x[0])
+        blas_int n = x.shape[0]
+        blas_int incx = x.strides[0] // sizeof(x[0])
     return dznrm2(&n, &x[0], &incx)
 
-cpdef int _test_icamax(float complex[:] cx) noexcept nogil:
+cpdef blas_int _test_icamax(float complex[:] cx) noexcept nogil:
     cdef:
-        int n = cx.shape[0]
-        int incx = cx.strides[0] // sizeof(cx[0])
+        blas_int n = cx.shape[0]
+        blas_int incx = cx.strides[0] // sizeof(cx[0])
     return icamax(&n, &cx[0], &incx)
 
-cpdef int _test_idamax(double[:] dx) noexcept nogil:
+cpdef blas_int _test_idamax(double[:] dx) noexcept nogil:
     cdef:
-        int n = dx.shape[0]
-        int incx = dx.strides[0] // sizeof(dx[0])
+        blas_int n = dx.shape[0]
+        blas_int incx = dx.strides[0] // sizeof(dx[0])
     return idamax(&n, &dx[0], &incx)
 
-cpdef int _test_isamax(float[:] sx) noexcept nogil:
+cpdef blas_int _test_isamax(float[:] sx) noexcept nogil:
     cdef:
-        int n = sx.shape[0]
-        int incx = sx.strides[0] // sizeof(sx[0])
+        blas_int n = sx.shape[0]
+        blas_int incx = sx.strides[0] // sizeof(sx[0])
     return isamax(&n, &sx[0], &incx)
 
-cpdef int _test_izamax(double complex[:] zx) noexcept nogil:
+cpdef blas_int _test_izamax(double complex[:] zx) noexcept nogil:
     cdef:
-        int n = zx.shape[0]
-        int incx = zx.strides[0] // sizeof(zx[0])
+        blas_int n = zx.shape[0]
+        blas_int incx = zx.strides[0] // sizeof(zx[0])
     return izamax(&n, &zx[0], &incx)
 
 cpdef float _test_sasum(float[:] sx) noexcept nogil:
     cdef:
-        int n = sx.shape[0]
-        int incx = sx.strides[0] // sizeof(sx[0])
+        blas_int n = sx.shape[0]
+        blas_int incx = sx.strides[0] // sizeof(sx[0])
     return sasum(&n, &sx[0], &incx)
 
 cpdef float _test_scasum(float complex[:] cx) noexcept nogil:
     cdef:
-        int n = cx.shape[0]
-        int incx = cx.strides[0] // sizeof(cx[0])
+        blas_int n = cx.shape[0]
+        blas_int incx = cx.strides[0] // sizeof(cx[0])
     return scasum(&n, &cx[0], &incx)
 
 cpdef float _test_scnrm2(float complex[:] x) noexcept nogil:
     cdef:
-        int n = x.shape[0]
-        int incx = x.strides[0] // sizeof(x[0])
+        blas_int n = x.shape[0]
+        blas_int incx = x.strides[0] // sizeof(x[0])
     return scnrm2(&n, &x[0], &incx)
 
 cpdef float _test_sdot(float[:] sx, float[:] sy) noexcept nogil:
     cdef:
-        int n = sx.shape[0]
-        int incx = sx.strides[0] // sizeof(sx[0])
-        int incy = sy.strides[0] // sizeof(sy[0])
+        blas_int n = sx.shape[0]
+        blas_int incx = sx.strides[0] // sizeof(sx[0])
+        blas_int incy = sy.strides[0] // sizeof(sy[0])
     return sdot(&n, &sx[0], &incx, &sy[0], &incy)
 
 cpdef float _test_snrm2(float[:] x) noexcept nogil:
     cdef:
-        int n = x.shape[0]
-        int incx = x.strides[0] // sizeof(x[0])
+        blas_int n = x.shape[0]
+        blas_int incx = x.strides[0] // sizeof(x[0])
     return snrm2(&n, &x[0], &incx)
 
 cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) noexcept nogil:
     cdef:
-        int n = zx.shape[0]
-        int incx = zx.strides[0] // sizeof(zx[0])
-        int incy = zy.strides[0] // sizeof(zy[0])
+        blas_int n = zx.shape[0]
+        blas_int incx = zx.strides[0] // sizeof(zx[0])
+        blas_int incy = zy.strides[0] // sizeof(zy[0])
     return zdotc(&n, &zx[0], &incx, &zy[0], &incy)
 
 cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) noexcept nogil:
     cdef:
-        int n = zx.shape[0]
-        int incx = zx.strides[0] // sizeof(zx[0])
-        int incy = zy.strides[0] // sizeof(zy[0])
+        blas_int n = zx.shape[0]
+        blas_int incx = zx.strides[0] // sizeof(zx[0])
+        blas_int incy = zy.strides[0] // sizeof(zy[0])
     return zdotu(&n, &zx[0], &incx, &zy[0], &incy)
+
+def _blas_int_size():
+    # Return the size of blas_int in bytes.
+    return sizeof(blas_int)
 """
 
 lapack_py_wrappers = """
@@ -385,7 +481,8 @@ def arg_casts(argtype):
     return ''
 
 
-def generate_decl_pyx(name, return_type, argnames, argtypes, accelerate, header_name):
+def generate_decl_pyx(name, return_type, argnames, argtypes, accelerate,
+                      header_name, ilp64=False):
     """Create Cython declaration for BLAS/LAPACK function."""
     pyx_input_args = ', '.join([' *'.join(arg) for arg in zip(argtypes, argnames)])
     # By default, nothing is returned
@@ -410,7 +507,7 @@ def generate_decl_pyx(name, return_type, argnames, argtypes, accelerate, header_
     if name in WRAPPED_FUNCS:
         pyx_call_args[0] = ''.join([arg_casts(c_argtypes[0]), '&', argnames[0]])
     pyx_call_args = ', '.join(pyx_call_args)
-    blas_macro, blas_name = get_blas_macro_and_name(name, accelerate)
+    blas_macro, blas_name = get_blas_macro_and_name(name, accelerate, ilp64)
     return f"""
 cdef extern from "{header_name}":
     {blas_return_type} _fortran_{name} "{blas_macro}({blas_name})"({c_proto}) nogil
@@ -421,7 +518,7 @@ cdef {return_type} {name}({pyx_input_args}) noexcept nogil:
 """
 
 
-def generate_file_pyx(sigs, lib_name, header_name, accelerate):
+def generate_file_pyx(sigs, lib_name, header_name, accelerate, ilp64=False):
     """Generate content for pyx file with BLAS/LAPACK declarations and tests."""
     if lib_name == 'BLAS':
         preamble_template = blas_pyx_preamble
@@ -435,13 +532,14 @@ def generate_file_pyx(sigs, lib_name, header_name, accelerate):
     comment = ['# ' + c for c in COMMENT_TEXT]
     preamble = comment + [preamble_template.format(names)]
     decls = [
-        generate_decl_pyx(**sig, accelerate=accelerate, header_name=header_name)
+        generate_decl_pyx(**sig, accelerate=accelerate, header_name=header_name,
+                          ilp64=ilp64)
         for sig in sigs]
     content = preamble + decls + [epilog]
     return ''.join(content)
 
 
-blas_pxd_preamble = """
+_pxd_blas_comments = """\
 # Within scipy, these wrappers can be used via relative or absolute cimport.
 # Examples:
 # from ..linalg cimport cython_blas
@@ -453,14 +551,9 @@ blas_pxd_preamble = """
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 
-ctypedef float s
-ctypedef double d
-ctypedef float complex c
-ctypedef double complex z
-
 """
 
-lapack_pxd_preamble = """
+_pxd_lapack_comments = """\
 # Within SciPy, these wrappers can be used via relative or absolute cimport.
 # Examples:
 # from ..linalg cimport cython_lapack
@@ -472,23 +565,55 @@ lapack_pxd_preamble = """
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 
+"""
+
+_pxd_types_lp64 = """\
 ctypedef float s
 ctypedef double d
 ctypedef float complex c
 ctypedef double complex z
 
-# Function pointer type declarations for
-# gees and gges families of functions.
-ctypedef bint cselect1(c*)
-ctypedef bint cselect2(c*, c*)
-ctypedef bint dselect2(d*, d*)
-ctypedef bint dselect3(d*, d*, d*)
-ctypedef bint sselect2(s*, s*)
-ctypedef bint sselect3(s*, s*, s*)
-ctypedef bint zselect1(z*)
-ctypedef bint zselect2(z*, z*)
+ctypedef int blas_int
 
 """
+
+_pxd_types_ilp64 = """\
+from libc.stdint cimport int64_t
+
+ctypedef float s
+ctypedef double d
+ctypedef float complex c
+ctypedef double complex z
+
+ctypedef int64_t blas_int
+
+"""
+
+_pxd_lapack_select_typedefs = """\
+# Function pointer type declarations for
+# gees and gges families of functions.
+ctypedef blas_int cselect1(c*)
+ctypedef blas_int cselect2(c*, c*)
+ctypedef blas_int dselect2(d*, d*)
+ctypedef blas_int dselect3(d*, d*, d*)
+ctypedef blas_int sselect2(s*, s*)
+ctypedef blas_int sselect3(s*, s*, s*)
+ctypedef blas_int zselect1(z*)
+ctypedef blas_int zselect2(z*, z*)
+
+"""
+
+
+def _get_pxd_preamble(lib_name, ilp64=False):
+    """Build a pxd preamble from shared building blocks."""
+    if lib_name == 'BLAS':
+        comments = _pxd_blas_comments
+        suffix = ""
+    else:
+        comments = _pxd_lapack_comments
+        suffix = _pxd_lapack_select_typedefs
+    types = _pxd_types_ilp64 if ilp64 else _pxd_types_lp64
+    return f"\n{comments}{types}{suffix}"
 
 
 def generate_decl_pxd(name, return_type, argnames, argtypes):
@@ -497,21 +622,17 @@ def generate_decl_pxd(name, return_type, argnames, argtypes):
     return f"cdef {return_type} {name}({args}) noexcept nogil\n"
 
 
-def generate_file_pxd(sigs, lib_name):
+def generate_file_pxd(sigs, lib_name, ilp64=False):
     """Create content for Cython header file for generated pyx."""
-    if lib_name == 'BLAS':
-        preamble = blas_pxd_preamble
-    elif lib_name == 'LAPACK':
-        preamble = lapack_pxd_preamble
-    else:
-        raise RuntimeError(f'Unrecognized lib_name: {lib_name}.')
+    preamble = _get_pxd_preamble(lib_name, ilp64)
     preamble = ['"""\n', *COMMENT_TEXT, '"""\n', preamble]
     decls = [generate_decl_pxd(**sig)for sig in sigs]
     content = preamble + decls
     return ''.join(content)
 
 
-def generate_decl_c(name, return_type, argnames, argtypes, accelerate):
+def generate_decl_c(name, return_type, argnames, argtypes, accelerate,
+                    ilp64=False):
     """Create C header declarations for Cython to import."""
     c_return_type = C_TYPES[return_type]
     c_argtypes = [C_TYPES[t] for t in argtypes]
@@ -521,12 +642,12 @@ def generate_decl_c(name, return_type, argnames, argtypes, accelerate):
         argnames = ['out'] + argnames
         c_argtypes = [c_return_type] + c_argtypes
         c_return_type = 'void'
-    blas_macro, blas_name = get_blas_macro_and_name(name, accelerate)
+    blas_macro, blas_name = get_blas_macro_and_name(name, accelerate, ilp64)
     c_args = ', '.join(f'{t} *{n}' for t, n in zip(c_argtypes, argnames))
     return f"{c_return_type} {blas_macro}({blas_name})({c_args});\n"
 
 
-def generate_file_c(sigs, lib_name, accelerate):
+def generate_file_c(sigs, lib_name, accelerate, ilp64=False):
     """Generate content for C header file for Cython to import."""
     if lib_name == 'BLAS':
         preamble = [C_PREAMBLE]
@@ -535,9 +656,26 @@ def generate_file_c(sigs, lib_name, accelerate):
     else:
         raise RuntimeError(f'Unrecognized lib_name: {lib_name}.')
     preamble = ['/*\n', *COMMENT_TEXT, '*/\n'] + preamble + [CPP_GUARD_BEGIN]
-    decls = [generate_decl_c(**sig, accelerate=accelerate) for sig in sigs]
+    decls = [generate_decl_c(**sig, accelerate=accelerate, ilp64=ilp64)
+             for sig in sigs]
     content = preamble + decls + [CPP_GUARD_END]
     return ''.join(content)
+
+
+def _sigs_replace_int(sigs):
+    """Replace 'int' and 'bint' types with 'blas_int' in parsed signatures.
+
+    This makes BLAS/LAPACK integer parameters use the ``blas_int`` typedef,
+    which resolves to ``int`` for LP64 and ``int64_t`` for ILP64 builds.
+    """
+    for sig in sigs:
+        sig['argtypes'] = [
+            'blas_int' if t in ('int', 'bint') else t
+            for t in sig['argtypes']
+        ]
+        if sig['return_type'] in ('int', 'bint'):
+            sig['return_type'] = 'blas_int'
+    return sigs
 
 
 def make_all(outdir,
@@ -547,7 +685,8 @@ def make_all(outdir,
              lapack_name="cython_lapack",
              blas_header_name="_blas_subroutines.h",
              lapack_header_name="_lapack_subroutines.h",
-             accelerate=False):
+             accelerate=False,
+             ilp64=False):
     src_files = (os.path.abspath(__file__),
                  blas_signature_file,
                  lapack_signature_file)
@@ -565,18 +704,20 @@ def make_all(outdir,
     with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     blas_sigs = read_signatures(blas_sigs)
+    blas_sigs = _sigs_replace_int(blas_sigs)
     with open(lapack_signature_file) as f:
         lapack_sigs = f.readlines()
     lapack_sigs = read_signatures(lapack_sigs)
+    lapack_sigs = _sigs_replace_int(lapack_sigs)
     to_write = {
         dst_files[0]: generate_file_pyx(
-            blas_sigs, 'BLAS', blas_header_name, accelerate),
-        dst_files[1]: generate_file_pxd(blas_sigs, 'BLAS'),
-        dst_files[2]: generate_file_c(blas_sigs, 'BLAS', accelerate),
+            blas_sigs, 'BLAS', blas_header_name, accelerate, ilp64),
+        dst_files[1]: generate_file_pxd(blas_sigs, 'BLAS', ilp64),
+        dst_files[2]: generate_file_c(blas_sigs, 'BLAS', accelerate, ilp64),
         dst_files[3]: generate_file_pyx(
-            lapack_sigs, 'LAPACK', lapack_header_name, accelerate),
-        dst_files[4]: generate_file_pxd(lapack_sigs, 'LAPACK'),
-        dst_files[5]: generate_file_c(lapack_sigs, 'LAPACK', accelerate)
+            lapack_sigs, 'LAPACK', lapack_header_name, accelerate, ilp64),
+        dst_files[4]: generate_file_pxd(lapack_sigs, 'LAPACK', ilp64),
+        dst_files[5]: generate_file_c(lapack_sigs, 'LAPACK', accelerate, ilp64)
     }
     write_files(to_write)
 
@@ -587,6 +728,8 @@ if __name__ == '__main__':
                         help="Path to the output directory")
     parser.add_argument("-a", "--accelerate", action="store_true",
                         help="Whether to use new Accelerate (macOS 13.3+)")
+    parser.add_argument("--ilp64", action="store_true",
+                        help="Use ILP64 (64-bit integer) BLAS/LAPACK interfaces")
     args = parser.parse_args()
 
     if not args.outdir:
@@ -594,4 +737,4 @@ if __name__ == '__main__':
     else:
         outdir_abs = os.path.join(os.getcwd(), args.outdir)
 
-    make_all(outdir_abs, accelerate=args.accelerate)
+    make_all(outdir_abs, accelerate=args.accelerate, ilp64=args.ilp64)

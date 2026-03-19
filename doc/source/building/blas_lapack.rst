@@ -99,14 +99,21 @@ user wants to override this autodetection mechanism for building against plain
 64-bit integer (ILP64) BLAS/LAPACK
 ----------------------------------
 
-Support for ILP64 BLAS and LAPACK is still experimental; at the time of writing
-(July 2025) it is only available for two BLAS/LAPACK configurations: MKL and
-``scipy-openblas``.
+Support for ILP64 BLAS and LAPACK is still **experimental**; at the time of
+writing (March 2026) it is only available for three BLAS/LAPACK configurations:
+MKL, Accelerate, and ``scipy-openblas``.
 
 SciPy always requires LP64 (32-bit integer size) BLAS/LAPACK. You can build SciPy
 with *additional* ILP64 support. This will result in SciPy requiring both BLAS and
 LAPACK variants, where some extensions link to the ILP64 variant, while other
 extensions link to the LP64 variant.
+
+.. note::
+   The requirement that SciPy always requires LP64 is very likely changing for the
+   1.18.0 release. Once all SciPy internals support ILP64, the default will be
+   to make a build from source that requests ILP64 with ``-Duse-ilp64=true``
+   use ILP64 for the low-level Python and Cython APIs in ``scipy.linalg`` as well
+   (more on that in the next section below).
 
 Building with ILP64 support requires BLAS/LAPACK support in ``meson``, which isn't
 yet merged upstream (see `meson#10921
@@ -132,11 +139,9 @@ for the ILP64 variant::
 From Python, low-level BLAS and LAPACK functions are available from ``scipy.linalg.blas``
 and ``scipy.linalg.lapack`` namespaces. For backwards compatibility, importing a name
 from either of these namespaces always gives you an LP64 variant, regardless of
-whether SciPy is built with or without the ILP64 support:
+whether SciPy is built with or without the ILP64 support::
 
-```
->>> from scipy.linalg.blas import dgemm     # this is an LP64 function
-```
+    >>> from scipy.linalg.blas import dgemm     # this is an LP64 function
 
 To choose the variant of a low-level routine, use ``get_blas_funcs`` and
 ``get_lapack_funcs`` functions::
@@ -148,6 +153,39 @@ To choose the variant of a low-level routine, use ``get_blas_funcs`` and
 
 High-level linear algebra functions (``norm``, ``solve`` and so on) should use this
 mechanism under the hood.
+
+
+Cython BLAS/LAPACK integer ABI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Cython BLAS and LAPACK API (``scipy.linalg.cython_blas`` and
+``scipy.linalg.cython_lapack``) uses the ``blas_int`` type for all integer
+parameters. By default, ``blas_int`` follows the ``use-ilp64`` setting: it is
+``int`` (32-bit) for LP64 builds and ``int64_t`` (64-bit) for ILP64 builds.
+
+This can be overridden with the ``-Dcython-blas-abi`` build option, which
+accepts three values:
+
+- ``auto`` (default): follows the ``use-ilp64`` setting
+- ``lp64``: always use 32-bit integers, even when ``use-ilp64=true``
+- ``ilp64``: always use 64-bit integers
+
+For example, to build with ILP64 BLAS/LAPACK but keep the Cython API at LP64
+(for downstream compatibility)::
+
+    $ spin build -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dcython-blas-abi=lp64
+
+This is useful primarily for Accelerate, which has good support for using both
+LP64 and ILP64 at the same time. That is the only library with solid support though;
+MKL has some support but it's more fragile (because it uses un-suffixed symbols for LP64,
+hence another library loading those same symbols in the same process may result in
+symbol clashes). Other BLAS libraries don't currently have this "dual ABI"
+build option. It may be useful to have SciPy itself use ILP64 but keeping the
+Cython API at LP64 because downstream packages may not yet support 64-bit
+integers in their Cython BLAS/LAPACK calls.
+
+The build configuration can be checked at runtime via
+``scipy.show_config()`` — look for the ``blas_cython_ilp64`` entry.
 
 
 Work-in-progress
