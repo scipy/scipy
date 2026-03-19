@@ -27,7 +27,7 @@ except ImportError:
     cython = None
 else:
     from scipy._external.packaging_version import version
-    required_version = '3.0.8'
+    required_version = '3.2.0'
     if version.parse(cython_version) < version.Version(required_version):
         # too old or wrong cython, skip Cython API tests
         cython = None
