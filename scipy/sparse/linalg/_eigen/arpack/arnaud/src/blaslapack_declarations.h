@@ -6,12 +6,18 @@
 /*
  * BLAS/LAPACK Fortran symbol mangling.
  *
- * When building within SciPy, the build system injects npy_cblas.h via
- * -include which defines BLAS_FUNC(). We map ARNAUD_BLAS to it.
+ * When building within SciPy, `ARNAUD_HAS_BLAS_CONFIG` is defined,
+ * that sets the `ARNAUD_BLAS` macro to contain the desired symbol
+ * mangling functionality (`BLAS_FUNC()` in other submodules).
  *
  * For standalone builds, ARNAUD_BLAS defaults to appending an underscore
  * (standard Fortran name mangling).
  */
+
+#ifdef ARNAUD_HAS_BLAS_CONFIG
+#include "arnaud_blas_config.h"
+#endif
+
 #ifndef ARNAUD_BLAS
 #define ARNAUD_BLAS(name) name ## _
 #endif
