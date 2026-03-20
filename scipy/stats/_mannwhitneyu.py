@@ -460,7 +460,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     R1 = xp.sum(ranks[..., :x.shape[-1]], axis=-1)         # method 2, step 2
     U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
-
+    if is_marray(xp):  # should _count_nonmasked mask count=0?
+        mask = R1.mask | (n1.data == 0) | (n2.data == 0)
+        U1, U2 = xp.asarray(U1.data, mask=mask), xp.asarray(U2.data, mask=mask)
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor
     elif alternative == "less":

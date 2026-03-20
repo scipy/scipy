@@ -5688,13 +5688,16 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
             raise ValueError(message)
         nan_policy = 'omit'
         x[mask_x], y[mask_y] = np.nan, np.nan
+        out_mask = (np.all(mask_x, axis=axis, keepdims=keepdims)
+                    | np.all(mask_y, axis=axis, keepdims=keepdims))
     else:
         x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
                       alternative=alternative, axis=axis, keepdims=keepdims)
+    mask = {'mask': out_mask} if is_marray(xp) else {}
     vals = res.statistic, res.pvalue, res.statistic
-    vals = (xp.asarray(val, dtype=dtype)[()] if val.ndim == 0
-            else xp.asarray(val, dtype=dtype) for val in vals)
+    vals = (xp.asarray(val, dtype=dtype, **mask)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype, **mask) for val in vals)
     return _pack_CorrelationResult(*vals)
 
 
@@ -7627,27 +7630,19 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     cdfvals = _masked_apply(cdf, args=(x, *args), xp=xp)
 
     ones = xp.ones(x.shape[:-1], dtype=xp.int8)
+    ones = xp.asarray(ones.data, mask=(N.data == 0)) if is_marray(xp) else ones
     ones = ones[()] if ones.ndim == 0 else ones
 
-    if alternative == 'greater':
-        Dplus, d_location = _compute_d(cdfvals, x, +1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
+    if alternative in ('greater', 'less'):
+        statistic_sign = 1 if alternative == 'greater' else -1
+        D, d_location = _compute_d(cdfvals, x, statistic_sign)
+        pvalue = _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
         pvalue = xp.asarray(pvalue, dtype=x.dtype)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
-        return KstestResult(Dplus, pvalue,
+        D = xp.asarray(D) if is_marray(xp) else D
+        return KstestResult(D, pvalue,
                             statistic_location=d_location,
-                            statistic_sign=ones)
-
-    if alternative == 'less':
-        Dminus, d_location = _compute_d(cdfvals, x, -1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype)
-        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
-        return KstestResult(Dminus, pvalue,
-                            statistic_location=d_location,
-                            statistic_sign=-ones)
+                            statistic_sign=ones*statistic_sign)
 
     # alternative == 'two-sided':
     Dplus, dplus_location = _compute_d(cdfvals, x, +1)
@@ -8090,12 +8085,14 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     d_sign = xp.where(selector, -one, one)
 
     if is_marray(xp):
+        d.data[d.mask] = 0  # was NaN; which causes problems in _ks_2samp_prob
         d = d.data  # converted to NumPy below
         n1, n2 = np.asarray(n1.data, dtype=int), np.asarray(n2.data, dtype=int)
     prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
     dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
     prob = xp.asarray(prob, dtype=dtype)
     d = xp.asarray(d, dtype=dtype)
+    d, prob, d_location, d_sign = _share_masks(d, prob, d_location, d_sign, xp=xp)
     if d.ndim == 0:
         d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
     return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
