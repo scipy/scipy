@@ -4811,6 +4811,24 @@ class TestKSOneSample:
         xp_assert_equal(res.statistic_location, xp.asarray(ref_location))
         xp_assert_equal(res.statistic_sign, xp.asarray(ref_sign, dtype=xp.int8))
 
+    def test_method_honoured_for_one_sided(self):
+        # gh-24737: `method` was ignored for one-sided alternatives; verify
+        # that 'exact' and 'asymp' give different p-values.
+        rng = np.random.default_rng(594235924652)
+        x = rng.standard_normal(100)
+        for alt in ('greater', 'less'):
+            res_exact = stats.ks_1samp(x, special.ndtr, alternative=alt,
+                                       method='exact')
+            res_asymp = stats.ks_1samp(x, special.ndtr, alternative=alt,
+                                       method='asymp')
+            # statistic must be identical regardless of method
+            assert_equal(res_exact.statistic, res_asymp.statistic)
+            # p-values must differ (exact uses ksone.sf, asymp uses exp formula)
+            assert res_exact.pvalue != res_asymp.pvalue, (
+                f"method='exact' and method='asymp' gave the same p-value "
+                f"for alternative='{alt}'; method is still being ignored"
+            )
+
     def test_invalid_method_raises(self):
         # gh-24737: unrecognized method strings must raise ValueError, not
         # silently fall through to the 'approx' else-clause.
