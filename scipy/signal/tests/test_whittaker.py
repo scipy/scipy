@@ -118,8 +118,8 @@ def test_whittaker_direct_vs_fast_order2(n):
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
-def test_whittaker_limit_penalty(order):
-    """Test that whittaker for close to zero and infinity penalty."""
+def test_whittaker_limit_zero_penalty(order):
+    """Test that whittaker for close to zero penalty."""
     rng = np.random.default_rng(42)
     n = 100
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
@@ -128,6 +128,14 @@ def test_whittaker_limit_penalty(order):
     wh = whittaker_henderson(signal, lamb=1e-7, order=order)
     assert_allclose(wh.x, signal, rtol=1e-4, atol=1e-5)
     assert wh.lamb == 1e-7
+
+
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
+def test_whittaker_limit_infinity_penalty(order):
+    """Test that whittaker for close to infinity penalty."""
+    rng = np.random.default_rng(42)
+    n = 100
+    y = np.sin(2*np.pi * np.linspace(0, 1, n))
 
     # In the limit of an infinite penalty, the smoothing results in an interpolation
     # polynom of degree = penalty order - 1 (order=2 => linear)
