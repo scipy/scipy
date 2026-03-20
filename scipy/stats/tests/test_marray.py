@@ -39,7 +39,7 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), all_unique=Tru
             assert mask.ndim <= 2
             mask = np.moveaxis(mask, masked_slice_axis, -1)
             i = rng.integers(mask.shape[0])
-            mask[i] = xp.nan
+            mask[i] = True
             mask = np.moveaxis(mask, -1, masked_slice_axis)
         masks.append(mask)
 
@@ -72,13 +72,15 @@ def assert_close(res, ref, *args, **kwargs):
     make_xp_pytest_param(stats.gmean, {}),
     make_xp_pytest_param(stats.hmean, {}),
     make_xp_pytest_param(stats.pmean, {'p': 2}),
-    # make_xp_pytest_param(stats.expectile, {'alpha': 0.4}),  # TODO: fix
+    make_xp_pytest_param(stats.expectile, {'alpha': 0.4}),
     make_xp_pytest_param(_xp_mean, {}),
 ])
 @pytest.mark.parametrize('weighted', [False, True])
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('masked_slice', [False, True])
 def test_one_sample_weighted_reducing(fun, kwargs, weighted, axis, masked_slice, xp):
+    if fun == stats.expectile and masked_slice:
+        pytest.xfail("TODO: fix failure of `expectile` with all-masked slice.")
     maxis = (axis or 0) if masked_slice else None
     mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp)
     mweights = marrays[1] if weighted else None
@@ -117,16 +119,16 @@ def test_one_sample_weighted_reducing(fun, kwargs, weighted, axis, masked_slice,
      make_xp_pytest_param(_xp_var, {'correction': 1, 'keepdims': True}),
      make_xp_pytest_param(stats.variation, {}),
      make_xp_pytest_param(stats.variation, {'ddof': 1}),
-     # make_xp_pytest_param(stats.tmean, dict(limits=(0.1, 0.9))),  # TODO: fix these
-     # make_xp_pytest_param(stats.tvar, dict(limits=(0.1, 0.9), inclusive=(False, True))),
-     # make_xp_pytest_param(stats.tstd, dict(limits=(0.1, 0.9), inclusive=(True, False))),
-     # make_xp_pytest_param(stats.tsem, dict(limits=(0.1, 0.9), inclusive=(False,)*2)),
+     make_xp_pytest_param(stats.tmean, dict(limits=(0.1, 0.9))),
+     make_xp_pytest_param(stats.tvar, dict(limits=(0.1, 0.9), inclusive=(False, True))),
+     make_xp_pytest_param(stats.tstd, dict(limits=(0.1, 0.9), inclusive=(True, False))),
+     make_xp_pytest_param(stats.tsem, dict(limits=(0.1, 0.9), inclusive=(False,)*2)),
      make_xp_pytest_param(stats.tmin, dict(lowerlimit=0.5, inclusive=True)),
      make_xp_pytest_param(stats.tmax, dict(upperlimit=0.5, inclusive=False)),
-     # make_xp_pytest_param(stats.iqr, {'interpolation': 'nearest'}),  # TODO: fix array-api-strict
-     # make_xp_pytest_param(stats.iqr, {'rng': (10, 90), 'scale': 'normal'}),
-     # make_xp_pytest_param(stats.median_abs_deviation, {}),
-     # make_xp_pytest_param(stats.median_abs_deviation, {'scale': 'normal'}),
+     make_xp_pytest_param(stats.iqr, {'interpolation': 'nearest'}),
+     make_xp_pytest_param(stats.iqr, {'rng': (10, 90), 'scale': 'normal'}),
+     make_xp_pytest_param(stats.median_abs_deviation, {}),
+     make_xp_pytest_param(stats.median_abs_deviation, {'scale': 'normal'}),
      make_xp_pytest_param(stats.trim_mean, {'proportiontocut': 0.1}),
      ])
 @pytest.mark.parametrize('axis', [0, 1, None])
@@ -140,14 +142,20 @@ def test_one_sample_reducing(fun, kwargs, axis, masked_slice, xp):
     assert_close(res, ref)
 
 
-# TODO: fix this
 @make_xp_test_case(stats.mode)
 @pytest.mark.parametrize('dtype', ['int32', 'float64'])
-@pytest.mark.parametrize('shape', [10, (7, 8)])
+@pytest.mark.parametrize('shape', [(10,), (7, 8)])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_mode(dtype, shape, axis, xp):
-    mxp, marrays, narrays = get_arrays(1, shape=shape, all_unique=False, xp=xp)
-    axis = 0 if marrays[0].ndim == 1 else axis
+@pytest.mark.parametrize('masked_slice', [False, True])
+def test_mode(dtype, shape, axis, masked_slice, xp):
+    if masked_slice and dtype == 'int32':
+        # Without `MArray`, dtype of `mode` with `nan_policy='omit' and all-nan slice
+        # is promoted to float to return NaN; `MArray` dtype is stable.
+        # However, MArray naturally returns `1` for the count, which is not right.
+        pytest.xfail("TODO: resolve nan_policy='omit'/all-nan slice dtype instability")
+    axis = 0 if len(shape) == 1 else axis
+    maxis = (axis or 0) if masked_slice else None
+    mxp, marrays, narrays = get_arrays(1, shape=shape, all_unique=False, masked_slice_axis=maxis, xp=xp)
     res = stats.mode(mxp.astype(marrays[0], getattr(mxp, dtype)), axis=axis)
     ref = stats.mode(*narrays, nan_policy='omit', axis=axis)
     assert_close(res.mode, ref.mode.astype(dtype))
@@ -175,7 +183,6 @@ def test_describe(axis, kwargs, masked_slice, xp):
     assert_close(res.kurtosis, ref.kurtosis)
 
 
-# TODO: study masked slice later
 @skip_backend('dask.array', reason='shape (nan,) in _xp_var when ddof=1')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun', [make_xp_pytest_param(stats.zscore),
@@ -183,15 +190,17 @@ def test_describe(axis, kwargs, masked_slice, xp):
                                  make_xp_pytest_param(stats.zmap)])
 @pytest.mark.parametrize('ddof', [0, 1])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_one_sample_non_reducing(fun, ddof, axis, xp):
+@pytest.mark.parametrize('masked_slice', [False, True])
+def test_one_sample_non_reducing(fun, ddof, axis, masked_slice, xp):
+    maxis = (axis or 0) if masked_slice else None
     n_arrays = 2 if fun == stats.zmap else 1
-    mxp, marrays, narrays = get_arrays(n_arrays, xp=xp)
+    mxp, marrays, narrays = get_arrays(n_arrays, masked_slice_axis=maxis, xp=xp)
     res = fun(*marrays, ddof=ddof, axis=axis)
     ref = xp.asarray(fun(*narrays, ddof=ddof, nan_policy='omit', axis=axis))
-    xp_assert_close(res.data[~res.mask], ref[~xp.isnan(ref)])
-    xp_assert_equal(res.mask, marrays[0].mask)
+    assert_close(res, ref)
 
 
+# TODO: fix trimmed t_test with MArray (w/ and w/out all-masked slice)
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('f, kwargs', [
@@ -199,12 +208,12 @@ def test_one_sample_non_reducing(fun, ddof, axis, xp):
     make_xp_pytest_param(stats.ttest_rel, dict()),
     make_xp_pytest_param(stats.ttest_ind, dict(equal_var=False)),
     make_xp_pytest_param(stats.ttest_ind, dict(equal_var=True)),
-    # make_xp_pytest_param(stats.ttest_ind, dict(equal_var=False, trim=0.1)),  # TODO: fix
+    # make_xp_pytest_param(stats.ttest_ind, dict(equal_var=False, trim=0.1)),
     # make_xp_pytest_param(stats.ttest_ind, dict(equal_var=True, trim=0.1)),
 ])
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
 @pytest.mark.parametrize('axis', [0, 1, None])
-@pytest.mark.parametrize('masked_slice', [False])
+@pytest.mark.parametrize('masked_slice', [False, True])
 def test_ttests(f, kwargs, alternative, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
     f_name = f.__name__
@@ -272,11 +281,11 @@ def test_goodness_of_fit(f, args, alternative, axis, masked_slice, xp):
 ])
 @pytest.mark.parametrize('ddof', [0, 1])
 @pytest.mark.parametrize('axis', [0, 1, None])
-@pytest.mark.parametrize('masked_slice', [True])
+@pytest.mark.parametrize('masked_slice', [False, True])
 def test_power_divergence_chisquare(f, lambda_, ddof, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
 
-    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp, shape=(5, 6))
+    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, shape=(9, 10), xp=xp)
 
     kwargs = dict(axis=axis, ddof=ddof)
 
@@ -507,7 +516,7 @@ class TestKendallTau:
     @pytest.mark.parametrize('variant', ['b', 'c'])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize('axis', [0, 1, None])
-    @pytest.mark.parametrize('masked_slice', [False, True])  # TODO: fix this
+    @pytest.mark.parametrize('masked_slice', [False, True])
     def test_omit_masked_elements(self, method, variant, alternative, axis, masked_slice, xp):
         maxis = (axis or 0) if masked_slice else None
         mxp, marrays, narrays = get_arrays(2, shape=(17, 18), xp=xp,
@@ -532,13 +541,13 @@ class TestKendallTau:
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun, kwargs', [
-    make_xp_pytest_param(stats.bartlett, {}),  # TODO: fix this
-    make_xp_pytest_param(stats.alexandergovern, {}),  # TODO: fix this
+    make_xp_pytest_param(stats.bartlett, {}),
+    make_xp_pytest_param(stats.alexandergovern, {}),
     make_xp_pytest_param(stats.levene, {'center': 'median'}),
     make_xp_pytest_param(stats.levene, {'center': 'mean'}),
     make_xp_pytest_param(stats.levene, {'center': 'trimmed'}),
     make_xp_pytest_param(stats.f_oneway, {'equal_var': True}),
-    make_xp_pytest_param(stats.f_oneway, {'equal_var': False}),  # TODO: fix this
+    make_xp_pytest_param(stats.f_oneway, {'equal_var': False}),
     make_xp_pytest_param(stats.kruskal, {}),
     make_xp_pytest_param(stats.fligner, {'center': 'median'}),
     make_xp_pytest_param(stats.fligner, {'center': 'mean'}),
@@ -579,13 +588,15 @@ def test_k_sample_paired_tests(fun, kwargs, axis, masked_slice, xp):
 ])
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
 @pytest.mark.parametrize('axis', [0, 1, None])
-@pytest.mark.parametrize('masked_slice', [False])  # TODO: come back to test properly
+@pytest.mark.parametrize('masked_slice', [False, True])
 def test_correlation(f, alternative, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
     mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp)
 
     kwargs = {} if f == stats.pointbiserialr else {'alternative': alternative}
     res = f(*marrays, **kwargs, axis=axis)
+    if f == stats.pearsonr:
+        res_ci_low, res_ci_high = res.confidence_interval()
 
     # `pearsonr` does not have `axis_nan_policy`, so do this manually
     x, y = narrays
@@ -599,17 +610,25 @@ def test_correlation(f, alternative, axis, masked_slice, xp):
         i = () if axis is None else i
 
         mask = np.isnan(xi) | np.isnan(yi)
+
+        if np.count_nonzero(~mask) < 2:
+            assert res.statistic.mask[i]
+            assert res.pvalue.mask[i]
+            if f == stats.pearsonr:
+                assert res_ci_low.mask[i]
+                assert res_ci_high.mask[i]
+            return
+
         ref = f(xi[~mask], yi[~mask], **kwargs)
 
         atol = 1e-7 if (is_torch(xp) and f == stats.spearmanrho) else 0.
-        xp_assert_close(res.statistic.data[i], xp.asarray(ref.statistic)[()], atol=atol)
-        xp_assert_close(res.pvalue.data[i], xp.asarray(ref.pvalue)[()], atol=atol)
+        assert_close(res.statistic[i], ref.statistic[()], atol=atol)
+        assert_close(res.pvalue[i], ref.pvalue[()], atol=atol)
 
         if f == stats.pearsonr:
-            res_ci_low, res_ci_high = res.confidence_interval()
             ref_ci_low, ref_ci_high = ref.confidence_interval()
-            xp_assert_close(res_ci_low.data[i], xp.asarray(ref_ci_low)[()])
-            xp_assert_close(res_ci_high.data[i], xp.asarray(ref_ci_high)[()])
+            assert_close(res_ci_low[i], ref_ci_low[()])
+            assert_close(res_ci_high[i], ref_ci_high[()])
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
@@ -617,11 +636,11 @@ def test_correlation(f, alternative, axis, masked_slice, xp):
 @pytest.mark.parametrize('f, method', [
     make_xp_pytest_param(stats.siegelslopes, {'method':'hierarchical'}),
     make_xp_pytest_param(stats.siegelslopes, {'method':'separate'}),
-    make_xp_pytest_param(stats.theilslopes, {'method': 'joint'}),  # TODO: fix
-    make_xp_pytest_param(stats.theilslopes, {'method': 'separate'}),  # TODO: fix
-    make_xp_pytest_param(stats.linregress, {'alternative': 'less'}),  # TODO: fix
-    make_xp_pytest_param(stats.linregress, {'alternative': 'greater'}),  # TODO: fix
-    make_xp_pytest_param(stats.linregress, {'alternative': 'two-sided'}),  # TODO: fix
+    make_xp_pytest_param(stats.theilslopes, {'method': 'joint'}),
+    make_xp_pytest_param(stats.theilslopes, {'method': 'separate'}),
+    make_xp_pytest_param(stats.linregress, {'alternative': 'less'}),
+    make_xp_pytest_param(stats.linregress, {'alternative': 'greater'}),
+    make_xp_pytest_param(stats.linregress, {'alternative': 'two-sided'}),
 ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('masked_slice', [False, True])
@@ -656,7 +675,7 @@ def test_entropy(qk, base, axis, masked_slice, xp):
     mxp, marrays, narrays = get_arrays(2 if qk else 1, masked_slice_axis=maxis, xp=xp)
     res = stats.entropy(*marrays, base=base, axis=axis)
     ref = stats.entropy(*narrays, base=base, nan_policy='omit', axis=axis)
-    assert_close(res, ref)  # TODO: fix
+    assert_close(res, ref)
 
 
 @make_xp_test_case(stats.rankdata)
@@ -673,16 +692,17 @@ def test_rankdata(method, axis, masked_slice, xp):
 
 
 @make_xp_test_case(stats.obrientransform)
+@skip_backend('dask.array', reason='Trouble with boolean indexing in assertion')
 @skip_backend('jax.numpy', reason="JAX currently incompatible with marray")
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
 @pytest.mark.parametrize('n_arrays', [1, 3])
-@pytest.mark.parametrize('masked_slice', [False])  # TODO: come back to test properly
+@pytest.mark.parametrize('masked_slice', [False, True])
 def test_obrientransform(dtype, n_arrays, masked_slice, xp):
-    maxis = (axis or 0) if masked_slice else None
     # obrientransform is not yet vectorized
-    mxp, marrays, narrays = get_arrays(n_arrays, dtype=dtype, shape=(25,), masked_slice_axis=maxis, xp=xp)
+    maxis = 0 if masked_slice else None
+    mxp, marrays, narrays = get_arrays(n_arrays, dtype=dtype, shape=(25,),
+                                       masked_slice_axis=maxis, xp=xp)
     res = stats.obrientransform(*marrays)
     ref = stats.obrientransform(*narrays, nan_policy='omit')
     for res_i, ref_i in zip(res, ref):
-        xp_assert_close(res_i.data[~res_i.mask],
-                        xp.asarray(ref_i[~np.isnan(ref_i)], dtype=getattr(xp, dtype)))
+        assert_close(res_i, ref_i)

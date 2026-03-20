@@ -3325,7 +3325,8 @@ def bartlett(*samples, axis=0):
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
-    Ni = xpx.at(Ni)[Ni == 0].set(xp.nan)
+    Ni = (xpx.at(Ni)[Ni == 0].set(xp.nan) if not is_marray(xp) else
+          xp.asarray(Ni.data, mask=xp.any(Ni == 0, axis=0, keepdims=True).data))
     ssq = xp.concat(ssq, axis=0)
     dtype = Ni.dtype
     Ntot = xp.sum(Ni, axis=0)

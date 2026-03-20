@@ -429,8 +429,9 @@ def _quantile_hf(y, p, n, method, weights, xp):
         g = xpx.at(g, jg < 0).set(0)
 
     g = xpx.at(g)[j < 0].set(0)
-    j = xp.clip(j, 0., n - 1)
-    jp1 = xp.clip(jp1, 0., n - 1)
+    zero = xp.zeros_like(j)
+    j = xp.clip(j, zero, xp.maximum(n - 1, zero))
+    jp1 = xp.clip(jp1, zero, xp.maximum(n - 1, zero))
 
     return ((1 - g) * xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
             + g * xp.take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
