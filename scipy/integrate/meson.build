@@ -8,7 +8,8 @@ py3.extension_module('_quadpack',
 py3.extension_module('_odepack',
   ['_odepackmodule.c', 'src/lsoda.c'],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
+  dependencies: [lapack_dep, np_dep, ccallback_dep],
+  include_directories: ['../_build_utils/src'],
   install: true,
   subdir: 'scipy/integrate'
 )
@@ -16,7 +17,8 @@ py3.extension_module('_odepack',
 py3.extension_module('_vode',
   ['_dzvodemodule.c', 'src/vode.c', 'src/zvode.c'],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
+  dependencies: [lapack_dep, np_dep, ccallback_dep],
+  include_directories: ['../_build_utils/src'],
   install: true,
   subdir: 'scipy/integrate'
 )
