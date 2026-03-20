@@ -123,30 +123,32 @@ def test_logdet_difference_matrix(order, n):
 
 
 @pytest.mark.parametrize(
-        ["signal", "lamb", "order", "weights", "msg"],
+        ["signal", "lamb", "order", "weights", "err", "msg"],
         [
-            ([[1, 2, 3] * 3], 1, 2, None,
+            ([[1, 2, 3] * 3], 1, 2, None, ValueError,
              "Input array signal must be of shape \\(n,\\)"),
-            (np.zeros(2), 1, 2, None, "Input array signal must be at least of shape"),
-            (np.arange(10), -0.9, 2, None, "Parameter lamb must be string"),
-            ([1, 2, 3], 1, 1.5, None,
+            (np.zeros(2), 1, 2, None, ValueError,
+             "Input array signal must be at least of shape"),
+            (np.arange(10), -0.9, 2, None, ValueError,
+             "Parameter lamb must be string"),
+            ([1, 2, 3], 1, 1.5, None, TypeError,
+             "'float' object cannot be interpreted as an integer"),
+            ([1, 2, 3], 1, 0, None, ValueError,
              "Parameter order must be an integer larger than or equal to 1."),
-            ([1, 2, 3], 1, 0, None,
-             "Parameter order must be an integer larger than or equal to 1."),
-            ([1, 2, 3], 1, 2, [0, 1],
+            ([1, 2, 3], 1, 2, [0, 1], ValueError,
              "Input array weights must have the same shape as the signal array."),
-            ([1, 2, 3], 1, 2, [[0]],
+            ([1, 2, 3], 1, 2, [[0]], ValueError,
              "Input array weights must have the same shape as the signal array."),
-            ([1, 2, np.nan], 1, 2, None,
+            ([1, 2, np.nan], 1, 2, None, ValueError,
              "Input array signal must be finite."),
-            ([1, 2, 3], 1, 2, [1, 2, np.nan],
+            ([1, 2, 3], 1, 2, [1, 2, np.nan], ValueError,
              "Input array weights must be finite."),
-            ([1, 2, np.nan], 1, 2, [1, 2, 3],
+            ([1, 2, np.nan], 1, 2, [1, 2, 3], ValueError,
              "Input array weights must be zero for all non-finite"),
         ])
-def test_whittaker_raises(signal, lamb, order, weights, msg):
+def test_whittaker_raises(signal, lamb, order, weights, err, msg):
     """Test that whittaker raises errors."""
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(err, match=msg):
         whittaker_henderson(signal, lamb=lamb, order=order, weights=weights)
 
 
@@ -190,15 +192,20 @@ def test_whittaker_direct_vs_fast_order2(n):
     x2 = _solve_WH_order2_fast(signal, lamb=1.23)
     assert_allclose(x1, x2, rtol=1e-11)
 
+    wh = whittaker_henderson(signal, lamb=1.23, order=2)
+    assert_allclose(wh.x, x1, rtol=1e-11)
+
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 def test_whittaker_limit_zero_penalty(order):
-    """Test that whittaker for close to zero penalty."""
+    """Test whittaker for penalty lamb close to zero."""
     rng = np.random.default_rng(42)
     n = 100
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
     noise = rng.standard_normal(n)
     signal = y + noise
+
+    # In the limit of a zero penalty, the smoothing results in reproducing the signal.
     wh = whittaker_henderson(signal, lamb=1e-7, order=order)
     assert_allclose(wh.x, signal, rtol=1e-4, atol=1e-5)
     assert wh.lamb == 1e-7
@@ -206,8 +213,7 @@ def test_whittaker_limit_zero_penalty(order):
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
 def test_whittaker_limit_infinity_penalty(order):
-    """Test that whittaker for close to infinity penalty."""
-    rng = np.random.default_rng(42)
+    """Test whittaker for penalty lamb close to infinity."""
     n = 100
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
 
@@ -320,6 +326,7 @@ def test_reml_criterion(order):
     M = D.T @ D
 
     def test_reml(la, y):
+        # See docstring and comment of _reml.
         A = np.eye(n) + la * M
         x = np.linalg.solve(A, y)
         resid = y - x

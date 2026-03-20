@@ -1,3 +1,4 @@
+import operator
 import warnings
 import numpy as np
 from scipy._lib._util import _RichResult
@@ -73,8 +74,8 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
     This implements WH smoothing with a difference penalty of the specified ``order``
     and penalty strength ``lamb``, see [1]_, [2]_ and [3]_. WH can be seen as a
-    P-Spline (penalized B-Spline) of degree zero for equidistant knots (at the signal
-    positions).
+    penalized B-Spline (P-Spline) of degree zero for equidistant knots at the signal
+    positions.
 
     In econometrics, the WH graduation of order 2 is referred to as the
     Hodrick-Prescott filter [4]_.
@@ -86,9 +87,9 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
         points of a signal, e.g. a time series with constant time lag.
     
     lamb : str or float, optional
-        Smoothing or penalty parameter, default is ``"reml"`` which minimizes the REML
-        criterion to find the parameter ``lamb``. If a number is passed, it must be
-        non-negative and it is used directly.
+        Smoothing or penalty parameter, default is ``"reml"`` which minimizes the
+        restricted maximum likelihood (REML) criterion to find the parameter ``lamb``.
+        If a number is passed, it must be non-negative and it is used directly.
 
     order : int, default: 2
         The order of the difference penalty, must be at least 1.
@@ -201,7 +202,8 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     >>> plt.show()
 
     """
-    if order < 1 or int(order) != order:
+    order = operator.index(order)
+    if order < 1:
         raise ValueError(
             "Parameter order must be an integer larger than or equal to 1."
         )
@@ -251,8 +253,6 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     elif lamb == 0.0:
         x = np.asarray(signal).copy()
     else:
-        # If performance matters and p == 2, think about a C++/Pybind implementation of
-        # x = _solve_WH_order2_fast(signal, lamb=lamb)
         x, _ = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
     return _RichResult(x=x, lamb=lamb)
 
@@ -265,7 +265,6 @@ def _polynomial_fit(y, lamb, order=2, weights=None, calc_logdet=False):
     if calc_logdet:
         # For large lambda, log|W + lambda D'D| ~ log|lambda D'D|
         # (with determinant understood as product of non-zero eigenvalues). 
-        # TODO: What about weights?
         logdet_DtD = _logdet_difference_matrix(order=order, n=n)
         logdet = (n - order) * np.log(lamb) + logdet_DtD
     else:
@@ -314,11 +313,14 @@ def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False, warn_use
         ab[i, :ab.shape[1] - i] = np.diagonal(P_raw, i)
     ab *= lamb
     if n > 2*p + 1:
-        ab = np.hstack([
-            ab[:, :p+1],
-            np.repeat(ab[:, p:p+1], n - (2*p+1), axis=1),
-            ab[:, -p:],
-        ])
+        ab = np.concat(
+            [
+                ab[:, :p+1],
+                np.repeat(ab[:, p:p+1], n - (2*p+1), axis=1),
+                ab[:, -p:],
+            ],
+            axis=1,
+        )
 
     if weights is None:
         # Check if lambda is so large that A = I + lambda D'D = lambda D'D. We even add
