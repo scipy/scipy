@@ -188,13 +188,14 @@ def test_whittaker_weights():
     assert_allclose(wh3.x, wh1.x, rtol=1e-11)
 
 
-def test_whittaker_zero_weight_interpolation():
+@pytest.mark.parametrize("missing_value", [np.nan, np.inf, 1e-20])
+def test_whittaker_zero_weight_interpolation(missing_value):
     """Test that whittaker interpolates where weights are zero."""
     n = 100
     signal = np.sin(2*np.pi * np.linspace(0, 1, n))
     signal[50:] += 2
     w = np.ones_like(signal)
-    signal[40:60] = np.nan  # value does not matter, np.nan to check arg validation
+    signal[40:60] = missing_value  # value does not matter
     w[40:60] = 0
     # Note: interpolation is a polynomial of degree = 2 * order - 1.
 
