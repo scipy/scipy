@@ -3880,7 +3880,7 @@ def wilcoxon_outputs(kwds):
                  cpu_only=True,  # null distribution is CPU only
                  marray=True,
                  extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "
-                             "compatible with MArrays. "
+                             "compatible with MArray input. "
                              "``method='auto'`` is incompatible with JAX arrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
