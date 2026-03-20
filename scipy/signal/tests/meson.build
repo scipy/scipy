@@ -27,3 +27,10 @@ py3.install_sources([
   subdir: 'scipy/signal/tests',
   install_tag: 'tests'
 )
+
+py3.install_sources([
+    'data/GLB.Ts+dSST.csv',
+  ],
+  subdir: 'scipy/signal/tests/data',
+  install_tag: 'tests'
+)
