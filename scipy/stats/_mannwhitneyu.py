@@ -221,12 +221,12 @@ def _mwu_choose_method(n1, n2, ties):
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True,  # exact calculation only implemented in NumPy
-                 skip_backends=[('cupy', 'needs rankdata'),
-                                ('dask.array', 'needs rankdata')],
-                 marray=True,
-                 extra_note=("Only ``method='asymptotic'`` is compatible with MArrays. "
-                             "``method='auto'`` is incompatible with JAX arrays."))
+@xp_capabilities(
+    cpu_only=True,  # exact calculation only implemented in NumPy
+    skip_backends=[('cupy', 'needs rankdata'), ('dask.array', 'needs rankdata')],
+    marray=True,
+    extra_note=("Only ``method='asymptotic'`` is compatible with MArray input."
+                "``method='auto'`` is incompatible with JAX arrays."))
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):

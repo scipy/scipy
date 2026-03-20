@@ -155,7 +155,9 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, fun='quantil
 
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
-                 marray=True)
+                 marray=True,
+                 extra_note=("Use of `weights` is incompatible with MArray. "
+                             "``method='harrell-davis'`` is CPU-only."))
 def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None,
              weights=None):
     """
@@ -552,7 +554,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
 def estimated_cdf(x, y, *, method='linear',
                   axis=0, nan_policy='propagate', keepdims=None):
     """
-    Estimate the CDF for the distribution underlying a sample.
+    Estimate the CDF of the distribution underlying a sample.
 
     Parameters
     ----------

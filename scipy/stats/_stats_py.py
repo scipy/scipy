@@ -494,9 +494,9 @@ def _mode_result(mode, count):
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
                  jax_jit=False,  # would delegate, but jax-ml/jax#34486
-                 extra_note=("Values in MArrays must be real numbers "
-                             "that cast safely to floating point."),
-                 marray=True)
+                 marray=True,
+                 extra_note=("Values in MArray input must be real numbers "
+                             "that cast safely to floating point."))
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -4370,7 +4370,8 @@ class PearsonRResult(PearsonRResultBase):
 
 
 # Missing special.betainc on torch
-@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True,
+    extra_note='Only the default `method` is compatible with MArray input.')
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -6083,7 +6084,9 @@ def unpack_TtestResult(res, _):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True,
+                 extra_note=("The ``confidence_interval`` method of the output object "
+                             "is incompatible with JAX JIT."))
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6514,7 +6517,10 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True,
+                 extra_note=("`trim` and `method` are incompatible with MArray input."
+                             "The ``confidence_interval`` method of the output object "
+                             "is incompatible with JAX JIT."))
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
@@ -6895,7 +6901,9 @@ def _calculate_winsorized_variance(a, g, axis, *, xp):
     return var_win
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True,
+                 extra_note=("The ``confidence_interval`` method of the output object"
+                             "is incompatible with JAX JIT."))
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
