@@ -867,8 +867,8 @@ endif
 
 subdir('_external')
 subdir('_lib')
-subdir('special')
 subdir('linalg')
+subdir('special')
 subdir('sparse')
 subdir('stats')
 subdir('fft')
