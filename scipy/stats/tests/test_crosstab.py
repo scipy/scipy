@@ -4,6 +4,7 @@ from numpy.testing import assert_array_equal, assert_equal
 from scipy.stats.contingency import crosstab
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize('sparse', [False, True])
 def test_crosstab_basic(sparse):
     a = [0, 0, 9, 9, 0, 0, 9]
@@ -52,6 +53,7 @@ def test_crosstab_basic_3d():
     assert_array_equal(count, expected_count)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize('sparse', [False, True])
 def test_crosstab_levels(sparse):
     a = [0, 0, 9, 9, 0, 0, 9]
@@ -70,6 +72,7 @@ def test_crosstab_levels(sparse):
         assert_array_equal(count, expected_count)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize('sparse', [False, True])
 def test_crosstab_extra_levels(sparse):
     # The pair of values (-1, 3) will be ignored, because we explicitly
