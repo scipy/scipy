@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _count_nonmasked
+from scipy._lib._array_api import xp_assert_close, _count_nonmasked
 from scipy._lib._array_api import make_xp_pytest_param, make_xp_test_case
 from scipy._lib._array_api import SCIPY_ARRAY_API, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
@@ -155,7 +155,8 @@ def test_mode(dtype, shape, axis, masked_slice, xp):
         pytest.xfail("TODO: resolve nan_policy='omit'/all-nan slice dtype instability")
     axis = 0 if len(shape) == 1 else axis
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(1, shape=shape, all_unique=False, masked_slice_axis=maxis, xp=xp)
+    mxp, marrays, narrays = get_arrays(1, shape=shape, all_unique=False,
+                                       masked_slice_axis=maxis, xp=xp)
     res = stats.mode(mxp.astype(marrays[0], getattr(mxp, dtype)), axis=axis)
     ref = stats.mode(*narrays, nan_policy='omit', axis=axis)
     assert_close(res.mode, ref.mode.astype(dtype))
@@ -251,7 +252,8 @@ def test_ttests(f, kwargs, alternative, axis, masked_slice, xp):
 @pytest.mark.parametrize('masked_slice', [False, True])
 def test_goodness_of_fit(f, args, alternative, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(1, masked_slice_axis=maxis, shape=(21, 22), xp=xp)
+    shape = (21, 22)
+    mxp, marrays, narrays = get_arrays(1, masked_slice_axis=maxis, shape=shape, xp=xp)
 
     if f in {stats.skewtest, stats.kurtosistest}:
         kwds = {'alternative': alternative}
@@ -321,7 +323,8 @@ def test_power_divergence_chisquare(f, lambda_, ddof, axis, masked_slice, xp):
 @pytest.mark.parametrize('masked_slice', [False, True])
 def test_combine_pvalues(method, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp, shape=(10, 11))
+    shape = (10, 11)
+    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp, shape=shape)
 
     kwargs = dict(method=method, axis=axis)
     res = stats.combine_pvalues(marrays[0], **kwargs)
@@ -417,9 +420,10 @@ def test_directional_stats(normalize, axis, xp):
 @pytest.mark.parametrize('method', ['asymptotic'])  # TODO: add 'exact', 'auto'
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('masked_slice', [False, True])
-def test_wilcoxon(n_samples, zero_method, correction, alternative, method, axis, masked_slice, xp):
+def test_wilcoxon(n_samples, zero_method, correction,
+                  alternative, method, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(n_samples, masked_slice_axis=maxis, xp=xp, seed=84912165484322)
+    mxp, marrays, narrays = get_arrays(n_samples, masked_slice_axis=maxis, xp=xp)
     kwargs = dict(zero_method=zero_method, correction=correction,
                   alternative=alternative, method=method)
     res = stats.wilcoxon(*marrays, axis=axis, **kwargs)
@@ -438,7 +442,7 @@ def test_wilcoxon(n_samples, zero_method, correction, alternative, method, axis,
 @pytest.mark.parametrize('masked_slice', [False, True])
 def test_mannwhitneyu(use_continuity, alternative, method, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp, seed=84912165484322)
+    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp)
     kwargs = dict(use_continuity=use_continuity, alternative=alternative, method=method)
     res = stats.mannwhitneyu(*marrays, axis=axis, **kwargs)
     ref = stats.mannwhitneyu(*narrays, nan_policy='omit', axis=axis, **kwargs)
@@ -455,7 +459,7 @@ def test_mannwhitneyu(use_continuity, alternative, method, axis, masked_slice, x
 @pytest.mark.parametrize('masked_slice', [False, True])
 def test_ks_1samp(fun, method, alternative, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(1, masked_slice_axis=maxis, xp=xp, seed=84912165484322)
+    mxp, marrays, narrays = get_arrays(1, masked_slice_axis=maxis, xp=xp)
     kwargs = dict(method=method, alternative=alternative, axis=axis)
     res = fun(*marrays, stats.norm.cdf, **kwargs)
     ref = stats.ks_1samp(*narrays, stats.norm.cdf, nan_policy='omit', **kwargs)
@@ -479,11 +483,11 @@ def test_two_sample_tests(fun, kwargs, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
     if fun == stats.cramervonmises_2samp and axis is None:
         pytest.skip("Sample too large for exact method.")
-    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp, seed=84912165484322)
+    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp)
     res = fun(*marrays, axis=axis, **kwargs)
     ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
     assert_close(res.statistic, ref.statistic)
-    assert_close(res.pvalue, ref.pvalue)
+    assert_close(res.pvalue, ref.pvalue, atol=1e-30)  # brunnermunzel w/ torch
 
 
 @make_xp_test_case(stats.ks_2samp)
@@ -496,7 +500,7 @@ def test_two_sample_tests(fun, kwargs, axis, masked_slice, xp):
 @pytest.mark.parametrize('masked_slice', [False, True])
 def test_ks_2samp(fun, method, alternative, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp, seed=84912165484322)
+    mxp, marrays, narrays = get_arrays(2, masked_slice_axis=maxis, xp=xp)
     kwargs = dict(method=method, alternative=alternative, axis=axis)
     res = fun(*marrays, **kwargs)
     ref = stats.ks_2samp(*narrays, nan_policy='omit', **kwargs)
@@ -517,10 +521,11 @@ class TestKendallTau:
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize('axis', [0, 1, None])
     @pytest.mark.parametrize('masked_slice', [False, True])
-    def test_omit_masked_elements(self, method, variant, alternative, axis, masked_slice, xp):
+    def test_omit_masked_elements(self, method, variant, alternative,
+                                  axis, masked_slice, xp):
         maxis = (axis or 0) if masked_slice else None
-        mxp, marrays, narrays = get_arrays(2, shape=(17, 18), xp=xp,
-                                           masked_slice_axis=maxis, seed=84912165484322)
+        shape = (17, 18)
+        _, marrays, narrays = get_arrays(2, shape=shape, masked_slice_axis=maxis, xp=xp)
         kwargs = dict(method=method, variant=variant, alternative=alternative)
         res = stats.kendalltau(*marrays, **kwargs, axis=axis)
         ref = stats.kendalltau(*narrays, **kwargs, nan_policy='omit', axis=axis)
@@ -646,7 +651,8 @@ def test_correlation(f, alternative, axis, masked_slice, xp):
 @pytest.mark.parametrize('masked_slice', [False, True])
 def test_slopes_intercepts(f, method, axis, masked_slice, xp):
     maxis = (axis or 0) if masked_slice else None
-    mxp, marrays, narrays = get_arrays(2, shape=(19, 20), masked_slice_axis=maxis, seed=84912165484320, xp=xp)
+    shape = (19, 20)
+    mxp, marrays, narrays = get_arrays(2, shape=shape, masked_slice_axis=maxis, xp=xp)
     res = f(*marrays, axis=axis, **method)
     ref = f(*narrays, nan_policy='omit', axis=axis, **method)
 
