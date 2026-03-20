@@ -20,15 +20,15 @@ def test_solveh_banded():
     for i in range(1, n):
         ab[i, :-i] = np.diagonal(A, i)
     x, logdet, _ = _solveh_banded(ab, b, calc_logdet=True)
-    assert_allclose(x, np.linalg.solve(A, b))
-    assert_allclose(logdet, np.log(np.linalg.det(A)))
+    assert_allclose(x, np.linalg.solve(A, b), rtol=1e-11)
+    assert_allclose(logdet, np.log(np.linalg.det(A)), rtol=1e-11)
 
     # tridiagonal case
     x, logdet, _ = _solveh_banded(ab[:2], b, calc_logdet=True)
     A_tri = (
         np.diag(np.diag(A)) + np.diag(np.diag(A, -1), -1) + np.diag(np.diag(A, 1), 1)
     )
-    assert_allclose(logdet, np.log(np.linalg.det(A_tri)))
+    assert_allclose(logdet, np.log(np.linalg.det(A_tri)), rtol=1e-11)
 
 
 @pytest.mark.parametrize(
@@ -43,9 +43,9 @@ def test_logdet_difference_matrix(order, n):
     p = order
     logdet = _logdet_difference_matrix(order=p, n=n)
     D = np.diff(np.eye(n), n=p, axis=0)  # shape (n-p, n)
-    assert_allclose(logdet, np.log(np.linalg.det(D @ D.T)))
+    assert_allclose(logdet, np.log(np.linalg.det(D @ D.T)), rtol=1e-11)
     eigvals = np.linalg.eigvals(D.T @ D)
-    assert_allclose(logdet, np.sum(np.log(eigvals[eigvals > 1e-8])))
+    assert_allclose(logdet, np.sum(np.log(eigvals[eigvals > 1e-8])), rtol=1e-11)
 
 
 @pytest.mark.parametrize(
@@ -114,7 +114,7 @@ def test_whittaker_direct_vs_fast_order2(n):
     signal = np.sin(2 * np.pi * np.linspace(0, 1, n)) + rng.standard_normal(n)
     x1, _ = _solve_WH_banded(signal, lamb=1.23, order=2)
     x2 = _solve_WH_order2_fast(signal, lamb=1.23)
-    assert_allclose(x1, x2)
+    assert_allclose(x1, x2, rtol=1e-11)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
@@ -159,7 +159,7 @@ def test_whittaker_unpenalized():
     n = 10
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
     wh = whittaker_henderson(y, lamb=0)
-    assert_allclose(wh.x, y)
+    assert_allclose(wh.x, y, rtol=1e-11)
     assert not np.may_share_memory(wh.x, y)
 
 
@@ -173,11 +173,11 @@ def test_whittaker_weights():
     wh1 = whittaker_henderson(signal, lamb=1)
     w = np.ones_like(signal)
     wh2 = whittaker_henderson(signal, lamb=1, weights=w)
-    assert_allclose(wh1.x, wh2.x)
+    assert_allclose(wh1.x, wh2.x, rtol=1e-11)
 
     # Multiplying penalty and weights by the same number does not change the result.
     wh3 = whittaker_henderson(signal, lamb=3, weights=3*w)
-    assert_allclose(wh3.x, wh1.x)
+    assert_allclose(wh3.x, wh1.x, rtol=1e-11)
 
 
 def test_whittaker_zero_weight_interpolation():
@@ -193,14 +193,14 @@ def test_whittaker_zero_weight_interpolation():
     # order = 1 => linear interpolation
     wh = whittaker_henderson(signal, lamb=1, order=1, weights=w)
     interp = np.interp(np.arange(40, 60), [39, 60], [wh.x[39], wh.x[60]])
-    assert_allclose(wh.x[40:60], interp)
+    assert_allclose(wh.x[40:60], interp, rtol=1e-11)
 
     # order = 2 => cubic interpolation
     wh = whittaker_henderson(signal, lamb=1, order=2, weights=w)
     poly = np.polynomial.Polynomial.fit(
         x=[38, 39, 60, 61], y=[wh.x[38], wh.x[39], wh.x[60], wh.x[61]], deg=3
     )
-    assert_allclose(wh.x[40:60], poly(np.arange(40, 60)))
+    assert_allclose(wh.x[40:60], poly(np.arange(40, 60)), rtol=1e-11)
 
 
 def test_whittaker_zero_weight_extrapolation():
@@ -215,17 +215,17 @@ def test_whittaker_zero_weight_extrapolation():
 
     # order = 1 => constant extrapolation
     wh = whittaker_henderson(signal, lamb=1, order=1, weights=w)
-    assert_allclose(wh.x[80:], wh.x[79])
+    assert_allclose(wh.x[80:], wh.x[79], rtol=1e-11)
 
     # order 2 => linear extrapolation
     wh = whittaker_henderson(signal, lamb=1, order=2, weights=w)
     poly = np.polynomial.Polynomial.fit(x=[78, 79], y=wh.x[78:80], deg=1)
-    assert_allclose(wh.x[80:], poly(np.arange(80, 100)))
+    assert_allclose(wh.x[80:], poly(np.arange(80, 100)), rtol=1e-11)
 
     # order = 3 => quadratic extrapolation
     wh = whittaker_henderson(signal, lamb=1, order=3, weights=w)
     poly = np.polynomial.Polynomial.fit(x=[77, 78, 79], y=wh.x[77:80], deg=2)
-    assert_allclose(wh.x[80:], poly(np.arange(80, 100)))
+    assert_allclose(wh.x[80:], poly(np.arange(80, 100)), rtol=1e-10)
 
 
 @pytest.mark.parametrize("order", [1, 2, 3])
@@ -247,7 +247,7 @@ def test_reml_criterion(order):
 
     r1 = _reml(lamb=la, y=y, order=order)
     r2 = test_reml(la=la, y=y)
-    assert_allclose(r1, r2)
+    assert_allclose(r1, r2, rtol=1e-11)
 
 
 def test_whittaker_reml():
