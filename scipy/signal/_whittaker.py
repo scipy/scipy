@@ -37,7 +37,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
     x : (M,) ndarray
         The solution to the system ``a x = b``. Shape of return matches shape of `b`.
     logdet : float
-        Logarithm of the determinant of `ab`.
+        Logarithm of the determinant of `ab`. Returns 0 if ``calc_logdet=False``.
     info : int
     """
     a1 = ab
@@ -114,7 +114,8 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     -----
     For the signal :math:`y = (y_1, y_2, \ldots, y_n)` and weights
     :math:`w = (w_1, w_2, \ldots, w_n)`, WH of order :math:`p` with smoothing or
-    penalty parameter :math:`\lambda` solves the following optimization problem:
+    penalty parameter :math:`\lambda` solves the following optimization problem for
+    :math:`x_i`:
 
     .. math::
 
@@ -268,7 +269,7 @@ def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False, warn_use
     x : ndarray
         The solution.
     logdet : float
-        Logarithm of the determinant of matrix A.
+        Logarithm of the determinant of matrix A. Returns 0 if ``calc_logdet=False``.
     """
     n = y.shape[0]  # n >= p + 1 was already checked
     p = order  # order of difference penalty
