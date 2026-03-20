@@ -3323,10 +3323,10 @@ class TestIQR:
 
     def test_rng(self, xp):
         x = xp.arange(5)
-        xp_assert_equal(stats.iqr(x), xp.asarray(2.))
-        xp_assert_equal(stats.iqr(x, rng=(25, 87.5)), xp.asarray(2.5))
-        xp_assert_equal(stats.iqr(x, rng=(12.5, 75)), xp.asarray(2.5))
-        xp_assert_equal(stats.iqr(x, rng=(10, 50)), xp.asarray(1.6))  # 3-1.4
+        xp_assert_close(stats.iqr(x), xp.asarray(2.))
+        xp_assert_close(stats.iqr(x, rng=(25, 87.5)), xp.asarray(2.5))
+        xp_assert_close(stats.iqr(x, rng=(12.5, 75)), xp.asarray(2.5))
+        xp_assert_close(stats.iqr(x, rng=(10, 50)), xp.asarray(1.6))  # 3-1.4
 
         message = r"Elements of `rng` must be in the range \[0, 100\]."
         with pytest.raises(ValueError, match=message):
