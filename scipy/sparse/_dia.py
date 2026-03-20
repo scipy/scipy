@@ -548,10 +548,33 @@ class dia_array(_dia_base, sparray):
 
     Notes
     -----
-
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
-    Sparse arrays with DIAgonal storage do not support slicing.
+
+    **Data format**
+
+    The ``data`` array stores diagonal entries in rows, where each row
+    of ``data`` corresponds to one diagonal specified by ``offsets``.
+    The alignment of elements within ``data`` follows these rules:
+
+    * **Sub-diagonals** (``offsets[k] < 0``): Left-aligned. The
+      diagonal values start at column 0 of ``data[k, :]``, with
+      unused positions padded at the end.
+    * **Main diagonal** (``offsets[k] == 0``): Left-aligned. Values
+      start at column 0.
+    * **Super-diagonals** (``offsets[k] > 0``): Right-aligned. The
+      diagonal values are shifted so that ``data[k, j]`` fills column
+      ``j`` of the sparse array for each column ``j`` where the
+      diagonal is present.
+
+    More precisely, for diagonal ``offsets[k]``, the element at row
+    ``r`` and column ``c`` of the sparse array is stored at
+    ``data[k, c]``.  Each column ``j`` of ``data`` thus maps directly
+    to column ``j`` of the sparse array.
+
+    When ``offsets`` is given in decreasing order, this layout matches
+    the `BLAS/LAPACK general band storage format
+    <https://netlib.org/lapack/lug/node124.html>`_.
 
     Examples
     --------
@@ -631,10 +654,33 @@ class dia_matrix(spmatrix, _dia_base):
 
     Notes
     -----
-
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
-    Sparse matrices with DIAgonal storage do not support slicing.
+
+    **Data format**
+
+    The ``data`` array stores diagonal entries in rows, where each row
+    of ``data`` corresponds to one diagonal specified by ``offsets``.
+    The alignment of elements within ``data`` follows these rules:
+
+    * **Sub-diagonals** (``offsets[k] < 0``): Left-aligned. The
+      diagonal values start at column 0 of ``data[k, :]``, with
+      unused positions padded at the end.
+    * **Main diagonal** (``offsets[k] == 0``): Left-aligned. Values
+      start at column 0.
+    * **Super-diagonals** (``offsets[k] > 0``): Right-aligned. The
+      diagonal values are shifted so that ``data[k, j]`` fills column
+      ``j`` of the sparse matrix for each column ``j`` where the
+      diagonal is present.
+
+    More precisely, for diagonal ``offsets[k]``, the element at row
+    ``r`` and column ``c`` of the sparse matrix is stored at
+    ``data[k, c]``.  Each column ``j`` of ``data`` thus maps directly
+    to column ``j`` of the sparse matrix.
+
+    When ``offsets`` is given in decreasing order, this layout matches
+    the `BLAS/LAPACK general band storage format
+    <https://netlib.org/lapack/lug/node124.html>`_.
 
     Examples
     --------
