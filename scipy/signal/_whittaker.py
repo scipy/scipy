@@ -127,6 +127,16 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     :math:`\Delta^2 x_i = \Delta(\Delta x_i) = x_{i+2} - 2x_{i+1} + x_i`.
     For every input value :math:`y_i`, it generates a smoothed value :math:`x_i`.
 
+    One of the nice properties of WH is that it automatically performs inter- and
+    extrapolation of data. Interpolation means filling in values when signal data is
+    only available on the left and on the right. Extrapolation means filling in values
+    after the observed signal ends.
+    Set ``weights = 0`` for regions where you want to extra- or interpolate. The values
+    of `signal` don't matter if ``weights = 0``.
+    WH interpolates a polynomial of ``degree = 2 * order - 1``, it extrapolates a
+    polynomial of ``degree = order - 1``. For ``order = 2`` it means cubic
+    interpolation and linear extrapolation.
+
     References
     ----------
     .. [1] Whittaker-Henderson smoothing,
