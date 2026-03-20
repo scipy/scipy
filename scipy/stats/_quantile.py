@@ -552,14 +552,14 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
 def estimated_cdf(x, y, *, method='linear',
                   axis=0, nan_policy='propagate', keepdims=None):
     """
-    Estimate the cumulative distribution function of the data along the specified axis.
+    Estimate the CDF for the distribution underlying a sample.
 
     Parameters
     ----------
     x : array_like of real numbers
         Data array.
     y : array_like of real numbers
-        Datum or data for which to estimate the cumulative probabilities.
+        Points at which to evaluate the estimated cdf.
         See `axis`, `keepdims`, and the examples for broadcasting behavior.
     method : str, default: 'linear'
         The method to use for estimating the cumulative distribution function.
@@ -577,7 +577,7 @@ def estimated_cdf(x, y, *, method='linear',
 
         See Notes for details.
     axis : int or None, default: 0
-        Axis along which the calculation is performed.
+        Axis along which samples in `x` are given in ND case.
         ``None`` ravels both `x` and `y` before performing the calculation,
         without checking whether the original shapes were compatible.
         As in other `scipy.stats` functions, a positive integer `axis` is resolved
