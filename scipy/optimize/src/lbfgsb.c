@@ -1032,7 +1032,7 @@ LINE777:
         // Skip the L-BFGS update.
         nskip += 1;
         updatd = 0;
-        goto LINE888;
+        goto LINE222;
     }
 
     /////////////////////////////////////////////////////
@@ -1070,18 +1070,9 @@ LINE777:
 
     // [  D^(1/2)      O ] [ -D^(1/2)  D^(-1/2)*L' ]
     // [ -L*D^(-1/2)   J ] [  0        J'          ]
-LINE888:
+
     // -------------------- the end of the loop -----------------------------
     goto LINE222;
-
-    save_local_vars(
-        prjctd, cnstnd, boxed, updatd, nintol,
-        iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
-        ifun, iword, nfree, nact, ileave, nenter,
-        theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
-        lsave, isave, dsave
-    );
-    return;
 }
 
 
