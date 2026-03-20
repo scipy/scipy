@@ -150,29 +150,40 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     Index, L-OTI).
     We use weights to indicate where to inter- and extrapolate the missing data.
 
+    >>> from pathlib import Path
     >>> import numpy as np
+    >>> import scipy
     >>> from scipy.signal import whittaker_henderson
+    >>> # For the most recent data, use
+    ... # fname="https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv"
+    ... # Here, we instead use a copy made in 2026.
+    ... fname = Path(scipy.signal.__file__).parent / "tests/data/GLB.Ts+dSST.csv"
     >>> data = np.genfromtxt(
-    ...     fname="https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv",
+    ...     fname=fname,
     ...     delimiter=",", skip_header=2, missing_values="***"
     ... )
     >>> year = data[:, 0]
-    >>> y = data[:, 1:13].ravel()  # monthly temperature anomalies
-    >>> x = year[0] + np.arange(len(y)) / 12
-    >>> w = np.ones_like(y)
-    >>> w[np.isnan(y)] = 0
-    >>> res = whittaker_henderson(y, weights=w)
-    >>> y[:5]
-    array([-0.19, -0.25, -0.1 , -0.17, -0.11])
+    >>> temperature = data[:, 1:13].ravel()  # monthly temperature anomalies
+    >>> w = np.ones_like(temperature)
+    >>> # We migh have some nan values.
+    ... np.sum(np.isnan(temperature))
+    np.int64(10)
+    >>> w[np.isnan(temperature)] = 0
+    >>> res = whittaker_henderson(temperature, weights=w)
+    >>> temperature[:5]
+    array([-0.19, -0.25, -0.09, -0.16, -0.1])
     >>> res.x[:5]
-    array([-0.18743163, -0.18403575, -0.18066452, -0.17797578, -0.17585308])
+    array([-0.18244619, -0.17823282, -0.17409373, -0.17080896, -0.16833158])
 
     Let us plot measurements and Whittaker-Henderson smoothing.
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(x, y, label="measurement")
+    >>> x = year[0] + np.arange(len(temperature)) / 12
+    >>> plt.plot(x, temperature, label="measurement")
     >>> plt.plot(x, res.x, label="WH smooth")
-    >>> plt.plot(x[w==0], res.x[w==0], color="red", label="inter-/extrapolation")
+    >>> # Above, we set w = 0 for nan values of temperature. WH automatically
+    ... # inter- or extrapolates for all data points with w = 0.
+    ... plt.plot(x[w==0], res.x[w==0], color="red", label="inter-/extrapolation")
     >>> plt.xlabel("year")
     >>> plt.ylabel("temperatur deviation [°C]")
     >>> plt.title("Global Temperature Anomalies (ref. 1951-1980)")
