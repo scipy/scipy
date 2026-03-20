@@ -14,7 +14,7 @@ from scipy._lib._util import copy_if_needed
 cimport numpy as np
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from libcpp.mutex cimport py_safe_call_object_once, py_safe_once_flag
+from libcpp.mutex cimport py_safe_call_once, py_safe_once_flag
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
@@ -408,17 +408,11 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     return n
 
 
-cdef class call_once_wrapper:
-    cdef:
-        cKDTree tree
-
-    def __cinit__(call_once_wrapper self, cKDTree tree):
-        self.tree = tree
-
-    def __call__(self):
-        n = cKDTreeNode()
-        n._setup(self.tree, node=self.tree.cself.ctree, level=0)
-        self.tree._python_tree = n
+cdef void init_pytree(void *void_tree):
+    cdef cKDTree tree = <cKDTree>void_tree
+    n = cKDTreeNode()
+    n._setup(tree, node=tree.cself.ctree, level=0)
+    tree._python_tree = n
 
 
 # Main cKDTree class
@@ -556,11 +550,10 @@ cdef class cKDTree:
     property tree:
         # make the tree viewable from Python
         def __get__(cKDTree self):
-            cdef cKDTreeNode n
-            cdef ckdtree *cself = self.cself
-            cdef call_once_wrapper wrapper
-            wrapper = call_once_wrapper(self)
-            py_safe_call_object_once(self.flag, wrapper)
+            # cast to void* is safe because it is either used to construct the
+            # python tree and then discarded or immediately discarded
+            cdef void *self_v = <void *>self
+            py_safe_call_once(self.flag, init_pytree, self_v)
             return self._python_tree
 
     def __cinit__(cKDTree self):
