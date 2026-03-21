@@ -794,42 +794,40 @@ LINE111:
 LINE222:
     iword = -1;
 
-    if ((!cnstnd) && (col > 0))
+    if ((cnstnd) || (col == 0))
     {
+        /////////////////////////////////////////////////////
+        //
+        // Compute the Generalized Cauchy Point (GCP).
+        //
+        /////////////////////////////////////////////////////
+        cauchy(n, x, l, u, nbd, g, indx2, iwhere, t, d, z, m, wy, ws, sy, wt, theta,
+            col, head, wa, &wa[2*m], &wa[4*m], &wa[6*m], &nseg, sbgnrm, &info);
+        if (info != 0)
+        {
+            // Singular triangular system detected; refresh the lbfgs memory.
+            info = 0;
+            col = 0;
+            head = 0;
+            theta = 1.0;
+            iupdat = 0;
+            updatd = 0;
+            goto LINE222;
+        }
+
+        nintol += nseg;
+
+        // Count the entering and leaving variables for iter > 0;
+        // find the index set of free and active variables at the GCP.
+        freev(n, &nfree, index, &nenter, &ileave, indx2, iwhere, &wrk, updatd,
+            cnstnd, iter);
+        nact = n - nfree;
+    } else {
         BLAS_FUNC(dcopy)(&n, x, &one_int, z, &one_int);
         wrk = updatd;
         nseg = 0;
-        goto LINE333;
-    }
+    } 
 
-    /////////////////////////////////////////////////////
-    //
-    // Compute the Generalized Cauchy Point (GCP).
-    //
-    /////////////////////////////////////////////////////
-    cauchy(n, x, l, u, nbd, g, indx2, iwhere, t, d, z, m, wy, ws, sy, wt, theta,
-           col, head, wa, &wa[2*m], &wa[4*m], &wa[6*m], &nseg, sbgnrm, &info);
-    if (info != 0)
-    {
-        // Singular triangular system detected; refresh the lbfgs memory.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-    nintol += nseg;
-
-    // Count the entering and leaving variables for iter > 0;
-    // find the index set of free and active variables at the GCP.
-    freev(n, &nfree, index, &nenter, &ileave, indx2, iwhere, &wrk, updatd,
-          cnstnd, iter);
-    nact = n - nfree;
-
-LINE333:
     // If there are no free variables or B=theta*I, then skip the subspace
     // minimization.
     if ((nfree != 0) && (col != 0))
