@@ -842,7 +842,8 @@ class TestLagrange:
         p = poly1d([5,2,1,4,3])
         xs = np.arange(len(p.coeffs))
         ys = p(xs)
-        pl = lagrange(xs,ys)
+        with pytest.warns(DeprecationWarning, match="`lagrange`"):
+            pl = lagrange(xs,ys)
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 

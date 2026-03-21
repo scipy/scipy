@@ -532,9 +532,9 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
     if xp.isdtype(in1.dtype, 'integral'):
-        in1 = xp.astype(in1, xp.float64)
+        in1 = xp.astype(in1, xp_default_dtype(xp))
     if xp.isdtype(in2.dtype, 'integral'):
-        in2 = xp.astype(in2, xp.float64)
+        in2 = xp.astype(in2, xp_default_dtype(xp))
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -3788,7 +3788,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     `resample_poly` (``padtype='wrap'``) on the other hand produces significant
     deviations. This is caused by the disconiuity at the beginning of the signal, for
     which the default filter of `resample_poly` is not suited well. This example
-    illustrates that for some use cases, adpating the `resample_poly` parameters may
+    illustrates that for some use cases, adapting the `resample_poly` parameters may
     be beneficial. `resample` has a big advantage in this regard: It uses the ideal
     antialiasing filter with the maximum bandwidth by default.
 

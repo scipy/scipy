@@ -1,7 +1,9 @@
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
-if is_mingw and ff.get_id() != 'gcc'
-  error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+if not get_option('_without-fortran')
+  if is_mingw and ff.get_id() != 'gcc'
+    error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+  endif
 endif
 
 cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
@@ -91,9 +93,6 @@ np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nod
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
-
-npymath_path = _incdir_numpy_abs / '..' / 'lib'
-npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
@@ -250,6 +249,16 @@ endif
 _args_blas_lapack = []
 accelerate_flag = []
 generate_blas_wrappers = false
+
+# If an exact MKL .pc name with 'ilp64' is given and use-ilp64 is true,
+# derive the LP64 .pc name by replacing 'ilp64' with 'lp64' in the name.
+# The original ILP64 name is saved for the ILP64 detection pass below.
+_blas_name_ilp64 = ''
+if use_ilp64 and blas_name.contains('ilp64')
+  _blas_name_ilp64 = blas_name
+  blas_name = blas_name.replace('ilp64', 'lp64')
+endif
+
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
@@ -375,7 +384,16 @@ if use_ilp64
   endif
 
   # Run the detection
-  if uses_mkl
+  if _blas_name_ilp64 != ''
+    # Exact MKL .pc name was given — use it directly via pkg-config
+    blas_ilp64 = dependency(_blas_name_ilp64)
+    lapack_ilp64 = blas_ilp64
+    _args_blas_ilp64 += [
+      '-DBLAS_SYMBOL_SUFFIX=_64',
+      '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
+    ]
+    c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
+  elif uses_mkl
     mkl_uses_sdl = false   # FIXME, why
     if mkl_uses_sdl
       mkl_opts = ['sdl: true']
@@ -594,51 +612,54 @@ cpp_args_pythran += [
   _cpp_Wno_int_in_bool_context,
 ]
 
-# Fortran warning flags
-_fflag_Wno_argument_mismatch = ff.get_supported_arguments('-Wno-argument-mismatch')
-_fflag_Wno_conversion = ff.get_supported_arguments('-Wno-conversion')
-_fflag_Wno_intrinsic_shadow = ff.get_supported_arguments('-Wno-intrinsic-shadow')
-_fflag_Wno_maybe_uninitialized = ff.get_supported_arguments('-Wno-maybe-uninitialized')
-_fflag_Wno_surprising = ff.get_supported_arguments('-Wno-surprising')
-_fflag_Wno_uninitialized = ff.get_supported_arguments('-Wno-uninitialized')
-_fflag_Wno_unused_dummy_argument = ff.get_supported_arguments('-Wno-unused-dummy-argument')
-_fflag_Wno_unused_label = ff.get_supported_arguments('-Wno-unused-label')
-_fflag_Wno_unused_variable = ff.get_supported_arguments('-Wno-unused-variable')
-_fflag_Wno_tabs = ff.get_supported_arguments('-Wno-tabs')
-# The default list of warnings to ignore from Fortran code. There is a lot of
-# old, vendored code that is very bad and we want to compile it silently (at
-# least with GCC and Clang)
-fortran_ignore_warnings = ff.get_supported_arguments(
- _fflag_Wno_argument_mismatch,
- _fflag_Wno_conversion,
- _fflag_Wno_maybe_uninitialized,
- _fflag_Wno_unused_dummy_argument,
- _fflag_Wno_unused_label,
- _fflag_Wno_unused_variable,
- _fflag_Wno_tabs,
-)
+if not get_option('_without-fortran')
+  # Fortran warning flags
+  _fflag_Wno_argument_mismatch = ff.get_supported_arguments('-Wno-argument-mismatch')
+  _fflag_Wno_conversion = ff.get_supported_arguments('-Wno-conversion')
+  _fflag_Wno_intrinsic_shadow = ff.get_supported_arguments('-Wno-intrinsic-shadow')
+  _fflag_Wno_maybe_uninitialized = ff.get_supported_arguments('-Wno-maybe-uninitialized')
+  _fflag_Wno_surprising = ff.get_supported_arguments('-Wno-surprising')
+  _fflag_Wno_uninitialized = ff.get_supported_arguments('-Wno-uninitialized')
+  _fflag_Wno_unused_dummy_argument = ff.get_supported_arguments('-Wno-unused-dummy-argument')
+  _fflag_Wno_unused_label = ff.get_supported_arguments('-Wno-unused-label')
+  _fflag_Wno_unused_variable = ff.get_supported_arguments('-Wno-unused-variable')
+  _fflag_Wno_tabs = ff.get_supported_arguments('-Wno-tabs')
+  # The default list of warnings to ignore from Fortran code. There is a lot of
+  # old, vendored code that is very bad and we want to compile it silently (at
+  # least with GCC and Clang)
+  fortran_ignore_warnings = ff.get_supported_arguments(
+   _fflag_Wno_argument_mismatch,
+   _fflag_Wno_conversion,
+   _fflag_Wno_maybe_uninitialized,
+   _fflag_Wno_unused_dummy_argument,
+   _fflag_Wno_unused_label,
+   _fflag_Wno_unused_variable,
+   _fflag_Wno_tabs,
+  )
 
-# Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
-# code uses preprocessor statements, add this compile flag to it.
+  # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
+  # code uses preprocessor statements, add this compile flag to it.
 
-# Gfortran does run the preprocessor for .F files, and PROPACK is the only
-# component which needs the preprocessor (unless we need symbol renaming for
-# blas_symbol_suffix).
-_fflag_preprocess = []
-_gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
-if ff.has_multi_arguments(_gfortran_preprocess)
-  _fflag_preprocess = _gfortran_preprocess
-else
-  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
+  # Gfortran does run the preprocessor for .F files, and PROPACK is the only
+  # component which needs the preprocessor (unless we need symbol renaming for
+  # blas_symbol_suffix).
+  _fflag_preprocess = []
+  _gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
+  if ff.has_multi_arguments(_gfortran_preprocess)
+    _fflag_preprocess = _gfortran_preprocess
+  else
+    _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
+  endif
+  if use_ilp64
+    _fflag_ilp64 = []
+    # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
+    # default, all other known compilers use `-i8`
+    _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
+  endif
 endif
 
-_fflag_ilp64 = []
 f2py_ilp64_opts = []
 if use_ilp64
-  # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
-  # default, all other known compilers use `-i8`
-  _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
-
   # Write out a mapping file for f2py for defaulting to ILP64
   conf_data = configuration_data()
   if cc.sizeof('long') == 8
@@ -713,8 +734,12 @@ compilers = {
   'C': cc,
   'CPP': cpp,
   'CYTHON': meson.get_compiler('cython'),
-  'FORTRAN': meson.get_compiler('fortran')
 }
+if get_option('_without-fortran')
+  compilers += {'FORTRAN': meson.get_compiler('c')}
+else
+  compilers += {'FORTRAN': meson.get_compiler('fortran')}
+endif
 
 machines = {
   'HOST': host_machine,
@@ -729,14 +754,19 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
-  conf_data.set(name + '_COMP_ARGS', ', '.join(
-      get_option(name.to_lower() + '_args')
+  if get_option('_without-fortran') and name == 'FORTRAN'
+    conf_data.set('FORTRAN_COMP_ARGS', 'n/a')
+    conf_data.set('FORTRAN_COMP_LINK_ARGS', 'n/a')
+  else
+    conf_data.set(name + '_COMP_ARGS', ', '.join(
+        get_option(name.to_lower() + '_args')
+      )
     )
-  )
-  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
-      get_option(name.to_lower() + '_link_args')
+    conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+        get_option(name.to_lower() + '_link_args')
+      )
     )
-  )
+  endif
 endforeach
 # Add `pythran` information if present
 if use_pythran
@@ -773,6 +803,15 @@ foreach name, dep : dependency_map
   endif
 endforeach
 
+
+# Resolve cython-blas-abi for config: 'auto' follows use-ilp64
+_cython_blas_abi = get_option('cython-blas-abi')
+if _cython_blas_abi == 'auto'
+  _cython_blas_ilp64 = use_ilp64
+else
+  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
+endif
+conf_data.set('BLAS_CYTHON_ILP64', _cython_blas_ilp64.to_string())
 
 configure_file(
   input: '__config__.py.in',
@@ -828,8 +867,8 @@ endif
 
 subdir('_external')
 subdir('_lib')
-subdir('special')
 subdir('linalg')
+subdir('special')
 subdir('sparse')
 subdir('stats')
 subdir('fft')
@@ -844,6 +883,8 @@ subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')
-subdir('odr')
+if not get_option('_without-fortran')
+  subdir('odr')
+endif
 subdir('datasets')
 subdir('misc')

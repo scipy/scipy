@@ -623,6 +623,35 @@ class TestMapCoordinates:
         except MemoryError as e:
             raise pytest.skip('Not enough memory available') from e
 
+    @xfail_xp_backends("cupy", reason="CuPy map_coordinates has the same aliasing bug")
+    @pytest.mark.parametrize('n_channels', range(1, 4))
+    @pytest.mark.parametrize('order', range(2, 6))
+    def test_map_coordinates_reflect_multichannel(self, n_channels, order, xp):
+        # Regression test for gh-24550: reflect mode spline prefilter had an
+        # aliasing bug that caused accuracy loss for multi-channel images.
+        if is_jax(xp) and order > 1:
+            pytest.xfail("jax map_coordinates requires order <= 1")
+
+        rng = np.random.default_rng(4567)
+        image = xp.asarray(rng.random((8, 8)), dtype=xp.float64)
+        coords = xp.asarray(rng.random((2, 5, 5)) * 7)
+
+        single = ndimage.map_coordinates(image, coords, order=order,
+                                         mode='reflect')
+
+        color = xp.stack([image] * n_channels, axis=-1)
+        channels = np.broadcast_to(np.arange(n_channels),
+                                   (1, 5, 5, n_channels))
+        coords_color = np.broadcast_to(
+            np.asarray(coords)[..., np.newaxis], (2, 5, 5, n_channels))
+        coords_color = xp.asarray(np.concatenate(
+            (coords_color, channels), axis=0))
+
+        multi = ndimage.map_coordinates(color, coords_color, order=order,
+                                        mode='reflect')
+        expected = xp.stack([single] * n_channels, axis=-1)
+        xp_assert_close(multi, expected)
+
 
 @make_xp_test_case(ndimage.affine_transform)
 class TestAffineTransform:

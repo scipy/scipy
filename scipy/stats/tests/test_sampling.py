@@ -25,6 +25,7 @@ from scipy import special
 from scipy.stats import chisquare, cramervonmises
 from scipy.stats._distr_params import distdiscrete, distcont
 from scipy._lib._util import check_random_state
+from scipy._lib._gcutils import assert_deallocated
 
 
 # common test data: this data can be shared between all the tests.
@@ -289,6 +290,17 @@ def test_with_scipy_distribution():
     domain = dist.support()
     pv = dist.pmf(np.arange(domain[0], domain[1]+1))
     check_discr_samples(rng, pv, dist.stats())
+
+
+def test_NumericalInverseHermite_refcycle():
+    # test if NumericalInverseHermite contains a reference cycle
+    dist = stats.norm()
+    urng = np.random.default_rng(0)
+    with assert_deallocated(NumericalInverseHermite, dist, random_state=urng) as rng:
+        u = np.linspace(0, 1, num=100)
+        check_cont_samples(rng, dist, dist.stats())
+        assert_allclose(dist.ppf(u), rng.ppf(u))
+        del rng
 
 
 def check_cont_samples(rng, dist, mv_ex, rtol=1e-7, atol=1e-1):

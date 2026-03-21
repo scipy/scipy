@@ -8,7 +8,7 @@ import scipy._external.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
 
-def _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
+def _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
                    step_factor, step_direction, preserve_shape, callback):
     # Input validation for `derivative`
     xp = array_namespace(x)
@@ -53,7 +53,7 @@ def _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return (f, x, args, atol, rtol, maxiter_int, order_int, initial_step,
+    return (f, x, args, kwargs, atol, rtol, maxiter_int, order_int, initial_step,
             step_factor, step_direction, preserve_shape, callback)
 
 
@@ -64,7 +64,7 @@ _dask_reason = 'boolean indexing assignment'
 
 @xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
                                 ('dask.array', _dask_reason)], jax_jit=False)
-def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
+def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
                order=8, initial_step=0.5, step_factor=2.0,
                step_direction=0, preserve_shape=False, callback=None):
     """Evaluate the derivative of an elementwise, real scalar function numerically.
@@ -97,6 +97,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    kwargs : dict of str:array_like, optional
+        Additional keyword arguments to be passed to `f`. See `args`.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances. Valid keys of the dictionary are:
 
@@ -381,9 +383,9 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     #  - relative steps?
     #  - show example of `np.vectorize`
 
-    res = _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
-                            step_factor, step_direction, preserve_shape, callback)
-    (func, x, args, atol, rtol, maxiter, order,
+    res = _derivative_iv(f, x, args, kwargs, tolerances, maxiter, order, initial_step,
+                         step_factor, step_direction, preserve_shape, callback)
+    (func, x, args, kwargs, atol, rtol, maxiter, order,
      h0, fac, hdir, preserve_shape, callback) = res
 
     # Initialization
@@ -391,7 +393,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     # possible to eliminate this function evaluation. However, it's useful for
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
-    temp = eim._initialize(func, (x,), args, preserve_shape=preserve_shape)
+    temp = eim._initialize(func, (x,), args, kwargs=kwargs,
+                           preserve_shape=preserve_shape)
     func, xs, fs, args, shape, dtype, xp = temp
 
     finfo = xp.finfo(dtype)

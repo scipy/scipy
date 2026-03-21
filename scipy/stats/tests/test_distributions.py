@@ -1255,6 +1255,32 @@ class TestNormInvGauss:
         vals = stats.norminvgauss.ppf(x_test, a, b)
         assert_allclose(x_test, stats.norminvgauss.cdf(vals, a, b))
 
+    @pytest.mark.parametrize('a', [0.1, 1.0, 10.0])
+    @pytest.mark.parametrize('b_a', [-0.9, -0.5, -0.1, 0.1, 0.5, 0.9])
+    def test_gh23196_tails_cdf_sf(self, a, b_a):
+        # gh-23196 reported that the norminvgauss CDF would drop to zero in the far
+        # right tail. The SF had a similar problem, dropping to zero at the far left.
+        # Check that this is resolved by checking that values in the deep tails are
+        # close to 1.0.
+        b = b_a * a
+        res = stats.norminvgauss(a=a, b=b).cdf(300)
+        np.testing.assert_allclose(res, 1, atol=1e-2)
+        res = stats.norminvgauss(a=a, b=b).sf(-300)
+        np.testing.assert_allclose(res, 1, atol=1e-2)
+
+    @pytest.mark.parametrize("x, a, b, ref", [
+        (100, 1.0, 0.0, 1.0),  # originally reported in gh-23196
+        (1500, 0.1, 0.09, 0.9999999999418577),  # suggested in gh-24567
+    ])
+    def test_gh23196_tails_cdf_sf_accuracy(self, x, a, b, ref):
+        # Spot check the accuracy of the CDF/SF in the deep tails.
+        # library(GeneralizedHyperbolic)
+        # options(digits=16)
+        # pnig(1500, alpha=0.1, beta=0.09)
+        rtol = 1e-14
+        np.testing.assert_allclose(stats.norminvgauss(a=a, b=b).cdf(x), ref, rtol=rtol)
+        np.testing.assert_allclose(stats.norminvgauss(a=a, b=-b).sf(-x), ref, rtol=rtol)
+
 
 class TestGeom:
     def setup_method(self):

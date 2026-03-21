@@ -33,11 +33,11 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
-      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
           pixi-version: v0.55.0
           cache: false
@@ -60,27 +60,6 @@ jobs:
         shell: bash -l {0}
         run: pixi exec ccache -s
 
-  test_scipy_openblas:
-    name: M1 & OpenBLAS, fast, py3.14/npAny, spin
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: macos-14
-
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          submodules: recursive
-
-      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
-        with:
-          pixi-version: v0.55.0
-          cache: false
-          environments: scipy-openblas
-
-      - name: Test with scipy-openblas32
-        run: pixi run test-scipy-openblas
 
   test_accelerate:
     name: Accelerate, full, py3.14/npAny, spin
@@ -93,11 +72,11 @@ jobs:
       matrix:
         environment: [accelerate-lp64, accelerate-ilp64]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
 
-      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
           pixi-version: v0.55.0
           cache: false
@@ -107,36 +86,6 @@ jobs:
         # mpmath tests are too slow for CI
         run: pixi run test-${{ matrix.environment }} -m full -- -k "not mpmath"
 
-
-  test_macos_x86_64_accelerate:
-    name: macos15, x86_64, accelerate
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: macos-15-intel
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          submodules: recursive
-
-      - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
-        with:
-          python-version: "3.13"
-          cache: 'pip'
-          allow-prereleases: true
-
-      - name: Test SciPy
-        run: |
-          export FC=gfortran-13
-          pip install -r requirements/build.txt
-          pip install -r requirements/dev.txt
-          spin build --with-accelerate
-          pip install -r requirements/test.txt
-          spin test
-
-
   clang_ASAN:
     name: Test under AddressSanitizer
     runs-on: macos-15
@@ -145,7 +94,7 @@ jobs:
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
         fetch-tags: true

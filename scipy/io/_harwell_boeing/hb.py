@@ -18,9 +18,11 @@ features are:
 # having reusable facilities to efficiently read/write fortran-formatted files
 # would be useful outside this module.
 
+import os
 import warnings
 
 import numpy as np
+from scipy._lib.deprecation import _NoValue
 from scipy.sparse import csc_array, csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
@@ -458,7 +460,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file, *, spmatrix=True):
+def hb_read(path_or_open_file, *, spmatrix=_NoValue):
     """Read HB-format file.
 
     Parameters
@@ -468,6 +470,13 @@ def hb_read(path_or_open_file, *, spmatrix=True):
         before reading.
     spmatrix : bool, optional (default: True)
         If ``True``, return sparse matrix. Otherwise return sparse array.
+
+        .. deprecated:: 1.18.0
+            The default value for `spmatrix` is changing to False in v1.20.
+            That means the default return value will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
+            See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     Returns
     -------
@@ -508,6 +517,19 @@ def hb_read(path_or_open_file, *, spmatrix=True):
     else:
         with open(path_or_open_file) as f:
             data = _get_matrix(f)
+
+    if spmatrix is _NoValue:
+        msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+            That means the default return type will be a sparse array.
+            Unless you use * instead of @, ** for matrix power, or you depend
+            on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+            See the spmatrix to sparray migration guide for details.
+            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+            """
+        prefixes = (os.path.dirname(__file__),)
+        warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+        spmatrix = True
+
     if spmatrix:
         return csc_matrix(data)
     return data

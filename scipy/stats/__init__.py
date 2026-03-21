@@ -279,11 +279,12 @@ Frequency statistics
 .. autosummary::
    :toctree: generated/
 
-   cumfreq
    quantile
+   estimated_cdf
+   cumfreq
+   relfreq
    percentileofscore
    scoreatpercentile
-   relfreq
 
 .. autosummary::
    :toctree: generated/
@@ -627,7 +628,7 @@ from ._distribution_infrastructure import (
 from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
-from ._quantile import quantile
+from ._quantile import quantile, estimated_cdf
 
 
 # Deprecated namespaces, to be removed in v2.0.0
