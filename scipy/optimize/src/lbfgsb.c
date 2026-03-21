@@ -832,62 +832,61 @@ LINE222:
 LINE333:
     // If there are no free variables or B=theta*I, then skip the subspace
     // minimization.
-    if ((nfree == 0) || (col == 0)) { goto LINE555; }
-
-    /////////////////////////////////////////////////////
-    //
-    // Subspace minimization
-    //
-    /////////////////////////////////////////////////////
-
-    // Form  the LEL^T factorization of the indefinite
-    //   matrix    K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]
-    //                 [L_a -R_z           theta*S'AA'S ]
-    //   where     E = [-I  0]
-    //                 [ 0  I]
-    if (wrk)
+    if ((nfree != 0) && (col != 0))
     {
-        formk(n, nfree, index, nenter, ileave, indx2, iupdat, updatd, wn, snd,
-              m, ws, wy, sy, theta, col, head, &info);
-    }
-    if (info != 0)
-    {
-        // nonpositive definiteness in Cholesky factorization;
-        // refresh the lbfgs memory and restart the iteration.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
+        /////////////////////////////////////////////////////
+        //
+        // Subspace minimization
+        //
+        /////////////////////////////////////////////////////
 
-    // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
-    cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
-           cnstnd, &info);
+        // Form  the LEL^T factorization of the indefinite
+        //   matrix    K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]
+        //                 [L_a -R_z           theta*S'AA'S ]
+        //   where     E = [-I  0]
+        //                 [ 0  I]
+        if (wrk)
+        {
+            formk(n, nfree, index, nenter, ileave, indx2, iupdat, updatd, wn, snd,
+                m, ws, wy, sy, theta, col, head, &info);
+        }
+        if (info != 0)
+        {
+            // nonpositive definiteness in Cholesky factorization;
+            // refresh the lbfgs memory and restart the iteration.
+            info = 0;
+            col = 0;
+            head = 0;
+            theta = 1.0;
+            iupdat = 0;
+            updatd = 0;
+            goto LINE222;
+        }
 
-    if (info == 0)
-    {
-        // Call the direct method.
-        subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
-              head, &iword, wa, wn, &info);
-    }
-    
-    if (info != 0)
-    {
-        // singular triangular system detected;
-        // refresh the lbfgs memory and restart the iteration.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
+        // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
+        cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
+            cnstnd, &info);
 
-LINE555:
+        if (info == 0)
+        {
+            // Call the direct method.
+            subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
+                head, &iword, wa, wn, &info);
+        }
+        
+        if (info != 0)
+        {
+            // singular triangular system detected;
+            // refresh the lbfgs memory and restart the iteration.
+            info = 0;
+            col = 0;
+            head = 0;
+            theta = 1.0;
+            iupdat = 0;
+            updatd = 0;
+            goto LINE222;
+        }
+    }
 
     /////////////////////////////////////////////////////
     //
