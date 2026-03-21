@@ -394,7 +394,8 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
     temp = eim._initialize(func, (x,), args, kwargs=kwargs,
-                           preserve_shape=preserve_shape)
+        multi_output_ok=preserve_shape,  # intentional - this is how Jacobian works
+        preserve_shape=preserve_shape)
     func, xs, fs, args, shape, dtype, xp = temp
 
     finfo = xp.finfo(dtype)

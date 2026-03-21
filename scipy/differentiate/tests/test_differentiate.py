@@ -340,7 +340,7 @@ class TestDerivative:
         with pytest.raises(ValueError, match=message):
             derivative(lambda x: x, xp.asarray(-4+1j))
 
-        message = "When `preserve_shape=False`, the shape of the array..."
+        message = "The shape of the array returned by `func`..."
         with pytest.raises(ValueError, match=message):
             derivative(lambda x: [1, 2, 3], xp.asarray([-2, -3]))
 

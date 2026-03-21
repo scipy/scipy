@@ -448,7 +448,7 @@ class TestChandrupatlaMinimize:
         with pytest.raises((ValueError, RuntimeError), match=message):
             _chandrupatla_minimize(lambda x: x, *bracket)
 
-        message = "the shape of the array returned by `func` must be the same"
+        message = "The shape of the array returned by `func` must be the same"
         bracket = xp.asarray([-3, -3]), xp.asarray([0, 0]), xp.asarray([5, 5])
         with pytest.raises(ValueError, match=message):
             _chandrupatla_minimize(lambda x: [x[0, ...], x[1, ...], x[1, ...]],
@@ -873,7 +873,7 @@ class TestFindRoot:
             bracket = xp.asarray([-2, -3]), xp.asarray([3, 4, 5])
             find_root(func, bracket)
 
-        message = "the shape of the array returned by `func`..."
+        message = "The shape of the array returned by `func`..."
         with pytest.raises(ValueError, match=message):
             bracket = xp.asarray([-3, -3]), xp.asarray([5, 5])
             find_root(lambda x: [x[0], x[1], x[1]], bracket)

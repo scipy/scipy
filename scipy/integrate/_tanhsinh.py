@@ -343,7 +343,7 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
         c[inf_b] = a[inf_b] + 1.  # takes care of infinite b
         c[inf_a & inf_b] = 0.  # takes care of infinite a and b
         temp = eim._initialize(f, (c,), args, kwargs=kwargs, complex_ok=True,
-                               preserve_shape=preserve_shape, xp=xp)
+            multi_output_ok=True, preserve_shape=preserve_shape, xp=xp)
     f, xs, fs, args, shape, dtype, xp = temp
     a = xp_ravel(xp.astype(xp.broadcast_to(a, shape), dtype))
     b = xp_ravel(xp.astype(xp.broadcast_to(b, shape), dtype))

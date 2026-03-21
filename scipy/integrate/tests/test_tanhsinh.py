@@ -159,6 +159,15 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(42, zero, f_b)
 
+        message = "The shape of the array returned by `func`..."
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(lambda x: xp.ones(3), xp.zeros(2), xp.ones(2))
+
+        message = "When `preserve_shape=True`, the array returned by `func`..."
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(lambda x: xp.ones((3, 4, 5)), xp.zeros(2), xp.ones(2),
+                      preserve_shape=True)
+
         message = '...must be True or False.'
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, zero, f_b, log=2)
