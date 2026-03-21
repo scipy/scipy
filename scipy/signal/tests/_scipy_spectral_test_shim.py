@@ -306,9 +306,9 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     elif platform.machine() in ('aarch64', 'i386', 'i686'):
         atol = max(atol, 1e-12)  # 2e-15 seems too tight for 32-Bit platforms
 
-# TEMPORARY: set atol unconditionally to 1e-12
+# TEMPORARY: increase atol unconditionally to 1e-12, if it is lower
 # A better fix is needed once we understand what's actually going on.
-    atol = 1e-12
+    atol = max(atol, 1e-12)
 
     assert_allclose(x_wrapper[k_lo:k_hi], x[k_lo:k_hi], atol=atol, rtol=rtol,
                     err_msg=f"Signal values {e_msg_part}")
