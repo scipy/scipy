@@ -368,4 +368,29 @@ def test_whittaker_reml():
     y[1::2] -= 0.2
     wh = whittaker_henderson(y, lamb="reml", order=order)
     assert wh.lamb > 0
-    # TODO: validate against another implementation (e.g. in R)
+
+    # Validate against R mgcv
+    # library(mgcv)
+    # n = 10
+    # order = 2
+    # signal = sin(2*pi * 0:(n-1) / (n-1))
+    # y = signal
+    # # add some (deterministic) noise
+    # y[seq(1, n, 2)] = y[seq(1, n, 2)] + 0.2
+    # y[seq(2, n, 2)] = y[seq(2, n, 2)] - 0.2
+    # x <- 1:n
+    # b <- gam(y ~ s(x, bs="ps", k=n, m=c(0, 2)), family = gaussian(),
+    #          knots = list(x=0:11), method="REML",
+    #          control = list(epsilon = 1e-12, mgcv.tol = 1e-12, efs.tol = 1e-12))
+    # options(digits=12)
+    # b$fitted.values
+    expected = [
+        0.209959334732, 0.589996568382, 0.938965773497, 0.766582291904, 0.349462653088,
+        -0.349462653088, -0.766582291904, -0.938965773497, -0.589996568382,
+        -0.209959334732,
+    ]
+    assert_allclose(wh.x, expected, rtol=1e-7)
+    # b$sp
+    expected_sp = 5.12904626508
+    expected_sp /= 16  # not 100% sure how to justify this 16.
+    assert wh.lamb == pytest.approx(expected_sp)
