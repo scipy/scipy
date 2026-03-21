@@ -11,7 +11,7 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
 import numbers
 import math
 import os
-import warnings
+from warnings import warn
 import numpy as np
 
 from scipy._lib._util import check_random_state, rng_integers, _transition_to_rng
@@ -437,7 +437,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
         dtype = np.dtype(np.common_type(*diagonals))
         future_dtype = np.result_type(*diagonals)
         if (dtype != future_dtype):
-            warnings.warn(
+            warn(
                 f"Input has data type {future_dtype}, but the output has been cast "
                 f"to {dtype}.  In the future, the output data type will match the "
                 "input. To avoid this warning, set the `dtype` parameter to `None` "
@@ -806,6 +806,24 @@ def kron(A, B, format=None):
         bsr_sparse = bsr_array
         csr_sparse = csr_array
         coo_sparse = coo_array
+    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
+        msg = """`kron` is switching to the sparse array interface.
+
+        For the case where input arrays are numpy arrays, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        For example, kron(coo_matrix(A), B).
+        For more information, see the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        This function will be changed no earlier than v1.20.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+        # default when all input are ndarray
+        bsr_sparse = bsr_matrix
+        csr_sparse = csr_matrix
+        coo_sparse = coo_matrix
     else:  # use spmatrix
         bsr_sparse = bsr_matrix
         csr_sparse = csr_matrix
@@ -917,6 +935,23 @@ def kronsum(A, B, format=None):
         # convert to local variables
         coo_sparse = coo_array
         identity_sparse = eye_array
+    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
+        msg = """`kronsum` is switching to the sparse array interface.
+
+        For the case where input arrays are numpy arrays, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        For example, kronsum(coo_matrix(A), B).
+        For more information, see the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        This function will be changed no earlier than v1.20.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+        # default when all input are ndarray
+        coo_sparse = coo_matrix
+        identity_sparse = identity
     else:
         coo_sparse = coo_matrix
         identity_sparse = identity
@@ -1252,7 +1287,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
     blocks = np.asarray(blocks, dtype='object')
 
     if blocks.ndim != 2:
-        raise ValueError('blocks must be 2-D')
+        raise ValueError('blocks must be 2-D, and some must be sparse')
 
     M,N = blocks.shape
 
@@ -1390,6 +1425,23 @@ def block_diag(mats, format=None, dtype=None):
     """
     if any(isinstance(a, sparray) for a in mats):
         container = coo_array
+    elif all(isinstance(a, np.ndarray) for a in mats):
+        msg = """`block_diag` is switching to the sparse array interface.
+
+        For the case where input arrays are numpy arrays, this function is
+        switching to returning a sparse array instead of sparse matrix.
+        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        For example, block_diag([coo_matrix(A), B]).
+        For more information, see the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        This function will be changed no earlier than v1.20.
+        """
+        prefixes = (os.path.dirname(__file__),)
+        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
+
+        # default when all input are ndarray
+        container = coo_matrix
     else:
         container = coo_matrix
 
