@@ -293,7 +293,7 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     assert_allclose(t, t_wrapper, err_msg=f"Sample times {e_msg_part}")
 
     # Adapted tolerances to account for resolution loss:
-    atol = 1e-12  # instead of default atol = 0
+    atol = np.finfo(x.dtype).resolution*2  # instead of default atol = 0
     rtol = 1e-7  # default for np.allclose()
 
     # Relax atol on 32-Bit platforms a bit to pass CI tests.
@@ -303,6 +303,8 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
         # float32 gets only used by TestSTFT.test_roundtrip_float32() so
         # we are using the tolerances from there to circumvent CI problems
         atol, rtol = 1e-4, 1e-5
+    else:
+        atol = max(atol, 1e-12)  # 2e-15 seems too tight for 32-Bit platforms
 
     assert_allclose(x_wrapper[k_lo:k_hi], x[k_lo:k_hi], atol=atol, rtol=rtol,
                     err_msg=f"Signal values {e_msg_part}")
