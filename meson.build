@@ -201,12 +201,6 @@ endif
 if not fs.exists('subprojects/cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('subprojects/ducc/ducc/README.md')
-  error('Missing the `ducc` submodule! Run `git submodule update --init` to fix this.')
-endif
-if not fs.exists('subprojects/pocketfft/README.md')
-  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('subprojects/unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -234,17 +228,14 @@ foreach prefix, files : cobyqa_sources
   py3.install_sources(files, subdir: external_dir / prefix)
 endforeach
 
-ducc = subproject('ducc')
-duccfft_dep = ducc.get_variable('duccfft_dep')
+duccfft = subproject('duccfft')
+duccfft_dep = duccfft.get_variable('duccfft_dep')
 
 pyprima = subproject('pyprima')
 pyprima_sources = pyprima.get_variable('sources')
 foreach prefix, files : pyprima_sources
   py3.install_sources(files, subdir: external_dir / prefix)
 endforeach
-
-pocketfft = subproject('pocketfft')
-pocketfft_dep = pocketfft.get_variable('pocketfft_dep')
 
 unuran = subproject('unuran')
 
