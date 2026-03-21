@@ -629,8 +629,7 @@ class dia_matrix(spmatrix, _dia_base):
     * **Sub-diagonals** (``offsets[i] < 0``): Elements are left-aligned
       (padded with zeros on the right).
 
-    Each column of ``data`` corresponds to a column in the resulting sparse
-    matrix.
+    Each column of ``data`` corresponds to a diagonal in the resulting matrix.
 
     Mathematically, the element at row `r` and column `c` of the matrix is
     stored in the ``data`` array at row `i` and column
