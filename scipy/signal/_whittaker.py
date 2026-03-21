@@ -134,8 +134,8 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     after the observed signal ends.
     Set ``weights = 0`` for regions where you want to extra- or interpolate. The values
     of `signal` don't matter if ``weights = 0``.
-    WH interpolates a polynomial of ``degree = 2 * order - 1``, it extrapolates a
-    polynomial of ``degree = order - 1``. For ``order = 2`` it means cubic
+    WH interpolates a polynomial of ``degree = 2 * order - 1`` and it extrapolates a
+    polynomial of ``degree = order - 1``. For ``order = 2``, this means cubic
     interpolation and linear extrapolation.
 
     References
@@ -176,7 +176,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     >>> year = data[:, 0]
     >>> temperature = data[:, 1:13].ravel()  # monthly temperature anomalies
     >>> w = np.ones_like(temperature)
-    >>> # We migh have some nan values.
+    >>> # We might have some nan values.
     ... np.sum(np.isnan(temperature))
     np.int64(10)
     >>> w[np.isnan(temperature)] = 0
@@ -200,6 +200,10 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     >>> plt.title("Global Temperature Anomalies (ref. 1951-1980)")
     >>> plt.legend()
     >>> plt.show()
+
+    We can see that extrapolation has occurred at the right end of the signal, meaning
+    that NaNs existed in the data for the most recent dates, in particular months of
+    2026 that have not yet happened at the time of the data download in March 2026.
 
     """
     order = operator.index(order)
