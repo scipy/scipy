@@ -169,7 +169,8 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return x.copy()
+        # Just return x if it is a Python scalar without a copy attribute.
+        return x.copy() if hasattr(x, "copy") else x
     if is_cupy(xp):
         return x.get()
     if is_torch(xp):

@@ -429,13 +429,13 @@ def reconstruct_path(csgraph, predecessors, directed=True):
         The N x N matrix representing the directed or undirected graph
         from which the predecessors are drawn.
     predecessors : array_like, one dimension
-        The length-N array of indices of predecessors for the tree.  The
-        index of the parent of node i is given by predecessors[i].
+        The length-N array of indices of predecessors for the tree. The
+        index of the parent of node ``i`` is given by ``predecessors[i]``.
     directed : bool, optional
         If True (default), then operate on a directed graph: only move from
-        point i to point j along paths csgraph[i, j].
+        point ``i`` to point ``j`` along paths ``csgraph[i, j]``.
         If False, then operate on an undirected graph: the algorithm can
-        progress from point i to j along csgraph[i, j] or csgraph[j, i].
+        progress from point ``i`` to ``j`` along ``csgraph[i, j]`` or ``csgraph[j, i]``.
 
     Returns
     -------
@@ -478,6 +478,10 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     from ._validation import validate_graph
     csgraph_orig = csgraph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
+    predecessors = np.asarray(predecessors)
+    if not np.isdtype(predecessors.dtype, "integral"):
+        msg = "`predecessors` must be of an integral dtype"
+        raise ValueError(msg)
 
     N = csgraph.shape[0]
 

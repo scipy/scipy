@@ -248,6 +248,7 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
 
 @xp_capabilities(cpu_only=True, exceptions=['jax.numpy'], marray=True,
     skip_backends=[('dask.array', 'not supported by rankdata (take_along_axis)')],
+    extra_note='Only the default `method` is compatible with MArray input.'
 )
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
@@ -698,10 +699,10 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
     z = float(special.ndtri(alpha / 2.))
     # This implements (2.6) from Sen (1968)
     # we don't actually need ranks, so an enhancement could be to have
-    # `rankdata` return only the second output. In the meantime, use the
+    # `rankdata` return only the third output. In the meantime, use the
     # least expensive `method`.
-    _, nxreps = _rankdata(x, method='min', return_ties=True)
-    _, nyreps = _rankdata(y, method='min', return_ties=True)
+    _, _, nxreps = _rankdata(x, method='min', return_ties=True)
+    _, _, nyreps = _rankdata(y, method='min', return_ties=True)
     nt = xp.count_nonzero(xp.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
     nt = xp.asarray(nt, dtype=y.dtype)
     ny = _count_nonmasked(y, keepdims=True, axis=-1)                    # n in Sen 1968

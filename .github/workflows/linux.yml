@@ -78,7 +78,7 @@ jobs:
       uses: ./.github/ccache
       with:
         workflow_name: ${{ github.workflow }}
-        job_name: ${{ github.job }}
+        job_name: ${{ github.job }}-${{ matrix.python-version }}
 
     - name: Setup build and install scipy
       run: |
@@ -213,25 +213,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
-            gfortran libgmp-dev libmpfr-dev libmpc-dev ccache
+            gfortran libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-
-      - name: Set up ccache
-        uses: ./.github/ccache
-        with:
-          workflow_name: ${{ github.workflow }}
-          job_name: ${{ github.job }}
 
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
+          # Note: we are testing installion via sdist, so can't use `ccache` in this job
           python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
-
-      - name: Ccache performance
-        shell: bash -l {0}
-        run: ccache -s
 
       - name: Testing SciPy
         run: |
@@ -267,7 +258,7 @@ jobs:
 
       - name: Setup Python build deps
         run: |
-          pip install build meson-python ninja pythran pybind11 cython numpy
+          pip install meson-python ninja pythran pybind11 cython numpy
 
 
       - name: Set up ccache
@@ -282,8 +273,9 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
-          python -m pip install dist/scipy*.whl
+          CC="ccache gcc-9" CXX="ccache g++-9" FC="ccache gfortran-9" python -m pip install . -v \
+              --no-build-isolation -Cbuild-dir=build \
+              -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
 
       - name: Ccache performance
         shell: bash -l {0}
@@ -378,21 +370,10 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install Ubuntu dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran \
-          lcov ccache
-
-    - name: Set up ccache
-      uses: ./.github/ccache
-      with:
-        workflow_name: ${{ github.workflow }}
-        job_name: ${{ github.job }}
-
-    - name: build + test
+    - name: build + test in i686 container
       run: |
         set -exuo pipefail
+        # Note: `ccache` not used because it isn't available on i686 CentOS 7
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
@@ -409,14 +390,11 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==2.0.0 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir && \
+        python -m pip install cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"
-
-    - name: Ccache performance
-      shell: bash -l {0}
-      run: ccache -s
 
   #################################################################################
   distro_multiple_pythons:
@@ -482,6 +460,7 @@ jobs:
     # (i.e., we're using it as a binary). This isn't a normal setup, but it's
     # sometimes being used that way - see gh-20535 and gh-24406
     name: build with global meson
+    needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
@@ -632,15 +611,15 @@ jobs:
         spin test -t $TEST_SUBMODULES -- --parallel-threads=4 --skip-thread-unsafe=true
 
   #################################################################################
-  clang-17-build-only:
+  clang-18-build-only:
     # Purpose is to check for warnings in builds with latest clang.
     # We do not run the test suite here.
-    name: Clang-17 build-only (-Werror)
+    name: Clang-18 build-only (-Werror)
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -654,15 +633,6 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          wget https://apt.llvm.org/llvm.sh
-          expected_hash="d2ccd623e05645d96d85df09d9898a0ae7ba6ec917ae64731f0c1e49573b6426"
-          file_hash=$(sha256sum llvm.sh | cut -d ' ' -f 1)
-          if [ "$file_hash" != "$expected_hash" ]; then
-            echo "Checksum verification failed for llvm.sh. The downloaded file may be corrupted or tampered with."
-            exit 1
-          fi
-          chmod u+x llvm.sh
-          sudo ./llvm.sh 17
           sudo apt install -y libopenblas-dev liblapack-dev
 
       - name: Setup Python build deps
@@ -672,8 +642,10 @@ jobs:
 
       - name: Build wheel, check for compiler warnings
         run: |
+          # if clang-18 isn't installed this should fail
+          clang-18 --version
           # specify which compilers to use using environment variables
-          CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
+          CC=clang-18 CXX=clang++-18 FC=gfortran python -m build -wnx -Csetup-args=--werror
 
   #################################################################################
   test_aarch64:

@@ -4,6 +4,14 @@ _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 _cython_tree += fs.copyfile('__init__.pxd')
 
 _generate_pyx = find_program('_generate_pyx.py')
+# Resolve cython-blas-abi: 'auto' follows use-ilp64, otherwise explicit
+_cython_blas_abi = get_option('cython-blas-abi')
+if _cython_blas_abi == 'auto'
+  _cython_blas_ilp64 = use_ilp64
+else
+  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
+endif
+ilp64_flag = _cython_blas_ilp64 ? '--ilp64' : []
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -14,10 +22,11 @@ cython_linalg = custom_target('cython_linalg',
     '_lapack_subroutines.h'
   ],
   input: '_generate_pyx.py',
-  command: [_generate_pyx, '-o', '@OUTDIR@', accelerate_flag],
+  command: [_generate_pyx, '-o', '@OUTDIR@', accelerate_flag, ilp64_flag],
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
+    '../_build_utils/_wrappers_common.py',
   ],
   install: true,
   # Install only the .pxd files
@@ -184,6 +193,7 @@ py3.extension_module('_decomp_interpolative',
 py3.extension_module('_batched_linalg',
   [
     'src/_common_array_utils.hh',
+    'src/_linalg_lu_det.hh',
     'src/_linalg_inv.hh',
     'src/_linalg_solve.hh',
     'src/_npymath.hh',
@@ -216,6 +226,7 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   subdir: 'scipy/linalg'
 )
 
+cython_blas_lapack_dep = _cython_blas_ilp64 ? lapack_dep : lapack_lp64_dep
 cython_blas = py3.extension_module('cython_blas',
   [
     linalg_cython_gen.process(cython_linalg[0]),  # cython_blas.pyx
@@ -223,7 +234,7 @@ cython_blas = py3.extension_module('cython_blas',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [cython_blas_lapack_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -236,18 +247,9 @@ cython_lapack = py3.extension_module('cython_lapack',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [cython_blas_lapack_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
-  subdir: 'scipy/linalg'
-)
-
-py3.extension_module('_decomp_lu_cython',
-  linalg_cython_gen.process('_decomp_lu_cython.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
   subdir: 'scipy/linalg'
 )
 
@@ -272,8 +274,8 @@ py3.extension_module('_internal_matfuncs',
     'src/_matfuncs_expm.c',
     'src/_matfuncs_sqrtm.c'
   ],
-  include_directories: 'src/',
-  dependencies: [np_dep, lapack_lp64_dep],
+  include_directories: ['src/', '../_build_utils/src'],  # for npy_cblas.h
+  dependencies: [np_dep, lapack_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -316,7 +318,6 @@ python_sources = [
   '_decomp_cossin.py',
   '_decomp_ldl.py',
   '_decomp_lu.py',
-  '_decomp_lu_cython.pyi',
   '_decomp_polar.py',
   '_decomp_qr.py',
   '_decomp_qz.py',
