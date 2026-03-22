@@ -17,9 +17,7 @@ mkdir $ROOT_DIR/.tmp
 git clone $REPO_URL $ROOT_DIR/.tmp
 pushd $ROOT_DIR/.tmp
 git checkout $COMMIT_HASH
+git grep -l "SPDX-License-Identifier: BSD-3-Clause OR GPL-2.0-or-later" | xargs tar cf ducc_bsd.tar
 popd
-mv -v $ROOT_DIR/.tmp/src/ducc0/bindings/ $ROOT_DIR/bindings/
-mv -v $ROOT_DIR/.tmp/src/ducc0/fft/ $ROOT_DIR/fft/
-mv -v $ROOT_DIR/.tmp/src/ducc0/infra/ $ROOT_DIR/infra/
-mv -v $ROOT_DIR/.tmp/src/ducc0/math/ $ROOT_DIR/math/
+tar xf $ROOT_DIR/.tmp/ducc_bsd.tar
 rm -rf $ROOT_DIR/.tmp

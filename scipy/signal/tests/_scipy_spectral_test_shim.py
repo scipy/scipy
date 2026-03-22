@@ -304,7 +304,7 @@ def istft_compare(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
         # we are using the tolerances from there to circumvent CI problems
         atol, rtol = 1e-4, 1e-5
     else:
-        atol = max(atol, 1e-12)  # 2e-15 seems too tight for 32-Bit platforms
+        atol = max(atol, 1e-12)  # 2e-15 seems too tight
 
     assert_allclose(x_wrapper[k_lo:k_hi], x[k_lo:k_hi], atol=atol, rtol=rtol,
                     err_msg=f"Signal values {e_msg_part}")
