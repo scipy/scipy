@@ -1229,7 +1229,7 @@ class TestRules:
         b = xp.asarray([1])
 
         for base_class in [Rule(), FixedRule()]:
-            with pytest.raises(Exception):
+            with pytest.raises(NotImplementedError):
                 base_class.estimate(basic_1d_integrand, a, b, args=(xp,))
 
 
@@ -1302,7 +1302,7 @@ class TestRulesQuadrature:
         GaussLegendreQuadrature
     ])
     def test_one_point_fixed_quad_impossible(self, quadrature, xp):
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             quadrature(1, xp=xp)
 
 

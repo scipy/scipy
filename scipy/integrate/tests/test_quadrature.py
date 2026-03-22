@@ -367,7 +367,7 @@ class TestTrapezoid(CommonTrapezoidSimpsonTests):
             trapezoid(y, x=xp.asarray([0, 10., 20.])[:, None], axis=0),
             out0
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             # x is not broadcastable against y
             trapezoid(y, x=xp.asarray([0, 10., 20.])[None, :], axis=0)
 
