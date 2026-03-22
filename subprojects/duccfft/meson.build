@@ -1,4 +1,4 @@
-project('duccfft', version: '0.38.0')
+project('duccfft', version: '0.40.0')
 
 duccfft_sources = files(
     'ducc0/infra/mav.cc',
