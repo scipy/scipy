@@ -2273,11 +2273,15 @@ class TestLstsq:
         x, resid, rank, s = lstsq(a, b, lapack_driver=driver)
 
         assert rank == n
-        assert resid.ndim == 0   # it's numpy scalar, in fact
 
-        delta = b - a @ x
-        manual_residuals = np.sum(delta * delta.conj(), axis=0)
-        assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+        if driver != "gelsy":
+            assert resid.ndim == 0   # it's numpy scalar, in fact
+
+            delta = b - a @ x
+            manual_residuals = np.sum(delta * delta.conj(), axis=0)
+            assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
 
         # 2. b.shape == (n, nrhs)
         b2 = np.stack((b, 2*b, 3*b, 4*b), axis=1)   # b1.shape=(3, 4), nrhs=4
@@ -2285,10 +2289,14 @@ class TestLstsq:
         x2, resid2, rank2, s2 = lstsq(a, b2, lapack_driver=driver)
 
         assert rank2 == n
-        assert resid2.shape == (nrhs,)
-        delta2 = b2 - a @ x2
-        manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
-        assert_allclose(resid2, manual_residuals2, atol=1e-14)
+
+        if driver != "gelsy":
+            assert resid2.shape == (nrhs,)
+            delta2 = b2 - a @ x2
+            manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
+            assert_allclose(resid2, manual_residuals2, atol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
 
         # 3. b.shape == (n,), and a has batch shape (2,)
         a3 = np.stack((a, 2*a))
@@ -2297,8 +2305,12 @@ class TestLstsq:
 
         x3, resid3, ranks3, s3 = lstsq(a3, b3, lapack_driver=driver)
         assert_equal(ranks3, np.asarray([n, n]))
-        assert resid3.shape == (n,)
-        assert_allclose(resid3, [resid]*n, atol=1e-14)
+
+        if driver != "gelsy":
+            assert resid3.shape == (n,) # XXX: ?
+            assert_allclose(resid3, [resid]*n, atol=1e-14)
+        else:
+            assert resid3.shape == (2, 0)
 
         # 4. b.shape == (n, nhrs) and a has batch shape = (2,)
         a4 = np.stack((a, 2*a))
@@ -2307,11 +2319,14 @@ class TestLstsq:
         x4, resid4, rank4, s4 = lstsq(a4, b4, lapack_driver=driver)
 
         assert_equal(rank4, np.asarray([n, n]))
-        assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
 
-        delta4 = b4 - a4 @ x4
-        manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
-        assert_allclose(resid4, manual_residual4, atol=1e-14)
+        if driver != "gelsy":
+            assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
+            delta4 = b4 - a4 @ x4
+            manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
+            assert_allclose(resid4, manual_residual4, atol=1e-14)
+        else:
+            assert resid4.shape == (2, 0)
 
     def test_errors(self):
         a = np.ones((3, 4))

@@ -1143,6 +1143,22 @@ void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_in
     }
 }
 
+/*
+ * Extract the residuals returned by ?gelss and ?gelsd into a new array from.
+ * Also change from F- to C-ordered arrays.
+ *
+ * Function is reminiscent of `copy_slice_F_to_C`, but there the top part is copied, here
+ * the same is done for the bottom part.
+ */
+template<typename T>
+void extract_residuals(T *dst, const T *src, const npy_intp m, const npy_intp n, const npy_intp nrhs) {
+    for (npy_intp i = 0; i < nrhs; i++) {
+        for (npy_intp j = n; j < m; j++) {
+            dst[(j-n)*nrhs + i] = src[i * m + j];
+        }
+    }
+}
+
 
 /*
  * 1-norm of a matrix

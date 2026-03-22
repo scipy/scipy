@@ -4,7 +4,7 @@
 
 template<typename T>
 int
-_lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, PyArrayObject *ap_res, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
     SliceStatus slice_status;
@@ -40,6 +40,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     // Outputs
     real_type *ptr_S = (real_type *)PyArray_DATA(ap_S);
     T *ptr_x = (T *)PyArray_DATA(ap_x);
+    T *ptr_res = (T *)PyArray_DATA(ap_res);
     npy_int64 *ptr_rank = (npy_int64 *)PyArray_DATA(ap_rank);
 
     // --------------------------------------------------------------------
@@ -139,12 +140,13 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
         // copy results from temp buffers (S is filled in-place already)
         copy_slice_F_to_C(ptr_x, data_b, n, nrhs, ldb);
+        extract_residuals(ptr_res, data_b, m, n, nrhs);
         *ptr_rank = (npy_int64)rank;
-        // NB: we discard the column residuals, b[n:]
 
         // advance the output pointers: S, x and rank arrays are C-ordered by construction
         ptr_S += min_mn;
         ptr_x += n*nrhs;
+        ptr_res += (max_mn - n) * nrhs;
         ptr_rank += 1;
     }
 
@@ -160,7 +162,7 @@ done:
 
 template<typename T>
 int
-_lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, PyArrayObject *ap_res, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
     SliceStatus slice_status;
@@ -190,6 +192,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     // Outputs
     real_type *ptr_S = (real_type *)PyArray_DATA(ap_S);
     T *ptr_x = (T *)PyArray_DATA(ap_x);
+    T *ptr_res = (T *)PyArray_DATA(ap_res);
     npy_int64 *ptr_rank = (npy_int64 *)PyArray_DATA(ap_rank);
 
     // --------------------------------------------------------------------
@@ -302,12 +305,13 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
         // copy results from temp buffers (S is filled in-place already)
         copy_slice_F_to_C(ptr_x, data_b, n, nrhs, ldb);
+        extract_residuals(ptr_res, data_b, m, n, nrhs);
         *ptr_rank = (npy_int64)rank;
-        // XXX we discard the column residuals, b[n:]
 
-        // advance the output pointers: S, x and rank arrays are C-ordered by construction
+        // advance the output pointers: S, x, residuals and rank arrays are C-ordered by construction
         ptr_S += min_mn;
         ptr_x += n*nrhs;
+        ptr_res += (max_mn - n) * nrhs;
         ptr_rank += 1;
     }
 
@@ -322,7 +326,7 @@ done:
 
 template<typename T>
 int
-_lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyArrayObject *ap_rank, PyArrayObject *ap_res, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
     SliceStatus slice_status;
@@ -461,7 +465,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
         // copy results from temp buffers
         copy_slice_F_to_C(ptr_x, data_b, n, nrhs, ldb);
         *ptr_rank = (npy_int64)rank;
-        // XXX we discard the column residuals, b[n:]
+        // NB. `gelsy` does not guarantee column residuals are present in b[n:] and, correspondingly, ap_res is empty.
 
         // advance the output pointers: x and rank arrays are C-ordered by construction
         ptr_x += n*nrhs;
@@ -478,17 +482,17 @@ done:
 
 template<typename T>
 int
-_lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const char * lapack_driver, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, PyArrayObject *ap_res, double rcond, const char * lapack_driver, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
     int info;
     if (strcmp(lapack_driver, "gelss") == 0) {
-        info = _lstsq_gelss<T>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, overwrite_a, overwrite_b, vec_status);
+        info = _lstsq_gelss<T>(ap_Am, ap_b, ap_S, ap_x, ap_rank, ap_res, rcond, overwrite_a, overwrite_b, vec_status);
     }
     else if (strcmp(lapack_driver, "gelsd") == 0) {
-        info = _lstsq_gelsd<T>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, overwrite_a, overwrite_b, vec_status);
+        info = _lstsq_gelsd<T>(ap_Am, ap_b, ap_S, ap_x, ap_rank, ap_res, rcond, overwrite_a, overwrite_b, vec_status);
     }
     else if (strcmp(lapack_driver, "gelsy") == 0) {
-        info = _lstsq_gelsy<T>(ap_Am, ap_b, ap_x, ap_rank, rcond, overwrite_a, overwrite_b, vec_status);
+        info = _lstsq_gelsy<T>(ap_Am, ap_b, ap_x, ap_rank, ap_res, rcond, overwrite_a, overwrite_b, vec_status);
     }
     else {
         // should have been validated at call site, really
