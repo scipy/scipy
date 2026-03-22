@@ -455,10 +455,12 @@ class TestTransitionToRNG:
         return sparse.random_array((10, 10), density=1.0, **kwargs).toarray()
 
     def random(self, **kwargs):
-        return sparse.random(10, 10, density=1.0, **kwargs).toarray()
+        with pytest.warns(DeprecationWarning, match=".* is being repl"):
+            return sparse.random(10, 10, density=1.0, **kwargs).toarray()
 
     def rand(self, **kwargs):
-        return sparse.rand(10, 10, density=1.0, **kwargs).toarray()
+        with pytest.warns(DeprecationWarning, match=".* is being repl"):
+            return sparse.rand(10, 10, density=1.0, **kwargs).toarray()
 
     def svds(self, **kwargs):
         rng = np.random.default_rng(3458934594269824562)

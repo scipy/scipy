@@ -514,11 +514,11 @@ def isspmatrix_lil(x):
     Examples
     --------
     >>> from scipy.sparse import lil_array, lil_matrix, coo_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(lil_matrix([[5]]))
+    >>> isspmatrix_lil(lil_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_lil(lil_array([[5]]))
+    >>> isspmatrix_lil(lil_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_lil(coo_matrix([[5]]))
+    >>> isspmatrix_lil(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
     msg = """`isspmatrix_lil` is being replaced by `self.format == "lil" and issparse`.

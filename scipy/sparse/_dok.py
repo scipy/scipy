@@ -662,11 +662,11 @@ def isspmatrix_dok(x):
     Examples
     --------
     >>> from scipy.sparse import dok_array, dok_matrix, coo_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(dok_matrix([[5]]))
+    >>> isspmatrix_dok(dok_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_dok(dok_array([[5]]))
+    >>> isspmatrix_dok(dok_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_dok(coo_matrix([[5]]))
+    >>> isspmatrix_dok(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
     msg = """`isspmatrix_dok` is being replaced by `self.format == "dok" and issparse`.
