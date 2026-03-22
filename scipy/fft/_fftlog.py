@@ -125,11 +125,16 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     >>> ord = 2
     >>> f = 10*jv(ord, 4*r)*r
 
-    Calculate the Hankel transform ``F`` of the signal data. Then,
-    calculate the scaling factors ``k`` corresponding to ``F``.
+    Calculate the Hankel transform ``F`` of the signal data.
 
     >>> F = fft.fht(f, dln, mu=ord)
-    >>> k = 1/r[::-1]
+
+    Calculate the evaluation points for the transformed data ``F``.
+    Since ``fht`` returns the transformed data in ascending order of
+    evaluation points, flip ``r`` in the evaluation points equation.
+
+
+    >>> k = 1/np.flip(r)
 
     Plot ``F`` versus ``k``.
 
@@ -160,7 +165,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     >>> r = np.logspace(-7, 1, 128)  # Input evaluation points
     >>> dln = np.log(r[1]/r[0])      # Step size
     >>> offset = fft.fhtoffset(dln, initial=-6*np.log(10), mu=mu)
-    >>> k = np.exp(offset)/r[::-1]   # Output evaluation points
+    >>> k = np.exp(offset)/np.flip(r)   # Output evaluation points
 
     Define the analytical function.
 
@@ -275,11 +280,14 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     >>> dln = np.log(k[1]/k[0])
     >>> a = fft.ifht(A, dln, mu=2)
 
-    Calculate the evaluation points for the transformed function ``a``
-    and compare the evaluated function with the kernel function
-    corresponding to ``k=240``.
+    Calculate the evaluation points for the transformed data ``a``.
+    Since ``ifht`` returns the transformed data in ascending order of
+    evaluation points, flip ``k`` in the evaluation points equation.
 
     >>> r = 1/k[::-1]
+
+    Compare ``a`` with the kernel function corresponding to ``k=240``.
+
     >>> a_f = jv(2, k[240]*r)*r
     >>> plt.plot(r, a)
     >>> plt.plot(r, a_f)
