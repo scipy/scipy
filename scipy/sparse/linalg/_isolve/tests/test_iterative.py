@@ -81,31 +81,35 @@ class SingleTest:
 
 
 def xp_case(case, xp, batch_A, batch_b, rng=None):
-    sparse = issparse(case.A) or issparse(case.b)
-    if not sparse:
-        A = xp.asarray(case.A)
-        rng = np.random.default_rng(rng)
-        if batch_A:
-            A_shape = batch_A + case.A.shape
-            batch_array = xp.asarray(rng.random(A_shape), dtype=A.dtype)
-            A = A * batch_array
-        b = xp.asarray(case.b)
-        if batch_b:
-            b_shape = batch_b + case.b.shape
-            batch_array = xp.asarray(rng.random(b_shape), dtype=b.dtype)
-            b = b * batch_array
-        case = types.SimpleNamespace(
-            name=case.name,
-            A=A,
-            b=b,
-            convergence=case.convergence,
-            solver=case.solver,
-            casename=case.casename,
-        )
-    else: # TODO: pydata/sparse for sparse tests?
-        if not is_numpy(xp):
-            pytest.skip("sparse tests run only with `np` backend")
-    return case
+    sparse = issparse(case.A)
+
+    if (not_np := not is_numpy(xp)) and sparse: # TODO: pydata/sparse for sparse tests?
+        pytest.skip("sparse tests run only with `np` backend")
+
+    A = xp.asarray(case.A) if not_np else case.A
+    b = xp.asarray(case.b) if not_np else case.b
+
+    rng = np.random.default_rng(rng)
+    if sparse and (batch_A or batch_b):
+        A = A.tocoo()
+    if batch_A:
+        # apply some random scaling to each system in batch,
+        # preserving symmetry, (non-)positive definiteness, Hermiticity
+        scaling = np.abs(rng.standard_normal(batch_A + (1, 1)))
+        batch_array = xp.asarray(scaling, dtype=A.dtype)
+        A = batch_array * A
+    if batch_b:
+        # apply some random scaling to each RHS in batch
+        b = b * xp.asarray(rng.random(batch_b + (1,)), dtype=b.dtype)
+
+    return types.SimpleNamespace(
+        name=case.name,
+        A=A,
+        b=b,
+        convergence=case.convergence,
+        solver=case.solver,
+        casename=case.casename,
+    )
 
 
 class IterativeParams:
@@ -400,53 +404,54 @@ def test_precond_dummy(case):
 def test_precond_inverse(case, xp, batch_A, batch_b):
     if case.casename not in ('poisson1d', 'poisson2d'):
         pytest.skip("specific to poisson1d and poisson2d cases")
+    if case.solver is qmr:
+        pytest.skip("skipped for qmr")
+    
     case = xp_case(case, xp, batch_A, batch_b, rng=38)
-    for solver in _SOLVERS:
-        if solver is qmr:
-            continue
+    rtol = 1e-8
 
-        rtol = 1e-8
+    def inverse(b, which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if is_numpy(xp) and not isinstance(A, np.ndarray):
+            A = A.toarray()
+        return xp.linalg.solve(A, b[..., np.newaxis])
 
-        def inverse(b, which=None):
-            """inverse preconditioner"""
-            A = case.A
-            if is_numpy(xp) and not isinstance(A, np.ndarray):
-                A = A.toarray()
-            return xp.linalg.solve(A, b)
+    def rinverse(b, which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if is_numpy(xp) and not isinstance(A, np.ndarray):
+            A = A.toarray()
+        return xp.linalg.solve(A.T, b[..., np.newaxis])
 
-        def rinverse(b, which=None):
-            """inverse preconditioner"""
-            A = case.A
-            if is_numpy(xp) and not isinstance(A, np.ndarray):
-                A = A.toarray()
-            return xp.linalg.solve(A.T, b)
+    matvec_count = [0]
 
-        matvec_count = [0]
+    def matvec(b):
+        matvec_count[0] += 1
+        return case.A @ b[..., np.newaxis]
 
-        def matvec(b):
-            matvec_count[0] += 1
-            return case.A @ b
+    def rmatvec(b):
+        matvec_count[0] += 1
+        return case.A.T @ b[..., np.newaxis]
 
-        def rmatvec(b):
-            matvec_count[0] += 1
-            return case.A.T @ b
+    b = case.b
+    x0 = 0 * b
 
-        b = case.b
-        x0 = 0 * b
+    A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
+    precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
 
-        A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
-        precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
+    # Solve with preconditioner
+    matvec_count = [0]
+    x, info = case.solver(A, b, M=precond, x0=x0, rtol=rtol)
 
-        # Solve with preconditioner
-        matvec_count = [0]
-        x, info = solver(A, b, M=precond, x0=x0, rtol=rtol)
+    assert info == 0
+    Ax = xp.squeeze(case.A @ x[..., xp.newaxis], axis=-1)
+    assert xp.all(
+        xp_vector_norm(Ax - b, axis=-1) <= xp_vector_norm(b, axis=-1) * rtol
+    )
 
-        assert info == 0
-        Ax = xp.squeeze(case.A @ x[..., xp.newaxis], axis=-1)
-        assert xp_vector_norm(Ax - b, axis=-1) <= xp_vector_norm(b, axis=-1) * rtol
-
-        # Solution should be nearly instant
-        assert matvec_count[0] <= 3
+    # Solution should be nearly instant
+    assert matvec_count[0] <= 3
 
 
 @pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
