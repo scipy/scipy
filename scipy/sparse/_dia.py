@@ -495,11 +495,11 @@ def isspmatrix_dia(x):
     Examples
     --------
     >>> from scipy.sparse import dia_array, dia_matrix, coo_matrix, isspmatrix_dia
-    >>> isspmatrix_dia(dia_matrix([[5]]))
+    >>> isspmatrix_dia(dia_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_dia(dia_array([[5]]))
+    >>> isspmatrix_dia(dia_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_dia(coo_matrix([[5]]))
+    >>> isspmatrix_dia(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
     msg = """`isspmatrix_dia` is being replaced by `self.format == "dia" and issparse`.

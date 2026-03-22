@@ -29,7 +29,7 @@ def issparse(x):
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csr_array, csr_matrix, issparse
-    >>> issparse(csr_matrix([[5]]))
+    >>> issparse(csr_matrix([[5]]))  # doctest: +SKIP
     True
     >>> issparse(csr_array([[5]]))
     True

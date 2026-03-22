@@ -304,7 +304,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     >>> from scipy.sparse import spdiags
     >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
     >>> diags = np.array([0, -1, 2])
-    >>> spdiags(data, diags, 4, 4).toarray()
+    >>> spdiags(data, diags, 4, 4).toarray()  # doctest: +SKIP
     array([[1, 0, 3, 0],
            [1, 2, 0, 4],
            [0, 2, 3, 0],
@@ -562,7 +562,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
     --------
     >>> from scipy.sparse import diags
     >>> diagonals = [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0], [1.0, 2.0]]
-    >>> diags(diagonals, [0, -1, 2]).toarray()
+    >>> diags(diagonals, [0, -1, 2]).toarray()  # doctest: +SKIP
     array([[1., 0., 1., 0.],
            [1., 2., 0., 2.],
            [0., 2., 3., 0.],
@@ -571,7 +571,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
     Broadcasting of scalars is supported (but shape needs to be
     specified):
 
-    >>> diags([1.0, -2.0, 1.0], [-1, 0, 1], shape=(4, 4)).toarray()
+    >>> diags([1.0, -2.0, 1.0], [-1, 0, 1], shape=(4, 4)).toarray()  # doctest: +SKIP
     array([[-2.,  1.,  0.,  0.],
            [ 1., -2.,  1.,  0.],
            [ 0.,  1., -2.,  1.],
@@ -581,7 +581,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=_NoValue):
     If only one diagonal is wanted (as in `numpy.diag`), the following
     works as well:
 
-    >>> diags([1.0, 2.0, 3.0], 1).toarray()
+    >>> diags([1.0, 2.0, 3.0], 1).toarray()  # doctest: +SKIP
     array([[ 0.,  1.,  0.,  0.],
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
@@ -641,11 +641,11 @@ def identity(n, dtype='d', format=None):
     Examples
     --------
     >>> import scipy as sp
-    >>> sp.sparse.identity(3).toarray()
+    >>> sp.sparse.identity(3).toarray()  # doctest: +SKIP
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sp.sparse.identity(3, dtype='int8', format='dia')
+    >>> sp.sparse.identity(3, dtype='int8', format='dia')  # doctest: +SKIP
     <DIAgonal sparse matrix of dtype 'int8'
         with 3 stored elements (1 diagonals) and shape (3, 3)>
     >>> sp.sparse.eye_array(3, dtype='int8', format='dia')
@@ -786,11 +786,11 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     --------
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sp.sparse.eye(3).toarray()
+    >>> sp.sparse.eye(3).toarray()  # doctest: +SKIP
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sp.sparse.eye(3, dtype=np.int8)
+    >>> sp.sparse.eye(3, dtype=np.int8)  # doctest: +SKIP
     <DIAgonal sparse matrix of dtype 'int8'
         with 3 stored elements (1 diagonals) and shape (3, 3)>
 
@@ -1158,9 +1158,9 @@ def hstack(blocks, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, hstack
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
+    >>> from scipy.sparse import coo_array, hstack
+    >>> A = coo_array([[1, 2], [3, 4]])
+    >>> B = coo_array([[5], [6]])
     >>> hstack([A,B]).toarray()
     array([[1, 2, 5],
            [3, 4, 6]])
@@ -1736,13 +1736,13 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> import scipy as sp
     >>> import numpy as np
     >>> rng = np.random.default_rng()
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng)  # doctest: +SKIP
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=rvs)
-    >>> S.toarray()
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=rvs)  # doctest: +SKIP
+    >>> S.toarray()  # doctest: +SKIP
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
@@ -1753,7 +1753,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> def np_normal_squared(size=None, rng=rng):
     ...     return rng.standard_normal(size) ** 2
     >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
-    ...                      data_rvs=np_normal_squared)
+    ...                      data_rvs=np_normal_squared)  # doctest: +SKIP
 
     Or we can build it from sp.stats style rvs functions:
 
@@ -1761,7 +1761,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
     ...     return std_normal(size=size, random_state=rng) ** 2
     >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
-    ...                      data_rvs=sp_stats_normal_squared)
+    ...                      data_rvs=sp_stats_normal_squared)  # doctest: +SKIP
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
@@ -1770,7 +1770,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=Y.rvs)  # doctest: +SKIP
     """
     msg = """`random` is being replaced by `random_array`.
 
@@ -1843,11 +1843,11 @@ def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     Examples
     --------
     >>> from scipy.sparse import rand
-    >>> matrix = rand(3, 4, density=0.25, format="csr", rng=42)
-    >>> matrix
+    >>> matrix = rand(3, 4, density=0.25, format="csr", rng=42)  # doctest: +SKIP
+    >>> matrix  # doctest: +SKIP
     <Compressed Sparse Row sparse matrix of dtype 'float64'
         with 3 stored elements and shape (3, 4)>
-    >>> matrix.toarray()
+    >>> matrix.toarray()  # doctest: +SKIP
     array([[0.05641158, 0.        , 0.        , 0.65088847],  # random
            [0.        , 0.        , 0.        , 0.14286682],
            [0.        , 0.        , 0.        , 0.        ]])

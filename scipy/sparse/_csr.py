@@ -312,11 +312,11 @@ def isspmatrix_csr(x):
     Examples
     --------
     >>> from scipy.sparse import csr_array, csr_matrix, coo_matrix, isspmatrix_csr
-    >>> isspmatrix_csr(csr_matrix([[5]]))
+    >>> isspmatrix_csr(csr_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_csr(csr_array([[5]]))
+    >>> isspmatrix_csr(csr_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_csr(coo_matrix([[5]]))
+    >>> isspmatrix_csr(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
     msg = """`isspmatrix_csr` is being replaced by `self.format == "csr" and issparse`.

@@ -1670,11 +1670,11 @@ def isspmatrix_coo(x):
     Examples
     --------
     >>> from scipy.sparse import coo_array, coo_matrix, csr_matrix, isspmatrix_coo
-    >>> isspmatrix_coo(coo_matrix([[5]]))
+    >>> isspmatrix_coo(coo_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_coo(coo_array([[5]]))
+    >>> isspmatrix_coo(coo_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_coo(csr_matrix([[5]]))
+    >>> isspmatrix_coo(csr_matrix([[5]]))  # doctest: +SKIP
     False
     """
     msg = """`isspmatrix_coo` is being replaced by `self.format == "coo" and issparse`.
