@@ -100,7 +100,7 @@ _trsyl3_probe_code = '''
 '''
 _have_trsyl3 = cc.links(_trsyl3_probe_code,
   args: _trsyl3_probe_c_args,
-  dependencies: [lapack_dep],
+  dependencies: [lapack],
   name: 'LAPACK has `?trsyl3` symbols'
 )
 _internal_matfuncs_c_args = []
