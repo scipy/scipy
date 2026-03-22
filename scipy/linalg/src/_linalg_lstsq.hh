@@ -125,7 +125,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         if (!overwrite_b) {
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
             copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
-        }
+        } // NB. gelss needs LDB = max(1, m, n)
 
         // perform the least squares
         call_gelss(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, &info);
@@ -290,7 +290,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
             // copy the r.h.s, too; NB: gelsd needs LDB=max(1, m, n)
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
             copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
-        }
+        } // NB. gelsd needs ldb = max(1, m, n)
 
         // perform the least squares
         call_gelsd(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, iwork, &info);
@@ -447,7 +447,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
         if (!overwrite_b) {
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
             copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
-        }
+        } // NB. gelsy needs ldb = max(1, m, n)
 
         for(npy_intp i=0; i<n; i++) {jpvt[i] = 0;}
 
