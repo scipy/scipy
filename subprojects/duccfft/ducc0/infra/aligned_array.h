@@ -141,7 +141,7 @@ template<typename T, size_t alignment=alignof(T)> class array_base
     /// If \a n is different from the current size, resizes the array to hold
     /// \a n elements.
     /** \note No data content is copied, the new array is uninitialized! */
-    void realloc(size_t n)
+    void resize(size_t n)
       {
       if (n==sz) return;
       dealloc(p);

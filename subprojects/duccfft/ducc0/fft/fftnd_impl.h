@@ -394,7 +394,7 @@ template<typename T, typename T0> class TmpStorage
       {
       if (inplace)
         {
-        d.realloc(bufsize_trafo);
+        d.resize(bufsize_trafo);
         return;
         }
       constexpr auto vlen = fft_simdlen<T0>;
@@ -407,7 +407,7 @@ template<typename T, typename T0> class TmpStorage
       // critical stride avoidance
       if ((dstride&256)==0) dstride+=16;
       if ((dofs&256)==0) dofs += 16;
-      d.realloc(buffct*dofs + datafct*dstride);
+      d.resize(buffct*dofs + datafct*dstride);
       }
 
     template<typename T2> T2 *transformBuf()

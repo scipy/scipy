@@ -91,7 +91,7 @@ using namespace std;
 using shape_t=fmav_info::shape_t;
 using stride_t=fmav_info::stride_t;
 
-using py::none;
+static const auto None = py::none();
 
 #ifdef DUCC0_USE_NANOBIND
 using NpArr = py::ndarray<py::numpy, py::device::cpu>;
@@ -434,7 +434,7 @@ using detail_pybind::OptNpArr;
 using detail_pybind::CNpArr;
 using detail_pybind::CNpArrT;
 using detail_pybind::OptCNpArr;
-using detail_pybind::none;
+using detail_pybind::None;
 using detail_pybind::isPyarr;
 using detail_pybind::make_Pyarr;
 using detail_pybind::make_Pyarr_and_vmav;

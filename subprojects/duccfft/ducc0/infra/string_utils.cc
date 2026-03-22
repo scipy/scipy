@@ -244,7 +244,7 @@ vector<string> parse_words_from_file (const string &filename)
     string word;
     inp>>word;
     word=trim(word);
-    if (!word.empty()) words.push_back(word);
+    if (word.empty()) words.push_back(word);
     }
   return words;
   }
