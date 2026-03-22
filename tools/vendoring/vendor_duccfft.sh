@@ -6,7 +6,7 @@ set -o nounset
 set -o errexit
 
 REPO_URL="https://gitlab.mpcdf.mpg.de/mtr/ducc.git"
-COMMIT_HASH="0187b894fd9c1a56a396016f57a1a841ab482ba6" # tag 'ducc0_0_40_0'
+COMMIT_HASH="837c60ac4b28801cb6b17113495d4bf4cbd82968"
 
 # XXX: run this from the repo top level like `./tools/vendoring/vendor_duccfft.sh`
 ROOT_DIR="subprojects/duccfft/ducc0"
