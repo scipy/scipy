@@ -1,7 +1,7 @@
 /*
 This file is part of the ducc FFT library
 
-Copyright (C) 2010-2025 Max-Planck-Society
+Copyright (C) 2010-2026 Max-Planck-Society
 Copyright (C) 2019 Peter Bell
 
 Authors: Martin Reinecke, Peter Bell
@@ -60,6 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 #include <complex>
+#include <algorithm>
 #include "ducc0/infra/error_handling.h"
 #include "ducc0/infra/aligned_array.h"
 #include "ducc0/infra/mav.h"

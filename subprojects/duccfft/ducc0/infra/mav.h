@@ -1,7 +1,7 @@
 /*! \file ducc0/infra/mav.h
  *  Classes for dealing with multidimensional arrays
  *
- *  \copyright Copyright (C) 2019-2025 Max-Planck-Society
+ *  \copyright Copyright (C) 2019-2026 Max-Planck-Society
  *  \author Martin Reinecke
  *  */
 
@@ -401,13 +401,13 @@ class fmav_info
   };
 
 /// Helper class containing shape and stride information of a `mav` object
-template<size_t ndim> class mav_info
+template<template<typename, size_t> typename Tcontainer, size_t ndim> class mav_info_proto
   {
   public:
     /// Fixed-size array of nonnegative integers for storing the array shape
-    using shape_t = array<size_t, ndim>;
+    using shape_t = Tcontainer<size_t, ndim>;
     /// Fixed-size array of integers for storing the array strides
-    using stride_t = array<ptrdiff_t, ndim>;
+    using stride_t = Tcontainer<ptrdiff_t, ndim>;
 
   protected:
     shape_t shp;
@@ -432,20 +432,20 @@ template<size_t ndim> class mav_info
 
   public:
     /// Constructs an object with all extents and strides set to zero.
-    mav_info() : sz(0)
+    mav_info_proto() : sz(0)
       {
       for (size_t i=0; i<ndim; ++i)
         { shp[i]=0; str[i]=0; }
       }
     /// Constructs an object with the given shape and stride.
-    mav_info(const shape_t &shape_, const stride_t &stride_)
+    mav_info_proto(const shape_t &shape_, const stride_t &stride_)
       : shp(shape_), str(stride_),
         sz(accumulate(shp.begin(),shp.end(),size_t(1),multiplies<>())) {}
     /// Constructs an object with the given shape and computes the strides
     /// automatically, assuming a C-contiguous memory layout.
-    mav_info(const shape_t &shape_)
-      : mav_info(shape_, shape2stride(shape_)) {}
-    mav_info(const fmav_info &inp)
+    mav_info_proto(const shape_t &shape_)
+      : mav_info_proto(shape_, shape2stride(shape_)) {}
+    mav_info_proto(const fmav_info &inp)
       {
       MR_assert(inp.ndim()==ndim, "dimensionality mismatch");
       sz=1;
@@ -456,7 +456,7 @@ template<size_t ndim> class mav_info
         str[i] = inp.stride(i);
         }
       }
-    void assign(const mav_info &other)
+    void assign(const mav_info_proto &other)
       {
       shp = other.shp;
       str = other.str;
@@ -491,7 +491,7 @@ template<size_t ndim> class mav_info
       return true;
       }
     /// Returns true iff this->shape and \a other.shape match.
-    bool conformable(const mav_info &other) const
+    bool conformable(const mav_info_proto &other) const
       { return shp==other.shp; }
     /// Returns true iff this->shape and \a other match.
     bool conformable(const shape_t &other) const
@@ -504,14 +504,14 @@ template<size_t ndim> class mav_info
       return getIdx(0, ns...);
       }
     template<size_t nd2>
-    mav_info<nd2> extend_and_broadcast(const array<size_t, nd2> &new_shape,
+    mav_info_proto<Tcontainer, nd2> extend_and_broadcast(const Tcontainer<size_t, nd2> &new_shape,
       const vector<size_t> &axpos) const
       {
       static_assert(nd2>=ndim, "new shape smaller than original one");
       MR_assert(axpos.size()==ndim, "bad axpos size");
-      array<ptrdiff_t, nd2> new_stride;
+      Tcontainer<ptrdiff_t, nd2> new_stride;
       fill(new_stride.begin(), new_stride.end(), 0);
-      array<uint8_t, nd2> used;
+      Tcontainer<uint8_t, nd2> used;
       fill(used.begin(), used.end(), 0);
       for (size_t i=0; i<ndim; ++i)
         {
@@ -521,10 +521,10 @@ template<size_t ndim> class mav_info
         used[axpos[i]]=1;
         new_stride[axpos[i]] = str[i];
         }
-      return mav_info<nd2>(new_shape, new_stride);
+      return mav_info_proto<Tcontainer, nd2>(new_shape, new_stride);
       }
     template<size_t nd2>
-    mav_info<nd2> extend_and_broadcast(const array<size_t, nd2> &new_shape,
+    mav_info_proto<Tcontainer, nd2> extend_and_broadcast(const Tcontainer<size_t, nd2> &new_shape,
       size_t firstaxis) const
       {
       vector<size_t> axpos(ndim);
@@ -538,7 +538,7 @@ template<size_t ndim> class mav_info
       swap(shp[ax0], shp[ax1]);
       swap(str[ax0], str[ax1]);
       }
-    mav_info transpose(const shape_t &axes) const
+    mav_info_proto transpose(const shape_t &axes) const
       {
       shape_t shp2;
       stride_t str2;
@@ -552,12 +552,12 @@ template<size_t ndim> class mav_info
         shp2[i] = shp[axes[i]];
         str2[i] = str[axes[i]];
         }
-      return mav_info(shp2, str2);
+      return mav_info_proto(shp2, str2);
       }
-    mav_info<ndim+1> prepend_1() const
+    mav_info_proto<Tcontainer, ndim+1> prepend_1() const
       {
-      typename mav_info<ndim+1>::shape_t newshp;
-      typename mav_info<ndim+1>::stride_t newstr;
+      typename mav_info_proto<Tcontainer, ndim+1>::shape_t newshp;
+      typename mav_info_proto<Tcontainer, ndim+1>::stride_t newstr;
       newshp[0] = 1;
       newstr[0] = 0;
       for (size_t i=0; i<ndim; ++i)
@@ -565,15 +565,15 @@ template<size_t ndim> class mav_info
         newshp[i+1] = shp[i];
         newstr[i+1] = str[i];
         }
-      return mav_info<ndim+1>(newshp, newstr);
+      return mav_info_proto<Tcontainer, ndim+1>(newshp, newstr);
       }
 
   protected:
     template<size_t nd2> auto subdata(const vector<slice> &slices) const
       {
       MR_assert(slices.size()==ndim, "bad number of slices");
-      array<size_t, nd2> nshp;
-      array<ptrdiff_t, nd2> nstr;
+      Tcontainer<size_t, nd2> nshp;
+      Tcontainer<ptrdiff_t, nd2> nstr;
 
       // unnecessary, but gcc warns otherwise
       for (size_t i=0; i<nd2; ++i) nshp[i]=nstr[i]=0;
@@ -596,9 +596,11 @@ template<size_t ndim> class mav_info
           ++i2;
           }
         }
-      return make_tuple(mav_info<nd2>(nshp, nstr), nofs);
+      return make_tuple(mav_info_proto<Tcontainer, nd2>(nshp, nstr), nofs);
       }
   };
+
+template<size_t ndim> using mav_info = mav_info_proto<std::array, ndim>;
 
 template<typename T> class cfmav: public fmav_info, public cmembuf<T>
   {
@@ -753,7 +755,6 @@ template<typename T> class vfmav: public cfmav<T>
       cmembuf<T>::assign(other);
       }
 
-    using cfmav<T>::operator();
     template<typename... Ns> T &operator()(Ns... ns) const
       { return raw(idx(ns...)); }
     T &operator()(const shape_t &ns) const
