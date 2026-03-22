@@ -575,6 +575,37 @@ class TestSqrtM:
             res = sqrtm(a)
             assert np.isinf(res[0, 1:]).all()
 
+    @pytest.mark.parametrize('dtyp', [np.float32, np.float64,
+                                      np.complex64, np.complex128])
+    def test_sqrtm_n3_singular_sylvester_blocks(self, dtyp):
+        # Trigger both 2x1 and 1x2 Sylvester solves in n=3 recursion with
+        # singular diagonal blocks and verify inf propagation is preserved.
+        mats = (
+            np.array([[0, 2, 2], [0, 0, 0], [0, 0, 0]], dtype=dtyp),
+            np.array([[0, 0, 2], [0, 0, 2], [0, 0, 0]], dtype=dtyp),
+        )
+        for a in mats:
+            with pytest.warns(LinAlgWarning, match="Matrix is singular."):
+                res = sqrtm(a)
+            assert np.isinf(res).any()
+
+    @pytest.mark.parametrize('dtyp, atol',
+                             [(np.float32, 5e-5),
+                              (np.float64, 1e-12),
+                              (np.complex64, 5e-5),
+                              (np.complex128, 1e-12)])
+    def test_sqrtm_n3_round_trip_finite(self, dtyp, atol):
+        # Cover both split patterns in n=3 recursion while verifying finite,
+        # accurate square roots.
+        mats = (
+            np.array([[4, 0, 1], [0, 9, 2], [0, 0, 16]], dtype=dtyp),
+            np.array([[4, 1, 2], [0, 9, 3], [0, 0, 16]], dtype=dtyp),
+        )
+        for a in mats:
+            res = sqrtm(a)
+            assert np.isfinite(res).all()
+            assert_allclose(res @ res, a, atol=atol, rtol=atol)
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):

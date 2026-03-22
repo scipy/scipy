@@ -79,6 +79,35 @@ if get_option('_without-fortran')
   link_language_blas_lapack = 'c'
 endif
 
+# Detect whether the linked LAPACK provides the LAPACK 3.11 `?trsyl3` family.
+_trsyl3_probe_c_args = [
+  '-I' + (meson.project_source_root() / 'scipy/_build_utils/src'),
+]
+_trsyl3_probe_code = '''
+  #include "npy_cblas.h"
+  extern void BLAS_FUNC(strsyl3)(void);
+  extern void BLAS_FUNC(dtrsyl3)(void);
+  extern void BLAS_FUNC(ctrsyl3)(void);
+  extern void BLAS_FUNC(ztrsyl3)(void);
+  int
+  main(void)
+  {
+    return (&BLAS_FUNC(strsyl3) != 0 &&
+            &BLAS_FUNC(dtrsyl3) != 0 &&
+            &BLAS_FUNC(ctrsyl3) != 0 &&
+            &BLAS_FUNC(ztrsyl3) != 0) ? 0 : 1;
+  }
+'''
+_have_trsyl3 = cc.links(_trsyl3_probe_code,
+  args: _trsyl3_probe_c_args,
+  dependencies: [lapack_dep],
+  name: 'LAPACK has `?trsyl3` symbols'
+)
+_internal_matfuncs_c_args = []
+if _have_trsyl3
+  _internal_matfuncs_c_args += ['-DSCIPY_LINALG_HAVE_TRSYL3=1']
+endif
+
 message(f'{fblas_module}')
 
 # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
@@ -274,6 +303,7 @@ py3.extension_module('_internal_matfuncs',
     'src/_matfuncs_expm.c',
     'src/_matfuncs_sqrtm.c'
   ],
+  c_args: _internal_matfuncs_c_args,
   include_directories: ['src/', '../_build_utils/src'],  # for npy_cblas.h
   dependencies: [np_dep, lapack_dep],
   install: true,

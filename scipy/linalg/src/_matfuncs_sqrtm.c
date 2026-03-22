@@ -7,6 +7,192 @@ static int sqrtm_recursion_z(SCIPY_Z* T, npy_intp bign, npy_intp n);
 static inline void zebra_pattern_s(float* restrict data, const Py_ssize_t n) {for (Py_ssize_t i=n-1; i>=0; i--) { data[2*i] = data[i]; data[2*i + 1] = 0.0f; }}
 static inline void zebra_pattern_d(double* restrict data, const Py_ssize_t n) {for (Py_ssize_t i=n-1; i>=0; i--) { data[2*i] = data[i]; data[2*i + 1] = 0.0; }}
 
+#ifdef SCIPY_LINALG_HAVE_TRSYL3
+static inline void
+solve_sylvester_s(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, float* a, CBLAS_INT* lda,
+                  float* b, CBLAS_INT* ldb, float* c, CBLAS_INT* ldc, float* scale,
+                  CBLAS_INT* info)
+{
+    CBLAS_INT liwork_query = -1, ldswork_query = -1;
+    CBLAS_INT iwork_hint = 1;
+    float swork_hint[2] = {2.0f, 1.0f};
+    BLAS_FUNC(strsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       &iwork_hint, &liwork_query, swork_hint, &ldswork_query, info);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(strsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    CBLAS_INT liwork = iwork_hint > 0 ? iwork_hint : 1;
+    CBLAS_INT ldswork = (CBLAS_INT)ceilf(swork_hint[0]);
+    CBLAS_INT cols = (CBLAS_INT)ceilf(swork_hint[1]);
+    ldswork = ldswork > 2 ? ldswork : 2;
+    cols = cols > 1 ? cols : 1;
+    size_t swork_size = (size_t)ldswork * (size_t)cols;
+    CBLAS_INT *iwork = malloc((size_t)liwork * sizeof(*iwork));
+    float *swork = malloc(swork_size * sizeof(*swork));
+    if (iwork == NULL || swork == NULL) {
+        free(iwork);
+        free(swork);
+        BLAS_FUNC(strsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    BLAS_FUNC(strsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       iwork, &liwork, swork, &ldswork, info);
+    free(iwork);
+    free(swork);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(strsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+    }
+}
+
+static inline void
+solve_sylvester_d(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda,
+                  double* b, CBLAS_INT* ldb, double* c, CBLAS_INT* ldc, double* scale,
+                  CBLAS_INT* info)
+{
+    CBLAS_INT liwork_query = -1, ldswork_query = -1;
+    CBLAS_INT iwork_hint = 1;
+    double swork_hint[2] = {2.0, 1.0};
+    BLAS_FUNC(dtrsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       &iwork_hint, &liwork_query, swork_hint, &ldswork_query, info);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(dtrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    CBLAS_INT liwork = iwork_hint > 0 ? iwork_hint : 1;
+    CBLAS_INT ldswork = (CBLAS_INT)ceil(swork_hint[0]);
+    CBLAS_INT cols = (CBLAS_INT)ceil(swork_hint[1]);
+    ldswork = ldswork > 2 ? ldswork : 2;
+    cols = cols > 1 ? cols : 1;
+    size_t swork_size = (size_t)ldswork * (size_t)cols;
+    CBLAS_INT *iwork = malloc((size_t)liwork * sizeof(*iwork));
+    double *swork = malloc(swork_size * sizeof(*swork));
+    if (iwork == NULL || swork == NULL) {
+        free(iwork);
+        free(swork);
+        BLAS_FUNC(dtrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    BLAS_FUNC(dtrsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       iwork, &liwork, swork, &ldswork, info);
+    free(iwork);
+    free(swork);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(dtrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+    }
+}
+
+static inline void
+solve_sylvester_c(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda,
+                  SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* c, CBLAS_INT* ldc, float* scale,
+                  CBLAS_INT* info)
+{
+    CBLAS_INT ldswork_query = -1;
+    SCIPY_C swork_hint[2] = {CPLX_C(2.0f, 0.0f), CPLX_C(1.0f, 0.0f)};
+    BLAS_FUNC(ctrsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       swork_hint, &ldswork_query, info);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(ctrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    CBLAS_INT ldswork = (CBLAS_INT)ceilf(crealf(swork_hint[0]));
+    CBLAS_INT cols = (CBLAS_INT)ceilf(crealf(swork_hint[1]));
+    ldswork = ldswork > 2 ? ldswork : 2;
+    cols = cols > 1 ? cols : 1;
+    size_t swork_size = (size_t)ldswork * (size_t)cols;
+    SCIPY_C *swork = malloc(swork_size * sizeof(*swork));
+    if (swork == NULL) {
+        BLAS_FUNC(ctrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    BLAS_FUNC(ctrsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       swork, &ldswork, info);
+    free(swork);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(ctrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+    }
+}
+
+static inline void
+solve_sylvester_z(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda,
+                  SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale,
+                  CBLAS_INT* info)
+{
+    CBLAS_INT ldswork_query = -1;
+    SCIPY_Z swork_hint[2] = {CPLX_Z(2.0, 0.0), CPLX_Z(1.0, 0.0)};
+    BLAS_FUNC(ztrsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       swork_hint, &ldswork_query, info);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(ztrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    CBLAS_INT ldswork = (CBLAS_INT)ceil(creal(swork_hint[0]));
+    CBLAS_INT cols = (CBLAS_INT)ceil(creal(swork_hint[1]));
+    ldswork = ldswork > 2 ? ldswork : 2;
+    cols = cols > 1 ? cols : 1;
+    size_t swork_size = (size_t)ldswork * (size_t)cols;
+    SCIPY_Z *swork = malloc(swork_size * sizeof(*swork));
+    if (swork == NULL) {
+        BLAS_FUNC(ztrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+        return;
+    }
+
+    BLAS_FUNC(ztrsyl3)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale,
+                       swork, &ldswork, info);
+    free(swork);
+    if (*info < 0) {
+        *info = 0;
+        BLAS_FUNC(ztrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+    }
+}
+#else
+static inline void
+solve_sylvester_s(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, float* a, CBLAS_INT* lda,
+                  float* b, CBLAS_INT* ldb, float* c, CBLAS_INT* ldc, float* scale,
+                  CBLAS_INT* info)
+{
+    BLAS_FUNC(strsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+}
+
+static inline void
+solve_sylvester_d(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda,
+                  double* b, CBLAS_INT* ldb, double* c, CBLAS_INT* ldc, double* scale,
+                  CBLAS_INT* info)
+{
+    BLAS_FUNC(dtrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+}
+
+static inline void
+solve_sylvester_c(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda,
+                  SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* c, CBLAS_INT* ldc, float* scale,
+                  CBLAS_INT* info)
+{
+    BLAS_FUNC(ctrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+}
+
+static inline void
+solve_sylvester_z(CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda,
+                  SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale,
+                  CBLAS_INT* info)
+{
+    BLAS_FUNC(ztrsyl)("N", "N", isgn, m, n, a, lda, b, ldb, c, ldc, scale, info);
+}
+#endif
+
 void
 matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* view_as_complex)
 {
@@ -792,7 +978,9 @@ sqrtm_recursion_s(float* T, npy_intp bign, npy_intp n)
             T[2*intbign + 1] = INFINITY;
             info = 1;
         } else {
-            BLAS_FUNC(strsyl)("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
+            solve_sylvester_s(&int1, &halfn, &otherhalfn, T, &intbign,
+                              &T[halfn*(intbign + 1)], &intbign,
+                              &T[halfn*intbign], &intbign, &scale, &info);
             if (scale != 1.0)
             {
                 for (i = 0; i < otherhalfn; i++)
@@ -883,7 +1071,9 @@ sqrtm_recursion_d(double* T, npy_intp bign, npy_intp n)
             T[2*intbign + 1] = INFINITY;
             info = 1;
         } else {
-            BLAS_FUNC(dtrsyl)("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
+            solve_sylvester_d(&int1, &halfn, &otherhalfn, T, &intbign,
+                              &T[halfn*(intbign + 1)], &intbign,
+                              &T[halfn*intbign], &intbign, &scale, &info);
             if (scale != 1.0)
             {
                 for (i = 0; i < otherhalfn; i++)
@@ -953,7 +1143,8 @@ sqrtm_recursion_c(SCIPY_C* T, npy_intp bign, npy_intp n)
             T12[intbign] = cinf;
             info = 1;
         } else {
-            BLAS_FUNC(ctrsyl)("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
+            solve_sylvester_c(&int1, &halfn, &otherhalfn, T11, &intbign,
+                              T22, &intbign, T12, &intbign, &scale, &info);
             if (scale != 1.0)
             {
                 for (i = 0; i < otherhalfn; i++)
@@ -1027,7 +1218,8 @@ sqrtm_recursion_z(SCIPY_Z* T, npy_intp bign, npy_intp n)
             T12[intbign] = zinf;
             info = 1;
         } else {
-            BLAS_FUNC(ztrsyl)("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
+            solve_sylvester_z(&int1, &halfn, &otherhalfn, T11, &intbign,
+                              T22, &intbign, T12, &intbign, &scale, &info);
             if (scale != 1.0)
             {
                 for (i = 0; i < otherhalfn; i++)
@@ -1058,4 +1250,3 @@ sqrtm_recursion_z(SCIPY_Z* T, npy_intp bign, npy_intp n)
 #undef SCIPY_C
 #undef CPLX_Z
 #undef CPLX_C
-
