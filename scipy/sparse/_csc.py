@@ -176,11 +176,11 @@ def isspmatrix_csc(x):
     Examples
     --------
     >>> from scipy.sparse import csc_array, csc_matrix, coo_matrix, isspmatrix_csc
-    >>> isspmatrix_csc(csc_matrix([[5]]))
+    >>> isspmatrix_csc(csc_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_csc(csc_array([[5]]))
+    >>> isspmatrix_csc(csc_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_csc(coo_matrix([[5]]))
+    >>> isspmatrix_csc(coo_matrix([[5]]))  # doctest: +SKIP
     False
     """
     msg = """`isspmatrix_csc` is being replaced by `self.format == "csc" and issparse`.

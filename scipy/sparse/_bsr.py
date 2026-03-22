@@ -646,11 +646,11 @@ def isspmatrix_bsr(x):
     Examples
     --------
     >>> from scipy.sparse import bsr_array, bsr_matrix, csr_matrix, isspmatrix_bsr
-    >>> isspmatrix_bsr(bsr_matrix([[5]]))
+    >>> isspmatrix_bsr(bsr_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_bsr(bsr_array([[5]]))
+    >>> isspmatrix_bsr(bsr_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_bsr(csr_matrix([[5]]))
+    >>> isspmatrix_bsr(csr_matrix([[5]]))  # doctest: +SKIP
     False
     """
     msg = """`isspmatrix_bsr` is being replaced by `self.format == "bsr" and issparse`.
