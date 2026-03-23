@@ -1,4 +1,3 @@
-import operator
 import warnings
 import numpy as np
 from scipy._lib._util import _RichResult, _validate_int
