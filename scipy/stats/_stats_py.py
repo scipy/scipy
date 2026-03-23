@@ -2290,8 +2290,6 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
     # fixed width bins for int values for 'bins'
     binsize = bin_edges[1] - bin_edges[0]
     # calculate number of extra points
-    # should this be *number* of extra points or should it be extra weight?
-    # should it include NaNs?
     binnedpoints = (xp.sum(hist) if weights is None
                     else xp.count_nonzero((bin_edges[0] <= a) & (a <= bin_edges[-1])))
     extrapoints = a.shape[0] - binnedpoints
