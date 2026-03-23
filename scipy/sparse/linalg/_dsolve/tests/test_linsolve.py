@@ -602,11 +602,11 @@ class TestSplu:
     @pytest.mark.parametrize("splu_fun, rtol", [(splu, 1e-7), (spilu, 1e-1)])
     def test_natural_permc(self, splu_fun, rtol):
         # Test that the "NATURAL" permc_spec does not permute the matrix
-        rng = np.random.RandomState(42)
+        rng = np.random.default_rng(142746583)
         n = 500
         p = 0.01
         A = random_array((n, n), density=p, rng=rng)
-        x = rng.rand(n)
+        x = rng.random(n)
         # Make A diagonal dominant to make sure it is not singular
         A += (n + 1) * eye_array(n)
         A_ = csc_array(A)
