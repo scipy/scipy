@@ -17,9 +17,7 @@ extern "C"
 
 #ifdef ACCELERATE_NEW_LAPACK
     #if __MAC_OS_X_VERSION_MAX_ALLOWED < 130300
-        #ifdef HAVE_BLAS_ILP64
-            #error "Accelerate ILP64 support is only available with macOS 13.3 SDK or later"
-        #endif
+        #error "Accelerate ILP64 support is only available with macOS 13.3 SDK or later"
     #else
         /* New Accelerate suffix is always $NEWLAPACK or $NEWLAPACK$ILP64 (no underscore appended) */
         #ifdef HAVE_BLAS_ILP64
