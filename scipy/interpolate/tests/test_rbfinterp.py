@@ -262,7 +262,11 @@ class _TestRBFInterpolator:
 
         y = _1d_test_function(x, xp)
         ytrue = _1d_test_function(xitp, xp)
-        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+
+        # Matern 1_2 is C0 so "rough" kernel need more smoothing
+        epsilon = 5.0 if not kernel == 'matern1_2' else 3.0
+
+        yitp = self.build(x, y, epsilon=epsilon, kernel=kernel)(xitp)
 
         mse = xp.mean((yitp - ytrue)**2)
         assert mse < 1.0e-4
@@ -280,7 +284,11 @@ class _TestRBFInterpolator:
 
         y = _2d_test_function(x, xp)
         ytrue = _2d_test_function(xitp, xp)
-        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+
+        # Matern 1_2 is C0 so "rough" kernel need more smoothing
+        epsilon = 5.0 if not kernel == 'matern1_2' else 3.0
+
+        yitp = self.build(x, y, epsilon=epsilon, kernel=kernel)(xitp)
 
         mse = xp.mean((yitp - ytrue)**2)
         assert mse < 2.0e-4
