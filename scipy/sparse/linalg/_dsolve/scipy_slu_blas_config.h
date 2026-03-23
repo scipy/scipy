@@ -19,6 +19,12 @@
 #define BLAS_FORTRAN_SUFFIX _
 #endif
 
+/* Accelerate doesn't use an underscore as suffix, so fix that up here */
+#ifdef ACCELERATE_NEW_LAPACK
+#undef BLAS_FORTRAN_SUFFIX
+#define BLAS_FORTRAN_SUFFIX
+#endif
+
 #define SLU_CONCAT4(a,b,c,d) a ## b ## c ## d
 #define SLU_EXPAND4(a,b,c,d) SLU_CONCAT4(a,b,c,d)
 
