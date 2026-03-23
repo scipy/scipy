@@ -9,8 +9,8 @@ import os
 from warnings import warn
 import numpy as np
 
-from ._coo import coo_matrix, coo_array
-from ._base import sparray
+from ._coo import coo_array, coo_matrix
+from ._base import sparray, spmatrix
 
 
 def find(A):
@@ -102,7 +102,9 @@ def tril(A, k=0, format=None):
     """
     if isinstance(A, sparray):
         coo_sparse = coo_array
-    elif isinstance(A, np.ndarray):
+    elif isinstance(A, spmatrix):
+        coo_sparse = coo_matrix
+    else:  # dense
         msg = """`tril` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -117,8 +119,6 @@ def tril(A, k=0, format=None):
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
         # default when input is ndarray
-        coo_sparse = coo_matrix
-    else:
         coo_sparse = coo_matrix
 
     # convert to COOrdinate format where things are easy
@@ -189,7 +189,9 @@ def triu(A, k=0, format=None):
     """
     if isinstance(A, sparray):
         coo_sparse = coo_array
-    elif isinstance(A, np.ndarray):
+    elif isinstance(A, spmatrix):
+        coo_sparse = coo_matrix
+    else:  # dense
         msg = """`triu` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -204,8 +206,6 @@ def triu(A, k=0, format=None):
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
         # default when input is ndarray
-        coo_sparse = coo_matrix
-    else:
         coo_sparse = coo_matrix
 
     # convert to COOrdinate format where things are easy

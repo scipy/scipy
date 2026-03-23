@@ -25,7 +25,7 @@ from ._csc import csc_matrix, csc_array
 from ._csr import csr_matrix, csr_array
 from ._dia import dia_matrix, dia_array
 
-from ._base import issparse, sparray
+from ._base import issparse, sparray, spmatrix
 
 
 def expand_dims(A, /, *, axis=0):
@@ -800,13 +800,17 @@ def kron(A, B, format=None):
            [15, 20,  0,  0]])
 
     """
-    # TODO: delete next 10 lines and replace _sparse with _array when spmatrix removed
+    # TODO: delete this if-clause and replace _sparse with _array when spmatrix removed
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         bsr_sparse = bsr_array
         csr_sparse = csr_array
         coo_sparse = coo_array
-    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
+    elif isinstance(A, spmatrix) or isinstance(B, spmatrix):
+        bsr_sparse = bsr_matrix
+        csr_sparse = csr_matrix
+        coo_sparse = coo_matrix
+    else:  # all dense
         msg = """`kron` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -821,10 +825,6 @@ def kron(A, B, format=None):
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
         # default when all input are ndarray
-        bsr_sparse = bsr_matrix
-        csr_sparse = csr_matrix
-        coo_sparse = coo_matrix
-    else:  # use spmatrix
         bsr_sparse = bsr_matrix
         csr_sparse = csr_matrix
         coo_sparse = coo_matrix
@@ -930,12 +930,15 @@ def kronsum(A, B, format=None):
     >>> plt.show()
 
     """
-    # TODO: delete next 8 lines and replace _sparse with _array when spmatrix removed
+    # TODO: delete this if-clause and replace _sparse with _array when spmatrix removed
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         coo_sparse = coo_array
         identity_sparse = eye_array
-    elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray):  # use default
+    elif isinstance(A, spmatrix) or isinstance(B, spmatrix):
+        coo_sparse = coo_matrix
+        identity_sparse = identity
+    else:  # all dense
         msg = """`kronsum` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -950,9 +953,6 @@ def kronsum(A, B, format=None):
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
         # default when all input are ndarray
-        coo_sparse = coo_matrix
-        identity_sparse = identity
-    else:
         coo_sparse = coo_matrix
         identity_sparse = identity
 
@@ -1425,7 +1425,9 @@ def block_diag(mats, format=None, dtype=None):
     """
     if any(isinstance(a, sparray) for a in mats):
         container = coo_array
-    elif all(isinstance(a, np.ndarray) for a in mats):
+    elif any(isinstance(a, spmatrix) for a in mats):
+        container = coo_matrix
+    else:  # all dense
         msg = """`block_diag` is switching to the sparse array interface.
 
         For the case where input arrays are numpy arrays, this function is
@@ -1441,8 +1443,6 @@ def block_diag(mats, format=None, dtype=None):
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
 
         # default when all input are ndarray
-        container = coo_matrix
-    else:
         container = coo_matrix
 
     row = []
