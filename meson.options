@@ -7,6 +7,10 @@ option('lapack', type: 'string', value: 'openblas',
 # See https://scipy.github.io/devdocs/building/blas_lapack.html for details
 option('use-ilp64', type: 'boolean', value: false,
        description: 'Use ILP64 (64-bit integer) BLAS and LAPACK interfaces')
+option('cython-blas-abi', type: 'combo', choices: ['auto', 'lp64', 'ilp64'],
+       value: 'auto',
+       description: 'Integer ABI for the cython_blas/cython_lapack Cython ' +
+                    'API. Default (auto) matches use-ilp64.')
 option('blas-symbol-suffix', type: 'string', value: 'auto',
         description: 'BLAS and LAPACK symbol suffix to use, if any')
 option('mkl-threading', type: 'string', value: 'auto',
@@ -23,3 +27,6 @@ option('use-system-libraries', type: 'array',
         choices : ['none', 'all', 'auto', 'boost.math', 'qhull'], value : ['none'],
         description: 'Choose which system libraries for subprojects ' +
                      'if they are available.')
+option('_without-fortran', type: 'boolean', value: false,
+       description: 'If set to true, build without a Fortran compiler ' +
+                    '(the deprecated `scipy.odr` will be missing)')

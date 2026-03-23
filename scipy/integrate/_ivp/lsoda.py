@@ -83,12 +83,14 @@ class LSODA(OdeSolver):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by methods 'Radau' and 'BDF', but
         will result in slower execution for this solver.
+    **extraneous
+        Any additional keyword arguments will be ignored.
 
     Attributes
     ----------
     n : int
         Number of equations.
-    status : string
+    status : str
         Current status of the solver: 'running', 'finished' or 'failed'.
     t_bound : float
         Boundary time.

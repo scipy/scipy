@@ -31,7 +31,7 @@ solve-group = "default"
 
 [environments.ipython]
 # tasks: ipython
-features = ["run-deps", "test-deps", "ipython"]
+features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
 solve-group = "default"
 
 [environments.bench]
@@ -68,7 +68,7 @@ solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
 # tasks: test-strict, bench-strict
-features = ["run-deps", "test-deps", "bench-common", "array_api_strict", "array_api_strict-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "array_api_strict", "array_api_strict-tasks", "marray"]
 solve-group = "array-api-cpu"
 
 [environments.dask-cpu]
@@ -83,12 +83,12 @@ solve-group = "array-api-cpu"
 
 [environments.torch-cpu]
 # tasks: test-torch, test-torch-float32, bench-torch
-features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks", "marray"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-cpu]
-# tasks: test-cpu, bench-cpu
-features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu"]
+# tasks: test-cpu, bench-cpu, ipython-cpu
+features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "sparse", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu", "ipython-dep", "ipython-cpu-task"]
 solve-group = "array-api-cpu"
 
 [environments.build-cuda]
@@ -98,7 +98,7 @@ features = ["build-deps", "build-cuda", "py-cuda"]
 
 [environments.cupy]
 # tasks: test-cupy, bench-cupy
-features = ["run-deps", "test-deps", "bench-common", "cuda13", "py-cuda", "cupy", "cupy-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "cuda13", "py-cuda", "cupy", "cupy-tasks", "marray"]
 solve-group = "cuda13"
 
 [environments.jax-cuda]
@@ -108,7 +108,7 @@ solve-group = "cuda12"
 
 [environments.torch-cuda]
 # tasks: test-torch-cuda, bench-torch-cuda
-features = ["run-deps", "test-deps", "bench-common", "cuda12", "py-cuda", "mkl", "torch-cuda", "torch-cuda-tasks"]
+features = ["run-deps", "test-deps", "bench-common", "cuda12", "py-cuda", "mkl", "torch-cuda", "torch-cuda-tasks", "marray"]
 solve-group = "cuda12"
 
 [environments.build-accelerate-lp64]
@@ -131,6 +131,22 @@ solve-group = "accelerate-ilp64"
 features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
+[environments.build-mkl-lp64]
+features = ["build-deps", "mkl", "build-mkl-lp64"]
+solve-group = "mkl-lp64"
+
+[environments.mkl-lp64]
+features = ["run-deps", "test-deps", "mkl", "mkl-lp64"]
+solve-group = "mkl-lp64"
+
+[environments.build-mkl-ilp64]
+features = ["build-deps", "mkl", "build-mkl-ilp64"]
+solve-group = "mkl-ilp64"
+
+[environments.mkl-ilp64]
+features = ["run-deps", "test-deps", "mkl", "mkl-ilp64"]
+solve-group = "mkl-ilp64"
+
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
 features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
@@ -138,6 +154,11 @@ features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "sy
 [environments.scipy-openblas]
 # tasks: build-scipy-openblas, test-scipy-openblas
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
+
+[environments.gha-update]
+# tasks: gha-update
+features = ["gha-update"]
+no-default-feature = true
 
 
 ### Default dependencies (included in all environments) ###
@@ -273,13 +294,19 @@ description = "Build the documentation"
 
 ### IPython ###
 
-[feature.ipython.dependencies]
+[feature.ipython-dep.dependencies]
 ipython = "*"
 
-[feature.ipython.tasks.ipython]
+[feature.ipython-task.tasks.ipython]
 cmd = "spin ipython --no-build"
 depends-on = "build"
 description = "Launch IPython"
+
+[feature.ipython-cpu-task.tasks.ipython-cpu]
+cmd = "spin ipython --build-dir=build-cpu --no-build"
+depends-on = "build-cpu"
+env.SCIPY_ARRAY_API = "1"
+description = "Launch IPython (array-api-cpu env)"
 
 
 ### Benchmarking ###
@@ -390,9 +417,46 @@ cmd = "spin test --no-build --build-dir=build-accelerate-ilp64"
 depends-on = "build-accelerate-ilp64"
 description = "Test SciPy with accelerate (ilp64)"
 
+[feature.build-mkl-lp64]
+platforms = ["linux-64"]
+
+# Note: we need BLAS support in Meson merged before we can simply use `-Dblas=mkl`
+[feature.build-mkl-lp64.tasks.build-mkl-lp64]
+cmd = "spin build --build-dir=build-mkl-lp64 --setup-args=-Dblas=mkl-dynamic-lp64-seq --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with MKL (LP64)"
+
+[feature.mkl-lp64.tasks.test-mkl-lp64]
+cmd = "spin test --no-build --build-dir=build-mkl-lp64"
+depends-on = "build-mkl-lp64"
+description = "Test SciPy with MKL (LP64)"
+
+[feature.mkl-lp64.tasks.check-mkl-lp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-lp64 --loaded-sharedlibs"
+depends-on = "build-mkl-lp64"
+description = "Check loaded shared libraries with MKL (LP64)"
+
+[feature.build-mkl-ilp64]
+platforms = ["linux-64"]
+
+[feature.build-mkl-ilp64.tasks.build-mkl-ilp64]
+cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with MKL (ILP64)"
+
+[feature.mkl-ilp64.tasks.test-mkl-ilp64]
+cmd = "spin test --no-build --build-dir=build-mkl-ilp64"
+depends-on = "build-mkl-ilp64"
+description = "Test SciPy with MKL (ILP64)"
+
+[feature.mkl-ilp64.tasks.check-mkl-ilp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-ilp64 --loaded-sharedlibs"
+depends-on = "build-mkl-ilp64"
+description = "Check loaded shared libraries with MKL (ILP64)"
+
 
 [feature.scipy-openblas.pypi-dependencies]
-scipy-openblas32 = ">=0.3.30.0.8"
+scipy-openblas32 = "==0.3.31.22.0"
 
 [feature.scipy-openblas.tasks.build-scipy-openblas]
 cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
@@ -604,6 +668,9 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 [feature.marray.dependencies]
 marray-python = "*"
 
+[feature.sparse.dependencies]
+sparse = "*"
+
 
 ### Optional dependencies ###
 
@@ -644,3 +711,12 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.py312.dependencies]
 python = "3.12.*"
+
+
+### Maintenance tools ###
+
+[feature.gha-update.dependencies]
+gha-tools = "*"
+
+[feature.gha-update.tasks.gha-update]
+cmd = "gha-tools autoupdate ./.github/workflows/ --write --pin all -s specific"

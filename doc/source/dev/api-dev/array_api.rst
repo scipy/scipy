@@ -111,6 +111,13 @@ located on the CPU. Additionally, some backends can have major caveats; in the e
 the function will fail when running inside ``jax.jit``.
 Additional caveats may be listed in the docstring of the function.
 
+Some functions also note support for `MArray <https://mdhaber.github.io/marray/tutorial.html>`__,
+a library that add a "missing data" awareness to the array library of your choice. MArray
+is not an independent array library; rather, it wraps the namespace of an array API
+compatible library to add "mask" support. Consequently, where MArray support is noted,
+it is supported in conjunction with all backend/device combinations marked as supported
+in the capabilities table.
+
 While the elements of the table marked with "n/a" are inherently out of scope, we are
 continually working on filling in the rest.
 Dask wrapping around backends other than NumPy (notably, CuPy) is currently out of scope
@@ -326,6 +333,73 @@ details that SciPy should not rely upon. In general, support for eager-mode is n
 target, and it is not considered a good use of developer time to put significant effort
 into enabling eager-only support.
 
+.. _dev-arrayapi_marray_support:
+
+A note on MArray support
+````````````````````````
+MArray wraps array API compatible namespaces, so it is common for an array API compatible
+function to execute *without warnings or errors* provided MArray input. **This does
+necessarily mean that the function supports MArray input.** The mask of MArrays is used
+to denote missing values; therefore, to consider a function compatible with MArray,
+numerical output with masked input must equal the numerical output expected if the
+masked values were removed entirely. MArray provides primitives to facilitate this,
+but typically, implementations must be generalized to ensure that this property holds.
+
+For instance, suppose that the function ``mean`` were not defined by the array API
+standard, and it had been implemented in SciPy as::
+
+  def mean(x, axis=0):
+      xp = array_namespace(x)
+      n = x.shape[axis]
+      return xp.sum(x, axis=axis) / n
+
+This implementation assumes that the denominator used to normalize the sum will be the
+same for each axis-slice: the length of the array along the ``axis``. This assumption
+is not valid for an array with masked values. Although MArray will ensure that masked
+values are not considered when computing the sum, the implementation still needs to be
+generalized to normalize by the *number of non-masked elements* in a slice::
+
+  from scipy._lib._array_api import _count_nonmasked
+
+  def mean(x, axis=0):
+      xp = array_namespace(x)
+      # n = x.shape[axis]
+      n = _count_nonmasked(x, axis=axis, keepdims=True, xp=xp)
+      return xp.sum(x, axis=axis) / n
+
+Using counts of non-masked elements instead of slice lengths was by far the most common
+generalization needed to add MArray support throughout `scipy.stats`, and for many
+functions, it was the only generalization needed. Other common changes included:
+
+- separate consideration of *both* the length along an axis and the count of non-masked
+  values (e.g., see `scipy.stats.cramervonmises_2samp`),
+- sharing a common mask between "paired-data" input arrays using
+  ``scipy._lib._array_api._share_masks`` (e.g., see `scipy.stats.spearmanrho`),
+- using ``scipy._lib._array_api._masked_apply`` to evaluate an elementwise function
+  on all data, then re-applying the common mask of the inputs to the output (e.g., see
+  `scipy.stats.cramervonmises`), and
+- distinguishing between (built-in) ``sum``, which propagates a mask, and ``xp.sum``,
+  which ignores masked values (e.g., see `scipy.stats.chisquare`).
+
+In most cases, use of ``_count_nonmasked``, ``_share_masks``, and ``_masked_apply`` has
+been sufficient to generalize functions without treating MArray input as a special case
+or accessing the ``mask`` or ``data`` attributes of an MArray directly. In exceptional
+cases, ``scipy._lib._array_api.is_marray`` is available to determine when the namespace
+has been wrapped with MArray, and the namespace of the underlying array library
+can be accessed using the ``_xp`` attribute of an MArray variable (e.g. see
+`scipy.stats.mode`).
+
+.. warning::
+
+  NumPy masked arrays tend to mask the output of calculations that would otherwise
+  return infinite or NaN output. This is unsafe because subsequent calculations will
+  treat these "invalid" outputs as "missing", erroneously producing seemingly valid
+  numerical output when the correct calculation would propagate the infinite or NaN
+  value. When adding MArray support to SciPy functions, ensure that masked values of
+  the output arise due to masked input (e.g., the output of an elementwise function on
+  a masked input value is masked; the output of a reducing function on an all-masked
+  slice is masked) and *only* due to masked input.
+
 .. _dev-arrayapi_default_dtype:
 
 Default Datatypes
@@ -350,6 +424,19 @@ and PyTorch with the
 `Metal performance shader backend <https://pytorch.org/blog/introducing-accelerated-pytorch-training-on-mac/>`_
 on ARM Mac. We are open to expanding and improving ``float32``-only
 support in cases where this is feasible and there is sufficient user interest.
+
+It is therefore recommended that those using SciPy with the JAX backend set the X64 flag by one
+of the means JAX provides since the default ``float32``-only configuration is not
+currently tested.
+
+Though not directly related to default dtypes, it may be useful to know that JAX defaults to using
+`TensorFloat32 <https://github.com/jax-ml/jax/issues/4873>`_
+precision for matrix multiplication of ``float32`` arrays on GPUs that support TensorFloat32.
+The half-precision mantissas used in this format can cause accuracy issues in scientific applications.
+SciPy sets `jax_default_matmul_precision <https://docs.jax.dev/en/latest/_autosummary/jax.default_matmul_precision.html>`_ to
+``"float32"`` in its JAX GPU tests and we recommend this configuration for users
+of the JAX backend. This configuration option does not affect matrix multiplications of ``float64``
+arrays when the X64 flag is enabled.
 
 
 Array creation functions without array inputs
@@ -407,6 +494,12 @@ signature::
       allow_dask_compute=False, jax_jit=True,
       # Extra note to inject into the docstring
       extra_note=None,
+      # Dictionary mapping method names to dictionaries of method
+      # specific capabilities for use when when xp_capabilities is
+      # applied to a class with varying capabilities per method
+      method_capabilities=None,
+      # Whether the function supports MArrays (used only in documentation)
+      marray=False,
   ):
 
 This is available in ``scipy._lib._array_api`` and can be applied to functions,
@@ -670,8 +763,58 @@ best demonstrated with an example::
     """
   )
 
-.. _dev-arrayapi_adding_tests:
+.. _dev-arrayapi_marray:
 
+``marray``
+``````````
+Use ``marray=True`` to document support for MArrays below the backend capabilities
+table. Unless noted in ``extra_note``, MArrays are understood to be supported by
+all features of the function and in conjunction with all supported backends.
+
+Applying ``xp_capabilities`` to classes
+```````````````````````````````````````
+
+For classes with array API standard support, one must apply ``xp_capabilities``
+once to the class itself, not separately to individual methods. The class level
+capabilities should be decided based on best judgment of which backends
+are generally usable with the class in a holistic sense. If individual methods
+differ in their capabilities, this can be specified using the
+``method_capabilities`` kwarg of ``xp_capabilities`` like in the example
+below::
+
+  @xp_capabilities(
+      method_capabilities={
+          "__init__": dict(jax_jit=False),
+	  "bar": dict(cpu_only=True, exceptions=["cupy"], jax_jit=False),
+      }
+  )
+  class Foo:
+      def __init__(self, x):
+          ...
+      def bar(self, y):
+          # not array-agnostic but has delegation to CuPy to set up
+	  ...
+      def baz(self, y):
+          # array-agnostic method
+	  ...
+
+Adding ``method_capabilities`` makes no changes to the documentation but does
+make it possible to access method level capabilities when adding tests and
+to test class methods with the JAX JIT. Documentation of
+method specific support and limitations should be added to the ``extra_note``
+described above.
+
+``method_capabilities`` should be a dictionary mapping method names to
+dictionaries with keys corresponding to the usual arguments of ``xp_capabilities``.
+Keys that are not supplied in the inner dictionaries will be filled with the
+``xp_capabilities`` default values. Entries in ``method_capabilities`` completely
+override the class level capabilities entry so that one can declare that some
+methods are supported on backends for which the class itself is considered
+unsupported; this is useful for incremental development. If a method has no
+corresponding entry in ``method_capabilities``, then by default, its capabilities
+will be the same as the class level capabilities.
+
+.. _dev-arrayapi_adding_tests:
 
 Adding tests
 ------------
@@ -814,6 +957,21 @@ relevant ``xp_capabilities`` entries, one should use ``reason="private"``.::
   pytest.mark.uses_xp_capabilities(False, reason="private")
   def test_private_toto_helper(xp):
       ...
+
+MArray testing
+``````````````
+
+Note that tests for MArray support are not added automatically by any of the mechanisms
+above; support must be tested manually. A common pattern is property-based testing:
+rather than testing the output of a function with particular MArray input against
+manually calculated reference values, compare the output of the function with
+randomly-generated MArray input against the output of a reference implementation,
+such as the same function with ``nan_policy='omit'`` or with the masked data removed
+programmatically. For reducing functions, it is also important to test the behavior of
+the function when some slices have insufficient (e.g. zero or one) element remaining
+after masked elements have been removed. Typically, MArray tests use the ``xp`` fixture
+to test MArray used *in conjunction* with all array backends supported by the function
+being tested. See ``scipy/stats/tests/test_marray.py`` for examples.
 
 Directly adding pytest markers
 ``````````````````````````````
@@ -1057,7 +1215,8 @@ the trouble of backend isolation. Maintainers are free to use their discretion t
 decide whether backend isolation is necessary or desirable.
 
 Testing the JAX JIT compiler (and lazy evaluation with Dask)
-------------------------------------------------------------
+````````````````````````````````````````````````````````````
+
 The `JAX JIT compiler <https://jax.readthedocs.io/en/latest/jit-compilation.html>`_
 introduces special restrictions to all code wrapped by ``@jax.jit``, which are not
 present when running JAX in eager mode. Notably, boolean masks in ``__getitem__``
@@ -1085,7 +1244,7 @@ To achieve this for private functions without ``xp_capabilities`` entries,
 you should tag them as follows in your test module::
 
   from scipy._lib._array_api import xp_assert_close
-  from scipy._lib.array_api_extra.testing import lazy_xp_function
+  from scipy._external.array_api_extra.testing import lazy_xp_function
   from scipy.mymodule import _private_toto_helper
 
   lazy_xp_function(_private_toto_helper)
@@ -1137,6 +1296,45 @@ as it does for tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
+Adding tests for class methods
+``````````````````````````````
+
+To declare that a test is testing a particular method of a class,
+one can pass a tuple of the form ``tuple[type, str]`` as an entry of
+``funcs`` in ``make_xp_test_case`` and ``make_xp_pytest_marks`` or as
+the argument ``func`` of ``make_xp_pytest_param``. The tuple
+``(A, "f")`` signifies that one is testing the method ``A.f`` of the
+class ``A``. Such a tuple is used rather than simply ``A.f``
+in order allow unambiguous specification of what is being tested in
+cases where a method is inherited from a parent class.::
+
+  @make_xp_test_case((Foo, "bar"))
+  def test_Foo_bar(xp):
+      ...
+
+When passing such a tuple to ``make_xp_pytest_param``, only the first
+entry of the tuple is actually used in the resulting pytest param::
+
+  @pytest.mark.parametrize("cls", [(A, "f"), (B, "f"), C])
+      def test(cls, xp):
+          # cls iterates over A, B, C.
+	  ...
+
+When using such tuple arguments, the pytest skips and xfails will be
+taken from the class level capabilities, unless a method specific
+override was added in the ``method_capabilities`` kwarg of
+``xp_capabilities``.
+
+
+If the capabilities for ``(A, "f")`` have
+``jax_jit=True`` (or if Dask is not in ``skip_backends``) then using
+``@make_xp_test_case((A, "f"))`` or one of its equivalents
+will cause ``lazy_xp_function`` to be applied to ``(A, "f")``.
+(``lazy_xp_function`` will in this case replace ``A.f`` with
+a clone to avoid unintentional modification of a parent
+in cases where a method is inherited from a parent class).
+
+
 Additional information
 ----------------------
 
@@ -1161,14 +1359,12 @@ helped during the development phase:
 API Coverage
 ------------
 The below tables show the current state of alternative backend support across
-SciPy's modules. Currently only public functions and function-like callable
-objects are included in the tables, but it is planned to eventually also include
-relevant public classes. Functions which are deemed out-of-scope are excluded
-from consideration. If a module or submodule contains no in-scope functions, it
-is excluded from the tables. For example, `scipy.spatial.transform` is currently
-excluded because it's API contains no functions, but may be included in the future
-when the scope expands to include classes. `scipy.odr` and `scipy.datasets` are excluded
-because their contents are considered out-of-scope.
+SciPy's modules. Public functions, function-like callables, and classes are
+included in the tables. Parts of the public API which are deemed out-of-scope
+are excluded from consideration when calculating coverage percentages. If a
+module or submodule contains no in-scope functions, it is excluded from the
+tables. For example, `scipy.datasets` is excluded because its contents are
+considered out-of-scope.
 
 .. toctree::
    :hidden:
@@ -1193,6 +1389,7 @@ because their contents are considered out-of-scope.
    array_api_modules_tables/sparse_csgraph
    array_api_modules_tables/spatial
    array_api_modules_tables/spatial_distance
+   array_api_modules_tables/spatial_transform
    array_api_modules_tables/special
    array_api_modules_tables/stats
    array_api_modules_tables/stats_contingency
@@ -1223,6 +1420,7 @@ Support on CPU
    :sparse.csgraph: array_api_support_sparse_csgraph_cpu
    :spatial: array_api_support_spatial_cpu
    :spatial.distance: array_api_support_spatial_distance_cpu
+   :spatial.transform: array_api_support_spatial_transform_cpu
    :special: array_api_support_special_cpu
    :stats: array_api_support_stats_cpu
    :stats.contingency: array_api_support_stats_contingency_cpu
@@ -1253,6 +1451,7 @@ Support on GPU
    :sparse.csgraph: array_api_support_sparse_csgraph_gpu
    :spatial: array_api_support_spatial_gpu
    :spatial.distance: array_api_support_spatial_distance_gpu
+   :spatial.transform: array_api_support_spatial_transform_gpu
    :special: array_api_support_special_gpu
    :stats: array_api_support_stats_gpu
    :stats.contingency: array_api_support_stats_contingency_gpu
@@ -1283,6 +1482,7 @@ Support with JIT
    :sparse.csgraph: array_api_support_sparse_csgraph_jit
    :spatial: array_api_support_spatial_jit
    :spatial.distance: array_api_support_spatial_distance_jit
+   :spatial.transform: array_api_support_spatial_transform_jit
    :special: array_api_support_special_jit
    :stats: array_api_support_stats_jit
    :stats.contingency: array_api_support_stats_contingency_jit

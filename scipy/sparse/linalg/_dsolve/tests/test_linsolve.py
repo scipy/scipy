@@ -13,8 +13,10 @@ from pytest import raises as assert_raises, warns as assert_warns
 
 import scipy.linalg
 from scipy.linalg import norm, inv
-from scipy.sparse import (dia_array, SparseEfficiencyWarning, csc_array,
-        csr_array, eye_array, issparse, dok_array, lil_array, bsr_array, kron)
+from scipy.sparse import (issparse, SparseEfficiencyWarning,
+                          csc_array, csr_array, coo_array, dia_array,
+                          dok_array, lil_array, bsr_array,
+                          eye_array, random_array, tril, triu, kron)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized,
@@ -423,12 +425,12 @@ class TestLinsolve:
         assert_allclose(x.toarray(), b.toarray(), atol=1e-12, rtol=1e-12)
 
     def test_dtype_cast(self):
-        A_real = scipy.sparse.csr_array([[1, 2, 0],
-                                          [0, 0, 3],
-                                          [4, 0, 5]])
-        A_complex = scipy.sparse.csr_array([[1, 2, 0],
-                                             [0, 0, 3],
-                                             [4, 0, 5 + 1j]])
+        A_real = csr_array([[1, 2, 0],
+                            [0, 0, 3],
+                            [4, 0, 5]])
+        A_complex = csr_array([[1, 2, 0],
+                               [0, 0, 3],
+                               [4, 0, 5 + 1j]])
         b_real = np.array([1,1,1])
         b_complex = np.array([1,1,1]) + 1j*np.array([1,1,1])
         x = spsolve(A_real, b_real)
@@ -603,10 +605,10 @@ class TestSplu:
         rng = np.random.RandomState(42)
         n = 500
         p = 0.01
-        A = scipy.sparse.random(n, n, p, random_state=rng)
+        A = random_array((n, n), density=p, random_state=rng)
         x = rng.rand(n)
         # Make A diagonal dominant to make sure it is not singular
-        A += (n+1)*scipy.sparse.eye_array(n)
+        A += (n + 1) * eye_array(n)
         A_ = csc_array(A)
         b = A_ @ x
 
@@ -752,41 +754,41 @@ class TestSplu:
 
 class TestGstrsErrors:
     def setup_method(self):
-      self.A = array([[1.0,2.0,3.0],[4.0,5.0,6.0],[7.0,8.0,9.0]], dtype=np.float64)
+      self.A = csc_array([[1.0,2.0,3.0],[4.0,5.0,6.0],[7.0,8.0,9.0]], dtype=np.float64)
       self.b = np.array([[1.0],[2.0],[3.0]], dtype=np.float64)
 
     def test_trans(self):
-        L = scipy.sparse.tril(self.A, format='csc')
-        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        L = tril(self.A, format='csc')
+        U = triu(self.A, k=1, format='csc')
         with assert_raises(ValueError, match="trans must be N, T, or H"):
             _superlu.gstrs('X', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
 
     def test_shape_LU(self):
-        L = scipy.sparse.tril(self.A[0:2,0:2], format='csc')
-        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        L = tril(self.A[0:2,0:2], format='csc')
+        U = triu(self.A, k=1, format='csc')
         with assert_raises(ValueError, match="L and U must have the same dimension"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
 
     def test_shape_b(self):
-        L = scipy.sparse.tril(self.A, format='csc')
-        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        L = tril(self.A, format='csc')
+        U = triu(self.A, k=1, format='csc')
         with assert_raises(ValueError, match="right hand side array has invalid shape"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr,
                                 self.b[0:2])
 
     def test_types_differ(self):
-        L = scipy.sparse.tril(self.A.astype(np.float32), format='csc')
-        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        L = tril(self.A.astype(np.float32), format='csc')
+        U = triu(self.A, k=1, format='csc')
         with assert_raises(TypeError, match="nzvals types of L and U differ"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
 
     def test_types_unsupported(self):
-        L = scipy.sparse.tril(self.A.astype(np.uint8), format='csc')
-        U = scipy.sparse.triu(self.A.astype(np.uint8), k=1, format='csc')
+        L = tril(self.A.astype(np.uint8), format='csc')
+        U = triu(self.A.astype(np.uint8), k=1, format='csc')
         with assert_raises(TypeError, match="nzvals is not of a type supported"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr,
@@ -800,9 +802,9 @@ class TestSpsolveTriangular:
     def test_zero_diagonal(self,fmt):
         n = 5
         rng = np.random.default_rng(43876432987)
-        A = rng.standard_normal((n, n))
+        A = coo_array(rng.standard_normal((n, n)))
         b = np.arange(n)
-        A = scipy.sparse.tril(A, k=0, format=fmt)
+        A = tril(A, k=0, format=fmt)
 
         x = spsolve_triangular(A, b, unit_diagonal=True, lower=True)
 
@@ -870,12 +872,12 @@ class TestSpsolveTriangular:
                     raise ValueError("choice_of_A must be 'real' or 'complex'.")
                 rng = np.random.default_rng(789002319)
                 rvs = rng.random
-                A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype,
-                                        random_state=rng, data_rvs=rvs)
+                A = random_array((n, n), density=0.1, format='lil', dtype=dtype,
+                                 random_state=rng, data_sampler=rvs)
                 if lower:
-                    A = scipy.sparse.tril(A, format="lil")
+                    A = tril(A, format="lil")
                 else:
-                    A = scipy.sparse.triu(A, format="lil")
+                    A = triu(A, format="lil")
                 for i in range(n):
                     A[i, i] = np.random.rand() + 1
                 if format == "csc":
@@ -910,12 +912,12 @@ def test_is_sptriangular_and_spbandwidth(nnz, fmt):
 
         N = nnz // 2
         dens = 0.1
-        A = scipy.sparse.random_array((N, N), density=dens, format="csr", rng=rng)
+        A = random_array((N, N), density=dens, format="csr", rng=rng)
         A[1, 3] = A[3, 1] = 22  # ensure not upper or lower
         A = A.asformat(fmt)
-        AU = scipy.sparse.triu(A, format=fmt)
-        AL = scipy.sparse.tril(A, format=fmt)
-        D = 0.1 * scipy.sparse.eye_array(N, format=fmt)
+        AU = triu(A, format=fmt)
+        AL = tril(A, format=fmt)
+        D = 0.1 * eye_array(N, format=fmt)
 
         assert is_sptriangular(A) == (False, False)
         assert is_sptriangular(AL) == (True, False)

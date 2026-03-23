@@ -5,15 +5,14 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, log, around, zeros,
-                   arange, sort, amin, amax, sqrt, array,
+from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
                    pi, exp, ravel, count_nonzero)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib.deprecation import _NoValue
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,
@@ -28,15 +27,15 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_device,
     xp_ravel,
-    _length_nonmasked,
+    _count_nonmasked,
     is_lazy_array,
 )
 
-from ._ansari_swilk_statistics import gscale, swilk
+from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2, _SimpleF)
+                        _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -236,7 +235,7 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -325,7 +324,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -342,7 +341,7 @@ def kstat(data, n=2, *, axis=None):
         raise ValueError("Should not be here.")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -386,13 +385,32 @@ def kstatvar(data, n=2, *, axis=None):
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(92366746)
+
+    As the sample size increases, the estimated variance of the k-statistic converges
+    to zero.
+
+    >>> for n in np.astype(np.logspace(1, 6, 6), int):
+    ...     x = rng.normal(size=n)
+    ...     kvar = stats.kstatvar(x, 1)
+    ...     print(f"{n=:<8}: {kvar=:.3g}")
+    n=10      : kvar=0.0954
+    n=100     : kvar=0.00974
+    n=1000    : kvar=0.000962
+    n=10000   : kvar=0.0001
+    n=100000  : kvar=9.94e-06
+    n=1000000 : kvar=9.99e-07
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = _length_nonmasked(data, axis, xp=xp)
+    N = _count_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -908,6 +926,10 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
         The statistic of each axis-slice (e.g. row) of the input will appear in a
         corresponding element of the output.
         If ``None``, the input will be raveled before computing the statistic.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
     nan_policy : {'propagate', 'omit', 'raise'
         Defines how to handle input NaNs.
 
@@ -919,11 +941,6 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
           statistic is computed, the corresponding entry of the output will be
           NaN.
         - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
-
-    keepdims : bool, default: False
-        If this is set to True, the axes which are reduced are left
-        in the result as dimensions with size one. With this option,
-        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -2081,9 +2098,9 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
-def shapiro(x):
+def shapiro(x, *, axis=None):
     r"""Perform the Shapiro-Wilk test for normality.
 
     The Shapiro-Wilk test tests the null hypothesis that the
@@ -2093,6 +2110,11 @@ def shapiro(x):
     ----------
     x : array_like
         Array of sample data. Must contain at least three observations.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -2109,7 +2131,7 @@ def shapiro(x):
 
     Notes
     -----
-    The algorithm used is described in [4]_ but censoring parameters as
+    The algorithm used is described in [4]_, but censoring parameters as
     described are not implemented. For N > 5000 the W test statistic is
     accurate, but the p-value may not be.
 
@@ -2123,9 +2145,9 @@ def shapiro(x):
     .. [3] Razali, N. M. & Wah, Y. B., "Power comparisons of Shapiro-Wilk,
            Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests", Journal
            of Statistical Modeling and Analytics, 2011, Vol. 2, pp. 21-33.
-    .. [4] Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The
-           W-test for Normality", 1995, Applied Statistics, Vol. 44,
-           :doi:`10.2307/2986146`
+    .. [4] Royston, P. "A toolkit for testing for non-normality in complete and
+           censored samples." Journal of the Royal Statistical Society: Series D
+           (The Statistician) 42.1 (1993): 37-43.
 
     Examples
     --------
@@ -2144,22 +2166,18 @@ def shapiro(x):
 
     For a more detailed example, see :ref:`hypothesis_shapiro`.
     """
-    x = np.ravel(x).astype(np.float64)
+    # `x` is an array and axis=-1 due to _axis_nan_policy decorator
+    xp = array_namespace(x)
 
-    N = len(x)
+    N = x.shape[-1]
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    a = zeros(N//2, dtype=np.float64)
-    init = 0
+    y = xp.sort(x, axis=-1)
+    y -= x[..., N//2:N//2+1]  # subtract the median (or a nearby value); see gh-15777
 
-    y = sort(x)
-    y -= x[N//2]  # subtract the median (or a nearby value); see gh-15777
-
-    w, pw, ifault = swilk(y, a, init)
-    if ifault not in [0, 2]:
-        warnings.warn("scipy.stats.shapiro: Input data has range zero. The"
-                      " results may not be accurate.", stacklevel=2)
+    y = xp_promote(y, force_floating=True, xp=xp)
+    w, pw = _swilk(y, xp=xp)
     if N > 5000:
         warnings.warn("scipy.stats.shapiro: For N > 5000, computed p-value "
                       f"may not be accurate. Current N is {N}.",
@@ -2169,7 +2187,70 @@ def shapiro(x):
     # We want to ensure that they are NumPy floats, so until dtypes are
     # respected, we can explicitly convert each to float64 (faster than
     # `np.array([w, pw])`).
-    return ShapiroResult(np.float64(w), np.float64(pw))
+    return ShapiroResult(w[()], pw[()])
+
+
+def _swilk_w(y, a, *, xp):
+    # calculate Shapiro-Wilk statistic given sorted sample and weights
+    # Follows [4] Section 2.1
+    num = xp.vecdot(a, y, axis=-1) ** 2
+    y_ = _demean(y, mean=xp.mean(y, axis=-1, keepdims=True), axis=-1, xp=xp)
+    den = xp.vecdot(y_, y_, axis=-1)
+    return num / den
+
+
+def _swilk(y, *, xp):
+    # calculate Shapiro-Wilk statistic and p-value from sorted sample
+    n = y.shape[-1]
+
+    if n == 3:
+        # [2] Table 5 gives the first four digits
+        c = math.sqrt(2) / 2
+        a = xp.asarray([-c, 0, c])
+        # [2] Corollary 4; discussed in https://github.com/scipy/scipy/issues/18322
+        W = xp.clip(_swilk_w(y, a, xp=xp), 0.75, 1.)
+        pvalue = xp.clip(1. - 6/np.pi * xp.acos(xp.sqrt(W)), 0., 1.)
+        return W, pvalue
+
+    # Follows [4] section 2.2
+    # could calculate half the coefficients and get the rest by antisymmetry
+    i = xp.arange(1, n + 1, dtype=y.dtype)
+    m = special.ndtri((i - 3 / 8) / (n + 1 / 4))
+    u = n**(-0.5)
+    mTm = xp.vecdot(m, m)
+    c = mTm**(-0.5) * m
+    mnm1, mn = m[..., -2], m[..., -1]
+    cnm1, cn = c[..., -2], c[..., -1]
+    an = (cn + 0.221157*u - 0.147981*u**2
+          - 2.071190*u**3 + 4.434685*u**4 - 2.706056*u**5)
+    anm1 = (cnm1 + 0.042981*u - 0.293762*u**2
+            - 1.752461*u**3 + 5.682633*u**4 - 3.582633*u**5)
+    phi = ((mTm - 2*mn**2) / (1 - 2*an**2) if n <= 5
+           else (mTm - 2*mn**2 - 2*mnm1**2) / (1 - 2*an**2 - 2*anm1**2))
+    a = phi**(-0.5) * m
+    if n > 5:
+        a = xpx.at(a)[..., -2].set(anm1)
+        a = xpx.at(a)[..., 1].set(-anm1)
+    a = xpx.at(a)[..., -1].set(an)
+    a = xpx.at(a)[..., -0].set(-an)
+    W = _swilk_w(y, a, xp=xp)
+
+    # Follows [4] Table 1
+    if n <= 11:
+        u = n
+        gamma = -2.273 + 0.459*u
+        mu = 0.5440 - 0.39978*u + 0.025054*u**2 - 0.0006714*u**3
+        sigma = math.exp(1.3822 - 0.77857*u + 0.062767*u**2 - 0.0020322*u**3)
+        gW = -xp.log(gamma - xp.log(1 - W))
+    else:
+        u = math.log(n)
+        mu = -1.5861 - 0.31082*u - 0.083751*u**2 + 0.0038915*u**3
+        sigma = math.exp(-0.4803 - 0.082676*u + 0.0030302*u**2)
+        gW = xp.log(1 - W)
+
+    z = (gW - mu) / sigma
+    pvalue = special.ndtr(-z)
+    return W, pvalue
 
 
 # Values from [8]
@@ -3118,8 +3199,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
 
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
-    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    rank, t = xp.astype(rank, dtype), xp.astype(t, dtype)
+    rank, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
@@ -3186,7 +3266,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
@@ -3198,7 +3278,7 @@ def bartlett(*samples, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         arrays of sample data.  Only 1d arrays are accepted, they may have
         different lengths.
 
@@ -3274,7 +3354,7 @@ def bartlett(*samples, axis=0):
         samples = _broadcast_arrays(samples, axis=axis, xp=xp)
         samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp),
+    Ni = [xp.asarray(_count_nonmasked(sample, axis=-1, xp=xp),
                      dtype=sample.dtype, device=xp_device(sample))
           for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
@@ -3306,8 +3386,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'],
-                 jax_jit=False)  # needs fdtrc
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3319,7 +3398,7 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The sample data, possibly with different lengths.
     center : {'mean', 'median', 'trimmed'}, optional
         Which statistics to use to center data points within each sample.  Default
@@ -3420,10 +3499,11 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     else:  # center == 'trimmed'
 
         def func(x):
-            # keepdims=True doesn't currently work for lazy arrays
+            # keepdims=True doesn't currently work for Dask
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    Nis = [sample.shape[-1] for sample in samples]
+    Nis = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+           for sample in samples]
     Ycis = [func(sample) for sample in samples]
     Ntot = sum(Nis)
 
@@ -3444,16 +3524,20 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
+    dfd = xp.squeeze(dfd, axis=-1) if is_marray(xp) else dfd
     dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
-    return LeveneResult(W[()], pval[()])
+    W = W[()] if W.ndim == 0 else W
+    pval = pval[()] if pval.ndim == 0 else pval
+    return LeveneResult(W, pval)
 
 
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')])
+                                ('cupy', 'no rankdata')],
+                 marray=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3464,7 +3548,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
         Which statistics to use to center data points within each sample. Default
@@ -3581,19 +3665,21 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
             # keepdims=True doesn't currently work for lazy arrays
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
-    ni = [sample.shape[-1] for sample in samples]
+    lengths = [sample.shape[-1] for sample in samples]
+    ni = [_count_nonmasked(sample, axis=-1, keepdims=True, xp=xp)
+          for sample in samples]
     N = sum(ni)
+    ni = [xp.squeeze(ni_, axis=-1) for ni_ in ni] if is_marray(xp) else ni
 
     # Implementation follows [3] pg 355 F-K.
     Xibar = [func(sample) for sample in samples]
     Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
     Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
     ranks = stats.rankdata(Xij_Xibar, method='average', axis=-1)
-    ranks = xp.astype(ranks, dtype)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
-    splits = list(itertools.accumulate(ni, initial=0))
+    splits = list(itertools.accumulate(lengths, initial=0))
     Ai = [a_Ni[..., i:j] for i, j in zip(splits[:-1], splits[1:])]
     Aibar = [xp.mean(Ai_, axis=-1) for Ai_ in Ai]
     abar = xp.mean(a_Ni, axis=-1)
@@ -3652,8 +3738,7 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     x = xp.sort(x, axis=-1)
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
-    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
-    a = xp.astype(a, phi.dtype)
+    _, _, a = _stats_py._rankdata(x, method='average', return_ties=True)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
     a = xp.concat((a, zeros), axis=-1)
@@ -3775,7 +3860,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     """
     xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
-    dtype = x.dtype
 
     # _axis_nan_policy decorator ensures axis=-1
     xy = xp.concat((x, y), axis=-1)
@@ -3790,8 +3874,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
-    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
+    r, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
 
     if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
@@ -3831,9 +3914,11 @@ def wilcoxon_outputs(kwds):
 
 @xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
                                 ("cupy", "no rankdata")],
-                 # the exact null distribution is NumPy-only
-                 jax_jit=False,
-                 cpu_only=True)  # null distribution is CPU only
+                 cpu_only=True,  # null distribution is CPU only
+                 marray=True,
+                 extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "
+                             "compatible with MArray input. "
+                             "``method='auto'`` is incompatible with JAX arrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -4094,7 +4179,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : array_like
         The set of samples.  There must be at least two samples.
         Each sample must be a one-dimensional sequence containing at least
         one value.  The samples are not required to have the same length.
@@ -4308,7 +4393,7 @@ def _circfuncs_common(samples, period, xp=None):
     return samples, sin_samp, cos_samp
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4402,7 +4487,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return (res * (period / (2.0 * pi)) - low) % period + low
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4497,7 +4582,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4528,7 +4613,24 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         Upper boundary of the principal value of an angle.  Default is ``2*pi``.
     low : float, optional
         Lower boundary of the principal value of an angle.  Default is ``0``.
-    normalize : boolean, optional
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+        which the  statistic is computed, the corresponding entry of the output
+        will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+        If insufficient data remains in the axis slice along which the
+        statistic is computed, the corresponding entry of the output will be
+        NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
+    normalize : bool, optional
         If ``False`` (the default), the return value is computed from the
         above formula with the input scaled by ``(2*pi)/(high-low)`` and
         the output scaled (back) by ``(high-low)/(2*pi)``.  If ``True``,
@@ -4614,7 +4716,7 @@ class DirectionalStats:
                 f" mean_resultant_length={self.mean_resultant_length})")
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 def directional_stats(samples, *, axis=0, normalize=True):
     """
     Computes sample statistics for directional data.
@@ -4640,7 +4742,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         of the data is a vector observation.
     axis : int, default: 0
         Axis along which the directional mean is computed.
-    normalize : boolean, default: True
+    normalize : bool, default: True
         If True, normalize the input to ensure that each observation is a
         unit vector. It the observations are already unit vectors, consider
         setting this to False to avoid unnecessary computation.

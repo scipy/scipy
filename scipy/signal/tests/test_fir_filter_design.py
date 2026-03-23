@@ -4,13 +4,13 @@ import numpy as np
 from pytest import raises as assert_raises, warns as assert_warns
 import pytest
 
-import scipy._lib.array_api_extra as xpx
+import scipy._external.array_api_extra as xpx
 import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
     array_namespace, xp_default_dtype, make_xp_test_case, _xp_copy_to_numpy
 )
-from scipy.fft import fft, fft2
+from scipy.fft import fft, fft2, rfft
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
     firwin, firwin2, freqz, remez, firls, minimum_phase, convolve2d, firwin_2d
 )
@@ -511,7 +511,7 @@ class TestRemez:
         N = 11  # number of taps in the filter
         a = 0.1  # width of the transition band
 
-        # design an unity gain hilbert bandpass filter from w to 0.5-w
+        # design a unity gain hilbert bandpass filter from w to 0.5-w
         h = remez(11, [a, 0.5-a], [1], type='hilbert')
 
         # make sure the filter has correct # of taps
@@ -761,6 +761,22 @@ class TestMinimumPhase:
         k = xp.asarray(k, dtype=xp.float64)
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         xp_assert_close(m, k, rtol=2e-3)
+
+    @xfail_xp_backends("cupy", reason="cupy/cupy#9795")
+    @pytest.mark.parametrize("N", (963, 964))
+    @pytest.mark.parametrize("dtype", ("float32", "float64"))
+    def test_nyquist(self, N, dtype, xp):
+        fc = xp.asarray(10)
+        fs = 100
+        h = firwin(N, fc, window="hann", pass_zero="lowpass", scale=False, fs=fs)
+        xp_dtype = getattr(xp, dtype)
+        h = xp.astype(h, xp_dtype)
+        h_min_sig = minimum_phase(h, method="homomorphic", n_fft=N, half=False)
+        H_mag = xp.abs(rfft(h, N))
+        H_min_mag = xp.abs(rfft(h_min_sig, N))
+        error = H_mag - H_min_mag
+        atol = dict(float32=1e-5, float64=1e-13)[dtype]
+        xp_assert_close(error, xp.zeros_like(error), atol=atol)
 
 
 class Testfirwin_2d:

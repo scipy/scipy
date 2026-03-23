@@ -18,13 +18,14 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 import numpy as np
 from ._slsqplib import slsqp
 from scipy.linalg import norm as lanorm
+from scipy.linalg.lapack import HAS_ILP64
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x, _wrap_callback)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _call_callback_maybe_halt
 from numpy.typing import NDArray
 
@@ -73,7 +74,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
                iprint=1, disp=None, full_output=0, epsilon=_epsilon,
                callback=None):
     """
-    Minimize a function using Sequential Least Squares Programming
+    Minimize a function using Sequential Least Squares Programming.
 
     Python interface function for the SLSQP Optimization subroutine
     originally implemented by Dieter Kraft.
@@ -150,7 +151,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         The number of iterations.
     imode : int, if full_output is true
         The exit mode from the optimizer (see below).
-    smode : string, if full_output is true
+    smode : str, if full_output is true
         Message describing the exit mode from the optimizer.
 
     See Also
@@ -477,8 +478,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if iprint >= 2:
         print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} {'GNORM':>16}")
 
+    # XXX: check problem size too large for LP64?
+
     # Internal buffer and int array
-    indices = np.zeros([max(m + 2*n + 2, 1)], dtype=np.int32)
+    indices = np.zeros(
+        [max(m + 2*n + 2, 1)], dtype=np.int64 if HAS_ILP64 else np.int32
+    )
 
     # The worst case workspace requirements for the buffer are:
 

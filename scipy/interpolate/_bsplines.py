@@ -1,3 +1,4 @@
+import functools
 import operator
 from math import prod
 from types import GenericAlias
@@ -14,7 +15,9 @@ from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
 
-from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy
+)
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
@@ -67,12 +70,47 @@ def _diff_dual_poly(j, k, y, d, t):
                         if (j + p) not in comb[i//d]])
     return res
 
+@functools.lru_cache(16)
+def _get_xp_bspline_cls(xp):
+    if is_numpy(xp):
+    # return None because we will not delegate in this case.
+        return None
+    spx = scipy_namespace_for(xp)
+    return getattr(getattr(spx, "interpolate", None), "BSpline", None)
+
+
+_bspline_extra_note = (
+    """The methods ``design_matrix`` and ``from_power_basis`` are currently
+    NumPy only. `insert_knot`` is currently not supported with CuPy.
+
+    If the spline is called on an array ``x`` with namespace different from the
+    namespace ``xp`` of the knots ``t`` and coefficients ``c``, an attempt will
+    be made to coerce ``x`` to the ``xp`` namespace. Mixing namespaces in this
+    way is not recommended.
+
+    """
+)
+
+
 @xp_capabilities(
     cpu_only=True, jax_jit=False,
+    exceptions=["cupy"],
+    method_capabilities={
+        "design_matrix": dict(np_only=True),
+        "from_power_basis": dict(np_only=True),
+        "insert_knot": dict(
+            cpu_only=True,
+            jax_jit=False,
+            skip_backends=[
+                ("dask.array", "https://github.com/scipy/scipy/issues/24205")
+            ]
+        ),
+    },
     skip_backends=[
         ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
-    ]
+         "https://github.com/scipy/scipy/issues/24205")
+    ],
+    extra_note=_bspline_extra_note,
 )
 class BSpline:
     r"""Univariate spline in the B-spline basis.
@@ -220,7 +258,20 @@ class BSpline:
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super().__init__()
 
-        self._asarray = array_namespace(c, t).asarray
+        xp = array_namespace(c, t)
+        xp_bspline_cls = _get_xp_bspline_cls(xp)
+        self._asarray = xp.asarray
+
+        if xp_bspline_cls is not None:
+            obj = xp_bspline_cls(t, c, k, extrapolate=extrapolate, axis=axis)
+            self._delegate_to = obj
+            self.k = obj.k
+            self.extrapolate = obj.extrapolate
+            self.axis = obj.axis
+            return
+
+        self._delegate_to = None
+
 
         self.k = operator.index(k)
         self._c = np.asarray(c)
@@ -267,17 +318,41 @@ class BSpline:
         self._c = np.ascontiguousarray(self._c, dtype=dt)
 
     @classmethod
+    def _construct_from_xp(cls, xp_bspline):
+        self = object.__new__(cls)
+        self._delegate_to = xp_bspline
+        xp = array_namespace(xp_bspline.t)
+        self._asarray = xp.asarray
+        self.k = xp_bspline.k
+        self.axis = xp_bspline.axis
+        self.extrapolate = xp_bspline.extrapolate
+        return self
+
+    @classmethod
     def construct_fast(cls, t, c, k, extrapolate=True, axis=0):
         """Construct a spline without making checks.
 
         Accepts same parameters as the regular constructor. Input arrays
         `t` and `c` must of correct shape and dtype.
         """
+        xp = array_namespace(t, c)
+        xp_bspline_cls = _get_xp_bspline_cls(xp)
+
+        if xp_bspline_cls is not None:
+            return cls._construct_from_xp(
+                xp_bspline_cls.construct_fast(
+                    t, c, k, extrapolate=extrapolate, axis=axis
+                )
+            )
+
         self = object.__new__(cls)
-        self._t, self._c, self.k = np.asarray(t), np.asarray(c), k
-        self.extrapolate = extrapolate
+        self.k = k
         self.axis = axis
-        self._asarray = array_namespace(t, c).asarray
+        self.extrapolate = extrapolate
+
+        self._delegate_to = None
+        self._t, self._c = np.asarray(t), np.asarray(c)
+        self._asarray = xp.asarray
         return self
 
     @property
@@ -290,18 +365,28 @@ class BSpline:
     # because they are used in a C extension expecting numpy arrays.
     @property
     def t(self):
+        if self._delegate_to is not None:
+            return self._delegate_to.t
         return self._asarray(self._t)
 
     @t.setter
     def t(self, t):
+        if self._delegate_to is not None:
+            self._delegate_to.t = t
+            return
         self._t = np.asarray(t)
 
     @property
     def c(self):
+        if self._delegate_to is not None:
+            return self._delegate_to.c
         return self._asarray(self._c)
 
     @c.setter
     def c(self, c):
+        if self._delegate_to is not None:
+            self._delegate_to.c = c
+            return
         self._c = np.asarray(c)
 
     @classmethod
@@ -361,13 +446,19 @@ class BSpline:
 
         """
         xp = array_namespace(t)
+        xp_bspline_cls = _get_xp_bspline_cls(xp)
+        if xp_bspline_cls is not None:
+            return cls._construct_from_xp(
+                xp_bspline_cls.basis_element(t, extrapolate=extrapolate)
+            )
+
         t = np.asarray(t)
         k = t.shape[0] - 2
-        
+
         if k < 0:
             raise ValueError("BSpline.basis_element requires at least 2 knots")
 
-        
+
         t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
@@ -533,6 +624,10 @@ class BSpline:
             in the coefficient array with the shape of `x`.
 
         """
+        if self._delegate_to is not None:
+            x = self._asarray(x)
+            return self._delegate_to(x, nu=nu, extrapolate=extrapolate)
+
         if extrapolate is None:
             extrapolate = self.extrapolate
         x = np.asarray(x)
@@ -609,6 +704,9 @@ class BSpline:
         splder, splantider
 
         """
+        if self._delegate_to is not None:
+            return self._construct_from_xp(self._delegate_to.derivative(nu=nu))
+
         c = self._asarray(self.c, copy=True)
         t = self.t
         xp = array_namespace(t, c)
@@ -634,6 +732,10 @@ class BSpline:
         b : `BSpline` object
             A new instance representing the antiderivative.
 
+        See Also
+        --------
+        splder, splantider
+
         Notes
         -----
         If antiderivative is computed and ``self.extrapolate='periodic'``,
@@ -641,11 +743,10 @@ class BSpline:
         the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
 
-        See Also
-        --------
-        splder, splantider
-
         """
+        if self._delegate_to is not None:
+            return self._construct_from_xp(self._delegate_to.antiderivative(nu=nu))
+
         c = self._asarray(self.c, copy=True)
         t = self.t
         xp = array_namespace(t, c)
@@ -712,6 +813,9 @@ class BSpline:
         >>> plt.show()
 
         """
+        if self._delegate_to is not None:
+            return self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+
         if extrapolate is None:
             extrapolate = self.extrapolate
 
@@ -807,7 +911,7 @@ class BSpline:
         pp : CubicSpline
             A piecewise polynomial in the power basis, as created
             by ``CubicSpline``
-        bc_type : string, optional
+        bc_type : str, optional
             Boundary condition type as in ``CubicSpline``: one of the
             ``not-a-knot``, ``natural``, ``clamped``, or ``periodic``.
             Necessary for construction an instance of ``BSpline`` class.
@@ -920,6 +1024,10 @@ class BSpline:
         spl : `BSpline` object
             A new `BSpline` object with the new knot inserted.
 
+        See Also
+        --------
+        scipy.interpolate.insert
+
         Notes
         -----
         Based on algorithms from [1]_ and [2]_.
@@ -940,10 +1048,6 @@ class BSpline:
             :doi:`10.1016/0010-4485(80)90154-2`.
         .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
             Numerical Analysis", Oxford University Press, 1993.
-
-        See Also
-        --------
-        scipy.interpolate.insert
 
         Examples
         --------
@@ -970,6 +1074,11 @@ class BSpline:
         array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
 
         """
+        if self._delegate_to is not None:
+            # insert_knot isn't available in CuPy as of version 14 causing this to
+            # raise with an AttributeError.
+            return self._construct_from_xp(self._delegate_to.insert_knot(x, m=m))
+
         x = float(x)
 
         if x < self._t[self.k] or x > self._t[-self.k-1]:
@@ -1291,20 +1400,20 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
     ----------
     t : ndarray, shape (nt + k + 1,)
         knots
-    k : integer
+    k : int
         B-spline order
     xval : float
         The value at which to evaluate the derivatives at.
     ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
         B-spline colocation matrix.
         This argument is modified *in-place*.
-    kl : integer
+    kl : int
         Number of lower diagonals of ab.
-    ku : integer
+    ku : int
         Number of upper diagonals of ab.
     deriv_ords : 1D ndarray
         Orders of derivatives known at xval
-    offset : integer, optional
+    offset : int, optional
         Skip this many rows of the matrix ab.
 
     """

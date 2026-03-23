@@ -10,7 +10,7 @@ from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype
                                    xp_size, array_namespace, _xp_copy_to_numpy,
                                    is_lazy_array, eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._lib import array_api_extra as xpx
+from scipy._external import array_api_extra as xpx
 from scipy import stats, special
 from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
@@ -1551,7 +1551,7 @@ class TestPermutationTest:
         expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
 
         def statistic(x, y, axis):
-            # todo: use `xp` as backend when `ks_2samp` is translated to array API
+            # todo: use `xp` as backend when `ks_2samp` supports more backends
             x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
             res = stats.ks_2samp(x, y, axis=axis, mode='asymp', alternative=alternative)
             res = xp.asarray(res.statistic)

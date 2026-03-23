@@ -105,7 +105,7 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
 #else
     extern int isamax_(int *, float *, int *);
     extern float sasum_(int *, float *, int *);
-    extern int scopy_(int *, float *, int *, float *, int *);
+    extern void scopy_(int *, float *, int *, float *, int *);
 #endif
 #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
 #define i_dnnt(a) \
@@ -205,7 +205,7 @@ L90:
     return 0;
 
     /*     ................ ENTRY   (isave[0] == 4)
-	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
+	   X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
 L110:
     jlast = isave[1];  /* j; */
 #ifdef _CRAY

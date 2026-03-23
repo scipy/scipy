@@ -16,7 +16,7 @@ from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
-from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._gcutils import assert_deallocated
 from scipy._lib._testutils import _run_concurrent_barrier
 
 from scipy.integrate import nquad
@@ -234,6 +234,16 @@ class TestInterp1D:
         y = [np.nan, 0, 1]
         yp = interp1d(x, y)(x)
         xp_assert_close(yp, y, atol=1e-15)
+
+    def test_linear_numerical_stability(self):
+        # regression test for gh-24281: Using de Boor's algorithm, there 
+        # should be no floating point error for query points contained 
+        # exactly in the x input array
+        x = np.array([0.0007499999999999, 0.002])
+        y = np.array([[0.0, 0.0], [0.0004164930555555557, 0.0]])
+        yp = interp1d(x, y)(x)
+        xp_assert_close(yp, y, atol=1e-20)
+        assert np.all(yp >= 0) # less stable computations give yp[1,1] = -5e-20
 
     def test_slinear_dtypes(self):
         # regression test for gh-7273: 1D slinear interpolation fails with
@@ -746,7 +756,6 @@ class TestInterp1D:
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
-    @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)
@@ -833,7 +842,8 @@ class TestLagrange:
         p = poly1d([5,2,1,4,3])
         xs = np.arange(len(p.coeffs))
         ys = p(xs)
-        pl = lagrange(xs,ys)
+        with pytest.warns(DeprecationWarning, match="`lagrange`"):
+            pl = lagrange(xs,ys)
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 

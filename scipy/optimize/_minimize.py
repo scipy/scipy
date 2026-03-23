@@ -194,19 +194,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         minimization algorithm sets some relevant solver-specific tolerance(s)
         equal to `tol`. For detailed control, use solver-specific
         options.
-    options : dict, optional
-        A dictionary of solver options. All methods except `TNC` accept the
-        following generic options:
-
-        maxiter : int
-            Maximum number of iterations to perform. Depending on the
-            method each iteration may use several function evaluations.
-
-            For `TNC` use `maxfun` instead of `maxiter`.
-        disp : bool
-            Set to True to print convergence messages.
-
-        For method-specific options, see :func:`show_options()`.
     callback : callable, optional
         A callable called after each iteration.
 
@@ -230,6 +217,19 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         Introspection is used to determine which of the signatures above to
         invoke.
+    options : dict, optional
+        A dictionary of solver options. All methods except `TNC` accept the
+        following generic options:
+
+        maxiter : int
+            Maximum number of iterations to perform. Depending on the
+            method each iteration may use several function evaluations.
+
+            For `TNC` use `maxfun` instead of `maxiter`.
+        disp : bool
+            Set to True to print convergence messages.
+
+        For method-specific options, see :func:`show_options()`.
 
     Returns
     -------
