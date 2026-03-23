@@ -176,9 +176,6 @@ if use_ilp64
   )
 endif
 
-
-# TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
-
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',
   linalg_cython_gen.process('_decomp_interpolative.pyx'),
