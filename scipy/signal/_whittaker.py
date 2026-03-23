@@ -1,7 +1,7 @@
 import operator
 import warnings
 import numpy as np
-from scipy._lib._util import _RichResult
+from scipy._lib._util import _RichResult, _validate_int
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
@@ -48,7 +48,8 @@ def _solveh_banded(ab, b, calc_logdet=False):
     logdet = 0.0
 
     if a1.shape[0] == 2:
-        ptsv = get_lapack_funcs("ptsv", (a1, b1), ilp64="preferred")
+        method = "ptsv"
+        ptsv = get_lapack_funcs(method, (a1, b1), ilp64="preferred")
         # We assume lower=True and real arrays
         d = a1[0, :]
         e = a1[1, :-1]
@@ -57,14 +58,15 @@ def _solveh_banded(ab, b, calc_logdet=False):
         if calc_logdet and info == 0:
             logdet = np.log(d).sum()
     else:
-        pbsv = get_lapack_funcs("pbsv", (a1, b1), ilp64="preferred")
+        method = "pbsv"
+        pbsv = get_lapack_funcs(method, (a1, b1), ilp64="preferred")
         # pbsv uses Cholesky LL', returns c=L in ab-storage format
         c, x, info = pbsv(a1, b1, lower=True, overwrite_ab=overwrite_ab,
                           overwrite_b=overwrite_b)
         if calc_logdet and info == 0:
             logdet = 2 * np.log(c[0, :]).sum()
     if info < 0:
-        raise ValueError(f"illegal value in {-info}th argument of internal pbsv")
+        raise ValueError(f"illegal value in {-info}th argument of internal {method}")
     return x, logdet, info
 
 
@@ -82,8 +84,8 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     
     Parameters
     ----------
-    signal : ndarray
-        A one-dimensional array of at length ``order + 1`` representing equidistant data
+    signal : array_like
+        A one-dimensional array of length ``order + 1`` representing equidistant data
         points of a signal, e.g. a time series with constant time lag.
     
     lamb : str or float, optional
@@ -94,7 +96,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     order : int, default: 2
         The order of the difference penalty, must be at least 1.
 
-    weights : ndarray, option
+    weights : array_like or None, optional
         A one-dimensional array of case weights with the same length as `signal`.
         ``None`` is equivalent to an array of all ones, ``np.ones_like(signal)``.
 
@@ -196,7 +198,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     ... # inter- or extrapolates for all data points with w = 0.
     ... plt.plot(x[w==0], res.x[w==0], color="red", label="inter-/extrapolation")
     >>> plt.xlabel("year")
-    >>> plt.ylabel("temperatur deviation [°C]")
+    >>> plt.ylabel("temperature deviation [°C]")
     >>> plt.title("Global Temperature Anomalies (ref. 1951-1980)")
     >>> plt.legend()
     >>> plt.show()
@@ -206,11 +208,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     2026 that have not yet happened at the time of the data download in March 2026.
 
     """
-    order = operator.index(order)
-    if order < 1:
-        raise ValueError(
-            "Parameter order must be an integer larger than or equal to 1."
-        )
+    order = _validate_int(order, name="order", minimum=1)
 
     signal = np.asarray(signal)
     if signal.ndim != 1:
@@ -381,7 +379,7 @@ def _logdet_difference_matrix(order, n):
     """Logarithm of the determinant of the difference matrix.
 
     If D is the difference matrix of order=p, then this computes `log det(D @ D.T)`
-    which equals the log of the sum of non-zero eigenvalues of `D.T @ D`.
+    which equals the sum of the log of non-zero eigenvalues of `D.T @ D`.
     """
     # product of eigenvalues =
     # prod(binom(n+i-1, 2i-1), i=1..p) / prod(binom(2i, i), i=1..p-1)
@@ -397,14 +395,14 @@ def _logdet_difference_matrix(order, n):
 
 
 def _reml(lamb, y, order, weights=None):
-    """Calculate the restictricted maximum likelihood (REML).
+    """Calculate the restricted maximum likelihood (REML).
     
     Parameters
     ----------
     lamb : penalty
     y : signal
     x : smoothed signal
-    order : oder of the difference penalty.
+    order : order of the difference penalty.
     weights : case weights
 
     Returns
