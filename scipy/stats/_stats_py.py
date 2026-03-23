@@ -61,7 +61,7 @@ from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
                                too_small_nd_not_omit, too_small_nd_omit)
-from ._binomtest import _binary_search_for_binom_tst as _binary_search
+from ._binomtest import _binary_search_for_binom_tst as _binary_search, _SimpleBinomial
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy._lib._array_api import (
@@ -494,9 +494,9 @@ def _mode_result(mode, count):
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312")],
                  jax_jit=False,  # would delegate, but jax-ml/jax#34486
-                 extra_note=("Values in MArrays must be real numbers "
-                             "that cast safely to floating point."),
-                 marray=True)
+                 marray=True,
+                 extra_note=("Values in MArray input must be real numbers "
+                             "that cast safely to floating point."))
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -1534,6 +1534,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    device=xp_device(a))
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
+    a = xp_promote(a, force_floating=True, xp=xp)
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)
     v = v[()] if v.ndim == 0 else v
@@ -3619,7 +3620,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities()
+@xp_capabilities(marray=True)
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values.
@@ -3694,18 +3695,27 @@ def trim_mean(a, proportiontocut, axis=0):
         a = xp_ravel(a)
         axis = 0
 
-    nobs = a.shape[axis]
-    lowercut = int(proportiontocut * nobs)
+    nobs = _count_nonmasked(a, axis=axis, keepdims=True, xp=xp)
+    lowercut = proportiontocut * nobs
+    nobs, lowercut = ((nobs, int(lowercut)) if not is_marray(xp)
+                      else (xp.astype(nobs, xp.int64), xp.astype(lowercut, xp.int64)))
     uppercut = nobs - lowercut
-    if (lowercut > uppercut):
+    if not is_marray(xp) and (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
     atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
             else xp.sort(a, axis=axis))
 
-    sl = [slice(None)] * atmp.ndim
-    sl[axis] = slice(lowercut, uppercut)
-    trimmed = xp_promote(atmp[tuple(sl)], force_floating=True, xp=xp)
+    if is_marray(xp):
+        indices = xp.arange(a.shape[-1])  # axis_nan_policy decorator -> axis=-1
+        mask = (indices < lowercut) | (indices >= (nobs - lowercut)) | atmp.mask
+        trimmed = xp.asarray(atmp.data, mask=mask.data)
+    else:
+        sl = [slice(None)] * atmp.ndim
+        sl[axis] = slice(lowercut, uppercut)
+        trimmed = atmp[tuple(sl)]
+
+    trimmed = xp_promote(trimmed, force_floating=True, xp=xp)
     return xp.mean(trimmed, axis=axis)
 
 
@@ -4360,7 +4370,8 @@ class PearsonRResult(PearsonRResultBase):
 
 
 # Missing special.betainc on torch
-@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'], marray=True,
+    extra_note='Only the default `method` is compatible with MArray input.')
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -5536,7 +5547,8 @@ def pointbiserialr(x, y, *, axis=0):
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=2,
-                 marray=True)
+                 marray=True, extra_note=("`nan_policy='propagate'` is "
+                                          "incompatible with MArray input."))
 def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
                alternative='two-sided', axis=None, keepdims=False):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
@@ -6072,7 +6084,9 @@ def unpack_TtestResult(res, _):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True,
+                 extra_note=("The ``confidence_interval`` method of the output object "
+                             "is incompatible with JAX JIT."))
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6503,7 +6517,10 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True,
+                 extra_note=("`trim` and `method` are incompatible with MArray input."
+                             "The ``confidence_interval`` method of the output object "
+                             "is incompatible with JAX JIT."))
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
@@ -6759,10 +6776,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                    "of `MonteCarloMethod`, or None (default).")
         raise ValueError(message)
 
-    if not is_numpy(xp) and method is not None:
-        message = "Use of resampling methods is compatible only with NumPy arrays."
-        raise NotImplementedError(message)
-
     result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
     NaN = _get_nan(a, b, shape=result_shape, xp=xp)
     if xp_size(a) == 0 or xp_size(b) == 0:
@@ -6782,12 +6795,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
         m1 = xp.mean(a, axis=axis)
         m2 = xp.mean(b, axis=axis)
     else:
-        message = "Use of `trim` is compatible only with NumPy arrays."
-        if not is_numpy(xp):
-            raise NotImplementedError(message)
-
-        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
-        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
+        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis, xp=xp)
+        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis, xp=xp)
 
     if equal_var:
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
@@ -6799,7 +6808,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     else:
         # nan_policy is taken care of by axis_nan_policy decorator
         ttest_kwargs = dict(equal_var=equal_var, trim=trim)
-        t, prob = _ttest_resampling(a, b, axis, alternative, ttest_kwargs, method)
+        t, prob = _ttest_resampling(a, b, axis, alternative,
+                                    ttest_kwargs, method, xp=xp)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = xp.broadcast_to(df, t.shape)
@@ -6810,8 +6820,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                        standard_error=denom, estimate=estimate)
 
 
-def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method):
+def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method, *, xp):
     def statistic(x, y, axis):
+        x, y = xp.asarray(x), xp.asarray(y)
         return ttest_ind(x, y, axis=axis, **ttest_kwargs).statistic
 
     test = (permutation_test if isinstance(method, PermutationMethod)
@@ -6831,12 +6842,12 @@ def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method):
     return res.statistic, res.pvalue
 
 
-def _ttest_trim_var_mean_len(a, trim, axis):
+def _ttest_trim_var_mean_len(a, trim, axis, *, xp):
     """Variance, mean, and length of winsorized input along specified axis"""
     # for use with `ttest_ind` when trimming.
     # further calculations in this test assume that the inputs are sorted.
     # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
-    a = np.sort(a, axis=axis)
+    a = xp.sort(a, axis=axis)
 
     # `g` is the number of elements to be replaced on each tail, converted
     # from a percentage amount of trimming
@@ -6845,7 +6856,7 @@ def _ttest_trim_var_mean_len(a, trim, axis):
 
     # Calculate the Winsorized variance of the input samples according to
     # specified `g`
-    v = _calculate_winsorized_variance(a, g, axis)
+    v = _calculate_winsorized_variance(a, g, axis, xp=xp)
 
     # the total number of elements in the trimmed samples
     n -= 2 * g
@@ -6855,16 +6866,16 @@ def _ttest_trim_var_mean_len(a, trim, axis):
     return v, m, n
 
 
-def _calculate_winsorized_variance(a, g, axis):
+def _calculate_winsorized_variance(a, g, axis, *, xp):
     """Calculates g-times winsorized variance along specified axis"""
     # it is expected that the input `a` is sorted along the correct axis
     if g == 0:
-        return _var(a, ddof=1, axis=axis)
+        return _var(a, ddof=1, axis=axis, xp=xp)
     # move the intended axis to the end that way it is easier to manipulate
-    a_win = np.moveaxis(a, axis, -1)
+    a_win = xp.moveaxis(a, axis, -1)
 
     # save where NaNs are for later use.
-    nans_indices = np.any(np.isnan(a_win), axis=-1)
+    nans_indices = xp.any(xp.isnan(a_win), axis=-1)
 
     # Winsorization and variance calculation are done in one step in [4]
     # (1-3), but here winsorization is done first; replace the left and
@@ -6873,24 +6884,26 @@ def _calculate_winsorized_variance(a, g, axis):
     # `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}` on the
     # right. Zero-indexing turns `g + 1` to `g`, and `n - g` to `- g - 1` in
     # array indexing.
-    a_win[..., :g] = a_win[..., [g]]
-    a_win[..., -g:] = a_win[..., [-g - 1]]
+    a_win = xpx.at(a_win)[..., :g].set(a_win[..., g:g+1])
+    a_win = xpx.at(a_win)[..., -g:].set(a_win[..., -g - 1:-g])
 
     # Determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
     # page 369, beginning of page 370). This is converted to NumPy's format,
     # `n - ddof` for use with `np.var`. The result is converted to an
     # array to accommodate indexing later.
-    var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
+    var_win = xp.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1, xp=xp))
 
     # with `nan_policy='propagate'`, NaNs may be completely trimmed out
     # because they were sorted into the tail of the array. In these cases,
     # replace computed variances with `np.nan`.
-    var_win[nans_indices] = np.nan
+    var_win = xpx.at(var_win)[nans_indices].set(xp.nan)
     return var_win
 
 
-@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True)
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"], marray=True,
+                 extra_note=("The ``confidence_interval`` method of the output object"
+                             "is incompatible with JAX JIT."))
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
@@ -7605,6 +7618,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     # `_axis_nan_policy` decorator ensures `axis=-1`
     xp = array_namespace(x)
     mode = method
+    if mode not in ['auto', 'exact', 'approx', 'asymp']:
+        raise ValueError(
+            f"Invalid value for method: {mode!r}. "
+            f"Must be one of 'auto', 'exact', 'approx', 'asymp'."
+        )
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
@@ -8018,10 +8036,10 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
     data_all = xp.concat((data1, data2), axis=-1)
     batch_shape = data_all.shape[:-1]
+    dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
 
     if is_marray(xp):
         # Previously, we used this algorithm for all backends:
-        dtype = xp_result_type(data1, data2, force_floating=True, xp=xp)
         n1 = xp.astype(_count_nonmasked(data1, axis=-1), dtype)
         n2 = xp.astype(_count_nonmasked(data2, axis=-1), dtype)
         cdf1 = xp.astype(_xp_searchsorted(data1, data_all, side='right'), dtype)
@@ -8035,13 +8053,15 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
         # We want the ECDF of each sample evaluated at *all* the points in the pooled
         # sample. The values each ECDF can assume are given by:
-        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
-        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+        cdf1_vals = xp.broadcast_to(xp.linspace(0, 1, n1 + 1, dtype=dtype),
+                                    batch_shape + (n1 + 1,))
+        cdf2_vals = xp.broadcast_to(xp.linspace(0, 1, n2 + 1, dtype=dtype),
+                                    batch_shape + (n2 + 1,))
         # Now we "just" need to know how many times each of these values *will* be
         # assumed when we evaluate the ECDFs at all points in the pooled sample.
         # These counts are given by the differences between consecutive ("min" or "max")
         # ranks corresponding with the observations in the (sorted) samples.
-        ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)
+        ranks, data_all, _ = _rankdata(data_all, method='min', return_sorted=True)
         ranks = xp.astype(ranks, xp.asarray(1).dtype)  # default int type
         one = xp.ones((*ranks.shape[:-1], 1), dtype=ranks.dtype,
                       device=xp_device(ranks))
@@ -8595,7 +8615,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
         raise ValueError("Inputs must not be empty.")
 
     alldata = xp.concat(samples, axis=-1)
-    ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    ranked, _, t = _rankdata(alldata, method='average', return_ties=True)
     counts = [xp.asarray(_count_nonmasked(sample, -1), dtype=t.dtype)
               for sample in samples]
     totaln = sum(counts)
@@ -8702,7 +8722,7 @@ def friedmanchisquare(*samples, axis=0):
     # The transpose flips this so we can work with axis-slices along -1. This is a
     # reducing statistic, so both axes 0 and -1 are consumed.
     data = xp_swapaxes(xp.stack(samples), 0, -1)
-    data, t = _rankdata(data, method='average', return_ties=True)
+    data, _, t = _rankdata(data, method='average', return_ties=True)
 
     # Handle ties
     ties = xp.sum(t * (t*t - 1), axis=(0, -1))
@@ -9087,6 +9107,7 @@ class QuantileTestResult:
     _keepdims : bool = field(repr=False)
     _ndim : int = field(repr=False)
     _nan_out : bool = field(repr=False)
+    _xp : bool = field(repr=False)
 
 
     def confidence_interval(self, confidence_level=0.95):
@@ -9122,11 +9143,12 @@ class QuantileTestResult:
         (1.9542373206359396, 2.293318740264183)
         """
 
+        xp = self._xp
         alternative = self._alternative
         p = self._p
-        x = np.sort(self._x, axis=-1)
+        x = xp.sort(self._x, axis=-1)
         n = x.shape[-1]
-        bd = stats.binom(n, p)
+        bd = _SimpleBinomial(n=n, p=p)
         shape = p.shape
 
         if confidence_level <= 0 or confidence_level >= 1:
@@ -9134,66 +9156,69 @@ class QuantileTestResult:
             raise ValueError(message)
 
         if n == 0:
-            zeros = np.zeros(p.shape, dtype=x.dtype)
+            zeros = xp.zeros(p.shape, dtype=x.dtype)
             low, high = zeros, zeros
         elif alternative == 'less':
             p = 1 - confidence_level
-            low = np.full(shape, -np.inf)
-            high_index = bd.isf(p).astype(int)
+            low = xp.full(shape, -xp.inf)
+            high_index = xp.astype(bd.isf(p), xp.int64)
             valid_index = high_index < n
-            high_index[~valid_index] = 0
-            x_high = np.take_along_axis(x, high_index, axis=-1)
-            high = np.where(valid_index, x_high, np.nan)
+            high_index = xpx.at(high_index)[~valid_index].set(0)
+            x_high = xp.take_along_axis(x, high_index, axis=-1)
+            high = xp.where(valid_index, x_high, xp.nan)
         elif alternative == 'greater':
             p = 1 - confidence_level
-            low_index = (bd.ppf(p)).astype(int) - 1
+            low_index = xp.astype(bd.ppf(p), xp.int64) - 1
             valid_index = low_index >= 0
-            low_index[~valid_index] = 0
-            x_low = np.take_along_axis(x, low_index, axis=-1)
-            low = np.where(valid_index, x_low, np.nan)
-            high = np.full(shape, np.inf)
+            low_index = xpx.at(low_index)[~valid_index].set(0)
+            x_low = xp.take_along_axis(x, low_index, axis=-1)
+            low = xp.where(valid_index, x_low, xp.nan)
+            high = xp.full(shape, xp.inf)
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
-            low_index = (bd.ppf(p)).astype(int) - 1
+            low_index = xp.astype(bd.ppf(p), xp.int64) - 1
             valid_index = low_index >= 0
-            low_index[~valid_index] = 0
-            x_low = np.take_along_axis(x, low_index, axis=-1)
-            low = np.where(valid_index, x_low, np.nan)
-            high_index = bd.isf(p).astype(int)
+            low_index = xpx.at(low_index)[~valid_index].set(0)
+            x_low = xp.take_along_axis(x, low_index, axis=-1)
+            low = xp.where(valid_index, x_low, xp.nan)
+            high_index = xp.astype(bd.isf(p), xp.int64)
             valid_index = high_index < n
-            high_index[~valid_index] = 0
-            x_high = np.take_along_axis(x, high_index, axis=-1)
-            high = np.where(valid_index, x_high, np.nan)
+            high_index = xpx.at(high_index)[~valid_index].set(0)
+            x_high = xp.take_along_axis(x, high_index, axis=-1)
+            high = xp.where(valid_index, x_high, xp.nan)
 
-        args = self._axis, self._axis_none, self._keepdims, self._ndim, self._nan_out
+        args = (self._axis, self._axis_none, self._keepdims,
+                self._ndim, self._nan_out, self._xp)
         low = _quantile_test_postprocess(low, *args)
         high = _quantile_test_postprocess(high, *args)
         return ConfidenceInterval(low, high)
 
 
 def quantile_test_iv(x, q, p, alternative, axis, keepdims):
+    xp = array_namespace(x, q, p)
+    dtype = xp_result_type(x, q, p, force_floating=True, xp=xp)
 
-    x = np.atleast_1d(x)
+    x = xpx.atleast_nd(x, ndim=1, xp=xp)
     message = '`x` must be an array of numbers.'
-    if not np.issubdtype(x.dtype, np.number):
+    if not xp.isdtype(x.dtype, 'numeric'):
         raise ValueError(message)
 
-    q = np.array(q)[()]
+    q = xp.asarray(q)
     message = "`q` must be a scalar or array of numbers."
-    if not np.issubdtype(q.dtype, np.number):
+    if not xp.isdtype(q.dtype, 'numeric'):
         raise ValueError(message)
 
-    p = np.array(p)[()]
+    p = xp.asarray(p)
     message = "`p` must be a scalar or array of floats."
-    if not np.issubdtype(p.dtype, np.inexact):
+    if not xp.isdtype(p.dtype, 'real floating'):
         raise ValueError(message)
 
     axis_none = axis is None
     ndim = max(x.ndim, p.ndim)
     if axis_none:
-        x = np.ravel(x)
-        q = np.ravel(q)
-        p = np.ravel(p)
+        x = xp_ravel(x)
+        q = xp_ravel(q)
+        p = xp_ravel(p)
         axis = 0
     elif np.iterable(axis) or int(axis) != axis:
         message = "`axis` must be an integer or None."
@@ -9212,9 +9237,9 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
         message = "If specified, `keepdims` must be True or False."
         raise ValueError(message)
 
-    x = np.sort(x, axis=axis)
-    q, p = np.broadcast_arrays(q, p)  # length along axis matters for q and p
-    x, q, p = _broadcast_arrays((x, q, p), axis=axis)
+    x = xp.sort(x, axis=axis)
+    q, p = xp.broadcast_arrays(q, p)  # length along axis matters for q and p
+    x, q, p = _broadcast_arrays((x, q, p), axis=axis, xp=xp)
 
     if (keepdims is False) and (p.shape[axis] != 1):
         message = ("`keepdims` may be False only if `p` and `q` are scalars or the "
@@ -9222,40 +9247,41 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
         raise ValueError(message)
     keepdims = (p.shape[axis] != 1) if keepdims is None else keepdims
 
-    x = np.moveaxis(x, axis, -1)
-    q = np.moveaxis(q, axis, -1)
-    p = np.moveaxis(p, axis, -1)
+    x = xp.moveaxis(x, axis, -1)
+    q = xp.moveaxis(q, axis, -1)
+    p = xp.moveaxis(p, axis, -1)
 
-    nan_out = ((p >= 1) | (p <= 0) | np.isnan(p) | np.isnan(q)
-               | np.any(np.isnan(x), axis=-1, keepdims=True))
-    if np.any(nan_out):
+    nan_out = ((p >= 1) | (p <= 0) | xp.isnan(p) | xp.isnan(q)
+               | xp.any(xp.isnan(x), axis=-1, keepdims=True))
+    if is_lazy_array(nan_out) or xp.any(nan_out):
         # These get NaN-ed out at the end. In the meantime, we want them
         # to pass through calculations without warnings or errors
-        q = xpx.at(q, nan_out).set(0, copy=True)
+        q = xpx.at(q, nan_out).set(0.0, copy=True)
         p = xpx.at(p, nan_out).set(0.5, copy=True)
 
-    return x, q, p, alternative, axis, keepdims, axis_none, ndim, nan_out
+    return x, q, p, alternative, axis, keepdims, axis_none, ndim, nan_out, dtype, xp
 
 
-def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out):
+def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out, xp):
     # Reshape per axis/keepdims
 
-    res[nan_out] = -1 if np.issubdtype(res.dtype, np.integer) else np.nan
+    res = xpx.at(res)[nan_out].set(xp.nan)
 
     if axis_none and keepdims:
         shape = (1,)*(ndim - 1) + res.shape
-        res = np.reshape(res, shape)
+        res = xp.reshape(res, shape)
         axis = -1
 
-    res = np.moveaxis(res, -1, axis)
+    res = xp.moveaxis(res, -1, axis)
 
     if not keepdims:
-        res = np.squeeze(res, axis=axis)
-    return res[()]
+        res = xp.squeeze(res, axis=axis)
+    return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities(np_only=True)
-def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=None):
+@xp_capabilities(skip_backends=[("dask.array", "no `take_along_axis`")], cpu_only=True,
+                 reason="binomial distribution ufuncs only available for NumPy")
+def quantile_test(x, *, q=0.0, p=0.5, alternative='two-sided', axis=0, keepdims=None):
     r"""
     Perform a quantile test and compute a confidence interval of the quantile.
 
@@ -9274,8 +9300,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
         The hypothesized value of the quantile.
     p : float, default: 0.5
         The probability associated with the quantile; i.e. the proportion of
-        the population less than `q` is `p`. Must be strictly between 0 and
-        1.
+        the population less than `q` is `p`. Must be strictly between 0 and 1.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
@@ -9318,9 +9343,9 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
 
         statistic : float
             One of two test statistics that may be used in the quantile test.
-            The first test statistic, ``T1``, is the proportion of observations in
+            The first test statistic, ``T1``, is the number of observations in
             `x` that are less than or equal to the hypothesized quantile
-            `q`. The second test statistic, ``T2``, is the proportion of
+            `q`. The second test statistic, ``T2``, is the number of
             observations in `x` that are strictly less than the hypothesized
             quantile `q`.
 
@@ -9333,8 +9358,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
             When ``alternative = 'two-sided'``, both ``T1`` and ``T2`` are
             considered, and the one that leads to the smallest p-value is used.
 
-        statistic_type : int
-            Either `1` or `2` depending on which of ``T1`` or ``T2`` was
+        statistic_type : float
+            Either ``1.`` or ``2.`` depending on which of ``T1`` or ``T2`` was
             used to calculate the p-value.
 
         pvalue : float
@@ -9556,19 +9581,20 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     # "H0: the p*th quantile of X is x*"
     # To facilitate comparison with [1], we'll use variable names that
     # best match Conover's notation
-    X, x_star, p_star, H1, axis, keepdims, axis_none, ndim, nan_out = quantile_test_iv(
-        x, q, p, alternative, axis, keepdims)
+    X, x_star, p_star, H1, axis, keepdims, axis_none, ndim, nan_out, dtype, xp = (
+        quantile_test_iv(x, q, p, alternative, axis, keepdims))
     # `axis` is the original `axis`; the working axis is -1.
 
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
     # "let T2 equal the number of observations less than x*."
     if X.shape[-1] > 0:
-        T1 = _xp_searchsorted(X, x_star, side='right')
-        T2 = _xp_searchsorted(X, x_star, side='left')
+        T1 = _xp_searchsorted(X, x_star, side='right', xp=xp)
+        T2 = _xp_searchsorted(X, x_star, side='left', xp=xp)
+        T1, T2 = xp.astype(T1, dtype), xp.astype(T2, dtype)
     else:
-        nan_out = np.ones_like(nan_out)
-        T = np.zeros(x_star.shape, dtype=np.int64)
+        nan_out = xp.ones_like(nan_out)
+        T = xp.zeros(x_star.shape, dtype=dtype)
         T1, T2 = T, T
 
     # "The null distribution of the test statistics T1 and T2 is "
@@ -9576,22 +9602,22 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     # "p = p* as given in the null hypothesis.... Y has the binomial "
     # "distribution with parameters n and p*."
     n = X.shape[-1]
-    Y = stats.binom(n=n, p=p_star)
+    Y = _SimpleBinomial(n=n, p=p_star)
 
     # "H1: the p* population quantile is less than x*"
     if H1 == 'less':
         # "The p-value is the probability that a binomial random variable Y "
         # "is greater than *or equal to* the observed value of T2...using p=p*"
         pvalue = Y.sf(T2-1)  # Y.pmf(T2) + Y.sf(T2)
-        statistic = np.full(pvalue.shape, T2)
-        statistic_type = np.full(pvalue.shape, 2)
+        statistic = xp.broadcast_to(T2, pvalue.shape)
+        statistic_type = xp.full_like(statistic, 2.)
     # "H1: the p* population quantile is greater than x*"
     elif H1 == 'greater':
         # "The p-value is the probability that a binomial random variable Y "
         # "is less than or equal to the observed value of T1... using p = p*"
         pvalue = Y.cdf(T1)
-        statistic = np.full(pvalue.shape, T1)
-        statistic_type = np.full(pvalue.shape, 1)
+        statistic = xp.broadcast_to(T1, pvalue.shape)
+        statistic_type = xp.full_like(statistic, 1.)
     # "H1: x* is not the p*th population quantile"
     elif H1 == 'two-sided':
         # "The p-value is twice the smaller of the probabilities that a
@@ -9600,22 +9626,27 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
         # using p=p*."
         # Note: both one-sided p-values can exceed 0.5 for the same data, so
         # `clip`
-        p_min = np.minimum(Y.cdf(T1), Y.sf(T2 - 1))
-        pvalue = np.clip(2*p_min, 0, 1)
+        p_min = xp.minimum(Y.cdf(T1), Y.sf(T2 - 1))
+        pvalue = xp.clip(2*p_min, 0., 1.)
         i2 = Y.cdf(T1) > Y.sf(T2 - 1)
-        statistic = np.where(i2, T2, T1)
-        statistic_type = np.where(i2, 2, 1)
+        statistic = xp.where(i2, T2, T1)
+        statistic_type = xp.where(i2, xp.full_like(T2, 2.), xp.full_like(T1, 1.))
+
+    statistic = xp.astype(statistic, dtype)
+    statistic_type = xp.astype(statistic_type, dtype)
+    pvalue = xp.astype(pvalue, dtype)
+    X = xp.astype(X, dtype)
 
     _statistic, _statistic_type, _pvalue = statistic, statistic_type, pvalue
-    args = axis, axis_none, keepdims, ndim, nan_out
+    args = axis, axis_none, keepdims, ndim, nan_out, xp
     statistic = _quantile_test_postprocess(statistic, *args)
     statistic_type = _quantile_test_postprocess(statistic_type, *args)
     pvalue = _quantile_test_postprocess(pvalue, *args)
 
     return QuantileTestResult(
-        statistic=statistic[()],
-        statistic_type=statistic_type[()],
-        pvalue=pvalue[()],
+        statistic=statistic,
+        statistic_type=statistic_type,
+        pvalue=pvalue,
         _alternative=H1,
         _x=X,
         _p=p_star,
@@ -9627,6 +9658,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
         _keepdims=keepdims,
         _ndim=ndim,
         _nan_out=nan_out,
+        _xp=xp,
     )
 
 
@@ -10260,7 +10292,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     contains_nan = _contains_nan(x, nan_policy)
 
     x = xp_swapaxes(x, axis, -1, xp=xp)
-    ranks = _rankdata(x, method, xp=xp)
+    ranks, _, _ = _rankdata(x, method, xp=xp)
 
     # JIT won't allow use of `contains_nan` for control flow here, so we always have to
     # run this with JIT.
@@ -10289,7 +10321,10 @@ def _order_ranks(ranks, j, *, xp):
 
 
 def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
-    # Rank data `x` by desired `method`; `return_ties`/`return_sorted` data  if desired
+    # Rank data `x` by desired `method`. For methods other than 'ordinal':
+    # - `return_sorted=True` ensures that the second output is sorted `x`
+    # - `return_ties=True` ensures that the third output is tie data
+    # Otherwise, the second/third output will be None.
     xp = array_namespace(x) if xp is None else xp
     dtype = xp_result_type(x, force_floating=True, xp=xp)
 
@@ -10297,33 +10332,24 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         import jax.scipy.stats as jax_stats
         ranks = jax_stats.rankdata(x, method=method, axis=-1)
         ranks = xp.astype(ranks, dtype, copy=False)
-        out = [ranks]
         y = xp.sort(x, axis=-1) if (return_ties or return_sorted) else None
-        if return_sorted:
-            out.append(y)
+        t = None
         if return_ties:
             max_ranks = jax_stats.rankdata(y, method='max', axis=-1)
             t = xp.diff(max_ranks, axis=-1, prepend=0)
             t = xp.astype(t, dtype, copy=False)
-            out.append(t)
-        return out[0] if len(out) == 1 else tuple(out)
+        return ranks, y, t
 
     if is_marray(xp):
         data, mask = x.data, x.mask
         uxp = array_namespace(data)
         data = uxp.where(mask, uxp.nan, data)
-        # TODO: have `_rankdata` always return three items, but allow them
-        #       to be `None` if they are not needed by the calling function.
-        #       Arguments controlling the number of outputs is a pain.
-        ranks, sorted, ties = _rankdata(data, method, True, True, xp=uxp)
-        out = [xp.asarray(ranks, mask=mask)]
-        if return_sorted or return_ties:
-            mask_sorted = uxp.isnan(sorted)
-        if return_sorted:
-            out.append(xp.asarray(sorted, mask=mask_sorted))
-        if return_ties:
-            out.append(xp.asarray(ties, mask=mask_sorted))
-        return out[0] if len(out) == 1 else tuple(out)
+        ranks, sorted, ties = _rankdata(data, method, return_sorted, return_ties, uxp)
+        ranks = xp.asarray(ranks, mask=mask)
+        mask_sorted = uxp.isnan(sorted) if (return_sorted or return_ties) else None
+        sorted = xp.asarray(sorted, mask=mask_sorted) if return_sorted else None
+        ties = xp.asarray(ties, mask=mask_sorted) if return_ties else None
+        return ranks, sorted, ties
 
     shape = x.shape
 
@@ -10333,7 +10359,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties or sorted data
+        ranks = _order_ranks(ordinal_ranks, j, xp=xp)
+        return (ranks, None, None)
 
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
@@ -10359,14 +10386,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     ranks = xp.reshape(xp.repeat(ranks, counts), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
-    if not (return_sorted or return_ties):
-        return ranks
 
-    out = [ranks]
-
-    if return_sorted:
-        out.append(y)
-
+    t = None
     if return_ties:
         # Tie information is returned in a format that is useful to functions that
         # rely on this (private) function. Example:
@@ -10386,9 +10407,8 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=dtype)
         t = xpx.at(t)[i].set(xp.astype(counts, dtype, copy=False))
-        out.append(t)
 
-    return out
+    return ranks, y, t
 
 
 @xp_capabilities(marray=True,
@@ -10868,13 +10888,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
-    if not is_marray(xp) and n == 2:
-        # handle case when only two points are passed in
-        one = xp.asarray(1.0, dtype=r.dtype)
-        prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
-        slope_stderr = xp.zeros_like(r)
-        intercept_stderr = xp.zeros_like(r)
-    else:
+    with np.errstate(invalid='ignore', divide='ignore'):
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
@@ -10913,6 +10927,7 @@ def _linearized_pmean(a, p, *, axis=None, weights=None, xp=None):
     return M0 * (1 + 0.5 * p * (ln2_avg - ln_avg * ln_avg))
 
 
+@xp_capabilities()
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
              dtype=None, warn=True, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
@@ -11060,6 +11075,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     return res[()] if res.ndim == 0 else res
 
 
+@xp_capabilities()
 def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propagate',
             dtype=None, xp=None):
     # an array-api compatible function for variance with scipy.stats interface
@@ -11082,7 +11098,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        n = _count_nonmasked(x, axis, xp=xp)
+        n = _count_nonmasked(x, axis, xp=xp, keepdims=keepdims)
         # Or two lines with ternaries : )
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]

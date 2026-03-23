@@ -101,7 +101,7 @@ ilu_ccopy_to_ucol(
 
 	if ( ksupno != jsupno ) { /* Should go into ucol[] */
 	    kfnz = repfnz[krep];
-	    if ( kfnz != EMPTY ) {	/* Nonzero U-segment */
+	    if ( kfnz != SLU_EMPTY ) {	/* Nonzero U-segment */
 
 		fsupc = xsup[ksupno];
 		isub = xlsub[fsupc] + kfnz - fsupc;
@@ -190,7 +190,7 @@ ilu_ccopy_to_ucol(
 			c_add(sum, sum, &ucol[i]);
 			break;
 		    case SMILU_3:
-			sum->r += tmp;
+			sum->r += c_abs1(&ucol[i]);
 			break;
 		    case SILU:
 		    default:

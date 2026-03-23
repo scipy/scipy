@@ -745,7 +745,14 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
                 BLAS_FUNC(dcopy)(&n, r, &one_int, g, &one_int);
                 *f = fold;
             }
-            goto LINE999;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         }
     }
 
@@ -773,106 +780,111 @@ LINE111:
     {
         *task = CONVERGENCE;
         *task_msg = CONV_GRAD;
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
     // ----------------- the beginning of the loop --------------------------
 LINE222:
     iword = -1;
 
-    if ((!cnstnd) && (col > 0))
+    if ((cnstnd) || (col == 0))
     {
+        /////////////////////////////////////////////////////
+        //
+        // Compute the Generalized Cauchy Point (GCP).
+        //
+        /////////////////////////////////////////////////////
+        cauchy(n, x, l, u, nbd, g, indx2, iwhere, t, d, z, m, wy, ws, sy, wt, theta,
+            col, head, wa, &wa[2*m], &wa[4*m], &wa[6*m], &nseg, sbgnrm, &info);
+        if (info != 0)
+        {
+            // Singular triangular system detected; refresh the lbfgs memory.
+            info = 0;
+            col = 0;
+            head = 0;
+            theta = 1.0;
+            iupdat = 0;
+            updatd = 0;
+            goto LINE222;
+        }
+
+        nintol += nseg;
+
+        // Count the entering and leaving variables for iter > 0;
+        // find the index set of free and active variables at the GCP.
+        freev(n, &nfree, index, &nenter, &ileave, indx2, iwhere, &wrk, updatd,
+            cnstnd, iter);
+        nact = n - nfree;
+    } else {
         BLAS_FUNC(dcopy)(&n, x, &one_int, z, &one_int);
         wrk = updatd;
         nseg = 0;
-        goto LINE333;
-    }
+    } 
 
-    /////////////////////////////////////////////////////
-    //
-    // Compute the Generalized Cauchy Point (GCP).
-    //
-    /////////////////////////////////////////////////////
-    cauchy(n, x, l, u, nbd, g, indx2, iwhere, t, d, z, m, wy, ws, sy, wt, theta,
-           col, head, wa, &wa[2*m], &wa[4*m], &wa[6*m], &nseg, sbgnrm, &info);
-    if (info != 0)
-    {
-        // Singular triangular system detected; refresh the lbfgs memory.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-    nintol += nseg;
-
-    // Count the entering and leaving variables for iter > 0;
-    // find the index set of free and active variables at the GCP.
-    freev(n, &nfree, index, &nenter, &ileave, indx2, iwhere, &wrk, updatd,
-          cnstnd, iter);
-    nact = n - nfree;
-
-LINE333:
     // If there are no free variables or B=theta*I, then skip the subspace
     // minimization.
-    if ((nfree == 0) || (col == 0)) { goto LINE555; }
-
-    /////////////////////////////////////////////////////
-    //
-    // Subspace minimization
-    //
-    /////////////////////////////////////////////////////
-
-    // Form  the LEL^T factorization of the indefinite
-    //   matrix    K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]
-    //                 [L_a -R_z           theta*S'AA'S ]
-    //   where     E = [-I  0]
-    //                 [ 0  I]
-    if (wrk)
+    if ((nfree != 0) && (col != 0))
     {
-        formk(n, nfree, index, nenter, ileave, indx2, iupdat, updatd, wn, snd,
-              m, ws, wy, sy, theta, col, head, &info);
+        /////////////////////////////////////////////////////
+        //
+        // Subspace minimization
+        //
+        /////////////////////////////////////////////////////
+
+        // Form  the LEL^T factorization of the indefinite
+        //   matrix    K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]
+        //                 [L_a -R_z           theta*S'AA'S ]
+        //   where     E = [-I  0]
+        //                 [ 0  I]
+        if (wrk)
+        {
+            formk(n, nfree, index, nenter, ileave, indx2, iupdat, updatd, wn, snd,
+                m, ws, wy, sy, theta, col, head, &info);
+        }
+        if (info != 0)
+        {
+            // nonpositive definiteness in Cholesky factorization;
+            // refresh the lbfgs memory and restart the iteration.
+            info = 0;
+            col = 0;
+            head = 0;
+            theta = 1.0;
+            iupdat = 0;
+            updatd = 0;
+            goto LINE222;
+        }
+
+        // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
+        cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
+            cnstnd, &info);
+
+        if (info == 0)
+        {
+            // Call the direct method.
+            subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
+                head, &iword, wa, wn, &info);
+        }
+        
+        if (info != 0)
+        {
+            // singular triangular system detected;
+            // refresh the lbfgs memory and restart the iteration.
+            info = 0;
+            col = 0;
+            head = 0;
+            theta = 1.0;
+            iupdat = 0;
+            updatd = 0;
+            goto LINE222;
+        }
     }
-    if (info != 0)
-    {
-        // nonpositive definiteness in Cholesky factorization;
-        // refresh the lbfgs memory and restart the iteration.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-    // compute r=-Z'B(xcp-xk)-Z'g (using wa(2m+1)=W'(xcp-x) from 'cauchy').
-    cmprlb(n, m, x, g, ws, wy, sy, wt, z, r, wa, index, theta, col, head, nfree,
-           cnstnd, &info);
-    if (info != 0) { goto LINE444; }
-
-    // Call the direct method.
-    subsm(n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy, theta, x, g, col,
-          head, &iword, wa, wn, &info);
-
-LINE444:
-    if (info != 0)
-    {
-        // singular triangular system detected;
-        // refresh the lbfgs memory and restart the iteration.
-        info = 0;
-        col = 0;
-        head = 0;
-        theta = 1.0;
-        iupdat = 0;
-        updatd = 0;
-        goto LINE222;
-    }
-
-LINE555:
 
     /////////////////////////////////////////////////////
     //
@@ -911,7 +923,14 @@ LINE666:
             *task = ABNORMAL;
             *task_msg = NO_MSG;
             iter++;
-            goto LINE999;
+            save_local_vars(
+                prjctd, cnstnd, boxed, updatd, nintol,
+                iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+                ifun, iword, nfree, nact, ileave, nenter,
+                theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+                lsave, isave, dsave
+            );
+            return;
         } else {
             // Refresh the lbfgs memory and restart the iteration.
             if (info == 0) { nfgv--; }
@@ -960,7 +979,14 @@ LINE777:
         // Terminate the algorithm.
         *task = CONVERGENCE;
         *task_msg = CONV_GRAD;
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
     ddum = fmax(fmax(fabs(fold), fabs(*f)), 1.0);
     if ((fold - *f) <= tol*ddum)
@@ -970,7 +996,14 @@ LINE777:
         *task_msg = CONV_F;
         if (iback >= 10) { info = -5; }
         // i.e. to issue a warning if iback > 10 in the line search.
-        goto LINE999;
+        save_local_vars(
+            prjctd, cnstnd, boxed, updatd, nintol,
+            iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
+            ifun, iword, nfree, nact, ileave, nenter,
+            theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
+            lsave, isave, dsave
+        );
+        return;
     }
 
     // Compute d=newx-oldx, r=newg-oldg, rr=y'y and dr=y's.
@@ -996,7 +1029,7 @@ LINE777:
         // Skip the L-BFGS update.
         nskip += 1;
         updatd = 0;
-        goto LINE888;
+        goto LINE222;
     }
 
     /////////////////////////////////////////////////////
@@ -1034,21 +1067,9 @@ LINE777:
 
     // [  D^(1/2)      O ] [ -D^(1/2)  D^(-1/2)*L' ]
     // [ -L*D^(-1/2)   J ] [  0        J'          ]
-LINE888:
+
     // -------------------- the end of the loop -----------------------------
     goto LINE222;
-
-LINE999:
-    ;
-
-    save_local_vars(
-        prjctd, cnstnd, boxed, updatd, nintol,
-        iback, nskip, head, col, itail, iter, iupdat, nseg, nfgv, info,
-        ifun, iword, nfree, nact, ileave, nenter,
-        theta, fold, tol, dnorm, gd, stpmx, sbgnrm, stp, gdold, dtd,
-        lsave, isave, dsave
-    );
-    return;
 }
 
 

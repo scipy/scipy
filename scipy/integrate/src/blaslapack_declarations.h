@@ -2,6 +2,8 @@
 #define BLASLAPACK_DECLARATIONS_H
 
 #include <complex.h>
+#include "npy_cblas.h"
+
 #if defined(_MSC_VER)
     // MSVC definition
     typedef _Dcomplex ZVODE_CPLX_TYPE;
@@ -14,21 +16,21 @@
 #endif
 
 
-void daxpy_(int* n, double* a, double* x, int* incx, double* y, int* incy);
-void dcopy_(int* n, double* x, int* incx, double* y, int* incy);
-void dscal_(int* n, double* a, double* x, int* incx);
-void dgbtrf_(int* m, int* n, int* kl, int* ku, double* ab, int* ldab, int* ipiv, int* info);
-void dgbtrs_(char* trans, int* n, int* kl, int* ku, int* nrhs, double* ab, int* ldab, int* ipiv, double* b, int* ldb, int* info);
-void dgetrf_(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
-void dgetrs_(char* trans, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b, int* ldb, int* info);
+void BLAS_FUNC(daxpy)(CBLAS_INT* n, double* a, double* x, CBLAS_INT* incx, double* y, CBLAS_INT* incy);
+void BLAS_FUNC(dcopy)(CBLAS_INT* n, double* x, CBLAS_INT* incx, double* y, CBLAS_INT* incy);
+void BLAS_FUNC(dscal)(CBLAS_INT* n, double* a, double* x, CBLAS_INT* incx);
+void BLAS_FUNC(dgbtrf)(CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* kl, CBLAS_INT* ku, double* ab, CBLAS_INT* ldab, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(dgbtrs)(char* trans, CBLAS_INT* n, CBLAS_INT* kl, CBLAS_INT* ku, CBLAS_INT* nrhs, double* ab, CBLAS_INT* ldab, CBLAS_INT* ipiv, double* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(dgetrf)(CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(dgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, double* a, CBLAS_INT* lda, CBLAS_INT* ipiv, double* b, CBLAS_INT* ldb, CBLAS_INT* info);
 
 // For ZVODE complex routines
-void zaxpy_(int* n, ZVODE_CPLX_TYPE* a, ZVODE_CPLX_TYPE* x, int* incx, ZVODE_CPLX_TYPE* y, int* incy);
-void zcopy_(int* n, ZVODE_CPLX_TYPE* x, int* incx, ZVODE_CPLX_TYPE* y, int* incy);
-void zscal_(int* n, ZVODE_CPLX_TYPE* a, ZVODE_CPLX_TYPE* x, int* incx);
-void zgbtrf_(int* m, int* n, int* kl, int* ku, ZVODE_CPLX_TYPE* ab, int* ldab, int* ipiv, int* info);
-void zgbtrs_(char* trans, int* n, int* kl, int* ku, int* nrhs, ZVODE_CPLX_TYPE* ab, int* ldab, int* ipiv, ZVODE_CPLX_TYPE* b, int* ldb, int* info);
-void zgetrf_(int* m, int* n, ZVODE_CPLX_TYPE* a, int* lda, int* ipiv, int* info);
-void zgetrs_(char* trans, int* n, int* nrhs, ZVODE_CPLX_TYPE* a, int* lda, int* ipiv, ZVODE_CPLX_TYPE* b, int* ldb, int* info);
+void BLAS_FUNC(zaxpy)(CBLAS_INT* n, ZVODE_CPLX_TYPE* a, ZVODE_CPLX_TYPE* x, CBLAS_INT* incx, ZVODE_CPLX_TYPE* y, CBLAS_INT* incy);
+void BLAS_FUNC(zcopy)(CBLAS_INT* n, ZVODE_CPLX_TYPE* x, CBLAS_INT* incx, ZVODE_CPLX_TYPE* y, CBLAS_INT* incy);
+void BLAS_FUNC(zscal)(CBLAS_INT* n, ZVODE_CPLX_TYPE* a, ZVODE_CPLX_TYPE* x, CBLAS_INT* incx);
+void BLAS_FUNC(zgbtrf)(CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* kl, CBLAS_INT* ku, ZVODE_CPLX_TYPE* ab, CBLAS_INT* ldab, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(zgbtrs)(char* trans, CBLAS_INT* n, CBLAS_INT* kl, CBLAS_INT* ku, CBLAS_INT* nrhs, ZVODE_CPLX_TYPE* ab, CBLAS_INT* ldab, CBLAS_INT* ipiv, ZVODE_CPLX_TYPE* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(zgetrf)(CBLAS_INT* m, CBLAS_INT* n, ZVODE_CPLX_TYPE* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(zgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, ZVODE_CPLX_TYPE* a, CBLAS_INT* lda, CBLAS_INT* ipiv, ZVODE_CPLX_TYPE* b, CBLAS_INT* ldb, CBLAS_INT* info);
 
 #endif

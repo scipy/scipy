@@ -221,12 +221,12 @@ def _mwu_choose_method(n1, n2, ties):
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True,  # exact calculation only implemented in NumPy
-                 skip_backends=[('cupy', 'needs rankdata'),
-                                ('dask.array', 'needs rankdata')],
-                 marray=True,
-                 extra_note=("Only ``method='asymptotic'`` is compatible with MArrays. "
-                             "``method='auto'`` is incompatible with JAX arrays."))
+@xp_capabilities(
+    cpu_only=True,  # exact calculation only implemented in NumPy
+    skip_backends=[('cupy', 'needs rankdata'), ('dask.array', 'needs rankdata')],
+    marray=True,
+    extra_note=("Only ``method='asymptotic'`` is compatible with MArray input."
+                "``method='auto'`` is incompatible with JAX arrays."))
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):
@@ -454,7 +454,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     n2 = _count_nonmasked(y, axis=-1, xp=xp)
 
     # Follows [2]
-    ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
+    ranks, _, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
     ranks = xp.astype(ranks, x.dtype, copy=False)
     t = xp.astype(t, x.dtype, copy=False)
     R1 = xp.sum(ranks[..., :x.shape[-1]], axis=-1)         # method 2, step 2

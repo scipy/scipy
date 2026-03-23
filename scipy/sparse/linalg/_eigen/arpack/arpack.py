@@ -38,7 +38,7 @@ Uses ARPACK: https://github.com/opencollab/arpack-ng
 import numpy as np
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, issparse
+from scipy.sparse import eye_array, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
@@ -1158,7 +1158,7 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
         elif issparse(A) or is_pydata_spmatrix(A):
-            A = A - sigma * eye(A.shape[0])
+            A = A - sigma * eye_array(A.shape[0])
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
         else:

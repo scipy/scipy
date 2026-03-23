@@ -146,7 +146,7 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox', *, xp):
     n_nan = xp.astype(xp.count_nonzero(i_nan, axis=-1), dtype)
     count = _count_nonmasked(d, axis=-1) - n_nan
 
-    r, t = _rankdata(xp.abs(d), 'average', return_ties=True, xp=xp)
+    r, _, t = _rankdata(xp.abs(d), 'average', return_ties=True, xp=xp)
     r, t = xp.astype(r, dtype, copy=False), xp.astype(t, dtype, copy=False)
 
     r_plus = xp.sum(xp.astype(d > 0, dtype) * r, axis=-1)
