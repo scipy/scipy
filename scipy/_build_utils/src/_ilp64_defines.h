@@ -2,7 +2,11 @@
 #define __SCIPY_ILP64_DEFINES__
 
 
-#include<stdint.h>
+#include <stdint.h>
+
+#ifdef __APPLE__
+#include <AvailabilityMacros.h>
+#endif
 
 /* Allow the use in C++ code.  */
 #ifdef __cplusplus
