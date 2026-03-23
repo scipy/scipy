@@ -131,10 +131,12 @@ def test_logdet_difference_matrix(order, n):
              "Input array signal must be at least of shape"),
             (np.arange(10), -0.9, 2, None, ValueError,
              "Parameter lamb must be string"),
+            ([1, 2, 3], "XXX", 1, None, ValueError,
+             "Parameter lamb must be string 'reml'"),
             ([1, 2, 3], 1, 1.5, None, TypeError,
              "order must be an integer."),
             ([1, 2, 3], 1, 0, None, ValueError,
-             "order must be an integer not less than 1."),
+             "order must be an integer not less than 1"),
             ([1, 2, 3], 1, 2, [0, 1], ValueError,
              "Input array weights must have the same shape as the signal array."),
             ([1, 2, 3], 1, 2, [[0]], ValueError,
@@ -228,15 +230,17 @@ def test_whittaker_limit_zero_penalty(order):
     assert wh.lamb == 1e-7
 
 
+@pytest.mark.parametrize("weights", [None, "ones"])
 @pytest.mark.parametrize("order", [1, 2, 3, 4])
-def test_whittaker_limit_infinity_penalty(order):
+def test_whittaker_limit_infinity_penalty(weights, order):
     """Test whittaker for penalty lamb close to infinity."""
     n = 100
     y = np.sin(2*np.pi * np.linspace(0, 1, n))
+    w = None if weights is None else np.ones_like(y)
 
     # In the limit of an infinite penalty, the smoothing results in an interpolation
     # polynom of degree = penalty order - 1 (order=2 => linear)
-    wh = whittaker_henderson(y, lamb=1e11, order=order)
+    wh = whittaker_henderson(y, lamb=1e11, order=order, weights=w)
     x_poly = np.arange(len(y))
     poly = np.polynomial.Polynomial.fit(x=x_poly, y=y, deg=order - 1)
     assert_allclose(wh.x, poly(x_poly), rtol=10**(-6 + order), atol=1e-5)
@@ -253,9 +257,9 @@ def test_whittaker_limit_infinity_penalty(order):
             UserWarning,
             match="The linear solver in Whittaker-Henderson smoothing detected",
         ):
-            wh = whittaker_henderson(y, lamb=1e15, order=order)
+            wh = whittaker_henderson(y, lamb=1e15, order=order, weights=w)
     else:
-        wh = whittaker_henderson(y, lamb=1e20, order=order)
+        wh = whittaker_henderson(y, lamb=1e20, order=order, weights=w)
     assert_allclose(wh.x, poly(x_poly), rtol=1e-10)
 
 
@@ -357,7 +361,8 @@ def test_reml_criterion(order):
     assert_allclose(r1, r2, rtol=1e-11)
 
 
-def test_whittaker_reml():
+@pytest.mark.parametrize("weights", [None, "ones"])
+def test_whittaker_reml(weights):
     """Test that whittaker with REML criterion works."""
     n = 10
     order = 2
@@ -366,7 +371,9 @@ def test_whittaker_reml():
     # add some (deterministic) noise
     y[::2] += 0.2
     y[1::2] -= 0.2
-    wh = whittaker_henderson(y, lamb="reml", order=order)
+    w = None if weights is None else np.ones_like(y)
+
+    wh = whittaker_henderson(y, lamb="reml", order=order, weights=w)
     assert wh.lamb > 0
 
     # Validate against R mgcv
@@ -394,3 +401,7 @@ def test_whittaker_reml():
     expected_sp = 5.12904626508
     expected_sp /= 16  # not 100% sure how to justify this 16.
     assert wh.lamb == pytest.approx(expected_sp)
+
+    # Double weights should result in double lamb.
+    wh2 = whittaker_henderson(y, lamb="reml", order=order, weights=2 * np.ones_like(y))
+    assert wh2.lamb == pytest.approx(2 * wh.lamb)
