@@ -42,7 +42,9 @@ def _assert_success(*, A, x, b, xp, tol, less_equal=False):
     residual = Ax - b
     err = xp_vector_norm(residual, axis=-1)
     assertion = xp_assert_less_equal if less_equal else xp_assert_less
-    assertion(err, tol, check_shape=False, check_0d=False, check_dtype=False)
+    # `check_dtype` fails for `minres` which can return double precision
+    # for single precision input
+    assertion(err, tol, check_dtype=False)
 
 
 # create parametrized fixture for easy reuse in tests
