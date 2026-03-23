@@ -26,7 +26,10 @@ _AVAILABLE = {
     "multiquadric",
     "inverse_multiquadric",
     "inverse_quadratic",
-    "gaussian"
+    "gaussian",
+    "matern1_2",
+    "matern3_2",
+    "matern5_2"
     }
 
 
@@ -96,6 +99,9 @@ class RBFInterpolator:
         - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
         - 'inverse_quadratic'    : ``1/(1 + r**2)``
         - 'gaussian'             : ``exp(-r**2)``
+        - 'matern1_2'            : ``exp(-r)``
+        - 'matern3_2' .          : ``(1+-3**0.5*r)*exp(-3**0.5*r)``
+        - 'matern5_2'            : ``(1+5**0.5*r + 5/3 *r**2)*exp(-5**0.5*r)``
 
         Default is 'thin_plate_spline'.
     epsilon : float, optional

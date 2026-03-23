@@ -124,16 +124,33 @@ def gaussian(r, xp):
     return xp.exp(-r**2)
 
 
+def matern1_2(r, xp):
+    return xp.exp(-r)
+
+
+def matern3_2(r, xp):
+    term = xp.sqrt(3.0) * r
+    return (1+term) * xp.exp(-term)
+
+
+def matern5_2(r, xp):
+    term = xp.sqrt(5.0) * r
+    return (1 + term + (5.0 * r * r) /3.0) * xp.exp(-term)
+
+
 NAME_TO_FUNC = {
-   "linear": linear,
-   "thin_plate_spline": thin_plate_spline,
-   "cubic": cubic,
-   "quintic": quintic,
-   "multiquadric": multiquadric,
-   "inverse_multiquadric": inverse_multiquadric,
-   "inverse_quadratic": inverse_quadratic,
-   "gaussian": gaussian
-   }
+  "linear": linear,
+  "thin_plate_spline": thin_plate_spline,
+  "cubic": cubic,
+  "quintic": quintic,
+  "multiquadric": multiquadric,
+  "inverse_multiquadric": inverse_multiquadric,
+  "inverse_quadratic": inverse_quadratic,
+  "gaussian": gaussian,
+  "matern1_2": matern1_2,
+  "matern3_2": matern3_2,
+  "matern5_2": matern5_2
+  }
 
 
 def kernel_matrix(x, kernel_func, xp):
