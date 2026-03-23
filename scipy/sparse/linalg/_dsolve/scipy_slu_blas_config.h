@@ -1,5 +1,5 @@
-#ifndef SCIPY_SLU_ILP64_CONFIG_H
-#define SCIPY_SLU_ILP64_CONFIG_H
+#ifndef SCIPY_SLU_BLAS_CONFIG_H
+#define SCIPY_SLU_BLAS_CONFIG_H
 
 #include "scipy_slu_config.h"
 
@@ -39,7 +39,9 @@
  * Note: LAPACK-like routines (dlacon2, scsum1, dzsum1, icmax1, izmax1) are
  * implemented internally by SuperLU and do NOT need ILP64 renaming.
  */
-#ifdef HAVE_BLAS_ILP64
+/* BLAS symbol renaming: active for both ILP64 (suffix) and symbol-prefixed
+ * libraries like scipy-openblas (prefix).  When prefix/suffix are empty,
+ * SLU_BLAS_FUNC(name) expands back to name_, which is a harmless no-op. */
 
 /* Single precision BLAS */
 #undef sswap_
@@ -175,6 +177,4 @@
 #undef zher2_
 #define zher2_    SLU_BLAS_FUNC(zher2)
 
-#endif /* HAVE_BLAS_ILP64 */
-
-#endif /* SCIPY_SLU_ILP64_CONFIG_H */
+#endif /* SCIPY_SLU_BLAS_CONFIG_H */

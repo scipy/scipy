@@ -453,8 +453,8 @@ at the top-level directory.
 #endif
 
 
-/* ILP64 BLAS symbol renaming (SciPy-specific, kept outside vendored SRC/) */
-#include "scipy_slu_ilp64_config.h"
+/* BLAS symbol renaming (SciPy-specific, kept outside vendored SRC/) */
+#include "scipy_slu_blas_config.h"
 
 
 #endif /* __SUPERLU_CNAMES */
