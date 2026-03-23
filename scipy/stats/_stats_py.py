@@ -8451,7 +8451,7 @@ def ranksums(x, y, alternative='two-sided'):
 
         This function includes a subset of the features of `mannwhitneyu`.
         Its statistic and p-value can be reproduced using `mannwhitneyu` with
-        options ``use_continuity==False`` and ``method='asymptotic'``.
+        options ``use_continuity=False`` and ``method='asymptotic'``.
         Prefer `mannwhitneyu` for use in new code.
 
     The Wilcoxon rank-sum test tests the null hypothesis that two sets
