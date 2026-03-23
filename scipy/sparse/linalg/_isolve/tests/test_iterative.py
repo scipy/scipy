@@ -42,6 +42,8 @@ def _assert_success(*, A, x, b, xp, tol, less_equal=False):
     residual = Ax - b
     err = xp_vector_norm(residual, axis=-1)
     assertion = xp_assert_less_equal if less_equal else xp_assert_less
+    if err.ndim >= 1:
+        tol = xp.broadcast_to(tol, residual.shape[:-1])
     # `check_dtype` fails for `minres` which can return double precision
     # for single precision input
     assertion(err, tol, check_dtype=False)
@@ -381,15 +383,13 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
 
     tol = xp_vector_norm(b, axis=-1) * rtol
     assert info == 0
-    _assert_success(A=A, x=x, b=b, xp=np, tol=tol, less_equal=True)
+    _assert_success(A=A, x=x, b=b, xp=np, tol=tol)
 
     A = aslinearoperator(A)
 
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
     assert info == 0
-    _assert_success(
-        A=A, x=x, b=b, xp=np, tol=tol, less_equal=True
-    )
+    _assert_success(A=A, x=x, b=b, xp=np, tol=tol)
 
 
 @pytest.mark.parametrize("batch_A", [()])
@@ -440,7 +440,7 @@ def test_precond_inverse(case, xp, batch_A, batch_b):
 
     assert info == 0
     tol = xp_vector_norm(b, axis=-1) * rtol
-    _assert_success(A=case.A, x=x, b=b, xp=xp, tol=tol, less_equal=True)
+    _assert_success(A=case.A, x=x, b=b, xp=xp, tol=tol)
 
     # Solution should be nearly instant
     assert matvec_count[0] <= 3
