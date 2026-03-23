@@ -318,10 +318,11 @@ _desc = (
   NaN.
 - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
-``nan_policy='raise'`` is not supported by lazy backends. For multidimensional input,
-``nan_policy='omit'`` is supported only by the NumPy backend. An alternative is to
-mask NaN values using `MArray <https://mdhaber.github.io/marray/tutorial.html>`__; see
-Notes for support information.""".split('\n'))
+``nan_policy='raise'`` and ``nan_policy='omit'`` are not supported by lazy backends, and
+``nan_policy='omit'`` is not compatible with MArray input. For multidimensional input,
+``nan_policy='omit'`` is supported only by the NumPy backend. Instead,
+mask NaN values using `MArray <https://mdhaber.github.io/marray/tutorial.html>`__;
+and use the default `nan_policy`. See Notes for support information.""".split('\n'))
 _nan_policy_parameter_doc = Parameter(_name, _type, _desc)
 _nan_policy_parameter = inspect.Parameter(_name,
                                           inspect.Parameter.KEYWORD_ONLY,
