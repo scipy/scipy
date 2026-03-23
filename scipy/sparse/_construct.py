@@ -1741,7 +1741,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=rvs)  # doctest: +SKIP
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=rvs)  # doctest: +SKIP
     >>> S.toarray()  # doctest: +SKIP
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1770,7 +1771,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=Y.rvs)  # doctest: +SKIP
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
+    ...                      data_rvs=Y.rvs)  # doctest: +SKIP
     """
     msg = """`random` is being replaced by `random_array`.
 
