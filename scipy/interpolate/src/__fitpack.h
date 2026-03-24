@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 #include <limits>
-#include "../_build_utils/src/_ilp64_defines.h"
+#include "../_build_utils/src/scipy_blas_defines.h"
 
 #define DLARTG BLAS_FUNC(dlartg)
 

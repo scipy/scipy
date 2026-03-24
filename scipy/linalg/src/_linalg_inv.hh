@@ -6,7 +6,7 @@
 #include <vector>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
-#include "_ilp64_defines.h"
+#include "scipy_blas_defines.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
 

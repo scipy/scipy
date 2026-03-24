@@ -1,6 +1,6 @@
 #ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
-#include "_ilp64_defines.h"
+#include "scipy_blas_defines.h"
 
 void   BLAS_FUNC(daxpy)(CBLAS_INT* n, double* alpha, double* x, CBLAS_INT* incx, double* y, CBLAS_INT* incy);
 void   BLAS_FUNC(dscal)(CBLAS_INT* n, double* alpha, double* x, CBLAS_INT* incx);

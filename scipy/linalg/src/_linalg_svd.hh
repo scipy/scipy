@@ -1,5 +1,5 @@
 #pragma once
-#include "_ilp64_defines.h"
+#include "scipy_blas_defines.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
 

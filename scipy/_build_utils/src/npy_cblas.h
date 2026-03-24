@@ -26,7 +26,7 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 
 #define CBLAS_INDEX size_t  /* this may vary between platforms */
 
-#include "_ilp64_defines.h"
+#include "scipy_blas_defines.h"
 
 
 #define BLASNAME(name) CBLAS_FUNC(name)
