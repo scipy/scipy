@@ -2519,16 +2519,11 @@ class TestVectorNorms:
 
     def test_stable(self):
         # more stable than numpy's norm
-        a = array([1e4] + [1]*10000, dtype=float32)
-        try:
-            # snrm in double precision; we obtain the same as for float64
-            # -- large atol needed due to varying blas implementations
-            assert_allclose(norm(a) - 1e4, 0.5, atol=1e-2)
-        except AssertionError:
-            # snrm implemented in single precision, == np.linalg.norm result
-            msg = ": Result should equal either 0.0 or 0.5 (depending on " \
-                  "implementation of snrm2)."
-            assert_almost_equal(norm(a) - 1e4, 0.0, err_msg=msg)
+        a = array([1e4] + [1] * 10000, dtype=float32)
+        # Compare against a float64 reference value.
+        # A small absolute tolerance allows for BLAS-dependent variation.
+        expected = np.sqrt((1e4)**2 + 10000.0) - 1e4
+        assert_allclose(norm(a) - 1e4, expected, atol=1.6e-2, rtol=0)
 
     def test_zero_norm(self):
         assert_equal(norm([1, 0, 3], 0), 2)
