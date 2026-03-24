@@ -7,6 +7,7 @@ from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 import scipy.special._ufuncs as scu
+import scipy.special._spfun_stats as _spfun_stats
 from scipy._lib._util import rng_integers
 import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
@@ -1626,13 +1627,14 @@ class poisson_binom_gen(rv_discrete):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
         args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'pmf')
+        return _spfun_stats._poisson_binom_pmf(k, np.moveaxis(args, 0, -1))
+
 
     def _cdf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
         args = np.asarray(args, dtype=np.float64)
-        return _poisson_binom(k, args, 'cdf')
+        return _spfun_stats._poisson_binom_cdf(k, np.moveaxis(args, 0, -1))
 
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)
