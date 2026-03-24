@@ -89,6 +89,7 @@ def test_get_blas_funcs_ilp_true():
         assert gemm.int_dtype == np.int64
         assert gemm.module_name == 'fblas_64'
     else:
+        assert HAS_LP64
         with pytest.raises(RuntimeError):
             get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
 
@@ -100,6 +101,7 @@ def test_get_blas_funcs_ilp_false():
         assert gemm.int_dtype == np.int32
         assert gemm.module_name == 'fblas'
     else:
+        assert HAS_ILP64
         with pytest.raises(RuntimeError):
             get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
 

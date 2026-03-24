@@ -236,20 +236,25 @@ import numpy as np
 import functools
 from scipy.__config__ import CONFIG
 
-# TODO: fold HAS_LP64 into __config__, allow for _fblas not being available
-from scipy.linalg import _fblas
-HAS_LP64 = True
-
+HAS_LP64 = CONFIG['Build Dependencies']['blas']['has lp64']
 HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
 del CONFIG
+
+_fblas = None
+if HAS_LP64:
+    from scipy.linalg import _fblas
+
 _fblas_64 = None
 if HAS_ILP64:
     from scipy.linalg import _fblas_64
 
-# Expose all functions (only fblas --- cblas is an implementation detail)
-empty_module = None
-from scipy.linalg._fblas import *  # noqa: E402, F403
-del empty_module
+if not (HAS_LP64 or HAS_ILP64):
+    raise RuntimeError("SciPy needs either LP64 or ILP64 BLAS.")
+
+if HAS_LP64:
+    from scipy.linalg._fblas import *  # noqa: E402, F403
+else:
+    from scipy.linalg._fblas_64 import *  # noqa: E402, F403
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
 

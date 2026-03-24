@@ -889,17 +889,25 @@ from .blas import (
 from re import compile as regex_compile
 from scipy.__config__ import CONFIG
 
-# TODO: fold HAS_LP64 into __config__, allow for _flapack not being available
-from scipy.linalg import _flapack
-HAS_LP64 = True
-
+HAS_LP64 = CONFIG['Build Dependencies']['lapack']['has lp64']
 HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
 del CONFIG
+
+_flapack = None
+if HAS_LP64:
+    from scipy.linalg import _flapack
+
 _flapack_64 = None
 if HAS_ILP64:
     from scipy.linalg import _flapack_64
 
-from scipy.linalg._flapack import *  # noqa: E402, F403
+if not (HAS_LP64 or HAS_ILP64):
+    raise RuntimeError("SciPy needs either LP64 or ILP64 LAPACK.")
+
+if HAS_LP64:
+    from scipy.linalg._flapack import *  # noqa: E402, F403
+else:
+    from scipy.linalg._flapack_64 import *  # noqa: E402, F403
 
 
 __all__ = ['get_lapack_funcs']
