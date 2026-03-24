@@ -33,7 +33,9 @@
 analysis."""
 
 import numpy as np
+from scipy._lib._array_api import array_namespace
 from scipy.special import gammaln as loggam
+from scipy.special._gufuncs import _poisson_binom_pmf_all
 
 
 __all__ = ['multigammaln']
@@ -106,3 +108,29 @@ def multigammaln(a, d):
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
+
+
+def _poisson_binom_pmf(k, p):
+    xp = array_namespace(k, p)
+    n = p.shape[-1]
+    out_shape = p.shape[:-1] + (n + 1,)
+    pmf = xp.zeros(out_shape, dtype=p.dtype)
+    _poisson_binom_pmf_all(p, out=pmf)
+    k_indices = xp.expand_dims(xp.clip(k, 0, n), axis=-1)
+    res = xp.squeeze(xp.take_along_axis(pmf, k_indices, axis=-1), axis=-1)
+    return xp.where((k < 0) | (k > n), xp.asarray(0.0, dtype=res.dtype), res)
+
+
+def _poisson_binom_cdf(k, p):
+    xp = array_namespace(k, p)
+    n = p.shape[-1]
+    out_shape = p.shape[:-1] + (n + 1,)
+    cdf = xp.zeros(out_shape, dtype=p.dtype)
+    _poisson_binom_pmf_all(p, out=cdf)
+    cdf = xp.cumsum(cdf, axis=-1)
+
+    k_indices = xp.expand_dims(xp.clip(k, 0, n), axis=-1)
+    res = xp.squeeze(xp.take_along_axis(cdf, k_indices, axis=-1), axis=-1)
+    res = xp.where(k < 0, xp.asarray(0.0, dtype=res.dtype), res)
+    res = xp.where(k >= n, xp.asarray(1.0, dtype=res.dtype), res)
+    return xp.squeeze(res, axis=-1)
