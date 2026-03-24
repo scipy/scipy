@@ -623,6 +623,18 @@ def test_show(case, capsys, xp):
     assert err == ""
 
 
+def test_tfqmr_maxiter_zero_show():
+    # Regression test for gh-24790: tfqmr raised UnboundLocalError when
+    # maxiter=0 and show=True because `iter` was never assigned by the loop.
+    A = np.eye(3)
+    b = np.ones(3)
+    # Should not raise, and must return an ndarray + non-negative info
+    x, info = tfqmr(A, b, maxiter=0, show=True)
+    assert isinstance(x, np.ndarray)
+    assert x.shape == b.shape
+    assert info == 0  # return value is maxiter (=0 here)
+
+
 def test_positional_error(solver, xp):
     # from test_x0_working
     rng = np.random.default_rng(1685363802304750)

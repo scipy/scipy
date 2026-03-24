@@ -133,6 +133,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     # we call this to get the right atol and raise errors as necessary
     atol, _ = _get_atol_rtol('tfqmr', r0norm, atol, rtol)
 
+    iter = -1
     for iter in range(maxiter):
         even = iter % 2 == 0
         if (even):
