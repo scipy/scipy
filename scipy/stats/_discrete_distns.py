@@ -23,7 +23,6 @@ from ._distn_infrastructure import (rv_discrete, get_distribution_names,
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
-from ._stats_pythran import _poisson_binom
 
 
 class binom_gen(rv_discrete):
