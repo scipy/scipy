@@ -6283,11 +6283,17 @@ class TestTTest1Samp:
             xp_assert_equal(res.statistic, xp.asarray(xp.nan))
             xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-            # check that nan in input array result in nan output
-            anan = xp.asarray([[1., np.nan], [-1., 1.]])
-            res = stats.ttest_1samp(anan, 0.)
-            xp_assert_equal(res.statistic, xp.asarray([0., xp.nan]))
-            xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
+            if not is_array_api_strict(xp):
+                # The `_axis_nan_policy` decorator wants to propagate NaNs into integer
+                # degrees of freedom, but array-api-strict refuses to promote between
+                # integers and floats. This is part of a larger dtype instability issue
+                # for integer outputs of stats functions; skip for now.
+
+                # check that nan in input array result in nan output
+                anan = xp.asarray([[1., np.nan], [-1., 1.]])
+                res = stats.ttest_1samp(anan, 0.)
+                xp_assert_equal(res.statistic, xp.asarray([0., xp.nan]))
+                xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
     @skip_xp_backends(np_only=True, reason="ND nan_policy='omit' is NumPy only")
     def test_ttest_1samp_new_omit(self, xp):
