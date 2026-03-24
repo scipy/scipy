@@ -6283,7 +6283,7 @@ class TestTTest1Samp:
             xp_assert_equal(res.statistic, xp.asarray([0., xp.nan]))
             xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
-    @skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
+    @skip_xp_backends(np_only=True, reason="ND nan_policy='omit' is NumPy only")
     def test_ttest_1samp_new_omit(self, xp):
         rng = np.random.default_rng(4008400329)
         n1, n2, n3 = (5, 10, 15)
