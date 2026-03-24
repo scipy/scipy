@@ -2292,6 +2292,19 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
             # Have bins extend past min and max values slightly
             s = (data_max - data_min) / (2. * (numbins - 1.))
             defaultlimits = (data_min - s, data_max + s)
+    else:
+        if not (np.iterable(defaultlimits) and len(defaultlimits)==2
+                and defaultlimits[0] < defaultlimits[1]):
+            message = ('If specified, `defaultreallimits` must be given as an iterable '
+                       'in the order (lower limit, upper limit).')
+            raise ValueError(message)
+        if not (xp.isdtype(a.dtype, 'real floating')
+                and (weights is None or xp.isdtype(weights.dtype, 'real floating'))):
+            message = '`a` and (if specified) `weights` must have real dtype.'
+            raise ValueError(message)
+        if weights is not None and not is_lazy_array(weights) and xp.any(weights < 0):
+            message = 'All `weights` must be non-negative.'
+            raise ValueError(message)
 
     bin_edges = xp.linspace(*defaultlimits, numbins+1, dtype=a.dtype)
     if weights is None:

@@ -2362,6 +2362,32 @@ class TestRegression:
 
 
 class HistFunctionsTest:
+    def test_input_validation(self, xp):
+        histfun = getattr(stats, self.histfun)
+        a = xp.arange(20)
+        numbins = 10
+        defaultreallimits = (0, 20)
+        weights = xp.ones(20)
+
+        message = "If specified, `defaultreallimits` must be..."
+        with pytest.raises(ValueError, match=message):
+            histfun(a, numbins, 10)
+        with pytest.raises(ValueError, match=message):
+            histfun(a, numbins, (1, 2, 3))
+        with pytest.raises(ValueError, match=message):
+            histfun(a, numbins, defaultreallimits[::-1])
+
+        message = r"`a` and \(if specified\) `weights` must have real dtype."
+        with pytest.raises(ValueError, match=message):
+            histfun(xp.astype(a, xp.complex128), numbins, defaultreallimits)
+        with pytest.raises(ValueError, match=message):
+            histfun(a, numbins, defaultreallimits, xp.astype(weights, xp.complex128))
+
+        if not is_lazy_array(weights):
+            message = "All `weights` must be non-negative."
+            with pytest.raises(ValueError, match=message):
+                histfun(a, numbins, defaultreallimits, -weights)
+
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     @pytest.mark.parametrize("edge_points", [False, True])
     @pytest.mark.parametrize("specify_limits", [False, True])
@@ -2400,7 +2426,6 @@ class HistFunctionsTest:
 
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         histfun = getattr(stats, self.histfun)
-        limits = limits if limits is None else xp.asarray(limits, dtype=dtype)
         weights = weights if weights is None else xp.asarray(weights, dtype=dtype)
         res = histfun(xp.asarray(a, dtype=dtype), nbins, limits, weights)
         ref_hist = xp.asarray(ref_hist, dtype=dtype)
