@@ -33,6 +33,7 @@
 analysis."""
 
 import numpy as np
+import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import array_namespace
 from scipy.special import gammaln as loggam
 from scipy.special._gufuncs import _poisson_binom_pmf_all
@@ -118,7 +119,8 @@ def _poisson_binom_pmf(k, p):
     _poisson_binom_pmf_all(p, out=pmf)
     k_indices = xp.expand_dims(xp.clip(k, 0, n), axis=-1)
     res = xp.squeeze(xp.take_along_axis(pmf, k_indices, axis=-1), axis=-1)
-    return xp.where((k < 0) | (k > n), xp.asarray(0.0, dtype=res.dtype), res)
+    res = xpx.at(res, (k < 0) | (k > n)).set(xp.asarray(0.0, dtype=res.dtype))
+    return res
 
 
 def _poisson_binom_cdf(k, p):
@@ -131,6 +133,6 @@ def _poisson_binom_cdf(k, p):
 
     k_indices = xp.expand_dims(xp.clip(k, 0, n), axis=-1)
     res = xp.squeeze(xp.take_along_axis(cdf, k_indices, axis=-1), axis=-1)
-    res = xp.where(k < 0, xp.asarray(0.0, dtype=res.dtype), res)
-    res = xp.where(k >= n, xp.asarray(1.0, dtype=res.dtype), res)
-    return xp.squeeze(res, axis=-1)
+    res = xpx.at(res, k < 0).set(xp.asarray(0.0, dtype=res.dtype))
+    res = xpx.at(res, k >= n).set(xp.asarray(1.0, dtype=res.dtype))
+    return res
