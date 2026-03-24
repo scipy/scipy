@@ -115,7 +115,7 @@ class ArrayAPISupportPerFunction(SphinxDirective):
             row for row in flat_table if row["module"] == f"scipy.{module}"
         )
 
-        headers = ["function"]
+        headers = ["function/class"]
         headers += backends
 
         new_rows = []

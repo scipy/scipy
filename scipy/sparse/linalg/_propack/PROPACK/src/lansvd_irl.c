@@ -9,24 +9,24 @@
 #include "blaslapack_declarations.h"
 
 
-static inline int int_min(const int a, const int b) { return a < b ? a : b; }
-static inline int int_max(const int a, const int b) { return a > b ? a : b; }
+static inline CBLAS_INT int_min(const CBLAS_INT a, const CBLAS_INT b) { return a < b ? a : b; }
+static inline CBLAS_INT int_max(const CBLAS_INT a, const CBLAS_INT b) { return a > b ? a : b; }
 
 
-void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_s aprod, float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
-                 float tolin, float* work, int lwork, int* iwork, float* doption, int* ioption,
-                 int* info, float* dparm, int* iparm, uint64_t* rng_state)
+void slansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_s aprod, float* U, CBLAS_INT ldu, float* sigma, float* bnd, float* V, CBLAS_INT ldv,
+                 float tolin, float* work, CBLAS_INT lwork, CBLAS_INT* iwork, float* doption, CBLAS_INT* ioption,
+                 CBLAS_INT* info, float* dparm, CBLAS_INT* iparm, uint64_t* rng_state)
 {
     // Parameters
-    int int1 = 1, int0 = 0;
+    CBLAS_INT int1 = 1, int0 = 0;
 
     // Local variables
-    int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
-    int ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
+    CBLAS_INT k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
+    CBLAS_INT ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
     float eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
     float shift, relgap;
-    int iter;
+    CBLAS_INT iter;
 
     // Set machine dependent constants
     eps = FLT_EPSILON;
@@ -57,7 +57,7 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0f; }
 
     // Set up random starting vector if none is provided by the user
-    rnorm = snrm2_(&m, &U[0], &int1);
+    rnorm = BLAS_FUNC(snrm2)(&m, &U[0], &int1);
     if (rnorm == 0.0f)
     {
         sgetu0(0, m, n, 0, 1, &U[0], &rnorm, U, ldu, aprod, dparm, iparm, &ierr, ioption[0], &anorm, &work[iwrk], rng_state);
@@ -77,8 +77,8 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         kold = k;
 
         // Compute and analyze SVD(B) and error bounds
-        scopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        scopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
 
         // Zero out bounds array
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0f; }
@@ -88,7 +88,7 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
               &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
-        sbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1,
+        BLAS_FUNC(sbdsqr)("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1,
                 &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
         // Update anorm estimate
@@ -239,8 +239,8 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     // Calculate singular vectors if requested
     if ((nconv >= *neig || *info > 0) && (jobu || jobv))
     {
-        scopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        scopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
         sritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
@@ -249,20 +249,20 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
 }
 
 
-void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_d aprod, double* U, int ldu, double* sigma, double* bnd, double* V, int ldv,
-                 double tolin, double* work, int lwork, int* iwork, double* doption, int* ioption,
-                 int* info, double* dparm, int* iparm, uint64_t* rng_state)
+void dlansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_d aprod, double* U, CBLAS_INT ldu, double* sigma, double* bnd, double* V, CBLAS_INT ldv,
+                 double tolin, double* work, CBLAS_INT lwork, CBLAS_INT* iwork, double* doption, CBLAS_INT* ioption,
+                 CBLAS_INT* info, double* dparm, CBLAS_INT* iparm, uint64_t* rng_state)
 {
     // Parameters
-    int int1 = 1, int0 = 0;
+    CBLAS_INT int1 = 1, int0 = 0;
 
     // Local variables
-    int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
-    int ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
+    CBLAS_INT k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
+    CBLAS_INT ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
     double eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
     double shift, relgap;
-    int iter;
+    CBLAS_INT iter;
 
     // Set machine dependent constants
     eps = DBL_EPSILON;
@@ -293,7 +293,7 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0; }
 
     // Set up random starting vector if none is provided by the user
-    rnorm = dnrm2_(&m, &U[0], &int1);
+    rnorm = BLAS_FUNC(dnrm2)(&m, &U[0], &int1);
     if (rnorm == 0.0)
     {
         dgetu0(0, m, n, 0, 1, &U[0], &rnorm, U, ldu, aprod, dparm, iparm, &ierr, ioption[0], &anorm, &work[iwrk], rng_state);
@@ -312,8 +312,8 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         kold = k;
 
         // Compute and analyze SVD(B) and error bounds
-        dcopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        dcopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
 
         // Zero out bounds array
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0; }
@@ -322,7 +322,7 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         dbdqr((dim == int_min(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
-        dbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
+        BLAS_FUNC(dbdsqr)("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
         // Update anorm estimate
         if (dim > 5)
@@ -472,8 +472,8 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     // Calculate singular vectors if requested
     if ((nconv >= *neig || *info > 0) && (jobu || jobv))
     {
-        dcopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        dcopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
         dritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
@@ -482,21 +482,21 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
 }
 
 
-void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, int ldu, float* sigma, float* bnd,
-                 PROPACK_CPLXF_TYPE* V, int ldv, float tolin, float* work, int lwork,
-                 PROPACK_CPLXF_TYPE* cwork, int lcwork, int* iwork, float* soption,
-                 int* ioption, int* info, PROPACK_CPLXF_TYPE* cparm, int* iparm, uint64_t* rng_state)
+void clansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, CBLAS_INT ldu, float* sigma, float* bnd,
+                 PROPACK_CPLXF_TYPE* V, CBLAS_INT ldv, float tolin, float* work, CBLAS_INT lwork,
+                 PROPACK_CPLXF_TYPE* cwork, CBLAS_INT lcwork, CBLAS_INT* iwork, float* soption,
+                 CBLAS_INT* ioption, CBLAS_INT* info, PROPACK_CPLXF_TYPE* cparm, CBLAS_INT* iparm, uint64_t* rng_state)
 {
     // Parameters
-    int int1 = 1, int0 = 0;
+    CBLAS_INT int1 = 1, int0 = 0;
 
     // Local variables
-    int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
-    int ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
+    CBLAS_INT k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
+    CBLAS_INT ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
     float eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
     float shift, relgap;
-    int iter;
+    CBLAS_INT iter;
 
     // Set machine dependent constants
     eps = FLT_EPSILON;
@@ -527,7 +527,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0f; }
 
     // Set up random starting vector if none is provided by the user
-    rnorm = scnrm2_(&m, U, &int1);
+    rnorm = BLAS_FUNC(scnrm2)(&m, U, &int1);
     if (rnorm == 0.0f)
     {
         cgetu0(0, m, n, 0, 1, U, &rnorm, U, ldu, aprod, cparm, iparm, &ierr, ioption[0], &anorm, cwork, rng_state);
@@ -546,8 +546,8 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         kold = k;
 
         // Compute and analyze SVD(B) and error bounds
-        scopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        scopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
 
         // Zero out bounds array
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0f; }
@@ -556,7 +556,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         sbdqr((dim == int_min(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
-        sbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
+        BLAS_FUNC(sbdsqr)("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
         // Update anorm estimate
         if (dim > 5)
@@ -703,8 +703,8 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     // Calculate singular vectors if requested
     if ((nconv >= *neig || *info > 0) && (jobu || jobv))
     {
-        scopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        scopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(scopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
         critzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, cwork, lcwork, iwork);
     }
@@ -713,21 +713,21 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
 }
 
 
-void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, int ldu, double* sigma, double* bnd,
-                 PROPACK_CPLX_TYPE* V, int ldv, double tolin, double* work, int lwork,
-                 PROPACK_CPLX_TYPE* zwork, int lzwork, int* iwork, double* doption,
-                 int* ioption, int* info, PROPACK_CPLX_TYPE* zparm, int* iparm, uint64_t* rng_state)
+void zlansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, CBLAS_INT ldu, double* sigma, double* bnd,
+                 PROPACK_CPLX_TYPE* V, CBLAS_INT ldv, double tolin, double* work, CBLAS_INT lwork,
+                 PROPACK_CPLX_TYPE* zwork, CBLAS_INT lzwork, CBLAS_INT* iwork, double* doption,
+                 CBLAS_INT* ioption, CBLAS_INT* info, PROPACK_CPLX_TYPE* zparm, CBLAS_INT* iparm, uint64_t* rng_state)
 {
     // Parameters
-    int int1 = 1, int0 = 0;
+    CBLAS_INT int1 = 1, int0 = 0;
 
     // Local variables
-    int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
-    int ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
+    CBLAS_INT k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
+    CBLAS_INT ialpha, ibeta, ialpha1, ibeta1, ishift, nshft, lapinfo;
     double eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
     double shift, relgap;
-    int iter;
+    CBLAS_INT iter;
 
     // Set machine dependent constants
     eps = DBL_EPSILON;
@@ -758,7 +758,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0; }
 
     // Set up random starting vector if none is provided by the user
-    rnorm = dznrm2_(&m, U, &int1);
+    rnorm = BLAS_FUNC(dznrm2)(&m, U, &int1);
     if (rnorm == 0.0)
     {
         zgetu0(0, m, n, 0, 1, U, &rnorm, U, ldu, aprod, zparm, iparm, &ierr, ioption[0], &anorm, zwork, rng_state);
@@ -777,8 +777,8 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         kold = k;
 
         // Compute and analyze SVD(B) and error bounds
-        dcopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        dcopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
 
         // Zero out bounds array
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0; }
@@ -787,7 +787,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         dbdqr((dim == int_min(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
-        dbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
+        BLAS_FUNC(dbdsqr)("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
         // Update anorm estimate
         if (dim > 5)
@@ -937,8 +937,8 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     // Calculate singular vectors if requested
     if ((nconv >= *neig || *info > 0) && (jobu || jobv))
     {
-        dcopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
-        dcopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
+        BLAS_FUNC(dcopy)(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
         zritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, zwork, lzwork, iwork);
     }

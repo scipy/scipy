@@ -411,7 +411,7 @@ else:
 
 +++
 
-So it is also convenience function that simply wraps the functions {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` and {func}`stats.mstats.trima <scipy.stats.mstats.trima>`.
+So it is also a convenience function that simply wraps the functions {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` and {func}`stats.mstats.trima <scipy.stats.mstats.trima>`.
 
 +++
 

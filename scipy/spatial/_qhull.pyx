@@ -27,7 +27,7 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
-from scipy.linalg.cython_lapack cimport dgetrf, dgetrs, dgecon
+from scipy.linalg.cython_lapack cimport blas_int, dgetrf, dgetrs, dgecon
 
 np.import_array()
 
@@ -176,7 +176,6 @@ cdef extern from "<libqhull_r/libqhull_r.h>":
     coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
 
 cdef extern from "qhull_misc.h":
-    ctypedef int CBLAS_INT   # actual type defined in the header file
     void qhull_misc_lib_check()
     int qh_new_qhull_scipy(qhT *, int dim, int numpoints, realT *points,
                            boolT ismalloc, char* qhull_cmd, void *outfile,
@@ -1134,16 +1133,16 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
     cdef int i, j
-    cdef CBLAS_INT n, nrhs, lda, ldb
-    cdef CBLAS_INT info = 0
-    cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
+    cdef blas_int n, nrhs, lda, ldb
+    cdef blas_int info = 0
+    cdef blas_int ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
     cdef double anorm
     cdef double rcond = 0.0
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
-    cdef CBLAS_INT iwork[NPY_MAXDIMS]
+    cdef blas_int iwork[NPY_MAXDIMS]
 
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]

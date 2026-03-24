@@ -99,6 +99,27 @@ class Rectangle:
     """Hyperrectangle class.
 
     Represents a Cartesian product of intervals.
+
+    Parameters
+    ----------
+    maxes : array_like of shape (m,)
+        Upper bounds of the hyperrectangle along each dimension.
+    mins : array_like of shape (m,)
+        Lower bounds of the hyperrectangle along each dimension.
+
+    Attributes
+    ----------
+    maxes : ndarray of shape (m,)
+        Upper bounds for each dimension.
+    mins : ndarray of shape (m,)
+        Lower bounds for each dimension.
+    m : int
+        Dimensionality of the hyperrectangle.
+
+    Notes
+    -----
+    If any element of `maxes` is smaller than the corresponding element in `mins`, the
+    values are swapped automatically.
     """
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
@@ -848,19 +869,30 @@ class KDTree(cKDTree):
             The other `KDTree` to compute distances against.
         max_distance : positive float
             Maximum distance within which neighbors are returned. Distances above this
-            values are returned as zero.
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
         output_type : str, optional
-            Which container to use for output data. Options: ``'dok_matrix'``,
-            ``'coo_matrix'``, ``'dict'``, or ``'ndarray'``. Default: ``'dok_matrix'``.
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
+            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
+            Default: ``'dok_matrix'``.
+
+            .. warning:: dok_matrix and coo_matrix are being replaced.
+
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' continue
+               to work, but will go away eventually.
 
             .. versionadded:: 1.6.0
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
             format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
             If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
@@ -875,9 +907,9 @@ class KDTree(cKDTree):
         >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
-        >>> kd_tree1 = KDTree(points1)
-        >>> kd_tree2 = KDTree(points2)
-        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> kdtree1 = KDTree(points1)
+        >>> kdtree2 = KDTree(points2)
+        >>> sdm = kdtree1.sparse_distance_matrix(kdtree2, 0.3, output_type="dok_array")
         >>> sdm.toarray()
         array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
            [0.        , 0.        , 0.        , 0.        , 0.        ],
@@ -896,8 +928,7 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        return super().sparse_distance_matrix(
-            other, max_distance, p, output_type)
+        return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
 def distance_matrix(x, y, p=2.0, threshold=1000000):

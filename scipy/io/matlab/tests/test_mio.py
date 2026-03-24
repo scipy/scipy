@@ -17,7 +17,7 @@ from pytest import raises as assert_raises, warns as assert_warns
 
 import numpy as np
 from numpy import array
-from scipy.sparse import issparse, eye_array, coo_array, csc_array
+from scipy.sparse import issparse, eye_array, coo_array, csc_array, sparray
 
 import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
@@ -1185,12 +1185,12 @@ def test_empty_sparse():
     sio.seek(0)
 
     res = loadmat(sio, spmatrix=False)
-    sparray = scipy.sparse.sparray
     assert isinstance(res['x'], sparray)
     res = loadmat(sio, spmatrix=True)
     assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
-    res = loadmat(sio)  # chk default
-    assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
+    with pytest.deprecated_call(match="The default value for `spmatrix"):
+        res = loadmat(sio)  # chk default
+        assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
 
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].toarray(), 0)

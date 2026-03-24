@@ -8,13 +8,8 @@
 #include <string.h>
 #define PyArray_MAX(a,b) (((a)>(b))?(a):(b))
 
-#ifdef HAVE_BLAS_ILP64
-#define F_INT npy_int64
-#define F_INT_NPY NPY_INT64
-#else
-#define F_INT int
-#define F_INT_NPY NPY_INT
-#endif
+/* NPY type code matching CBLAS_INT (int or npy_int64 depending on ILP64) */
+#define CBLAS_INT_NPY (sizeof(CBLAS_INT) == 8 ? NPY_INT64 : NPY_INT)
 
 
 #define PYERR(errobj,message) {\
@@ -587,7 +582,8 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     PyArrayObject *ap_tout = NULL;
     PyObject *extra_args = NULL;
     PyObject *Dfun = Py_None;
-    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 4;
+    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, liw, jt = 4;
+    CBLAS_INT *iwork;
     double *y, t, *tout, *rtol, *atol, *rwork;
     double h0 = 0.0, hmax = 0.0, hmin = 0.0;
     long ixpr = 0, mxstep = 0, mxhnil = 0, mxordn = 12, mxords = 5, ml = -1, mu = -1;
@@ -713,13 +709,13 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
 
-    if ((wa = (double *)calloc(lrw*sizeof(double) + liw*sizeof(int), 1))==NULL) {
+    if ((wa = (double *)calloc(lrw*sizeof(double) + liw*sizeof(CBLAS_INT), 1))==NULL) {
         PyErr_NoMemory();
         goto fail;
     }
     allocated = 1;
     rwork = wa;
-    iwork = (int *)(wa + lrw);
+    iwork = (CBLAS_INT *)((char *)(wa + lrw));
 
     iwork[0] = ml;
     iwork[1] = mu;
@@ -795,20 +791,20 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
             *((double *)PyArray_DATA(ap_tcur) + (k-1)) = rwork[12];
             *((double *)PyArray_DATA(ap_tolsf) + (k-1)) = rwork[13];
             *((double *)PyArray_DATA(ap_tsw) + (k-1)) = rwork[14];
-            *((int *)PyArray_DATA(ap_nst) + (k-1)) = iwork[10];
-            *((int *)PyArray_DATA(ap_nfe) + (k-1)) = iwork[11];
-            *((int *)PyArray_DATA(ap_nje) + (k-1)) = iwork[12];
-            *((int *)PyArray_DATA(ap_nqu) + (k-1)) = iwork[13];
+            *((int *)PyArray_DATA(ap_nst) + (k-1)) = (int)iwork[10];
+            *((int *)PyArray_DATA(ap_nfe) + (k-1)) = (int)iwork[11];
+            *((int *)PyArray_DATA(ap_nje) + (k-1)) = (int)iwork[12];
+            *((int *)PyArray_DATA(ap_nqu) + (k-1)) = (int)iwork[13];
 
             if (istate == -5 || istate == -4) {
-                imxer = iwork[15];
+                imxer = (int)iwork[15];
             } else {
                 imxer = -1;
             }
 
-            lenrw = iwork[16];
-            leniw = iwork[17];
-            *((int *)PyArray_DATA(ap_mused) + (k-1)) = iwork[18];
+            lenrw = (int)iwork[16];
+            leniw = (int)iwork[17];
+            *((int *)PyArray_DATA(ap_mused) + (k-1)) = (int)iwork[18];
         }
 
         // copy integration result to output
@@ -904,7 +900,8 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
     double *y, t, tout, *rtol, *atol, *rwork;
     double *state_doubles = NULL;
-    int *iwork, *state_ints = NULL;
+    int *state_ints = NULL;
+    CBLAS_INT *iwork;
     int neq, itol, itask, istate, iopt, lrw, liw, jt;
     long tfirst = 0;
 
@@ -1022,12 +1019,12 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
     rwork = (double *) PyArray_DATA(ap_rwork);
 
     // Get iwork array
-    ap_iwork = (PyArrayObject *) PyArray_ContiguousFromObject((PyObject*)ap_iwork, F_INT_NPY, 1, 1);
+    ap_iwork = (PyArrayObject *) PyArray_ContiguousFromObject((PyObject*)ap_iwork, CBLAS_INT_NPY, 1, 1);
     if (ap_iwork == NULL) {
         goto fail;
     }
     liw = PyArray_DIM(ap_iwork, 0);
-    iwork = (int *) PyArray_DATA(ap_iwork);
+    iwork = (CBLAS_INT *) PyArray_DATA(ap_iwork);
 
     // Get state arrays if provided (optional for backward compatibility)
     if (ap_state_doubles != NULL) {
@@ -1047,7 +1044,7 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
     if (ap_state_ints != NULL) {
         ap_state_ints = (PyArrayObject *) PyArray_ContiguousFromObject(
-            (PyObject*)ap_state_ints, F_INT_NPY, 1, 1);
+            (PyObject*)ap_state_ints, NPY_INT, 1, 1);
         if (ap_state_ints == NULL) {
             goto fail;
         }

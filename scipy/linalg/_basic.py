@@ -5,7 +5,6 @@
 #              and Jake Vanderplas, August 2012
 
 import warnings
-from itertools import product
 import numpy as np
 from scipy._lib._util import _apply_over_batch
 from .lapack import (
@@ -16,7 +15,7 @@ from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import find_det_from_lu
+from ._batched_linalg import _det as _linalg_det
 from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -1210,33 +1209,18 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
-    # Then check overwrite permission
-    if not _datacopied(a1, a):  # "a"  still alive through "a1"
-        if not overwrite_a:
-            # Data belongs to "a" so make a copy
-            a1 = a1.copy(order='C')
-        #  else: Do nothing we'll use "a" if possible
-    # else:  a1 has its own data thus free to scratch
+    det = _linalg_det(a1, overwrite_a)
 
-    # Then layout checks, might happen that overwrite is allowed but original
-    # array was read-only or non-C-contiguous.
-    if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
-        a1 = a1.copy(order='C')
-
-    if a1.ndim == 2:
-        det = find_det_from_lu(a1)
-        # Convert float, complex to NumPy scalars
-        return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
-
-    # loop over the stacked array, and avoid overflows for single precision
+    # Promote single precision to double to prevent overflows
     # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    dtype_char = a1.dtype.char
-    if dtype_char in 'fF':
-        dtype_char = 'd' if dtype_char.islower() else 'D'
+    if det.dtype.char == 'f':
+        det = det.astype(np.float64)
+    elif det.dtype.char == 'F':
+        det = det.astype(np.complex128)
 
-    det = np.empty(a1.shape[:-2], dtype=dtype_char)
-    for ind in product(*[range(x) for x in a1.shape[:-2]]):
-        det[ind] = find_det_from_lu(a1[ind])
+    # Return scalar for 2D input
+    if det.ndim == 0:
+        return det[()]
     return det
 
 
@@ -1449,7 +1433,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-@_apply_over_batch(('a', 2))
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1463,9 +1446,13 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     significance cut-off value is determined by ``atol + rtol * s``. Any
     singular value below this value is assumed insignificant.
 
+    The `a` array argument may have additional "batch" dimensions prepended to the core
+    shape. In this case, the array is treated as a batch of lower-dimensional slices;
+    see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Matrix to be pseudo-inverted.
     atol : float, optional
         Absolute threshold term, default value is 0.
@@ -1487,7 +1474,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
 
     Returns
     -------
-    B : (N, M) ndarray
+    B : (..., N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix. Returned if `return_rank` is True.
@@ -1548,24 +1535,35 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     >>> np.allclose((B @ A).conj().T, B @ A)  # Condition 4
     True
 
+    If the input array has more than two dimensions, it is interpreted as a batch of
+    two-dimensional slices:
+
+    >>> a = np.stack((np.zeros((3, 3)), np.eye(3)))
+    >>> p, ranks = linalg.pinv(a, return_rank=True)
+    >>> p.shape
+    (2, 3, 3)
+    >>> ranks
+    array([0, 3])
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
-    t = u.dtype.char.lower()
-    maxS = np.max(s, initial=0.)
+    u, s, vh = _decomp_svd.svd(a.conj(), full_matrices=False, check_finite=False)
 
     atol = 0. if atol is None else atol
-    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
-
+    rtol = max(a.shape[-2:]) * np.finfo(u.dtype).eps if (rtol is None) else rtol
     if (atol < 0.) or (rtol < 0.):
         raise ValueError("atol and rtol values must be positive.")
 
+    maxS = np.max(s, axis=-1, initial=0., keepdims=True)
     val = atol + maxS * rtol
-    rank = np.sum(s > val)
 
-    u = u[:, :rank]
-    u /= s[:rank]
-    B = (u @ vh[:rank]).conj().T
+    large = s > val
+    rank = np.sum(large, axis=-1)
+
+    # zero out small singular values, 1/s large singular values
+    np.divide(1, s, where=large, out=s)
+    s[~large] = 0
+
+    B = vh.mT @ (s[..., None] * u.mT)
 
     if return_rank:
         return B, rank
