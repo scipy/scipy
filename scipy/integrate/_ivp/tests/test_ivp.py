@@ -294,7 +294,7 @@ def test_integration_complex_sparse():
     atol = 1e-6
     y0 = [0.5 + 1j]
     t_span = [0, 1]
-    sparsity = csc_matrix(np.ones((1, 1)))
+    sparsity = csc_array(np.ones((1, 1)))
     res = solve_ivp(fun_complex, t_span, y0, method='BDF',
                     rtol=rtol, atol=atol, jac_sparsity=sparsity)
     assert res.success
@@ -1039,7 +1039,7 @@ def test_num_jac_sparse():
         A[-1, -1] = 1
         A[-1, -2] = 1
 
-        return A
+        return csc_array(A)
 
     np.random.seed(0)
     n = 20
@@ -1067,6 +1067,13 @@ def test_num_jac_sparse():
     assert_allclose(J_num_dense, J_num_sparse.toarray(),
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
+
+    # test DeprecationWarning due to move from sparse matrix to sparse array
+    # in num_jac when structure is an ndarray.
+    with pytest.deprecated_call(match="num_jac is switching to the sparse array"):
+        J_num_sparse, factor_sparse = num_jac(fun, 0, y.ravel(), f, 1e-8, None,
+                                              sparsity=(A.toarray(), groups))
+
 
 
 def test_args():

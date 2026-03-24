@@ -285,6 +285,7 @@ class BDF(OdeSolver):
 
                 def jac_wrapped(t, y):
                     self.njev += 1
+                    # TODO: switch to csc_array after spmatrix is removed
                     return csc_constructor(jac(t, y), dtype=y0.dtype)
             else:
                 J = np.asarray(J, dtype=y0.dtype)

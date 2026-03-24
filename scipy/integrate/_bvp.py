@@ -4,7 +4,7 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import pinv
 
-from scipy.sparse import coo_array
+from scipy.sparse import csc_array
 from scipy.sparse.linalg import splu
 from scipy.optimize import OptimizeResult
 from scipy._lib._array_api import xp_capabilities
@@ -270,8 +270,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
         dPhi_dp = -h/6 * (df_dp[:-1] + df_dp[1:] + 4 * df_dp_middle)
         values = np.hstack((values, dPhi_dp.ravel(), dbc_dp.ravel()))
 
-    J = coo_array((values, (i_jac, j_jac)))
-    return J.tocsc()
+    return csc_array((values, (i_jac, j_jac)))
 
 
 def collocation_fun(fun, y, p, x, h):
