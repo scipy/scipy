@@ -1,6 +1,7 @@
 #include <xsf/numpy.h>
 #include <xsf/bessel.h>
 #include <xsf/sph_harm.h>
+#include <xsf/stats.h>
 
 #include "sf_error.h"
 
@@ -52,6 +53,10 @@ void sph_harm_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[1] = dims[1];
 }
 
+void _poisson_binom_pmf_all_map_dims(const npy_intp *dims, npy_intp *new_dims) {
+    new_dims[0] = dims[0];
+    new_dims[1] = dims[1];
+}
 
 static int
 _gufuncs_module_exec(PyObject *module)
@@ -228,6 +233,19 @@ _gufuncs_module_exec(PyObject *module)
         xsf::numpy::gufunc({static_cast<xsf::numpy::f_f1f1>(xsf::rcty), static_cast<xsf::numpy::d_d1d1>(xsf::rcty)}, 2,
                            "_rcty", rcty_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(module, "_rcty", _rcty);
+
+    PyObject *_poisson_binom_pmf_all = xsf::numpy::gufunc(
+        {
+            static_cast<xsf::numpy::f1_f1>(xsf::poisson_binom_pmf_all),
+            static_cast<xsf::numpy::d1_d1>(xsf::poisson_binom_pmf_all)
+        },
+        1,
+        "_poisson_binom_pmf_all",
+        "Internal function",
+        "(i)->(j)",
+	_poisson_binom_pmf_all_map_dims
+    );
+    PyModule_AddObjectRef(module, "_poisson_binom_pmf_all", _poisson_binom_pmf_all);
 
     return 0;
 }
