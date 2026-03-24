@@ -129,7 +129,7 @@ def _poisson_binom_cdf(k, p):
     out_shape = p.shape[:-1] + (n + 1,)
     cdf = xp.zeros(out_shape, dtype=p.dtype)
     _poisson_binom_pmf_all(p, out=cdf)
-    cdf = xp.cumsum(cdf, axis=-1)
+    cdf = xp.cumulative_sum(cdf, axis=-1)
 
     k_indices = xp.expand_dims(xp.clip(k, 0, n), axis=-1)
     res = xp.squeeze(xp.take_along_axis(cdf, k_indices, axis=-1), axis=-1)
