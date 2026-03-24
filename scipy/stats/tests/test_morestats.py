@@ -1466,6 +1466,16 @@ class TestBinomTest:
         xp_assert_close(res4_p1, binom_testp1)
         xp_assert_close(res4_m1, binom_testm1)
 
+    @skip_xp_backends('jax.numpy', reason="'two-sided' alternative needs root finder")
+    def test_binomtest_large_n_precision(self, xp):
+        # Test that two-sided binomtest is precise for very large n,
+        # where float arithmetic on n and ix would lose precision.
+        n = 10000000000000000
+        k = 1
+        p = 1e-15
+        result = stats.binomtest(k, n, p)
+        xp_assert_close(result.pvalue, xp.asarray(0.001199049739722154))
+
 
 @make_xp_test_case(stats.fligner)
 class TestFligner:

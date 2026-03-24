@@ -297,13 +297,15 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             B = _SimpleBinomial(n, p)
             ix = _binary_search_for_binom_tst(lambda x1: -B.pmf(x1), -d*rerr,
                                               xp.ceil(p * n), n, xp=xp)
+            n_int = xp.astype(n, xp.int64)
+            ix_int = xp.astype(ix, xp.int64)
             # y is the number of terms between mode and n that are <= d*rerr.
             # ix gave us the first term where a(ix) <= d*rerr < a(ix-1)
             # if the first equality doesn't hold, y=n-ix. Otherwise, we
             # need to include ix as well as the equality holds. Note that
             # the equality will hold in very very rare situations due to rerr.
-            y = n - ix + xp.asarray(d*rerr == B.pmf(ix), dtype=ix.dtype)
-            pval = B.cdf(k) + B.sf(n - y)
+            y = n_int - ix_int + xp.astype(d*rerr == B.pmf(ix), xp.int64)
+            pval = B.cdf(k) + B.sf(xp.astype(n_int - y, k.dtype))
             return pval
 
         def k_gte_pn(d, k, p, n):
