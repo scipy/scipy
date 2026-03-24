@@ -2,7 +2,7 @@
 #define BLASLAPACK_DECLARATIONS_H
 
 #include <complex.h>
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 #if defined(_MSC_VER)
     // MSVC definition

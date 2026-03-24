@@ -1,5 +1,5 @@
-#ifndef __SCIPY_ILP64_DEFINES__
-#define __SCIPY_ILP64_DEFINES__
+#ifndef __SCIPY_BLAS_DEFINES__
+#define __SCIPY_BLAS_DEFINES__
 
 
 #include <stdint.h>
@@ -81,5 +81,5 @@ extern "C"
 }
 #endif
 
-#endif  /* __SCIPY_ILP64_DEFINES__ */
+#endif  /* __SCIPY_BLAS_DEFINES__ */
 
