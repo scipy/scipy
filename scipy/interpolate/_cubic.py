@@ -104,6 +104,7 @@ class CubicHermiteSpline(PPoly):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-extrapolation-extrapolate-argument`.
 
     Attributes
     ----------
@@ -200,10 +201,11 @@ class PchipInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
-    extrapolate : bool, optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
-        based on first and last intervals, or to return NaNs. If None (default), it is
-        set to True.
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-extrapolation-extrapolate-argument`.
 
     Methods
     -------
@@ -433,10 +435,11 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         .. versionadded:: 1.13.0
 
-    extrapolate : {bool, None}, optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
-        based on first and last intervals, or to return NaNs. If None,
-        ``extrapolate`` is set to False.
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), it is set to False.
+        See :ref:`tutorial-extrapolation-extrapolate-argument`.
 
     Methods
     -------
@@ -684,6 +687,7 @@ class CubicSpline(CubicHermiteSpline):
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), ``extrapolate`` is
         set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
+        See :ref:`tutorial-extrapolation-extrapolate-argument`.
 
     Attributes
     ----------
