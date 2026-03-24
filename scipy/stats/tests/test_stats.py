@@ -40,7 +40,8 @@ from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
                                    xp_swapaxes, xp_result_type, is_jax,
-                                   xp_copy, xp_promote, make_xp_pytest_param)
+                                   xp_copy, xp_promote, make_xp_pytest_param,
+                                   is_array_api_strict)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
@@ -5214,10 +5215,15 @@ class TestTTestRel:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-        anan = xp.asarray([[1., np.nan], [-1., 1.]])
-        res = stats.ttest_rel(anan, xp.zeros((2, 2)))
-        xp_assert_equal(res.statistic, xp.asarray([0, np.nan]))
-        xp_assert_equal(res.pvalue, xp.asarray([1, np.nan]))
+        if not is_array_api_strict(xp):
+            # The `_axis_nan_policy` decorator wants to propagate NaNs into integer
+            # degrees of freedom, but array-api-strict refuses to promote between
+            # integers and floats. This is part of a larger dtype instability issue
+            # for integer outputs of stats functions; skip for now.
+            anan = xp.asarray([[1., np.nan], [-1., 1.]])
+            res = stats.ttest_rel(anan, xp.zeros((2, 2)))
+            xp_assert_equal(res.statistic, xp.asarray([0, np.nan]))
+            xp_assert_equal(res.pvalue, xp.asarray([1, np.nan]))
 
         # test incorrect input shape raise an error
         x = xp.arange(24)
@@ -5720,6 +5726,8 @@ class TestTTestIndCommon:
         xp_assert_close(res.statistic, statistics)
         xp_assert_close(res.pvalue, pvalues)
 
+    @make_xp_test_case(stats.ttest_ind)
+    @skip_xp_backends('dask.array', reason="different message when nan_policy='raise'")
     @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
                              ids=["trim", "basic"])
     @pytest.mark.parametrize("axis", [-1, 0])
@@ -5749,6 +5757,19 @@ class TestTTestIndCommon:
         xp_assert_equal(p_nans, expected)
         statistic_nans = xp.isnan(res.statistic)
         xp_assert_equal(statistic_nans, expected)
+
+        # test nan_policy='raise'
+        message = ("nan_policy='raise' is not supported..." if is_lazy_array(a)
+                   else "The input contains nan values")
+        with pytest.raises((ValueError, TypeError), match=message):
+            res = stats.ttest_ind(a, b, axis=axis, nan_policy='raise', **kwds)
+
+        # test that nan_policy='omit' raised for non-NumPy backends
+        if is_numpy(xp):
+            return
+        message = "Use of `nan_policy='omit'` is incompatible with multidimensional..."
+        with pytest.raises(NotImplementedError, match=message):
+            res = stats.ttest_ind(a, b, axis=axis, nan_policy='omit', **kwds)
 
 
 @make_xp_test_case(stats.ttest_ind)
@@ -6262,13 +6283,19 @@ class TestTTest1Samp:
             xp_assert_equal(res.statistic, xp.asarray(xp.nan))
             xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-            # check that nan in input array result in nan output
-            anan = xp.asarray([[1., np.nan], [-1., 1.]])
-            res = stats.ttest_1samp(anan, 0.)
-            xp_assert_equal(res.statistic, xp.asarray([0., xp.nan]))
-            xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
+            if not is_array_api_strict(xp):
+                # The `_axis_nan_policy` decorator wants to propagate NaNs into integer
+                # degrees of freedom, but array-api-strict refuses to promote between
+                # integers and floats. This is part of a larger dtype instability issue
+                # for integer outputs of stats functions; skip for now.
 
-    @skip_xp_backends(eager_only=True, reason="lazy -> reduced nan_policy capabilities")
+                # check that nan in input array result in nan output
+                anan = xp.asarray([[1., np.nan], [-1., 1.]])
+                res = stats.ttest_1samp(anan, 0.)
+                xp_assert_equal(res.statistic, xp.asarray([0., xp.nan]))
+                xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
+
+    @skip_xp_backends(np_only=True, reason="ND nan_policy='omit' is NumPy only")
     def test_ttest_1samp_new_omit(self, xp):
         rng = np.random.default_rng(4008400329)
         n1, n2, n3 = (5, 10, 15)
