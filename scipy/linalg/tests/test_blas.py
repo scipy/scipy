@@ -17,11 +17,6 @@ from scipy.linalg import get_blas_funcs, toeplitz, solve
 from scipy.linalg.blas import HAS_ILP64, HAS_LP64
 
 try:
-    from scipy.linalg import _cblas as cblas
-except ImportError:
-    cblas = None
-
-try:
     from scipy.linalg import _fblas as fblas
     FBLAS_ERROR = fblas.__fblas_error
 except ImportError:
@@ -52,9 +47,6 @@ def test_get_blas_funcs():
     # array
     assert_equal(f1.typecode, 'z')
     assert_equal(f2.typecode, 'z')
-    if cblas is not None:
-        assert_equal(f1.module_name, 'cblas')
-        assert_equal(f2.module_name, 'cblas')
 
     # check defaults.
     f1 = get_blas_funcs('rotg')
@@ -97,6 +89,7 @@ def test_get_blas_funcs_ilp_true():
         assert gemm.int_dtype == np.int64
         assert gemm.module_name == 'fblas_64'
     else:
+        assert HAS_LP64
         with pytest.raises(RuntimeError):
             get_blas_funcs('gemm', (np.eye(3),), ilp64=True)
 
@@ -108,6 +101,7 @@ def test_get_blas_funcs_ilp_false():
         assert gemm.int_dtype == np.int32
         assert gemm.module_name == 'fblas'
     else:
+        assert HAS_ILP64
         with pytest.raises(RuntimeError):
             get_blas_funcs('gemm', (np.eye(3),), ilp64=False)
 
@@ -138,17 +132,14 @@ def _dt_from_prefix(prefix):
 
 def parametrize_blas(func_name, prefixes, modules=None):
     """Parametrize a test over BLAS prefixes, "sdcz", and over the BLAS modules,
-    `fblas,fblas_64,cblas`.
+    `fblas,fblas_64.
 
-    Given a func_name "gemm", this generates a pytest parametrization over up to 12
+    Given a func_name "gemm", this generates a pytest parametrization over up to 8
     variants: sgemm, dgemm, cgemm, zgemm, each loaded from `fblas` (i.e. 32-bit LP64
-    variants), `fblas_64` (i.e. 64-bit ILP64 variants) and `cblas` (LP64 probably).
+    variants) and `fblas_64` (i.e. 64-bit ILP64 variants)..
 
     If a module is not available, the pytest parameter has a skip mark, so that the
     test is skipped with a descriptive message.
-
-    The `cblas` variant here is historical, there's only a single test below, and
-    SciPy does not really use the cblas interface.
 
     Parameters
     ----------
@@ -183,17 +174,6 @@ def parametrize_blas(func_name, prefixes, modules=None):
             params.append(param_)
 
     return pytest.mark.parametrize("f, dtype", params)
-
-
-class TestCBLAS1Simple:
-
-    @parametrize_blas("axpy", "sdcz", modules=[(cblas, "cblas")])
-    def test_axpy(self, f, dtype):
-        assert_array_almost_equal(f([1, 2, 3], [2, -1, 3], a=5),
-                                  [7, 9, 18])
-        if dtype in COMPLEX_DTYPES:
-            assert_array_almost_equal(f([1, 2j, 3], [2, -1, 3], a=5),
-                                      [7, 10j-1, 18])
 
 
 class TestFBLAS1Simple:

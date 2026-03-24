@@ -9,7 +9,7 @@ with safe_import():
     import scipy.interpolate as interpolate
 
 with safe_import():
-    from scipy.sparse import csr_matrix
+    from scipy.sparse import csr_array
 
 
 class Leaks(Benchmark):
@@ -123,8 +123,8 @@ class GridDataPeakMem(Benchmark):
 
         random_values = rng.random(num_nonzero, dtype=np.float32)
 
-        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)),
-                                   shape=shape, dtype=np.float32)
+        sparse_matrix = csr_array((random_values, (random_rows, random_cols)),
+                                  shape=shape, dtype=np.float32)
         sparse_matrix = sparse_matrix.toarray()
 
         self.coords = np.column_stack(np.nonzero(sparse_matrix))
