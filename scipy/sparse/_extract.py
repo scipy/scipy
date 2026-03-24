@@ -7,7 +7,6 @@ __all__ = ['find', 'tril', 'triu']
 
 import os
 from warnings import warn
-import numpy as np
 
 from ._coo import coo_array, coo_matrix
 from ._base import sparray, spmatrix
