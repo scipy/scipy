@@ -39,7 +39,7 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
-                                   xp_swapaxes, xp_result_type, is_jax,
+                                   xp_swapaxes, xp_result_type, is_jax, is_cupy,
                                    xp_copy, xp_promote, make_xp_pytest_param)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
@@ -2399,7 +2399,9 @@ class HistFunctionsTest:
 
         if edge_points and not specify_limits:
             pytest.skip("Limits must be specified to determine edge points.")
-        if edge_points and (is_jax(xp) or (dtype != 'float64' and is_torch(xp))):
+        if edge_points and (is_jax(xp)
+                            or (dtype != 'float64' and is_torch(xp))
+                            or (dtype != 'float64' and is_cupy(xp))):
             pytest.skip("Some backends are having trouble with edge point arithmetic.")
 
         a = np.astype(rng.random(100), dtype)
