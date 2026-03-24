@@ -20,13 +20,8 @@ from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
+from scipy.sparse import diags_array
 
-import scipy.sparse as sps
-
-try:
-    from scipy.linalg import _clapack as clapack
-except ImportError:
-    clapack = None
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
@@ -55,12 +50,12 @@ def test_lapack_documented():
     names = set(lapack.__doc__.split())
     ignore_list = {
         "absolute_import",
-        "clapack",
         "division",
         "find_best_lapack_type",
         "flapack",
         "print_function",
         "HAS_ILP64",
+        "HAS_LP64",
         "np",
     }
     missing = list()
@@ -71,10 +66,14 @@ def test_lapack_documented():
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
 
 
-def test_ilp64_blas_lapack_both_or_none():
+def test_lp64_ilp64_blas_lapack_both_or_none():
     from scipy.linalg.blas import HAS_ILP64 as blas_has_ilp64
     from scipy.linalg.lapack import HAS_ILP64 as lapack_has_ilp64
     assert blas_has_ilp64 == lapack_has_ilp64
+
+    from scipy.linalg.blas import HAS_LP64 as blas_has_lp64
+    from scipy.linalg.lapack import HAS_LP64 as lapack_has_lp64
+    assert blas_has_lp64 == lapack_has_lp64
 
 
 class TestFlapackSimple:
@@ -85,8 +84,8 @@ class TestFlapackSimple:
               [4, 0, 0, 2e-3],
               [7, 1, 0, 0],
               [0, 1, 0, 0]]
-        for p in 'sdzc':
-            f = getattr(flapack, p+'gebal', None)
+        for dtype in DTYPES:
+            f = get_lapack_funcs('gebal', dtype=dtype)
             if f is None:
                 continue
             ba, lo, hi, pivscale, info = f(a)
@@ -104,8 +103,8 @@ class TestFlapackSimple:
         a = [[-149, -50, -154],
              [537, 180, 546],
              [-27, -9, -25]]
-        for p in 'd':
-            f = getattr(flapack, p+'gehrd', None)
+        for dtype in [np.float64]:
+            f = get_lapack_funcs('gehrd', dtype=dtype)
             if f is None:
                 continue
             ht, tau, info = f(a)
@@ -178,11 +177,6 @@ class TestLapack:
     def test_flapack(self):
         if hasattr(flapack, 'empty_module'):
             # flapack module is empty
-            pass
-
-    def test_clapack(self):
-        if hasattr(clapack, 'empty_module'):
-            # clapack module is empty
             pass
 
 
@@ -591,7 +585,7 @@ class TestTbtrs:
             bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
-        a = sps.diags(bands, band_offsets, format='dia')
+        a = diags_array(bands, offsets=band_offsets, format='dia')
 
         # Convert A into banded storage form
         ab = np.zeros((kd + 1, n), dtype)

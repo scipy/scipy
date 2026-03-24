@@ -5,7 +5,6 @@
 #              and Jake Vanderplas, August 2012
 
 import warnings
-from itertools import product
 import numpy as np
 from scipy._lib._util import _apply_over_batch
 from .lapack import (
@@ -16,7 +15,7 @@ from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import find_det_from_lu
+from ._batched_linalg import _det as _linalg_det
 from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -1210,33 +1209,18 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
-    # Then check overwrite permission
-    if not _datacopied(a1, a):  # "a"  still alive through "a1"
-        if not overwrite_a:
-            # Data belongs to "a" so make a copy
-            a1 = a1.copy(order='C')
-        #  else: Do nothing we'll use "a" if possible
-    # else:  a1 has its own data thus free to scratch
+    det = _linalg_det(a1, overwrite_a)
 
-    # Then layout checks, might happen that overwrite is allowed but original
-    # array was read-only or non-C-contiguous.
-    if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
-        a1 = a1.copy(order='C')
-
-    if a1.ndim == 2:
-        det = find_det_from_lu(a1)
-        # Convert float, complex to NumPy scalars
-        return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
-
-    # loop over the stacked array, and avoid overflows for single precision
+    # Promote single precision to double to prevent overflows
     # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    dtype_char = a1.dtype.char
-    if dtype_char in 'fF':
-        dtype_char = 'd' if dtype_char.islower() else 'D'
+    if det.dtype.char == 'f':
+        det = det.astype(np.float64)
+    elif det.dtype.char == 'F':
+        det = det.astype(np.complex128)
 
-    det = np.empty(a1.shape[:-2], dtype=dtype_char)
-    for ind in product(*[range(x) for x in a1.shape[:-2]]):
-        det[ind] = find_det_from_lu(a1[ind])
+    # Return scalar for 2D input
+    if det.ndim == 0:
+        return det[()]
     return det
 
 

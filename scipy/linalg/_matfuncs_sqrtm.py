@@ -9,7 +9,7 @@ __all__ = []
 import numpy as np
 
 # Local imports
-from .lapack import ztrsyl, dtrsyl
+from .lapack import get_lapack_funcs
 
 class SqrtmError(np.linalg.LinAlgError):
     pass
@@ -56,6 +56,8 @@ def _sqrtm_triu(T, blocksize=64):
 
     R = np.diag(np.sqrt(T_diag))
 
+    trsyl = get_lapack_funcs('trsyl', (R,), ilp64="preferred")
+
     # Compute the number of blocks to use; use at least one block.
     n, n = T.shape
     nblocks = max(n // blocksize, 1)
@@ -97,10 +99,7 @@ def _sqrtm_triu(T, blocksize=64):
             # and the fortran dtrsyl and ztrsyl docs.
             Rii = R[istart:istop, istart:istop]
             Rjj = R[jstart:jstop, jstart:jstop]
-            if keep_it_real:
-                x, scale, info = dtrsyl(Rii, Rjj, S)
-            else:
-                x, scale, info = ztrsyl(Rii, Rjj, S)
+            x, scale, info = trsyl(Rii, Rjj, S)
             R[istart:istop, jstart:jstop] = x * scale
 
     # Return the matrix square root.
