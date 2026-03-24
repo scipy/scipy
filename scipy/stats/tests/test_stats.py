@@ -40,7 +40,8 @@ from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
                                    SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
                                    xp_swapaxes, xp_result_type, is_jax,
-                                   xp_copy, xp_promote, make_xp_pytest_param)
+                                   xp_copy, xp_promote, make_xp_pytest_param,
+                                   is_array_api_strict)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
@@ -5214,10 +5215,15 @@ class TestTTestRel:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-        anan = xp.asarray([[1., np.nan], [-1., 1.]])
-        res = stats.ttest_rel(anan, xp.zeros((2, 2)))
-        xp_assert_equal(res.statistic, xp.asarray([0, np.nan]))
-        xp_assert_equal(res.pvalue, xp.asarray([1, np.nan]))
+        if not is_array_api_strict(xp):
+            # The `_axis_nan_policy` decorator wants to propagate NaNs into integer
+            # degrees of freedom, but array-api-strict refuses to promote between
+            # integers and floats. This is part of a larger dtype instability issue
+            # for integer outputs of stats functions; skip for now.
+            anan = xp.asarray([[1., np.nan], [-1., 1.]])
+            res = stats.ttest_rel(anan, xp.zeros((2, 2)))
+            xp_assert_equal(res.statistic, xp.asarray([0, np.nan]))
+            xp_assert_equal(res.pvalue, xp.asarray([1, np.nan]))
 
         # test incorrect input shape raise an error
         x = xp.arange(24)
