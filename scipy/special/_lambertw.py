@@ -2,6 +2,9 @@ from ._ufuncs import _lambertw
 
 import numpy as np
 
+# exp(-1), the negation of which is the branch-point of the Lambert W function
+_EXPN1 = np.exp(-1.0)
+
 
 def lambertw(z, k=0, tol=1e-8):
     r"""
@@ -146,4 +149,21 @@ def lambertw(z, k=0, tol=1e-8):
     # TODO: special expert should inspect this
     # interception; better place to do it?
     k = np.asarray(k, dtype=np.dtype("long"))
-    return _lambertw(z, k, tol)
+
+    # Special-case the branch point z = -1/e exactly.  At this point the
+    # Halley iteration in the C implementation divides by zero (2w+2 = 0
+    # when the initial guess w = -1 is exact), producing NaN.  The correct
+    # value is W(-1/e, 0) = W(-1/e, -1) = -1.  See gh-24770.
+    z = np.asarray(z)
+    scalar_input = z.ndim == 0
+    z = np.atleast_1d(z)
+    result = _lambertw(z, k, tol)
+    # Identify entries that are exactly the branch point -1/e (real axis only)
+    branchpt = (z.real == -_EXPN1) & (z.imag == 0.0)
+    if np.any(branchpt):
+        k_bc = np.broadcast_to(k, branchpt.shape)
+        at_bp = branchpt & ((k_bc == 0) | (k_bc == -1))
+        result[at_bp] = complex(-1.0, 0.0)
+    if scalar_input:
+        return result[()]
+    return result

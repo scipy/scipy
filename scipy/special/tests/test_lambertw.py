@@ -107,3 +107,31 @@ def test_lambertw_subnormal_k0(z):
     # For values this small, we can be sure that numerically,
     # lambertw(z) is z.
     assert w == z
+
+
+def test_lambertw_branch_point():
+    # Regression test for gh-24770: lambertw(-1/e) returned nan+nanj instead
+    # of -1+0j.  At the branch point z = -1/e the Halley iteration in the C
+    # backend divides by zero (2w+2 = 0) when the initial guess is exactly -1.
+    # Both real branches meet at -1 at this point.
+    neg_inv_e = -1.0 / e
+    # Scalar, principal branch
+    w0 = lambertw(neg_inv_e, k=0)
+    assert not np.isnan(w0), f"lambertw(-1/e, k=0) returned NaN: {w0}"
+    assert_allclose(w0, -1.0 + 0j, atol=1e-14)
+
+    # Scalar, k=-1 branch (both branches share the branch point)
+    wm1 = lambertw(neg_inv_e, k=-1)
+    assert not np.isnan(wm1), f"lambertw(-1/e, k=-1) returned NaN: {wm1}"
+    assert_allclose(wm1, -1.0 + 0j, atol=1e-14)
+
+    # Array input containing the branch point
+    zs = np.array([-1.0 / e, -0.2, 0.0])
+    ws = lambertw(zs)
+    assert not np.any(np.isnan(ws)), f"lambertw array with -1/e entry returned NaN: {ws}"
+    assert_allclose(ws[0], -1.0 + 0j, atol=1e-14)
+
+    # The fix must not affect inputs that are merely near (but not exactly at)
+    # the branch point, and must not affect non-real inputs.
+    assert not np.isnan(lambertw(-1.0 / e + 1e-12))
+    assert not np.isnan(lambertw(-1.0 / e - 1e-12))
