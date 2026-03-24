@@ -887,11 +887,6 @@ from .blas import (
 )
 
 from re import compile as regex_compile
-try:
-    from scipy.linalg import _clapack
-except ImportError:
-    _clapack = None
-
 from scipy.__config__ import CONFIG
 
 # TODO: fold HAS_LP64 into __config__, allow for _flapack not being available
@@ -904,11 +899,8 @@ _flapack_64 = None
 if HAS_ILP64:
     from scipy.linalg import _flapack_64
 
-
-# Expose all functions (only flapack --- clapack is an implementation detail)
-empty_module = None
 from scipy.linalg._flapack import *  # noqa: E402, F403
-del empty_module
+
 
 __all__ = ['get_lapack_funcs']
 
@@ -1043,20 +1035,18 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
         if ilp64 == 'preferred':
             ilp64 = HAS_ILP64
         else:
-            raise ValueError("Invalid value for 'ilp64'")
+            raise ValueError(f"Invalid value for {ilp64 = }.")
 
     if not ilp64:
         return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack, _clapack,
-                          "flapack", "clapack", _lapack_alias,
+                          "LAPACK", _flapack, "flapack", _lapack_alias,
                           ilp64=False)
     else:
         if not HAS_ILP64:
             raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
                                "compiled only with 32-bit LAPACK")
         return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack_64, None,
-                          "flapack_64", None, _lapack_alias,
+                          "LAPACK", _flapack_64, "flapack_64", _lapack_alias,
                           ilp64=True)
 
 

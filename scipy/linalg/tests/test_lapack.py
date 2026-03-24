@@ -22,10 +22,6 @@ from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 from scipy.sparse import diags_array
 
-try:
-    from scipy.linalg import _clapack as clapack
-except ImportError:
-    clapack = None
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
@@ -54,7 +50,6 @@ def test_lapack_documented():
     names = set(lapack.__doc__.split())
     ignore_list = {
         "absolute_import",
-        "clapack",
         "division",
         "find_best_lapack_type",
         "flapack",
@@ -182,11 +177,6 @@ class TestLapack:
     def test_flapack(self):
         if hasattr(flapack, 'empty_module'):
             # flapack module is empty
-            pass
-
-    def test_clapack(self):
-        if hasattr(clapack, 'empty_module'):
-            # clapack module is empty
             pass
 
 
