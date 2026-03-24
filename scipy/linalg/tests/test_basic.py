@@ -2345,19 +2345,19 @@ class TestLstsq:
     @parametrize_overwrite_b_arg
     @pytest.mark.parametrize("driver", ["gelss", "gelsd", "gelsy"])
     @pytest.mark.parametrize("dtype", [int, float])
-    @pytest.mark.parametrize("shape", [(4, 3), (3, 4)])
+    @pytest.mark.parametrize("shape", [(2, 4, 3), (4, 3), (3, 4)])
     @pytest.mark.parametrize("nrhs", [1, 5])
     @pytest.mark.parametrize("order", ["C", "F"])
     def test_overwrite(
         self, overwrite_kw, overwrite_b_kw, driver, dtype, shape, nrhs, order
     ):
-        rng = np.random.default_rng(seed=12345)
+        rng = np.random.default_rng(seed=123456)
         if dtype is not int:
             a = np.asarray(rng.normal(size=shape), order=order)
-            b = np.asarray(rng.normal(size=(shape[0], nrhs)), order=order)
+            b = np.asarray(rng.normal(size=(*shape[:-1], nrhs)), order=order)
         else: # avoid issues with singularity
             a = np.asarray(rng.integers(1000, size=shape), order=order)
-            b = np.asarray(rng.integers(1000, size=(shape[0], nrhs)), order=order)
+            b = np.asarray(rng.integers(1000, size=(*shape[:-1], nrhs)), order=order)
 
         a_ref = np.copy(a)
         b_ref = np.copy(b)
@@ -2367,15 +2367,21 @@ class TestLstsq:
         )
 
         # validate solution
-        if shape[0] >= shape[1]:
-            x_ref = solve(a_ref.T @ a_ref, a_ref.T @ b_ref)
+        a_T = a_ref.swapaxes(-2, -1)
+        if shape[-2] >= shape[-1]:
+            x_ref = solve(a_T @ a_ref, a_T @ b_ref)
         else:
-            x_ref = a_ref.T @ solve(a_ref @ a_ref.T, b_ref)
+            x_ref = a_T @ solve(a_ref @ a_T, b_ref)
 
         assert_allclose(x_ref, x, atol=1e-12)
 
         overwrite_a = overwrite_kw.get("overwrite_a", False)
-        overwrite_a = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+        overwrite_a = (
+            overwrite_a and
+            (dtype is not int) and
+            a.flags["F_CONTIGUOUS"] and
+            a.ndim <= 2
+        )
 
         # Classical conditions: F_contiguity + should not be overwritten internally.
         # Complemented by the fact that LAPACK requires a `b` of at least `max(m, n)`,
