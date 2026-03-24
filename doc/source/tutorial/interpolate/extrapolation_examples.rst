@@ -33,6 +33,115 @@ are deliberately pared down to bare essentials needed to demonstrate the
 main ideas, in a hope that they serve as an inspiration for your
 handling of your particular problem.
 
+.. _tutorial-extrapolation-extrapolate-argument:
+
+Extrapolation in piecewise polynomial interpolators
+===================================================
+
+Several interpolators in :mod:`scipy.interpolate` share a common ``extrapolate``
+argument, including :class:`CubicSpline`, :class:`CubicHermiteSpline`,
+:class:`Akima1DInterpolator`, :class:`PchipInterpolator`, :class:`PPoly`, and
+:class:`BPoly`.
+
+These objects represent piecewise polynomial functions. For all of them,
+extrapolation amounts to evaluating the boundary polynomial segments
+outside the data domain:
+
+- ``extrapolate=True``: evaluate the boundary polynomial pieces;
+- ``extrapolate=False``: return ``NaN``;
+- ``extrapolate="periodic"`` (if supported): evaluate periodically;
+- ``extrapolate=None``: use the class-specific default behavior.       
+
+The default is typically ``True`` for all these interpolators, except
+:class:`Akima1DInterpolator`.
+
+Note that ``extrapolate="periodic"`` simply wraps evaluation periodically;
+it does not enforce periodic boundary conditions on the interpolant unless
+the interpolator itself was constructed with periodic constraints (e.g.
+``bc_type="periodic"`` for splines).
+
+To illustrate the behavior, we consider :class:`PchipInterpolator` and compare the 
+result for several values of the ``extrapolate=True/False/"periodic"`` argument:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from scipy.interpolate import PchipInterpolator
+
+    # data
+    x = np.array([0, 1, 2.5, 3, 4])
+    y = np.array([0.0, 1.0, 0.8, 1.2, 0.0])
+    # evaluation points
+    x_eval = np.linspace(-4, 8, 300)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for extrapolate, linestyle in zip(
+        [True, False, "periodic"], ["-", "--", ":"], strict=True
+    ):
+        y_interp = PchipInterpolator(x, y, extrapolate=extrapolate)(x_eval)
+        ax.plot(x_eval, y_interp, linestyle, label=f"extrapolate={extrapolate}")
+    ax.plot(x, y, "k.", markersize=8, label="data")
+    ax.axvline(x[0] - 4, color="k", alpha=0.2)
+    ax.axvline(x[0], color="k", alpha=0.2)
+    ax.axvline(x[-1], color="k", alpha=0.2)
+    ax.axvline(x[-1] + 4, color="k", alpha=0.2)
+    ax.set_ylim(-2.0, 2.5)
+    ax.legend(ncol=2, loc="lower left")
+    ax.set_xlabel("x")
+    ax.set_ylabel("f(x)")
+    ax.set_title("PchipInterpolator")
+    plt.show()
+    
+
+For :class:`CubicSpline`, extrapolation interacts with ``bc_type``:
+
+- if ``bc_type="periodic"``, periodic boundary conditions are enforced;
+- otherwise, extrapolation is controlled by ``extrapolate`` as above.
+
+More generally, ``bc_type`` is a construction-time argument (e.g. in
+:func:`make_interp_spline`), while ``extrapolate`` is an evaluation-time
+argument (e.g. in :class:`BSpline.__call__`).
+
+We now illustrate the behavior of :class:`CubicSpline` for the same ``extrapolate`` 
+argument, and also show the result for ``bc_type="periodic"``:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from scipy.interpolate import CubicSpline
+
+    # data
+    x = np.array([0, 1, 2.5, 3, 4])
+    y = np.array([0.0, 1.0, 0.8, 1.2, 0.0])
+    # evaluation points
+    x_eval = np.linspace(-4, 8, 300)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for extrapolate, linestyle in zip(
+        [True, False, "periodic"], ["-", "--", ":"], strict=True
+    ):
+        y_interp = CubicSpline(x, y, extrapolate=extrapolate)(x_eval)
+        ax.plot(x_eval, y_interp, linestyle, label=f"extrapolate={extrapolate}")
+    ax.plot(
+        x_eval,
+        CubicSpline(x, y, bc_type="periodic")(x_eval),
+        "-.",
+        label="bc_type='periodic'",
+    )
+    ax.plot(x, y, "ko", label="data")
+    ax.axvline(x[0] - 4, color="k", alpha=0.2)
+    ax.axvline(x[0], color="k", alpha=0.2)
+    ax.axvline(x[-1], color="k", alpha=0.2)
+    ax.axvline(x[-1] + 4, color="k", alpha=0.2)
+    ax.set_ylim(-0.5, 1.5)
+    ax.legend(ncol=2, loc="lower left")
+    ax.set_xlabel("x")
+    ax.set_ylabel("f(x)")
+    ax.set_title("CubicSpline")
+    plt.show()
+
 
 .. _tutorial-extrapolation-left-right:
 
