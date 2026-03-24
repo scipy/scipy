@@ -1,3 +1,5 @@
-# Reusing existing QL Pack
-- import: codeql-suites/cpp-code-scanning.qls
-  from: codeql-cpp
+# Reusing existing QL query suite
+- import: codeql-suites/cpp-code-scanning.qls # the default query suite. Other options: https://docs.github.com/en/code-security/tutorials/customize-code-scanning/customizing-analysis-with-codeql-packs#example-query-specifiers
+  from: codeql/cpp-queries # https://docs.github.com/en/code-security/tutorials/customize-code-scanning/creating-codeql-query-suites#reusability-examples
+# - exclude: # Excluding queries we are not interested in: https://docs.github.com/en/code-security/tutorials/customize-code-scanning/creating-codeql-query-suites#examples-of-filtering-which-queries-are-run
+#  id: cpp/cleartext-storage-file
