@@ -2234,7 +2234,7 @@ HistogramResult = namedtuple('HistogramResult',
                              ('count', 'lowerlimit', 'binsize', 'extrapoints'))
 
 
-def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False, *,
+def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
                density=False, cumulative=False):
     """Create a histogram.
 
@@ -2255,10 +2255,6 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
     weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
-    printextras : bool, optional
-        If True, if there are extra points (i.e. the points that fall outside
-        the bin limits) a warning is raised saying how many of those points
-        there are.  Default is False.
 
     Returns
     -------
@@ -2318,11 +2314,6 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
     binnedpoints = (xp.sum(hist) if weights is None
                     else xp.count_nonzero((bin_edges[0] <= a) & (a <= bin_edges[-1])))
     extrapoints = a.shape[0] - binnedpoints
-
-    # should we raise if printextras is used with lazy arrays?
-    if not is_lazy_array(extrapoints) and extrapoints > 0 and printextras:
-        warnings.warn(f"Points outside given histogram range = {extrapoints}",
-                      stacklevel=3,)
 
     lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype)[()]
 
