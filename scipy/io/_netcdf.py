@@ -96,6 +96,12 @@ class netcdf_file:
     """
     A file object for NetCDF data.
 
+    .. legacy:: class
+
+        For new projects, consider using
+        `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_
+        instead.
+
     A `netcdf_file` object has two standard attributes: `dimensions` and
     `variables`. The values of both are dictionaries, mapping dimension
     names to their associated lengths and variable names to variables,
@@ -129,14 +135,6 @@ class netcdf_file:
 
     Notes
     -----
-    This module is derived from
-    `pupynere <https://github.com/stcorp/pupynere>`_.
-    The major advantage of this module over other modules is that it doesn't
-    require the code to be linked to the NetCDF libraries. However, for a more
-    recent version of the NetCDF standard and additional features, please consider
-    the permissively-licensed
-    `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_.
-
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
@@ -806,6 +804,12 @@ class netcdf_variable:
     """
     A data object for netcdf files.
 
+    .. legacy:: class
+
+        For new projects, consider using
+        `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_
+        instead.
+
     `netcdf_variable` objects are constructed by calling the method
     `netcdf_file.createVariable` on the `netcdf_file` object. `netcdf_variable`
     objects behave much like array objects defined in numpy, except that their
@@ -853,12 +857,6 @@ class netcdf_variable:
     See Also
     --------
     isrec, shape
-
-    Notes
-    -----
-    For a more recent version of the NetCDF standard and additional features, please
-    consider the permissively-licensed
-    `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_.
 
     """
     def __init__(self, data, typecode, size, shape, dimensions,
