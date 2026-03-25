@@ -19,6 +19,7 @@ runs:
         echo "dir=${CCACHE_DIR:-$HOME/.ccache}" >> $GITHUB_OUTPUT
         NOW=$(date -u +"%F-%T")
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
+        ccache --zero-stats
     - name: Setup compiler cache and save it
       # Run a restore and save if running on main
       # Note: we can't simply use restore followed by save because composite actions
