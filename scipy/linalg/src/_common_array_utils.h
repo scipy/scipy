@@ -21,6 +21,11 @@
     #define CPLX_C(real, imag) (real + imag*I)
 #endif
 
+#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+#include <immintrin.h>
+#define SCIPY_HAVE_AVX2_TARGET 1
+#endif
+
 // BLAS and LAPACK functions used
 void BLAS_FUNC(saxpy)(CBLAS_INT* n, float* sa, float* sx, CBLAS_INT* incx, float* sy, CBLAS_INT* incy);
 void BLAS_FUNC(scopy)(CBLAS_INT* n, float* dx, CBLAS_INT* incx, float* dy, CBLAS_INT* incy);
@@ -74,22 +79,33 @@ void BLAS_FUNC(zdscal)(CBLAS_INT* n, double* sa, SCIPY_Z* sx, CBLAS_INT* incx);
 void BLAS_FUNC(ztrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* info);
 // void BLAS_FUNC(ztrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, double* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
+
 /**
- *  These functions are used to measure the bandwidth of an (n x m) matrix
- *  stored in row-major (C) format.
+ *
+ * Bandwidth detection for general matrices. There are two implementations
+ * provided below, a scalar scanning implementation and an AVX2-optimized
+ * implementation. The AVX2 implementation is selected at load time when
+ * CPU support is detected, otherwise the scalar version is used as a
+ * fallback. The AVX2 path is available on GCC and Clang on x86-64; MSVC
+ * and other platforms always use the scalar fallback.
+ *
  */
+
+// bandwidth_s
+
 static inline void
-bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_s_scalar(float* restrict data, npy_intp n, npy_intp m,
+                   npy_intp* lower_band, npy_intp* upper_band)
 {
     Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
     for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (Py_ssize_t c = 0; c < limit; c++) {
             if (data[r*m + c] != 0.0f) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
     for (Py_ssize_t r = 0; r < n-1; r++) {
         for (Py_ssize_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0f) { ub = c - r; break; }
@@ -100,19 +116,122 @@ bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, 
     *upper_band = ub;
 }
 
+#ifdef SCIPY_HAVE_AVX2_TARGET
+__attribute__((target("avx2")))
+static inline void
+bandwidth_s_avx2(float* restrict data, npy_intp n, npy_intp m,
+                 npy_intp* lower_band, npy_intp* upper_band)
+{
+    const __m256 zero = _mm256_setzero_ps();
+    Py_ssize_t lb = 0, ub = 0;
+
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        if (limit >= 8) {
+            Py_ssize_t c = 0;
+            for (; c + 7 < limit; c += 8) {
+                __m256 v = _mm256_loadu_ps(&data[r*m + c]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    lb = r - (c + __builtin_ctz(~mask));
+                    goto lb_done_s;
+                }
+            }
+            if (c < limit) {
+                __m256 v = _mm256_loadu_ps(&data[r*m + limit - 8]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    lb = r - (limit - 8 + __builtin_ctz(~mask));
+                    goto lb_done_s;
+                }
+            }
+        } else {
+            for (Py_ssize_t c = 0; c < limit; c++) {
+                if (data[r*m + c] != 0.0f) { lb = r - c; goto lb_done_s; }
+            }
+        }
+        lb_done_s:
+        if (r <= lb) { break; }
+    }
+
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        Py_ssize_t limit = r + ub;
+        Py_ssize_t span = m - 1 - limit;
+        if (span >= 8) {
+            Py_ssize_t c = m - 1;
+            for (; c - 7 > limit; c -= 8) {
+                __m256 v = _mm256_loadu_ps(&data[r*m + c - 7]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    int last = 31 - __builtin_clz(~mask & 0xFF);
+                    ub = (c - 7 + last) - r;
+                    goto ub_done_s;
+                }
+            }
+            if (c > limit) {
+                __m256 v = _mm256_loadu_ps(&data[r*m + limit + 1]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    int last = 31 - __builtin_clz(~mask & 0xFF);
+                    ub = (limit + 1 + last) - r;
+                    goto ub_done_s;
+                }
+            }
+        } else {
+            for (Py_ssize_t c = m - 1; c > limit; c--) {
+                if (data[r*m + c] != 0.0f) { ub = c - r; goto ub_done_s; }
+            }
+        }
+        ub_done_s:
+        if (r + ub + 1 > m) { break; }
+    }
+
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+typedef void (*bandwidth_s_fn)(float* restrict, npy_intp, npy_intp, npy_intp*, npy_intp*);
+static bandwidth_s_fn bandwidth_s_impl = 0;
+
+__attribute__((constructor))
+static void bandwidth_s_resolve(void) {
+    bandwidth_s_impl = __builtin_cpu_supports("avx2") ? bandwidth_s_avx2
+                                                      : bandwidth_s_scalar;
+}
+#endif // SCIPY_HAVE_AVX2_TARGET
 
 static inline void
-bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_s(float* restrict data, npy_intp n, npy_intp m,
+            npy_intp* lower_band, npy_intp* upper_band)
+{
+#ifdef SCIPY_HAVE_AVX2_TARGET
+    bandwidth_s_impl(data, n, m, lower_band, upper_band);
+#else
+    bandwidth_s_scalar(data, n, m, lower_band, upper_band);
+#endif
+}
+
+
+// bandwidth_d
+
+static inline void
+bandwidth_d_scalar(double* restrict data, npy_intp n, npy_intp m,
+                   npy_intp* lower_band, npy_intp* upper_band)
 {
     Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
     for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (Py_ssize_t c = 0; c < limit; c++) {
             if (data[r*m + c] != 0.0) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
     for (Py_ssize_t r = 0; r < n-1; r++) {
         for (Py_ssize_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0) { ub = c - r; break; }
@@ -123,30 +242,130 @@ bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band,
     *upper_band = ub;
 }
 
+#ifdef SCIPY_HAVE_AVX2_TARGET
+__attribute__((target("avx2")))
+static inline void
+bandwidth_d_avx2(double* restrict data, npy_intp n, npy_intp m,
+                 npy_intp* lower_band, npy_intp* upper_band)
+{
+    const __m256d zero = _mm256_setzero_pd();
+    Py_ssize_t lb = 0, ub = 0;
+
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        if (limit >= 4) {
+            Py_ssize_t c = 0;
+            for (; c + 3 < limit; c += 4) {
+                __m256d v = _mm256_loadu_pd(&data[r*m + c]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    lb = r - (c + __builtin_ctz(~mask));
+                    goto lb_done_d;
+                }
+            }
+            if (c < limit) {
+                __m256d v = _mm256_loadu_pd(&data[r*m + limit - 4]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    lb = r - (limit - 4 + __builtin_ctz(~mask));
+                    goto lb_done_d;
+                }
+            }
+        } else {
+            for (Py_ssize_t c = 0; c < limit; c++) {
+                if (data[r*m + c] != 0.0) { lb = r - c; goto lb_done_d; }
+            }
+        }
+        lb_done_d:
+        if (r <= lb) { break; }
+    }
+
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        Py_ssize_t limit = r + ub;
+        Py_ssize_t span = m - 1 - limit;
+        if (span >= 4) {
+            Py_ssize_t c = m - 1;
+            for (; c - 3 > limit; c -= 4) {
+                __m256d v = _mm256_loadu_pd(&data[r*m + c - 3]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    int last = 31 - __builtin_clz(~mask & 0xF);
+                    ub = (c - 3 + last) - r;
+                    goto ub_done_d;
+                }
+            }
+            if (c > limit) {
+                __m256d v = _mm256_loadu_pd(&data[r*m + limit + 1]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    int last = 31 - __builtin_clz(~mask & 0xF);
+                    ub = (limit + 1 + last) - r;
+                    goto ub_done_d;
+                }
+            }
+        } else {
+            for (Py_ssize_t c = m - 1; c > limit; c--) {
+                if (data[r*m + c] != 0.0) { ub = c - r; goto ub_done_d; }
+            }
+        }
+        ub_done_d:
+        if (r + ub + 1 > m) { break; }
+    }
+
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+typedef void (*bandwidth_d_fn)(double* restrict, npy_intp, npy_intp, npy_intp*, npy_intp*);
+static bandwidth_d_fn bandwidth_d_impl = 0;
+
+__attribute__((constructor))
+static void bandwidth_d_resolve(void) {
+    bandwidth_d_impl = __builtin_cpu_supports("avx2") ? bandwidth_d_avx2
+                                                      : bandwidth_d_scalar;
+}
+#endif // SCIPY_HAVE_AVX2_TARGET
 
 static inline void
-bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_d(double* restrict data, npy_intp n, npy_intp m,
+            npy_intp* lower_band, npy_intp* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { lb = r - c; break; }
+#ifdef SCIPY_HAVE_AVX2_TARGET
+    bandwidth_d_impl(data, n, m, lower_band, upper_band);
 #else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { lb = r - c; break; }
+    bandwidth_d_scalar(data, n, m, lower_band, upper_band);
 #endif
+}
+
+
+// bandwidth_c
+// Complex64: each element is 2 floats. Cast to float*, index as (r*m+c)*2.
+// AVX2 loads 8 floats = 4 complex values. Mask bit-pairs: [re,im] per element.
+
+static inline void
+bandwidth_c_scalar(SCIPY_C* restrict data, npy_intp n, npy_intp m,
+                   npy_intp* lower_band, npy_intp* upper_band)
+{
+    float* fdata = (float*)data;
+    Py_ssize_t lb = 0, ub = 0;
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (Py_ssize_t c = 0; c < limit; c++) {
+            Py_ssize_t idx = (r*m + c) * 2;
+            if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
     for (Py_ssize_t r = 0; r < n-1; r++) {
         for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { ub = c - r; break; }
-#endif
+            Py_ssize_t idx = (r*m + c) * 2;
+            if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
     }
@@ -154,35 +373,259 @@ bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band
     *upper_band = ub;
 }
 
+#ifdef SCIPY_HAVE_AVX2_TARGET
+__attribute__((target("avx2")))
+static inline void
+bandwidth_c_avx2(SCIPY_C* restrict data, npy_intp n, npy_intp m,
+                 npy_intp* lower_band, npy_intp* upper_band)
+{
+    float* fdata = (float*)data;
+    const __m256 zero = _mm256_setzero_ps();
+    Py_ssize_t lb = 0, ub = 0;
+
+    // 8 floats = 4 complex64 per tray
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        if (limit >= 4) {
+            Py_ssize_t c = 0;
+            for (; c + 3 < limit; c += 4) {
+                __m256 v = _mm256_loadu_ps(&fdata[(r*m + c) * 2]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    // 4 complex elements: bits [0,1]=c, [2,3]=c+1, [4,5]=c+2, [6,7]=c+3
+                    if ((mask & 0x03) != 0x03) { lb = r - c;       goto lb_done_c; }
+                    if ((mask & 0x0C) != 0x0C) { lb = r - (c + 1); goto lb_done_c; }
+                    if ((mask & 0x30) != 0x30) { lb = r - (c + 2); goto lb_done_c; }
+                    lb = r - (c + 3); goto lb_done_c;
+                }
+            }
+            if (c < limit) {
+                __m256 v = _mm256_loadu_ps(&fdata[(r*m + limit - 4) * 2]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    Py_ssize_t base = limit - 4;
+                    if ((mask & 0x03) != 0x03) { lb = r - base;       goto lb_done_c; }
+                    if ((mask & 0x0C) != 0x0C) { lb = r - (base + 1); goto lb_done_c; }
+                    if ((mask & 0x30) != 0x30) { lb = r - (base + 2); goto lb_done_c; }
+                    lb = r - (base + 3); goto lb_done_c;
+                }
+            }
+        } else {
+            for (Py_ssize_t c = 0; c < limit; c++) {
+                Py_ssize_t idx = (r*m + c) * 2;
+                if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) {
+                    lb = r - c; goto lb_done_c;
+                }
+            }
+        }
+        lb_done_c:
+        if (r <= lb) { break; }
+    }
+
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        Py_ssize_t limit = r + ub;
+        Py_ssize_t span = m - 1 - limit;
+        if (span >= 4) {
+            Py_ssize_t c = m - 1;
+            for (; c - 3 > limit; c -= 4) {
+                __m256 v = _mm256_loadu_ps(&fdata[(r*m + c - 3) * 2]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    // rightmost nonzero: check from high bits down
+                    if ((mask & 0xC0) != 0xC0) { ub = c - r;       goto ub_done_c; }
+                    if ((mask & 0x30) != 0x30) { ub = (c - 1) - r; goto ub_done_c; }
+                    if ((mask & 0x0C) != 0x0C) { ub = (c - 2) - r; goto ub_done_c; }
+                    ub = (c - 3) - r; goto ub_done_c;
+                }
+            }
+            if (c > limit) {
+                __m256 v = _mm256_loadu_ps(&fdata[(r*m + limit + 1) * 2]);
+                __m256 cmp = _mm256_cmp_ps(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_ps(cmp);
+                if (mask != 0xFF) {
+                    Py_ssize_t base = limit + 1;
+                    if ((mask & 0xC0) != 0xC0) { ub = (base + 3) - r; goto ub_done_c; }
+                    if ((mask & 0x30) != 0x30) { ub = (base + 2) - r; goto ub_done_c; }
+                    if ((mask & 0x0C) != 0x0C) { ub = (base + 1) - r; goto ub_done_c; }
+                    ub = base - r; goto ub_done_c;
+                }
+            }
+        } else {
+            for (Py_ssize_t c = m - 1; c > limit; c--) {
+                Py_ssize_t idx = (r*m + c) * 2;
+                if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) {
+                    ub = c - r; goto ub_done_c;
+                }
+            }
+        }
+        ub_done_c:
+        if (r + ub + 1 > m) { break; }
+    }
+
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+typedef void (*bandwidth_c_fn)(SCIPY_C* restrict, npy_intp, npy_intp, npy_intp*, npy_intp*);
+static bandwidth_c_fn bandwidth_c_impl = 0;
+
+__attribute__((constructor))
+static void bandwidth_c_resolve(void) {
+    bandwidth_c_impl = __builtin_cpu_supports("avx2") ? bandwidth_c_avx2
+                                                      : bandwidth_c_scalar;
+}
+#endif // SCIPY_HAVE_AVX2_TARGET
 
 static inline void
-bandwidth_z(SCIPY_Z* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m,
+            npy_intp* lower_band, npy_intp* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { lb = r - c; break; }
+#ifdef SCIPY_HAVE_AVX2_TARGET
+    bandwidth_c_impl(data, n, m, lower_band, upper_band);
 #else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { lb = r - c; break; }
+    bandwidth_c_scalar(data, n, m, lower_band, upper_band);
 #endif
+}
+
+
+// bandwidth_z
+// Complex128: each element is 2 doubles. Cast to double*, index as (r*m+c)*2.
+// AVX2 loads 4 doubles = 2 complex values. Mask bit-pairs: [re,im] per element.
+
+static inline void
+bandwidth_z_scalar(SCIPY_Z* restrict data, npy_intp n, npy_intp m,
+                   npy_intp* lower_band, npy_intp* upper_band)
+{
+    double* ddata = (double*)data;
+    Py_ssize_t lb = 0, ub = 0;
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (Py_ssize_t c = 0; c < limit; c++) {
+            Py_ssize_t idx = (r*m + c) * 2;
+            if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
     for (Py_ssize_t r = 0; r < n-1; r++) {
         for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { ub = c - r; break; }
-#endif
+            Py_ssize_t idx = (r*m + c) * 2;
+            if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
     }
     *lower_band = lb;
     *upper_band = ub;
+}
+
+#ifdef SCIPY_HAVE_AVX2_TARGET
+__attribute__((target("avx2")))
+static inline void
+bandwidth_z_avx2(SCIPY_Z* restrict data, npy_intp n, npy_intp m,
+                 npy_intp* lower_band, npy_intp* upper_band)
+{
+    double* ddata = (double*)data;
+    const __m256d zero = _mm256_setzero_pd();
+    Py_ssize_t lb = 0, ub = 0;
+
+    // 4 doubles = 2 complex128 per tray
+    for (Py_ssize_t r = n-1; r > 0; r--) {
+        Py_ssize_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        if (limit >= 2) {
+            Py_ssize_t c = 0;
+            for (; c + 1 < limit; c += 2) {
+                __m256d v = _mm256_loadu_pd(&ddata[(r*m + c) * 2]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    if ((mask & 0x3) != 0x3) { lb = r - c;       goto lb_done_z; }
+                    else                      { lb = r - (c + 1); goto lb_done_z; }
+                }
+            }
+            if (c < limit) {
+                __m256d v = _mm256_loadu_pd(&ddata[(r*m + limit - 2) * 2]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    if ((mask & 0x3) != 0x3) { lb = r - (limit - 2); goto lb_done_z; }
+                    else                      { lb = r - (limit - 1); goto lb_done_z; }
+                }
+            }
+        } else {
+            for (Py_ssize_t c = 0; c < limit; c++) {
+                Py_ssize_t idx = (r*m + c) * 2;
+                if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) {
+                    lb = r - c; goto lb_done_z;
+                }
+            }
+        }
+        lb_done_z:
+        if (r <= lb) { break; }
+    }
+
+    for (Py_ssize_t r = 0; r < n-1; r++) {
+        Py_ssize_t limit = r + ub;
+        Py_ssize_t span = m - 1 - limit;
+        if (span >= 2) {
+            Py_ssize_t c = m - 1;
+            for (; c - 1 > limit; c -= 2) {
+                __m256d v = _mm256_loadu_pd(&ddata[(r*m + c - 1) * 2]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    if ((mask & 0xC) != 0xC) { ub = c - r;       goto ub_done_z; }
+                    else                      { ub = (c - 1) - r; goto ub_done_z; }
+                }
+            }
+            if (c > limit) {
+                __m256d v = _mm256_loadu_pd(&ddata[(r*m + limit + 1) * 2]);
+                __m256d cmp = _mm256_cmp_pd(v, zero, _CMP_EQ_OQ);
+                int mask = _mm256_movemask_pd(cmp);
+                if (mask != 0xF) {
+                    if ((mask & 0xC) != 0xC) { ub = (limit + 2) - r; goto ub_done_z; }
+                    else                      { ub = (limit + 1) - r; goto ub_done_z; }
+                }
+            }
+        } else {
+            for (Py_ssize_t c = m - 1; c > limit; c--) {
+                Py_ssize_t idx = (r*m + c) * 2;
+                if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) {
+                    ub = c - r; goto ub_done_z;
+                }
+            }
+        }
+        ub_done_z:
+        if (r + ub + 1 > m) { break; }
+    }
+
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+typedef void (*bandwidth_z_fn)(SCIPY_Z* restrict, npy_intp, npy_intp, npy_intp*, npy_intp*);
+static bandwidth_z_fn bandwidth_z_impl = 0;
+
+__attribute__((constructor))
+static void bandwidth_z_resolve(void) {
+    bandwidth_z_impl = __builtin_cpu_supports("avx2") ? bandwidth_z_avx2
+                                                      : bandwidth_z_scalar;
+}
+#endif // SCIPY_HAVE_AVX2_TARGET
+
+static inline void
+bandwidth_z(SCIPY_Z* restrict data, npy_intp n, npy_intp m,
+            npy_intp* lower_band, npy_intp* upper_band)
+{
+#ifdef SCIPY_HAVE_AVX2_TARGET
+    bandwidth_z_impl(data, n, m, lower_band, upper_band);
+#else
+    bandwidth_z_scalar(data, n, m, lower_band, upper_band);
+#endif
 }
 
 
