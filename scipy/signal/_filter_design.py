@@ -4672,6 +4672,24 @@ def buttap(N, *, xp=None, device=None):
     See Also
     --------
     butter : Filter design function using this prototype
+    Examples
+    --------
+    Design a 3rd-order Butterworth analog prototype filter:
+
+    >>> from scipy.signal import buttap
+    >>> z, p, k = buttap(3)
+    >>> z
+    array([], dtype=float64)
+    >>> len(p)
+    3
+    >>> k
+    1.0
+
+    The poles are evenly spaced on the left half of the unit circle:
+
+    >>> import numpy as np
+    >>> np.abs(p)  # all poles have unit magnitude
+    array([1., 1., 1.])
 
     """
     if xp is None:
@@ -5333,6 +5351,25 @@ def besselap(N, norm='phase', *, xp=None, device=None):
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
+    Examples
+    --------
+    Design a 3rd-order Bessel analog prototype filter with default
+    phase-matched normalization:
+
+    >>> from scipy.signal import besselap
+    >>> z, p, k = besselap(3)
+    >>> z
+    array([], dtype=float64)
+    >>> len(p)
+    3
+    >>> k
+    1.0
+
+    The filter with magnitude normalization:
+
+    >>> z, p, k = besselap(3, norm='mag')
+    >>> k
+    1.0
 
     """
     if xp is None:
