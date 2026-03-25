@@ -386,6 +386,8 @@ def xp_assert_less_equal(
         check_0d=check_0d
     )
 
+    # we call `_strict_check` before `_assert_less` so that scalars are
+    # coerced to the `xp` namespace before we apply `xp.nextafter`
     _assert_less(
         actual, xp.nextafter(desired, desired + 1),
         err_msg=err_msg, verbose=verbose, xp=xp

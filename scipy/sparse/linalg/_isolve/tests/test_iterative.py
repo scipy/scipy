@@ -43,10 +43,10 @@ def _assert_success(*, A, x, b, xp, tol, less_equal=False):
     err = xp_vector_norm(residual, axis=-1)
     assertion = xp_assert_less_equal if less_equal else xp_assert_less
     if err.ndim >= 1:
-        tol = xp.broadcast_to(tol, residual.shape[:-1])
+        tol = xp.broadcast_to(tol, err)
     # `check_dtype` fails for `minres` which can return double precision
     # for single precision input
-    assertion(err, tol, check_dtype=False)
+    assertion(err, tol)
 
 
 # create parametrized fixture for easy reuse in tests
@@ -587,10 +587,7 @@ def test_maxiter_worsening(solver, xp):
         assert error <= slack_tol * best_error
 
 
-@pytest.mark.parametrize("batch_A", [()])
-@pytest.mark.parametrize("batch_b", [()])
-def test_x0_working(solver, xp, batch_A, batch_b):
-    # Easy problem
+def _setup_random_system(xp, batch_A, batch_b):
     rng = np.random.default_rng(1685363802304750)
     n = 10
     A = rng.random(size=(*batch_A, n, n))
@@ -599,6 +596,14 @@ def test_x0_working(solver, xp, batch_A, batch_b):
     x0 = rng.random((*batch_b, n))
     dtype = xpx.default_dtype(xp)
     A, b, x0 = (xp.asarray(arr, dtype=dtype) for arr in [A, b, x0])
+    return A, b, x0
+
+
+@pytest.mark.parametrize("batch_A", [()])
+@pytest.mark.parametrize("batch_b", [()])
+def test_x0_working(solver, xp, batch_A, batch_b):
+    # Easy problem
+    A, b, x0 = _setup_random_system(xp, batch_A, batch_b)
 
     if solver is minres:
         kw = dict(rtol=1e-6)
@@ -693,15 +698,7 @@ def test_show(case, capsys, xp, batch_A, batch_b):
 @pytest.mark.parametrize("batch_A", [()])
 @pytest.mark.parametrize("batch_b", [()])
 def test_positional_error(solver, xp, batch_A, batch_b):
-    # from test_x0_working
-    rng = np.random.default_rng(1685363802304750)
-    n = 10
-    A = rng.random(size=(*batch_A, n, n))
-    A = A @ A.mT
-    b = rng.random((*batch_b, n))
-    x0 = rng.random((*batch_b, n))
-    dtype = xpx.default_dtype(xp)
-    A, b, x0 = (xp.asarray(arr, dtype=dtype) for arr in [A, b, x0])
+    A, b, x0 = _setup_random_system(xp, batch_A, batch_b)
     with pytest.raises(TypeError):
         solver(A, b, x0, 1e-5)
 
@@ -712,15 +709,7 @@ def test_positional_error(solver, xp, batch_A, batch_b):
 def test_invalid_atol(solver, atol, xp, batch_A, batch_b):
     if solver == minres:
         pytest.skip("minres has no `atol` argument")
-    # from test_x0_working
-    rng = np.random.default_rng(1685363802304750)
-    n = 10
-    A = rng.random(size=(*batch_A, n, n))
-    A = A @ A.mT
-    b = rng.random((*batch_b, n))
-    x0 = rng.random((*batch_b, n))
-    dtype = xpx.default_dtype(xp)
-    A, b, x0 = (xp.asarray(arr, dtype=dtype) for arr in [A, b, x0])
+    A, b, x0 = _setup_random_system(xp, batch_A, batch_b)
     with pytest.raises(ValueError):
         solver(A, b, x0, atol=atol)
 
