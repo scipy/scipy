@@ -468,8 +468,6 @@ def test_atol(solver, xp, batch_A, batch_b):
     A = xp.asarray(A, dtype=dtype) 
     b = xp.asarray(b, dtype=dtype)
 
-    b_norm = xp_vector_norm(b, axis=-1)
-
     tols = np.r_[0, np.logspace(-9, 2, 7), np.inf]
 
     # Check effect of badly scaled preconditioners
