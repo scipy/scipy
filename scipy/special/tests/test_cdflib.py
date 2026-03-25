@@ -955,3 +955,29 @@ def test_bdtrik(y, n, p, k):
     # Reference values for y were computed with mpmath using
     # the _binomial_cdf function from above.
     assert_allclose(sp.bdtrik(y, n, p), k, rtol=1e-11)
+
+
+@pytest.mark.parametrize("p, std, x, ref", [
+    (0, 0.1, 0, np.nan),
+    (0.1, np.inf, 1, np.inf),
+    (0.1, 1, np.inf, np.inf),
+    (0.1, 1, -np.inf, -np.inf),
+    (0.1, np.inf, np.inf, np.inf),
+    (0.1, 0.1, np.inf, np.inf),
+    (0.1, 1, -np.inf, -np.inf),
+    (0.3, -1, 1, np.nan)
+])
+def test_nrdtrimn_edge_cases(p, std, x, ref):
+    assert_equal(sp.nrdtrimn(p, std, x), ref)
+
+
+@pytest.mark.parametrize("mn, p, x, ref", [
+    (0, 0, 0, np.nan),
+    (0, 1, 0, np.nan),
+    (0, 1, np.inf, np.nan),
+    (0.1, 1, 1, np.nan),
+    (0.1, 0.1, np.inf, -np.inf),
+    (0.1, 0.1, -np.inf, np.inf),
+])
+def test_nrdtrisd_edge_cases(mn, p, x, ref):
+    assert_equal(sp.nrdtrisd(mn, p, x), ref)
