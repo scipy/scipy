@@ -10,5 +10,5 @@
  * It is conditionally included by blaslapack_declarations.h when
  * ARNAUD_HAS_BLAS_CONFIG is defined.
  */
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #define ARNAUD_BLAS(name) BLAS_FUNC(name)
