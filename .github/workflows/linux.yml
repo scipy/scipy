@@ -15,6 +15,7 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  CCACHE_MAXSIZE: "250M"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
