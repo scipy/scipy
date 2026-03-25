@@ -602,6 +602,7 @@ _cpp_Wno_unused_function = cpp.get_supported_arguments('-Wno-unused-function')
 _cpp_Wno_unused_local_typedefs = cpp.get_supported_arguments('-Wno-unused-local-typedefs')
 _cpp_Wno_unused_variable = cpp.get_supported_arguments('-Wno-unused-variable')
 _cpp_Wno_int_in_bool_context = cpp.get_supported_arguments('-Wno-int-in-bool-context')
+_cpp_Wno_unneeded_internal_declaration = cpp.get_supported_arguments('-Wno-unneeded-internal-declaration')
 
 cpp_args_pythran += [
   _cpp_Wno_cpp,
@@ -812,6 +813,10 @@ else
   _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
 endif
 conf_data.set('BLAS_CYTHON_ILP64', _cython_blas_ilp64.to_string())
+
+# TODO: make this into an option
+conf_data.set('BLAS_HAS_LP64', true)
+conf_data.set('LAPACK_HAS_LP64', true)
 
 configure_file(
   input: '__config__.py.in',

@@ -23,13 +23,13 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_ddefs.h"
 
-extern void dswap_(int *, double [], int *, double [], int *);
-extern void daxpy_(int *, double *, double [], int *, double [], int *);
-extern void dcopy_(int *, double [], int *, double [], int *);
-extern double dasum_(int *, double *, int *);
-extern double dnrm2_(int *, double *, int *);
-extern double dnrm2_(int *, double [], int *);
-extern int idamax_(int *, double [], int *);
+extern void dswap_(slu_blasint *, double [], slu_blasint *, double [], slu_blasint *);
+extern void daxpy_(slu_blasint *, double *, double [], slu_blasint *, double [], slu_blasint *);
+extern void dcopy_(slu_blasint *, double [], slu_blasint *, double [], slu_blasint *);
+extern double dasum_(slu_blasint *, double *, slu_blasint *);
+extern double dnrm2_(slu_blasint *, double *, slu_blasint *);
+extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
+extern slu_blasint idamax_(slu_blasint *, double [], slu_blasint *);
 
 #if 0
 static double *A;  /* used in _compare_ only */
@@ -73,7 +73,7 @@ int ilu_ddrop_row(
     register int i, k, m1;
     register int nzlc; /* number of nonzeros in column last+1 */
     int_t xlusup_first, xlsub_first;
-    int m, n; /* m x n is the size of the supernode */
+    slu_blasint m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register double *temp;
     register double *lusup = (double *) Glu->lusup;
@@ -87,8 +87,8 @@ int ilu_ddrop_row(
     double zero = 0.0;
     double one = 1.0;
     double none = -1.0;
-    int i_1 = 1;
-    int inc_diag; /* inc_diag = m + 1 */
+    slu_blasint i_1 = 1;
+    slu_blasint inc_diag; /* inc_diag = m + 1 */
     int nzp = 0;  /* number of zero pivots */
     double alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
 
@@ -193,7 +193,7 @@ int ilu_ddrop_row(
 	    }
 	    else /* by quick select */
 	    {
-		int len = m1 - n + 1;
+		slu_blasint len = m1 - n + 1;
 		dcopy_(&len, dwork, &i_1, dwork2, &i_1);
 		tol = dqselect(len, dwork2, quota - n);
 #if 0

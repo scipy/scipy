@@ -26,7 +26,7 @@ at the top-level directory.
 int num_drop_U;
 #endif
 
-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+extern void zcopy_(slu_blasint *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
 
 #if 0
 static doublecomplex *A;  /* used in _compare_ only */
@@ -72,11 +72,11 @@ ilu_zcopy_to_ucol(
     doublecomplex    *ucol;
     int_t     *usub, *xusub;
     int_t     nzumax;
-    int       m; /* number of entries in the nonzero U-segments */
+    slu_blasint m; /* number of entries in the nonzero U-segments */
     register double d_max = 0.0, d_min = 1.0 / dmach("Safe minimum");
     register double tmp;
     doublecomplex zero = {0.0, 0.0};
-    int i_1 = 1;
+    slu_blasint i_1 = 1;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;

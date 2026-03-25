@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cstdint>
 #include <type_traits>
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 constexpr int LU_MAX_NDIM = 64;
 

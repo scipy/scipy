@@ -6,7 +6,7 @@
 #include "Python.h"
 #include <tuple>
 #include "numpy/npy_math.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 /*
  * declare LAPACK prototypes
@@ -1001,7 +1001,7 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  */
 template<typename T>
 CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
 
     real_type value = real_part(_lwrk) * fudge_factor;
     if((std::is_same<real_type, float>::value) ||
@@ -1138,7 +1138,7 @@ void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_in
         }
 
         for (npy_intp j = stop; j < m; j++) {
-            dst[j*n + i] = numeric_limits<T>::zero;
+            dst[j*n + i] = sp_numeric_limits<T>::zero;
         }
     }
 }
@@ -1149,11 +1149,11 @@ void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_in
  */
 
 template<typename T>
-typename type_traits<T>::real_type
+typename sp_type_traits<T>::real_type
 norm1_(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename sp_type_traits<T>::real_type;
+    using value_type = typename sp_type_traits<T>::value_type;
     value_type *pA = reinterpret_cast<value_type *>(A);
 
     Py_ssize_t i, j;
@@ -1170,11 +1170,11 @@ norm1_(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename sp_type_traits<T>::real_type
 norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename sp_type_traits<T>::real_type;
+    using value_type = typename sp_type_traits<T>::value_type;
     value_type *pA = reinterpret_cast<value_type *>(A);
 
     Py_ssize_t i, j;
@@ -1201,11 +1201,11 @@ norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename sp_type_traits<T>::real_type
 norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename sp_type_traits<T>::real_type;
+    using value_type = typename sp_type_traits<T>::value_type;
     value_type *pA = reinterpret_cast<value_type *>(A);
 
     Py_ssize_t i, j;
@@ -1230,7 +1230,7 @@ norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename sp_type_traits<T>::real_type
 norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
     // NB: transpose for the F order
     if (uplo == 'U') {return norm1_sym_herm_lower(A, work, n);}
@@ -1240,10 +1240,10 @@ norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
 
 
 template<typename T>
-typename type_traits<T>::real_type
+typename sp_type_traits<T>::real_type
 norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename sp_type_traits<T>::real_type;
+    using value_type = typename sp_type_traits<T>::value_type;
 
     value_type *pd = reinterpret_cast<value_type *>(d);
     value_type *pdu = reinterpret_cast<value_type *>(du);
@@ -1272,10 +1272,10 @@ norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
  * is always such that its number of rows is `2 * kl + ku + 1`.
  */
 template <typename T>
-typename type_traits<T>::real_type
+typename sp_type_traits<T>::real_type
 norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename sp_type_traits<T>::real_type;
+    using value_type = typename sp_type_traits<T>::value_type;
 
     value_type *pab = reinterpret_cast<value_type *>(ab);
     real_type *rwork = (real_type *)work;
@@ -1314,7 +1314,7 @@ template<typename T>
 void
 bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
 {
-    using value_type = typename type_traits<T>::value_type;
+    using value_type = typename sp_type_traits<T>::value_type;
     value_type *p_data = reinterpret_cast<value_type *>(data);
     value_type zero = value_type(0.);
 
@@ -1353,7 +1353,7 @@ template<typename T>
 void
 bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy_intp *lower_band, npy_intp *upper_band)
 {
-    using value_type = typename type_traits<T>::value_type;
+    using value_type = typename sp_type_traits<T>::value_type;
     value_type *p_data = reinterpret_cast<value_type *>(data);
     value_type zero = value_type(0.);
 
@@ -1395,7 +1395,7 @@ template<typename T>
 std::tuple<bool, bool>
 is_sym_or_herm(const T *data, npy_intp n) {
     // Return a pair of (is_symmetric, is_hermitian)
-    using value_type = typename type_traits<T>::value_type;
+    using value_type = typename sp_type_traits<T>::value_type;
     const value_type *p_data = reinterpret_cast<const value_type *>(data);
     bool all_sym = true, all_herm = true;
 
@@ -1560,13 +1560,13 @@ zero_other_triangle(char uplo, T *data, npy_intp n) {
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=i+1; j<n; j++){
-                data[j + i*n] = numeric_limits<T>::zero;
+                data[j + i*n] = sp_numeric_limits<T>::zero;
             }
         }
     } else {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=0; j<i; j++){
-                data[j + i*n] = numeric_limits<T>::zero;
+                data[j + i*n] = sp_numeric_limits<T>::zero;
             }
         }
     }
@@ -1578,7 +1578,7 @@ inline void
 nan_matrix(T * data, npy_intp n) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            data[i * n + j] = numeric_limits<T>::nan;
+            data[i * n + j] = sp_numeric_limits<T>::nan;
         }
     }
 }
