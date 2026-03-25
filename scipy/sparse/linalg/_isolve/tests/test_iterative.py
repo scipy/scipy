@@ -43,8 +43,6 @@ def _assert_success(*, A, x, b, xp, rtol=1.0, atol=0.0, less_equal=False):
     err = xp_vector_norm(residual, axis=-1)
     assertion = xp_assert_less_equal if less_equal else xp_assert_less
     limit = atol + rtol * xp_vector_norm(b, axis=-1)
-    # `check_dtype` fails for `minres` which can return double precision
-    # for single precision input
     assertion(err, limit)
 
 
@@ -565,7 +563,6 @@ def test_maxiter_worsening(solver, xp):
     rtol = 1e-8
     for maxiter in range(1, 20):
         x, info = solver(A, v, maxiter=maxiter, rtol=rtol, atol=0.0)
-        
         if info == 0:
             _assert_success(A=A, x=x, b=v, xp=xp, rtol=rtol)
 
