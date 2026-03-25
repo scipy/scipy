@@ -39,7 +39,7 @@ WRAPPED_FUNCS = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
 USE_OLD_ACCELERATE = ['lsame', 'dcabs1']
 
 C_PREAMBLE = """
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #include "fortran_defs.h"
 
 #include "_mkl_ilp64_fixes.h"
