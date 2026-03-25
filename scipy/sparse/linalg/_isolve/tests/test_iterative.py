@@ -37,16 +37,20 @@ _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
 CB_TYPE_FILTER = ".*called without specifying `callback_type`.*"
 
 
-def _assert_success(*, A, x, b, xp, tol, less_equal=False):
+def _assert_success(*, A, x, b, xp, rtol=None, limit=None, less_equal=False):
+    if (rtol and limit) or (not rtol and not limit):
+        raise ValueError("must specify just one of rtol and limit")
     Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
     residual = Ax - b
     err = xp_vector_norm(residual, axis=-1)
     assertion = xp_assert_less_equal if less_equal else xp_assert_less
+    if rtol:
+        limit = rtol * xp_vector_norm(b, axis=-1)
     if err.ndim >= 1:
-        tol = xp.broadcast_to(tol, err)
+        limit = xp.broadcast_to(limit, err)
     # `check_dtype` fails for `minres` which can return double precision
     # for single precision input
-    assertion(err, tol)
+    assertion(err, limit)
 
 
 # create parametrized fixture for easy reuse in tests
@@ -336,13 +340,12 @@ def test_convergence(case, xp, batch_A, batch_b):
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
     xp_assert_equal(x0, 0 * b)  # ensure that x0 is not overwritten
 
-    b_norm = xp_vector_norm(b, axis=-1)
     if case.convergence:
         assert info == 0
-        _assert_success(A=A, x=x, b=b, xp=xp, tol=b_norm * rtol)
+        _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
     else:
         assert info != 0
-        _assert_success(A=A, x=x, b=b, xp=xp, tol=b_norm, less_equal=True)
+        _assert_success(A=A, x=x, b=b, xp=xp, rtol=1, less_equal=True)
 
 
 @pytest.mark.parametrize("batch_A", [()])
@@ -381,15 +384,14 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
     else:
         x, info = case.solver(A, b, M=precond, x0=x0, rtol=rtol)
 
-    tol = xp_vector_norm(b, axis=-1) * rtol
     assert info == 0
-    _assert_success(A=A, x=x, b=b, xp=np, tol=tol)
+    _assert_success(A=A, x=x, b=b, xp=np, rtol=rtol)
 
     A = aslinearoperator(A)
 
     x, info = case.solver(A, b, x0=x0, rtol=rtol)
     assert info == 0
-    _assert_success(A=A, x=x, b=b, xp=np, tol=tol)
+    _assert_success(A=A, x=x, b=b, xp=np, rtol=rtol)
 
 
 @pytest.mark.parametrize("batch_A", [()])
@@ -439,8 +441,7 @@ def test_precond_inverse(case, xp, batch_A, batch_b):
     x, info = case.solver(A, b, M=precond, x0=x0, rtol=rtol)
 
     assert info == 0
-    tol = xp_vector_norm(b, axis=-1) * rtol
-    _assert_success(A=case.A, x=x, b=b, xp=xp, tol=tol)
+    _assert_success(A=case.A, x=x, b=b, xp=xp, rtol=rtol)
 
     # Solution should be nearly instant
     assert matvec_count[0] <= 3
@@ -503,8 +504,8 @@ def test_atol(solver, xp, batch_A, batch_b):
         atol2 = xp.asarray(atol2, dtype=A.dtype)
         # Added 1.00025 fudge factor because of `err` exceeding `atol` just
         # very slightly on s390x (see gh-17839)
-        tol = 1.00025 * xp.maximum(atol, atol2)
-        _assert_success(A=A, x=x, b=b, xp=xp, tol=tol)
+        limit = 1.00025 * xp.maximum(atol, atol2)
+        _assert_success(A=A, x=x, b=b, xp=xp, limit=limit)
 
 
 @pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
@@ -575,11 +576,12 @@ def test_maxiter_worsening(solver, xp):
     # slack_tol = 7 if platform.machine() == 'aarch64' else 5
     slack_tol = 9
 
+    rtol = 1e-8
     for maxiter in range(1, 20):
-        x, info = solver(A, v, maxiter=maxiter, rtol=1e-8, atol=0.0)
+        x, info = solver(A, v, maxiter=maxiter, rtol=rtol, atol=0.0)
         
         if info == 0:
-            _assert_success(A=A, x=x, b=v, xp=xp, tol=1e-8 * xp_vector_norm(v))
+            _assert_success(A=A, x=x, b=v, xp=xp, rtol=rtol)
 
         # Check with slack
         error = xp_vector_norm(A @ x - v)
@@ -613,11 +615,11 @@ def test_x0_working(solver, xp, batch_A, batch_b):
     x, info = solver(A, b, **kw)
     assert info == 0
 
-    _assert_success(A=A, x=x, b=b, xp=xp, tol=1e-6 * xp_vector_norm(b, axis=-1))
+    _assert_success(A=A, x=x, b=b, xp=xp, rtol=1e-6)
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    _assert_success(A=A, x=x, b=b, xp=xp, tol=1e-5 * xp_vector_norm(b, axis=-1))
+    _assert_success(A=A, x=x, b=b, xp=xp, rtol=1e-5)
 
 
 @pytest.mark.parametrize("batch_A", [()])
@@ -641,8 +643,7 @@ def test_x0_equals_Mb(case, xp, batch_A, batch_b):
 
     assert x0 == 'Mb'  # ensure that x0 is not overwritten
     assert info == 0
-    tol = rtol * xp_vector_norm(b, axis=-1)
-    _assert_success(A=A, x=x, b=b, xp=xp, tol=tol)
+    _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
 
 
 @pytest.mark.parametrize("batch_A", [()])
