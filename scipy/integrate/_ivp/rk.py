@@ -274,6 +274,85 @@ class RK23(RungeKutta):
     ----------
     .. [1] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
            Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
+
+    Examples
+    --------
+    This example demonstrates how to compute one period of a periodic
+    orbit in a two-dimensional dynamical system.
+
+    >>> import numpy as np
+    >>> import scipy.integrate as itg
+    >>> import matplotlib.pylab as plt
+
+    Define a function that returns the right-hand side of a dynamical
+    system with a stable periodic orbit.
+
+    >>> def dynam_sys(t, x):
+    >>>     dx1_dt = 5*(1-x[1]**2)*x[0] - x[1]
+    >>>     dx2_dt = x[0]
+    >>>     return [dx1_dt, dx2_dt]
+
+    The system has an equilibrium at the origin. Create a solver
+    object with an initial state slightly away from the
+    equilibrium.
+
+    >>> solver = itg.RK45(dynam_sys, 0, [0.25,0.25], 1E200, max_step=0.05)
+
+    Create an array in which to store the estimated solution.
+    To allow for concatenation of future states, initialize the array
+    by reshaping the initial state.
+
+    >>> soly = solver.y.reshape(1, 2)
+
+    To find a point on the periodic orbit, run the solver
+    for ``2000`` integration steps. Store the estimated states in
+    ``soly``.
+
+    >>> for i in range(2000):
+    >>>     solver.step()
+    >>>     solyn = solver.y.reshape(1, 2)
+    >>>     soly = np.concatenate((soly, solyn))
+
+    Plot ``soly`` with its first element in green and its final
+    element in magenta.
+
+    >>> plt.plot(soly[:,0], soly[:,1])
+    >>> plt.plot(soly[0,0], soly[0,1], "go")
+    >>> plt.plot(soly[-1,0], soly[-1,1], "mo")
+    >>> plt.show()
+
+    The plot shows that the last element in ``soly`` is located on a
+    segment of the periodic orbit where there is relatively little
+    variation in the estimated states. Create another solver and
+    initialize it with the last element in ``soly``.
+
+    >>> init = np.array([soly[-1,0], soly[-1,1]])
+    >>> POsolver = itg.RK23(dynam_sys, 0, init, 5000, max_step=0.05)
+
+    Create a variable that tracks the distance of the current
+    estimated state from the initial state. Run ``POsolver`` until
+    the current estimated state is within ``0.005`` units of the last
+    estimated state.
+
+    >>> dist_init = 1
+    >>> POsoly = POsolver.y.reshape(1, 2)
+    >>> while dist_init > 0.005:
+    >>>     POsolver.step()
+    >>>     POsolyn = POsolver.y.reshape(1, 2)
+    >>>     POsoly = np.concatenate((POsoly, POsolyn))
+    >>>     dist_init = np.linalg.norm(init-POsolyn)
+
+    Plot ``POsoly`` with its initial element in green and its final
+    element in magenta.
+
+    >>> plt.plot(POsoly[:,0], POsoly[:,1])
+    >>> plt.plot(POsoly[0,0], POsoly[0,1], "go")
+    >>> plt.plot(POsoly[-1,0], POsoly[-1,1], "mo")
+    >>> plt.show()
+
+    The plot shows approximately one period of the orbit.
+    The final and initial states are so close that the final
+    state marker obscures the initial state marker.
     """
     order = 3
     error_estimator_order = 2
@@ -377,6 +456,84 @@ class RK45(RungeKutta):
            No. 1, pp. 19-26, 1980.
     .. [2] L. W. Shampine, "Some Practical Runge-Kutta Formulas", Mathematics
            of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
+
+    Examples
+    --------
+    This example demonstrates how to compute one period of a periodic
+    orbit in a two-dimensional dynamical system.
+
+    >>> import numpy as np
+    >>> import scipy.integrate as itg
+    >>> import matplotlib.pylab as plt
+
+    Define a function that returns the right-hand side of a dynamical
+    system with a stable periodic orbit.
+
+    >>> def dynam_sys(t, x):
+    >>>     dx1_dt = 5*(1-x[1]**2)*x[0] - x[1]
+    >>>     dx2_dt = x[0]
+    >>>     return [dx1_dt, dx2_dt]
+
+    The system has an equilibrium at the origin. Create a solver
+    object with an initial state slightly away from the
+    equilibrium.
+
+    >>> solver = itg.RK45(dynam_sys, 0, [0.25,0.25], 5000, max_step=0.05)
+
+    Create an array in which to store the estimated solution.
+    To allow for concatenation of future states, initialize the array
+    by reshaping the initial state.
+
+    >>> soly = solver.y.reshape(1, 2)
+
+    To find a point on the periodic orbit, run the solver for
+    ``2000`` integration steps. Store the estimated states in ``soly``.
+
+    >>> for i in range(2000):
+    >>>     solver.step()
+    >>>     solyn = solver.y.reshape(1, 2)
+    >>>     soly = np.concatenate((soly, solyn))
+
+    Plot ``soly`` with its first element in green and its final
+    element in magenta.
+
+    >>> plt.plot(soly[:,0], soly[:,1])
+    >>> plt.plot(soly[0,0], soly[0,1], "go")
+    >>> plt.plot(soly[-1,0], soly[-1,1], "mo")
+    >>> plt.show()
+
+    The plot shows that the last element in ``soly`` is located on a
+    segment of the periodic orbit where there is relatively little
+    variation in the estimated states. Create another solver and
+    initialize it with the last element in ``soly``.
+
+    >>> init = np.array([soly[-1,0], soly[-1,1]])
+    >>> POsolver = itg.RK45(dynam_sys, 0, init, 5000, max_step=0.05)
+
+    Create a variable that tracks the distance of the current
+    estimated state from the initial state. Run ``POsolver`` until
+    the current estimated state is within ``0.01`` units of the last
+    estimated state.
+
+    >>> dist_init = 1
+    >>> POsoly = POsolver.y.reshape(1, 2)
+    >>> while dist_init > 0.01:
+    >>>     POsolver.step()
+    >>>     POsolyn = POsolver.y.reshape(1, 2)
+    >>>     POsoly = np.concatenate((POsoly, POsolyn))
+    >>>     dist_init = np.linalg.norm(init-POsolyn)
+
+    Plot ``POsoly`` with its initial element in green and its final
+    element in magenta.
+
+    >>> plt.plot(POsoly[:,0], POsoly[:,1])
+    >>> plt.plot(POsoly[0,0], POsoly[0,1], "go")
+    >>> plt.plot(POsoly[-1,0], POsoly[-1,1], "mo")
+    >>> plt.show()
+
+    The plot shows approximately one period of the orbit.
+    The final and initial states are so close that the final
+    state marker obscures the initial state marker.
     """
     order = 5
     error_estimator_order = 4
