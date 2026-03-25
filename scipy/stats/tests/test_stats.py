@@ -2477,8 +2477,7 @@ class TestRelfreq(HistFunctionsTest):
         res = stats.relfreq(a, numbins=4)
         check_named_results(res, attributes, xp=xp)
 
-    @skip_xp_backends(np_only=True, reason='array-like input is NumPy-only')
-    def test_relfreq_array_like(self):
+    def test_relfreq_array_like(self):  # array_like is np only
         # check array_like input is accepted
         a = [1, 4, 2, 1, 3, 1]
         res, _, _, _ = stats.relfreq(a, numbins=4)
