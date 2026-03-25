@@ -2234,8 +2234,8 @@ HistogramResult = namedtuple('HistogramResult',
                              ('count', 'lowerlimit', 'binsize', 'extrapoints'))
 
 
-def _histogram(a, numbins=10, defaultlimits=None, weights=None,
-               printextras=False):
+def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
+               density=False, cumulative=False):
     """Create a histogram.
 
     Separate the range into several bins and return the number of instances
@@ -2255,10 +2255,6 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
     weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
-    printextras : bool, optional
-        If True, if there are extra points (i.e. the points that fall outside
-        the bin limits) a warning is raised saying how many of those points
-        there are.  Default is False.
 
     Returns
     -------
@@ -2281,35 +2277,66 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
     default if default limits is not set.
 
     """
-    a = np.ravel(a)
+    xp = array_namespace(a)
+    a = xp_ravel(a)
+    a, weights = xp_promote(a, weights, force_floating=True, xp=xp)
+
     if defaultlimits is None:
-        if a.size == 0:
+        if xp_size(a) == 0:
             # handle empty arrays. Undetermined range, so use 0-1.
-            defaultlimits = (0, 1)
+            defaultlimits = xp.asarray(0., dtype=a.dtype), xp.asarray(1., dtype=a.dtype)
         else:
             # no range given, so use values in `a`
-            data_min = a.min()
-            data_max = a.max()
+            data_min = xp.min(a)
+            data_max = xp.max(a)
             # Have bins extend past min and max values slightly
             s = (data_max - data_min) / (2. * (numbins - 1.))
             defaultlimits = (data_min - s, data_max + s)
+    else:
+        if not (np.iterable(defaultlimits) and len(defaultlimits)==2
+                and defaultlimits[0] < defaultlimits[1]):
+            message = ('If specified, `defaultreallimits` must be given as an iterable '
+                       'in the order (lower limit, upper limit).')
+            raise ValueError(message)
+        if not (xp.isdtype(a.dtype, 'real floating')
+                and (weights is None or xp.isdtype(weights.dtype, 'real floating'))):
+            message = '`a` and (if specified) `weights` must have real dtype.'
+            raise ValueError(message)
+        if weights is not None and not is_lazy_array(weights) and xp.any(weights < 0):
+            message = 'All `weights` must be non-negative.'
+            raise ValueError(message)
 
-    # use numpy's histogram method to compute bins
-    hist, bin_edges = np.histogram(a, bins=numbins, range=defaultlimits,
-                                   weights=weights)
-    # hist are not always floats, convert to keep with old output
-    hist = np.array(hist, dtype=float)
+    bin_edges = xp.linspace(*defaultlimits, numbins+1, dtype=a.dtype)
+    if weights is None:
+        indices = xp.searchsorted(xp.sort(a), bin_edges, side='left')
+        hist = xp.diff(indices)
+        n_right_limit = xp.count_nonzero(a == bin_edges[-1])
+        hist = xpx.at(hist)[-1].add(xp.astype(n_right_limit, hist.dtype))
+    else:
+        i = xp.argsort(a)
+        weights, a = weights[i], a[i]
+        cumulative_weights = xp.cumulative_sum(weights, include_initial=True)
+        indices = xp.searchsorted(a, bin_edges, side='left')
+        hist = xp.diff(xp.take_along_axis(cumulative_weights, indices, axis=-1))
+        hist = xpx.at(hist)[-1].add(xp.sum(xp.where(a == bin_edges[-1], weights, 0.)))
+
     # fixed width for bins is assumed, as numpy's histogram gives
     # fixed width bins for int values for 'bins'
     binsize = bin_edges[1] - bin_edges[0]
     # calculate number of extra points
-    extrapoints = len([v for v in a
-                       if defaultlimits[0] > v or v > defaultlimits[1]])
-    if extrapoints > 0 and printextras:
-        warnings.warn(f"Points outside given histogram range = {extrapoints}",
-                      stacklevel=3,)
+    binnedpoints = (xp.sum(hist) if weights is None
+                    else xp.count_nonzero((bin_edges[0] <= a) & (a <= bin_edges[-1])))
+    extrapoints = a.shape[0] - binnedpoints
 
-    return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
+    lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype)[()]
+
+    hist = xp.asarray(hist, dtype=a.dtype)
+    if density:
+        hist = hist / (a.shape[0] if weights is None else cumulative_weights[-1])
+    if cumulative:
+        hist = xp.cumulative_sum(hist, axis=0)
+
+    return HistogramResult(hist, lowerlimit, binsize, extrapoints)
 
 
 CumfreqResult = namedtuple('CumfreqResult',
@@ -2317,7 +2344,7 @@ CumfreqResult = namedtuple('CumfreqResult',
                             'extrapoints'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'fails tests')])
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a cumulative frequency histogram, using the histogram function.
 
@@ -2390,9 +2417,9 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     >>> plt.show()
 
     """
-    h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
-    cumhist = np.cumsum(h * 1, axis=0)
-    return CumfreqResult(cumhist, l, b, e)
+    h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights,
+                            cumulative=True)
+    return CumfreqResult(h, l, b, e)
 
 
 RelfreqResult = namedtuple('RelfreqResult',
@@ -2400,7 +2427,7 @@ RelfreqResult = namedtuple('RelfreqResult',
                             'extrapoints'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'fails tests')])
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a relative frequency histogram, using the histogram function.
 
@@ -2470,10 +2497,8 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     >>> plt.show()
 
     """
-    a = np.asanyarray(a)
-    h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
-    h = h / a.shape[0]
-
+    h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights,
+                            density=True)
     return RelfreqResult(h, l, b, e)
 
 
