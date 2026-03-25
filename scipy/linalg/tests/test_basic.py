@@ -2869,10 +2869,11 @@ class TestDTypes:
         a = self.get_arr2D(tcode)
 
         is_arm = platform.machine() == 'arm64'
+        is_armhf = platform.machine() == 'armv8l'   # gh-24831
         is_windows = os.name == 'nt'
 
         failing_tcodes = 'SUVOmM'
-        if not (is_arm or is_windows):
+        if not (is_arm or is_armhf or is_windows):
             failing_tcodes += 'gG'
 
         if tcode in failing_tcodes:
