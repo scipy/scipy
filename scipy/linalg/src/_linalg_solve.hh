@@ -5,7 +5,7 @@
 #include <iostream>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
 

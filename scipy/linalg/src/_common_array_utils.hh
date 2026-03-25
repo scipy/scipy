@@ -6,7 +6,7 @@
 #include "Python.h"
 #include <tuple>
 #include "numpy/npy_math.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 /*
  * declare LAPACK prototypes

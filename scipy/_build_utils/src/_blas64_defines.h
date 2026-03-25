@@ -5,7 +5,8 @@
  * via its hardcoded F_FUNC define.
  *
  * For ILP64 variants, we need a more flexible naming scheme, to potentially include
- * the _64 or 64_ suffixes. This is what the `BLAS_FUNC` macro from `npy_cblas.h` does.
+ * the _64 or 64_ suffixes. This is what the `BLAS_FUNC` macro from
+ * `scipy_blas_defines.h` does.
  *
  * We therefore inject the define into the f2py-generated sources.
  *
@@ -44,7 +45,7 @@
 #undef F_FUNC
 #endif
 
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #define F_FUNC(f, F) BLAS_FUNC(f)
 
 #include "_mkl_ilp64_fixes.h"
