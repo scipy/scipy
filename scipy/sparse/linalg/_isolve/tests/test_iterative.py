@@ -37,17 +37,12 @@ _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
 CB_TYPE_FILTER = ".*called without specifying `callback_type`.*"
 
 
-def _assert_success(*, A, x, b, xp, rtol=None, limit=None, less_equal=False):
-    if (rtol and limit) or (not rtol and not limit):
-        raise ValueError("must specify just one of rtol and limit")
+def _assert_success(*, A, x, b, xp, rtol=1.0, atol=0.0, less_equal=False):
     Ax = xp.squeeze(A @ x[..., xp.newaxis], axis=-1)
     residual = Ax - b
     err = xp_vector_norm(residual, axis=-1)
     assertion = xp_assert_less_equal if less_equal else xp_assert_less
-    if rtol:
-        limit = rtol * xp_vector_norm(b, axis=-1)
-    if err.ndim >= 1:
-        limit = xp.broadcast_to(limit, err)
+    limit = atol + rtol * xp_vector_norm(b, axis=-1)
     # `check_dtype` fails for `minres` which can return double precision
     # for single precision input
     assertion(err, limit)
@@ -498,14 +493,7 @@ def test_atol(solver, xp, batch_A, batch_b):
             x, info = solver(A, b, M=M, rtol=rtol, atol=atol)
 
         assert info == 0
-
-        atol2 = rtol * b_norm
-        atol = xp.asarray(atol, dtype=A.dtype)
-        atol2 = xp.asarray(atol2, dtype=A.dtype)
-        # Added 1.00025 fudge factor because of `err` exceeding `atol` just
-        # very slightly on s390x (see gh-17839)
-        limit = 1.00025 * xp.maximum(atol, atol2)
-        _assert_success(A=A, x=x, b=b, xp=xp, limit=limit)
+        _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol, atol=atol)
 
 
 @pytest.mark.skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11711")
