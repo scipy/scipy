@@ -4558,11 +4558,11 @@ add_newdoc("kolmogorov",
     This function wraps the implementation from the XSF (extended special functions)
     library.
 
-     References
-     ----------
-     .. [1] Marsaglia, G., Tsang, W. W., & Wang, J. (2003). "Evaluating Kolmogorov's distribution." 
-         Journal of statistical software, 8(18), 1-4.
-     .. [2] Kolmogorov-Smirnov test. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+    References
+    ----------
+    .. [1] Marsaglia, G., Tsang, W. W., & Wang, J. (2003). "Evaluating Kolmogorov's distribution." 
+       Journal of statistical software, 8(18), 1-4.
+    .. [2] Kolmogorov-Smirnov test. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
 
     Examples
     --------
