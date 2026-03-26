@@ -317,7 +317,8 @@ endif
 
 blas_lp64_dep = declare_dependency(
   dependencies: blas,
-  compile_args: _args_blas_lapack
+  compile_args: _args_blas_lapack,
+  include_directories: ['_build_utils/src'],
 )
 
 if not blas.found()
@@ -437,16 +438,14 @@ if use_ilp64
     endif
     message(f'BLAS symbol suffix (ILP64): @blas_symbol_suffix@')
   endif
-  _blas_incdir = []
   if blas_symbol_suffix != ''
     _args_blas_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
-    _blas_incdir = ['.']
   endif
 
   blas_dep = declare_dependency(
     dependencies: [blas_ilp64],
     compile_args: _args_blas_ilp64,
-    include_directories: _blas_incdir,
+    include_directories: ['_build_utils/src'],
   )
   lapack_dep = declare_dependency(dependencies: [lapack_ilp64, blas_dep])
 
@@ -861,7 +860,8 @@ if use_ilp64
   blas_dep = declare_dependency(
     dependencies: blas_dep,
     link_with: [g77_abi_wrappers_ilp64],
-    compile_args: [c_flags_ilp64]
+    compile_args: [c_flags_ilp64],
+    include_directories: ['_build_utils/src'],
   )
   lapack_dep = declare_dependency(
     dependencies: [lapack_dep, blas_dep],
