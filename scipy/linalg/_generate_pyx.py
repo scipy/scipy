@@ -36,7 +36,6 @@ CPP_GUARD_END = _wrappers_common.CPP_GUARD_END
 LAPACK_DECLS = _wrappers_common.LAPACK_DECLS
 NPY_TYPES = _wrappers_common.NPY_TYPES
 WRAPPED_FUNCS = _wrappers_common.WRAPPED_FUNCS
-all_newer = _wrappers_common.all_newer
 get_blas_macro_and_name = _wrappers_common.get_blas_macro_and_name
 read_signatures = _wrappers_common.read_signatures
 write_files = _wrappers_common.write_files
@@ -687,9 +686,6 @@ def make_all(outdir,
              lapack_header_name="_lapack_subroutines.h",
              accelerate=False,
              ilp64=False):
-    src_files = (os.path.abspath(__file__),
-                 blas_signature_file,
-                 lapack_signature_file)
     dst_files = (blas_name + '.pyx',
                  blas_name + '.pxd',
                  blas_header_name,
@@ -698,9 +694,6 @@ def make_all(outdir,
                  lapack_header_name)
     dst_files = [os.path.join(outdir, f) for f in dst_files]
     os.chdir(BASE_DIR)
-    if all_newer(dst_files, src_files):
-        print("scipy/linalg/_generate_pyx.py: all files up-to-date")
-        return
     with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     blas_sigs = read_signatures(blas_sigs)
