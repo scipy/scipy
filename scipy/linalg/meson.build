@@ -26,6 +26,7 @@ cython_linalg = custom_target('cython_linalg',
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
+    '../_build_utils/_generate_blas_wrapper.py',
     '../_build_utils/_wrappers_common.py',
   ],
   install: true,
