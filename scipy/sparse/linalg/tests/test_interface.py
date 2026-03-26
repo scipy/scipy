@@ -48,7 +48,7 @@ def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
         column[rng.integers(1, nshapes):] = 1
     # permute elements between shapes (while preserving overall batch shape)
     shapes = list(rng.permuted(shapes, axis=0))
-    # potentially trim preceeding 1s from a shape
+    # potentially trim preceding 1s from a shape
     for i in range(len(shapes)):
         shape = shapes[i]
         j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim

@@ -1309,7 +1309,7 @@ class TestMakeDistribution:
                 assert_allclose(X.lmoment(order, standardize=standardize),
                                 Y.lmoment(order, standardize=standardize))
 
-        # Confirm that the `sample` and `moment` methods are overriden as expected
+        # Confirm that the `sample` and `moment` methods are overridden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
         sample_inverse = X.sample(shape=10, rng=0, method='inverse_transform')
         assert_allclose(sample_formula, sample_inverse)
