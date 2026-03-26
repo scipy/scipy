@@ -288,9 +288,9 @@ class RK23(RungeKutta):
     system with a stable periodic orbit.
 
     >>> def dynam_sys(t, x):
-    >>>     dx1_dt = 5*(1-x[1]**2)*x[0] - x[1]
-    >>>     dx2_dt = x[0]
-    >>>     return [dx1_dt, dx2_dt]
+    ...     dx1_dt = 5*(1-x[1]**2)*x[0] - x[1]
+    ...     dx2_dt = x[0]
+    ...     return [dx1_dt, dx2_dt]
 
     The system has an equilibrium at the origin. Create a solver
     object with an initial state slightly away from the
@@ -309,9 +309,9 @@ class RK23(RungeKutta):
     ``soly``.
 
     >>> for i in range(2000):
-    >>>     solver.step()
-    >>>     solyn = solver.y.reshape(1, 2)
-    >>>     soly = np.concatenate((soly, solyn))
+    ...     solver.step()
+    ...     solyn = solver.y.reshape(1, 2)
+    ...     soly = np.concatenate((soly, solyn))
 
     Plot ``soly`` with its first element in green and its final
     element in magenta.
@@ -337,10 +337,10 @@ class RK23(RungeKutta):
     >>> dist_init = 1
     >>> POsoly = POsolver.y.reshape(1, 2)
     >>> while dist_init > 0.005:
-    >>>     POsolver.step()
-    >>>     POsolyn = POsolver.y.reshape(1, 2)
-    >>>     POsoly = np.concatenate((POsoly, POsolyn))
-    >>>     dist_init = np.linalg.norm(init-POsolyn)
+    ...     POsolver.step()
+    ...     POsolyn = POsolver.y.reshape(1, 2)
+    ...     POsoly = np.concatenate((POsoly, POsolyn))
+    ...     dist_init = np.linalg.norm(init-POsolyn)
 
     Plot ``POsoly`` with its initial element in green and its final
     element in magenta.
@@ -470,9 +470,9 @@ class RK45(RungeKutta):
     system with a stable periodic orbit.
 
     >>> def dynam_sys(t, x):
-    >>>     dx1_dt = 5*(1-x[1]**2)*x[0] - x[1]
-    >>>     dx2_dt = x[0]
-    >>>     return [dx1_dt, dx2_dt]
+    ...     dx1_dt = 5*(1-x[1]**2)*x[0] - x[1]
+    ...     dx2_dt = x[0]
+    ...     return [dx1_dt, dx2_dt]
 
     The system has an equilibrium at the origin. Create a solver
     object with an initial state slightly away from the
@@ -490,9 +490,9 @@ class RK45(RungeKutta):
     ``2000`` integration steps. Store the estimated states in ``soly``.
 
     >>> for i in range(2000):
-    >>>     solver.step()
-    >>>     solyn = solver.y.reshape(1, 2)
-    >>>     soly = np.concatenate((soly, solyn))
+    ...     solver.step()
+    ...     solyn = solver.y.reshape(1, 2)
+    ...     soly = np.concatenate((soly, solyn))
 
     Plot ``soly`` with its first element in green and its final
     element in magenta.
@@ -518,10 +518,10 @@ class RK45(RungeKutta):
     >>> dist_init = 1
     >>> POsoly = POsolver.y.reshape(1, 2)
     >>> while dist_init > 0.01:
-    >>>     POsolver.step()
-    >>>     POsolyn = POsolver.y.reshape(1, 2)
-    >>>     POsoly = np.concatenate((POsoly, POsolyn))
-    >>>     dist_init = np.linalg.norm(init-POsolyn)
+    ...     POsolver.step()
+    ...     POsolyn = POsolver.y.reshape(1, 2)
+    ...     POsoly = np.concatenate((POsoly, POsolyn))
+    ...     dist_init = np.linalg.norm(init-POsolyn)
 
     Plot ``POsoly`` with its initial element in green and its final
     element in magenta.
