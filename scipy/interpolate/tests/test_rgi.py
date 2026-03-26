@@ -368,7 +368,7 @@ class TestRegularGridInterpolator:
         # but using np.arange for convenience.
         x0 = np.arange(ndim, dtype=dtype)
 
-        # Unpack 'x0'; loosly speaking this is the inverse of np.mgrid.
+        # Unpack 'x0'; loosely speaking this is the inverse of np.mgrid.
         # By construction 'points' defines a grid of length one along all axes.
         points = tuple(np.asarray([xi]) for xi in x0)
 

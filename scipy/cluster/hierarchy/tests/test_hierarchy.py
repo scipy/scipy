@@ -1100,7 +1100,7 @@ class TestDendrogram:
             set_link_color_palette(None)
 
     def test_dendrogram_leaf_colors_zero_dist(self, xp):
-        # tests that the colors of leafs are correct for tree
+        # tests that the colors of leaves are correct for tree
         # with two identical points
         X = np.asarray([[1, 0, 0],
                         [0, 0, 1],

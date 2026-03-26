@@ -161,7 +161,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def generate_knots(x, y, *, w=None, xb=None, xe=None,
                    k=3, s=0, nest=None, bc_type=None):
-    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satisfied.
 
     Parameters
     ----------
@@ -838,7 +838,7 @@ def root_rati(f, p0, bracket, acc):
     https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/fppara.f#L290
 
     Note that the latter is for parametric splines and the former is for 1D spline
-    functions. The minimization is indentical though [modulo a summation over the
+    functions. The minimization is identical though [modulo a summation over the
     dimensions in the computation of f(p)], so we reuse the minimizer for both
     d=1 and d>1.
     """

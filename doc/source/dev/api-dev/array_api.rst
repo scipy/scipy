@@ -535,7 +535,7 @@ Note that in some modules a systematic process for delegation to native
 implementations is set up, where functions are replaced with wrappers
 that perform delegation. In this case, ``xp_capabilities`` is not always
 applied as a decorator with ``@`` syntax, but may instead be applied
-programatically on the wrappers. When working on array API standard
+programmatically on the wrappers. When working on array API standard
 support within a module, its important to be aware of how such delegation
 is set up, if any, and how ``xp_capabilities`` is being applied. A common
 practice currently is to have a file, ``_support_alternative_backends.py``
@@ -664,7 +664,7 @@ deprecation. Things that are deprecated are inherently out-of-scope).
 
 Considerations of what to consider in-scope are evolving, and something which is now
 considered out-of-scope may be decided to be in-scope in the future if sufficient user
-interest and feasability are demonstrated.
+interest and feasibility are demonstrated.
 
 .. _dev-arrayapi_skip_xfail_backends:
 

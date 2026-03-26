@@ -2147,7 +2147,7 @@ def _cholesky_invwishart_rvs(
     and :math:`\mathcal{W}^{-1}_d` is an inverse Wishart distribution.
     Accordingly, the degrees of freedom adjustment
     :math:`\mathrm{df} \to \mathrm{df} + d - 1`
-    occurrs in the scope of this function.
+    occurs in the scope of this function.
     """
     df_iw = df + scale.shape[0] - 1
     iw_samples = scipy.stats.invwishart.rvs(df_iw, scale, size, random_state)

@@ -799,7 +799,7 @@ int32_t StochasticLib3::FishersNCHyp (int32_t n, int32_t m, int32_t N, double od
    and the two distributions are sometimes confused. A more detailed 
    explanation of this distribution is given below under the multivariate
    Fisher's noncentral hypergeometric distribution (MultiFishersNCHyp). 
-   For further documentation see nchyp.pdf, awailable from www.agner.org/random
+   For further documentation see nchyp.pdf, available from www.agner.org/random
 
    This function uses inversion by chop-down search from zero when parameters
    are small, and the ratio-of-uniforms rejection method when the former 
