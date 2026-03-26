@@ -876,7 +876,7 @@ class PPoly(_PPolyBase):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
-        See :ref:`tutorial-extrapolation-extrapolate-argument`.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
     axis : int, optional
         Interpolation axis. Default is zero.
 
@@ -1356,7 +1356,7 @@ class BPoly(_PPolyBase):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
-        See :ref:`tutorial-extrapolation-extrapolate-argument`.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
     axis : int, optional
         Interpolation axis. Default is zero.
 

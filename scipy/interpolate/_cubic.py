@@ -104,7 +104,7 @@ class CubicHermiteSpline(PPoly):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
-        See :ref:`tutorial-extrapolation-extrapolate-argument`.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Attributes
     ----------
@@ -205,7 +205,7 @@ class PchipInterpolator(CubicHermiteSpline):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to True.
-        See :ref:`tutorial-extrapolation-extrapolate-argument`.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Methods
     -------
@@ -439,7 +439,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), it is set to False.
-        See :ref:`tutorial-extrapolation-extrapolate-argument`.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Methods
     -------
@@ -687,7 +687,7 @@ class CubicSpline(CubicHermiteSpline):
         based on first and last intervals, or to return NaNs. If 'periodic',
         periodic extrapolation is used. If None (default), ``extrapolate`` is
         set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
-        See :ref:`tutorial-extrapolation-extrapolate-argument`.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
 
     Attributes
     ----------
