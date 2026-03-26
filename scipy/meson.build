@@ -814,8 +814,8 @@ endif
 conf_data.set('BLAS_CYTHON_ILP64', _cython_blas_ilp64.to_string())
 
 # TODO: make this into an option
-conf_data.set('BLAS_HAS_LP64', true)
-conf_data.set('LAPACK_HAS_LP64', true)
+conf_data.set('BLAS_HAS_LP64', 'true')
+conf_data.set('LAPACK_HAS_LP64', 'true')
 
 configure_file(
   input: '__config__.py.in',
