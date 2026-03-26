@@ -2574,7 +2574,7 @@ def roots_sh_legendre(n, mu=False):
     array([5.55111512e-16, 1.11022302e-16,  3.33066907e-16,  0.00000000e+00,
         -2.22044605e-16, -1.11022302e-16, -1.85962357e-15])
 
-    ``weights`` can be used for Guass-Legendre quadrature to estimate integrals over
+    ``weights`` can be used for Gauss–Legendre quadrature on :math:`[0, 1]`.
     the interval :math:`[0, 1]`.
 
     """
