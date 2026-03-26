@@ -39,6 +39,7 @@ WRAPPED_FUNCS = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
 USE_OLD_ACCELERATE = ['lsame', 'dcabs1']
 
 C_PREAMBLE = """
+#include "numpy/npy_math.h"  /* for npy_complex{64,128} only */
 #include "scipy_blas_defines.h"
 #include "fortran_defs.h"
 
