@@ -148,7 +148,8 @@ class TestCholesky:
 
         c = cholesky(a, **overwrite_kw)
         overwrite_a = overwrite_kw.get("overwrite_a", False)
-        a_inplace = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+        a_inplace = (overwrite_a and (dtype is not int)
+                     and (a.flags["F_CONTIGUOUS"] or a.flags["C_CONTIGUOUS"]))
 
         assert np.shares_memory(a, c) == a_inplace
         assert np.all(a == a_ref) != a_inplace
@@ -402,7 +403,8 @@ class TestChoFactor:
 
         c, lower = cho_factor(a, **overwrite_kw, lower=lower)
         overwrite_a = overwrite_kw.get("overwrite_a", False)
-        a_inplace = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+        a_inplace = (overwrite_a and (dtype is not int)
+                     and (a.flags["F_CONTIGUOUS"] or a.flags["C_CONTIGUOUS"]))
 
         assert np.shares_memory(a, c) == a_inplace
         assert np.all(a == a_ref) != a_inplace

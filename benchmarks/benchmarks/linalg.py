@@ -222,6 +222,30 @@ class BatchedEigBench(Benchmark):
             sl.eig(self.a)
 
 
+class CholeskyBench(Benchmark):
+    params = [
+        [10, 50, 64, 256, 2048],
+        ['float64', 'complex128'],
+        ['C', 'F'],
+        ['numpy', 'scipy'],
+    ]
+    param_names = ['size', 'dtype', 'order', 'module']
+
+    def setup(self, size, dtype, order, module):
+        dtype = np.dtype(dtype)
+        x = random([size, size])
+        if np.issubdtype(dtype, np.complexfloating):
+            x = x + 1j * random([size, size])
+        a = (x @ x.conj().T + size * np.eye(size)).astype(dtype)
+        self.a = np.asfortranarray(a) if order == 'F' else np.ascontiguousarray(a)
+
+    def time_cholesky(self, size, dtype, order, module):
+        if module == 'numpy':
+            nl.cholesky(self.a)
+        else:
+            sl.cholesky(self.a)
+
+
 class BatchedCholeskyBench(Benchmark):
     params = [
         [(100, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100), (100, 100)],

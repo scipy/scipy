@@ -35,7 +35,8 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
 
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
-    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
+    overwrite_a = (overwrite_a and (a1.ndim == 2)
+                   and (a1.flags["F_CONTIGUOUS"] or a1.flags["C_CONTIGUOUS"]))
 
     # accomodate empty arrays
     if a1.shape[-1] == 0:
@@ -92,11 +93,13 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     -----
     During the finiteness check (if selected), the entire matrix `a` is
     checked. During decomposition, `a` is assumed to be symmetric or Hermitian
-    (as applicable), and only the half selected by option `lower` is referenced.
-    Consequently, if `a` is asymmetric/non-Hermitian, `cholesky` may still
-    succeed if the symmetric/Hermitian matrix represented by the selected half
-    is positive definite, yet it may fail if an element in the other half is
-    non-finite.
+    (as applicable), and only one half of the matrix is referenced.
+    When `a` is Fortran-contiguous and ``overwrite_a=False``, the *opposite*
+    half to ``lower`` is read as an optimization. In all other cases, the half selected
+    by ``lower`` is read directly. Consequently, if `a` is
+    asymmetric/non-Hermitian, `cholesky` may still succeed if the
+    symmetric/Hermitian matrix represented by the referenced half is positive
+    definite, yet it may fail if an element in that half is non-finite.
 
     Examples
     --------
@@ -172,11 +175,13 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     -----
     During the finiteness check (if selected), the entire matrix `a` is
     checked. During decomposition, `a` is assumed to be symmetric or Hermitian
-    (as applicable), and only the half selected by option `lower` is referenced.
-    Consequently, if `a` is asymmetric/non-Hermitian, `cholesky` may still
-    succeed if the symmetric/Hermitian matrix represented by the selected half
-    is positive definite, yet it may fail if an element in the other half is
-    non-finite.
+    (as applicable), and only one half of the matrix is referenced.
+    When `a` is Fortran-contiguous and ``overwrite_a=False``, the *opposite*
+    half to ``lower`` is read as an optimization. In all other cases, the half selected
+    by ``lower`` is read directly. Consequently, if `a` is
+    asymmetric/non-Hermitian, `cholesky` may still succeed if the
+    symmetric/Hermitian matrix represented by the referenced half is positive
+    definite, yet it may fail if an element in that half is non-finite.
 
     Examples
     --------

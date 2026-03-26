@@ -1097,25 +1097,26 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
 
 
 /*
- * Copy only a specific triangle of F-ordered `src` to C-ordered `dst`.
+ * Copy half of an arbitrary-ordered but symmetric `src` to a specific
+ * triangle of C-ordered `dst`.
  *
- * `src` is n x n, F-ordered
- * `dst` is n x n, C-ordered
- *
- * `uplo` determines which triangle gets copied over,
+ * `src` is n x n, accessed via element strides s0 (row) and s1 (col).
+ * `dst` is n x n, C-ordered, assumed zero-initialized.
+ * `uplo` determines which triangle of `dst` is written to.
  */
 template<typename T>
-void copy_triangle_F_to_C(T *dst, const T *src, const npy_intp n, const char uplo) {
+void copy_triangle_to_C(T *dst, const T *src, const npy_intp n,
+                         const npy_intp s0, const npy_intp s1, const char uplo) {
     if (uplo == 'U') {
         for (npy_intp i = 0; i < n; i++) {
             for (npy_intp j = 0; j <= i; j++) {
-                dst[i + j * n] = src[i * n + j];
+                dst[i * n + j] = *(src + i * s0 + j * s1);
             }
         }
     } else {
         for (npy_intp i = 0; i < n; i++) {
             for (npy_intp j = i; j < n; j++) {
-                dst[i + j * n] = src[i * n + j];
+                dst[i * n + j] = *(src + i * s0 + j * s1);
             }
         }
     }
