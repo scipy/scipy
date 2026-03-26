@@ -123,7 +123,7 @@ argument, including :class:`CubicSpline`, :class:`CubicHermiteSpline`,
 :class:`BPoly`.
 
 The ``bc_type`` parameter
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 For :class:`CubicSpline` and :func:`make_interp_spline`, the ``bc_type``
 construction-time argument controls the shape of the spline at its boundaries and
@@ -173,7 +173,7 @@ periodic interpolant:
     plt.show()
 
 The ``extrapolate`` constructor argument
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------
 
 All the interpolators listed above accept an ``extrapolate`` keyword at construction
 time, which sets the default out-of-bounds behavior for all subsequent evaluations:
@@ -225,7 +225,7 @@ and makes no guarantees about smoothness at the join point, as visible in
 the plot above.
 
 Overriding ``extrapolate`` per call
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
 The ``extrapolate`` argument can also be passed at evaluation time (i.e. when
 calling the interpolator object). Passing ``extrapolate=None`` (the default) means
