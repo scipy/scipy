@@ -618,7 +618,7 @@ void CWalleniusNCHypergeometric::findpars() {
 
 
 int CWalleniusNCHypergeometric::BernouilliH(int32_t x_, double h, double rh, StochasticLib1 *sto) {
-   // This function generates a Bernouilli variate with probability proportional
+   // This function generates a Bernoulli variate with probability proportional
    // to the univariate Wallenius' noncentral hypergeometric distribution.
    // The return value will be 1 with probability f(x_)/h and 0 with probability
    // 1-f(x_)/h.
@@ -696,7 +696,7 @@ int CWalleniusNCHypergeometric::BernouilliH(int32_t x_, double h, double rh, Sto
 
       t2 = (ts-0.5) / k;            // calculate 1/Ypsilon(ts)
       rgts = exp(-(phideri0 + bico - 0.5 * t2*t2));
-      return rh < G_integral * fts * rgts;   // Bernouilli variate
+      return rh < G_integral * fts * rgts;   // Bernoulli variate
    }
 
    else { // G > h: can't use sampling in t-domain
@@ -829,7 +829,7 @@ double CWalleniusNCHypergeometric::laplace() {
    int j;                        // loop counter for derivative
    int k;                        // loop counter for expansion degree
    int ll;                       // k/2
-   int converg = 0;              // number of consequtive terms below accuracy
+   int converg = 0;              // number of consecutive terms below accuracy
    int PrecisionIndex;           // index into ErfRes table according to desired precision
 
    // initialize
@@ -1604,7 +1604,7 @@ double CMultiWalleniusNCHypergeometric::laplace(void) {
    int j;                              // loop counter for derivative
    int k;                              // loop counter for expansion degree
    int ll;                             // k/2
-   int converg = 0;                    // number of consequtive terms below accuracy
+   int converg = 0;                    // number of consecutive terms below accuracy
    int PrecisionIndex;                 // index into ErfRes table according to desired precision
 
    // initialize

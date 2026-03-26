@@ -2413,7 +2413,7 @@ def bilinear(b, a, fs=1.0):
     Examples
     --------
     The following example shows the frequency response of an analog bandpass filter and
-    the corresponding digital filter derived by utilitzing the bilinear transform:
+    the corresponding digital filter derived by utilizing the bilinear transform:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2424,7 +2424,7 @@ def bilinear(b, a, fs=1.0):
     >>> bb_s, aa_s = signal.butter(4, om_c, btype='bandpass', analog=True, output='ba')
     >>> bb_z, aa_z = signal.bilinear(bb_s, aa_s, fs)
     ...
-    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digitial filter
+    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digital filter
     >>> w_s, H_s = signal.freqs(bb_s, aa_s, worN=w_z*fs)  # analog filter response
     ...
     >>> f_z, f_s = w_z * fs / (2*np.pi), w_s / (2*np.pi)

@@ -183,7 +183,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             goto done;
         }
 
-        // copy-and-tranpose U and Vh slices from temp buffers to the output;
+        // copy-and-transpose U and Vh slices from temp buffers to the output;
         // Also advance the output pointers: U, S, Vh are C-contiguous by construction
         if (jobz != 'N') {
             copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
@@ -330,7 +330,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             goto done;
         }
 
-        // copy-and-tranpose U and Vh slices from temp buffers to the output;
+        // copy-and-transpose U and Vh slices from temp buffers to the output;
         // Also advance the output pointers: U, S, Vh are C-contiguous by construction
         if (jobz != 'N') {
             copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);

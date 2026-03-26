@@ -1642,7 +1642,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
     Parameters
     ----------
     input : array_like
-        Array over which to compute the morphlogical gradient.
+        Array over which to compute the morphological gradient.
     size : tuple of ints
         Shape of a flat and full structuring element used for the mathematical
         morphology operations. Optional if `footprint` or `structure` is
@@ -2025,7 +2025,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2142,7 +2142,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     """
     ft_inplace = isinstance(indices, np.ndarray)
     dt_inplace = isinstance(distances, np.ndarray)
-    _distance_tranform_arg_check(
+    _distance_transform_arg_check(
         dt_inplace, ft_inplace, return_distances, return_indices
     )
 
@@ -2264,7 +2264,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2354,7 +2354,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     """
     ft_inplace = isinstance(indices, np.ndarray)
     dt_inplace = isinstance(distances, np.ndarray)
-    _distance_tranform_arg_check(
+    _distance_transform_arg_check(
         dt_inplace, ft_inplace, return_distances, return_indices
     )
     input = np.asarray(input)
@@ -2468,7 +2468,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2560,7 +2560,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     """
     ft_inplace = isinstance(indices, np.ndarray)
     dt_inplace = isinstance(distances, np.ndarray)
-    _distance_tranform_arg_check(
+    _distance_transform_arg_check(
         dt_inplace, ft_inplace, return_distances, return_indices
     )
 
@@ -2616,7 +2616,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         return None
 
 
-def _distance_tranform_arg_check(distances_out, indices_out,
+def _distance_transform_arg_check(distances_out, indices_out,
                                  return_distances, return_indices):
     """Raise a RuntimeError if the arguments are invalid"""
     error_msgs = []

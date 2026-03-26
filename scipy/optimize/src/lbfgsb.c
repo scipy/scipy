@@ -1353,7 +1353,7 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
     //         iorder(nleft+1),...,iorder(nbreak) are indices of
     //                                     encountered breakpoints; and
     //         iorder(nfree),...,iorder(n) are indices of variables which
-    //                 have no bound constraits along the search direction.
+    //                 have no bound constraints along the search direction.
     //
     //     iwhere is an integer array of dimension n.
     //       On entry iwhere indicates only the permanently fixed (iwhere=3)
@@ -1516,7 +1516,7 @@ cauchy(CBLAS_INT n, double* x, double* l, double* u,
             if (nbd[i] <= 2) { tl = x[i] - l[i]; }
             if (nbd[i] >= 2) { tu = u[i] - x[i]; }
 
-            // If a varaible is close enough to a bound, we treat it as at bound.
+            // If a variable is close enough to a bound, we treat it as at bound.
             xlower = ((nbd[i] <= 2) && (tl <= 0.0));
             xupper = ((nbd[i] >= 2) && (tu <= 0.0));
 

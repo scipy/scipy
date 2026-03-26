@@ -262,7 +262,7 @@ def ss2tf(A, B, C, D, input=0):
     Notes
     -----
     Before calculating `num` and `den`, the function `abcd_normalize` is called to
-    convert the parameters `A`, `B`, `C`, `D` into two-dimesional arrays of the
+    convert the parameters `A`, `B`, `C`, `D` into two-dimensional arrays of the
     same dtype. The resulting dtype will be based on NumPy's dtype promotion rules,
     except in the case where each of `A`, `B`, `C`, and `D` has integer dtype, in which
     case the resulting dtype will be the default floating point dtype of ``float64``.

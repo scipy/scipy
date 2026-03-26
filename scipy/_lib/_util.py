@@ -34,7 +34,7 @@ copy_if_needed: bool | None = None
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
 # See gh-23913
 #
-# PEP 649/749 allows for underfined annotations at runtime, and added the
+# PEP 649/749 allows for undefined annotations at runtime, and added the
 # `annotation_format` parameter to handle these cases.
 # `annotationlib.Format.FORWARDREF` is the closest to previous behavior,
 # returning ForwardRef objects fornew undefined annotations cases.

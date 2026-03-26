@@ -1210,7 +1210,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     Notes
     -----
-    In order to invert a short-time Fourier transfrom (STFT) with the so-called
+    In order to invert a short-time Fourier transform (STFT) with the so-called
     "overlap-add method", the signal windowing must obey the constraint of
     "Constant OverLap Add" (COLA). This ensures that every point in the input
     data is equally weighted, thereby avoiding aliasing and allowing full
@@ -2051,7 +2051,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     .. legacy:: function
 
-        This function is soley used by the legacy functions `spectrogram` and `stft`
+        This function is solely used by the legacy functions `spectrogram` and `stft`
         (which are also in this same source file `scipy/signal/_spectral_py.py`).
 
     This is a helper function that implements the commonality between
@@ -2404,7 +2404,7 @@ def _triage_segments(window, nperseg, input_length):
 
     .. legacy:: function
 
-        This function is soley used by the legacy functions `spectrogram` and
+        This function is solely used by the legacy functions `spectrogram` and
         `_spectral_helper` (which are also in this file).
 
     Parameters

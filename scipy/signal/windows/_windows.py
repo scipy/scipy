@@ -2395,7 +2395,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     ----------
     window : str | tuple | float
         Either a string with the window name or a tuple consisting of window name and
-        window parameters. If it is a float, a `~scipy.singal.kaiser` window is
+        window parameters. If it is a float, a `~scipy.signal.kaiser` window is
         created with `window` being the shape parameter. Consult the Notes below for
         more details.
     Nx : int
@@ -2466,7 +2466,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
         Generalized Gaussian with shape parameter ``p`` and standard deviation ``sig``
         (aliases: ``'general_gaussian', 'general gauss', 'general_gauss', 'ggs'``)
     `general_hamming` / ``('general hamming', alpha)``:
-        Generalized Hamming window with coefficent ``alpha``
+        Generalized Hamming window with coefficient ``alpha``
         (aliases: ``'general_hamming'``)
     `hamming` / ``'hamming'``:
         Hamming window (aliases: ``'hamm', 'ham'``)
@@ -2485,7 +2485,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     `parzen` / ``'parzen'``:
         Parzen window (aliases: ``'parz', 'par'``)
     `taylor` / ``'taylor'`` / (``'taylor', nbar, sll, norm)``:
-        Taylor window with ``nbar`` adjascent sidelobes (default: ``4``)), ``sll`` dB
+        Taylor window with ``nbar`` adjacent sidelobes (default: ``4``)), ``sll`` dB
         suppression level (default: ``30``) and boolean value ``norm``
         (default: ``True``) (aliases: ``taylorwin``)
     `triang`/ ``'triangle'``:

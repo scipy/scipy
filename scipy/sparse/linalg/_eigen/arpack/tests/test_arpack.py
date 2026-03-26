@@ -691,7 +691,7 @@ def test_real_eigs_real_k_subset():
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_gh24358(dtype):
-    # gh-24358: eigs with which="SR" returned zeros due to nev variable was modifed
+    # gh-24358: eigs with which="SR" returned zeros due to nev variable was modified
     #  after naupd calls in the C ARPACK implementation. This was due to hitting a
     # complex valued eig but requesting only one of them.
 

@@ -348,14 +348,14 @@ class Elec:
         self.constr_hess = constr_hess
         self.bounds = None
 
-    def _get_cordinates(self, x):
+    def _get_coordinates(self, x):
         x_coord = x[:self.n_electrons]
         y_coord = x[self.n_electrons:2 * self.n_electrons]
         z_coord = x[2 * self.n_electrons:]
         return x_coord, y_coord, z_coord
 
     def _compute_coordinate_deltas(self, x):
-        x_coord, y_coord, z_coord = self._get_cordinates(x)
+        x_coord, y_coord, z_coord = self._get_coordinates(x)
         dx = x_coord[:, None] - x_coord
         dy = y_coord[:, None] - y_coord
         dz = z_coord[:, None] - z_coord
@@ -422,12 +422,12 @@ class Elec:
     @property
     def constr(self):
         def fun(x):
-            x_coord, y_coord, z_coord = self._get_cordinates(x)
+            x_coord, y_coord, z_coord = self._get_coordinates(x)
             return x_coord**2 + y_coord**2 + z_coord**2 - 1
 
         if self.constr_jac is None:
             def jac(x):
-                x_coord, y_coord, z_coord = self._get_cordinates(x)
+                x_coord, y_coord, z_coord = self._get_coordinates(x)
                 Jx = 2 * np.diag(x_coord)
                 Jy = 2 * np.diag(y_coord)
                 Jz = 2 * np.diag(z_coord)

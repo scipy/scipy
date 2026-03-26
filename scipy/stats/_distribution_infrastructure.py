@@ -60,7 +60,7 @@ _NO_CACHE = "no_cache"
 #  Fix `sample` for QMCEngine (implementation does not match documentation)
 #  When a parameter is invalid, set only the offending parameter to NaN (if possible)?
 #  `_tanhsinh` special case when there are no abscissae between the limits
-#    example: cdf of uniform betweeen 1.0 and np.nextafter(1.0, np.inf)
+#    example: cdf of uniform between 1.0 and np.nextafter(1.0, np.inf)
 #  check behavior of moment methods when moments are undefined/infinite -
 #    basically OK but needs tests
 #  investigate use of median
@@ -389,7 +389,7 @@ class _Interval(_Domain):
             z[~i] = max
 
         elif type_ == 'out':
-            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitary; we just want
+            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitrary; we just want
             zr = max_nn + uniform(1, 5, size=shape)  # some numbers outside domain
             i = rng.random(size=n) < 0.5
             z[i] = zr[i]
@@ -836,7 +836,7 @@ class _Parameterization:
         ----------
         sizes : iterable of shape tuples
             The size of the array to be generated for each parameter in the
-            parameterization. Note that the order of sizes is arbitary; the
+            parameterization. Note that the order of sizes is arbitrary; the
             size of the array generated for a specific parameter is not
             controlled individually as written.
         rng : NumPy Generator
@@ -857,7 +857,7 @@ class _Parameterization:
             A dictionary of parameter name/value pairs.
         """
         # ENH: be smart about the order. The domains of some parameters
-        # depend on others. If the relationshp is simple (e.g. a < b < c),
+        # depend on others. If the relationships is simple (e.g. a < b < c),
         # we can draw values in order a, b, c.
         parameter_values = {}
 
@@ -3538,7 +3538,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # treat the parameters as "fixed" and the quantile/percentile arguments
     # as "variable". There are a lot of advantages to this structure, and I
     # don't think the fact that a few methods reverse the fixed and variable
-    # quantities should make us question that choice. It can still accomodate
+    # quantities should make us question that choice. It can still accommodate
     # these methods reasonably efficiently.
 
 
@@ -4447,7 +4447,7 @@ class TransformedDistribution(ContinuousDistribution):
 class TruncatedDistribution(TransformedDistribution):
     """Truncated distribution."""
     # TODO:
-    # - consider avoiding catastropic cancellation by using appropriate tail
+    # - consider avoiding catastrophic cancellation by using appropriate tail
     # - if the mode of `_dist` is within the support, it's still the mode
     # - rejection sampling might be more efficient than inverse transform
 

@@ -44,7 +44,7 @@ from scipy.optimize.elementwise import find_root
 from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan
 
 import scipy.special as special
-# Import unused here but needs to stay until end of deprecation periode
+# Import unused here but needs to stay until end of deprecation period
 # See https://github.com/scipy/scipy/issues/15765#issuecomment-1875564522
 from scipy import linalg  # noqa: F401
 from . import distributions
@@ -10661,7 +10661,7 @@ def _br(x, *, r=0, xp):
 
 
 def _prk(r, k):
-    # Writen to match [1] Equation 27 closely to facilitate review.
+    # Written to match [1] Equation 27 closely to facilitate review.
     # This does not protect against overflow, so improvements to
     # robustness would be a welcome follow-up.
     binom_r_k = xpx.lazy_apply(special.binom, r, k)

@@ -2874,7 +2874,7 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     i.e., representing the absolute value of the instantaneous amplitude.
 
     The right plot shows the real part of that analytic signal being interpreted
-    as a complex-vauled signal, i.e., having zero imaginary part. There the resulting
+    as a complex-valued signal, i.e., having zero imaginary part. There the resulting
     envelope is not as smooth as in the analytic case and the instantaneous amplitude
     in the real plane is not recovered. If ``z_re`` had been passed as a real-valued
     signal, i.e., as ``z_re = z.real`` instead of ``z_re = z.real + 0j``, the result
@@ -3607,7 +3607,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         ``T * n_x / num``.
     t_r : ndarray, optional
         The `num` equidistant timestamps of `x_r`.
-        This is only returned if paramater `t` is not ``None``.
+        This is only returned if parameter `t` is not ``None``.
 
     See Also
     --------
@@ -3740,7 +3740,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
     // n1 = 155`` and then pass the result to `resample`. Two parameterization of
     `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
-    periodic wheras the default parametrization performs zero-padding. The upper
+    periodic whereas the default parametrization performs zero-padding. The upper
     subplot shows the resulting signals over time whereas the lower subplot depicts the
     resulting one-sided magnitude spectra.
 
@@ -4365,7 +4365,7 @@ def lfilter_zi(b, a):
     The following code creates a lowpass Butterworth filter to filter a signal made up
     of ones. As expected of a lowpass filter, the output is also all ones. If the `zi`
     argument of `lfilter` had not been given, a transient signal would have been
-    produced. The second signal illustrates that using the parameter `zi` supresses
+    produced. The second signal illustrates that using the parameter `zi` suppresses
     transients at the beginning of the output signal:
 
     >>> import numpy as np
@@ -5189,7 +5189,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         The input signal made up of equidistant samples. If `x` is a multidimensional
         array, the parameter `axis` specifies the time axis.
     q : int
-        The downsampling factor, which is a postive integer. When using IIR
+        The downsampling factor, which is a positive integer. When using IIR
         downsampling, it is recommended to call `decimate` multiple times for
         downsampling factors higher than 13.
     n : int, optional

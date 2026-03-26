@@ -106,7 +106,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     **kwargs
-        The following aditional keyword arguments can be passed:
+        The following additional keyword arguments can be passed:
 
         byte_order : str or None, optional
             None by default, implying byte order guessed from mat

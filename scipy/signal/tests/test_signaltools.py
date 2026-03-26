@@ -2189,7 +2189,7 @@ class _TestLinearFilter:
         # Test for #22470: lfiltic does not handle `a[0] != 1`
         # and, more in general, test that lfiltic behaves consistently with lfilter
         if is_cupy(xp) and isinstance(a, int | float):
-            pytest.skip('cupy does not supoprt scalar filter coefficients')
+            pytest.skip('cupy does not support scalar filter coefficients')
         x = self.generate(6, xp)  # arbitrary input
         b = self.convert_dtype([.5, 1., .2], xp)  # arbitrary b
         a = self.convert_dtype(a, xp)
@@ -2198,7 +2198,7 @@ class _TestLinearFilter:
         K = M + N if is_cupy(xp) else max(N, M)
         # compute reference initial conditions as final conditions of lfilter
         y1, zi_1 = lfilter(b, a, x, zi=self.generate(K, xp))
-        # copute initial conditions from lfiltic
+        # compute initial conditions from lfiltic
         zi_2 = lfiltic(b, a, xp.flip(y1), xp.flip(x))
         # compare lfiltic's output with reference
         assert_array_almost_equal(zi_1, zi_2)
@@ -4621,7 +4621,7 @@ class TestDeconvolve:
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
     def test_divisor_greater_signal(self, xp):
-        """Return signal as `remainder` when ``len(divisior) > len(signal)``. """
+        """Return signal as `remainder` when ``len(divisor) > len(signal)``. """
         sig, div = xp.asarray([0, 1, 2]), xp.asarray([0, 1, 2, 4, 5])
         quotient, remainder = signal.deconvolve(sig, div)
         xp_assert_equal(remainder, sig)

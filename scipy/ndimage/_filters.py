@@ -396,8 +396,8 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     >>> res.shape == ascent.shape + (3,)
     True
 
-    Suppose we wish to implment a "mode" filter - a filter that selects the most
-    frequently occuring value within the window. A simple (but rather slow)
+    Suppose we wish to implement a "mode" filter - a filter that selects the most
+    frequently occurring value within the window. A simple (but rather slow)
     approach is to use `generic_filter` with `scipy.stats.mode`.
 
     >>> from scipy import stats

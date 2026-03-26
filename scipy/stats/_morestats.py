@@ -4008,7 +4008,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     configuration options and other appropriate settings.
 
     The presence of ties and zeros affects the resolution of ``method='auto'``
-    accordingly: exhasutive permutations are performed when ``len(d) <= 13``,
+    accordingly: exhaustive permutations are performed when ``len(d) <= 13``,
     and the asymptotic method is used otherwise. Note that they asymptotic
     method may not be very accurate even for ``len(d) > 14``; the threshold
     was chosen as a compromise between execution time and accuracy under the
@@ -4111,7 +4111,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     """
-    # replace approx by asymptotic to ensure backwards compatability
+    # replace approx by asymptotic to ensure backwards compatibility
     if method == "approx":
         method = "asymptotic"
     return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative,
@@ -4843,7 +4843,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     Returns
     -------
-    ps_adusted : array_like
+    ps_adjusted : array_like
         The adjusted p-values. If the null hypothesis is rejected where these
         fall below a specified level, the false discovery rate is controlled
         at that level.

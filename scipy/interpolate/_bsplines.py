@@ -2555,7 +2555,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     if np.ndim(lam) == 0:
         c = solve_banded((2, 2), X + lam * wE, y)
     elif np.ndim(lam) == 1:
-        # XXX: solve_banded does not suppport batched `ab` matrices; loop manually
+        # XXX: solve_banded does not support batched `ab` matrices; loop manually
         c = np.empty((n, lam.shape[0]))
         for i in range(lam.shape[0]):
             c[:, i] = solve_banded((2, 2), X + lam[i] * wE, y[:, i])

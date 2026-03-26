@@ -219,7 +219,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (info < 0) {
-        // Either OOM error or requiested lwork too large.
+        // Either OOM error or requested lwork too large.
         Py_DECREF(ap_x);
         PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.solve.");
         return NULL;
@@ -371,7 +371,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (info < 0) {
-        // Either OOM error or requiested lwork too large.
+        // Either OOM error or requested lwork too large.
         PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.qr.");
         goto fail_qr;
     }
