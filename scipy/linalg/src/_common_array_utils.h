@@ -21,7 +21,10 @@
     #define CPLX_C(real, imag) (real + imag*I)
 #endif
 
-#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+// AVX2 dispatch requires __builtin_cpu_supports and __attribute__((target)),
+// available on GCC and Clang on non-Windows x86-64. Clang on Windows uses
+// lld-link which cannot resolve __cpu_model from compiler-rt.
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
 #include <immintrin.h>
 #define SCIPY_HAVE_AVX2_TARGET 1
 #endif
