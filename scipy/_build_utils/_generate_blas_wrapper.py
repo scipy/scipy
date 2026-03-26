@@ -10,7 +10,7 @@ literal suffix "$NEWLAPACK".
 
 To point our BLAS/LAPACK calls to these symbols, we need to create wrappers
 which call them appropriately. We do this as simple C function declarations
-that make use of the preprocessor macros defined in npy_cblas.h.
+that make use of the preprocessor macros defined in scipy_blas_defines.h.
 
 We already have all the required signature information in
     scipy/linalg/cython_{blas,lapack}_signatures.txt
