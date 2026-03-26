@@ -2551,7 +2551,7 @@ def roots_sh_legendre(n, mu=False):
     Examples
     --------
 
-    Find the roots of a 7th order Legendre polynomial.
+    Find the roots of a 7th-order shifted Legendre polynomial.
 
     >>> import numpy as np
     >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
