@@ -10404,7 +10404,10 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     elif method == 'dense':
         ranks = xp.cumulative_sum(xp.astype(i, dtype, copy=False), axis=-1)[i]
 
-    ranks = xp.reshape(xp.repeat(ranks, counts), shape)
+    ranks = xp.reshape(
+        ranks[xp.cumulative_sum(xp.astype(xp.reshape(i, (-1,)), xp.int64)) - 1],
+        shape,
+    )
     ranks = _order_ranks(ranks, j, xp=xp)
 
     t = None
