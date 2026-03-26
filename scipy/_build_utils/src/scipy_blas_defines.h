@@ -3,7 +3,6 @@
 
 
 #include <stdint.h>
-#include "numpy/npy_math.h"    /* for npy_complex{64,128}*/
 
 #ifdef __APPLE__
 #include <AvailabilityMacros.h>
