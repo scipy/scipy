@@ -4539,7 +4539,7 @@ add_newdoc("kolmogorov",
     -------
     scalar or ndarray
         The probability that the test statistic exceeds `x`.
-        Values are in the range [0, 1].
+        Values are in the range :math:`[0, 1]`.
 
     See Also
     --------
