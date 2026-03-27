@@ -4509,8 +4509,8 @@ add_newdoc("kolmogorov",
     r"""
     kolmogorov(x, out=None)
 
-    Complementary cumulative distribution (Survival Function) of the 
-    Kolmogorov distribution.
+    Complementary cumulative distribution function (survival function) of the 
+   Kolmogorov distribution.
 
     Returns the complementary cumulative distribution function of
     Kolmogorov's limiting distribution, which is the distribution of
