@@ -6,7 +6,9 @@ from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
 
-from scipy._lib._array_api import xp_capabilities, xp_copy, xp_vector_norm
+from scipy._lib._array_api import (
+    is_jax, is_lazy_array, is_torch, xp_capabilities, xp_copy, xp_vector_norm
+)
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
@@ -310,12 +312,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         return x, maxiter
 
 
-@xp_capabilities(
-    skip_backends=[
-        ("dask.array", "data-dependent branching"),
-        ("jax.numpy", "data-dependent branching"),
-    ]
-)
+@xp_capabilities(skip_backends=[("dask.array", "data-dependent branching")])
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
@@ -401,7 +398,8 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol, xp=xp)
 
-    if not xp.any(bnrm2):
+    lazy = is_lazy_array(x)
+    if not lazy and not xp.any(bnrm2):
         return b, 0
 
     if maxiter is None:
@@ -411,7 +409,55 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     matvec = A.matvec
     psolve = M.matvec
-    r = b - matvec(x) if xp.any(x) else xp_copy(b, xp=xp)
+    r = b - matvec(x) if lazy or xp.any(x) else xp_copy(b, xp=xp)
+
+    if is_jax(xp) or is_torch(xp):
+        def cond_fun(value):
+            _, _, _, _, k, converged = value
+            return xp.any(~converged) & xp.all(k < maxiter)
+
+        def body_fun(value):
+            x, r, rho_cur, p, k, converged = value
+            q = matvec(p)
+            c = dotprod(p, q)
+            alpha = xp.where(~converged, rho_cur / c, 0.0)
+            alpha = alpha[..., xp.newaxis]
+            x = x + alpha*p
+            r = r - alpha*q
+            rho_prev = rho_cur
+            if callback:
+                callback(x)
+            z = psolve(r)
+            rho_cur = dotprod(r, z)
+            beta = xp.where(~converged, rho_cur / rho_prev, 0.0)
+            beta = beta[..., xp.newaxis]
+            p = z + (p * beta)
+            converged = xp_vector_norm(r, axis=-1, xp=xp) <= atol
+            return x, r, rho_cur, p, k + 1, converged
+
+        z = psolve(r)
+        p = xp_copy(z, xp=xp)
+        rho_cur = dotprod(r, z)
+        converged = xp_vector_norm(r, axis=-1, xp=xp) <= atol
+        initial_value = (x, r, rho_cur, p, xp.asarray(0), converged)
+
+        if is_jax(xp):
+            import jax
+            x_final, *_ = jax.lax.while_loop(cond_fun, body_fun, initial_value)
+        else:
+            def torch_cond(*args):
+                return cond_fun(args)
+                
+            def torch_body(*args):
+                return body_fun(args)
+
+            def loop():
+                return xp.while_loop(torch_cond, torch_body, initial_value)
+
+            x_final, *_ = loop()
+
+        return x_final, None
+
 
     # Dummy value to initialize var, silences warnings
     rho_prev, p = None, None

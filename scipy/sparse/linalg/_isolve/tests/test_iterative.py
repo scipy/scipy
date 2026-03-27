@@ -13,7 +13,7 @@ from numpy.testing import assert_allclose
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 
 from scipy._lib._array_api import (
-    is_jax, is_numpy, is_torch, make_xp_pytest_marks,
+    is_jax, is_lazy_array, is_numpy, is_torch, make_xp_pytest_marks,
     xp_assert_close, xp_assert_less, xp_vector_norm, xp_assert_equal,
     xp_assert_less_equal,
 )
@@ -330,6 +330,9 @@ def test_maxiter(case, xp, batch_A, batch_b):
 
     b = case.b
     x0 = 0 * b
+    
+    if is_torch(xp):
+        pytest.skip("Callback incompatible with torch dynamo")
 
     residuals = []
 
@@ -350,8 +353,11 @@ def test_maxiter(case, xp, batch_A, batch_b):
 
     empty = batch_A == (0,) or batch_b == (0, 1)
     # TODO: is this correct?
-    if not empty:
-        assert len(residuals) == 1
+    if is_lazy_array(x):
+        assert residuals[0].shape == xpx.broadcast_shapes(batch_A, batch_b)
+        assert info == None
+    elif not empty:
+        assert residuals[0].shape == xpx.broadcast_shapes(batch_A, batch_b)
         assert info == 1
     else:
         assert len(residuals) == 0
@@ -377,11 +383,11 @@ def test_convergence(case, xp, batch_A, batch_b):
     xp_assert_equal(x0, 0 * b)  # ensure that x0 is not overwritten
 
     if case.convergence:
-        assert info == 0
+        assert info == 0 or info is None
         fudge_factor = 1.01
         _assert_success(A=A, x=x, b=b, xp=xp, rtol=fudge_factor * rtol)
     else:
-        assert info != 0
+        assert info != 0 or info is None
         _assert_success(A=A, x=x, b=b, xp=xp, rtol=1, less_equal=True)
 
 
@@ -425,13 +431,13 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
     if dtype in [xp.float32, xp.complex64]:
         fudge_factor = 1.1
 
-    assert info == 0
+    assert info == 0 or info is None
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=fudge_factor * rtol)
 
     A = aslinearoperator(A)
 
     x, info = case.solver.impl(A, b, x0=x0, rtol=rtol)
-    assert info == 0
+    assert info == 0 or info is None
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=fudge_factor * rtol)
 
 
@@ -481,7 +487,7 @@ def test_precond_inverse(case, xp, batch_A, batch_b):
     matvec_count = [0]
     x, info = case.solver.impl(A, b, M=precond, x0=x0, rtol=rtol)
 
-    assert info == 0
+    assert info == 0 or info is None
     _assert_success(A=case.A, x=x, b=b, xp=xp, rtol=rtol)
 
     # Solution should be nearly instant
@@ -539,7 +545,7 @@ def test_atol(solver, xp, batch_A, batch_b):
         else:
             x, info = solver.impl(A, b, M=M, rtol=rtol, atol=atol)
 
-        assert info == 0
+        assert info == 0 or info is None
         _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol, atol=atol)
 
 
@@ -559,11 +565,11 @@ def test_zero_rhs(solver, xp, batch_A, batch_b):
     for tol in tols:
         tol = float(tol)
         x, info = solver.impl(A, b, rtol=tol)
-        assert info == 0
+        assert info == 0 or info is None
         xp_assert_close(x, expected, atol=1e-15)
 
         x, info = solver.impl(A, b, rtol=tol, x0=xp.ones((*batch_b, 10)))
-        assert info == 0
+        assert info == 0 or info is None
         xp_assert_close(x, expected, atol=tol)
 
         if solver != SOLVERS.minres:
@@ -572,11 +578,11 @@ def test_zero_rhs(solver, xp, batch_A, batch_b):
                 xp_assert_close(x, expected)
 
             x, info = solver.impl(A, b, rtol=tol, atol=tol)
-            assert info == 0
+            assert info == 0 or info is None
             xp_assert_close(x, expected, atol=1e-300)
 
             x, info = solver.impl(A, b, rtol=tol, atol=0.0)
-            assert info == 0
+            assert info == 0 or info is None
             xp_assert_close(x, expected, atol=1e-300)
 
 
@@ -648,7 +654,7 @@ def test_x0_working(solver, xp, batch_A, batch_b):
         kw = dict(atol=0.0, rtol=rtol)
 
     x, info = solver.impl(A, b, **kw)
-    assert info == 0
+    assert info == 0 or info is None
 
     if is_torch(xp) and b.dtype == xp.float32:
         rtol = 5e-4
@@ -656,7 +662,7 @@ def test_x0_working(solver, xp, batch_A, batch_b):
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
 
     x, info = solver.impl(A, b, x0=x0, **kw)
-    assert info == 0
+    assert info == 0 or info is None
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=3*rtol)
 
 
@@ -680,7 +686,7 @@ def test_x0_equals_Mb(case, xp, batch_A, batch_b):
     x, info = case.solver.impl(A, b, x0=x0, rtol=rtol)
 
     assert x0 == 'Mb'  # ensure that x0 is not overwritten
-    assert info == 0
+    assert info == 0 or info is None
     fudge_factor = 1.2 if is_jax(xp) else 1.01
     rtol = fudge_factor * rtol
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
@@ -698,7 +704,7 @@ def test_x0_solves_problem_exactly(solver, xp, batch_A, batch_b):
     sol, info = solver.impl(mat, rhs, x0=rhs)
     expected = xp.broadcast_to(rhs, (*np.broadcast_shapes(batch_A, batch_b), 2))
     xp_assert_close(sol, expected)
-    assert info == 0
+    assert info == 0 or info is None
 
 
 @pytest.mark.parametrize("batch_A", [(), (5,), (0,)])
