@@ -112,13 +112,13 @@ def _polynomial_matrix(x, powers):
     return out
 
 
-# pythran export _build_system(float[:, :],
-#                              float[:, :],
-#                              float[:],
-#                              str,
-#                              float,
-#                              int64[:, :])
-def _build_system(y, d, smoothing, kernel, epsilon, powers):
+# pythran export _build_system_with_kernel(float[:, :],
+#                                          float[:, :],
+#                                          float[:],
+#                                          float64(float64),
+#                                          float,
+#                                          int64[:, :])
+def _build_system_with_kernel(y, d, smoothing, kernel_func, epsilon, powers):
     """Build the system used to solve for the RBF interpolant coefficients.
 
     Parameters
@@ -129,8 +129,8 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
         Data values at `y`.
     smoothing : (P,) float ndarray
         Smoothing parameter for each data point.
-    kernel : str
-        Name of the RBF.
+    kernel_func : float64(float64) capsule
+        Compiled RBF kernel: maps scalar distance r to scalar value.
     epsilon : float
         Shape parameter.
     powers : (R, N) int ndarray
@@ -146,125 +146,6 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
         Domain shift used to create the polynomial matrix.
     scale : (N,) float ndarray
         Domain scaling used to create the polynomial matrix.
-
-    """
-    p = d.shape[0]
-    s = d.shape[1]
-    r = powers.shape[0]
-    kernel_func = NAME_TO_FUNC[kernel]
-
-    # Shift and scale the polynomial domain to be between -1 and 1
-    mins = np.min(y, axis=0)
-    maxs = np.max(y, axis=0)
-    shift = (maxs + mins)/2
-    scale = (maxs - mins)/2
-    # The scale may be zero if there is a single point or all the points have
-    # the same value for some dimension. Avoid division by zero by replacing
-    # zeros with ones.
-    scale[scale == 0.0] = 1.0
-
-    yeps = y*epsilon
-    yhat = (y - shift)/scale
-
-    # Transpose to make the array fortran contiguous. This is required for
-    # dgesv to not make a copy of lhs.
-    lhs = np.empty((p + r, p + r), dtype=float).T
-    kernel_matrix(yeps, kernel_func, lhs[:p, :p])
-    polynomial_matrix(yhat, powers, lhs[:p, p:])
-    lhs[p:, :p] = lhs[:p, p:].T
-    lhs[p:, p:] = 0.0
-    for i in range(p):
-        lhs[i, i] += smoothing[i]
-
-    # Transpose to make the array fortran contiguous.
-    rhs = np.empty((s, p + r), dtype=float).T
-    rhs[:p] = d
-    rhs[p:] = 0.0
-
-    return lhs, rhs, shift, scale
-
-
-# pythran export _build_evaluation_coefficients(float[:, :],
-#                          float[:, :],
-#                          str,
-#                          float,
-#                          int64[:, :],
-#                          float[:],
-#                          float[:])
-def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
-                                   shift, scale):
-    """Construct the coefficients needed to evaluate
-    the RBF.
-
-    Parameters
-    ----------
-    x : (Q, N) float ndarray
-        Evaluation point coordinates.
-    y : (P, N) float ndarray
-        Data point coordinates.
-    kernel : str
-        Name of the RBF.
-    epsilon : float
-        Shape parameter.
-    powers : (R, N) int ndarray
-        The exponents for each monomial in the polynomial.
-    shift : (N,) float ndarray
-        Shifts the polynomial domain for numerical stability.
-    scale : (N,) float ndarray
-        Scales the polynomial domain for numerical stability.
-
-    Returns
-    -------
-    (Q, P + R) float ndarray
-
-    """
-    q = x.shape[0]
-    p = y.shape[0]
-    r = powers.shape[0]
-    kernel_func = NAME_TO_FUNC[kernel]
-
-    yeps = y*epsilon
-    xeps = x*epsilon
-    xhat = (x - shift)/scale
-
-    vec = np.empty((q, p + r), dtype=float)
-    for i in range(q):
-        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p])
-        polynomial_vector(xhat[i], powers, vec[i, p:])
-
-    return vec
-
-
-# pythran export _build_system_with_kernel(float[:, :],
-#                                          float[:, :],
-#                                          float[:],
-#                                          float64(float64),
-#                                          float,
-#                                          int64[:, :])
-def _build_system_with_kernel(y, d, smoothing, kernel_func, epsilon, powers):
-    """Build the RBF system using a compiled kernel function pointer.
-
-    Identical to ``_build_system`` but accepts a ``float64(float64)``
-    capsule as *kernel_func* instead of a string name.  Pythran calls
-    the function pointer directly in the inner loop without any Python
-    dispatch overhead.
-
-    Parameters
-    ----------
-    y : (P, N) float ndarray
-    d : (P, S) float ndarray
-    smoothing : (P,) float ndarray
-    kernel_func : float64(float64) capsule
-        Compiled RBF kernel: maps scalar distance r to scalar value.
-    epsilon : float
-    powers : (R, N) int ndarray
-
-    Returns
-    -------
-    lhs : (P + R, P + R) float ndarray
-    rhs : (P + R, S) float ndarray
-    shift : (N,) float ndarray
-    scale : (N,) float ndarray
     """
     p = d.shape[0]
     s = d.shape[1]
@@ -303,20 +184,25 @@ def _build_system_with_kernel(y, d, smoothing, kernel_func, epsilon, powers):
 #                                                           float[:])
 def _build_evaluation_coefficients_with_kernel(x, y, kernel_func, epsilon,
                                                powers, shift, scale):
-    """Construct evaluation coefficients using a compiled kernel function pointer.
-
-    Identical to ``_build_evaluation_coefficients`` but accepts a
-    ``float64(float64)`` capsule as *kernel_func*.
+    """
+    Construct the coefficients needed to evaluate the RBF.
 
     Parameters
     ----------
     x : (Q, N) float ndarray
+        Evaluation point coordinates.
     y : (P, N) float ndarray
+        Data point coordinates.
     kernel_func : float64(float64) capsule
+        Compiled RBF kernel: maps scalar distance r to scalar value.
     epsilon : float
+        Shape parameter.
     powers : (R, N) int ndarray
+        The exponents for each monomial in the polynomial.
     shift : (N,) float ndarray
+        Shifts the polynomial domain for numerical stability.
     scale : (N,) float ndarray
+        Scales the polynomial domain for numerical stability.
 
     Returns
     -------

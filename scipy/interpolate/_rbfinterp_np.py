@@ -5,8 +5,6 @@ from ._rbfinterp_common import _monomial_powers_impl
 
 from . import _rbfinterp_pythran as _pythran_mod
 from ._rbfinterp_pythran import (
-    _build_system as _pythran_build_system,
-    _build_evaluation_coefficients as _pythran_build_evaluation_coefficients,
     _build_system_with_kernel as _pythran_build_system_with_kernel,
     _build_evaluation_coefficients_with_kernel as
         _pythran_build_evaluation_coefficients_with_kernel,
@@ -32,14 +30,11 @@ def _get_kernel_capsule(kernel):
 def _build_evaluation_coefficients(
     x, y, kernel, epsilon, powers, shift, scale, xp
 ):
-    if isinstance(kernel, str):
-        return _pythran_build_evaluation_coefficients(
-            x, y, kernel, epsilon, powers, shift, scale
-        )
     capsule = _get_kernel_capsule(kernel)
     return _pythran_build_evaluation_coefficients_with_kernel(
         x, y, capsule, epsilon, powers, shift, scale
     )
+
 
 def polynomial_matrix(x, powers, xp):
     return _pythran_polynomial_matrix(x, powers)
@@ -54,8 +49,6 @@ def _monomial_powers(ndim, degree, xp):
 
 
 def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
-    if isinstance(kernel, str):
-        return _pythran_build_system(y, d, smoothing, kernel, epsilon, powers)
     capsule = _get_kernel_capsule(kernel)
     return _pythran_build_system_with_kernel(
         y, d, smoothing, capsule, epsilon, powers
