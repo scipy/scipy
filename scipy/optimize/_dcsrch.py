@@ -261,8 +261,11 @@ class DCSRCH:
             stp = None
             task = b"WARNING: dcsrch did not converge within max iterations"
 
-        if task[:5] == b"ERROR" or task[:4] == b"WARN":
+        if task[:5] == b"ERROR":
             stp = None  # failed
+        # NOTE: WARN does NOT set stp=None — per MINPACK2 spec, on WARN stp
+        # holds the best point found during the search. Callers check task to
+        # decide whether to accept the step or fall back.
 
         return stp, phi1, phi0, task
 
