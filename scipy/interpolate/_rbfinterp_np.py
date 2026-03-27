@@ -16,7 +16,30 @@ dgesv = get_lapack_funcs('gesv', dtype=np.float64, ilp64="preferred")
 
 
 def _get_kernel_capsule(kernel):
-    """Return a float64(float64) capsule for *kernel*.
+    """Return a float64(float64) capsule for given name.
+
+    Parameters
+    ----------
+    kernel : str or LowLevelCallable
+        Either the name of a built-in RBF (str) or a ``LowLevelCallable``
+        wrapping a user-compiled ``double (*)(double)`` kernel.
+
+    Returns
+    -------
+    capsule : PyCapsule
+        Opaque capsule suitable for passing to
+        ``_build_system_with_kernel`` /
+        ``_build_evaluation_coefficients_with_kernel``.
+
+    Notes
+    -----
+    For the ``str`` path, the compiled capsule is retrieved as a module
+    attribute of ``_rbfinterp_pythran``
+
+    For the ``LowLevelCallable`` path, element 0 of the LLC tuple is the
+    normalised PyCapsule.  Pythran ignores the capsule name and trusts the
+    ``float64(float64)`` annotation in the export line, so no ``signature=`` coercion
+    is needed on the LLC side.
     """
     if isinstance(kernel, str):
         # e.g. _pythran_mod.gaussian — a PyCapsule set by Pythran at import
