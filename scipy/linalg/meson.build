@@ -192,8 +192,10 @@ py3.extension_module('_batched_linalg',
     'src/_linalg_inv.hh',
     'src/_linalg_solve.hh',
     'src/_npymath.hh',
-    'src/_batched_linalg_module.cc'
+    'src/_batched_linalg_module.cc',
+    'src/_linalg_simd_kernels.c'
   ],
+  include_directories: ['src/'],
   dependencies: [np_dep, lapack_dep],
   link_args: version_link_args,
   install: true,
@@ -264,7 +266,8 @@ py3.extension_module('_internal_matfuncs',
   [
     '_matfuncsmodule.c',
     'src/_matfuncs_expm.c',
-    'src/_matfuncs_sqrtm.c'
+    'src/_matfuncs_sqrtm.c',
+    'src/_linalg_simd_kernels.c'
   ],
   include_directories: ['src/'],
   dependencies: [np_dep, lapack_dep],
