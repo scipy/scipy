@@ -303,8 +303,8 @@ int32_t StochasticLib3::WalleniusNCHypRatioOfUnifoms (int32_t n, int32_t m, int3
       xma2 = xi - (wnc_a-0.5);
       xma2 *= xma2;
       hx = (s2 >= xma2) ? 1. : s2 / xma2;
-      // rejection in t-domain implemented in CWalleniusNCHypergeometric::BernouilliH
-      if (wnch.BernouilliH(xi, hx * wnc_k * 1.01, u * u * wnc_k  * 1.01, this)) {
+      // rejection in t-domain implemented in CWalleniusNCHypergeometric::BernoulliH
+      if (wnch.BernoulliH(xi, hx * wnc_k * 1.01, u * u * wnc_k  * 1.01, this)) {
          break;                                  // acceptance
       }
 #endif      
