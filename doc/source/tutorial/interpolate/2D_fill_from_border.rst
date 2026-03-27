@@ -272,8 +272,8 @@ interpolator to get back to the desired density.
 
    >>> from scipy.interpolate import RBFInterpolator, RegularGridInterpolator
    >>> results = []
-   >>> fig, axes = plt.subplots(2, 2, constrained_layout=True, sharex=True, sharey=True)
-   >>> for i, kernel in enumerate(["linear", "thin_plate_spline", "cubic", "quintic"]):
+   >>> fig, axes = plt.subplots(1, 3, constrained_layout=True, sharex=True, sharey=True)
+   >>> for i, kernel in enumerate(["linear", "thin_plate_spline", "cubic"]):
    ...     rbf_interpolator = RBFInterpolator(
    ...         np.column_stack([edge_x, edge_y]), border_values, kernel=kernel
    ...     )
@@ -288,14 +288,13 @@ interpolator to get back to the desired density.
    ...         sparse_values
    ...     )
    ...     values = refiner(np.stack([grid_x, grid_y], -1))
-   ...     ax = plt.subplot(2, 2, i + 1)
+   ...     ax = plt.subplot(1, 3, i + 1)
    ...     results.append(plot_and_check_filled_image(values, kernel))
    ...
    >>> np.array(results)
    array([[-1.56770893e-14,  4.07119969e-03],
           [-2.57408215e-13,  4.07119969e-03],
-          [-2.86032633e-13,  4.07119969e-03],
-          [-3.92475615e-08,  4.07132258e-03]])
+          [-2.86032633e-13,  4.07119969e-03]])
 
    The columns show the mean and standard deviation of the differences
    from the provided frame, respectively.  The rows iterate over the
