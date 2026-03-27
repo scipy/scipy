@@ -1,5 +1,7 @@
 import numpy as np
 from numpy.linalg import LinAlgError
+from scipy._lib._ccallback_c import get_capsule_signature
+
 from scipy.linalg.lapack import get_lapack_funcs
 from ._rbfinterp_common import _monomial_powers_impl
 
@@ -34,7 +36,7 @@ def _get_kernel_capsule(kernel):
     Notes
     -----
     For the ``str`` path, the compiled capsule is retrieved as a module
-    attribute of ``_rbfinterp_pythran``
+    attribute of ``_bfinterp_pythran``
 
     For the ``LowLevelCallable`` path, element 0 of the LLC tuple is the
     normalised PyCapsule.  Pythran ignores the capsule name and trusts the
@@ -42,11 +44,19 @@ def _get_kernel_capsule(kernel):
     is needed on the LLC side.
     """
     if isinstance(kernel, str):
-        # e.g. _pythran_mod.gaussian — a PyCapsule set by Pythran at import
+        # Built in kernel
         return getattr(_pythran_mod, kernel)
     else:
         # LowLevelCallable is a tuple subclass; element 0 is the capsule
-        return tuple.__getitem__(kernel, 0)
+        capsule =  tuple.__getitem__(kernel, 0)
+        sig = get_capsule_signature(capsule)
+        if sig != "double (double)":
+            raise ValueError(
+                f"LowLevelCallable kernel must have signature \"double (double)\", got"
+                f" \"{sig}\"."
+                f"Construct with: "
+                f"LowLevelCallable(fn, signature=\"double (double)\")"
+            )
 
 
 # trampolines for pythran-compiled functions to drop the `xp` argument
