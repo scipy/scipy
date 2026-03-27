@@ -1,53 +1,55 @@
 import numpy as np
 
-
+# pythran export capsule linear(float64)
 def linear(r):
     return -r
 
-
+# pythran export capsule thin_plate_spline(float64)
 def thin_plate_spline(r):
     if r == 0:
         return 0.0
     else:
         return r**2*np.log(r)
 
-
+# pythran export capsule cubic(float64)
 def cubic(r):
     return r**3
 
-
+# pythran export capsule quintic(float64)
 def quintic(r):
     return -r**5
 
-
+# pythran export capsule multiquadric(float64)
 def multiquadric(r):
     return -np.sqrt(r**2 + 1)
 
-
+# pythran export capsule inverse_multiquadric(float64)
 def inverse_multiquadric(r):
     return 1/np.sqrt(r**2 + 1)
 
-
+# pythran export capsule inverse_quadratic(float64)
 def inverse_quadratic(r):
     return 1/(r**2 + 1)
 
-
+# pythran export capsule gaussian(float64)
 def gaussian(r):
     return np.exp(-r**2)
 
-
+# pythran export capsule matern1_2(float64)
 def matern1_2(r):
     return np.exp(-r)
 
 
+# pythran export capsule matern3_2(float64)
 def matern3_2(r):
     term = np.sqrt(3.0) * r
-    return (1+term) * np.exp(-term)
+    return (1.0 + term) * np.exp(-term)
 
 
+# pythran export capsule matern5_2(float64)
 def matern5_2(r):
     term = np.sqrt(5.0) * r
-    return (1 + term + (5.0 * r *r) /3.0) * np.exp(-term)
+    return (1.0 + term + 5.0 * r**2 / 3.0) * np.exp(-term)
 
 
 NAME_TO_FUNC = {
@@ -224,6 +226,109 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
     yeps = y*epsilon
     xeps = x*epsilon
     xhat = (x - shift)/scale
+
+    vec = np.empty((q, p + r), dtype=float)
+    for i in range(q):
+        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p])
+        polynomial_vector(xhat[i], powers, vec[i, p:])
+
+    return vec
+
+
+# pythran export _build_system_with_kernel(float[:, :],
+#                                          float[:, :],
+#                                          float[:],
+#                                          float64(float64),
+#                                          float,
+#                                          int64[:, :])
+def _build_system_with_kernel(y, d, smoothing, kernel_func, epsilon, powers):
+    """Build the RBF system using a compiled kernel function pointer.
+
+    Identical to ``_build_system`` but accepts a ``float64(float64)``
+    capsule as *kernel_func* instead of a string name.  Pythran calls
+    the function pointer directly in the inner loop without any Python
+    dispatch overhead.
+
+    Parameters
+    ----------
+    y : (P, N) float ndarray
+    d : (P, S) float ndarray
+    smoothing : (P,) float ndarray
+    kernel_func : float64(float64) capsule
+        Compiled RBF kernel: maps scalar distance r to scalar value.
+    epsilon : float
+    powers : (R, N) int ndarray
+
+    Returns
+    -------
+    lhs : (P + R, P + R) float ndarray
+    rhs : (P + R, S) float ndarray
+    shift : (N,) float ndarray
+    scale : (N,) float ndarray
+    """
+    p = d.shape[0]
+    s = d.shape[1]
+    r = powers.shape[0]
+
+    mins = np.min(y, axis=0)
+    maxs = np.max(y, axis=0)
+    shift = (maxs + mins) / 2
+    scale = (maxs - mins) / 2
+    scale[scale == 0.0] = 1.0
+
+    yeps = y * epsilon
+    yhat = (y - shift) / scale
+
+    lhs = np.empty((p + r, p + r), dtype=float).T
+    kernel_matrix(yeps, kernel_func, lhs[:p, :p])
+    polynomial_matrix(yhat, powers, lhs[:p, p:])
+    lhs[p:, :p] = lhs[:p, p:].T
+    lhs[p:, p:] = 0.0
+    for i in range(p):
+        lhs[i, i] += smoothing[i]
+
+    rhs = np.empty((s, p + r), dtype=float).T
+    rhs[:p] = d
+    rhs[p:] = 0.0
+
+    return lhs, rhs, shift, scale
+
+
+# pythran export _build_evaluation_coefficients_with_kernel(float[:, :],
+#                                                           float[:, :],
+#                                                           float64(float64),
+#                                                           float,
+#                                                           int64[:, :],
+#                                                           float[:],
+#                                                           float[:])
+def _build_evaluation_coefficients_with_kernel(x, y, kernel_func, epsilon,
+                                               powers, shift, scale):
+    """Construct evaluation coefficients using a compiled kernel function pointer.
+
+    Identical to ``_build_evaluation_coefficients`` but accepts a
+    ``float64(float64)`` capsule as *kernel_func*.
+
+    Parameters
+    ----------
+    x : (Q, N) float ndarray
+    y : (P, N) float ndarray
+    kernel_func : float64(float64) capsule
+    epsilon : float
+    powers : (R, N) int ndarray
+    shift : (N,) float ndarray
+    scale : (N,) float ndarray
+
+    Returns
+    -------
+    (Q, P + R) float ndarray
+    """
+    q = x.shape[0]
+    p = y.shape[0]
+    r = powers.shape[0]
+
+    yeps = y * epsilon
+    xeps = x * epsilon
+    xhat = (x - shift) / scale
 
     vec = np.empty((q, p + r), dtype=float)
     for i in range(q):

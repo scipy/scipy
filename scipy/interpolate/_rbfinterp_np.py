@@ -3,9 +3,13 @@ from numpy.linalg import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 from ._rbfinterp_common import _monomial_powers_impl
 
+from . import _rbfinterp_pythran as _pythran_mod
 from ._rbfinterp_pythran import (
     _build_system as _pythran_build_system,
     _build_evaluation_coefficients as _pythran_build_evaluation_coefficients,
+    _build_system_with_kernel as _pythran_build_system_with_kernel,
+    _build_evaluation_coefficients_with_kernel as
+        _pythran_build_evaluation_coefficients_with_kernel,
     _polynomial_matrix as _pythran_polynomial_matrix
 )
 
@@ -13,12 +17,28 @@ from ._rbfinterp_pythran import (
 dgesv = get_lapack_funcs('gesv', dtype=np.float64, ilp64="preferred")
 
 
+def _get_kernel_capsule(kernel):
+    """Return a float64(float64) capsule for *kernel*.
+    """
+    if isinstance(kernel, str):
+        # e.g. _pythran_mod.gaussian — a PyCapsule set by Pythran at import
+        return getattr(_pythran_mod, kernel)
+    else:
+        # LowLevelCallable is a tuple subclass; element 0 is the capsule
+        return tuple.__getitem__(kernel, 0)
+
+
 # trampolines for pythran-compiled functions to drop the `xp` argument
 def _build_evaluation_coefficients(
     x, y, kernel, epsilon, powers, shift, scale, xp
 ):
-    return _pythran_build_evaluation_coefficients(
-        x, y, kernel, epsilon, powers, shift, scale
+    if isinstance(kernel, str):
+        return _pythran_build_evaluation_coefficients(
+            x, y, kernel, epsilon, powers, shift, scale
+        )
+    capsule = _get_kernel_capsule(kernel)
+    return _pythran_build_evaluation_coefficients_with_kernel(
+        x, y, capsule, epsilon, powers, shift, scale
     )
 
 def polynomial_matrix(x, powers, xp):
@@ -34,7 +54,12 @@ def _monomial_powers(ndim, degree, xp):
 
 
 def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
-    return _pythran_build_system(y, d, smoothing, kernel, epsilon, powers)
+    if isinstance(kernel, str):
+        return _pythran_build_system(y, d, smoothing, kernel, epsilon, powers)
+    capsule = _get_kernel_capsule(kernel)
+    return _pythran_build_system_with_kernel(
+        y, d, smoothing, capsule, epsilon, powers
+    )
 
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):

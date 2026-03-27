@@ -16,6 +16,7 @@ import scipy._external.array_api_extra as xpx
 
 __all__ = ["RBFInterpolator"]
 
+from .. import LowLevelCallable
 
 # These RBFs are implemented.
 _AVAILABLE = {
@@ -278,46 +279,54 @@ class RBFInterpolator:
                     "Expected `smoothing` to be a scalar or have shape "
                     f"({ny},)."
                     )
+        if not isinstance(kernel, LowLevelCallable) and is_numpy(xp):
+            kernel_llc = isinstance(kernel, LowLevelCallable)
+            if not kernel_llc:
+                kernel = kernel.lower()
+                if kernel not in _AVAILABLE:
+                    raise ValueError(f"`kernel` must be one of {_AVAILABLE}.")
 
-        kernel = kernel.lower()
-        if kernel not in _AVAILABLE:
-            raise ValueError(f"`kernel` must be one of {_AVAILABLE}.")
-
-        if epsilon is None:
-            if kernel in _SCALE_INVARIANT:
-                epsilon = 1.0
+            if epsilon is None:
+                if kernel in _SCALE_INVARIANT:
+                    epsilon = 1.0
+                else:
+                    raise ValueError(
+                        "`epsilon` must be specified if `kernel` is not one of "
+                        f"{_SCALE_INVARIANT}."
+                        )
             else:
-                raise ValueError(
-                    "`epsilon` must be specified if `kernel` is not one of "
-                    f"{_SCALE_INVARIANT}."
+                epsilon = float(epsilon)
+
+            min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
+            if degree is None:
+                degree = max(min_degree, 0)
+            else:
+                degree = int(degree)
+                if degree < -1:
+                    raise ValueError("`degree` must be at least -1.")
+                elif -1 < degree < min_degree:
+                    warnings.warn(
+                        f"`degree` should not be below {min_degree} except -1 "
+                        f"when `kernel` is '{kernel}'."
+                        f"The interpolant may not be uniquely "
+                        f"solvable, and the smoothing parameter may have an "
+                        f"unintuitive effect.",
+                        UserWarning, stacklevel=2
                     )
-        else:
-            epsilon = float(epsilon)
 
-        min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
-        if degree is None:
-            degree = max(min_degree, 0)
+            if neighbors is None:
+                nobs = ny
+            else:
+                # Make sure the number of nearest neighbors used for interpolation
+                # does not exceed the number of observations.
+                neighbors = int(min(neighbors, ny))
+                nobs = neighbors
         else:
-            degree = int(degree)
-            if degree < -1:
-                raise ValueError("`degree` must be at least -1.")
-            elif -1 < degree < min_degree:
-                warnings.warn(
-                    f"`degree` should not be below {min_degree} except -1 "
-                    f"when `kernel` is '{kernel}'."
-                    f"The interpolant may not be uniquely "
-                    f"solvable, and the smoothing parameter may have an "
-                    f"unintuitive effect.",
-                    UserWarning, stacklevel=2
-                )
-
-        if neighbors is None:
             nobs = ny
-        else:
-            # Make sure the number of nearest neighbors used for interpolation
-            # does not exceed the number of observations.
-            neighbors = int(min(neighbors, ny))
-            nobs = neighbors
+            warnings.warn(
+                "You have supplied a custom kernel you must take care of X",
+                UserWarning, stacklevel=2
+            )
 
         powers = _backend._monomial_powers(ndim, degree, xp)
         # The polynomial matrix must have full column rank in order for the
