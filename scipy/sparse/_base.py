@@ -1770,23 +1770,11 @@ def isspmatrix(x):
     >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
     >>> isspmatrix(csr_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix(csr_array([[5]]))  # doctest: +SKIP
+    >>> isspmatrix(csr_array([[5]]))
     False
-    >>> isspmatrix(np.array([[5]]))  # doctest: +SKIP
+    >>> isspmatrix(np.array([[5]]))
     False
-    >>> isspmatrix(5)  # doctest: +SKIP
+    >>> isspmatrix(5)
     False
     """
-    msg = """`isspmatrix` is being replaced `issparse(A) and not isinstance(A, sparray)`
-
-        All sparse matrix classes (*_matrix) are being deprecated in favor of
-        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
-        is elementwise multiplication. See the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        The isspmatrix function will be removed no earlier than v1.20.
-        """
-    import os
-    prefixes = (os.path.dirname(__file__),)
-    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, spmatrix)
