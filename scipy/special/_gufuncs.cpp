@@ -58,7 +58,9 @@ void _poisson_binom_all_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[1] = dims[1];
 }
 
-void _no_op_map_dims(const npy_intp *dims, npy_intp *new_dims) {}
+void _take_from_dist_map_dims(const npy_intp *dims, npy_intp *new_dims) {
+    new_dims[0] = dims[0];
+}
 
 static int
 _gufuncs_module_exec(PyObject *module)
@@ -271,7 +273,7 @@ _gufuncs_module_exec(PyObject *module)
         "_take_from_pmf",
         "Internal function",
         "(i),()->()",
-	_no_op_map_dims
+	_take_from_dist_map_dims
     );
     PyModule_AddObjectRef(module, "_take_from_pmf", _take_from_pmf);
 
@@ -284,7 +286,7 @@ _gufuncs_module_exec(PyObject *module)
         "_take_from_discrete_cdf",
         "Internal function",
         "(i),()->()",
-	_no_op_map_dims
+	_take_from_dist_map_dims
     );
     PyModule_AddObjectRef(module, "_take_from_discrete_cdf", _take_from_discrete_cdf);
 
