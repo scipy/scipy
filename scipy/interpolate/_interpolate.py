@@ -872,10 +872,11 @@ class PPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.
-    extrapolate : bool or 'periodic', optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. Default is True.
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
     axis : int, optional
         Interpolation axis. Default is zero.
 
@@ -1351,10 +1352,11 @@ class BPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.
-    extrapolate : bool, optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. Default is True.
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
     axis : int, optional
         Interpolation axis. Default is zero.
 
