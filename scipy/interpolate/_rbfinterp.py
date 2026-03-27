@@ -90,7 +90,7 @@ class RBFInterpolator:
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
     kernel : str or LowLevelCallable optional
-        Type of RBF. This should be one of
+        Type of RBF. This should be one of,  default is 'thin_plate_spline',
 
         - 'linear'               : ``-r``
         - 'thin_plate_spline'    : ``r**2 * log(r)``
@@ -104,19 +104,22 @@ class RBFInterpolator:
         - 'matern3_2' .          : ``(1+-3**0.5*r)*exp(-3**0.5*r)``
         - 'matern5_2'            : ``(1+5**0.5*r + 5/3 *r**2)*exp(-5**0.5*r)``
 
-        Default is 'thin_plate_spline'.
 
         Alternatively, a :class:`~scipy.LowLevelCallable` wrapping a compiled kernel
-        with C signature ``double (double)``, where the argument is the scalar distance
+        with signature ``double (double)``, where the argument is the scalar distance
         *r*.  Both `epsilon` and `degree` must be supplied explicitly; neither has a
         default.
 
         Only NumPy arrays are supported with a ``LowLevelCallable`` kernel.
 
-        The recommended way to supply a custom kernel is to compile it with
+        This can be done usig pythran to compile python to C++ or by directly writing
+        and compile a C/C++ fucnction.
+
+        **Pythran**
+
         Pythran and expose it as a capsule::
 
-            # my_rbf.py
+            # custom_kernel.py
             import numpy as np
 
             def my_kernel(r):
@@ -124,11 +127,42 @@ class RBFInterpolator:
 
             # pythran export capsule my_kernel(float64)
 
-        Then wrap the capsule in a ``LowLevelCallable``::
+        Compile with pythran::
 
-            from my_rbf import my_kernel          # capsule object
+            pythran custom_kernel.py
+
+        Then in wrap the function in a ``LowLevelCallable``::
+
+            from custom_kernel import my_kernel  # capsule object
             from scipy import LowLevelCallable
+            # signature only required for pythran capusel
             llc = LowLevelCallable(my_kernel, signature="double (double)")
+
+            interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
+
+        **C/C++**::
+
+            // custom_kernel.c
+            #include <math.h>
+            double my_kernel(double r) {
+                return exp(-r * r) / r;
+            }
+
+        Compile::
+
+            clang -shared -fPIC -O3 -o custom_kernel.dylib custom_kernel.c
+
+        Then wrap the function in a ``LowLevelCallable``::
+
+            import ctypes
+            from scipy import LowLevelCallable
+            from scipy.interpolate import RBFInterpolator
+
+            lib = ctypes.CDLL('./custom_kernel.dylib')
+            lib.my_kernel.restype  = ctypes.c_double
+            lib.my_kernel.argtypes = [ctypes.c_double]
+
+            llc = LowLevelCallable(lib.my_kernel)
             interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
 
     epsilon : float, optional
@@ -305,7 +339,7 @@ class RBFInterpolator:
                     "Expected `smoothing` to be a scalar or have shape "
                     f"({ny},)."
                     )
-        if not isinstance(kernel, LowLevelCallable) and is_numpy(xp):
+        if not isinstance(kernel, LowLevelCallable):
             kernel_llc = isinstance(kernel, LowLevelCallable)
             if not kernel_llc:
                 kernel = kernel.lower()
@@ -340,19 +374,34 @@ class RBFInterpolator:
                         UserWarning, stacklevel=2
                     )
 
-            if neighbors is None:
-                nobs = ny
-            else:
-                # Make sure the number of nearest neighbors used for interpolation
-                # does not exceed the number of observations.
-                neighbors = int(min(neighbors, ny))
-                nobs = neighbors
         else:
+            if not is_numpy(xp):
+                raise ValueError(
+                    "LowLevelCallable kernels are currently only supported "
+                    "for NumPy backend.")
+
+            if epsilon is None:
+                raise ValueError(
+                    "`epsilon` must be specified when `kernel` is a "
+                    "LowLevelCallable."
+                )
+            epsilon = float(epsilon)
+            if degree is None:
+                raise ValueError(
+                    "`degree` must be specified when `kernel` is a "
+                    "LowLevelCallable."
+                )
+            degree = int(degree)
+            if degree < -1:
+                raise ValueError("`degree` must be at least -1.")
+
+        if neighbors is None:
             nobs = ny
-            warnings.warn(
-                "You have supplied a custom kernel you must take care of X",
-                UserWarning, stacklevel=2
-            )
+        else:
+            # Make sure the number of nearest neighbors used for interpolation
+            # does not exceed the number of observations.
+            neighbors = int(min(neighbors, ny))
+            nobs = neighbors
 
         powers = _backend._monomial_powers(ndim, degree, xp)
         # The polynomial matrix must have full column rank in order for the
