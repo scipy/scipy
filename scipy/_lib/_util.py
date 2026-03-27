@@ -22,24 +22,11 @@ from scipy._lib._sparse import issparse
 from numpy.exceptions import AxisError
 
 
-np_long: type
-np_ulong: type
+type np_long = np.long
+type np_ulong = np.ulong
 
-try:
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            r".*In the future `np\.long` will be defined as.*",
-            FutureWarning,
-        )
-        np_long = np.long  # type: ignore[attr-defined]
-        np_ulong = np.ulong  # type: ignore[attr-defined]
-except AttributeError:
-        np_long = np.int_
-        np_ulong = np.uint
-
-IntNumber = int | np.integer
-DecimalNumber = float | np.floating | np.integer
+type IntNumber = int | np.integer
+type DecimalNumber = float | np.floating | np.integer
 
 copy_if_needed: bool | None = None
 
@@ -63,8 +50,8 @@ else:
     wrapped_inspect_signature = inspect.signature
 
 
-_RNG: type = np.random.Generator | np.random.RandomState
-SeedType: type = IntNumber | _RNG | None
+type _RNG = np.random.Generator | np.random.RandomState
+type SeedType = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
 
