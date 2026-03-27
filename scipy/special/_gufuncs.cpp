@@ -53,7 +53,7 @@ void sph_harm_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[1] = dims[1];
 }
 
-void _poisson_binom_pmf_all_map_dims(const npy_intp *dims, npy_intp *new_dims) {
+void _poisson_binom_all_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[0] = dims[0];
     new_dims[1] = dims[1];
 }
@@ -245,9 +245,22 @@ _gufuncs_module_exec(PyObject *module)
         "_poisson_binom_pmf_all",
         "Internal function",
         "(i)->(j)",
-	_poisson_binom_pmf_all_map_dims
+	_poisson_binom_all_map_dims
     );
     PyModule_AddObjectRef(module, "_poisson_binom_pmf_all", _poisson_binom_pmf_all);
+
+    PyObject *_poisson_binom_cdf_all = xsf::numpy::gufunc(
+        {
+            static_cast<xsf::numpy::f1_f1>(xsf::poisson_binom_cdf_all),
+            static_cast<xsf::numpy::d1_d1>(xsf::poisson_binom_cdf_all)
+        },
+        1,
+        "_poisson_binom_cdf_all",
+        "Internal function",
+        "(i)->(j)",
+	_poisson_binom_all_map_dims
+    );
+    PyModule_AddObjectRef(module, "_poisson_binom_cdf_all", _poisson_binom_cdf_all);
 
     PyObject *_take_from_pmf = xsf::numpy::gufunc(
 	{
