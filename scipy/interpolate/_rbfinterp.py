@@ -89,7 +89,7 @@ class RBFInterpolator:
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
-    kernel : str, optional
+    kernel : str or LowLevelCallable optional
         Type of RBF. This should be one of
 
         - 'linear'               : ``-r``
@@ -105,6 +105,32 @@ class RBFInterpolator:
         - 'matern5_2'            : ``(1+5**0.5*r + 5/3 *r**2)*exp(-5**0.5*r)``
 
         Default is 'thin_plate_spline'.
+
+        Alternatively, a :class:`~scipy.LowLevelCallable` wrapping a compiled kernel
+        with C signature ``double (double)``, where the argument is the scalar distance
+        *r*.  Both `epsilon` and `degree` must be supplied explicitly; neither has a
+        default.
+
+        Only NumPy arrays are supported with a ``LowLevelCallable`` kernel.
+
+        The recommended way to supply a custom kernel is to compile it with
+        Pythran and expose it as a capsule::
+
+            # my_rbf.py
+            import numpy as np
+
+            def my_kernel(r):
+                return np.exp(-r ** 2) * r
+
+            # pythran export capsule my_kernel(float64)
+
+        Then wrap the capsule in a ``LowLevelCallable``::
+
+            from my_rbf import my_kernel          # capsule object
+            from scipy import LowLevelCallable
+            llc = LowLevelCallable(my_kernel, signature="double (double)")
+            interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
+
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. If `kernel` is
         'linear', 'thin_plate_spline', 'cubic', or 'quintic', this defaults to
