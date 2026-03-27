@@ -4510,17 +4510,20 @@ add_newdoc("kolmogorov",
     kolmogorov(x, out=None)
 
     Complementary cumulative distribution function (survival function) of the 
-   Kolmogorov distribution.
+    Kolmogorov distribution.
 
     Returns the complementary cumulative distribution function of
     Kolmogorov's limiting distribution, which is the distribution of
-    :math:`D_n \sqrt{n}` as :math:`n \to \infty`, where :math:`D_n` is
-    the maximum absolute difference between an empirical cumulative 
+    :math:`D_n \sqrt{n}` as :math:`n \to \infty`, where :math:`D_n` is the maximum absolute difference between an empirical cumulative 
     distribution function (ECDF) and a theoretical CDF in a two-sided
-    Kolmogorov-Smirnov test.
+    Kolmogorov-Smirnov test:
+    
+    .. math::
 
+        D_n = \max_{x} |F_n(x) - F(x)|
+
+    where :math:`F_n(x)` is the empirical CDF and :math:`F(x)` is the theoretical CDF.
     The function computes:
-
     .. math::
 
         P(D_n \sqrt{n} > x)
@@ -4532,8 +4535,7 @@ add_newdoc("kolmogorov",
         :math:`\sqrt{n} \max(|\mathrm{ECDF} - \mathrm{CDF}|)`, where `n` is the 
         sample size. Must be non-negative. Typical values range from 0 to ~2.
     out : ndarray, optional
-        Optional output array to store the result. Must have the same shape as 
-        the broadcasted input. This is a standard NumPy ufunc parameter.
+        Optional output array to store the result. 
 
     Returns
     -------
@@ -4574,8 +4576,8 @@ add_newdoc("kolmogorov",
     >>> kolmogorov([0, 0.5, 1.0])
     array([ 1.        ,  0.96394524,  0.26999967])
 
-    Compare a sample of size 1000 drawn from Laplace(0, 1) against 
-    Normal(0, 1):
+    Compare a sample of size 1000 drawn from a Laplace(0, 1) distribution against
+    the target distribution, a Normal(0, 1) distribution.
 
     >>> from scipy.stats import norm, laplace
     >>> rng = np.random.default_rng()
