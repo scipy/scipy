@@ -617,12 +617,12 @@ void CWalleniusNCHypergeometric::findpars() {
 }
 
 
-int CWalleniusNCHypergeometric::BernouilliH(int32_t x_, double h, double rh, StochasticLib1 *sto) {
+int CWalleniusNCHypergeometric::BernoulliH(int32_t x_, double h, double rh, StochasticLib1 *sto) {
    // This function generates a Bernoulli variate with probability proportional
    // to the univariate Wallenius' noncentral hypergeometric distribution.
    // The return value will be 1 with probability f(x_)/h and 0 with probability
    // 1-f(x_)/h.
-   // This is equivalent to calling sto->Bernouilli(probability(x_)/h),
+   // This is equivalent to calling sto->Bernoulli(probability(x_)/h),
    // but this method is faster. The method used here avoids calculating the
    // Wallenius probability by sampling in the t-domain.
    // rh is a uniform random number in the interval 0 <= rh < h. The function
