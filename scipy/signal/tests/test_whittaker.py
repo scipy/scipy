@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy.signal import whittaker_henderson
 from scipy.signal._whittaker import (
-    _logdet_difference_matrix, _reml, _solveh_banded, _solve_WH_banded,
+    _logdet_difference_matrix, _polynomial_fit, _reml, _solveh_banded, _solve_WH_banded,
 )
 from scipy.stats import special_ortho_group
 
@@ -120,6 +120,24 @@ def test_logdet_difference_matrix(order, n):
     assert_allclose(logdet, np.log(np.linalg.det(D @ D.T)), rtol=1e-11)
     eigvals = np.linalg.eigvals(D.T @ D)
     assert_allclose(logdet, np.sum(np.log(eigvals[eigvals > 1e-8])), rtol=1e-11)
+
+
+@pytest.mark.parametrize("calc_logdet", [False, True])
+@pytest.mark.parametrize("lamb", [0.1, 1e20])
+def test_polynomial_fit(calc_logdet, lamb):
+    """Test that _polynomial_fit works as expected."""
+    n = 20
+    y = np.sin(2 * np.pi * np.linspace(0, 1, n))
+    poly, logdet = _polynomial_fit(y, lamb, calc_logdet=calc_logdet)
+
+    if not calc_logdet:
+        assert logdet == 0
+    
+    poly2, logdet2 = _polynomial_fit(
+        y, lamb, weights=1.23 * np.ones(n), calc_logdet=calc_logdet
+    )
+    assert logdet2 == pytest.approx(logdet, rel=1e-12)
+    assert_allclose(poly2, poly)
 
 
 @pytest.mark.parametrize(
@@ -400,8 +418,8 @@ def test_whittaker_reml(weights):
     # b$sp
     expected_sp = 5.12904626508
     expected_sp /= 16  # not 100% sure how to justify this 16.
-    assert wh.lamb == pytest.approx(expected_sp)
+    assert wh.lamb == pytest.approx(expected_sp, rel=1e-7)
 
     # Double weights should result in double lamb.
     wh2 = whittaker_henderson(y, lamb="reml", order=order, weights=2 * np.ones_like(y))
-    assert wh2.lamb == pytest.approx(2 * wh.lamb)
+    assert wh2.lamb == pytest.approx(2 * wh.lamb, rel=1e-7)
