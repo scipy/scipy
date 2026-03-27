@@ -14,7 +14,7 @@ from scipy.sparse import (
         bsr_matrix, csc_matrix, dia_matrix, lil_matrix,
         coo_matrix, csr_matrix, dok_matrix,
         isspmatrix_bsr, isspmatrix_csc, isspmatrix_dia, isspmatrix_lil,
-        isspmatrix_coo, isspmatrix_csr, isspmatrix_dok, isspmatrix,
+        isspmatrix_coo, isspmatrix_csr, isspmatrix_dok,
         spdiags, diags, identity, eye, bmat, rand, random,
     )
 from scipy.sparse._sputils import supported_dtypes, matrix
@@ -467,8 +467,6 @@ def test_isspmatrix_functions_deprecated():
         isspmatrix_dok(A)
     with pytest.deprecated_call(match=".isspmatrix_lil. is being replaced"):
         isspmatrix_lil(A)
-    with pytest.deprecated_call(match=".isspmatrix. is being replaced"):
-        isspmatrix(A)
 
 
 def test_class_constructors_deprecated():
