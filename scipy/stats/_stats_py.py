@@ -10203,8 +10203,7 @@ def _validate_distribution(values, weights):
     return values, None
 
 
-@xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
-                                ("dask.array", "no `take_along_axis`")],
+@xp_capabilities(skip_backends=[("dask.array", "no `take_along_axis`")],
                  marray=True)
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
