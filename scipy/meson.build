@@ -512,9 +512,7 @@ cython_gen_cpp = generator(cython,
 
 if use_pythran
   pythran_gen = generator(pythran,
-    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@',
-                 '--config', 'typing.max_combiner=16',
-                 '--config', 'typing.max_heterogeneous_sequence_size=32'],
+    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',
   )
 endif
