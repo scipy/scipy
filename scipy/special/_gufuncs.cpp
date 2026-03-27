@@ -247,6 +247,32 @@ _gufuncs_module_exec(PyObject *module)
     );
     PyModule_AddObjectRef(module, "_poisson_binom_pmf_all", _poisson_binom_pmf_all);
 
+    PyObject *_take_from_pmf = xsf::numpy::gufunc(
+	{
+            static_cast<xsf::numpy::f1q_f>(xsf::take_from_pmf),
+            static_cast<xsf::numpy::d1q_d>(xsf::take_from_pmf),
+        },
+        1,
+        "_take_from_pmf",
+        "Internal function",
+        "(i),()->()",
+	nullptr
+    );
+    PyModule_AddObjectRef(module, "_take_from_pmf", _take_from_pmf);
+
+    PyObject *_take_from_discrete_cdf = xsf::numpy::gufunc(
+	{
+            static_cast<xsf::numpy::f1q_f>(xsf::take_from_discrete_cdf),
+            static_cast<xsf::numpy::d1q_d>(xsf::take_from_discrete_cdf),
+        },
+        1,
+        "_take_from_discrete_cdf",
+        "Internal function",
+        "(i),()->()",
+	nullptr
+    );
+    PyModule_AddObjectRef(module, "_take_from_discrete_cdf", _take_from_discrete_cdf);
+
     return 0;
 }
 
