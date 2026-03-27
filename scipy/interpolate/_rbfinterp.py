@@ -340,11 +340,11 @@ class RBFInterpolator:
                     f"({ny},)."
                     )
         if not isinstance(kernel, LowLevelCallable):
-            kernel_llc = isinstance(kernel, LowLevelCallable)
-            if not kernel_llc:
-                kernel = kernel.lower()
-                if kernel not in _AVAILABLE:
-                    raise ValueError(f"`kernel` must be one of {_AVAILABLE}.")
+
+            kernel = kernel.lower()
+            if kernel not in _AVAILABLE:
+                raise ValueError(f"`kernel` must be one of {_AVAILABLE} or a "
+                                 f"LowLevelCallable.")
 
             if epsilon is None:
                 if kernel in _SCALE_INVARIANT:

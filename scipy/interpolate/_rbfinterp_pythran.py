@@ -1,52 +1,52 @@
 import numpy as np
 
-# pythran export capsule linear(float64)
+# pythran export capsule linear(float)
 def linear(r):
     return -r
 
-# pythran export capsule thin_plate_spline(float64)
+# pythran export capsule thin_plate_spline(float)
 def thin_plate_spline(r):
     if r == 0:
         return 0.0
     else:
         return r**2*np.log(r)
 
-# pythran export capsule cubic(float64)
+# pythran export capsule cubic(float)
 def cubic(r):
     return r**3
 
-# pythran export capsule quintic(float64)
+# pythran export capsule quintic(float)
 def quintic(r):
     return -r**5
 
-# pythran export capsule multiquadric(float64)
+# pythran export capsule multiquadric(float)
 def multiquadric(r):
     return -np.sqrt(r**2 + 1)
 
-# pythran export capsule inverse_multiquadric(float64)
+# pythran export capsule inverse_multiquadric(float)
 def inverse_multiquadric(r):
     return 1/np.sqrt(r**2 + 1)
 
-# pythran export capsule inverse_quadratic(float64)
+# pythran export capsule inverse_quadratic(float)
 def inverse_quadratic(r):
     return 1/(r**2 + 1)
 
-# pythran export capsule gaussian(float64)
+# pythran export capsule gaussian(float)
 def gaussian(r):
     return np.exp(-r**2)
 
-# pythran export capsule matern1_2(float64)
+# pythran export capsule matern1_2(float)
 def matern1_2(r):
     return np.exp(-r)
 
 
-# pythran export capsule matern3_2(float64)
+# pythran export capsule matern3_2(float)
 def matern3_2(r):
     term = np.sqrt(3.0) * r
     return (1.0 + term) * np.exp(-term)
 
 
-# pythran export capsule matern5_2(float64)
+# pythran export capsule matern5_2(float)
 def matern5_2(r):
     term = np.sqrt(5.0) * r
     return (1.0 + term + 5.0 * r**2 / 3.0) * np.exp(-term)
@@ -129,7 +129,7 @@ def _build_system_with_kernel(y, d, smoothing, kernel_func, epsilon, powers):
         Data values at `y`.
     smoothing : (P,) float ndarray
         Smoothing parameter for each data point.
-    kernel_func : float64(float64) capsule
+    kernel_func : float(float) capsule
         Compiled RBF kernel: maps scalar distance r to scalar value.
     epsilon : float
         Shape parameter.
@@ -193,7 +193,7 @@ def _build_evaluation_coefficients_with_kernel(x, y, kernel_func, epsilon,
         Evaluation point coordinates.
     y : (P, N) float ndarray
         Data point coordinates.
-    kernel_func : float64(float64) capsule
+    kernel_func : float(float) capsule
         Compiled RBF kernel: maps scalar distance r to scalar value.
     epsilon : float
         Shape parameter.
