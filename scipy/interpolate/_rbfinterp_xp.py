@@ -25,6 +25,8 @@ the following differences:
 In general, we would prefer less code duplication. The main blocker ATM is
 that pythran cannot compile functions with an xp= argument where xp is numpy.
 """
+from math import sqrt
+
 from numpy.linalg import LinAlgError
 from ._rbfinterp_common import _monomial_powers_impl
 
@@ -129,13 +131,14 @@ def matern1_2(r, xp):
 
 
 def matern3_2(r, xp):
-    term = xp.sqrt(3.0) * r
-    return (1+term) * xp.exp(-term)
+    # sqrt is just a constant number
+    term = sqrt(3.0) * r
+    return (1.0 + term) * xp.exp(-term)
 
 
 def matern5_2(r, xp):
-    term = xp.sqrt(5.0) * r
-    return (1 + term + (5.0 * r * r) /3.0) * xp.exp(-term)
+    term = sqrt(5.0) * r
+    return (1.0 + term + 5.0 * r**2 / 3.0) * xp.exp(-term)
 
 
 NAME_TO_FUNC = {
