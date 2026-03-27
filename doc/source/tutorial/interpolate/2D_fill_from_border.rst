@@ -107,7 +107,8 @@ We now plot these functions to get a sense of their behavior.
    ...     return [error_mean, error_std]
    ...
    >>> sum_of_sines = np.sin(6 * np.pi * grid_x / L) + np.sin(6 * np.pi * grid_y / L)
-   >>> fig, axes = plt.subplots(1, 3, constrained_layout=True, sharex=True, sharey=True)
+   >>> fig, axes = plt.subplots(1, 3, constrained_layout=True, sharex=True, sharey=True,
+   ...                          figsize=(5, 2.25))
    >>> plt.subplot(131)
    <Axes: >
    >>> np.array(plot_and_check_filled_image(sum_of_sines, "Sum of sines"))
@@ -157,7 +158,8 @@ every point.
    ...     NearestNDInterpolator, LinearNDInterpolator, CloughTocher2DInterpolator
    ... )
    >>> full_results = []
-   >>> fig, axes = plt.subplots(3, 3, constrained_layout=True, sharex=True, sharey=True)
+   >>> fig, axes = plt.subplots(3, 3, constrained_layout=True, sharex=True, sharey=True,
+   ...                          figsize=(5, 4.5))
    >>> for i in range(3):
    ...     sparse_mask = np.zeros_like(grid_x, dtype=bool)
    ...     sparse_mask[::i+1, ::i+1] = True
@@ -228,7 +230,8 @@ also reduce the problem:
    :context: close-figs
 
    >>> full_results = []
-   >>> fig, axes = plt.subplots(1, 2, constrained_layout=True, sharex=True, sharey=True)
+   >>> fig, axes = plt.subplots(1, 2, constrained_layout=True, sharex=True, sharey=True,
+   ...                          figsize=(5, 3))
    >>> for i, interpolator_class in enumerate(
    ...     [LinearNDInterpolator, CloughTocher2DInterpolator]
    ... ):
@@ -272,7 +275,8 @@ interpolator to get back to the desired density.
 
    >>> from scipy.interpolate import RBFInterpolator, RegularGridInterpolator
    >>> results = []
-   >>> fig, axes = plt.subplots(1, 3, constrained_layout=True, sharex=True, sharey=True)
+   >>> fig, axes = plt.subplots(1, 3, constrained_layout=True, sharex=True, sharey=True,
+   ...                          figsize=(5, 2.25))
    >>> for i, kernel in enumerate(["linear", "thin_plate_spline", "cubic"]):
    ...     rbf_interpolator = RBFInterpolator(
    ...         np.column_stack([edge_x, edge_y]), border_values, kernel=kernel
@@ -493,6 +497,7 @@ equation, as do, for example,
    >>> values = np.tensordot(
    ...     coeffs, laplace_polynomials(scaled_grid_x, scaled_grid_y), 1
    ... )
+   >>> fig = plt.figure(figsize=(4, 3.5))
    >>> np.array(plot_and_check_filled_image(values, "Laplace polynomial"))
    array([-5.32907052e-17,  6.62820658e-01])
 
