@@ -555,7 +555,9 @@ if use_pythran
   # TODO: add argument to mark extension modules as safe to run without the GIL,
   #       once pythran supports that.
   pythran_gen = generator(pythran,
-    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
+    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@',
+                 '--config', 'typing.max_combiner=16',
+                 '--config', 'typing.max_heterogeneous_sequence_size=32'],
     output : '@BASENAME@.cpp',
   )
 endif
