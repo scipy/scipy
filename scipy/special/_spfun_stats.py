@@ -36,7 +36,9 @@ import numpy as np
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import array_namespace
 from scipy.special import gammaln as loggam
-from scipy.special._gufuncs import _poisson_binom_pmf_all
+from scipy.special._gufuncs import (
+    _poisson_binom_pmf_all, _take_from_pmf, _take_from_discrete_cdf
+)
 
 
 __all__ = ['multigammaln']
@@ -117,10 +119,7 @@ def _poisson_binom_pmf(k, p):
     out_shape = p.shape[:-1] + (n + 1,)
     pmf = xp.zeros(out_shape, dtype=p.dtype)
     _poisson_binom_pmf_all(p, out=pmf)
-    k_indices = xp.expand_dims(xp.clip(k, 0, n), axis=-1)
-    res = xp.squeeze(xp.take_along_axis(pmf, k_indices, axis=-1), axis=-1)
-    res = xpx.at(res, (k < 0) | (k > n)).set(xp.asarray(0.0, dtype=res.dtype))
-    return res
+    return _take_from_pmf(pmf, k)
 
 
 def _poisson_binom_cdf(k, p):
@@ -130,9 +129,4 @@ def _poisson_binom_cdf(k, p):
     cdf = xp.zeros(out_shape, dtype=p.dtype)
     _poisson_binom_pmf_all(p, out=cdf)
     cdf = xp.cumulative_sum(cdf, axis=-1)
-
-    k_indices = xp.expand_dims(xp.clip(k, 0, n), axis=-1)
-    res = xp.squeeze(xp.take_along_axis(cdf, k_indices, axis=-1), axis=-1)
-    res = xpx.at(res, k < 0).set(xp.asarray(0.0, dtype=res.dtype))
-    res = xpx.at(res, k >= n).set(xp.asarray(1.0, dtype=res.dtype))
-    return res
+    return _take_from_discrete_cdf(cdf, k)
