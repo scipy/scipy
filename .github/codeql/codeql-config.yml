@@ -3,3 +3,11 @@ name: "SciPy CodeQL config"
 queries:
     - uses: ./.github/codeql-queries/scipy-code-scanning.qls
     - uses: ./.github/codeql-queries/scipy-c-cpp-queries
+
+paths-ignore:
+  - "dist/**"
+  - "build/**"
+   - '**/*.md'
+   - '**/*.txt'
+   - 'tools/**'
+   - 'subprojects/**'
