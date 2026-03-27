@@ -26,6 +26,7 @@ cython_linalg = custom_target('cython_linalg',
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
+    '../_build_utils/_generate_blas_wrapper.py',
     '../_build_utils/_wrappers_common.py',
   ],
   install: true,
@@ -151,7 +152,6 @@ if use_ilp64
   py3.extension_module('_fblas_64',
     fblas64_module,
     link_args: version_link_args,
-    include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_dep, fortranobject_dep],  # lapack_dep is ILP64 if use_ilp64==true
     install: true,
     link_language: link_language_blas_lapack,
@@ -168,7 +168,6 @@ if use_ilp64
     flapack64_module,
     c_args: [Wno_empty_body],
     link_args: version_link_args,
-    include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_dep, fortranobject_dep],
     install: true,
     link_language: link_language_blas_lapack,
@@ -197,7 +196,6 @@ py3.extension_module('_batched_linalg',
     'src/_batched_linalg_module.cc'
   ],
   dependencies: [np_dep, lapack_dep],
-  include_directories: ['../_build_utils/src'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
@@ -233,7 +231,6 @@ cython_blas = py3.extension_module('cython_blas',
   link_args: version_link_args,
   dependencies: [cython_blas_lapack_dep, np_dep],
   install: true,
-  include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
 )
 
@@ -246,7 +243,6 @@ cython_lapack = py3.extension_module('cython_lapack',
   link_args: version_link_args,
   dependencies: [cython_blas_lapack_dep, np_dep],
   install: true,
-  include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
 )
 
@@ -271,7 +267,7 @@ py3.extension_module('_internal_matfuncs',
     'src/_matfuncs_expm.c',
     'src/_matfuncs_sqrtm.c'
   ],
-  include_directories: ['src/', '../_build_utils/src'],  # for scipy_blas_defines.h
+  include_directories: ['src/'],
   dependencies: [np_dep, lapack_dep],
   install: true,
   subdir: 'scipy/linalg'
