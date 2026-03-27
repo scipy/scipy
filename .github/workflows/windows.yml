@@ -74,15 +74,14 @@ jobs:
           cache: "pip"
           cache-dependency-path: "environment.yml"
 
-      - name: Install rtools (mingw-w64)
+      - name: Set rtools location (mingw-w64)
         run: |
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
-          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+          echo "c:\rtools45\ucrt64\bin" >> $env:GITHUB_PATH
 
       - name: pip-packages
         run: |
           # 2.0.0 is currently our oldest supported NumPy version
-          python -m pip install numpy==2.0.0 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
+          python -m pip install numpy==2.0.0 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0" pkgconf
           python -m pip install -r requirements/openblas.txt
 
       - name: Build

@@ -70,10 +70,9 @@ the same shared library.
 
 """
 
+import argparse
 import json
 import os
-from stat import ST_MTIME
-import argparse
 import re
 import textwrap
 
@@ -781,33 +780,7 @@ def unique(lst):
     return new_lst
 
 
-def newer(source, target):
-    """
-    Return true if 'source' exists and is more recently modified than
-    'target', or if 'source' exists and 'target' doesn't.  Return false if
-    both exist and 'target' is the same age or younger than 'source'.
-    """
-    if not os.path.exists(source):
-        raise ValueError(f"file '{os.path.abspath(source)}' does not exist")
-    if not os.path.exists(target):
-        return 1
-
-    mtime1 = os.stat(source)[ST_MTIME]
-    mtime2 = os.stat(target)[ST_MTIME]
-
-    return mtime1 > mtime2
-
-
-def all_newer(src_files, dst_files):
-    return all(os.path.exists(dst) and newer(dst, src)
-               for dst in dst_files for src in src_files)
-
-
 def main(outdir):
-    pwd = os.path.dirname(__file__)
-    src_files = (os.path.abspath(__file__),
-                 os.path.abspath(os.path.join(pwd, 'functions.json')),
-                 os.path.abspath(os.path.join(pwd, '_add_newdocs.py')))
     dst_files = ('_ufuncs.pyx',
                  '_ufuncs_defs.h',
                  '_ufuncs_cxx.pyx',
@@ -816,10 +789,6 @@ def main(outdir):
     dst_files = (os.path.join(outdir, f) for f in dst_files)
 
     os.chdir(BASE_DIR)
-
-    if all_newer(src_files, dst_files):
-        print("scipy/special/_generate_pyx.py: all files up-to-date")
-        return
 
     ufuncs = []
     with open('functions.json') as data:

@@ -68,7 +68,7 @@ extern "C" {
 #endif
 
 /* Prototypes for functions in dcomplex.c */
-void z_div(doublecomplex *, doublecomplex *, doublecomplex *);
+void z_div(doublecomplex *, const doublecomplex *, const doublecomplex *);
 double z_abs(doublecomplex *);     /* exact */
 double z_abs1(doublecomplex *);    /* approximate */
 void z_exp(doublecomplex *, doublecomplex *);

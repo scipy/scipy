@@ -385,6 +385,25 @@ def kstatvar(data, n=2, *, axis=None):
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(92366746)
+
+    As the sample size increases, the estimated variance of the k-statistic converges
+    to zero.
+
+    >>> for n in np.astype(np.logspace(1, 6, 6), int):
+    ...     x = rng.normal(size=n)
+    ...     kvar = stats.kstatvar(x, 1)
+    ...     print(f"{n=:<8}: {kvar=:.3g}")
+    n=10      : kvar=0.0954
+    n=100     : kvar=0.00974
+    n=1000    : kvar=0.000962
+    n=10000   : kvar=0.0001
+    n=100000  : kvar=9.94e-06
+    n=1000000 : kvar=9.99e-07
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
@@ -3157,7 +3176,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
 
     N = m + n
     xy = xp.concat([x, y], axis=-1)  # combine
-    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    rank, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
     symrank = xp.minimum(rank, N - rank + 1)
     AB = xp.sum(symrank[..., :n], axis=-1)
     repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
@@ -3330,9 +3349,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True,
-                 extra_note="Option ``center='trimmed'`` is incompatible with MArray."
-                 )
+@xp_capabilities(cpu_only=True, exceptions=['cupy'], marray=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3443,9 +3460,6 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
             return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
-        if is_marray(xp):
-            message = "`center='trimmed'` is incompatible with MArray."
-            raise ValueError(message)
 
         def func(x):
             # keepdims=True doesn't currently work for Dask
@@ -3486,8 +3500,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
                                 ('cupy', 'no rankdata')],
-                 marray=True,
-                 extra_note="Option ``center='trimmed'`` is incompatible with MArray.")
+                 marray=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3611,10 +3624,6 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
 
     else:  # center == 'trimmed'
 
-        if is_marray(xp):
-            message = "`center='trimmed'` is incompatible with MArray."
-            raise ValueError(message)
-
         def func(x):
             # keepdims=True doesn't currently work for lazy arrays
             return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
@@ -3692,7 +3701,7 @@ def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     x = xp.sort(x, axis=-1)
     xy = xp.concat((x, y), axis=-1)
     i = xp.argsort(xy, stable=True, axis=-1)
-    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
+    _, _, a = _stats_py._rankdata(x, method='average', return_ties=True)
 
     zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
     a = xp.concat((a, zeros), axis=-1)
@@ -3828,7 +3837,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
-    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
 
     if is_lazy_array(t) or xp.any(t > 1):
         z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
@@ -3871,7 +3880,7 @@ def wilcoxon_outputs(kwds):
                  cpu_only=True,  # null distribution is CPU only
                  marray=True,
                  extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "
-                             "compatible with MArrays. "
+                             "compatible with MArray input. "
                              "``method='auto'`` is incompatible with JAX arrays."))
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(

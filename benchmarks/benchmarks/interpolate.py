@@ -9,7 +9,7 @@ with safe_import():
     import scipy.interpolate as interpolate
 
 with safe_import():
-    from scipy.sparse import csr_matrix
+    from scipy.sparse import csr_array
 
 
 class Leaks(Benchmark):
@@ -68,6 +68,29 @@ class BenchPPoly(Benchmark):
         self.pp(self.xp)
 
 
+class BenchBSpline(Benchmark):
+    param_names = ['npts']
+    params = [10, 100, 1000, 10000]
+
+    def setup(self, npts):
+        rng = np.random.default_rng(1234)
+        self.k = 3
+        self.n = 55
+
+        self.t = np.sort(rng.random(self.n + self.k + 1))
+        self.c = rng.random(self.n)
+
+        self.bspl = interpolate.BSpline(self.t, self.c, self.k)
+        self.xp = np.linspace(self.t[self.k], self.t[-self.k-1], npts)
+
+    def time_evaluation(self, npts):
+        self.bspl(self.xp)
+
+    def time_creation(self, npts):
+        interpolate.BSpline(self.t, self.c, self.k)
+
+
+
 class GridData(Benchmark):
     param_names = ['n_grids', 'method']
     params = [
@@ -100,8 +123,8 @@ class GridDataPeakMem(Benchmark):
 
         random_values = rng.random(num_nonzero, dtype=np.float32)
 
-        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)),
-                                   shape=shape, dtype=np.float32)
+        sparse_matrix = csr_array((random_values, (random_rows, random_cols)),
+                                  shape=shape, dtype=np.float32)
         sparse_matrix = sparse_matrix.toarray()
 
         self.coords = np.column_stack(np.nonzero(sparse_matrix))
