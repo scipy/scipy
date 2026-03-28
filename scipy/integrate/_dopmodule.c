@@ -46,12 +46,13 @@ func_thunk(int n, double t, double *y, double *f, double *rpar, int *ipar)
     }
 
     // We already prepared the tuple in the callback setup
-    PyTuple_SetItem(current_func_callback->func_args, 0, PyFloat_FromDouble(t));
+    PyObject *py_t_f = PyFloat_FromDouble(t);
+    if (!py_t_f) { Py_DECREF(py_y); return; }
+    PyTuple_SetItem(current_func_callback->func_args, 0, py_t_f);
     PyTuple_SetItem(current_func_callback->func_args, 1, py_y);
 
     // Call Python function
     PyObject *result = PyObject_CallObject(current_func_callback->func, current_func_callback->func_args);
-
 
     if (result) {
         // Extract result directly to f array
@@ -91,7 +92,9 @@ solout_thunk(int nr, double xold, double x, double* y, int n, double* con, int* 
     }
 
     // Prepare the tuple for solout
-    PyTuple_SetItem(current_func_callback->func_args, 0, PyFloat_FromDouble(x));
+    PyObject *py_x_s = PyFloat_FromDouble(x);
+    if (!py_x_s) { Py_DECREF(py_y); return; }
+    PyTuple_SetItem(current_func_callback->func_args, 0, py_x_s);
     PyTuple_SetItem(current_func_callback->func_args, 1, py_y);
 
     // Call solout function

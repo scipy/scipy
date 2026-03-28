@@ -38,6 +38,10 @@ static SuperLUGlobalObject *get_tls_global(void)
         return (SuperLUGlobalObject*)PyErr_NoMemory();
     }
     obj->memory_dict = PyDict_New();
+    if (obj->memory_dict == NULL) {
+        PyObject_Del(obj);
+        return (SuperLUGlobalObject*)PyErr_NoMemory();
+    }
     obj->jmpbuf_valid = 0;
 
     PyDict_SetItemString(thread_dict, key, (PyObject *)obj);
@@ -164,7 +168,7 @@ static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
 
     while (PyDict_Next(self->memory_dict, &pos, &key, &value)) {
         void *ptr;
-        ptr = PyLong_AsVoidPtr(value);
+        ptr = PyLong_AsVoidPtr(key);
         free(ptr);
     }
 

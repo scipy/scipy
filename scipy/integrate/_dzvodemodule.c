@@ -200,6 +200,7 @@ dvode_function_thunk(int neq, double t, double* y, double* ydot, double* rpar, i
     if (current_dvode_callback->func_args) {
         Py_ssize_t nargs = PyTuple_Size(current_dvode_callback->func_args);
         args_tuple = PyTuple_New(2 + nargs);
+        if (!args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
         PyTuple_SET_ITEM(args_tuple, 0, py_t);
         PyTuple_SET_ITEM(args_tuple, 1, py_y);
         for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -209,6 +210,7 @@ dvode_function_thunk(int neq, double t, double* y, double* ydot, double* rpar, i
         }
     } else {
         args_tuple = PyTuple_Pack(2, py_t, py_y);
+        if (!args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
     }
 
     // Call Python function
@@ -281,6 +283,7 @@ dvode_jacobian_thunk(int neq, double t, double* y, int ml, int mu,
     if (current_dvode_callback->func_args) {
         Py_ssize_t nargs = PyTuple_Size(current_dvode_callback->func_args);
         jac_args_tuple = PyTuple_New(2 + nargs);
+        if (!jac_args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
         PyTuple_SET_ITEM(jac_args_tuple, 0, py_t);
         PyTuple_SET_ITEM(jac_args_tuple, 1, py_y);
         for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -290,6 +293,7 @@ dvode_jacobian_thunk(int neq, double t, double* y, int ml, int mu,
         }
     } else {
         jac_args_tuple = PyTuple_Pack(2, py_t, py_y);
+        if (!jac_args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
     }
 
     // Call Python Jacobian function
@@ -425,6 +429,7 @@ zvode_function_thunk(int neq, double t, ZVODE_CPLX_TYPE* y, ZVODE_CPLX_TYPE* ydo
     if (current_zvode_callback->func_args) {
         Py_ssize_t nargs = PyTuple_Size(current_zvode_callback->func_args);
         args_tuple = PyTuple_New(2 + nargs);
+        if (!args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
         PyTuple_SET_ITEM(args_tuple, 0, py_t);
         PyTuple_SET_ITEM(args_tuple, 1, py_y);
         for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -434,6 +439,7 @@ zvode_function_thunk(int neq, double t, ZVODE_CPLX_TYPE* y, ZVODE_CPLX_TYPE* ydo
         }
     } else {
         args_tuple = PyTuple_Pack(2, py_t, py_y);
+        if (!args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
     }
 
     // Call Python function
@@ -506,6 +512,7 @@ zvode_jacobian_thunk(int neq, double t, ZVODE_CPLX_TYPE* y, int ml, int mu,
     if (current_zvode_callback->func_args) {
         Py_ssize_t nargs = PyTuple_Size(current_zvode_callback->func_args);
         jac_args_tuple = PyTuple_New(2 + nargs);
+        if (!jac_args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
         PyTuple_SET_ITEM(jac_args_tuple, 0, py_t);
         PyTuple_SET_ITEM(jac_args_tuple, 1, py_y);
         for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -515,6 +522,7 @@ zvode_jacobian_thunk(int neq, double t, ZVODE_CPLX_TYPE* y, int ml, int mu,
         }
     } else {
         jac_args_tuple = PyTuple_Pack(2, py_t, py_y);
+        if (!jac_args_tuple) { Py_DECREF(py_t); Py_DECREF(py_y); return; }
     }
 
     // Call Python Jacobian function

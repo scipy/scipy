@@ -11,8 +11,8 @@
     #define ARNAUD_cplx(real, imag) ((_Dcomplex){real, imag})
     #define ARNAUD_cplxf(real, imag) ((_Fcomplex){real, imag})
 #else
-    #define ARNAUD_cplx(real, imag) ((real) + (imag)*I)
-    #define ARNAUD_cplxf(real, imag) ((real) + (imag)*I)
+    #define ARNAUD_cplx(real, imag) CMPLX(real, imag)
+    #define ARNAUD_cplxf(real, imag) CMPLXF(real, imag)
 #endif
 
 #ifdef HAVE_BLAS_ILP64
@@ -1066,9 +1066,24 @@ PyMethodDef arpacklib_module_methods[] = {
 };
 
 
+static int
+arpacklib_exec(PyObject *module)
+{
+    arpack_error_obj = PyErr_NewException("_arpacklib.ArpackError", NULL, NULL);
+    if (arpack_error_obj == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "ArpackError", arpack_error_obj) < 0) {
+        Py_CLEAR(arpack_error_obj);
+        return -1;
+    }
+    return 0;
+}
+
 static struct PyModuleDef_Slot arpacklib_module_slots[] = {
-    // signal that this module can be imported in isolated subinterpreters
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_exec, arpacklib_exec},
+    // Global arpack_error_obj prevents true per-interpreter isolation
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
 #if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
     // signal that this module supports running without an active GIL
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -1081,7 +1096,7 @@ static struct
 PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_arpacklib",
-    .m_size = 0,
+    .m_size = 0,  /* no per-module state; arpack_error_obj is a global */
     .m_methods = arpacklib_module_methods,
     .m_slots = arpacklib_module_slots,
 };

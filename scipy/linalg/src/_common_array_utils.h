@@ -17,8 +17,8 @@
     #include <complex.h>
     #define SCIPY_Z double complex
     #define SCIPY_C float complex
-    #define CPLX_Z(real, imag) (real + imag*I)
-    #define CPLX_C(real, imag) (real + imag*I)
+    #define CPLX_Z(real, imag) CMPLX(real, imag)
+    #define CPLX_C(real, imag) CMPLXF(real, imag)
 #endif
 
 // BLAS and LAPACK functions used

@@ -1089,6 +1089,9 @@ int set_superlu_options_from_dict(superlu_options_t * options,
     }
     else {
         args = PyTuple_New(0);
+        if (args == NULL) {
+            return 0;
+        }
         ret = PyArg_ParseTupleAndKeywords(args, option_dict,
                                           "|O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&",
                                           kwlist, fact_cvt, &options->Fact,

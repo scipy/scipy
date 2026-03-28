@@ -55,7 +55,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     PyGILState_STATE save;
     PyObject *scipy_special = NULL;
     char msg[2048], info[1024];
-    static PyObject *py_SpecialFunctionWarning = NULL;
+    PyObject *py_SpecialFunctionWarning = NULL;
     sf_action_t action;
 
     if ((int) code < 0 || (int) code >= SF_ERROR__LAST) {
@@ -118,6 +118,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
 skip_warn:
+    Py_XDECREF(py_SpecialFunctionWarning);
     PyGILState_Release(save);
 }
 

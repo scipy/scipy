@@ -37,9 +37,13 @@ direct(PyObject *self, PyObject *args)
     dimension = PyArray_DIMS((PyArrayObject*)lb)[0];
     x = (double *) malloc(sizeof(double) * (dimension + 1));
     if (!x) {
-        ret_code = DIRECT_OUT_OF_MEMORY;
+        return PyErr_NoMemory();
     }
     PyObject *x_seq = PyList_New(dimension);
+    if (!x_seq) {
+        free(x);
+        return NULL;
+    }
     lower_bounds = (double*)PyArray_DATA((PyArrayObject*)lb);
     upper_bounds = (double*)PyArray_DATA((PyArrayObject*)ub);
     magic_eps_abs = 0.0;

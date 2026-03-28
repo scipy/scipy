@@ -44,11 +44,11 @@
     }                                                                                       \
                                                                                             \
 done:                                                                                       \
-    PyGILState_Release(gstate);                                                             \
     Py_XDECREF(arg1);                                                                       \
     Py_XDECREF(argobj);                                                                     \
     Py_XDECREF(funcname);                                                                   \
     Py_XDECREF(res);                                                                        \
+    PyGILState_Release(gstate);                                                             \
                                                                                             \
     if (error) {                                                                            \
         /* nonlocal return causes memory leaks. So, if the Python error variable has been   \
