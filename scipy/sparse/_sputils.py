@@ -2,7 +2,7 @@
 """
 
 import sys
-from typing import Any, Literal, Union
+from typing import Any, Literal
 import operator
 import numpy as np
 from math import prod
@@ -550,7 +550,7 @@ def convert_pydata_sparse_to_scipy(
     arg: Any,
     target_format: None | Literal["csc", "csr"] = None,
     accept_fv: Any = None,
-) -> Union[Any, "sp.spmatrix"]:
+) -> "sp.spmatrix | Any":
     """
     Convert a pydata/sparse array to scipy sparse matrix,
     pass through anything else.

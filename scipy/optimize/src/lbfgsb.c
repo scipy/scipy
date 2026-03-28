@@ -241,8 +241,9 @@ setulb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u, CBLAS_INT* nbd
     //
     //     iwa is an integer working array of length 3nmax.
     //
-    //     task is a working string of characters of length 60 indicating
+    //     task is a working integer array of length 2. task[0] indicates
     //       the current job when entering and quitting this subroutine.
+    //       task[1] indicates the status message.
     //
     //     iprint is an integer variable that must be set by the user.
     //       It controls the frequency and type of output generated:
@@ -571,8 +572,10 @@ mainlb(CBLAS_INT n, CBLAS_INT m, double* x, double* l, double* u,
     //       the free set is stored in indx2, and it is passed on to
     //       subroutine formk with this information.
     //
-    //     task is a working string of characters of length 60 indicating
+    //     task is a working integer indicating
     //       the current job when entering and leaving this subroutine.
+    //
+    //     task_msg is a working integer indicating the status message.
     //
     //     iprint is an INTEGER variable that must be set by the user.
     //       It controls the frequency and type of output generated:
@@ -3258,24 +3261,24 @@ dcsrch(double f, double g, double* stp, double ftol, double gtol,
     //         On entry stpmax is a nonnegative upper bound for the step.
     //         On exit stpmax is unchanged.
     //
-    //       task is a character variable of length at least 60.
+    //       task is an integer variable with values from enum Status.
     //         On initial entry task must be set to 'START'.
     //         On exit task indicates the required action:
     //
-    //            If task(1:2) = 'FG' then evaluate the function and
+    //            If task = 'FG' then evaluate the function and
     //            derivative at stp and call dcsrch again.
     //
-    //            If task(1:4) = 'CONV' then the search is successful.
+    //            If task = 'CONV' then the search is successful.
     //
-    //            If task(1:4) = 'WARN' then the subroutine is not able
+    //            If task = 'WARN' then the subroutine is not able
     //            to satisfy the convergence conditions. The exit value of
     //            stp contains the best point found during the search.
     //
-    //            If task(1:5) = 'ERROR' then there is an error in the
+    //            If task = 'ERROR' then there is an error in the
     //            input arguments.
     //
     //         On exit with convergence, a warning or an error, the
-    //            variable task contains additional information.
+    //            variable task_msg contains additional information.
     //
     //       isave is an integer work array of dimension 2.
     //
