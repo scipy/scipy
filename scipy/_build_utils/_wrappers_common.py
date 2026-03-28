@@ -2,9 +2,6 @@
 Helper functions and variables for generation of BLAS/LAPACK wrappers.
 """
 
-import os
-from stat import ST_MTIME
-
 # Used to convert from types in signature files to C types
 C_TYPES = {'int': 'int',
            'blas_int': 'CBLAS_INT',
@@ -39,7 +36,8 @@ WRAPPED_FUNCS = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
 USE_OLD_ACCELERATE = ['lsame', 'dcabs1']
 
 C_PREAMBLE = """
-#include "npy_cblas.h"
+#include "numpy/npy_math.h"  /* for npy_complex{64,128} only */
+#include "scipy_blas_defines.h"
 #include "fortran_defs.h"
 
 #include "_mkl_ilp64_fixes.h"
@@ -98,28 +96,6 @@ def read_signatures(lines):
             'argtypes': list(argtypes)
         })
     return sigs
-
-def newer(dst, src):
-    """
-    Return true if 'dst' exists and is more recently modified than
-    'src', or if 'dst' exists and 'src' doesn't.  Return false if
-    both exist and 'dst' is the same age or younger than 'src'.
-    """
-    if not os.path.exists(dst):
-        raise ValueError(f"file '{os.path.abspath(dst)}' does not exist")
-    if not os.path.exists(src):
-        return 1
-
-    mtime1 = os.stat(dst)[ST_MTIME]
-    mtime2 = os.stat(src)[ST_MTIME]
-
-    return mtime1 > mtime2
-
-
-def all_newer(dst_files, src_files):
-    """True only if all dst_files exist and are newer than all src_files."""
-    return all(os.path.exists(dst) and newer(dst, src)
-               for dst in dst_files for src in src_files)
 
 
 def get_blas_macro_and_name(name, accelerate, ilp64=False):
