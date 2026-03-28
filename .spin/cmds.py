@@ -371,7 +371,7 @@ def working_dir(new_dir):
 @click.command(context_settings={"ignore_unknown_options": True})
 @meson.build_dir_option
 @click.pass_context
-def mypy(ctx, build_dir=None):
+def mypy(ctx, build_dir):
     """🦆 Run Mypy tests for SciPy
     """
     if is_editable_install():
@@ -392,7 +392,7 @@ def mypy(ctx, build_dir=None):
     except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
-            "pip install -r mypy_requirements.txt from the repo root"
+            "pip install -r requirements/dev.txt from the repo root"
         ) from e
 
     build_dir = os.path.abspath(build_dir)
@@ -412,6 +412,8 @@ def mypy(ctx, build_dir=None):
         ])
     print(report, end='')
     print(errors, end='', file=sys.stderr)
+    if status:
+        raise SystemExit(status)
 
 @spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
