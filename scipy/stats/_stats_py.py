@@ -10405,7 +10405,9 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
 
     # The below line is used in place of
     # ranks = xp.reshape(xp.repeat(ranks, counts), shape)
-    # due to xp.repeat not accepting arrays of counts. The cumulative sum over i will
+    # due to cupy.repeat not accepting arrays for repeats
+    # (ref https://github.com/cupy/cupy/issues/3849).
+    # The cumulative sum over i will
     # increment every time a new unique rank appears, giving the correct indices to
     # replicate repeat.
     ranks = xp.reshape(
