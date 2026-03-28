@@ -341,10 +341,15 @@ means *not-a-number*, i.e. a result of an illegal mathematical operation
 Out-of-bounds behavior
 ======================
 
-Several interpolators in :mod:`scipy.interpolate` share a common ``extrapolate``
-argument, including :class:`CubicSpline`, :class:`CubicHermiteSpline`,
-:class:`Akima1DInterpolator`, :class:`PchipInterpolator`, :class:`PPoly`, and
-:class:`BPoly`.
+Several interpolators in :mod:`scipy.interpolate` share a common way to control the
+out-of-bouds behavior, including :class:`CubicSpline`, :class:`CubicHermiteSpline`,
+:class:`Akima1DInterpolator`, :class:`PchipInterpolator`, :class:`PPoly`,
+:class:`BPoly`, and :class:`BSpline`.
+
+There are two principal ingredients which affect the out-of-bounds behavior:
+``bc_type`` and ``extrapolate`` arguments. The former controls how the object
+is constructed, and the latter controls how it is evaluated.
+
 
 The ``bc_type`` parameter
 -------------------------
@@ -357,7 +362,7 @@ values of ``bc_type``, out-of-bounds behavior is controlled separately by the
 ``extrapolate`` argument described below.
 
 To illustrate, we compare several values of the ``extrapolate`` constructor argument
-for :class:`CubicSpline`, including ``bc_type="periodic"`` which produces a truly
+for :class:`CubicSpline`, including ``bc_type="periodic"`` which produces a smooth
 periodic interpolant:
 
 .. plot::
@@ -378,6 +383,7 @@ periodic interpolant:
     ):
         y_interp = CubicSpline(x, y, extrapolate=extrapolate)(x_eval)
         ax.plot(x_eval, y_interp, linestyle, label=f"extrapolate={extrapolate}")
+
     ax.plot(
         x_eval,
         CubicSpline(x, y, bc_type="periodic")(x_eval),
@@ -396,6 +402,15 @@ periodic interpolant:
     ax.set_title("CubicSpline")
     plt.show()
 
+
+Note that using ``bc_type="periodic"`` (red curve) enforces equal derivatives at the
+boundaries of the interpolation interval (``x=0`` and ``x=4``), so that the resulting
+interpolant is smooth across the whole real line.
+
+On the contrary, using ``extrapolate="periodic"`` together with the default value for ``bc_type`` (the green curve) does not pay any special attention to the boundaries, and
+simply "copies" the curve from the interpolation interval to the outside. See :ref:`tutorial-extrapolation-cubicspline-extend` for an additional discussion of how different ``bc_type`` values affect the interpolant.
+
+
 The ``extrapolate`` constructor argument
 ----------------------------------------
 
@@ -406,8 +421,9 @@ time, which sets the default out-of-bounds behavior for all subsequent evaluatio
 - ``extrapolate=False``: return ``NaN``;
 - ``extrapolate="periodic"`` (if supported): wrap the evaluation periodically.
 
-The default is ``True`` for most interpolators, except :class:`Akima1DInterpolator`
-which defaults to ``False``.
+The default is ``True`` for most interpolators, with two exceptions:
+:class:`Akima1DInterpolator` defaults to ``False``, and ``bc_type="periodic"``
+forces the default to ``extrapolate="periodic"``.
 
 To illustrate, we consider :class:`PchipInterpolator` with several values of the
 ``extrapolate`` constructor argument:
