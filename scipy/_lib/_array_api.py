@@ -1060,7 +1060,7 @@ def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=
         def test(func, verb, xp):
             # iterates on (func=f1, verb="hello")
             # and (func=f2, verb="world")
-    additional_marks : pytest.MarkDecorator | List[pytest.MarkDecorator]
+    additional_marks : pytest.MarkDecorator | list[pytest.MarkDecorator]
         Additional pytest marks to add to the parameter, e.g.
         ``pytest.mark.slow``.
 

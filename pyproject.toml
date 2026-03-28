@@ -110,7 +110,7 @@ doc = [
 dev = [
     "click<8.3.0",
     "spin",
-    "mypy==1.10.0",
+    "mypy==1.19.1",
     "typing_extensions",
     "types-psutil",
     "pycodestyle",
