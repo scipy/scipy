@@ -2145,7 +2145,9 @@ class Rotation:
         # to the follow-up PR that adds general Array API support for Rotations.
         return create_group(cls, group, axis=axis)
 
-    def __getitem__(self, indexer: int | slice | EllipsisType | Array | None) -> Rotation:
+    def __getitem__(
+        self, indexer: int | slice | EllipsisType | Array | None
+    ) -> Rotation:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
