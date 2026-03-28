@@ -225,7 +225,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
 
 
 def from_davenport(
-    axes: Array, order: str, angles: Array | float, degrees: bool = False
+    axes: Array, order: str, angles: Array, degrees: bool = False
 ) -> Array:
     xp = array_namespace(axes)
     device = xp_device(axes)
@@ -243,7 +243,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)  # type:ignore[arg-type]
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp) 
     num_axes = axes.shape[-2]
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
@@ -270,7 +270,7 @@ def from_davenport(
         angles = _deg2rad(angles)
 
     if (
-        not broadcastable(axes.shape[:-1], angles.shape)  # type:ignore[arg-type]
+        not broadcastable(axes.shape[:-1], angles.shape)
         or axes.shape[-2] != angles.shape[-1]
     ):
         raise ValueError(
