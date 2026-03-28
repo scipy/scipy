@@ -12,7 +12,7 @@
 #else
     // C99 compliant compilers
     typedef double complex ZVODE_CPLX_TYPE;
-    #define ZVODE_cplx(real, imag) ((real) + (imag)*I)
+    #define ZVODE_cplx(real, imag) CMPLX(real, imag)
 #endif
 
 

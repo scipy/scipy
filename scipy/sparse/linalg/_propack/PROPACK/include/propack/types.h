@@ -16,8 +16,8 @@
     // C99 compliant compilers
     typedef float complex PROPACK_CPLXF_TYPE;
     typedef double complex PROPACK_CPLX_TYPE;
-    #define PROPACK_cplxf(real, imag) ((real) + (imag)*I)
-    #define PROPACK_cplx(real, imag) ((real) + (imag)*I)
+    #define PROPACK_cplxf(real, imag) CMPLXF(real, imag)
+    #define PROPACK_cplx(real, imag) CMPLX(real, imag)
 #endif
 
 

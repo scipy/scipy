@@ -23,8 +23,8 @@
     // C99 compliant compilers
     typedef float complex ARNAUD_CPLXF_TYPE;
     typedef double complex ARNAUD_CPLX_TYPE;
-    #define ARNAUD_cplxf(real, imag) ((real) + (imag)*I)
-    #define ARNAUD_cplx(real, imag) ((real) + (imag)*I)
+    #define ARNAUD_cplxf(real, imag) CMPLXF(real, imag)
+    #define ARNAUD_cplx(real, imag) CMPLX(real, imag)
 #endif
 
 
