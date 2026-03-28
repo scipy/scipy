@@ -1281,10 +1281,18 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     int typenum = PyArray_TYPE(ap_a);
-    bool has_simd = (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64) || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128);
-
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
     npy_intp itemsize = PyArray_ITEMSIZE(ap_a);
+
+    // Use the dtype character to identify longdouble/clongdouble reliably.
+    // On Windows, longdouble == double so the typenum may alias to
+    // NPY_FLOAT64/NPY_COMPLEX128 but the dtype char is always 'g'/'G'.
+    char dtype_char = PyArray_DESCR(ap_a)->type;
+    bool is_longdouble = (dtype_char == 'g' || dtype_char == 'G');
+
+    bool has_simd = !is_longdouble
+                    && ((typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
+                     || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128));
 
     // Element strides for all dims
     int64_t elem_strides[LU_MAX_NDIM];
@@ -1328,20 +1336,37 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         if (use_simd) {
             switch (typenum) {
-                case NPY_FLOAT32:    bandwidth_s((const float *)a_data   + offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT64:    bandwidth_d((const double *)a_data  + offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:  bandwidth_c(reinterpret_cast<const SCIPY_C *>(a_data) + offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128: bandwidth_z(reinterpret_cast<const SCIPY_Z *>(a_data) + offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT32:    bandwidth_s(&((const float *)a_data)[offset],                   n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT64:    bandwidth_d(&((const double *)a_data)[offset],                  n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:  bandwidth_c(&reinterpret_cast<const SCIPY_C *>(a_data)[offset], n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128: bandwidth_z(&reinterpret_cast<const SCIPY_Z *>(a_data)[offset], n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
             }
             if (inner_f_contig) { std::swap(lb_data[idx], ub_data[idx]); }
         } else {
             int64_t s0 = elem_strides[ndim - 2];
             int64_t s1 = elem_strides[ndim - 1];
 
-            // Normalize longlong → int64 to avoid platform-dependent duplicate case labels
+            // Normalize platform-dependent typenums to canonical case labels.
+            //
+            // Integers: On Windows sizeof(int)==sizeof(long)==4 but
+            // NPY_INT != NPY_LONG, and NPY_INT32 is only one of them.
+            // Map all integer typenums to canonical NPY_INTxx by itemsize.
+            //
+            // Longdouble: On Windows longdouble == double so the typenum
+            // may alias to NPY_DOUBLE/NPY_COMPLEX128. Force to
+            // NPY_LONGDOUBLE/NPY_CLONGDOUBLE using the dtype char.
             int tn = typenum;
-            if (tn == NPY_LONGLONG)  { tn = NPY_INT64; }
-            if (tn == NPY_ULONGLONG) { tn = NPY_UINT64; }
+            if (is_longdouble) {
+                tn = (dtype_char == 'g') ? NPY_LONGDOUBLE : NPY_CLONGDOUBLE;
+            } else if (PyTypeNum_ISINTEGER(tn) && !PyTypeNum_ISBOOL(tn)) {
+                bool is_unsigned = PyTypeNum_ISUNSIGNED(tn);
+                switch (itemsize) {
+                    case 1: tn = is_unsigned ? NPY_UINT8  : NPY_INT8;  break;
+                    case 2: tn = is_unsigned ? NPY_UINT16 : NPY_INT16; break;
+                    case 4: tn = is_unsigned ? NPY_UINT32 : NPY_INT32; break;
+                    case 8: tn = is_unsigned ? NPY_UINT64 : NPY_INT64; break;
+                }
+            }
 
             switch (tn) {
                 case NPY_BOOL:        bandwidth_strided_scalar<npy_bool>                  (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
