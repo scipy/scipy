@@ -1269,7 +1269,12 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     if (n == 0 || m == 0) {
         if (ndim == 2) {
-            return Py_BuildValue("(ii)", 0, 0);
+            npy_int64 zero = 0;
+            PyArray_Descr *descr = PyArray_DescrFromType(NPY_INT64);
+            PyObject *z1 = PyArray_Scalar(&zero, descr, NULL);
+            PyObject *z2 = PyArray_Scalar(&zero, descr, NULL);
+            Py_DECREF(descr);
+            return Py_BuildValue("(NN)", z1, z2);
         }
         // Batched empty: return zero arrays
         npy_intp *batch_shape = shape; // first ndim-2 dims
@@ -1284,15 +1289,9 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
     npy_intp itemsize = PyArray_ITEMSIZE(ap_a);
 
-    // Use the dtype character to identify longdouble/clongdouble reliably.
-    // On Windows, longdouble == double so the typenum may alias to
-    // NPY_FLOAT64/NPY_COMPLEX128 but the dtype char is always 'g'/'G'.
-    char dtype_char = PyArray_DESCR(ap_a)->type;
-    bool is_longdouble = (dtype_char == 'g' || dtype_char == 'G');
-
-    bool has_simd = !is_longdouble
-                    && ((typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
-                     || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128));
+    // longdouble/clongdouble are rejected by the Python wrapper in _misc.py
+    bool has_simd = (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
+                    || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128);
 
     // Element strides for all dims
     int64_t elem_strides[LU_MAX_NDIM];
@@ -1346,19 +1345,12 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
             int64_t s0 = elem_strides[ndim - 2];
             int64_t s1 = elem_strides[ndim - 1];
 
-            // Normalize platform-dependent typenums to canonical case labels.
-            //
-            // Integers: On Windows sizeof(int)==sizeof(long)==4 but
+            // Normalize platform-dependent integer typenums to canonical
+            // case labels. On Windows sizeof(int)==sizeof(long)==4 but
             // NPY_INT != NPY_LONG, and NPY_INT32 is only one of them.
             // Map all integer typenums to canonical NPY_INTxx by itemsize.
-            //
-            // Longdouble: On Windows longdouble == double so the typenum
-            // may alias to NPY_DOUBLE/NPY_COMPLEX128. Force to
-            // NPY_LONGDOUBLE/NPY_CLONGDOUBLE using the dtype char.
             int tn = typenum;
-            if (is_longdouble) {
-                tn = (dtype_char == 'g') ? NPY_LONGDOUBLE : NPY_CLONGDOUBLE;
-            } else if (PyTypeNum_ISINTEGER(tn) && !PyTypeNum_ISBOOL(tn)) {
+            if (PyTypeNum_ISINTEGER(tn) && !PyTypeNum_ISBOOL(tn)) {
                 bool is_unsigned = PyTypeNum_ISUNSIGNED(tn);
                 switch (itemsize) {
                     case 1: tn = is_unsigned ? NPY_UINT8  : NPY_INT8;  break;
@@ -1380,10 +1372,8 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
                 case NPY_UINT64:      bandwidth_strided_scalar<npy_uint64>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_FLOAT:       bandwidth_strided_scalar<float>                     (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_DOUBLE:      bandwidth_strided_scalar<double>                    (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_LONGDOUBLE:  bandwidth_strided_scalar<long double>               (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_COMPLEX64:   bandwidth_strided_scalar<std::complex<float>>       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_COMPLEX128:  bandwidth_strided_scalar<std::complex<double>>      (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_CLONGDOUBLE: bandwidth_strided_scalar<std::complex<long double>> (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 default:
                     Py_DECREF(ap_lb); Py_DECREF(ap_ub);
                     PyErr_SetString(PyExc_TypeError, "Unsupported dtype.");
@@ -1392,11 +1382,14 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
 
-    // 2D: return tuple of ints; N-d: return tuple of arrays
+    // 2D: return tuple of np.int64 scalars; N-d: return tuple of int64 arrays
     if (ndim == 2) {
-        long lb = (long)lb_data[0], ub = (long)ub_data[0];
+        PyArray_Descr *descr = PyArray_DescrFromType(NPY_INT64);
+        PyObject *lb_obj = PyArray_Scalar(&lb_data[0], descr, NULL);
+        PyObject *ub_obj = PyArray_Scalar(&ub_data[0], descr, NULL);
+        Py_DECREF(descr);
         Py_DECREF(ap_lb); Py_DECREF(ap_ub);
-        return Py_BuildValue("(ll)", lb, ub);
+        return Py_BuildValue("(NN)", lb_obj, ub_obj);
     }
 
     return Py_BuildValue("(NN)", (PyObject *)ap_lb, (PyObject *)ap_ub);
