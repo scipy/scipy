@@ -8135,6 +8135,7 @@ class TestKruskal:
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
     @skip_xp_backends('jax.numpy', reason='lazy -> reduced nan_policy capabilities')
+    @xfail_xp_backends('cupy', reason='cupy returns small but nonzero res.statistic')
     def test_nan_policy_omit_raise(self, xp):
         x = xp.arange(10.)
         x = xpx.at(x)[9].set(xp.nan)
