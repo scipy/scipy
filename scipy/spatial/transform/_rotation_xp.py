@@ -26,6 +26,9 @@ from scipy._external.array_api_compat import device as xp_device
 from scipy._external.array_api_compat import is_array_api_obj
 import scipy._external.array_api_extra as xpx
 
+# mypy: disable-error-code=index
+# mypy: disable-error-code=operator
+# mypy: disable-error-code=union-attr
 
 def from_quat(
     quat: Array,
@@ -240,7 +243,7 @@ def from_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)  # type:ignore[arg-type]
     num_axes = axes.shape[-2]
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
@@ -267,7 +270,7 @@ def from_davenport(
         angles = _deg2rad(angles)
 
     if (
-        not broadcastable(axes.shape[:-1], angles.shape)
+        not broadcastable(axes.shape[:-1], angles.shape)  # type:ignore[arg-type]
         or axes.shape[-2] != angles.shape[-1]
     ):
         raise ValueError(
