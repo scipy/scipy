@@ -10400,17 +10400,18 @@ def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
     elif method == 'dense':
         ranks = xp.cumulative_sum(xp.astype(i, dtype, copy=False), axis=-1)[i]
 
-    # The below line is used in place of
-    # ranks = xp.reshape(xp.repeat(ranks, counts), shape)
-    # due to cupy.repeat not accepting arrays for repeats
-    # (ref https://github.com/cupy/cupy/issues/3849).
-    # The cumulative sum over i will
-    # increment every time a new unique rank appears, giving the correct indices to
-    # replicate repeat.
-    ranks = xp.reshape(
-        ranks[xp.cumulative_sum(xp.astype(xp.reshape(i, (-1,)), xp.int64)) - 1],
-        shape,
-    )
+    if not is_cupy(xp):
+        ranks = xp.reshape(xp.repeat(ranks, counts), shape)
+    else:
+        # workaround for cupy.repeat not accepting arrays for repeats
+        # (ref https://github.com/cupy/cupy/issues/3849).
+        # The cumulative sum over i will
+        # increment every time a new unique rank appears, giving the correct
+        # indices to replicate xp.repeats.
+        ranks = xp.reshape(
+            ranks[xp.cumulative_sum(xp.astype(xp.reshape(i, (-1,)), xp.int64)) - 1],
+            shape,
+        )
     ranks = _order_ranks(ranks, j, xp=xp)
 
     t = None
