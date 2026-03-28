@@ -607,7 +607,7 @@ class _PPolyBase:
     __slots__ = ('_c', '_x', 'extrapolate', 'axis', '_asarray')
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None, axis=0):
         self._asarray  = array_namespace(c, x).asarray

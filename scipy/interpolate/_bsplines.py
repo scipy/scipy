@@ -606,7 +606,7 @@ class BSpline:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
 
     def __init__(self, t, c, k, extrapolate=True, axis=0):
