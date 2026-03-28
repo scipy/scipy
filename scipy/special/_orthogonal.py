@@ -2551,7 +2551,7 @@ def roots_sh_legendre(n, mu=False):
     Examples
     --------
 
-    Find the roots of a 7th order Legendre polynomial.
+    Find the roots of a 7th-order shifted Legendre polynomial.
 
     >>> import numpy as np
     >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
@@ -2567,14 +2567,14 @@ def roots_sh_legendre(n, mu=False):
     array([0.06474248, 0.1398527, 0.19091503, 0.20897959, 0.19091503, 0.1398527,
         0.06474248])
 
-    Verify that we have the roots by evaluating the degree 7 Shifted Legendre
-    polynomial at ``roots``.  All the values are approximately zero:
+    Verify the roots by evaluating the degree-7 shifted Legendre polynomial
+    at ``roots``.  All the values are approximately zero:
 
     >>> eval_sh_legendre(7, roots)
     array([5.55111512e-16, 1.11022302e-16,  3.33066907e-16,  0.00000000e+00,
         -2.22044605e-16, -1.11022302e-16, -1.85962357e-15])
 
-    ``weights`` can be used for Guass-Legendre quadrature to estimate integrals over
+    ``weights`` can be used for Gauss–Legendre quadrature on :math:`[0, 1]`.
     the interval :math:`[0, 1]`.
 
     """
