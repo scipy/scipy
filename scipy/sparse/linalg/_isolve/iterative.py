@@ -397,7 +397,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     True
     """
     A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
-    bnrm2 = xp_vector_norm(b, axis=-1)
+    bnrm2 = xp_vector_norm(b, axis=-1, xp=xp)
 
     atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol, xp=xp)
 
