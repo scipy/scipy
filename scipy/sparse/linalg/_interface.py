@@ -1124,8 +1124,7 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
 
     def __init__(self, A, xp=None):
         xp = np_compat if xp is None else xp
-        A_T = A.mT if A.ndim > 2 else A.T
-        super().__init__(xp.conj(A_T), xp=xp)
+        super().__init__(xp.conj(A.mT), xp=xp)
         self.args = (A,)  # override to ensure `self.args[0]` is accurate
 
     def _adjoint(self):
