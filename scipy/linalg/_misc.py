@@ -249,9 +249,10 @@ def bandwidth(a: NDArray[Any]) -> tuple[int|NDArray[np.int64], int|NDArray[np.in
     a = np.asarray(a)
     if a.ndim < 2:
         raise ValueError('Input array must be at least 2D.')
-    if a.dtype.char == 'e':  # np.float16
-        raise TypeError('Input array with float16 dtype is not supported.')
-    elif a.dtype.char not in '?bhilqnpBHILQNPfdgFDG':
+    if a.dtype.char in 'egG':
+        raise TypeError('Input array with float16/longdouble/clongdouble '
+                        'dtype is not supported.')
+    elif a.dtype.char not in '?bhilqnpBHILQNPfdFD':
         raise TypeError(f'Input array must have a numeric dtype, got {a.dtype}.')
     if a.size == 0:
         return (0, 0)
