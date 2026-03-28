@@ -27,11 +27,13 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5, xp=np):
 
 def _cg_setup(A, b, x, *, maxiter, matvec, xp):
     """Common cg-esque setup"""
+    bnrm2 = xp_vector_norm(b, axis=-1, xp=xp)
     dotprod = functools.partial(xp.vecdot, axis=-1)
     if maxiter is None:
         maxiter = b.shape[-1] * 10
     r = b - matvec(x) if xp.any(x) else xp_copy(b, xp=xp)
-    return dotprod, maxiter, r
+    return bnrm2, dotprod, maxiter, r
+
 
 @xp_capabilities(
     skip_backends=[
@@ -114,23 +116,22 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     True
     """
     A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
-    bnrm2 = xp_vector_norm(b, axis=-1, xp=xp)
+    matvec, rmatvec = A.matvec, A.rmatvec
+    psolve, rpsolve = M.matvec, M.rmatvec
+    bnrm2, dotprod, maxiter, r = _cg_setup(
+        A, b, x, maxiter=maxiter, matvec=matvec, xp=xp
+    )
 
     atol, _ = _get_atol_rtol('bicg', bnrm2, atol, rtol, xp=xp)
 
     if not xp.any(bnrm2):
         return b, 0
 
-    matvec, rmatvec = A.matvec, A.rmatvec
-    psolve, rpsolve = M.matvec, M.rmatvec
-
     rhotol = xp.finfo(x.dtype).eps**2
 
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, p, ptilde = None, None, None
 
-    dotprod, maxiter, r = _cg_setup(A, b, x, maxiter=maxiter, matvec=matvec, xp=xp)
-    
     rtilde = xp_copy(r, xp=xp)
 
     for iteration in range(maxiter):
@@ -167,7 +168,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         qtilde = rmatvec(ptilde)
         rv = dotprod(ptilde, q)
 
-        if not xp.any(rv[~converged]):
+        if not xp.any(rv[~converged]):  # Dot product breakdown
             return x, -11
 
         if not batched:
@@ -428,17 +429,16 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     True
     """
     A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
-    bnrm2 = xp_vector_norm(b, axis=-1, xp=xp)
+    matvec = A.matvec
+    psolve = M.matvec
+    bnrm2, dotprod, maxiter, r = _cg_setup(
+        A, b, x, maxiter=maxiter, matvec=matvec, xp=xp
+    )
 
     atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol, xp=xp)
 
     if not xp.any(bnrm2):
         return b, 0
-
-    matvec = A.matvec
-    psolve = M.matvec
-
-    dotprod, maxiter, r = _cg_setup(A, b, x, maxiter=maxiter, matvec=matvec, xp=xp)
 
     # Dummy value to initialize var, silences warnings
     rho_prev, p = None, None
@@ -488,7 +488,12 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         return x, maxiter
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "data-dependent branching"),
+        ("jax.numpy", "data-dependent branching"),
+    ]
+)
 def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the Conjugate Gradient Squared method.
@@ -534,6 +539,14 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     -----
     The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
     condition number than `A`, see [1]_.
+    
+    `A`, `b`, `x0`, and `M` may have additional "batch" dimensions prepended to
+    the core shape. In this case, the array is treated as a
+    batch of slices of the core shape; see :ref:`linalg_batch`.
+    The core shape of `A` and `M`  is ``(N, N)``,
+    while the core shape of `b` and `x0` is ``(N,)``.
+    'Column vector' input of shape ``(N, 1)`` is restricted to
+    the un-batched case.
 
     References
     ----------
@@ -559,72 +572,73 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b, xp, batched = make_system(A, M, x0, b)
-    bnrm2 = np.linalg.norm(b)
-
-    atol, _ = _get_atol_rtol('cgs', bnrm2, atol, rtol)
-
-    if bnrm2 == 0:
-        return b, 0
-
-    n = len(b)
-
-    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
-
-    if maxiter is None:
-        maxiter = n*10
-
+    A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
     matvec = A.matvec
     psolve = M.matvec
+    bnrm2, dotprod, maxiter, r = _cg_setup(
+        A, b, x, maxiter=maxiter, matvec=matvec, xp=xp
+    )
 
-    rhotol = np.finfo(x.dtype.char).eps**2
+    atol, _ = _get_atol_rtol('cgs', bnrm2, atol, rtol, xp=xp)
 
-    r = b - matvec(x) if x.any() else b.copy()
+    if not xp.any(bnrm2):
+        return b, 0
 
-    rtilde = r.copy()
-    bnorm = np.linalg.norm(b)
-    if bnorm == 0:
-        bnorm = 1
+    rhotol = xp.finfo(x.dtype).eps**2
+    rtilde = xp_copy(r, xp=xp)
 
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, p, u, q = None, None, None, None
 
     for iteration in range(maxiter):
-        rnorm = np.linalg.norm(r)
-        if rnorm < atol:  # Are we done?
+        converged = xp_vector_norm(r, axis=-1, xp=xp) < atol
+        if xp.all(converged):
             return x, 0
 
         rho_cur = dotprod(rtilde, r)
-        if np.abs(rho_cur) < rhotol:  # Breakdown case
+        if xp.all((xp.abs(rho_cur) < rhotol)[~converged]):  # Breakdown case
             return x, -10
 
         if iteration > 0:
-            beta = rho_cur / rho_prev
+            if not batched:
+                beta = rho_cur / rho_prev
+            else:
+                beta = xp.zeros_like(rho_cur)
+                mask = ~converged
+                beta[mask] = rho_cur[mask] / rho_prev[mask]
+                beta = beta[..., xp.newaxis]
 
             # u = r + beta * q
-            # p = u + beta * (q + beta * p);
-            u[:] = r[:]
+            u[...] = r[...]
             u += beta*q
 
+            # p = u + beta * (q + beta * p);
             p *= beta
             p += q
             p *= beta
             p += u
 
         else:  # First spin
-            p = r.copy()
-            u = r.copy()
-            q = np.empty_like(r)
+            p = xp_copy(r, xp=xp)
+            u = xp_copy(r, xp=xp)
+            q = xp.empty_like(r)
 
         phat = psolve(p)
         vhat = matvec(phat)
         rv = dotprod(rtilde, vhat)
 
-        if rv == 0:  # Dot product breakdown
+        if not xp.any(rv[~converged]):  # Dot product breakdown
             return x, -11
 
-        alpha = rho_cur / rv
-        q[:] = u[:]
+        if not batched:
+            alpha = rho_cur / rv
+        else:
+            alpha = xp.zeros_like(rho_cur)
+            mask = ~converged
+            alpha[mask] = rho_cur[mask] / rv[mask]
+            alpha = alpha[..., xp.newaxis]
+
+        q[...] = u[...]
         q -= alpha*vhat
         uhat = psolve(u + q)
         x += alpha*uhat
