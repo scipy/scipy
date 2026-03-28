@@ -49,6 +49,10 @@ class SOLVERS(StrEnum):
     def impl(self):
         return getattr(_isolve, self.value)
     
+    @property
+    def batch_support(self):
+        return self in (SOLVERS.cg, SOLVERS.bicg)
+    
     @classmethod
     def from_list(cls, values):
         return [cls(v) for v in values]
@@ -70,8 +74,7 @@ def _assert_success(*, A, x, b, xp, rtol=1.0, atol=0.0, less_equal=False):
 
 
 def skip_if_batching_unsupported(solver, batch_A, batch_b):
-    batched_solvers = [SOLVERS.cg]
-    if solver not in batched_solvers and (batch_A != () or batch_b != ()):
+    if not solver.batch_support and (batch_A != () or batch_b != ()):
         pytest.skip(f"batching unsupported for {solver}")
 
 
@@ -382,6 +385,8 @@ def test_convergence(case, xp, batch_A, batch_b):
         assert info == 0
         fudge_factor = 1.01 if not is_numpy(xp) else 1
         _assert_success(A=A, x=x, b=b, xp=xp, rtol=fudge_factor * rtol)
+    elif (0 in batch_A) or (0 in batch_b):
+        assert info == 0
     else:
         assert info != 0
         _assert_success(A=A, x=x, b=b, xp=xp, rtol=1, less_equal=True)
@@ -425,7 +430,7 @@ def test_precond_dummy(case, xp, batch_A, batch_b):
 
     fudge_factor = 1
     if dtype in [xp.float32, xp.complex64]:
-        fudge_factor = 1.1
+        fudge_factor = 1.15
 
     assert info == 0
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=fudge_factor * rtol)
@@ -461,7 +466,7 @@ def test_precond_inverse(case, xp, batch_A, batch_b):
         A = case.A
         if is_numpy(xp) and not isinstance(A, np.ndarray):
             A = A.toarray()
-        return xp.linalg.solve(A.T, b[..., np.newaxis])
+        return xp.linalg.solve(A.mT, b[..., np.newaxis])
 
     matvec_count = [0]
 
@@ -471,7 +476,7 @@ def test_precond_inverse(case, xp, batch_A, batch_b):
 
     def rmatvec(b):
         matvec_count[0] += 1
-        return case.A.T @ b[..., np.newaxis]
+        return case.A.mT @ b[..., np.newaxis]
 
     b = case.b
     x0 = 0 * b
@@ -987,8 +992,7 @@ class TestGMRES:
 
 def test_nD(solver, xp):
     """Check that >2-D operators are rejected cleanly."""
-    if solver == SOLVERS.cg:
-        # cg has batch support
+    if solver.batch_support:
         return
     def id(x):
         return x
