@@ -916,7 +916,7 @@ class TestGetWindow:
         sig = xp.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2, xp=xp)
-        mesg = "^window must" if is_cupy(xp) else "^window.shape="
+        mesg = "^window must|^window.shape="
         with assert_raises(ValueError, match=mesg):
             resample(sig, sig.shape[0] * osfactor, window=win)
 

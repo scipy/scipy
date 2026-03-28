@@ -112,6 +112,139 @@ data with an outlier:
     >>> plt.show()
 
 
+.. _tutorial-interpolate_out_of_bounds:
+
+Out-of-bounds behavior
+======================
+
+Several interpolators in :mod:`scipy.interpolate` share a common ``extrapolate``
+argument, including :class:`CubicSpline`, :class:`CubicHermiteSpline`,
+:class:`Akima1DInterpolator`, :class:`PchipInterpolator`, :class:`PPoly`, and
+:class:`BPoly`.
+
+The ``bc_type`` parameter
+-------------------------
+
+For :class:`CubicSpline` and :func:`make_interp_spline`, the ``bc_type``
+construction-time argument controls the shape of the spline at its boundaries and
+therefore also affects extrapolation. When ``bc_type="periodic"``, periodic boundary
+conditions are enforced and the interpolant is smooth at the join point. For all other 
+values of ``bc_type``, out-of-bounds behavior is controlled separately by the 
+``extrapolate`` argument described below.
+
+To illustrate, we compare several values of the ``extrapolate`` constructor argument
+for :class:`CubicSpline`, including ``bc_type="periodic"`` which produces a truly
+periodic interpolant:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from scipy.interpolate import CubicSpline
+
+    # data
+    x = np.array([0, 1, 2.5, 3, 4])
+    y = np.array([0.0, 1.0, 0.8, 1.2, 0.0])
+    # evaluation points
+    x_eval = np.linspace(-4, 8, 300)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for extrapolate, linestyle in zip(
+        [True, False, "periodic"], ["-", "--", ":"], strict=True
+    ):
+        y_interp = CubicSpline(x, y, extrapolate=extrapolate)(x_eval)
+        ax.plot(x_eval, y_interp, linestyle, label=f"extrapolate={extrapolate}")
+    ax.plot(
+        x_eval,
+        CubicSpline(x, y, bc_type="periodic")(x_eval),
+        "-.",
+        label="bc_type='periodic'",
+    )
+    ax.plot(x, y, "ko", label="data")
+    ax.axvline(x[0] - 4, color="k", alpha=0.2)
+    ax.axvline(x[0], color="k", alpha=0.2)
+    ax.axvline(x[-1], color="k", alpha=0.2)
+    ax.axvline(x[-1] + 4, color="k", alpha=0.2)
+    ax.set_ylim(-0.5, 1.5)
+    ax.legend(ncol=2, loc="lower left")
+    ax.set_xlabel("x")
+    ax.set_ylabel("f(x)")
+    ax.set_title("CubicSpline")
+    plt.show()
+
+The ``extrapolate`` constructor argument
+----------------------------------------
+
+All the interpolators listed above accept an ``extrapolate`` keyword at construction
+time, which sets the default out-of-bounds behavior for all subsequent evaluations:
+
+- ``extrapolate=True`` (default for most): evaluate the boundary polynomial pieces;
+- ``extrapolate=False``: return ``NaN``;
+- ``extrapolate="periodic"`` (if supported): wrap the evaluation periodically.
+
+The default is ``True`` for most interpolators, except :class:`Akima1DInterpolator`
+which defaults to ``False``.
+
+To illustrate, we consider :class:`PchipInterpolator` with several values of the
+``extrapolate`` constructor argument:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from scipy.interpolate import PchipInterpolator
+
+    # data
+    x = np.array([0, 1, 2.5, 3, 4])
+    y = np.array([0.0, 1.0, 0.8, 1.2, 0.0])
+    # evaluation points
+    x_eval = np.linspace(-4, 8, 300)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for extrapolate, linestyle in zip(
+        [True, False, "periodic"], ["-", "--", ":"], strict=True
+    ):
+        y_interp = PchipInterpolator(x, y, extrapolate=extrapolate)(x_eval)
+        ax.plot(x_eval, y_interp, linestyle, label=f"extrapolate={extrapolate}")
+    ax.plot(x, y, "k.", markersize=8, label="data")
+    ax.axvline(x[0] - 4, color="k", alpha=0.2)
+    ax.axvline(x[0], color="k", alpha=0.2)
+    ax.axvline(x[-1], color="k", alpha=0.2)
+    ax.axvline(x[-1] + 4, color="k", alpha=0.2)
+    ax.set_ylim(-2.0, 2.5)
+    ax.legend(ncol=2, loc="lower left")
+    ax.set_xlabel("x")
+    ax.set_ylabel("f(x)")
+    ax.set_title("PchipInterpolator")
+    plt.show()
+
+Note that :class:`PchipInterpolator` has no ``bc_type`` argument, so there is
+no way to construct a truly periodic PCHIP interpolant. Using
+``extrapolate="periodic"`` only wraps evaluation at the domain boundaries
+and makes no guarantees about smoothness at the join point, as visible in
+the plot above.
+
+Overriding ``extrapolate`` per call
+-----------------------------------
+
+The ``extrapolate`` argument can also be passed at evaluation time (i.e. when
+calling the interpolator object). Passing ``extrapolate=None`` (the default) means
+"use the value that was set at construction time." Passing any other value
+overrides the construction-time setting for that call only:
+
+    >>> from scipy.interpolate import CubicSpline
+    >>> import numpy as np
+    >>> spl = CubicSpline([0, 1, 2], [0, 1, 0], extrapolate=False)
+    >>> x_eval = np.array([-1, 0.5, 3])
+    >>> spl(x_eval)           # uses construction-time extrapolate=False
+    array([nan, 0.75, nan])
+    >>> spl(x_eval, extrapolate=True)   # override for this call
+    array([-3.,  0.75,  -3.])
+
+See :ref:`Extrapolation tips and tricks <tutorial-extrapolation>` for
+further details.
+
+
 .. _tutorial-interpolate_bsplines:
 
 Interpolation with B-splines

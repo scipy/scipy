@@ -5,7 +5,7 @@
 #include <iostream>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
 
@@ -16,7 +16,7 @@ inline void solve_slice_general(
     CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, void *irwork, T *work,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
 
     CBLAS_INT info;
     char norm = '1';
@@ -32,7 +32,7 @@ inline void solve_slice_general(
 
         status.rcond = (double)rcond;
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < sp_numeric_limits<real_type>::eps);
 
             // finally, solve
             call_getrs(&trans, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
@@ -52,7 +52,7 @@ inline void solve_slice_triangular(
     char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, char trans, T *work, void *irwork,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
 
     CBLAS_INT info;
     char norm = '1';
@@ -65,7 +65,7 @@ inline void solve_slice_triangular(
     if(info >= 0) {
         call_trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < sp_numeric_limits<real_type>::eps);
             status.rcond = (double)rcond;
         }
     }
@@ -78,7 +78,7 @@ inline void solve_slice_cholesky(
     char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, T* work, void *irwork,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
 
     CBLAS_INT info;
     real_type rcond;
@@ -93,7 +93,7 @@ inline void solve_slice_cholesky(
 
         if (info >= 0) {
             status.rcond = (double)rcond;
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < sp_numeric_limits<real_type>::eps);
 
             // finally, solve
             call_potrs(&uplo, &N, &NRHS, data, &N, b_data, &N, &info);
@@ -114,7 +114,7 @@ void solve_slice_sym_herm(
     bool is_symm_not_herm,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
 
     CBLAS_INT info;
     real_type rcond;
@@ -137,7 +137,7 @@ void solve_slice_sym_herm(
 
         if (info >= 0) {
             status.rcond = (double)rcond;
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < sp_numeric_limits<real_type>::eps);
 
             // finally, solve
             if (is_symm_not_herm) {
@@ -162,7 +162,7 @@ void solve_slice_tridiag(
     T *work, T *work2, void *irwork,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
     // work is 4*n, is for dl, d, du, du2
     // work2 is 2*n, is for trcon's work array
 
@@ -188,7 +188,7 @@ void solve_slice_tridiag(
 
         status.rcond = (double)rcond;
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < sp_numeric_limits<real_type>::eps);
 
             // finally, solve
             call_gttrs(&trans, &N, &NRHS, dl, d, du, du2, ipiv, b_data, &N, &info);
@@ -207,7 +207,7 @@ inline void solve_slice_banded(
     char trans, CBLAS_INT N, CBLAS_INT NRHS, T *ab, CBLAS_INT *ipiv, T *b_data, T *work2, void *irwork,
     CBLAS_INT kl, CBLAS_INT ku, SliceStatus &status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
 
     CBLAS_INT ldab = 2 * kl + ku + 1;
 
@@ -224,7 +224,7 @@ inline void solve_slice_banded(
 
         status.rcond = (double)rcond;
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < sp_numeric_limits<real_type>::eps);
 
             // finally, solve
             call_gbtrs(&trans, &N, &kl, &ku, &NRHS, ab, &ldab, ipiv, b_data, &N, &info);
@@ -243,8 +243,8 @@ template<typename T>
 inline void solve_slice_diagonal(
     CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename sp_type_traits<T>::real_type;
+    using value_type = typename sp_type_traits<T>::value_type;
     value_type *pdata = reinterpret_cast<value_type *>(data);
     value_type *p_bdata = reinterpret_cast<value_type *>(b_data);
 
@@ -271,7 +271,7 @@ inline void solve_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ numeric_limits<real_type>::eps;
+    status.is_ill_conditioned = maxa * maxinva > 1./ sp_numeric_limits<real_type>::eps;
     status.rcond = maxa * maxinva;
 }
 
@@ -282,7 +282,7 @@ template<typename T>
 int
 _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, char trans, int overwrite_a, int overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
 {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename sp_type_traits<T>::real_type;
 
     CBLAS_INT info;
     npy_intp *ks = NULL; // For storage of the bandwidths
@@ -319,7 +319,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     }
 
     void *irwork;
-    if constexpr (type_traits<T>::is_complex) {
+    if constexpr (sp_type_traits<T>::is_complex) {
         irwork = malloc(intn * sizeof(real_type));
     } else {
         irwork = malloc(intn * sizeof(CBLAS_INT));
@@ -424,7 +424,7 @@ template<typename T>
 int
 _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     char trans = transposed ? 'T' : 'N';
     npy_intp lower_band = 0, upper_band = 0;
@@ -467,7 +467,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // --------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork=-1, info;
 
-    T tmp = numeric_limits<T>::zero;
+    T tmp = sp_numeric_limits<T>::zero;
     call_sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp, &lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
 
@@ -536,7 +536,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
-    if constexpr (type_traits<T>::is_complex) {
+    if constexpr (sp_type_traits<T>::is_complex) {
         irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
@@ -603,12 +603,12 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             } else {
                 // Check if symmetric/hermitian
                 std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
-                if (is_herm || (is_symm && !type_traits<T>::is_complex)) {
+                if (is_herm || (is_symm && !sp_type_traits<T>::is_complex)) {
                     // either real symmetric or complex hermitian; try Cholesky first,
                     // fall back to sym/her if it fails
                     slice_structure = St::POS_DEF;
                 }
-                else if (is_symm && type_traits<T>::is_complex) {
+                else if (is_symm && sp_type_traits<T>::is_complex) {
                     // complex symmetric, not hermitian
                     slice_structure = St::SYM;
                 }

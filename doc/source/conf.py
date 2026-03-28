@@ -353,7 +353,10 @@ plot_pre_code = """
 import warnings
 for key in (
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
-        'odr'
+        'odr',
+        'pade',
+        'lagrange',
+        'approximate_taylor_polynomial',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

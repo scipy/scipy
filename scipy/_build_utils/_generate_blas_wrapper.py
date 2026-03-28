@@ -10,7 +10,7 @@ literal suffix "$NEWLAPACK".
 
 To point our BLAS/LAPACK calls to these symbols, we need to create wrappers
 which call them appropriately. We do this as simple C function declarations
-that make use of the preprocessor macros defined in npy_cblas.h.
+that make use of the preprocessor macros defined in scipy_blas_defines.h.
 
 We already have all the required signature information in
     scipy/linalg/cython_{blas,lapack}_signatures.txt
@@ -30,7 +30,7 @@ import os
 
 from _wrappers_common import (C_PREAMBLE, C_TYPES, CPP_GUARD_BEGIN,
                               CPP_GUARD_END, LAPACK_DECLS, USE_OLD_ACCELERATE,
-                              WRAPPED_FUNCS, all_newer,
+                              WRAPPED_FUNCS,
                               get_blas_macro_and_name, read_signatures,
                               write_files)
 
@@ -96,14 +96,7 @@ def make_all(outdir,
         lapack_sigs = f.readlines()
     blas_sigs = read_signatures(blas_sigs)
     lapack_sigs = read_signatures(lapack_sigs)
-    # Do not create new files if not necessary
-    src_files = (os.path.abspath(__file__),
-                 blas_signature_file,
-                 lapack_signature_file)
     dst_files = [os.path.join(outdir, 'blas_lapack_wrappers.c')]
-    if all_newer(dst_files, src_files):
-        print("scipy/_build_utils/_generate_blas_wrapper.py: all files up-to-date")
-        return
     wrapper_file = generate_file_wrapper(blas_sigs + lapack_sigs, accelerate)
     write_files({dst_files[0]: wrapper_file})
 

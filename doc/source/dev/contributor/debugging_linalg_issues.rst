@@ -138,20 +138,20 @@ distros. For example, to create a conda environment with the latest SciPy
 release installed and then switching between OpenBLAS, Netlib BLAS/LAPACK, and
 MKL is as simple as::
 
-    $ mamba create -n blas-switch scipy threadpoolctl
-    $ mamba activate blas-switch
+    $ conda create -n blas-switch scipy threadpoolctl
+    $ conda activate blas-switch
     $ python -m threadpoolctl -i scipy.linalg
     ...
         "user_api": "blas",
         "internal_api": "openblas",
 
-    $ mamba install "libblas=*=*netlib"
+    $ conda install "libblas=*=*netlib"
     ...
       libblas                         3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
       libcblas                        3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
       liblapack                       3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
 
-    $ mamba install "libblas=*=*mkl"
+    $ conda install "libblas=*=*mkl"
     ...
       libblas                           3.9.0-5_h92ddd45_netlib --> 3.9.0-21_linux64_mkl
       libcblas                          3.9.0-5_h92ddd45_netlib --> 3.9.0-21_linux64_mkl
@@ -167,14 +167,14 @@ in the exact same way as in `SciPy's conda-forge build recipe
 <https://github.com/conda-forge/scipy-feedstock/blob/main/recipe/build.sh>`__
 (outputs omitted for brevity, they're similar to the ones above)::
 
-    $ mamba env create -f environment.yml
-    $ mamba activate scipy-dev
-    $ mamba install "libblas=*=*netlib"  # necessary, we need to build against blas/lapack
+    $ conda env create -f environment.yml
+    $ conda activate scipy-dev
+    $ conda install "libblas=*=*netlib"  # necessary, we need to build against blas/lapack
     $ spin build -S-Dblas=blas -S-Dlapack=lapack -S-Duse-g77-abi=true
     $ spin test -s linalg  # run tests to verify
-    $ mamba install "libblas=*=*mkl"
+    $ conda install "libblas=*=*mkl"
     $ spin test -s linalg
-    $ mamba install "libblas=*=*openblas"
+    $ conda install "libblas=*=*openblas"
 
 
 Linux distro package managers

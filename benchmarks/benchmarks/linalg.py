@@ -222,6 +222,46 @@ class BatchedEigBench(Benchmark):
             sl.eig(self.a)
 
 
+class BatchedCholeskyBench(Benchmark):
+    params = [
+        [(100, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100), (100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names  = ["shape", "module"]
+
+    def setup(self, shape, module):
+        x = random(shape[:-1] + (1000,))
+        self.a = x @ np.swapaxes(x, axis1=-2, axis2=-1)
+
+    def time_cholesky(self, shape, module):
+        if module == "numpy":
+            nl.cholesky(self.a)
+        else:
+            sl.cholesky(self.a)
+
+
+class BatchedQRBench(Benchmark):
+    params = [
+        [(100, 10, 10), (100, 20, 20), (100, 100)],
+        ["full/complete", "economic/reduced", "r/r", "raw/raw"],
+        ["scipy", "numpy"]
+    ]
+    param_names = ["shape", "mode", "module"]
+
+    def setup(self, shape, mode, module):
+        self.a = random(shape)
+
+        if module == "scipy":
+            self.kwd = {"mode": mode.split("/")[0]}
+        elif module == "numpy":
+            self.kwd = {"mode": mode.split("/")[1]}
+
+    def time_solve(self, shape, mode, module):
+        if module == "numpy":
+            nl.qr(self.a, **self.kwd)
+        else:
+            sl.qr(self.a, **self.kwd)
+
 
 class Norm(Benchmark):
     params = [

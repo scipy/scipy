@@ -94,9 +94,6 @@ incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
-npymath_path = _incdir_numpy_abs / '..' / 'lib'
-npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 # Pythran include directory and build flags
@@ -252,6 +249,16 @@ endif
 _args_blas_lapack = []
 accelerate_flag = []
 generate_blas_wrappers = false
+
+# If an exact MKL .pc name with 'ilp64' is given and use-ilp64 is true,
+# derive the LP64 .pc name by replacing 'ilp64' with 'lp64' in the name.
+# The original ILP64 name is saved for the ILP64 detection pass below.
+_blas_name_ilp64 = ''
+if use_ilp64 and blas_name.contains('ilp64')
+  _blas_name_ilp64 = blas_name
+  blas_name = blas_name.replace('ilp64', 'lp64')
+endif
+
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
@@ -310,7 +317,8 @@ endif
 
 blas_lp64_dep = declare_dependency(
   dependencies: blas,
-  compile_args: _args_blas_lapack
+  compile_args: _args_blas_lapack,
+  include_directories: ['_build_utils/src'],
 )
 
 if not blas.found()
@@ -377,7 +385,16 @@ if use_ilp64
   endif
 
   # Run the detection
-  if uses_mkl
+  if _blas_name_ilp64 != ''
+    # Exact MKL .pc name was given — use it directly via pkg-config
+    blas_ilp64 = dependency(_blas_name_ilp64)
+    lapack_ilp64 = blas_ilp64
+    _args_blas_ilp64 += [
+      '-DBLAS_SYMBOL_SUFFIX=_64',
+      '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
+    ]
+    c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
+  elif uses_mkl
     mkl_uses_sdl = false   # FIXME, why
     if mkl_uses_sdl
       mkl_opts = ['sdl: true']
@@ -421,16 +438,14 @@ if use_ilp64
     endif
     message(f'BLAS symbol suffix (ILP64): @blas_symbol_suffix@')
   endif
-  _blas_incdir = []
   if blas_symbol_suffix != ''
     _args_blas_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
-    _blas_incdir = ['.']
   endif
 
   blas_dep = declare_dependency(
     dependencies: [blas_ilp64],
     compile_args: _args_blas_ilp64,
-    include_directories: _blas_incdir,
+    include_directories: ['_build_utils/src'],
   )
   lapack_dep = declare_dependency(dependencies: [lapack_ilp64, blas_dep])
 
@@ -586,6 +601,7 @@ _cpp_Wno_unused_function = cpp.get_supported_arguments('-Wno-unused-function')
 _cpp_Wno_unused_local_typedefs = cpp.get_supported_arguments('-Wno-unused-local-typedefs')
 _cpp_Wno_unused_variable = cpp.get_supported_arguments('-Wno-unused-variable')
 _cpp_Wno_int_in_bool_context = cpp.get_supported_arguments('-Wno-int-in-bool-context')
+_cpp_Wno_unneeded_internal_declaration = cpp.get_supported_arguments('-Wno-unneeded-internal-declaration')
 
 cpp_args_pythran += [
   _cpp_Wno_cpp,
@@ -788,6 +804,19 @@ foreach name, dep : dependency_map
 endforeach
 
 
+# Resolve cython-blas-abi for config: 'auto' follows use-ilp64
+_cython_blas_abi = get_option('cython-blas-abi')
+if _cython_blas_abi == 'auto'
+  _cython_blas_ilp64 = use_ilp64
+else
+  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
+endif
+conf_data.set('BLAS_CYTHON_ILP64', _cython_blas_ilp64.to_string())
+
+# TODO: make this into an option
+conf_data.set('BLAS_HAS_LP64', 'true')
+conf_data.set('LAPACK_HAS_LP64', 'true')
+
 configure_file(
   input: '__config__.py.in',
   output: '__config__.py',
@@ -831,7 +860,8 @@ if use_ilp64
   blas_dep = declare_dependency(
     dependencies: blas_dep,
     link_with: [g77_abi_wrappers_ilp64],
-    compile_args: [c_flags_ilp64]
+    compile_args: [c_flags_ilp64],
+    include_directories: ['_build_utils/src'],
   )
   lapack_dep = declare_dependency(
     dependencies: [lapack_dep, blas_dep],
@@ -842,8 +872,8 @@ endif
 
 subdir('_external')
 subdir('_lib')
-subdir('special')
 subdir('linalg')
+subdir('special')
 subdir('sparse')
 subdir('stats')
 subdir('fft')

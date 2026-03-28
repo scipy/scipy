@@ -2021,7 +2021,7 @@ const char *fresnel_doc = R"(
 
     .. math::
 
-       S(z) &= \int_0^z \sin(\pi t^2 /2) dt \\
+       S(z) &= \int_0^z \sin(\pi t^2 /2) dt, \\
        C(z) &= \int_0^z \cos(\pi t^2 /2) dt.
 
     See [dlmf]_ for details.
@@ -2050,27 +2050,45 @@ const char *fresnel_doc = R"(
     Examples
     --------
     >>> import numpy as np
-    >>> import scipy.special as sc
+    >>> from scipy.special import fresnel, erf
 
-    As z goes to infinity along the real axis, S and C converge to 0.5.
+    First, we verify the following limits:
 
-    >>> S, C = sc.fresnel([0.1, 1, 10, 100, np.inf])
+    .. math::
+
+         \lim_{z \to \infty} S(z) = \lim_{z \to \infty} C(z) = 1/2.
+
+    >>> S, C = fresnel([0.1, 1, 10, 100, np.inf])
     >>> S
     array([0.00052359, 0.43825915, 0.46816998, 0.4968169 , 0.5       ])
     >>> C
     array([0.09999753, 0.7798934 , 0.49989869, 0.4999999 , 0.5       ])
 
-    They are related to the error function `erf`.
+    Next, we verify the following relation to the error function:
 
-    >>> z = np.array([1, 2, 3, 4])
-    >>> zeta = 0.5 * np.sqrt(np.pi) * (1 - 1j) * z
-    >>> S, C = sc.fresnel(z)
-    >>> C + 1j*S
-    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
-           0.60572079+0.496313j  , 0.49842603+0.42051575j])
-    >>> 0.5 * (1 + 1j) * sc.erf(zeta)
-    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
-           0.60572079+0.496313j  , 0.49842603+0.42051575j])
+    .. math::
+
+        C(z) + i S(z) = \frac{1 + i}{2}
+        \operatorname{erf}\left(\frac{\sqrt{\pi}(1 - i)}{2} z\right).
+
+
+    >>> z = np.linspace(-10, 10)
+    >>> S, C = fresnel(z)
+    >>> RHS = (1 + 1j)/2 * erf((np.sqrt(np.pi)*(1 - 1j))/2*z)
+    >>> np.allclose(C + 1j*S, RHS)
+    True
+
+    Finally, we plot :math:`C(z)` against :math:`S(z)` to get the Euler or Cornu spiral.
+
+    >>> import matplotlib.pyplot as plt
+    >>> z = np.linspace(-10, 10, num=1000)
+    >>> S, C = fresnel(z)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(C, S)
+    >>> ax.set_aspect('equal')
+    >>> ax.set_xlabel('$C(z)$')
+    >>> ax.set_ylabel('$S(z)$')
+    >>> plt.show()
     )";
 
 const char *gamma_doc = R"(

@@ -148,7 +148,7 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #define ITMAX 5
     
     /* Table of constant values */
-    int    ione = 1, nrow = A->nrow;
+    slu_blasint    ione = 1, nrow = A->nrow;
     doublecomplex ndone = {-1., 0.};
     doublecomplex done = {1., 0.};
     
@@ -171,13 +171,6 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     int      isave[3];
 
     extern int zlacon2_(int *, doublecomplex *, doublecomplex *, double *, int *, int []);
-#ifdef _CRAY
-    extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
-    extern int CSAXPY(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
-#else
-    extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
-    extern int zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
-#endif
 
     Astore = A->Store;
     Aval   = Astore->nzval;
@@ -409,7 +402,8 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    zlacon2_(&nrow, &work[A->nrow], work, &ferr[j], &kase, isave);
+	    int nrow_int = (int)nrow;
+	    zlacon2_(&nrow_int, &work[A->nrow], work, &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
 	    if (kase == 1) {

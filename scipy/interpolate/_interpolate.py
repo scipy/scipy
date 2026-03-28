@@ -1,7 +1,8 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
-
+import os
 from math import prod
 from types import GenericAlias
+import warnings
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -19,6 +20,7 @@ from ._interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 
+@xp_capabilities(out_of_scope=True)
 def lagrange(x, w):
     r"""
     Return a Lagrange interpolating polynomial.
@@ -28,6 +30,10 @@ def lagrange(x, w):
 
     Warning: This implementation is numerically unstable. Do not expect to
     be able to use more than about 20 points even if they are chosen optimally.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        `scipy.interpolate.BarycentricInterpolator` instead.
 
     Parameters
     ----------
@@ -92,7 +98,10 @@ def lagrange(x, w):
     >>> plt.show()
 
     """
-
+    _warn_skips = (os.path.dirname(__file__),)
+    msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
+           "`scipy.interpolate.BarycentricInterpolator` instead.")
+    warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     M = len(x)
     p = poly1d(0.0)
     for j in range(M):
@@ -863,10 +872,11 @@ class PPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.
-    extrapolate : bool or 'periodic', optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. Default is True.
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
     axis : int, optional
         Interpolation axis. Default is zero.
 
@@ -1342,10 +1352,11 @@ class BPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.
-    extrapolate : bool, optional
+    extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. Default is True.
+        periodic extrapolation is used. If None (default), it is set to True.
+        See :ref:`tutorial-interpolate_out_of_bounds`.
     axis : int, optional
         Interpolation axis. Default is zero.
 

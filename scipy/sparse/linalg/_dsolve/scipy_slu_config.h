@@ -17,6 +17,18 @@ void superlu_python_module_free(void *ptr);
 #define SCIPY_FIX 1
 
 /*
+ * BLAS integer type: matches the BLAS library's integer ABI.
+ * When HAVE_BLAS_ILP64 is defined (ILP64 build), this is int64_t;
+ * otherwise it is int (LP64, the default).
+ */
+#ifdef HAVE_BLAS_ILP64
+#include <stdint.h>
+typedef int64_t slu_blasint;
+#else
+typedef int slu_blasint;
+#endif
+
+/*
  * Fortran configuration
  */
 #if defined(NO_APPEND_FORTRAN)

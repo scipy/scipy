@@ -43,7 +43,7 @@ at the top-level directory.
  * Local parameters
  * ================
  *   nseg: no of segments in current U[*,j]
- *   jsuper: jsuper=EMPTY if column j does not belong to the same
+x *   jsuper: jsuper=SLU_EMPTY if column j does not belong to the same
  *	supernode as j-1. Otherwise, jsuper=nsuper.
  *
  *   marker2: A-row --> A-row/col (0/1)
@@ -105,10 +105,10 @@ ilu_scolumn_dfs(
 
 
     /* For each nonzero in A[*,jcol] do dfs */
-    for (k = 0; lsub_col[k] != EMPTY; k++) {
+    for (k = 0; lsub_col[k] != SLU_EMPTY; k++) {
 
 	krow = lsub_col[k];
-	lsub_col[k] = EMPTY;
+	lsub_col[k] = SLU_EMPTY;
 	kmark = marker2[krow];
 
 	/* krow was visited before, go to the next nonzero */
@@ -120,14 +120,14 @@ ilu_scolumn_dfs(
 	marker2[krow] = jcol;
 	kperm = perm_r[krow];
 
-	if ( kperm == EMPTY ) {
+	if ( kperm == SLU_EMPTY ) {
 	    lsub[nextl++] = krow;	/* krow is indexed into A */
 	    if ( nextl >= nzlmax ) {
 		if ((mem_error = sLUMemXpand(jcol, nextl, LSUB, &nzlmax, Glu)))
 		    return (mem_error);
 		lsub = Glu->lsub;
 	    }
-	    if ( kmark != jcolm1 ) jsuper = EMPTY;/* Row index subset testing */
+	    if ( kmark != jcolm1 ) jsuper = SLU_EMPTY;/* Row index subset testing */
 	} else {
 	    /*	krow is in U: if its supernode-rep krep
 	     *	has been explored, update repfnz[*]
@@ -135,13 +135,13 @@ ilu_scolumn_dfs(
 	    krep = xsup[supno[kperm]+1] - 1;
 	    myfnz = repfnz[krep];
 
-	    if ( myfnz != EMPTY ) {	/* Visited before */
+	    if ( myfnz != SLU_EMPTY ) {	/* Visited before */
 		if ( myfnz > kperm ) repfnz[krep] = kperm;
 		/* continue; */
 	    }
 	    else {
 		/* Otherwise, perform dfs starting at krep */
-		oldrep = EMPTY;
+		oldrep = SLU_EMPTY;
 		parent[krep] = oldrep;
 		repfnz[krep] = kperm;
 		xdfs = xlsub[xsup[supno[krep]]];
@@ -162,7 +162,7 @@ ilu_scolumn_dfs(
 			    chperm = perm_r[kchild];
 
 			    /* Case kchild is in L: place it in L[*,k] */
-			    if ( chperm == EMPTY ) {
+			    if ( chperm == SLU_EMPTY ) {
 				lsub[nextl++] = kchild;
 				if ( nextl >= nzlmax ) {
 				    if ( (mem_error = sLUMemXpand(jcol,nextl,
@@ -170,7 +170,7 @@ ilu_scolumn_dfs(
 					return (mem_error);
 				    lsub = Glu->lsub;
 				}
-				if ( chmark != jcolm1 ) jsuper = EMPTY;
+				if ( chmark != jcolm1 ) jsuper = SLU_EMPTY;
 			    } else {
 				/* Case kchild is in U:
 				 *   chrep = its supernode-rep. If its rep has
@@ -178,7 +178,7 @@ ilu_scolumn_dfs(
 				 */
 				chrep = xsup[supno[chperm]+1] - 1;
 				myfnz = repfnz[chrep];
-				if ( myfnz != EMPTY ) { /* Visited before */
+				if ( myfnz != SLU_EMPTY ) { /* Visited before */
 				    if ( myfnz > chperm )
 					repfnz[chrep] = chperm;
 				} else {
@@ -205,12 +205,12 @@ ilu_scolumn_dfs(
 		    segrep[*nseg] = krep;
 		    ++(*nseg);
 		    kpar = parent[krep]; /* Pop from stack, mimic recursion */
-		    if ( kpar == EMPTY ) break; /* dfs done */
+		    if ( kpar == SLU_EMPTY ) break; /* dfs done */
 		    krep = kpar;
 		    xdfs = xplore[krep];
 		    maxdfs = xlsub[krep + 1];
 
-		} while ( kpar != EMPTY );	/* Until empty stack */
+		} while ( kpar != SLU_EMPTY );	/* Until empty stack */
 
 	    } /* else */
 
@@ -226,20 +226,20 @@ ilu_scolumn_dfs(
 	jptr = xlsub[jcol];	/* Not compressed yet */
 	jm1ptr = xlsub[jcolm1];
 
-	if ( (nextl-jptr != jptr-jm1ptr-1) ) jsuper = EMPTY;
+	if ( (nextl-jptr != jptr-jm1ptr-1) ) jsuper = SLU_EMPTY;
 
 	/* Always start a new supernode for a singular column */
-	if ( nextl == jptr ) jsuper = EMPTY;
+	if ( nextl == jptr ) jsuper = SLU_EMPTY;
 
 	/* Make sure the number of columns in a supernode doesn't
 	   exceed threshold. */
-	if ( jcol - fsupc >= maxsuper ) jsuper = EMPTY;
+	if ( jcol - fsupc >= maxsuper ) jsuper = SLU_EMPTY;
 
 	/* If jcol starts a new supernode, reclaim storage space in
 	 * lsub from the previous supernode. Note we only store
 	 * the subscript set of the first columns of the supernode.
 	 */
-	if ( jsuper == EMPTY ) {	/* starts a new supernode */
+	if ( jsuper == SLU_EMPTY ) {	/* starts a new supernode */
 	    if ( (fsupc < jcolm1) ) { /* >= 2 columns in nsuper */
 #ifdef CHK_COMPRESS
 		printf("  Compress lsub[] at super %d-%d\n", fsupc, jcolm1);

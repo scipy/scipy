@@ -202,12 +202,43 @@ class TestBatch:
             kwargs=dict(compute_uv=compute_uv, full_matrices=full_matrices)
         )
 
-    @pytest.mark.parametrize('fun', [linalg.polar, linalg.qr, linalg.rq])
+    @pytest.mark.parametrize('fun', [linalg.polar, linalg.rq])
     @pytest.mark.parametrize('dtype', floating)
     def test_polar_qr_rq(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, A, n_out=2)
+
+    @pytest.mark.parametrize('pivoting', [True, False])
+    @pytest.mark.parametrize('dtype', floating)
+    @pytest.mark.parametrize('mode', ['full', 'economic', 'r'])
+    def test_qr(self, mode, dtype, pivoting):
+        rng = np.random.default_rng(12345)
+        a = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        self.batch_test(lambda x: linalg.qr(x, mode=mode, pivoting=pivoting), a,
+                        n_out=(1 if mode == 'r' else 2) + 1 if pivoting else 0)
+
+    @pytest.mark.parametrize('pivoting', [True, False])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_raw(self, dtype, pivoting):
+        rng = np.random.default_rng(12345)
+        a = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        (q_raw, tau), r, *other = linalg.qr(a, mode="raw", pivoting=pivoting)
+
+        # return argument contains a tuple, hence `batch_test` is not applicable.
+        for i in range(a.shape[0]):
+            for j in range(a.shape[1]):
+                (q_raw_ij, tau_ij), r_ij, *other_ij = linalg.qr(
+                    a[i, j, :, :], mode="raw", pivoting=pivoting
+                )
+
+                assert_allclose(q_raw[i, j, :, :], q_raw_ij)
+                assert_allclose(tau[i, j, :], tau_ij)
+                assert_allclose(r[i, j, :, :], r_ij)
+
+                if pivoting:
+                    assert_allclose(other[0][i, j, :], other_ij[0])
+
 
     @pytest.mark.parametrize('cdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
@@ -704,4 +735,3 @@ def test_shapes_solve_like(func, core_shape):
     with pytest.raises(ValueError, match=pattern):
         # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
         func(a, b)
-
