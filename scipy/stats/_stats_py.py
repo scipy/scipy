@@ -7845,8 +7845,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
-                                ('dask.array', 'no rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # null distribution is NumPy-only
                  marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
@@ -8192,8 +8191,7 @@ def _kstest_n_samples(kwargs):
     return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'),
-                                ('dask.array', 'no rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
                  marray=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
@@ -8548,7 +8546,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  marray=True)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
@@ -8659,7 +8657,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata")],
                  marray=True)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
@@ -8763,8 +8761,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 @xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
                  marray=True,
-                 skip_backends=[('dask.array', 'needs rankdata'),
-                                ('cupy', 'needs rankdata')])
+                 skip_backends=[('dask.array', 'needs rankdata')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate', *, axis=0):
