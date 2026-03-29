@@ -2572,7 +2572,7 @@ def roots_sh_legendre(n, mu=False):
 
     Compute nodes, weights, and the sum of the weights for order 10:
 
-    >>> roots, weights, mu = roots_sh_legendre(10, mu=True)
+    >>> x, w, mu = roots_sh_legendre(10, mu=True)
     >>> mu 
     1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
 
