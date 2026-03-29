@@ -484,7 +484,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     help="Submodule whose tests to run (cluster, constants, ...)")
 @meson.build_dir_option
 @click.pass_context
-def refguide_check(ctx, build_dir=None, *args, **kwargs):
+def refguide_check(ctx, build_dir, *args, **kwargs):
     """🔧 Run refguide check."""
     click.secho(
             "Invoking `build` prior to running refguide-check:",
@@ -678,7 +678,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
 @click.argument('extra_args', nargs=-1)
 @click.pass_context
 def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no_build,
-          build_dir=None, extra_args=()):
+          build_dir, extra_args=()):
     """🔧  Run checks specific to the SciPy code base.
 
     Exactly one check can be run at once. Example:
@@ -872,7 +872,7 @@ def _dirty_git_working_dir():
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, build, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build, build_dir, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
