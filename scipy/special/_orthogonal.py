@@ -2578,7 +2578,7 @@ def roots_sh_legendre(n, mu=False):
 
     >>> roots, weights, mu = roots_sh_legendre(10, mu=True)
     >>> mu 
-    1.0  # Sum of weights of shifted Guass-Legendre quadrature is always 1
+    1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
 
     """
     x, w = roots_legendre(n)
