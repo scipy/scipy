@@ -4,6 +4,7 @@ Helper functions and variables for generation of BLAS/LAPACK wrappers.
 
 # Used to convert from types in signature files to C types
 C_TYPES = {'int': 'int',
+           'int64_t': 'CBLAS_INT',
            'blas_int': 'CBLAS_INT',
            'c': 'npy_complex64',
            'd': 'double',
