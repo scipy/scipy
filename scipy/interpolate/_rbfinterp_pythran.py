@@ -52,21 +52,6 @@ def matern5_2(r):
     return (1.0 + term + 5.0 * r**2 / 3.0) * np.exp(-term)
 
 
-NAME_TO_FUNC = {
-   "linear": linear,
-   "thin_plate_spline": thin_plate_spline,
-   "cubic": cubic,
-   "quintic": quintic,
-   "multiquadric": multiquadric,
-   "inverse_multiquadric": inverse_multiquadric,
-   "inverse_quadratic": inverse_quadratic,
-   "gaussian": gaussian,
-   "matern1_2": matern1_2,
-   "matern3_2": matern3_2,
-   "matern5_2": matern5_2
-}
-
-
 def kernel_vector(x, y, kernel_func, out):
     """Evaluate RBFs, with centers at `y`, at the point `x`."""
     for i in range(y.shape[0]):
@@ -94,13 +79,11 @@ def polynomial_matrix(x, powers, out):
             out[i, j] = np.prod(x[i]**powers[j])
 
 
-# pythran export _kernel_matrix(float[:, :], str)
-def _kernel_matrix(x, kernel):
+# pythran export _kernel_matrix(float[:, :], float(float))
+def _kernel_matrix(x, kernel_func):
     """Return RBFs, with centers at `x`, evaluated at `x`."""
     out = np.empty((x.shape[0], x.shape[0]), dtype=float)
-    kernel_func = NAME_TO_FUNC[kernel]
     kernel_matrix(x, kernel_func, out)
-
     return out
 
 
