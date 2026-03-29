@@ -342,7 +342,7 @@ Out-of-bounds behavior
 ======================
 
 Several interpolators in :mod:`scipy.interpolate` share a common way to control the
-out-of-bouds behavior, including :class:`CubicSpline`, :class:`CubicHermiteSpline`,
+out-of-bounds behavior, including :class:`CubicSpline`, :class:`CubicHermiteSpline`,
 :class:`Akima1DInterpolator`, :class:`PchipInterpolator`, :class:`PPoly`,
 :class:`BPoly`, and :class:`BSpline`.
 
@@ -405,10 +405,10 @@ periodic interpolant:
 
 Note that using ``bc_type="periodic"`` (red curve) enforces equal derivatives at the
 boundaries of the interpolation interval (``x=0`` and ``x=4``), so that the resulting
-interpolant is smooth across the whole real line.
+interpolant extends smoothly as a periodic function.
 
-On the contrary, using ``extrapolate="periodic"`` together with the default value for ``bc_type`` (the green curve) does not pay any special attention to the boundaries, and
-simply "copies" the curve from the interpolation interval to the outside. See :ref:`tutorial-extrapolation-cubicspline-extend` for an additional discussion of how different ``bc_type`` values affect the interpolant.
+On the contrary, using ``extrapolate="periodic"`` together with the default value for ``bc_type`` (the green curve) does not enforce any boundary conditions, and simply extends the interpolant
++ periodically outside the data domain. See :ref:`tutorial-extrapolation-cubicspline-extend` for an additional discussion of how different ``bc_type`` values affect the interpolant.
 
 
 The ``extrapolate`` constructor argument
