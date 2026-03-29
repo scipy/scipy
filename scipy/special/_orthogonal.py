@@ -2555,15 +2555,11 @@ def roots_sh_legendre(n, mu=False):
 
     >>> import numpy as np
     >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
-    >>> roots, weights = roots_sh_legendre(7)
-
-    ``roots`` contains the roots, and ``weights`` contains the weights for
-    Gauss-Legendre quadrature.
-
-    >>> roots
+    >>> x, w = roots_sh_legendre(7)
+    >>> x
     array([0.02544604, 0.12923441, 0.29707742, 0.5, 0.70292258, 0.87076559,
         0.97455396])
-    >>> weights
+    >>> w
     array([0.06474248, 0.1398527, 0.19091503, 0.20897959, 0.19091503, 0.1398527,
         0.06474248])
 
