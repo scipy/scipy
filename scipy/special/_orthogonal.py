@@ -2563,7 +2563,6 @@ def roots_sh_legendre(n, mu=False):
     array([0.06474248, 0.1398527, 0.19091503, 0.20897959, 0.19091503, 0.1398527,
         0.06474248])
 
-    Verify the roots by evaluating the degree-7 shifted Legendre polynomial
     Verify that ``x`` are the roots of the degree-7 shifted Legendre polynomial:
 
     >>> eval_sh_legendre(7, roots)
