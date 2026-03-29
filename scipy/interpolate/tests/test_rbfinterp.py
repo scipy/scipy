@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy._lib._array_api import xp_assert_close, make_xp_test_case
+from scipy.interpolate._rbfinterp_np import _get_kernel_capsule
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree  # type: ignore[attr-defined]
 from scipy.interpolate._rbfinterp import (
@@ -55,7 +56,8 @@ def _is_conditionally_positive_definite(kernel, m):
         seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
-            A = _rbfinterp_pythran._kernel_matrix(x, kernel)
+            capsule = _get_kernel_capsule(kernel)
+            A = _rbfinterp_pythran._kernel_matrix(x, capsule)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
