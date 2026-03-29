@@ -519,7 +519,6 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_S = NULL;
     PyArrayObject *ap_x = NULL;
     PyArrayObject *ap_rank = NULL;
-    PyArrayObject *ap_res = NULL;
     PyObject *ret_lst = NULL, *s_ret = NULL;
     double rcond;
     const char *lapack_driver = NULL;
@@ -580,6 +579,8 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp m = shape[ndim - 2];
     npy_intp n = shape[ndim - 1];
     npy_intp min_mn = m < n ? m : n;
+    CBLAS_INT max_mn = m > n ? m : n;
+    CBLAS_INT ldb = max_mn > 1 ? max_mn : 1;
     npy_intp nrhs = PyArray_DIM(ap_b, ndim-1);
 
     // Allocate the output(s)
@@ -589,12 +590,17 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // x.shape = (..., N, NRHS)
-    shape_1[ndim-2] = n;
+    shape_1[ndim-2] = ldb;
     shape_1[ndim-1] = nrhs;
-    ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-    if (!ap_x) {
-        PyErr_NoMemory();
-        goto fail;
+    if (!overwrite_b) { // Will only work if m > n, python side should have caught this.
+        ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
+        if (!ap_x) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+    } else {
+        Py_INCREF(ap_b);
+        ap_x = ap_b;
     }
 
     // S array is not used by ?gelsy
@@ -611,22 +617,6 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
             PyErr_NoMemory();
             goto fail;
         }
-
-        shape_1[ndim - 2] = std::max(m, n) - n;
-        shape_1[ndim - 1] = nrhs;
-        ap_res = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-        if (!ap_res) {
-            PyErr_NoMemory();
-            goto fail;
-        }
-    } else {
-        // ?gelsy does not return residuals, so just return an empty array with correct batch size.
-        shape_1[ndim - 2] = 0;
-        ap_res = (PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, typenum);
-        if (!ap_res) {
-            PyErr_NoMemory();
-            goto fail;
-        }
     }
 
     // rank.shape = batch_shape
@@ -638,16 +628,16 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _lstsq<float>(ap_Am, ap_b, ap_S, ap_x, ap_rank, ap_res, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<float>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _lstsq<double>(ap_Am, ap_b, ap_S, ap_x, ap_rank, ap_res, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<double>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _lstsq<npy_complex64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, ap_res, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<npy_complex64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _lstsq<npy_complex128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, ap_res, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<npy_complex128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -663,13 +653,12 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // with 'gelsy', we return None for `s`
     s_ret = ap_S != NULL ? PyArray_Return(ap_S) : Py_None;
 
-    return Py_BuildValue("NNNNN", PyArray_Return(ap_x), PyArray_Return(ap_res), PyArray_Return(ap_rank), s_ret, ret_lst);
+    return Py_BuildValue("NNNN", PyArray_Return(ap_x), PyArray_Return(ap_rank), s_ret, ret_lst);
 
 fail:
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_rank);
     Py_XDECREF(ap_S);
-    Py_XDECREF(ap_res);
     return NULL;
 }
 

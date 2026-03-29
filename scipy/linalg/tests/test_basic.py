@@ -2366,7 +2366,7 @@ class TestLstsq:
             a, b, **overwrite_kw, **overwrite_b_kw, lapack_driver=driver
         )
 
-        # validate solution
+        # validate solution and residuals
         a_T = a_ref.swapaxes(-2, -1)
         if shape[-2] >= shape[-1]:
             x_ref = solve(a_T @ a_ref, a_T @ b_ref)
@@ -2374,6 +2374,13 @@ class TestLstsq:
             x_ref = a_T @ solve(a_ref @ a_T, b_ref)
 
         assert_allclose(x_ref, x, atol=1e-12)
+
+        if driver != "gelsy" and shape[-2] >= shape[-1]:
+            res_ref = a_ref @ x - b_ref
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+            assert_allclose(res_ref, res, atol=1e-12)
+        else:
+            assert_allclose(np.zeros(shape[:-2] + (0,), x.dtype), res)
 
         overwrite_a = overwrite_kw.get("overwrite_a", False)
         overwrite_a = (
@@ -2396,6 +2403,7 @@ class TestLstsq:
 
         assert np.all(a_ref == a) != overwrite_a
         assert np.all(b_ref == b) != overwrite_b
+        assert np.shares_memory(x, b) == overwrite_b
 
 
 class TestPinv:
