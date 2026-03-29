@@ -2565,7 +2565,7 @@ def roots_sh_legendre(n, mu=False):
 
     Verify that ``x`` are the roots of the degree-7 shifted Legendre polynomial:
 
-    >>> eval_sh_legendre(7, roots)
+    >>> eval_sh_legendre(7, x)
     array([5.55111512e-16, 1.11022302e-16,  3.33066907e-16,  0.00000000e+00,
         -2.22044605e-16, -1.11022302e-16, -1.85962357e-15])
 
