@@ -2551,7 +2551,7 @@ def roots_sh_legendre(n, mu=False):
     Examples
     --------
 
-    Compute nodes and weights for a 7th-order shifted Guass-Legendre quadrature:
+    Compute nodes and weights for a 7th-order shifted Gauss-Legendre quadrature:
 
     >>> import numpy as np
     >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
