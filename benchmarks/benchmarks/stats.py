@@ -844,7 +844,7 @@ class PoissonBinom(Benchmark):
         shape = batch_shape + (size_p,)
 
         self.p = self.rng.uniform(size=shape)
-        self.k = self.rng.integers(size_p // 2, size=batch_shape)
+        self.k = self.rng.integers(size_p + 1, size=batch_shape)
 
     def time_poisson_binom_pmf(self, size_p, batch_shape):
         stats.poisson_binom.pmf(self.k, self.p)
