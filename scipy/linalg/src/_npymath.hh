@@ -16,10 +16,10 @@ namespace detail {
  * Numeric limits and useful constants for NumPy scalar types.
  */
 
-template<typename T> struct sp_numeric_limits {};
+template<typename T> struct numeric_limits {};
 
 template<>
-struct sp_numeric_limits<float>{
+struct numeric_limits<float>{
     static constexpr float zero = 0.0f;
     static constexpr float one = 1.0f;
     static constexpr float nan = std::numeric_limits<float>::quiet_NaN();
@@ -27,7 +27,7 @@ struct sp_numeric_limits<float>{
 };
 
 template<>
-struct sp_numeric_limits<double>{
+struct numeric_limits<double>{
     static constexpr double zero = 0.0;
     static constexpr double one = 1.0;
     static constexpr double nan = std::numeric_limits<double>::quiet_NaN();
@@ -36,7 +36,7 @@ struct sp_numeric_limits<double>{
 
 
 template<>
-struct sp_numeric_limits<npy_complex64>{
+struct numeric_limits<npy_complex64>{
     static constexpr npy_complex64 zero = {0.0f, 0.0f};
     static constexpr npy_complex64 one = {1.0f, 0.0f};
     static constexpr npy_complex64 nan = {std::numeric_limits<float>::quiet_NaN(),
@@ -44,7 +44,7 @@ struct sp_numeric_limits<npy_complex64>{
 };
 
 template<>
-struct sp_numeric_limits<npy_complex128>{
+struct numeric_limits<npy_complex128>{
     static constexpr npy_complex128 zero = {0.0, 0.0};
     static constexpr npy_complex128 one = {1.0, 0.0};
     static constexpr npy_complex128 nan = {std::numeric_limits<double>::quiet_NaN(),
@@ -61,8 +61,8 @@ struct sp_numeric_limits<npy_complex128>{
  *   - typenum: NumPy type number (NPY_FLOAT, NPY_DOUBLE, etc.)
  *   - is_complex: boolean indicating whether the type is complex
  */
-template<typename T> struct sp_type_traits {};
-template<> struct sp_type_traits<float> {
+template<typename T> struct type_traits {};
+template<> struct type_traits<float> {
     using real_type = float;
     using value_type = float;
     using npy_complex_type = npy_complex64;
@@ -70,21 +70,21 @@ template<> struct sp_type_traits<float> {
     static constexpr bool is_complex = false;
 
 };
-template<> struct sp_type_traits<double> {
+template<> struct type_traits<double> {
     using real_type = double;
     using value_type = double;
     using npy_complex_type = npy_complex128;
     static constexpr int typenum = NPY_DOUBLE;
     static constexpr bool is_complex = false;
 };
-template<> struct sp_type_traits<npy_complex64> {
+template<> struct type_traits<npy_complex64> {
     using real_type = float;
     using value_type = std::complex<float>;
     using npy_complex_type = npy_complex64;
     static constexpr int typenum = NPY_COMPLEX64;
     static constexpr bool is_complex = true;
 };
-template<> struct sp_type_traits<npy_complex128> {
+template<> struct type_traits<npy_complex128> {
     using real_type = double;
     using value_type = std::complex<double>;
     using npy_complex_type = npy_complex128;

@@ -19,7 +19,7 @@ void invert_slice_general(
     CBLAS_INT N, T *data, CBLAS_INT *ipiv, void *irwork, T *work, CBLAS_INT lwork,
     SliceStatus& status
 ) {
-    using real_type = typename detail::sp_type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     char norm = '1';
@@ -35,7 +35,7 @@ void invert_slice_general(
 
         status.rcond = (double)rcond;
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::sp_numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, invert
             call_getri(&N, data, &N, ipiv, work, &lwork, &info);
@@ -57,7 +57,7 @@ void invert_slice_cholesky(
     char uplo, CBLAS_INT N, T *data, T* work, void *irwork,
     SliceStatus& status
 ) {
-    using real_type = typename detail::sp_type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
@@ -73,7 +73,7 @@ void invert_slice_cholesky(
 
         if (info >= 0) {
             status.rcond = (double)rcond;
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::sp_numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, invert
             call_potri(&uplo, &N, data, &N, &info);
@@ -93,7 +93,7 @@ void invert_slice_sym_herm(
     bool is_symm_not_herm, 
     SliceStatus& status
 ) {
-    using real_type = typename detail::sp_type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     real_type rcond;
@@ -116,7 +116,7 @@ void invert_slice_sym_herm(
 
         if (info >= 0) {
             status.rcond = (double)rcond;
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::sp_numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, invert
             if (is_symm_not_herm) {
@@ -140,7 +140,7 @@ void invert_slice_triangular(
     char uplo, char diag, CBLAS_INT N, T *data, T *work, void *irwork,
     SliceStatus& status
 ) {
-    using real_type = typename detail::sp_type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     char norm = '1';
@@ -154,7 +154,7 @@ void invert_slice_triangular(
 
         call_trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::sp_numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
             status.rcond = (double)rcond;
         }
     }
@@ -166,8 +166,8 @@ template<typename T>
 inline void invert_slice_diagonal(
     CBLAS_INT N, T *data, SliceStatus& status
 ) {
-    using real_type = typename detail::sp_type_traits<T>::real_type;
-    using value_type = typename detail::sp_type_traits<T>::value_type;
+    using real_type = typename detail::type_traits<T>::real_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     value_type *pdata = reinterpret_cast<value_type *>(data);
 
     value_type zero(0.), one(1.);
@@ -191,7 +191,7 @@ inline void invert_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ detail::sp_numeric_limits<real_type>::eps;
+    status.is_ill_conditioned = maxa * maxinva > 1./ detail::numeric_limits<real_type>::eps;
     status.rcond = maxa * maxinva;
 }
 
@@ -200,7 +200,7 @@ template<typename T>
 int
 _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
@@ -227,8 +227,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    T tmp = detail::sp_numeric_limits<T>::zero;
-    T tmp1 = detail::sp_numeric_limits<T>::zero;
+    T tmp = detail::numeric_limits<T>::zero;
+    T tmp1 = detail::numeric_limits<T>::zero;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
     call_getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
@@ -310,7 +310,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
-    if constexpr(detail::sp_type_traits<T>::is_complex) {
+    if constexpr(detail::type_traits<T>::is_complex) {
         irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
@@ -371,7 +371,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 // Check if symmetric/hermitian
                 std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
 
-                if constexpr (!detail::sp_type_traits<T>::is_complex) {
+                if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real: is_symm and is_herm are always equal
                     if (is_symm) {
                         // try Cholesky first, fall back to sytrf if it fails
@@ -455,7 +455,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             case St::SYM:     // NB: if POS_DEF failed, fall-through to here
             case St::HER:
             {
-                if constexpr (!detail::sp_type_traits<T>::is_complex) {
+                if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real: always use sytrf/sytri
                     invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, true, slice_status);
                 }
@@ -468,7 +468,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     goto free_exit;
                 }
 
-                if constexpr (!detail::sp_type_traits<T>::is_complex) {
+                if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real symmetric
                     fill_other_triangle_noconj(uplo, data, intn);
                 }

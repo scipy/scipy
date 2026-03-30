@@ -47,7 +47,7 @@ template<typename T>
 int
 _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -87,7 +87,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, intm = (CBLAS_INT)m, lwork = -1, info;
-    T tmp = detail::sp_numeric_limits<T>::zero;
+    T tmp = detail::numeric_limits<T>::zero;
 
     // query LWORK
     call_gesdd(&jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, NULL, &info);
@@ -147,7 +147,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     }
 
     // rwork
-    if constexpr (detail::sp_type_traits<T>::is_complex) {
+    if constexpr (detail::type_traits<T>::is_complex) {
         // assume LAPACK > 3.6 (cf LAPACK docs on netlib.org)
         npy_intp lrwork = std::max(
             5*min_mn*min_mn + 5*min_mn,
@@ -211,7 +211,7 @@ template<typename T>
 int
 _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -250,7 +250,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, intm = (CBLAS_INT)m, lwork = -1, info;
-    T tmp = detail::sp_numeric_limits<T>::zero;
+    T tmp = detail::numeric_limits<T>::zero;
 
     // query LWORK
     call_gesvd(&jobz, &jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, &info);
@@ -300,7 +300,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     }
 
     real_type *rwork = NULL;
-    if constexpr (detail::sp_type_traits<T>::is_complex) {
+    if constexpr (detail::type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(5*min_mn*sizeof(real_type));
         if (rwork == NULL) {
             free(buf);
