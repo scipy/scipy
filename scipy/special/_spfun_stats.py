@@ -115,8 +115,9 @@ def multigammaln(a, d):
 
 def _poisson_binom_pmf(k, p):
     xp = array_namespace(k, p)
+    k, p = xp.asarray(k), xp.asarray(p)
     n = p.shape[-1]
-    out_shape = p.shape[:-1] + (n + 1,)
+    out_shape = xp.broadcast_shapes(k.shape, p.shape[:-1]) + (n + 1,)
     pmf = xp.zeros(out_shape, dtype=p.dtype)
     _poisson_binom_pmf_all(p, out=pmf)
     return _take_from_pmf(pmf, k)
@@ -124,8 +125,9 @@ def _poisson_binom_pmf(k, p):
 
 def _poisson_binom_cdf(k, p):
     xp = array_namespace(k, p)
+    k, p = xp.asarray(k), xp.asarray(p)
     n = p.shape[-1]
-    out_shape = p.shape[:-1] + (n + 1,)
+    out_shape = xp.broadcast_shapes(k.shape, p.shape[:-1]) + (n + 1,)
     cdf = xp.zeros(out_shape, dtype=p.dtype)
     _poisson_binom_cdf_all(p, out=cdf)
     return _take_from_discrete_cdf(cdf, k)
