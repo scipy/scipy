@@ -7,7 +7,7 @@ queries:
 paths-ignore:
   - "dist/**"
   - "build/**"
-  - '**/*.md'
-  - '**/*.txt'
-  - 'tools/**'
-  - 'subprojects/**'
+  - "**/*.md"
+  - "**/*.txt"
+  - "tools/**"
+  - "subprojects/**"
