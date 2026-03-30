@@ -14,7 +14,7 @@ py3.extension_module('_propack',
     propack_sources,
     '_propackmodule.c'
   ],
-  include_directories: ['PROPACK/include', 'PROPACK/src/include', '../../../_build_utils/src'],
+  include_directories: ['PROPACK/include', 'PROPACK/src/include'],
   dependencies: [np_dep, ccallback_dep, lapack_dep],
   link_args: version_link_args,
   install: true,

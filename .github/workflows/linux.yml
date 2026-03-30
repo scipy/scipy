@@ -116,7 +116,7 @@ jobs:
       if: matrix.python-version == '3.12'
       run: |
         # Packages that are only needed for their annotations
-        python -m pip install mypy==1.10.0 types-psutil typing_extensions
+        python -m pip install mypy==1.19.1 types-psutil typing_extensions
         python -m pip install pybind11 sphinx
 
         spin mypy
