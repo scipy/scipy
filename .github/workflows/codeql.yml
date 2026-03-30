@@ -130,9 +130,7 @@ jobs:
       with:
         patterns: |
           - dist/**
-          - "build/**
-          - **/*.md
-          - **/*.txt
+          - build/**
           - tools/**
           - subprojects/**
         input: sarif-results/cpp.sarif
