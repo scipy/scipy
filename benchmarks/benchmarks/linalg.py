@@ -45,6 +45,7 @@ class Bench(Benchmark):
 
         self.a = a
         self.b = b
+        self.a_pos = a @ a.T + size * np.eye(size)
 
     def time_solve(self, size, contig, module):
         if module == 'numpy':
@@ -89,6 +90,12 @@ class Bench(Benchmark):
             nl.svd(self.a)
         else:
             sl.svd(self.a)
+
+    def time_cholesky(self, size, contig, module):
+        if module == 'numpy':
+            nl.cholesky(self.a_pos)
+        else:
+            sl.cholesky(self.a_pos)
 
     # Retain old benchmark results (remove this if changing the benchmark)
     time_det.version = (
@@ -220,30 +227,6 @@ class BatchedEigBench(Benchmark):
             nl.eig(self.a)
         else:
             sl.eig(self.a)
-
-
-class CholeskyBench(Benchmark):
-    params = [
-        [10, 50, 64, 256, 2048],
-        ['float64', 'complex128'],
-        ['C', 'F'],
-        ['numpy', 'scipy'],
-    ]
-    param_names = ['size', 'dtype', 'order', 'module']
-
-    def setup(self, size, dtype, order, module):
-        dtype = np.dtype(dtype)
-        x = random([size, size])
-        if np.issubdtype(dtype, np.complexfloating):
-            x = x + 1j * random([size, size])
-        a = (x @ x.conj().T + size * np.eye(size)).astype(dtype)
-        self.a = np.asfortranarray(a) if order == 'F' else np.ascontiguousarray(a)
-
-    def time_cholesky(self, size, dtype, order, module):
-        if module == 'numpy':
-            nl.cholesky(self.a)
-        else:
-            sl.cholesky(self.a)
 
 
 class BatchedCholeskyBench(Benchmark):

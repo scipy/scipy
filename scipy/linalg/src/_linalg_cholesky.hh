@@ -28,7 +28,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     CBLAS_INT intn = (CBLAS_INT)n, info = 0;
 
     npy_intp sz = (npy_intp)sizeof(T);
-    bool f_contig = (strides[ndim-2] == sz && strides[ndim-1] == n * sz);
+    int f_contig = (strides[ndim-2] == sz && strides[ndim-1] == n * sz);
 
     /*
      * Since scipy returns C-ordered output, we call potrf with flipped uplo
@@ -48,7 +48,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
         uplo = (uplo == 'L') ? 'U' : 'L';
     }
 
-    T *data_a = overwrite_a ? Am_data : NULL;
+    T *data_a = NULL;
 
     // Main loop to traverse the slices
     for (npy_intp idx = 0; idx < outer_size; idx++) {
@@ -57,6 +57,8 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
             data_a = &ret_data[idx * n * n];
             T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
             copy_triangle_to_C(data_a, slice_ptr_A, n, s0, s1, uplo);
+        } else {
+            data_a = Am_data;
         }
         // NB. `overwrite_a` is only enabled when the input is 2D contiguous so
         // data is already correctly ordered in input array. If generalized to
