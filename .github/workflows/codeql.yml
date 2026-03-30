@@ -33,10 +33,6 @@ jobs:
       # required to fetch internal or private CodeQL packs
       packages: read
 
-      # only required for workflows in private repositories
-      actions: read
-      contents: read
-
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +61,7 @@ jobs:
     # - name: Setup runtime (example)
     #   uses: actions/setup-example@v1
     - name: Install dependencies
+      if: matrix.language == 'c-cpp'
       run: |
         git submodule update --init
         sudo apt update
@@ -97,8 +94,8 @@ jobs:
     # to build your code.
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - if: matrix.build-mode == 'manual'
-      name: Install dependencies and build SciPy
+    - name: Build (manual)
+      if: matrix.build-mode == 'manual'
       shell: bash
       run: |
         git submodule update --init
@@ -126,6 +123,7 @@ jobs:
         upload: failure-only
 
     - name: filter-sarif
+      if: matrix.language == 'c-cpp'
       uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
       with:
         patterns: |
@@ -138,13 +136,7 @@ jobs:
         output: sarif-results/cpp.sarif
 
     - name: Upload SARIF
+      if: matrix.language == 'c-cpp'
       uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4
       with:
-        sarif_file: sarif-results/cpp.sarif
-
-    - name: Upload loc as a Build Artifact
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-      with:
-        name: sarif-results
-        path: sarif-results
-        retention-days: 1
+        sarif_file: sarif-results/${{ matrix.language }}.sarif
