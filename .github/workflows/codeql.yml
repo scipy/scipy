@@ -139,4 +139,4 @@ jobs:
       if: matrix.language == 'c-cpp'
       uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4
       with:
-        sarif_file: sarif-results/${{ matrix.language }}.sarif
+        sarif_file: sarif-results/cpp.sarif
