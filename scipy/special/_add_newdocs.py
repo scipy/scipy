@@ -4513,10 +4513,13 @@ add_newdoc("kolmogorov",
     Kolmogorov distribution.
 
     Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` as n goes to infinity)
-    of a two-sided test for equality between an empirical and a theoretical
-    distribution. It is equal to the (limit as n->infinity of the)
-    probability that ``sqrt(n) * max absolute deviation > y``.
+    Kolmogorov's limiting distribution (``D_n * sqrt(n)`` as n goes to
+    infinity) of a two-sided test for equality between an empirical and a
+    theoretical distribution. Here ``D_n = max |F_n(x) - F(x)|`` is the
+    Kolmogorov-Smirnov statistic, where ``F_n`` is the empirical CDF of a
+    sample of size ``n`` and ``F`` is the target CDF. It is equal to the
+    (limit as n->infinity of the) probability that
+    ``sqrt(n) * max absolute deviation > y``.
 
     Parameters
     ----------
@@ -4541,9 +4544,14 @@ add_newdoc("kolmogorov",
     -----
     `kolmogorov` is used by `stats.kstest` in the application of the
     Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
+    function is exposed in `scipy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.kstwobign` distribution.
+
+    References
+    ----------
+    .. [1] "Kolmogorov-Smirnov test", Wikipedia,
+           https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
 
     Examples
     --------
