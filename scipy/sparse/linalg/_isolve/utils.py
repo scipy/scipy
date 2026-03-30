@@ -18,6 +18,23 @@ from scipy._lib._array_api import (
 def id(x):
     return x
 
+def _process_vector_input(v, *, A, N, xp, arg_name):
+    v = _asarray(v, subok=True, xp=xp)
+
+    # maintain column vector backwards-compatibility in 2-D case
+    column_vector = v.shape[-2:] == (N, 1) 
+    # otherwise treat as a row-vector
+    row_vector = v.shape[-1] == N
+
+    if not (column_vector or row_vector):
+        msg = f"shapes of A {A.shape} and {arg_name} {v.shape} are incompatible"
+        raise ValueError(msg)
+
+    if column_vector:
+        v = xp_ravel(v, xp=xp)
+
+    return v
+
 def make_system(A, M, x0, b, nd_support=False):
     """Make a linear system Ax=b
 
@@ -71,19 +88,8 @@ def make_system(A, M, x0, b, nd_support=False):
         )
         raise TypeError(msg)
 
-    b = _asarray(b, subok=True, xp=xp)
+    b = _process_vector_input(b, A=A, N=N, xp=xp, arg_name="b")
 
-    # maintain column vector backwards-compatibility in 2-D case
-    column_vector = b.ndim == 2 and b.shape[-2:] == (N, 1) 
-    # otherwise treat as a row-vector
-    row_vector = b.shape[-1] == N
-
-    if not (column_vector or row_vector):
-        raise ValueError(f'shapes of A {A.shape} and b {b.shape} are '
-                         'incompatible')
-    if column_vector:
-        b = xp_ravel(b, xp=xp)
-    
     # NOTE: unbatched column vectors are ravelled and hence are 1-D.
     batched = A.ndim > 2 or b.ndim > 1
     if batched and not nd_support:
@@ -93,8 +99,7 @@ def make_system(A, M, x0, b, nd_support=False):
         )
 
     dtype = xp_result_type(A.dtype, b.dtype, force_floating=True, xp=xp)
-
-    b = xp.astype(b, dtype)  # make b the same type as x
+    b = xp.astype(b, dtype)
 
     # process preconditioner
     if M is None:
@@ -132,18 +137,8 @@ def make_system(A, M, x0, b, nd_support=False):
         else:
             raise ValueError(f"invalid input for x0: {x0}")
     else:
-        x = xp.asarray(x0, dtype=dtype, copy=True)
-
-        # maintain column vector backwards-compatibility in 2-D case
-        column_vector = x.ndim == 2 and x.shape[-2:] == (N, 1)
-        # otherwise treat as a row-vector
-        row_vector = x.shape[-1] == N
-
-        if not (row_vector or column_vector):
-            raise ValueError(f'shapes of A {A.shape} and '
-                             f'x0 {x.shape} are incompatible')
-        if column_vector:
-            x = xp_ravel(x, xp=xp)
+        x0 = _process_vector_input(x0, A=A, N=N, xp=xp, arg_name="x0")
+        x = xp.astype(x0, dtype, copy=True)
 
     result_shape = np.broadcast_shapes(A.shape[:-1], b.shape)
     def _broadcast_if_needed(arr):
@@ -151,7 +146,7 @@ def make_system(A, M, x0, b, nd_support=False):
             arr = xp.broadcast_to(arr, shape=result_shape)
             arr = xp_copy(arr, xp=xp) # avoid read-only arrays
         return arr
-    
+
     x, b = map(_broadcast_if_needed, [x, b])
 
     return A, M, x, b, xp, batched
