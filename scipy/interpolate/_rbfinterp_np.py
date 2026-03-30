@@ -57,6 +57,7 @@ def _get_kernel_capsule(kernel):
                 f"Construct with: "
                 f"LowLevelCallable(fn, signature=\"double (double)\")"
             )
+        return capsule
 
 
 # trampolines for pythran-compiled functions to drop the `xp` argument
