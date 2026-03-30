@@ -2282,7 +2282,7 @@ class TestChebyshev:
 )
 @pytest.mark.parametrize("weights", [True, False])
 def test_distance_nd(func, p, weights):
-     # check that inputs broadcast correctly against a reference implementation
+    #  check that inputs broadcast correctly against a reference implementation
     rng = np.random.default_rng(6738657865438)
     ref_func = _apply_over_batch(('u', 1), ('v', 1), ('p', 1), ('w', 1))(func)
 
