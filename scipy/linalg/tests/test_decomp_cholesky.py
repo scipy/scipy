@@ -174,6 +174,37 @@ class TestCholesky:
             assert_allclose(np.tril(a, k=-1), np.zeros_like(a), atol=1e-14)
             assert_allclose(c.T @ c, a_ref, atol=1e-14)
 
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("order", ['C', 'F', 'noncontig'])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    def test_nan_in_unused_triangle(self, lower, order, overwrite_a):
+        # The unused triangle should never be read, so NaN there must not
+        # affect the result.
+        rng = np.random.default_rng(seed=12345)
+        n = 5
+        x = rng.normal(size=(n, n))
+        a = x @ x.T + n * np.eye(n)
+        c_ref = cholesky(a, lower=lower)
+
+        # Prepare the array in the desired layout first
+        if order == 'noncontig':
+            a_big = np.zeros((2*n, 2*n))
+            a_big[::2, ::2] = a
+            a_nan = a_big[::2, ::2]  # non-contiguous view
+            assert not a_nan.flags['CONTIGUOUS']
+        else:
+            a_nan = np.array(a, order=order)
+
+        # Put NaN in the unused triangle
+        if lower:
+            a_nan[np.triu_indices(n, 1)] = np.nan
+        else:
+            a_nan[np.tril_indices(n, -1)] = np.nan
+
+        c = cholesky(a_nan, lower=lower, overwrite_a=overwrite_a,
+                     check_finite=False)
+        assert_allclose(c, c_ref, atol=1e-14)
+
 
 class TestCholeskyBanded:
     """Tests for cholesky_banded() and cho_solve_banded."""
