@@ -97,8 +97,6 @@ def make_system(A, M, x0, b, nd_support=False):
 
     if hasattr(A, 'dtype'):
         x_dtype = A.dtype
-    else:
-        x_dtype = A.matvec(b).dtype
     x_dtype = xp_result_type(x_dtype, b.dtype, force_floating=True, xp=xp)
 
     b = xp.astype(b, x_dtype)  # make b the same type as x
