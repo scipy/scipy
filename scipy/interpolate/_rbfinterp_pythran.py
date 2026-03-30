@@ -134,15 +134,21 @@ def _build_system_with_kernel(y, d, smoothing, kernel_func, epsilon, powers):
     s = d.shape[1]
     r = powers.shape[0]
 
+    # Shift and scale the polynomial domain to be between -1 and 1
     mins = np.min(y, axis=0)
     maxs = np.max(y, axis=0)
     shift = (maxs + mins) / 2
     scale = (maxs - mins) / 2
+    # The scale may be zero if there is a single point or all the points have
+    # the same value for some dimension. Avoid division by zero by replacing
+    # zeros with ones.
     scale[scale == 0.0] = 1.0
 
     yeps = y * epsilon
     yhat = (y - shift) / scale
 
+    # Transpose to make the array fortran contiguous. This is required for
+    # dgesv to not make a copy of lhs.
     lhs = np.empty((p + r, p + r), dtype=float).T
     kernel_matrix(yeps, kernel_func, lhs[:p, :p])
     polynomial_matrix(yhat, powers, lhs[:p, p:])

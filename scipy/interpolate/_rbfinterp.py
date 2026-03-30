@@ -107,64 +107,9 @@ class RBFInterpolator:
 
         Alternatively, a :class:`~scipy.LowLevelCallable` wrapping a compiled kernel
         with signature ``double (double)``, where the argument is the scalar distance
-        *r*.  Both `epsilon` and `degree` must be supplied explicitly; neither has a
-        default.
-
-        Only NumPy arrays are supported with a ``LowLevelCallable`` kernel.
-
-        This can be done usig pythran to compile python to C++ or by directly writing
-        and compile a C/C++ fucnction.
-
-        **Pythran**
-
-        Pythran and expose it as a capsule::
-
-            # custom_kernel.py
-            import numpy as np
-
-            def my_kernel(r):
-                return np.exp(-r ** 2) * r
-
-            # pythran export capsule my_kernel(float64)
-
-        Compile with pythran::
-
-            pythran custom_kernel.py
-
-        Then in wrap the function in a ``LowLevelCallable``::
-
-            from custom_kernel import my_kernel  # capsule object
-            from scipy import LowLevelCallable
-            # signature only required for pythran capusel
-            llc = LowLevelCallable(my_kernel, signature="double (double)")
-
-            interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
-
-        **C/C++**::
-
-            // custom_kernel.c
-            #include <math.h>
-            double my_kernel(double r) {
-                return exp(-r * r) / r;
-            }
-
-        Compile::
-
-            clang -shared -fPIC -O3 -o custom_kernel.dylib custom_kernel.c
-
-        Then wrap the function in a ``LowLevelCallable``::
-
-            import ctypes
-            from scipy import LowLevelCallable
-            from scipy.interpolate import RBFInterpolator
-
-            lib = ctypes.CDLL('./custom_kernel.dylib')
-            lib.my_kernel.restype  = ctypes.c_double
-            lib.my_kernel.argtypes = [ctypes.c_double]
-
-            llc = LowLevelCallable(lib.my_kernel)
-            interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
-
+        *r* see :ref:`rbfinterpolate_custom_kernels` for more details. Both `epsilon`
+        and `degree` must be supplied explicitly; neither has a default. Only NumPy
+        arrays are supported with a ``LowLevelCallable`` kernel.
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. If `kernel` is
         'linear', 'thin_plate_spline', 'cubic', or 'quintic', this defaults to
@@ -299,6 +244,17 @@ class RBFInterpolator:
         xp = array_namespace(y, d, smoothing)
         _backend = _get_backend(xp)
 
+        if isinstance(kernel, str):
+            kernel = kernel.lower()
+            if kernel not in _AVAILABLE:
+                raise ValueError(f"String `kernel` must be one of {_AVAILABLE}")
+        elif isinstance(kernel, LowLevelCallable):
+            if not is_numpy(xp):
+                raise ValueError(
+                    "LowLevelCallable kernels are only supported with the NumPy backend.")
+        else:
+            raise ValueError("The kernel must be a string or a LowLevelCallable.")
+
         if neighbors is not None:
             if not is_numpy(xp):
                 raise NotImplementedError(
@@ -339,24 +295,19 @@ class RBFInterpolator:
                     "Expected `smoothing` to be a scalar or have shape "
                     f"({ny},)."
                     )
-        if not isinstance(kernel, LowLevelCallable):
 
-            kernel = kernel.lower()
-            if kernel not in _AVAILABLE:
-                raise ValueError(f"`kernel` must be one of {_AVAILABLE} or a "
-                                 f"LowLevelCallable.")
-
-            if epsilon is None:
-                if kernel in _SCALE_INVARIANT:
-                    epsilon = 1.0
-                else:
-                    raise ValueError(
-                        "`epsilon` must be specified if `kernel` is not one of "
-                        f"{_SCALE_INVARIANT}."
-                        )
+        if epsilon is None:
+            if kernel in _SCALE_INVARIANT:
+                epsilon = 1.0
             else:
-                epsilon = float(epsilon)
+                raise ValueError(
+                    "`epsilon` must be specified if `kernel` is not one of "
+                    f"{_SCALE_INVARIANT} or a LowLevelCallable."
+                )
+        else:
+            epsilon = float(epsilon)
 
+        if isinstance(kernel, str):
             min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
             if degree is None:
                 degree = max(min_degree, 0)
@@ -373,19 +324,7 @@ class RBFInterpolator:
                         f"unintuitive effect.",
                         UserWarning, stacklevel=2
                     )
-
         else:
-            if not is_numpy(xp):
-                raise ValueError(
-                    "LowLevelCallable kernels are currently only supported "
-                    "for NumPy backend.")
-
-            if epsilon is None:
-                raise ValueError(
-                    "`epsilon` must be specified when `kernel` is a "
-                    "LowLevelCallable."
-                )
-            epsilon = float(epsilon)
             if degree is None:
                 raise ValueError(
                     "`degree` must be specified when `kernel` is a "
