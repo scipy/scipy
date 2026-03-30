@@ -1,15 +1,16 @@
-from numpy import inner, zeros, inf, finfo
-from numpy.linalg import norm
-from math import sqrt
-
-from scipy._lib._array_api import xp_capabilities
+from scipy._lib._array_api import xp_capabilities, xp_copy, xp_vector_norm
 
 from .utils import make_system
 
 __all__ = ['minres']
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "data-dependent branching"),
+        ("jax.numpy", "data-dependent branching"),
+    ]
+)
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
@@ -70,6 +71,14 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     Notes
     -----
     This file is a translation of the MATLAB implementation [2]_.
+    
+    `A`, `b`, `x0`, and `M` may have additional "batch" dimensions prepended to
+    the core shape. In this case, the array is treated as a
+    batch of slices of the core shape; see :ref:`linalg_batch`.
+    The core shape of `A` and `M`  is ``(N, N)``,
+    while the core shape of `b` and `x0` is ``(N,)``.
+    'Column vector' input of shape ``(N, 1)`` is restricted to
+    the un-batched case.
 
     References
     ----------
@@ -93,7 +102,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b, xp, batched = make_system(A, M, x0, b)
+    A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
 
     matvec = A.matvec
     psolve = M.matvec
@@ -101,7 +110,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     first = 'Enter minres.   '
     last = 'Exit  minres.   '
 
-    n = A.shape[0]
+    n = A.shape[-1]
 
     if maxiter is None:
         maxiter = 5 * n
@@ -133,31 +142,30 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
     xtype = x.dtype
 
-    eps = finfo(xtype).eps
+    eps = xp.finfo(xtype).eps
 
     # Set up y and v for the first Lanczos vector v1.
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
     if x0 is None:
-        r1 = b.copy()
+        r1 = xp_copy(b, xp=xp)
     else:
-        r1 = b - A@x
+        r1 = b - matvec(x)
     y = psolve(r1)
 
-    beta1 = inner(r1, y)
+    beta1 = xp.vecdot(r1, y, axis=-1)[..., xp.newaxis]
 
-    if beta1 < 0:
+    if xp.any(beta1 < 0):
         raise ValueError('indefinite preconditioner')
-    elif beta1 == 0:
+    elif not xp.any(beta1):
         return (x, 0)
 
-    bnorm = norm(b)
-    if bnorm == 0:
-        x = b
-        return (x, 0)
+    bnorm = xp_vector_norm(b, axis=-1, xp=xp)
+    if not xp.any(bnorm):
+        return (b, 0)
 
-    beta1 = sqrt(beta1)
+    beta1 = xp.sqrt(beta1)
 
     if check:
         # are these too strict?
@@ -165,18 +173,18 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         # see if A is symmetric
         w = matvec(y)
         r2 = matvec(w)
-        s = inner(w,w)
-        t = inner(y,r2)
-        z = abs(s - t)
+        s = xp.vecdot(w, w, axis=-1)
+        t = xp.vecdot(y, r2, axis=-1)
+        z = xp.abs(s - t)
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
             raise ValueError('non-symmetric matrix')
 
         # see if M is symmetric
         r2 = psolve(y)
-        s = inner(y,y)
-        t = inner(r1,r2)
-        z = abs(s - t)
+        s = xp.vecdot(y, y, axis=-1)
+        t = xp.vecdot(r1, r2, axis=-1)
+        z = xp.abs(s - t)
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
             raise ValueError('non-symmetric preconditioner')
@@ -191,12 +199,12 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     rhs1 = beta1
     rhs2 = 0
     tnorm2 = 0
-    gmax = 0
-    gmin = finfo(xtype).max
+    gmax = 0.0
+    gmin = xp.finfo(xtype).max
     cs = -1
     sn = 0
-    w = zeros(n, dtype=xtype)
-    w2 = zeros(n, dtype=xtype)
+    w = xp.zeros(n, dtype=xtype)
+    w2 = xp.zeros(n, dtype=xtype)
     r2 = r1
 
     if show:
@@ -216,20 +224,20 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         if itn >= 2:
             y = y - (beta/oldb)*r1
 
-        alfa = inner(v,y)
+        alfa = xp.vecdot(v, y, axis=-1)[..., xp.newaxis]
         y = y - (alfa/beta)*r2
         r1 = r2
         r2 = y
         y = psolve(r2)
         oldb = beta
-        beta = inner(r2,y)
-        if beta < 0:
+        beta = xp.vecdot(r2, y, axis=-1)[..., xp.newaxis]
+        if xp.any(beta < 0):
             raise ValueError('non-symmetric matrix')
-        beta = sqrt(beta)
+        beta = xp.sqrt(beta)
         tnorm2 += alfa**2 + oldb**2 + beta**2
 
         if itn == 1:
-            if beta/beta1 <= 10*eps:
+            if xp.all(beta/beta1 <= 10*eps):
                 istop = -1  # Terminate later
 
         # Apply previous rotation Qk-1 to get
@@ -241,13 +249,14 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         gbar = sn * dbar - cs * alfa   # gbar 1 = alfa1     gbar k
         epsln = sn * beta     # epsln2 = 0         epslnk+1
         dbar = - cs * beta   # dbar 2 = beta2     dbar k+1
-        root = norm([gbar, dbar])
+        root = xp_vector_norm(xp.stack([gbar, dbar], axis=-1), axis=-1, xp=xp)
         Arnorm = phibar * root
 
         # Compute the next plane rotation Qk
 
-        gamma = norm([gbar, beta]).astype(xtype)  # gammak
-        gamma = max(gamma, eps)
+        gamma = xp_vector_norm(xp.stack([gbar, beta], axis=-1), axis=-1, xp=xp)  # gammak
+        gamma = xp.astype(gamma, xtype)
+        gamma = xp.maximum(xp.asarray(gamma, dtype=xtype), xp.asarray(eps, dtype=xtype))
         cs = gbar / gamma             # ck
         sn = beta / gamma             # sk
         phi = cs * phibar              # phik
@@ -263,34 +272,32 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
         # Go round again.
 
-        gmax = max(gmax, gamma)
-        gmin = min(gmin, gamma)
+        gmax = xp.maximum(xp.asarray(gmax, dtype=xtype), xp.asarray(gamma, dtype=xtype))
+        gmin = xp.minimum(xp.asarray(gmin, dtype=xtype), xp.asarray(gamma, dtype=xtype))
         z = rhs1 / gamma
         rhs1 = rhs2 - delta*z
         rhs2 = - epsln*z
 
         # Estimate various norms and test for convergence.
 
-        Anorm = sqrt(tnorm2)
-        ynorm = norm(x)
+        Anorm = xp.sqrt(tnorm2)
+        ynorm = xp_vector_norm(x, axis=-1, xp=xp)[..., xp.newaxis]
         epsa = Anorm * eps
         epsx = Anorm * ynorm * eps
         epsr = Anorm * ynorm * rtol
         diag = gbar
 
-        if diag == 0:
-            diag = epsa
+        diag = xp.where(diag == 0, epsa, diag)
 
         qrnorm = phibar
         rnorm = qrnorm
-        if ynorm == 0 or Anorm == 0:
-            test1 = inf
-        else:
-            test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
-        if Anorm == 0:
-            test2 = inf
-        else:
-            test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
+        
+        test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
+        test1_mask = (ynorm == 0) | (Anorm == 0)
+        test1[test1_mask] = xp.inf
+
+        test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
+        test2[Anorm == 0] = xp.inf
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
@@ -303,25 +310,27 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         # See if any of the stopping criteria are satisfied.
         # In rare cases, istop is already -1 from above (Abar = const*I).
 
+        # TODO: allow different stopping criteria for different systems
+        # with a vector of `istop`
         if istop == 0:
             t1 = 1 + test1      # These tests work if rtol < eps
             t2 = 1 + test2
-            if t2 <= 1:
+            if xp.all(t2 <= 1):
                 istop = 2
-            if t1 <= 1:
+            if xp.all(t1 <= 1):
                 istop = 1
 
             if itn >= maxiter:
                 istop = 6
-            if Acond >= 0.1/eps:
+            if xp.all(Acond >= 0.1/eps):
                 istop = 4
-            if epsx >= beta1:
+            if xp.all(epsx >= beta1):
                 istop = 3
             # if rnorm <= epsx   : istop = 2
             # if rnorm <= epsr   : istop = 1
-            if test2 <= rtol:
+            if xp.all(test2 <= rtol):
                 istop = 2
-            if test1 <= rtol:
+            if xp.all(test1 <= rtol):
                 istop = 1
 
         # See if it is time to print something.
@@ -335,11 +344,11 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
             prnt = True
         if itn % 10 == 0:
             prnt = True
-        if qrnorm <= 10*epsx:
+        if xp.any(qrnorm <= 10*epsx):
             prnt = True
-        if qrnorm <= 10*epsr:
+        if xp.any(qrnorm <= 10*epsr):
             prnt = True
-        if Acond <= 1e-2/eps:
+        if xp.any(Acond <= 1e-2/eps):
             prnt = True
         if istop != 0:
             prnt = True

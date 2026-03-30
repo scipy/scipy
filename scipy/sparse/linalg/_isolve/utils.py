@@ -148,7 +148,7 @@ def make_system(A, M, x0, b, nd_support=False):
             arr = xp.broadcast_to(arr, shape=result_shape)
             arr = xp_copy(arr, xp=xp) # avoid read-only arrays
         return arr
-    
+
     x, b = map(_broadcast_if_needed, [x, b])
     
     # NOTE: unbatched column vectors are ravelled and hence are 1-D.

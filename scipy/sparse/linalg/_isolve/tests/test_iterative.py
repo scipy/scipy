@@ -53,6 +53,7 @@ class SOLVERS(StrEnum):
             SOLVERS.bicg,
             SOLVERS.cg,
             SOLVERS.cgs,
+            SOLVERS.minres,
         )
     
     @classmethod
