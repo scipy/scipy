@@ -1625,15 +1625,15 @@ class poisson_binom_gen(rv_discrete):
     def _pmf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _spfun_stats._poisson_binom_pmf(k, np.moveaxis(args, 0, -1))
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _spfun_stats._poisson_binom_pmf(k, p)
 
 
     def _cdf(self, k, *args):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
-        args = np.asarray(args, dtype=np.float64)
-        return _spfun_stats._poisson_binom_cdf(k, np.moveaxis(args, 0, -1))
+        p = np.stack(args, dtype=np.float64, axis=-1)
+        return _spfun_stats._poisson_binom_cdf(k, p)
 
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)
