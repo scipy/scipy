@@ -2838,6 +2838,8 @@ class TestDTypes:
         # return a valid 2D array for the typecode
         if tcode == 'M':
             return np.eye(2, dtype='datetime64[ms]')
+        elif tcode == 'm':
+            return np.eye(2, dtype='timedelta64[ms]')
         elif tcode == 'V':
             return np.asarray([[b'a', b'b'], [b'c', b'd']], dtype='V')
         else:
@@ -2847,6 +2849,8 @@ class TestDTypes:
         # return a valid 1D array for the typecode
         if tcode == 'M':
             return np.ones(2, dtype='datetime64[ms]')
+        elif tcode =='m':
+            return np.ones(2, dtype='timedelta64[ms]')
         elif tcode == 'V':
             return np.asarray([b'a', b'b'], dtype='V')
         else:
