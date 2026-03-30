@@ -20,8 +20,8 @@ template<typename T> struct sp_numeric_limits {};
 
 template<>
 struct sp_numeric_limits<float>{
-    static constexpr double zero = 0.0f;
-    static constexpr double one = 1.0f;
+    static constexpr float zero = 0.0f;
+    static constexpr float one = 1.0f;
     static constexpr float nan = std::numeric_limits<float>::quiet_NaN();
     static constexpr float eps = std::numeric_limits<float>::epsilon();
 };
