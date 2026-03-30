@@ -34,6 +34,9 @@ def make_system(A, M, x0, b, nd_support=False):
         Default is `None`, which means using the zero initial guess.
     b : array_like
         right hand side
+    nd_support: bool, optional
+        Whether or not the calling algorithm supports n-dimensional
+        batchesfor input `A` and `b`. Default: ``False``.
 
     Returns
     -------
@@ -47,13 +50,12 @@ def make_system(A, M, x0, b, nd_support=False):
         b : rank 1 ndarray
             right hand side
         xp : compatible array namespace
+        batched : bool
+            True if input is batched, i.e. ``A.ndim > 2 or b.ndim > 1``.
 
     """
     A_ = A
     A = aslinearoperator(A)
-
-    if not nd_support and A.ndim > 2:
-        raise ValueError(f"{A.ndim}-dimensional `A` is unsupported, expected 2-D.")
 
     if (N := A.shape[-2]) != A.shape[-1]:
         raise ValueError(
@@ -81,6 +83,14 @@ def make_system(A, M, x0, b, nd_support=False):
                          'incompatible')
     if column_vector:
         b = xp_ravel(b, xp=xp)
+    
+    # NOTE: unbatched column vectors are ravelled and hence are 1-D.
+    batched = A.ndim > 2 or b.ndim > 1
+    if batched and not nd_support:
+        raise ValueError(
+            f"{A.ndim}-dimensional `A` and `{b.ndim}-dimensional `b` "
+            f"is unsupported, expected 2-D `A` and 1-D `b`."
+        )
 
     if not xp.isdtype(b.dtype, ("real floating", "complex floating")):
         b = xp.astype(b, xp.float64)  # upcast non-FP types to float64
@@ -150,8 +160,5 @@ def make_system(A, M, x0, b, nd_support=False):
         return arr
     
     x, b = map(_broadcast_if_needed, [x, b])
-    
-    # NOTE: unbatched column vectors are ravelled and hence are 1-D.
-    batched = A.ndim > 2 or b.ndim > 1
 
     return A, M, x, b, xp, batched
