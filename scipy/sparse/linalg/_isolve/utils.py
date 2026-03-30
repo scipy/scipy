@@ -92,14 +92,9 @@ def make_system(A, M, x0, b, nd_support=False):
             f"is unsupported, expected 2-D `A` and 1-D `b`."
         )
 
-    if not xp.isdtype(b.dtype, ("real floating", "complex floating")):
-        b = xp.astype(b, xp.float64)  # upcast non-FP types to float64
+    dtype = xp_result_type(A.dtype, b.dtype, force_floating=True, xp=xp)
 
-    if hasattr(A, 'dtype'):
-        x_dtype = A.dtype
-    x_dtype = xp_result_type(x_dtype, b.dtype, force_floating=True, xp=xp)
-
-    b = xp.astype(b, x_dtype)  # make b the same type as x
+    b = xp.astype(b, dtype)  # make b the same type as x
 
     # process preconditioner
     if M is None:
@@ -129,7 +124,7 @@ def make_system(A, M, x0, b, nd_support=False):
 
     # set initial guess
     if x0 is None:
-        x = xp.zeros((*M.shape[:-2], N), dtype=x_dtype)
+        x = xp.zeros((*M.shape[:-2], N), dtype=dtype)
     elif isinstance(x0, str):
         if x0 == 'Mb':  # use nonzero initial guess ``M @ b``
             bCopy = xp_copy(b, xp=xp)
@@ -137,7 +132,7 @@ def make_system(A, M, x0, b, nd_support=False):
         else:
             raise ValueError(f"invalid input for x0: {x0}")
     else:
-        x = xp.asarray(x0, dtype=x_dtype, copy=True)
+        x = xp.asarray(x0, dtype=dtype, copy=True)
 
         # maintain column vector backwards-compatibility in 2-D case
         column_vector = x.ndim == 2 and x.shape[-2:] == (N, 1)
