@@ -597,16 +597,15 @@ class BSpline:
         self._delegate_to = xp_bspline_cls(
             t, c, k, extrapolate=extrapolate, axis=axis
         )
-        self._asarray_internal = xp_internal.asarray
-        self._asarray_external = xp.asarray
+        self._asarray_out = xp.asarray
+        self._asarray_in = xp_internal.asarray
 
     @classmethod
-    def _construct_from_xp(cls, xp_bspline, *, asarray_external):
+    def _construct_from_xp(cls, xp_bspline, *, asarray_out):
         self = object.__new__(cls)
         self._delegate_to = xp_bspline
-        xp_internal = array_namespace(xp_bspline.t)
-        self._asarray_internal = xp_internal.asarray
-        self._asarray_external = asarray_external
+        self._asarray_out = asarray_out
+        self._asarray_in = array_namespace(xp_bspline.t).asarray
         return self
 
     @classmethod
@@ -617,15 +616,10 @@ class BSpline:
         `t` and `c` must of correct shape and dtype.
         """
         xp = array_namespace(t, c)
-        xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
+        xp_bspline_cls, _ = _get_xp_bspline_cls(xp)
         return cls._construct_from_xp(
-            xp_bspline_cls.construct_fast(
-                xp_internal.asarray(t),
-                xp_internal.asarray(c),
-                k, extrapolate=extrapolate,
-                axis=axis,
-            ),
-            asarray_external=xp.asarray,
+            xp_bspline_cls.construct_fast(t, c, k, extrapolate=extrapolate, axis=axis),
+            asarray_out=xp.asarray,
         )
 
     @property
@@ -636,19 +630,21 @@ class BSpline:
 
     @property
     def t(self):
-        return self._asarray_external(self._delegate_to.t)
+        return self._asarray_out(self._delegate_to.t)
 
     @t.setter
     def t(self, t):
-        self._delegate_to.t = self._asarray_internal(t)
+        xp_internal = array_namespace(self._delegate_to.t)
+        self._delegate_to.t = xp_internal.asarray(t) if is_numpy(xp_internal) else t
 
     @property
     def c(self):
-        return self._asarray_external(self._delegate_to.c)
+        return self._asarray_out(self._delegate_to.c)
 
     @c.setter
     def c(self, c):
-        self._delegate_to.c = self._asarray_internal(c)
+        xp_internal = array_namespace(self._delegate_to.c)
+        self._delegate_to.c = xp_internal.asarray(c) if is_numpy(xp_internal) else c
 
     @property
     def k(self):
@@ -736,7 +732,7 @@ class BSpline:
             xp_bspline_cls.basis_element(
                 xp_internal.asarray(t), extrapolate=extrapolate,
             ),
-            asarray_external=xp.asarray,
+            asarray_out=xp.asarray,
         )
 
     @classmethod
@@ -843,8 +839,8 @@ class BSpline:
             in the coefficient array with the shape of `x`.
 
         """
-        return self._asarray_external(
-            self._delegate_to(self._asarray_internal(x), nu=nu, extrapolate=extrapolate)
+        return self._asarray_out(
+            self._delegate_to(self._asarray_in(x), nu=nu, extrapolate=extrapolate)
         )
 
     def derivative(self, nu=1):
@@ -871,11 +867,11 @@ class BSpline:
             # the array-agnostic codepath below.
             return self._construct_from_xp(
                 self._delegate_to.derivative(nu=nu),
-                asarray_external=self._asarray_external,
+                asarray_out=self._asarray_out,
             )
 
         ## Array-agnostic codepath
-        c = self._asarray_external(self.c, copy=True)
+        c = self._asarray_out(self.c, copy=True)
         t = self.t
         xp = array_namespace(t, c)
 
@@ -884,8 +880,7 @@ class BSpline:
         if ct > 0:
             c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
         tck = _fitpack_impl.splder((t, c, self.k), nu)
-        return self.construct_fast(*tck, extrapolate=self.extrapolate,
-                                   axis=self.axis)
+        return self.construct_fast(*tck, extrapolate=self.extrapolate, axis=self.axis)
 
     def antiderivative(self, nu=1):
         """Return a B-spline representing the antiderivative.
@@ -917,11 +912,11 @@ class BSpline:
             # array-agnostic codepath below.
             return self._construct_from_xp(
                 self._delegate_to.antiderivative(nu=nu),
-                asarray_external=self._asarray_external,
+                asarray_out=self._asarray_out,
             )
 
         ## Array-agnostic codepath
-        c = self._asarray_external(self.c, copy=True)
+        c = self._asarray_out(self.c, copy=True)
         t = self.t
         xp = array_namespace(t, c)
 
@@ -936,8 +931,7 @@ class BSpline:
         else:
             extrapolate = self.extrapolate
 
-        return self.construct_fast(*tck, extrapolate=extrapolate,
-                                   axis=self.axis)
+        return self.construct_fast(*tck, extrapolate=extrapolate, axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """Compute a definite integral of the spline.
@@ -987,7 +981,7 @@ class BSpline:
         >>> plt.show()
 
         """
-        return self._asarray_external(
+        return self._asarray_out(
             self._delegate_to.integrate(a, b, extrapolate=extrapolate)
         )
 
@@ -1072,7 +1066,7 @@ class BSpline:
         # from_power_basis isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         spl = xp_bspline_cls.from_power_basis(pp, bc_type=bc_type)
-        return cls._construct_from_xp(spl, asarray_external=xp.asarray)
+        return cls._construct_from_xp(spl, asarray_out=xp.asarray)
 
     def insert_knot(self, x, m=1):
         """Insert a new knot at `x` of multiplicity `m`.
@@ -1146,8 +1140,7 @@ class BSpline:
         # insert_knot isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         return self._construct_from_xp(
-            self._delegate_to.insert_knot(x, m=m),
-            asarray_external=self._asarray_external,
+            self._delegate_to.insert_knot(x, m=m), asarray_out=self._asarray_out,
         )
 
 
