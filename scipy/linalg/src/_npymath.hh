@@ -8,6 +8,10 @@
 #include "numpy/npy_math.h"
 
 
+namespace sp_linalg {
+
+namespace detail {
+
 /*
  * Numeric limits and useful constants for NumPy scalar types.
  */
@@ -108,6 +112,10 @@ inline npy_complex128 conj(npy_complex128 value){return npy_cpack(npy_creal(valu
 // complex from two reals
 inline npy_complex64 cpack(float re, float im) {return npy_cpackf(re, im);}
 inline npy_complex128 cpack(double re, double im) {return npy_cpack(re, im);}
+
+} // namespace detail
+
+} // namespace sp_linalg
 
 
 /*
