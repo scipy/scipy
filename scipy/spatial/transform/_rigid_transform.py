@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Iterable, Iterator
 from types import EllipsisType, GenericAlias, ModuleType, NotImplementedType
 from collections.abc import Callable
