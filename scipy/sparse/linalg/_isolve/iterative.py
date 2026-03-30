@@ -25,13 +25,13 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5, xp=np):
     return atol, rtol
 
 
-def _cg_setup(A, b, x, *, maxiter, matvec, xp):
+def _cg_setup(A, b, x, *, maxiter, xp):
     """Common cg-esque setup"""
     bnrm2 = xp_vector_norm(b, axis=-1, xp=xp)
     dotprod = functools.partial(xp.vecdot, axis=-1)
     if maxiter is None:
         maxiter = b.shape[-1] * 10
-    r = b - matvec(x) if xp.any(x) else xp_copy(b, xp=xp)
+    r = b - A.matvec(x) if xp.any(x) else xp_copy(b, xp=xp)
     return bnrm2, dotprod, maxiter, r
 
 
@@ -119,7 +119,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     matvec, rmatvec = A.matvec, A.rmatvec
     psolve, rpsolve = M.matvec, M.rmatvec
     bnrm2, dotprod, maxiter, r = _cg_setup(
-        A, b, x, maxiter=maxiter, matvec=matvec, xp=xp
+        A, b, x, maxiter=maxiter, xp=xp
     )
 
     atol, _ = _get_atol_rtol('bicg', bnrm2, atol, rtol, xp=xp)
@@ -432,7 +432,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     matvec = A.matvec
     psolve = M.matvec
     bnrm2, dotprod, maxiter, r = _cg_setup(
-        A, b, x, maxiter=maxiter, matvec=matvec, xp=xp
+        A, b, x, maxiter=maxiter, xp=xp
     )
 
     atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol, xp=xp)
@@ -576,7 +576,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     matvec = A.matvec
     psolve = M.matvec
     bnrm2, dotprod, maxiter, r = _cg_setup(
-        A, b, x, maxiter=maxiter, matvec=matvec, xp=xp
+        A, b, x, maxiter=maxiter, xp=xp
     )
 
     atol, _ = _get_atol_rtol('cgs', bnrm2, atol, rtol, xp=xp)
