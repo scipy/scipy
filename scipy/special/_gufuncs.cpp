@@ -18,7 +18,7 @@ static PyObject* _set_action(PyObject* self, PyObject* args) {
     sf_action_t action;
 
     if (!PyArg_ParseTuple(args, "ii", &code, &action)) {
-	return NULL;
+        return NULL;
     }
 
     sf_error_set_action(code, action);
@@ -247,7 +247,7 @@ _gufuncs_module_exec(PyObject *module)
         "_poisson_binom_pmf_all",
         "Internal function",
         "(i)->(j)",
-	_poisson_binom_all_map_dims
+        _poisson_binom_all_map_dims
     );
     PyModule_AddObjectRef(module, "_poisson_binom_pmf_all", _poisson_binom_pmf_all);
 
@@ -260,12 +260,12 @@ _gufuncs_module_exec(PyObject *module)
         "_poisson_binom_cdf_all",
         "Internal function",
         "(i)->(j)",
-	_poisson_binom_all_map_dims
+        _poisson_binom_all_map_dims
     );
     PyModule_AddObjectRef(module, "_poisson_binom_cdf_all", _poisson_binom_cdf_all);
 
     PyObject *_take_from_pmf = xsf::numpy::gufunc(
-	{
+        {
             static_cast<xsf::numpy::f1q_f>(xsf::take_from_pmf),
             static_cast<xsf::numpy::d1q_d>(xsf::take_from_pmf),
         },
@@ -273,12 +273,12 @@ _gufuncs_module_exec(PyObject *module)
         "_take_from_pmf",
         "Internal function",
         "(i),()->()",
-	_take_from_dist_map_dims
+        _take_from_dist_map_dims
     );
     PyModule_AddObjectRef(module, "_take_from_pmf", _take_from_pmf);
 
     PyObject *_take_from_discrete_cdf = xsf::numpy::gufunc(
-	{
+        {
             static_cast<xsf::numpy::f1q_f>(xsf::take_from_discrete_cdf),
             static_cast<xsf::numpy::d1q_d>(xsf::take_from_discrete_cdf),
         },
@@ -286,7 +286,7 @@ _gufuncs_module_exec(PyObject *module)
         "_take_from_discrete_cdf",
         "Internal function",
         "(i),()->()",
-	_take_from_dist_map_dims
+        _take_from_dist_map_dims
     );
     PyModule_AddObjectRef(module, "_take_from_discrete_cdf", _take_from_discrete_cdf);
 
