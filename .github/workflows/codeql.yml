@@ -127,11 +127,11 @@ jobs:
       uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
       with:
         patterns: |
-          - dist/**
-          - build/**
-          - tools/**
-          - subprojects/**
-          - benchmarks/**
+          -dist/**
+          -build/**
+          -tools/**
+          -subprojects/**
+          -benchmarks/**
         input: sarif-results/cpp.sarif
         output: sarif-results/cpp.sarif
 
