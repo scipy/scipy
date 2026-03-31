@@ -72,7 +72,13 @@ def _diff_dual_poly(j, k, y, d, t):
 
 
 class _BSpline:
-    """NumPy Backend for BSpline."""
+    """NumPy Backend for BSpline.
+
+    The public BSpline class below is set up to delegate to bspline implementations
+    from differing backends. The ``derivative`` and ``antiderivative`` methods are
+    not including here because they are handled by an array-agnostic implementation
+    in the public class.
+    """
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         self.k = operator.index(k)
         self.c = np.asarray(c)
@@ -402,6 +408,22 @@ class _BSpline:
 
 @functools.lru_cache(16)
 def _get_xp_bspline_cls(xp):
+    """Returns bspline class to delegate to for xp along with internal array namespace.
+
+    Parameters
+    ----------
+    xp : module
+
+    Returns
+    -------
+    cls : type
+        The bspline class to delegate to for namespace `xp`.
+    namespace : module
+        The internal namespace that calculations are performed with
+        (may differ from `xp`, e.g. numpy delegation for torch on CPU).
+    """
+    # A device kwarg could be added to give device dependent delegation
+    # e.g., delegating torch to numpy on CPU and cupy on GPU.
     if is_numpy(xp):
         return _BSpline, xp
     spx = scipy_namespace_for(xp)
@@ -593,19 +615,30 @@ class BSpline:
         xp = array_namespace(t, c)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
         if not is_numpy(xp):
+            # only convert t and c to internal namespace if it is not NumPy
+            # to preserve NumPy behavior with lists.
             t, c = xp_internal.asarray(t), xp_internal.asarray(c)
         self._delegate_to = xp_bspline_cls(
             t, c, k, extrapolate=extrapolate, axis=axis
         )
-        self._asarray_out = xp.asarray
-        self._asarray_in = xp_internal.asarray
+        # The user facing namespace and the internal namespace used by
+        # ``self._delegate_to`` may differ.
+        # Track the user facing namespace in ``self._xp`` and the internal
+        # namespace used in the delegate in ``self._xp_internal`` for easy mapping.
+        # The internal namespace is also available as
+        # ``array_namespace(self._delegate_to.t)``
+        # but we cache it here to save on such lookups. Custom ``__getstate`` and
+        # ``__setstate__`` dunder methods are needed to allow for pickling while
+        # keeping modules in attributes like this.
+        self._xp = xp
+        self._xp_internal = xp_internal
 
     @classmethod
-    def _construct_from_xp(cls, xp_bspline, *, asarray_out):
+    def _construct_from_xp(cls, xp_bspline, *, xp_external):
         self = object.__new__(cls)
         self._delegate_to = xp_bspline
-        self._asarray_out = asarray_out
-        self._asarray_in = array_namespace(xp_bspline.t).asarray
+        self._xp = xp_external
+        self._xp_internal = array_namespace(xp_bspline.t)
         return self
 
     @classmethod
@@ -624,7 +657,7 @@ class BSpline:
                 k,
                 extrapolate=extrapolate, axis=axis,
             ),
-            asarray_out=xp.asarray,
+            xp_external=xp,
         )
 
     @property
@@ -635,21 +668,27 @@ class BSpline:
 
     @property
     def t(self):
-        return self._asarray_out(self._delegate_to.t)
+        return self._xp.asarray(self._delegate_to.t)
 
     @t.setter
     def t(self, t):
-        xp_internal = array_namespace(self._delegate_to.t)
-        self._delegate_to.t = xp_internal.asarray(t) if is_numpy(xp_internal) else t
+        # Preserves existing behavior to allow setting with a list when using
+        # the NumPy backend. Don't allow such conversions for other backends.
+        self._delegate_to.t = (
+            self._xp_internal.asarray(t) if is_numpy(self._xp_internal) else t
+        )
 
     @property
     def c(self):
-        return self._asarray_out(self._delegate_to.c)
+        return self._xp.asarray(self._delegate_to.c)
 
     @c.setter
     def c(self, c):
-        xp_internal = array_namespace(self._delegate_to.c)
-        self._delegate_to.c = xp_internal.asarray(c) if is_numpy(xp_internal) else c
+        # Preserves existing behavior to allow setting with a list when using
+        # the NumPy backend. Don't allow such conversions for other backends.
+        self._delegate_to.c = (
+            self._xp_internal.asarray(c) if is_numpy(self._xp_internal) else c
+        )
 
     @property
     def k(self):
@@ -737,7 +776,7 @@ class BSpline:
             xp_bspline_cls.basis_element(
                 xp_internal.asarray(t), extrapolate=extrapolate,
             ),
-            asarray_out=xp.asarray,
+            xp_external=xp,
         )
 
     @classmethod
@@ -844,8 +883,10 @@ class BSpline:
             in the coefficient array with the shape of `x`.
 
         """
-        return self._asarray_out(
-            self._delegate_to(self._asarray_in(x), nu=nu, extrapolate=extrapolate)
+        return self._xp.asarray(
+            self._delegate_to(
+                self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
+            )
         )
 
     def derivative(self, nu=1):
@@ -872,13 +913,13 @@ class BSpline:
             # the array-agnostic codepath below.
             return self._construct_from_xp(
                 self._delegate_to.derivative(nu=nu),
-                asarray_out=self._asarray_out,
+                xp_external=self._xp,
             )
 
         ## Array-agnostic codepath
-        c = self._asarray_out(self.c, copy=True)
+        xp = self._xp
+        c = self._xp.asarray(self.c, copy=True)
         t = self.t
-        xp = array_namespace(t, c)
 
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
@@ -917,13 +958,13 @@ class BSpline:
             # array-agnostic codepath below.
             return self._construct_from_xp(
                 self._delegate_to.antiderivative(nu=nu),
-                asarray_out=self._asarray_out,
+                xp_external=self._xp,
             )
 
         ## Array-agnostic codepath
-        c = self._asarray_out(self.c, copy=True)
+        xp = self._xp
+        c = self._xp.asarray(self.c, copy=True)
         t = self.t
-        xp = array_namespace(t, c)
 
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
@@ -986,7 +1027,7 @@ class BSpline:
         >>> plt.show()
 
         """
-        return self._asarray_out(
+        return self._xp.asarray(
             self._delegate_to.integrate(a, b, extrapolate=extrapolate)
         )
 
@@ -1071,7 +1112,7 @@ class BSpline:
         # from_power_basis isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         spl = xp_bspline_cls.from_power_basis(pp, bc_type=bc_type)
-        return cls._construct_from_xp(spl, asarray_out=xp.asarray)
+        return cls._construct_from_xp(spl, xp_external=xp)
 
     def insert_knot(self, x, m=1):
         """Insert a new knot at `x` of multiplicity `m`.
@@ -1145,8 +1186,18 @@ class BSpline:
         # insert_knot isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         return self._construct_from_xp(
-            self._delegate_to.insert_knot(x, m=m), asarray_out=self._asarray_out,
+            self._delegate_to.insert_knot(x, m=m), xp_external=self._xp
         )
+
+    def __getstate__(self):
+        # need custom __getstate__ and __setstate__ methods to allow pickling
+        # while holding onto namespaces.
+        return (self._delegate_to, self._xp.empty(0))
+
+    def __setstate__(self, state):
+        self._delegate_to, sentinel_array = state
+        self._xp_internal = array_namespace(self._delegate_to.t)
+        self._xp = array_namespace(sentinel_array)
 
 
 def _insert(xval, t, c, k, periodic=False):

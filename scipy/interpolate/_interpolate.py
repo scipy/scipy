@@ -1272,7 +1272,7 @@ class PPoly(_PPolyBase):
         """
         if isinstance(tck, BSpline):
             t, c, k = np.asarray(tck.t), np.asarray(tck.c), tck.k
-            _asarray = tck._asarray_out
+            _asarray = tck._xp.asarray
             if extrapolate is None:
                 extrapolate = tck.extrapolate
         else:
