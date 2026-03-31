@@ -129,8 +129,8 @@ def load_testing_files():
     eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
     eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
     eo['random-float32-data'] = np.float32(eo['random-double-data'])
-    eo['random-int-data'] = np.long(eo['random-int-data'])
-    eo['random-uint-data'] = np.ulong(eo['random-uint-data'])
+    eo['random-int-data'] = np.int_(eo['random-int-data'])
+    eo['random-uint-data'] = np.uint(eo['random-uint-data'])
 
 
 load_testing_files()
@@ -405,8 +405,8 @@ class TestCdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np.ulong, np.long, np.float32, np.float64],
-                              'uint': [np.long, np.float32, np.float64],
+        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.float64],
+                              'uint': [np.int_, np.float32, np.float64],
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
@@ -697,8 +697,8 @@ class TestPdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np.ulong, np.long, np.float32, np.float64],
-                              'uint': [np.long, np.float32, np.float64],
+        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.float64],
+                              'uint': [np.int_, np.float32, np.float64],
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
