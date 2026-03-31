@@ -2,7 +2,7 @@
 #define ARNAUD_TYPES_H
 
 #include <stdint.h>
-#include <complex.h>
+#include "scipy_complex_support.h"
 
 
 /* Integer type for BLAS/LAPACK interface */

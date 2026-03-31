@@ -2,7 +2,7 @@
 #define PROPACK_TYPES_H
 
 #include <stdint.h>
-#include <complex.h>
+#include "scipy_complex_support.h"
 #include "scipy_blas_defines.h"
 
 

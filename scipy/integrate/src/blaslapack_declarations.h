@@ -1,7 +1,7 @@
 #ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
 
-#include <complex.h>
+#include "scipy_complex_support.h"
 #include "scipy_blas_defines.h"
 
 #if defined(_MSC_VER)
