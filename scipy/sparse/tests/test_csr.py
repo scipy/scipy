@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
@@ -225,3 +226,65 @@ def test_broadcast_to():
 
     with pytest.raises(ValueError, match="cannot be broadcast"):
         csr_array([0, 1, 2])._broadcast_to(shape=(3, 2))
+
+@pytest.mark.xslow
+def test_large_assign_to_empty_array():
+    # compressed assignment growing over int32 index array boundary gh-24915
+    d = 47000  # d**2 > 2**31 (46340**2 fits in int32, 46341**2 does not)
+    index = np.arange(46341)
+    WMSG = "Changing the sparsity structure"
+
+    csr_a = csr_array((d, d), dtype=np.float32)
+    # was raising ValueError due to int32 n_samples but assigning at > 2**31 locations
+    assert csr_a.indices.dtype == np.int32
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
+        csr_a[index[:, None], index] = 1
+    assert csr_a.indices.dtype == np.int64
+
+@pytest.mark.xslow
+def test_assign_to_already_large_array():
+    d = 47000  # d**2 > 2**31 (46340**2 fits in int32, 46341**2 does not)
+    WMSG = "Changing the sparsity structure"
+
+    big_ones_data = np.ones((46340, 46340), dtype=np.float32)
+    big_ones_coords = tuple(co.astype(np.int32) for co in big_ones_data.nonzero())
+    big_ones_data = big_ones_data.reshape(-1)
+    csr_c = csr_array((big_ones_data, big_ones_coords), shape=(d, d), dtype=np.float32)
+    assert csr_c.indices.dtype == np.int32
+    assert csr_c.nnz < 2**31
+    index = np.arange(46340, 46640, dtype=np.int32)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
+        csr_c[index[:, None], index] = 1
+    assert csr_c.indices.dtype == np.int64
+    assert csr_c.nnz > 2**31
+
+@pytest.mark.xslow
+def test_growing_past_int32_index_arrays():
+    d = 47000  # d**2 > 2**31 (46340**2 fits in int32, 46341**2 does not)
+    WMSG = "Changing the sparsity structure"
+
+    big_ones_data = np.ones((46340, 46340), dtype=np.float32)
+    big_ones_coords = tuple(co.astype(np.int32) for co in big_ones_data.nonzero())
+    big_ones_data = big_ones_data.reshape(-1)
+    csr_a = csr_array((big_ones_data, big_ones_coords), shape=(d, d))
+    csr_b = np.arange(300 * 300, dtype=np.float32).reshape((300, 300))
+    csr_c = csr_array(csr_b)
+
+    assert csr_a.indices.dtype == np.int32
+    assert csr_a.nnz < 2**31
+    index = np.arange(46340, 46640, dtype=np.int32)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
+        csr_a[index[:, None], index] = csr_b
+    assert csr_a.nnz > 2**31
+    assert csr_a.indices.dtype == np.int64
+
+    csr_a = csr_array((big_ones_data, big_ones_coords), shape=(d, d))
+    assert csr_a.nnz < 2**31
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
+        csr_a[index[:, None], index] = csr_c
+    assert csr_a.indices.dtype == np.int64
+    assert csr_a.nnz > 2**31
