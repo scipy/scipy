@@ -928,7 +928,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Update index data type
         idx_dtype = self._get_index_dtype((self.indices, self.indptr),
-                                    maxval=(self.indptr[-1] + x.size))
+                                    maxval=(self.indptr[-1].item() + x.size))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
         i = np.asarray(i, dtype=idx_dtype)
@@ -937,7 +937,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Collate old and new in chunks by major index
         indices_parts = []
         data_parts = []
-        ui, ui_indptr = np.unique(i, return_index=True)
+        ui_indptr = np.diff(np.append([-1], i)).nonzero()[0]
+        ui = i[ui_indptr]
         ui_indptr = np.append(ui_indptr, len(j))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
