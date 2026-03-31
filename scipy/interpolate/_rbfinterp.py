@@ -307,6 +307,29 @@ class RBFInterpolator:
         else:
             epsilon = float(epsilon)
 
+        if degree is not None:
+            degree = int(degree)
+            if degree < -1:
+                raise ValueError("`degree` must be at least -1.")
+
+        if isinstance(kernel, str):
+            min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
+
+            if degree is None:
+                degree = max(min_degree, 0)
+            elif -1 < degree < min_degree:
+                warnings.warn(
+                    f"`degree` should not be below {min_degree} except -1 "
+                    f"when `kernel` is '{kernel}'. The interpolant may not be uniquely "
+                    f"solvable, and the smoothing parameter may have an unintuitive "
+                    f"effect.",
+                    UserWarning, stacklevel=2
+                )
+        elif degree is None:
+            # Kernel is a LowLevelCallable but degree is missing
+            raise ValueError(
+                "`degree` must be specified when `kernel` is a LowLevelCallable.")
+
         if isinstance(kernel, str):
             min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
             if degree is None:
