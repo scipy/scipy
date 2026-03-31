@@ -114,6 +114,24 @@ def multigammaln(a, d):
 
 
 def _poisson_binom_pmf(k, p):
+    """Returns pmf of Poisson Binomial distribution.
+
+    Parameters
+    ----------
+    k : array
+        Number of successes at which to evaluate pmf.
+
+    p : array
+        Success probabilities of independent Bernoulli trials.
+
+    Notes
+    -----
+    This is equivalent to a gufunc with signature ``()(i)->()``.
+    The last dimension of `p` contains success probabilities and
+    the preceding dimensions are batch dimensions. The batch
+    dimensions are broadcast against ``k``.
+
+    """
     xp = array_namespace(k, p)
     k, p = xp.asarray(k), xp.asarray(p)
     n = p.shape[-1]
@@ -124,6 +142,22 @@ def _poisson_binom_pmf(k, p):
 
 
 def _poisson_binom_cdf(k, p):
+    """Returns cdf of Poisson Binomial distribution
+
+    Parameters
+    ----------
+    k : array
+        Number of successes at which to evaluate cdff.
+
+    p : array
+        Success probabilities of independent Bernoulli trials.
+
+    This is equivalent to a gufunc with signature ``()(i)->()``.
+    The last dimension of `p` contains success probabilities and
+    the preceding dimensions are batch dimensions. The batch
+    dimensions are broadcast against ``k``.
+
+    """
     xp = array_namespace(k, p)
     k, p = xp.asarray(k), xp.asarray(p)
     n = p.shape[-1]
