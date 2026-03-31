@@ -486,11 +486,11 @@ class _TestRBFInterpolator:
         x, xitp = xp.asarray(x), xp.asarray(xitp)
         y = _1d_test_function(x, xp)
 
-        with pytest.raises(ValueError):
-            self.build(x, y, kernel=llc)
+        with pytest.raises(ValueError, match="`degree` must be specified"):
+            self.build(x, y, kernel=llc, epsilon=1.0)
 
-        with pytest.raises(ValueError):
-            self.build(x, y, kernel=llc)
+        with pytest.raises(ValueError, match="`epsilon` must be specified"):
+            self.build(x, y, kernel=llc, degree=0)
 
         interp_llc = self.build(x, y, kernel=llc, degree=0, epsilon=1.0)
         interp = self.build(x, y, kernel='linear', degree=0, epsilon=1.0)
