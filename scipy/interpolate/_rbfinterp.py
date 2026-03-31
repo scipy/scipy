@@ -250,8 +250,8 @@ class RBFInterpolator:
                 raise ValueError(f"String `kernel` must be one of {_AVAILABLE}")
         elif isinstance(kernel, LowLevelCallable):
             if not is_numpy(xp):
-                raise ValueError(
-                    "LowLevelCallable kernels are only supported with the NumPy backend.")
+                raise ValueError("LowLevelCallable kernels are only "
+                                 "supported with the NumPy backend.")
         else:
             raise ValueError("The kernel must be a string or a LowLevelCallable.")
 
