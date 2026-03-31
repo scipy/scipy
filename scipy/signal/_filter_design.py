@@ -356,12 +356,14 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         Numerator of a linear filter. If `b` has dimension greater than 1,
         it is assumed that the coefficients are stored in the first dimension,
         and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
-        array must be compatible for broadcasting.
+        array must be compatible for broadcasting. Specifically, the **last**
+        dimension of `b` must be 1 (a singleton) so it can broadcast against
+        the 1-D frequency array. Use ``b[..., np.newaxis]`` to add this
+        dimension when needed (see Examples).
     a : array_like
-        Denominator of a linear filter. If `b` has dimension greater than 1,
-        it is assumed that the coefficients are stored in the first dimension,
-        and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
-        array must be compatible for broadcasting.
+        Denominator of a linear filter. If `a` has dimension greater than 1,
+        the same shape requirements as `b` apply: the last dimension must be 1.
+        Use ``a[..., np.newaxis]`` to add this dimension when needed.
     worN : {None, int, array_like}, optional
         If a single integer, then compute at that many frequencies (default is
         N=512). This is a convenient alternative to::
@@ -505,6 +507,16 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
 
     b = xpx.atleast_nd(b, ndim=1, xp=xp)
     a = xpx.atleast_nd(a, ndim=1, xp=xp)
+
+    for arr, name in ((b, 'b'), (a, 'a')):
+        if arr.ndim > 1 and arr.shape[-1] != 1:
+            raise ValueError(
+                f"`{name}` has shape {arr.shape}, but when `{name}` is "
+                f"multidimensional its last dimension must be 1 (a singleton) "
+                f"so that it can broadcast with the frequency array. "
+                f"Use `{name}[..., np.newaxis]` to add the required trailing "
+                f"dimension, giving shape {arr.shape + (1,)}."
+            )
 
     fs = _validate_fs(fs, allow_none=False)
 
