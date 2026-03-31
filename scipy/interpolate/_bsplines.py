@@ -616,9 +616,14 @@ class BSpline:
         `t` and `c` must of correct shape and dtype.
         """
         xp = array_namespace(t, c)
-        xp_bspline_cls, _ = _get_xp_bspline_cls(xp)
+        xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
         return cls._construct_from_xp(
-            xp_bspline_cls.construct_fast(t, c, k, extrapolate=extrapolate, axis=axis),
+            xp_bspline_cls.construct_fast(
+                xp_internal.asarray(t),
+                xp_internal.asarray(c),
+                k,
+                extrapolate=extrapolate, axis=axis,
+            ),
             asarray_out=xp.asarray,
         )
 
