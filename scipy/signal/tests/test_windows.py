@@ -359,6 +359,32 @@ exponential_data = {
 }
 
 
+@make_xp_test_case(windows.cosine)
+class TestCosine:
+
+    def test_basic(self, xp):
+        # Values computed from the definition: w[n] = sin(pi*(n+0.5)/M)
+        xp_assert_close(windows.cosine(4, xp=xp),
+                        xp.asarray([0.38268343236509, 0.923879532511287,
+                                    0.923879532511287, 0.38268343236509],
+                                   dtype=xp.float64))
+        xp_assert_close(windows.cosine(6, xp=xp),
+                        xp.asarray([0.258819045102521, 0.707106781186547,
+                                    0.965925826289068, 0.965925826289068,
+                                    0.707106781186548, 0.258819045102521],
+                                   dtype=xp.float64))
+        xp_assert_close(windows.cosine(6, sym=False, xp=xp),
+                        xp.asarray([0.222520933956314, 0.623489801858733,
+                                    0.900968867902419, 1.,
+                                    0.900968867902419, 0.623489801858734],
+                                   dtype=xp.float64))
+
+    def test_extremes(self, xp):
+        # Length-1 window should be a single sample equal to 1
+        xp_assert_close(windows.cosine(1, xp=xp),
+                        xp.asarray([1.0], dtype=xp.float64))
+
+
 @make_xp_test_case(windows.exponential)
 def test_exponential(xp):
     for k, v in exponential_data.items():
@@ -428,6 +454,33 @@ class TestGeneralCosine:
         a = xp.asarray([0.5, 0.3, 0.2])
         xp_assert_close(windows.general_cosine(4, a, sym=False),
                         xp.asarray([0.4, 0.3, 1, 0.3], dtype=xp.float64))
+
+
+@make_xp_test_case(windows.general_gaussian)
+class TestGeneralGaussian:
+
+    def test_basic(self, xp):
+        # p=2 reduces to a standard Gaussian; p=1 gives a Laplacian shape
+        xp_assert_close(windows.general_gaussian(5, p=1.5, sig=1.0, xp=xp),
+                        xp.asarray([0.018315638888734, 0.606530659712633,
+                                    1., 0.606530659712633, 0.018315638888734],
+                                   dtype=xp.float64))
+        xp_assert_close(windows.general_gaussian(5, p=2, sig=2.0, xp=xp),
+                        xp.asarray([0.606530659712633, 0.969233234476344,
+                                    1., 0.969233234476344, 0.606530659712633],
+                                   dtype=xp.float64))
+        xp_assert_close(windows.general_gaussian(6, p=1, sig=1.5, sym=False,
+                                                 xp=xp),
+                        xp.asarray([0.135335283236613, 0.411112290507187,
+                                    0.800737402916808, 1.,
+                                    0.800737402916808, 0.411112290507187],
+                                   dtype=xp.float64))
+
+    def test_center_is_one(self, xp):
+        # The centre sample (odd-length, symmetric) should always be 1
+        for p in (0.5, 1.0, 2.0, 5.0):
+            w = windows.general_gaussian(7, p=p, sig=2.0, xp=xp)
+            xp_assert_close(w[3:4], xp.asarray([1.0], dtype=xp.float64))
 
 
 @make_xp_test_case(windows.general_hamming)
