@@ -11,35 +11,17 @@ Sparse arrays (:mod:`scipy.sparse`)
    sparse.csgraph
    sparse.linalg
    sparse.migration_to_sparray
+   sparse.spmatrix_api
 
 SciPy 2-D sparse array package for numeric data.
 
-.. note::
+.. warning::
 
-   This package is switching to an array interface, compatible with
-   NumPy arrays, from the older matrix interface.  We recommend that
-   you use the array objects (`bsr_array`, `coo_array`, etc.) for
-   all new work.
-
-   When using the array interface, please note that:
-
-   - ``x * y`` no longer performs matrix multiplication, but
-     element-wise multiplication (just like with NumPy arrays).  To
-     make code work with both arrays and matrices, use ``x @ y`` for
-     matrix multiplication.
-   - Operations such as ``sum``, that used to produce dense matrices, now
-     produce arrays, whose multiplication behavior differs similarly.
-   - Sparse arrays use array style *slicing* operations, returning scalars,
-     1D, or 2D sparse arrays. If you need 2D results, use an appropriate index.
-     E.g. ``A[:, i, None]`` or ``A[:, [i]]``.
-   - All index arrays for a given sparse array should be of same dtype.
-     For example, for CSR format, ``indices`` and ``indptr`` should have
-     the same dtype. For COO, each array in `coords` should have same dtype.
-
-   The construction utilities (`eye`, `kron`, `random`, `diags`, etc.)
-   have appropriate replacements (see :ref:`sparse-construction-functions`).
-
-   For more information see
+   SciPy sparse is shifting from a sparse matrix interface to a sparse
+   array interface. In the next few releases we expect to deprecate the
+   sparse matrix interface. For documentation of the that matrix
+   interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+   For guidance on converting existing code to sparse arrays, see
    :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
 
@@ -95,8 +77,15 @@ Combining arrays
    triu - Upper triangular portion of a sparse array
    hstack - Stack sparse arrays horizontally (column wise)
    vstack - Stack sparse arrays vertically (row wise)
-   swapaxes - swap two axes of a sparse array
+
+Manipulating arrays
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
    matrix_transpose - Transpose a matrix (or a batch of matrices)
+   swapaxes - swap two axes of a sparse array
    expand_dims - add a new (trivial) axis to a sparse array
    permute_dims - reorder the axes of a sparse array
 
@@ -119,54 +108,7 @@ Identifying sparse arrays
    :toctree: generated/
 
    issparse - Check if the argument is a sparse object (array or matrix).
-
-
-Sparse matrix classes
-=====================
-
-.. autosummary::
-   :toctree: generated/
-
-   bsr_matrix - Block Sparse Row matrix
-   coo_matrix - A sparse matrix in COOrdinate format
-   csc_matrix - Compressed Sparse Column matrix
-   csr_matrix - Compressed Sparse Row matrix
-   dia_matrix - Sparse matrix with DIAgonal storage
-   dok_matrix - Dictionary Of Keys based sparse matrix
-   lil_matrix - Row-based list of lists sparse matrix
-   spmatrix - Sparse matrix base class
-
-Building sparse matrices
-------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   eye - Sparse MxN matrix whose k-th diagonal is all ones
-   identity - Identity matrix in sparse matrix format
-   diags - Return a sparse matrix from diagonals
-   spdiags - Return a sparse matrix from diagonals
-   bmat - Build a sparse matrix from sparse sub-blocks
-   random - Random values in a given shape matrix
-   rand - Random values in a given shape matrix (old interface)
-
-**Combining matrices use the same functions as for** :ref:`combining-arrays`.
-
-Identifying sparse matrices
----------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   issparse
-   isspmatrix
-   isspmatrix_csc
-   isspmatrix_csr
-   isspmatrix_bsr
-   isspmatrix_lil
-   isspmatrix_dok
-   isspmatrix_coo
-   isspmatrix_dia
+   isspmatrix - Check if the argument is an old style sparse matrix.
 
 
 Warnings
@@ -193,19 +135,18 @@ There are seven available sparse array types:
 7. dia_array: DIAgonal format
 
 To construct an array efficiently, use any of `coo_array`,
-`dok_array` or `lil_array`. `dok_array` and `lil_array`
-support basic slicing and fancy indexing with a similar syntax
-to NumPy arrays. The COO format does not support indexing (yet)
-but can also be used to efficiently construct arrays using coord
-and value info.
+`dok_array` or `lil_array`. They each support basic slicing
+and fancy indexing with a similar syntax to NumPy arrays.
+The COO format is recommended and other formats use it under the hood to
+allow efficient construction using data values and coordinate arrays.
 
 Despite their similarity to NumPy arrays, it is **strongly discouraged**
 to use NumPy functions directly on these arrays because NumPy typically
 treats them as generic Python objects rather than arrays, leading to
-unexpected (and incorrect) results. If you do want to apply a NumPy
-function to these arrays, first check if SciPy has its own implementation
-for the given sparse array class, or **convert the sparse array to
-a NumPy array** (e.g., using the `toarray` method of the class)
+unexpected (and incorrect) results. If you are tempted to apply a NumPy
+function to these arrays, check if SciPy has its own implementation
+for the given sparse array class and, if not, **convert the sparse array
+to a NumPy array** (e.g., using the `toarray` method of the class)
 before applying the method.
 
 All conversions among the CSR, CSC, and COO formats are efficient,
@@ -213,7 +154,7 @@ linear-time operations.
 
 To perform manipulations such as multiplication or inversion, first
 convert the array to either CSC or CSR format. The `lil_array`
-format is row-based, so conversion to CSR is efficient, whereas
+format is row-based, so conversion to CSR is efficient, but
 conversion to CSC is less so.
 
 Matrix vector product
@@ -293,8 +234,9 @@ Further details
 ---------------
 
 CSR column indices are not necessarily sorted. Likewise for CSC row
-indices. Use the ``.sorted_indices()`` and ``.sort_indices()`` methods when
-sorted indices are required (e.g., when passing data to other libraries).
+indices. And similarly for COO coordinates. Use the ``.sorted_indices()``
+and ``.sort_indices()`` methods when sorted indices are required (e.g.,
+when passing data to other libraries).
 
 """
 
