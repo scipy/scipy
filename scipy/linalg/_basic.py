@@ -1266,8 +1266,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     x : (N,) or (..., N, K) ndarray
         Least-squares solution.
     residues : (K,) ndarray or float
-        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` (returns a
-        scalar if ``b`` is 1-D). Otherwise a (0,)-shaped array is returned.
+        If `lapack_driver` is ``'gelss'`` or ``'gelsd'`` this contains the square of
+        the 2-norm for each column in ``b - a x`` if ``M > N`` and ``rank == N``. If
+        the rank condition is violated, ``NaN`` is returned instead. If `lapack_driver`
+        if ``'gelsy'`` or ``M <= N`` a (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
     s : (min(M, N),) ndarray or None
@@ -1426,6 +1428,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     x1 = x[..., :n, :]
     if m > n and lapack_driver != "gelsy":
         residuals = np.sum(x[..., n:, :] * x[..., n:, :].conj(), axis=-2)
+
+        # LAPACK makes no promises about residuals for non full-column rank, set to NaN
+        residuals[rank < n, :] = np.nan
     else:
         residuals = np.zeros(batch_shape + (0,), dtype=x.dtype)
 

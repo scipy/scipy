@@ -2328,6 +2328,41 @@ class TestLstsq:
         else:
             assert resid4.shape == (2, 0)
 
+    @pytest.mark.parametrize("driver", ["gelsd", "gelss", "gelsy"])
+    @pytest.mark.parametrize("shape_a", [(3, 2), (4, 3, 2)])
+    @pytest.mark.parametrize("shape_b", [(3,), (3, 1), (3, 5)])
+    def test_rank_deficient_residuals(self, driver, shape_a, shape_b):
+        rng = np.random.default_rng(seed=42)
+
+        # Insert one rank-deficient slice to check if `NaN` is returned
+        if len(shape_a) == 2:
+            a = np.zeros(shape_a)
+        else:
+            a = np.zeros(shape_a)
+            a[1:, :, 0] = 1
+            a[1:, :, 1:] = rng.normal(size=(shape_a[0]-1, shape_a[1], shape_a[-1]-1))
+
+        b = rng.normal(size=shape_b)
+
+        x, res, rank, _ = lstsq(a, b, lapack_driver=driver)
+
+        # Validate that the residuals are correct for full-rank slices and that `NaN` is
+        # inserted otherwise.
+        if driver != "gelsy":
+            if b.ndim == 1:
+                b = b[:, None]
+                x = x[..., None]
+                res = res[..., None]
+            res_ref = a @ x - b
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+
+            mask = rank == shape_a[-1]
+            assert_allclose(res[mask], res_ref[mask])
+            assert np.all(np.isnan(res[~mask]))
+        else:
+            assert res.shape == (a.shape[:-2] + (0,))
+
+
     def test_errors(self):
         a = np.ones((3, 4))
         b = np.ones(4)
