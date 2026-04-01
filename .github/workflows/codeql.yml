@@ -13,7 +13,9 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "codeql-updates"]
+  pull_request:
+    branches: ["main", "codeql-updates"]
 
 permissions: {}
 
