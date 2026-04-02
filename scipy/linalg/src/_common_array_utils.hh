@@ -1055,21 +1055,52 @@ void copy_slice(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, 
 
 
 /*
- * Copy n-by-m C-order slice from slice_ptr to dst in F-order.
+ * Copy n-by-m strided slice from slice_ptr to dst in F-order.
  *
- * `src` is n-by-m, strided
+ * `src` is n-by-m, strided (strides s2, s1 in bytes)
  * `dst` is ldb-by-m, F-ordered.
  *
  * The default is to have src and dst of the same size (ldb=-1 means ldb=n).
+ *
+ * Fast paths:
+ *   - F-contiguous input (s2 == sizeof(T), s1 == n*sizeof(T)): memcpy
+ *   - C-contiguous input (s2 == m*sizeof(T), s1 == sizeof(T)): blocked transpose
+ *   - General strides: element-by-element copy
  */
 template<typename T>
 void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1, npy_intp ldb=-1) {
 
     if (ldb == -1) {ldb = n;}
 
+    const npy_intp sz = (npy_intp)sizeof(T);
+
+    // F-contiguous: layout already matches, straight memcpy
+    if (s2 == sz && s1 == n * sz && ldb == n) {
+        memcpy(dst, slice_ptr, n * m * sizeof(T));
+        return;
+    }
+
+    // C-contiguous: blocked transpose for cache efficiency
+    if (s2 == m * sz && s1 == sz) {
+        const npy_intp BLOCK = 64;
+        for (npy_intp j0 = 0; j0 < m; j0 += BLOCK) {
+            npy_intp j1 = std::min(j0 + BLOCK, m);
+            for (npy_intp i0 = 0; i0 < n; i0 += BLOCK) {
+                npy_intp i1 = std::min(i0 + BLOCK, n);
+                for (npy_intp j = j0; j < j1; j++) {
+                    for (npy_intp i = i0; i < i1; i++) {
+                        dst[i + j*ldb] = slice_ptr[i*m + j];
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    // General strides: element-by-element
     for (npy_intp i = 0; i < n; i++) {
         for (npy_intp j = 0; j < m; j++) {
-            dst[i + j*ldb] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));  // == src[i*m + j]
+            dst[i + j*ldb] = *(slice_ptr + (i*s2/sz) + (j*s1/sz));
         }
     }
 }
