@@ -975,4 +975,90 @@ In these cases, the final shape of the output is the batch shape of the input
 concatenated with the core shape of the output (i.e., the shape of the output when
 the batch shape of the input is ``()``). For more information, see :doc:`linalg_batch`.
 
+
+.. _tutorial_linalg_overwrite:
+
+``overwrite_X`` arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Many linear algebra functions have ``overwrite_a`` arguments to signal that an operation
+is allowed to work in-place and overwrite the input array.
+By default, ``scipy.linalg`` functions preserve their inputs and make copies internally.
+
+In some cases, working in-place may improve performance or avoid running out of memory---
+it is however advisable to measure and make sure you actually see improvements
+for your specific workloads. 
+
+Note however that setting ``overwrite_a=True`` only indicates that it *may* work in-place;
+whether it actually *does* depends on whether additional requirements are met.
+For most functions, an in-place operation requires that all of the following conditions
+are true:
+
+- the dtype of the input array is LAPACK-compatible: only single and double precision
+  float (``float{32, 64}``) and complex (``complex{64,128}``) arrays are compatible;
+- the array is Fortran-ordered;
+- currently only two-dimensional arrays, ``ndim == 2``, are compatible; batched arrays
+  use an internal buffer of the size of the core shaped array. This however may change
+  in a future SciPy version. 
+
+If any of these conditions is violated, a copy is made under the hood, regardless of
+whether `overwrite_a` is ``True`` or ``False``.
+
+Some functions may relax some of these requirements or impose additional constraints
+for working in-place.
+
+Note that this all is completely opaque: if you set ``overwrite_a=True`` but the
+function has to operate on a copy, no warnings or diagnostic output will be generated.
+
+As an illustration, consider a simple inversion operation:
+
+>>> import numpy as np
+>>> from scipy.linalg import inv
+>>> a = np.asarray([[2, 1], [0, 1]])
+>>> a_inv = inv(a)
+>>> a_inv
+array([[ 0.5, -0.5],
+       [ 0. ,  1. ]])
+>>> a
+array([[2, 1],
+       [0, 1]])
+
+Since ``a`` is of integer dtype, the `scipy.linalg.inv` function internally makes a
+floating-point copy, which it feeds into the LAPACK's inversion routine. Thus setting
+``overwrite_a`` to ``True`` makes no difference:
+
+>>> a_inv = inv(a, overwrite_a=True)
+>>> a_inv
+array([[ 0.5, -0.5],
+       [ 0. ,  1. ]])
+>>> a
+array([[2, 1],
+       [0, 1]])
+
+To force it work in-place, we need to manually convert the ``a`` array to be
+Fortran-ordered and dtype-compatible:
+
+>>> af = np.asarray(a, order='F', dtype=np.float64)
+>>> a_inv = inv(af, overwrite_a=True)
+>>> a_inv
+array([[ 0.5, -0.5],
+       [ 0. ,  1. ]])
+>>> af
+array([[ 0.5, -0.5],
+       [ 0. ,  1. ]])
+
+Note that the input array, ``af``, has now been overwritten. We can check that the
+input and output arrays actually use the same memory buffer:
+
+>>> np.shares_memory(af, a_inv)
+True
+
+In general, it may or may not hold that ``a_inv is af``: the only guarantee is
+that inputs and outputs share *some* part of the memory buffer.
+
+Finally, we recommend that you only use these ``overwrite_a`` arguments if
+performance / memory measurements show a significant improvement. In the vast
+majority of usages, adding them is a premature optimization.
+
+
 .. _book: https://www.press.jhu.edu/books/title/10678/matrix-computations
