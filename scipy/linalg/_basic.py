@@ -93,10 +93,12 @@ def solve(a, b, lower=False, overwrite_a=False,
         entries above the diagonal are ignored. If False (default), the
         calculation uses only the data in the upper triangle of `a`; entries
         below the diagonal are ignored.
-    overwrite_a : bool, default: False
-        Allow overwriting data in `a` (may enhance performance).
-    overwrite_b : bool, default: False
-        Allow overwriting data in `b` (may enhance performance).
+    overwrite_a : bool, optional
+        Allow overwriting data in `a` (may enhance performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
+    overwrite_b : bool, optional
+        Allow overwriting data in `b` (may enhance performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, default: True
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1003,6 +1005,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
         Square matrix (or a batch of matrices) to be inverted.
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1131,6 +1134,7 @@ def det(a, overwrite_a=False, check_finite=True):
         Input array to compute determinants for.
     overwrite_a : bool, optional
         Allow overwriting data in a (may enhance performance).
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1245,9 +1249,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         rank of a. Singular values smaller than
         ``cond * largest_singular_value`` are considered zero.
     overwrite_a : bool, optional
-        Discard data in `a` (may enhance performance). Default is False.
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
-        Discard data in `b` (may enhance performance). Default is False.
+        Whether to overwrite data in `b` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1711,6 +1717,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         This is passed to xGEBAL directly. Essentially, overwrites the result
         to the data. It might increase the space efficiency. See LAPACK manual
         for details. This is False by default.
+        See :ref:`tutorial_linalg_overwrite` for details.
 
     Returns
     -------

@@ -69,7 +69,8 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
         factorization. During decomposition, only the selected half of the
         matrix is referenced. Default is upper-triangular.
     overwrite_a : bool, optional
-        Whether to overwrite data in `a` (may improve performance).
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -143,7 +144,8 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
         During decomposition, only the selected half of the matrix is referenced.
         (Default: upper-triangular)
     overwrite_a : bool, optional
-        Whether to overwrite data in a (may improve performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems

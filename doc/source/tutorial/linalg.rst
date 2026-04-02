@@ -978,7 +978,7 @@ the batch shape of the input is ``()``). For more information, see :doc:`linalg_
 
 .. _tutorial_linalg_overwrite:
 
-``overwrite_X`` arguments
+``overwrite_*`` arguments
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Many linear algebra functions have ``overwrite_a`` arguments to signal that an operation
