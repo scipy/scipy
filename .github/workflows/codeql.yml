@@ -97,6 +97,13 @@ jobs:
         python -m pip install -r requirements/build.txt -r requirements/dev.txt
         spin build
 
+    - if: matrix.language == 'c-cpp'
+      name: Work around CodeQL C++ trap cache finalize crash (ensure tarballs dir exists)
+      shell: bash
+      run: |
+        set -euxo pipefail
+        mkdir -p "${RUNNER_TEMP}/trapCaches/cpp/tarballs"
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
       with:
