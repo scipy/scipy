@@ -623,6 +623,15 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 def isspmatrix_bsr(x):
     """Is `x` of a bsr_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the that matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -769,6 +778,15 @@ class bsr_array(_bsr_base, sparray):
 class bsr_matrix(spmatrix, _bsr_base):
     """
     Block Sparse Row format sparse matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the that matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         bsr_matrix(D, [blocksize=(R,C)])

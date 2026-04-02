@@ -480,6 +480,15 @@ def _invert_index(idx):
 def isspmatrix_dia(x):
     """Is `x` of dia_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the that matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -590,6 +599,15 @@ class dia_array(_dia_base, sparray):
 class dia_matrix(spmatrix, _dia_base):
     """
     Sparse matrix with DIAgonal storage.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the that matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         dia_matrix(D)
