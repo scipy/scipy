@@ -305,17 +305,28 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (mode != QR_mode::R) { // Allocate Q if needed, if `mode == raw`, F-ordered array is required.
-        ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
-        if (!ap_Q) {
-            PyErr_NoMemory();
-            goto fail_qr;
+        if (!overwrite_a || mode == QR_mode::FULL) {
+            ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
+            if (!ap_Q) {
+                PyErr_NoMemory();
+                goto fail_qr;
+            }
+        } else {
+            Py_INCREF(ap_A);
+            ap_Q = ap_A;
         }
     }
 
-    ap_R = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_R, typenum);
-    if (!ap_R) {
-        PyErr_NoMemory();
-        goto fail_qr;
+    if (mode == QR_mode::RAW_MODE || mode == QR_mode::ECONOMIC || (!overwrite_a && (mode == QR_mode::R || mode == QR_mode::FULL))) {
+        // Return C-ordered object, hence `0` flag. Already pre-fill with zeros for efficiency.
+        ap_R = (PyArrayObject *)PyArray_ZEROS(ndim, shape_R, typenum, 0);
+        if (!ap_R) {
+            PyErr_NoMemory();
+            goto fail_qr;
+        }
+    } else {
+        Py_INCREF(ap_A);
+        ap_R = ap_A;
     }
 
     if (mode == QR_mode::RAW_MODE) {
@@ -331,14 +342,19 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
          * set the strides of `Q` to return F-ordered slices.
          *
          * Dimensions other than the last two are not affected so slice computation etc. stays intact.
+         *
+         * This step is bypassed if `overwrite_a` is set since this flag is only enabled when the input is 2D and F-ordered,
+         * so swapping around the strides does not make a difference then.
          */
-        npy_intp *strides_Q = PyArray_STRIDES(ap_Q);
-        int sizeof_T = PyArray_ITEMSIZE(ap_Q);
+        if (!overwrite_a) {
+            npy_intp *strides_Q = PyArray_STRIDES(ap_Q);
+            int sizeof_T = PyArray_ITEMSIZE(ap_Q);
 
-        strides_Q[ndim-2] = sizeof_T;
-        strides_Q[ndim-1] = M * sizeof_T;
+            strides_Q[ndim-2] = sizeof_T;
+            strides_Q[ndim-1] = M * sizeof_T;
 
-        PyArray_UpdateFlags(ap_Q, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS);
+            PyArray_UpdateFlags(ap_Q, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS);
+        }
     }
 
     // Set all elements to 0 immediately as the pivots are also used as inputs in `geqp3`.
