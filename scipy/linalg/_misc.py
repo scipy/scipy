@@ -196,26 +196,30 @@ def _datacopied(arr, original):
 
 
 def bandwidth(a: NDArray[Any]) -> tuple[int|NDArray[np.int64], int|NDArray[np.int64]]:
-    """Return the lower and upper bandwidth of a 2D numeric array.
+    """Return the lower and upper bandwidth of a numeric array.
 
     Parameters
     ----------
-    a : ndarray
-        Input array of size (N, M)
+    a : (..., N, M) array_like
+        Input array of at least 2 dimensions.
 
     Returns
     -------
-    lu : tuple
-        2-tuple of ints indicating the lower and upper bandwidth. A zero
-        denotes no sub- or super-diagonal on that side (triangular), and,
-        say for N rows (N-1) means that side is full. Same example applies
-        to the upper triangular part with (M-1).
+    lower : (...) np.int64
+        Lower bandwidth. a scalar ``np.int64`` is assigned per
+        2D slice of the input array of last two dimensions. A value of 0
+        means the slice is upper triangular; ``N - 1`` means the lower part
+        is full.
+    upper : (...), np.int64
+        Upper bandwidth. Same shape rules as `lower`. A value of 0
+        means the slice is lower triangular; ``M - 1`` means the upper
+        part is full.
 
     Raises
     ------
     TypeError
-        If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes.
+        If the dtype of the array is not supported, in particular, for NumPy
+        float16, float128 and complex256 and other NumPy non-numeric types.
 
     Notes
     -----
@@ -249,13 +253,22 @@ def bandwidth(a: NDArray[Any]) -> tuple[int|NDArray[np.int64], int|NDArray[np.in
     a = np.asarray(a)
     if a.ndim < 2:
         raise ValueError('Input array must be at least 2D.')
+
     if a.dtype.char in 'egG':
-        raise TypeError('Input array with float16/longdouble/clongdouble '
+
+        raise TypeError('Input array with float16/float128/complex256 '
                         'dtype is not supported.')
-    elif a.dtype.char not in '?bhilqnpBHILQNPfdFD':
+
+    # Now that the problematic numeric types are tested, test for numeric or bool.
+    elif not (np.isdtype(a.dtype.type, "numeric") or np.isdtype(a.dtype.type, "bool")):
+
         raise TypeError(f'Input array must have a numeric dtype, got {a.dtype}.')
+
     if a.size == 0:
-        return (0, 0)
+        return (
+            np.zeros(a.shape[-2], dtype=np.int64),
+            np.zeros(a.shape[-1], dtype=np.int64)
+        )
 
     return _bandwidth(a)
 
