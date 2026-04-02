@@ -1,5 +1,4 @@
 #include <cstring>
-#include "_linalg_simd_kernels.h"
 #include "_linalg_inv.hh"
 #include "_linalg_solve.hh"
 #include "_linalg_svd.hh"
@@ -1250,6 +1249,37 @@ bandwidth_strided_scalar(const void *data, int64_t offset,
 }
 
 
+template<typename T>
+inline void
+bandwidth_contiguous_scalar(const void *data, int64_t offset,
+                            int64_t n, int64_t m,
+                            int64_t *lower_band, int64_t *upper_band)
+{
+    const T *slice = (const T *)data + offset;
+    const T zero = T(0);
+    int64_t lb = 0, ub = 0;
+
+    for (int64_t r = n - 1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
+            if (slice[r * m + c] != zero) { lb = r - c; break; }
+        }
+        if (r <= lb) { break; }
+    }
+
+    for (int64_t r = 0; r < n - 1; r++) {
+        for (int64_t c = m - 1; c > r + ub; c--) {
+            if (slice[r * m + c] != zero) { ub = c - r; break; }
+        }
+        if (r + ub + 1 > m) { break; }
+    }
+
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
 static PyObject*
 _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_a = NULL;
@@ -1290,8 +1320,8 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp itemsize = PyArray_ITEMSIZE(ap_a);
 
     // longdouble/clongdouble are rejected by the Python wrapper in _misc.py
-    bool has_simd = (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
-                    || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128);
+    bool has_contiguous = (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
+                          || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128);
 
     // Element strides for all dims
     int64_t elem_strides[LU_MAX_NDIM];
@@ -1304,7 +1334,7 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // F-contiguous: inner slices are only F-contiguous for 2D
     bool inner_c_contig = PyArray_IS_C_CONTIGUOUS(ap_a);
     bool inner_f_contig = (ndim == 2) && PyArray_IS_F_CONTIGUOUS(ap_a);
-    bool use_simd = has_simd && (inner_c_contig || inner_f_contig);
+    bool use_contiguous = has_contiguous && (inner_c_contig || inner_f_contig);
 
     int64_t n_eff = inner_f_contig ? m : n;
     int64_t m_eff = inner_f_contig ? n : m;
@@ -1333,12 +1363,12 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
             temp /= shape[i];
         }
 
-        if (use_simd) {
+        if (use_contiguous) {
             switch (typenum) {
-                case NPY_FLOAT32:    bandwidth_s(&((const float *)a_data)[offset],                   n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT64:    bandwidth_d(&((const double *)a_data)[offset],                  n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:  bandwidth_c(&reinterpret_cast<const SCIPY_C *>(a_data)[offset], n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128: bandwidth_z(&reinterpret_cast<const SCIPY_Z *>(a_data)[offset], n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT32:    bandwidth_contiguous_scalar<float>                (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT64:    bandwidth_contiguous_scalar<double>               (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:  bandwidth_contiguous_scalar<std::complex<float>>  (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128: bandwidth_contiguous_scalar<std::complex<double>> (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
             }
             if (inner_f_contig) { std::swap(lb_data[idx], ub_data[idx]); }
         } else {
