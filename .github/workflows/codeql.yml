@@ -13,9 +13,9 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [ "main", "maintenance/*", "maintenance/0.10.x", "maintenance/0.11.x", "maintenance/0.12.x", "maintenance/0.13.x", "maintenance/0.14.x", "maintenance/0.15.x", "maintenance/0.16.x", "maintenance/0.17.x", "maintenance/0.18.x", "maintenance/0.19.x", "maintenance/0.5.2.x", "maintenance/0.6.x", "maintenance/0.7.x", "maintenance/0.8.x", "maintenance/0.9.x", "maintenance/1.0.x", "maintenance/1.1.x", "maintenance/1.2.x", "maintenance/1.3.x", "maintenance/1.4.x", "maintenance/1.5.x", "maintenance/1.6.x" ]
+    branches: [ "main"]
   pull_request:
-    branches: [ "main", "maintenance/*", "maintenance/0.10.x", "maintenance/0.11.x", "maintenance/0.12.x", "maintenance/0.13.x", "maintenance/0.14.x", "maintenance/0.15.x", "maintenance/0.16.x", "maintenance/0.17.x", "maintenance/0.18.x", "maintenance/0.19.x", "maintenance/0.5.2.x", "maintenance/0.6.x", "maintenance/0.7.x", "maintenance/0.8.x", "maintenance/0.9.x", "maintenance/1.0.x", "maintenance/1.1.x", "maintenance/1.2.x", "maintenance/1.3.x", "maintenance/1.4.x", "maintenance/1.5.x", "maintenance/1.6.x" ]
+    branches: [ "main"]
   schedule:
     - cron: '33 21 * * 3'
 
@@ -48,7 +48,7 @@ jobs:
         - language: actions
           build-mode: none
         - language: c-cpp
-          build-mode: none
+          build-mode: manual
         - language: python
           build-mode: none
         # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
@@ -91,12 +91,11 @@ jobs:
     - if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        echo 'If you are using a "manual" build mode for one or more of the' \
-          'languages you are analyzing, replace this with the commands to build' \
-          'your code, for example:'
-        echo '  make bootstrap'
-        echo '  make release'
-        exit 1
+        git submodule update --init
+        sudo apt update
+        sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
+        python -m pip install -r requirements/build.txt -r requirements/dev.txt
+        spin build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
