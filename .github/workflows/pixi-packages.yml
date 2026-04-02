@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest, macos-latest, windows-2025]
+        runs-on: [ubuntu-latest, windows-2025] # macOS jobs have less concurrency
     if: github.repository == 'scipy/scipy'
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
