@@ -225,6 +225,12 @@ blas_name = get_option('blas')
 lapack_name = get_option('lapack')
 blas_symbol_suffix = get_option('blas-symbol-suffix')
 use_ilp64 = get_option('use-ilp64')
+_cython_blas_abi = get_option('cython-blas-abi')
+if _cython_blas_abi == 'auto'
+  _cython_blas_ilp64 = use_ilp64
+else
+  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
+endif
 
 # MKL-specific options
 _threading_opt = get_option('mkl-threading')
@@ -238,19 +244,6 @@ blas_opts = {'mkl': mkl_opts}
 mkl_version_req = '>=2023.0'  # see gh-24824
 mkl_may_use_sdl = not use_ilp64 and _threading_opt in ['auto', 'iomp']
 
-
-macOS13_3_or_later = false
-if host_machine.system() == 'darwin'
-  r = run_command('xcrun', '-sdk', 'macosx', '--show-sdk-version', check: true)
-  sdkVersion = r.stdout().strip()
-
-  macOS13_3_or_later = sdkVersion.version_compare('>=13.3')
-endif
-
-_args_blas_lapack = []
-accelerate_flag = []
-generate_blas_wrappers = false
-
 # If an exact MKL .pc name with 'ilp64' is given and use-ilp64 is true,
 # derive the LP64 .pc name by replacing 'ilp64' with 'lp64' in the name.
 # The original ILP64 name is saved for the ILP64 detection pass below.
@@ -260,6 +253,17 @@ if use_ilp64 and blas_name.contains('ilp64')
   blas_name = blas_name.replace('ilp64', 'lp64')
 endif
 
+macOS13_3_or_later = false
+if host_machine.system() == 'darwin'
+  r = run_command('xcrun', '-sdk', 'macosx', '--show-sdk-version', check: true)
+  sdkVersion = r.stdout().strip()
+
+  macOS13_3_or_later = sdkVersion.version_compare('>=13.3')
+endif
+
+_args_blas_lp64 = []
+accelerate_flag = []
+generate_blas_wrappers = false
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
@@ -267,7 +271,7 @@ if blas_name == 'accelerate'
   if cc.get_id() != 'clang'
     warning('accelerate may not be properly detected with non-native Apple compiler due to https://github.com/mesonbuild/meson/issues/13608')
   endif
-  _args_blas_lapack += ['-DACCELERATE_NEW_LAPACK']
+  _args_blas_lp64 += ['-DACCELERATE_NEW_LAPACK']
   generate_blas_wrappers = true
   accelerate_flag = '-a'
 endif
@@ -318,7 +322,7 @@ endif
 
 blas_lp64_dep = declare_dependency(
   dependencies: blas,
-  compile_args: _args_blas_lapack,
+  compile_args: _args_blas_lp64,
   include_directories: ['_build_utils/src'],
 )
 
@@ -342,7 +346,7 @@ endif
 
 lapack_lp64_dep = declare_dependency(
   dependencies: [lapack, blas_lp64_dep],
-  compile_args: _args_blas_lapack
+  compile_args: _args_blas_lp64
 )
 
 dependency_map = {
@@ -416,9 +420,7 @@ if use_ilp64
       # scipy_openblas64, a separate library
       blas_ilp64 = dependency('scipy-openblas64')
       lapack_ilp64 = blas_ilp64
-
   else
-    # XXX: ILP64 detection has only been tested for MKL and scipy-openblas64
     if blas_name == 'openblas'
       # We cannot allow plain openblas here, that's already the LP64 library and
       # will lead to problems (there is, as of now, no combined OpenBLAS build
@@ -430,7 +432,9 @@ if use_ilp64
     lapack_ilp64 = dependency(lapack_name, modules: ['lapack'] + blas_interface)
   endif
 
-  # Pick up the symbol suffix, it may be auto-detected by Meson and different from LP64
+  # Pick up the symbol suffix, it may be auto-detected by Meson and different
+  # from LP64. This `'auto'` behavior requires native support in Meson (either
+  # from numpy's vendored fork, or in PR meson#14773).
   if blas_symbol_suffix == 'auto'
     if blas_name == 'scipy-openblas'
       blas_symbol_suffix = '64_'
@@ -805,17 +809,7 @@ foreach name, dep : dependency_map
   endif
 endforeach
 
-
-# Resolve cython-blas-abi for config: 'auto' follows use-ilp64
-_cython_blas_abi = get_option('cython-blas-abi')
-if _cython_blas_abi == 'auto'
-  _cython_blas_ilp64 = use_ilp64
-else
-  _cython_blas_ilp64 = (_cython_blas_abi == 'ilp64')
-endif
 conf_data.set('BLAS_CYTHON_ILP64', _cython_blas_ilp64.to_string())
-
-# TODO: make this into an option
 conf_data.set('BLAS_HAS_LP64', 'true')
 conf_data.set('LAPACK_HAS_LP64', 'true')
 
