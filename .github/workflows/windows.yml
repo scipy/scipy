@@ -86,6 +86,7 @@ jobs:
 
       - name: Build
         run: |
+          $env:FORCE_PKGCONF_PYPI=1
           spin build --with-scipy-openblas
 
       - name: Test

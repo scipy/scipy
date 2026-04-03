@@ -1585,7 +1585,7 @@ class Rotation:
               expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
-        ``self.as_matrix() @ vectors``.
+        ``(self.as_matrix() @ vectors[..., np.newaxis])[..., 0]``.
 
         Parameters
         ----------

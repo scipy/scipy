@@ -43,7 +43,7 @@ u_vh_shapes(npy_intp m, npy_intp n, char jobz,
 
 template<typename T>
 int
-_svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, SliceStatusVec& vec_status)
+_svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
     SliceStatus slice_status;
@@ -94,8 +94,23 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     lwork = (CBLAS_INT)(real_part(tmp));
     if(lwork == 0) { lwork = 1; }
 
-    // allocate
-    npy_intp bufsize = m*n + lwork;
+    /*
+     * Allocate memory and chop the buffer into parts
+     *
+     *    lwork     data_size         
+     * |----------|-----------|----------|------|
+     * ^          ^           ^          ^      
+     * work       data        buf_U     buf_Vh
+     *
+     * Here
+     *   - data is m*n if overwrite_a is False (and =0 otherwise)
+     *   - buf_U is u_shape0*u_shape1 if jobz !='N' (and =0 otherwise)
+     *   - buf_Vh is vh_shape0*vh_shapw1 if jobz != 'N' (and =0 otherwise)
+     *
+     * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
+     */
+    npy_intp data_size = overwrite_a ? 0 : m*n;
+    npy_intp bufsize = data_size + lwork;
     if (jobz != 'N') {
         bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
     }
@@ -104,14 +119,19 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     if (buf == NULL) { info = -101; return (int)info; }
 
     // partition the workspace
-    T *data = &buf[0];
-    T *work = &buf[m*n];
+    T *work = &buf[0];
+    T *data;
+    if (overwrite_a) {
+        data = (T *)Am_data;
+    } else {
+        data = &buf[lwork];
+    }
 
     T *buf_U = NULL;
     T *buf_Vh = NULL;
     if (jobz != 'N') {
-        buf_U = &buf[m*n + lwork];
-        buf_Vh = &buf[m*n + lwork + u_shape0*u_shape1];
+        buf_U = &buf[data_size + lwork];
+        buf_Vh = &buf[data_size + lwork + u_shape0*u_shape1];
     }
 
     CBLAS_INT *iwork = NULL;
@@ -146,9 +166,11 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         init_status(slice_status, idx, St::GENERAL);
 
-        // copy the slice to `data` in F order
-        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-        copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+        if (!overwrite_a) {
+            // copy the slice to `data` in F order
+            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+        }
 
         // SVD the slice
         call_gesdd(&jobz, &intm, &intn, data, &intm, ptr_S, buf_U, &ldu, buf_Vh, &ldvh, work, &lwork, rwork, iwork, &info);
@@ -185,7 +207,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
 template<typename T>
 int
-_svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, SliceStatusVec& vec_status)
+_svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
     SliceStatus slice_status;
@@ -235,8 +257,23 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     lwork = (CBLAS_INT)(real_part(tmp));
     if(lwork == 0) { lwork = 1; }
 
-    // allocate
-    npy_intp bufsize = m*n + lwork;
+    /*
+     * Allocate memory and chop the buffer into parts
+     *
+     *    lwork     data_size         
+     * |----------|-----------|----------|------|
+     * ^          ^           ^          ^      
+     * work       data        buf_U     buf_Vh
+     *
+     * Here
+     *   - data is m*n if overwrite_a is False (and =0 otherwise)
+     *   - buf_U is u_shape0*u_shape1 if jobz !='N' (and =0 otherwise)
+     *   - buf_Vh is vh_shape0*vh_shapw1 if jobz != 'N' (and =0 otherwise)
+     *
+     * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
+     */
+    npy_intp data_size = overwrite_a ? 0 : m*n;
+    npy_intp bufsize = data_size + lwork;
     if (jobz != 'N') {
         bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
     }
@@ -245,14 +282,19 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     if (buf == NULL) { info = -101; return (int)info; }
 
     // partition the workspace
-    T *data = &buf[0];
-    T *work = &buf[m*n];
+    T *work = &buf[0];
+    T *data;
+    if (overwrite_a) {
+        data = (T *)Am_data;
+    } else {
+        data = &buf[lwork];
+    }
 
     T *buf_U = NULL;
     T *buf_Vh = NULL;
     if (jobz != 'N') {
-        buf_U = &buf[m*n + lwork];
-        buf_Vh = &buf[m*n + lwork + u_shape0*u_shape1];
+        buf_U = &buf[data_size + lwork];
+        buf_Vh = &buf[data_size + lwork + u_shape0*u_shape1];
     }
 
     real_type *rwork = NULL;
@@ -271,9 +313,11 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         init_status(slice_status, idx, St::GENERAL);
 
-        // copy the slice to `data` in F order
-        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-        copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+        if (!overwrite_a) {
+            // copy the slice to `data` in F order
+            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+        }
 
         // SVD the slice
         call_gesvd(&jobz, &jobz, &intm, &intn, data, &intm, ptr_S, buf_U, &ldu, buf_Vh, &ldvh, work, &lwork, rwork, &info);
@@ -309,14 +353,14 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
 template<typename T>
 int
-_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, const char * lapack_driver, SliceStatusVec& vec_status)
+_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, const char * lapack_driver, int overwrite_a, SliceStatusVec& vec_status)
 {
     int info;
     if (strcmp(lapack_driver, "gesdd") == 0) {
-        info = _svd_gesdd<T>(ap_Am, ap_U, ap_S, ap_Vh, jobz, vec_status);
+        info = _svd_gesdd<T>(ap_Am, ap_U, ap_S, ap_Vh, jobz, overwrite_a, vec_status);
     }
     else if (strcmp(lapack_driver, "gesvd") == 0) {
-        info = _svd_gesvd<T>(ap_Am, ap_U, ap_S, ap_Vh, jobz, vec_status);
+        info = _svd_gesvd<T>(ap_Am, ap_U, ap_S, ap_Vh, jobz, overwrite_a, vec_status);
     }
     else {
         // should have been validated at call site, really
