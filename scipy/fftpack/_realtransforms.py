@@ -614,7 +614,6 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     The plot shows ``xn`` with identifiable components.
 
-    .. versionadded:: 0.11.0
     """
     type = _inverse_typemap[type]
     return _pocketfft.dst(x, type, n, axis, norm, overwrite_x)
