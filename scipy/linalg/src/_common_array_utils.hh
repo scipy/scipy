@@ -1097,17 +1097,25 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
 
 
 /*
- * Copy half of an arbitrary-ordered but symmetric `src` to a specific
- * triangle of C-ordered `dst`.
+ * Copy one triangle of a strided n-by-n `src` to C-ordered `dst`.
  *
- * `src` is n x n, accessed via element strides s0 (row) and s1 (col).
- * `dst` is n x n, C-ordered, assumed zero-initialized.
- * `uplo` determines which triangle of `dst` is written to.
+ * Only elements in the `uplo` triangle are copied;
+ * `dst` is assumed zero-initialized for the other triangle.
+ *
+ * The function does not use the symmetry of `src` — it reads exactly the
+ * triangle specified by `uplo`. The caller is responsible for ensuring
+ * that the correct triangle is populated in `src`.
+ *
+ * Examples:
+ *   C-contiguous src (s0=n, s1=1): src[i*n + j] -> dst[i*n + j],
+ *       both sequential in the inner loop — effectively a partial memcpy.
+ *   F-contiguous src (s0=1, s1=n): src[i + j*n] -> dst[i*n + j],
+ *       column-sequential reads, row-sequential writes.
  */
 template<typename T>
 void copy_triangle_to_C(T *dst, const T *src, const npy_intp n,
                          const npy_intp s0, const npy_intp s1, const char uplo) {
-    if (uplo == 'U') {
+    if (uplo == 'L') {
         for (npy_intp i = 0; i < n; i++) {
             for (npy_intp j = 0; j <= i; j++) {
                 dst[i * n + j] = *(src + i * s0 + j * s1);
