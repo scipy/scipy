@@ -5,7 +5,6 @@ from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, spmatrix, find, csc_array, csr_array, csr_matrix
-from ..sparse import safely_cast_index_arrays
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace, xp_result_type
 from scipy._lib._util import MapWrapper
@@ -277,11 +276,6 @@ def group_columns(A, order=0):
     A = A[:, order]
 
     if issparse(A):
-        # TODO: Remove the index array cast to int32 if the Cython version is removed
-        # The index arrays only need to be int32 for the Cython version.
-        import scipy as sp
-        if not hasattr(sp.optimize._group_columns, "__pythran__"):
-            A.indices, A.indptr = safely_cast_index_arrays(A, np.int32)
         groups = group_sparse(m, n, A.indices, A.indptr)
     else:
         groups = group_dense(m, n, A)

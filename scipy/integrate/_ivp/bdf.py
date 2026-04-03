@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from scipy.sparse import issparse, eye_array
+from scipy.sparse import issparse, eye_array, safely_cast_index_arrays
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
@@ -122,7 +122,7 @@ class BDF(OdeSolver):
           assumed to be constant.
         * If callable, the Jacobian is assumed to depend on both
           t and y; it will be called as ``jac(t, y)`` as necessary.
-          For the 'Radau' and 'BDF' methods, the return value can be a
+          For the 'Radau' and 'BDF' methods, the return value might be a
           sparse array or sparse matrix.
         * If None (default), the Jacobian will be approximated by
           finite differences.
@@ -265,6 +265,7 @@ class BDF(OdeSolver):
             if sparsity is not None:
                 if issparse(sparsity):
                     sparsity = sparsity.tocsc()
+                safely_cast_index_arrays(sparsity)
                 groups = group_columns(sparsity)
                 sparsity = (sparsity, groups)
 

@@ -440,7 +440,6 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
         f_new = fun(t, y[:, None] + h_vecs)
         df = f_new - f[:, None]
         i, j, _ = find(structure[:, ind])
-        # this is same whether csc_array or csc_matrix. Not returned to user.
         diff_new = csc_array((df[i, groups_map[groups[ind[j]]]], (i, j)),
                              shape=(n, ind.shape[0]))
 
