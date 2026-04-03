@@ -284,7 +284,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     Since ``ifht`` returns the transformed data in ascending order of
     evaluation points, flip ``k`` in the evaluation points equation.
 
-    >>> r = 1/k[::-1]
+    >>> r = 1 / np.flip(k)
 
     Compare ``a`` with the kernel function corresponding to ``k=240``.
 
