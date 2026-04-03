@@ -195,7 +195,7 @@ def _datacopied(arr, original):
     return arr.base is None
 
 
-def bandwidth(a: NDArray[Any]) -> tuple[int|NDArray[np.int64], int|NDArray[np.int64]]:
+def bandwidth(a):
     """Return the lower and upper bandwidth of a numeric array.
 
     Parameters
@@ -205,15 +205,15 @@ def bandwidth(a: NDArray[Any]) -> tuple[int|NDArray[np.int64], int|NDArray[np.in
 
     Returns
     -------
-    lower : (...) np.int64
+    lower : np.int64 | nDArray[np.int64]
         Lower bandwidth. a scalar ``np.int64`` is assigned per
         2D slice of the input array of last two dimensions. A value of 0
         means the slice is upper triangular; ``N - 1`` means the lower part
-        is full.
-    upper : (...), np.int64
+        is full. If the input array is 2D then a scalar int64 is returned.
+    upper : np.int64 | nDArray[np.int64]
         Upper bandwidth. Same shape rules as `lower`. A value of 0
         means the slice is lower triangular; ``M - 1`` means the upper
-        part is full.
+        part is full. If the input array is 2D then a scalar int64 is returned.
 
     Raises
     ------
