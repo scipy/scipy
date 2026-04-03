@@ -42,13 +42,14 @@ With this simple boundary condition, we can find a few analytic
 solutions as a baseline.
 
 On noting that each boundary condition is zero when the respective
-coordinate is zero or L, we find one solution by adding the two
+coordinate is zero or L and the boundary conditions on opposite sides
+of the square are the same, we can find one solution by adding the two
 boundary conditions together:
 
 .. math:: \sin(6\pi x/L) + \sin(6\pi y/L)
 
 Since the sine is two-pi periodic and the boundary conditions reverse
-sign at two of the corners, we may also find a solution by summing the
+sign at opposite corners, we may also find a solution by summing the
 coordinates before taking the sine:
 
 .. math:: \sin(6\pi (x+y)/L)
@@ -261,8 +262,8 @@ The radial-basis-function interpolators use all input points to
 determine interpolated values, weighting nearer points more and
 farther points less.  The kernel determines exactly how much more or
 less weight a point will have based on distance: we will use the
-linear, thin-plate spline, cubic, and quintic kernels here because
-they don't require additional configuration for interpolation.
+linear, thin-plate spline, and, cubic kernels here because they don't
+require additional configuration for interpolation.
 
 Since this weighting must be done for each target point, this
 interpolation can get a bit slow, so we thin the target grid by a
@@ -302,7 +303,7 @@ interpolator to get back to the desired density.
 
    The columns show the mean and standard deviation of the differences
    from the provided frame, respectively.  The rows iterate over the
-   RBF kernels: linear, thin-plate spline, cubic, and quintic.
+   RBF kernels: linear, thin-plate spline, and cubic.
 
 -----------------------
 Multi-linear regression
@@ -323,8 +324,11 @@ into a matrix :math:`X`, we seek a vector :math:`\beta` such that
 gives the least-squares value of :math:`\beta` as
 :math:`\beta = (X'X)^{-1} X' y`.
 
+Unconstrained polynomials
+-------------------------
+
 For the columns of :math:`X`, we start with polynomials from the NumPy
-polynomials module: specifically the Legendre polynomials, which are
+polynomials package: specifically the Legendre polynomials, which are
 orthogonal on the interval :math:`[-1, 1]`, which should help the
 numerics of the inverse, and the Chebyshev polynomials which are
 frequently used for interpolation.
@@ -402,14 +406,18 @@ able to produce the six extrema of the boundary conditions.
    polynomials.
 
 The higher-order polynomials produce interesting shapes in the
-interior of the domain, which are pretty, but slightly concerning.  We
-can further restrict the set of polynomials to those which introduce
-no new extrema in the interior of the domain, by insisting all
-polynomials must have one degree less than two.  We notice that this
-description applies to the "sum of sines" described and plotted above,
-as it is the sum of one function constant in x and one function
-constant in y.  It is therefore likely that these regressions will
-produce results similar to that function.
+interior of the domain, which are pretty, but slightly concerning.
+
+Restricted polynomials
+----------------------
+
+We can further restrict the set of polynomials to those which
+introduce no new extrema in the interior of the domain, by insisting
+all monomial terms in the polynomial fit must have one degree less
+than two.  We notice that this description applies to the "sum of
+sines" described and plotted above, as it is the sum of one function
+constant in x and one function constant in y.  It is therefore likely
+that these regressions will produce results similar to that function.
 
 
 .. plot::
@@ -461,6 +469,8 @@ produce results similar to that function.
    Chebyshev.  The rows within each block give the degree of the
    polynomial, seventh, eleventh, or fifteenth.
 
+Polynomials satisfying the Laplace equation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A different way to restrict the polynomials to avoid interior extrema
 is to insist that the individual polynomials each satisfy the Laplace
@@ -505,7 +515,8 @@ equation, as do, for example,
 Other packages
 --------------
 
-There are packages that will solve Laplace equation with given boundary conditions.
+There are packages that will solve Laplace equation with given
+boundary conditions.
 
 Scikit-Image has an
 `inpaint_biharmonic <https://scikit-image.org/docs/stable/auto_examples/filters/plot_inpaint.html>`__
@@ -523,3 +534,32 @@ hide the linear algebra and offer additional diagnostics.  The
 `formula.ols <https://www.statsmodels.org/stable/example_formulas.html>`__
 interface hides even more of the linear algebra, and can simplify the
 setup of the regression.
+
+-------------
+Closing notes
+-------------
+
+SciPy's interpolate package has a :func:`griddata` function that acts
+as a wrapper around :class:`NearestNDInterpolator`,
+:class:`LinearNDInterpolator`, or :class:`CloughTocher2DInterpolator`
+and so is not described separately here.  These functions work best
+with points scattered through the interior of some domain, and can
+give odd results in the situation outlined here.
+
+If we happen to be in a situation where we have more than the single
+line of information on each edge of the domain as assumed above ---
+perhaps we know that, say, a five-pixel border around the edge of an
+image will always be part of the background we want to estimate ---
+then the regression and radial basis function approaches will be able
+to use this information directly.  The unrestricted polynomials have a
+tendency to introduce extrema in the domain interior, but the two
+kinds of restricted polynomials are designed to minimize that problem
+and so are good alternatives.
+
+The :class:`NearestNDInterpolator`, :class:`LinearNDInterpolator` and
+:class:`NearestNDInterpolator`, on the other hand, will only use the
+inmost portion of that data to fill the center of the image.  If we
+want to use these interpolators anyway, but want them to use this
+additional information, we will have to incorporate that information
+into those inmost points, perhaps by replacing those points with a
+mean of nearby points.
