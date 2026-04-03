@@ -50,5 +50,4 @@
 
 #include "_mkl_ilp64_fixes.h"
 
-#define F_INT npy_int64
-
+#define F_INT int64_t
