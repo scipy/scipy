@@ -1,8 +1,7 @@
 from itertools import groupby
 from warnings import warn
-import os
 import numpy as np
-from scipy.sparse import find, csc_array, csc_matrix
+from scipy.sparse import find, csc_array, isspmatrix, csc_matrix
 
 
 EPS = np.finfo(float).eps
@@ -396,24 +395,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     df = f_new - f[:, None]
 
     i, j, _ = find(structure)
-    if isinstance(structure, csc_array):
-        diff = csc_array((df[i, groups[j]], (i, j)), shape=(n, n))
-    else:
-        msg = """num_jac is switching to the sparse array interface.
-
-        The sparsity structure input can still be a csc_matrix. But the output
-        will be a csc_array. You can prepare for this by converting the structure
-        part of sparsity to csc_array (i.e. the first entry in the 2-tuple).
-        For example, sparsity=(csc_array(A), groups).
-        For more information, see the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        This default value will be changed no earlier than v1.20.
-        """
-        prefixes = (os.path.dirname(__file__),)
-        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-
-        diff = csc_matrix((df[i, groups[j]], (i, j)), shape=(n, n))
+    diff = csc_array((df[i, groups[j]], (i, j)), shape=(n, n))
     max_ind = np.array(abs(diff).argmax(axis=0)).ravel()
     r = np.arange(n)
     max_diff = np.asarray(np.abs(diff[max_ind, r])).ravel()
@@ -466,4 +448,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     factor[max_diff > NUM_JAC_DIFF_BIG * scale] *= NUM_JAC_FACTOR_DECREASE
     factor = np.maximum(factor, NUM_JAC_MIN_FACTOR)
 
+    # return spmatrix if structure is spmatrix
+    if isspmatrix(structure):
+        diff = csc_matrix(diff)
     return diff, factor

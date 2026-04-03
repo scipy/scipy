@@ -375,8 +375,8 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
         Function computing boundary condition residuals.
     jac : callable
         Function computing the Jacobian of the whole system (including
-        collocation and boundary condition residuals). It is supposed to
-        return csc_array or csc_matrix.
+        collocation and boundary condition residuals). It must return
+        scipy.sparse in CSC format ready for use with `scipy.sparse.linalg.splu`.
     y : ndarray, shape (n, m)
         Initial guess for the function values at the mesh nodes.
     p : ndarray, shape (k,)

@@ -12,7 +12,7 @@ from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
-from scipy.sparse import coo_array, csc_array
+from scipy.sparse import csc_array, csc_matrix
 
 
 def fun_zero(t, y):
@@ -118,7 +118,7 @@ def medazko_sparsity(n):
     cols = np.hstack(cols)
     rows = np.hstack(rows)
 
-    return coo_array((np.ones_like(cols), (cols, rows)))
+    return csc_array((np.ones_like(cols), (cols, rows)))
 
 
 def fun_complex(t, y):
@@ -1024,7 +1024,8 @@ def test_num_jac():
     assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
 
-def test_num_jac_sparse():
+@pytest.mark.parametrize("structure_type", [csc_array, csc_matrix, np.array])
+def test_num_jac_sparse(structure_type):
     def fun(t, y):
         e = y[1:]**3 - y[:-1]**2
         z = np.zeros(y.shape[1])
@@ -1039,7 +1040,7 @@ def test_num_jac_sparse():
         A[-1, -1] = 1
         A[-1, -2] = 1
 
-        return csc_array(A)
+        return structure_type(A)
 
     np.random.seed(0)
     n = 20
@@ -1067,13 +1068,6 @@ def test_num_jac_sparse():
     assert_allclose(J_num_dense, J_num_sparse.toarray(),
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
-
-    # test DeprecationWarning due to move from sparse matrix to sparse array
-    # in num_jac when structure is an ndarray.
-    with pytest.deprecated_call(match="num_jac is switching to the sparse array"):
-        J_num_sparse, factor_sparse = num_jac(fun, 0, y.ravel(), f, 1e-8, None,
-                                              sparsity=(A.toarray(), groups))
-
 
 
 def test_args():
