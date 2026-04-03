@@ -3989,12 +3989,15 @@ _remove_scale_methods = ['entropy', 'interval', 'mean', 'median',
                          'moment', 'stats', 'std', 'support', 'var']
 for method_name in _remove_scale_methods:
     # remove `scale` parameter from method documentation
+    # rv_discrete override methods have no docstring (just `return super().xxx(...)`),
+    # so use the parent rv_generic method to get the base docstring, then assign to child.
     method = getattr(rv_discrete, method_name)
-    doc = FunctionDoc(method)
+    parent_method = getattr(rv_generic, method_name)
+    doc = FunctionDoc(parent_method)
     doc['Parameters'] = [p for p in doc['Parameters'] if p.name != 'scale']
     doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
     method.__doc__ = doc
-del method_name, method, doc  # pyrefly:ignore[unbound-name]
+del method_name, method, parent_method, doc  # pyrefly:ignore[unbound-name]
 
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
