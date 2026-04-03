@@ -1297,24 +1297,6 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp *shape = PyArray_SHAPE(ap_a);
     int64_t n = shape[ndim - 2], m = shape[ndim - 1];
 
-    if (n == 0 || m == 0) {
-        if (ndim == 2) {
-            npy_int64 zero = 0;
-            PyArray_Descr *descr = PyArray_DescrFromType(NPY_INT64);
-            PyObject *z1 = PyArray_Scalar(&zero, descr, NULL);
-            PyObject *z2 = PyArray_Scalar(&zero, descr, NULL);
-            Py_DECREF(descr);
-            return Py_BuildValue("(NN)", z1, z2);
-        }
-        // Batched empty: return zero arrays
-        npy_intp *batch_shape = shape; // first ndim-2 dims
-        int batch_ndim = ndim - 2;
-        PyObject *ap_lb = PyArray_ZEROS(batch_ndim, batch_shape, NPY_INT64, 0);
-        PyObject *ap_ub = PyArray_ZEROS(batch_ndim, batch_shape, NPY_INT64, 0);
-        if (!ap_lb || !ap_ub) { Py_XDECREF(ap_lb); Py_XDECREF(ap_ub); return NULL; }
-        return Py_BuildValue("(NN)", ap_lb, ap_ub);
-    }
-
     int typenum = PyArray_TYPE(ap_a);
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
     npy_intp itemsize = PyArray_ITEMSIZE(ap_a);

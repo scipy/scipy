@@ -255,19 +255,22 @@ def bandwidth(a):
         raise ValueError('Input array must be at least 2D.')
 
     if a.dtype.char in 'egG':
-
         raise TypeError('Input array with float16/float128/complex256 '
                         'dtype is not supported.')
 
     # Now that the problematic numeric types are tested, test for numeric or bool.
     elif not (np.isdtype(a.dtype.type, "numeric") or np.isdtype(a.dtype.type, "bool")):
-
         raise TypeError(f'Input array must have a numeric dtype, got {a.dtype}.')
 
+    # Empty array bandwidth is defined to be zero.
     if a.size == 0:
+        if a.ndim == 2:
+            return (np.int64(0), np.int64(0))
+
+        batch_shape = a.shape[:-2]
         return (
-            np.zeros(a.shape[-2], dtype=np.int64),
-            np.zeros(a.shape[-1], dtype=np.int64)
+            np.zeros(batch_shape, dtype=np.int64),
+            np.zeros(batch_shape, dtype=np.int64)
         )
 
     return _bandwidth(a)
