@@ -981,10 +981,12 @@ the batch shape of the input is ``()``). For more information, see :doc:`linalg_
 ``overwrite_*`` arguments
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Many linear algebra functions have ``overwrite_a`` arguments to signal that an operation
-is allowed to work in-place and overwrite the input array.
+Many linear algebra functions have ``overwrite_*`` arguments to signal that an operation
+is allowed to work in-place and overwrite the input array (the naming convention is
+that an array argument ``a`` has a matching ``overwrite_a``; a ``b`` argument has a
+matching ``overwrite_b`` and so on).
+ 
 By default, ``scipy.linalg`` functions preserve their inputs and make copies internally.
-
 In some cases, working in-place may improve performance or avoid running out of memory---
 it is however advisable to measure and make sure you actually see improvements
 for your specific workloads. 
