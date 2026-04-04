@@ -51,3 +51,11 @@
 #include "_mkl_ilp64_fixes.h"
 
 #define F_INT int64_t
+
+/*
+ * f2py translates abs() from pyf expressions directly into C abs(),
+ * which takes int. With ILP64, F_INT is npy_int64 (long), so we
+ * need labs() to avoid truncation warnings.
+ */
+#undef abs
+#define abs labs
