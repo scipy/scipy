@@ -61,7 +61,7 @@ if get_option('_without-fortran')
   link_language_blas_lapack = 'c'
 endif
 
-if not use_ilp64 or not cython_blas_ilp64
+if needs_lp64_fblas
   fblas_module = custom_target('fblas_module',
     output: ['_fblasmodule.c'],
     input: 'fblas.pyf.src',

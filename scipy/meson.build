@@ -413,7 +413,7 @@ if use_ilp64 and not cython_blas_ilp64
   # Build LP64 g77 ABI wrappers (this is the only thing we build twice)
   if use_g77_abi
     g77_abi_wrappers_lp64 = static_library(
-      'g77_abi_wrappers',
+      'g77_abi_wrappers_lp64',
       ['_build_utils/src/wrap_g77_abi.c'],
       dependencies: [cblas, blas],
       c_args: _args_blas_lp64,
@@ -422,7 +422,7 @@ if use_ilp64 and not cython_blas_ilp64
     )
   else
     g77_abi_wrappers_lp64 = static_library(
-      'dummy_g77_abi_wrappers',
+      'dummy_g77_abi_wrappers_lp64',
       ['_build_utils/src/wrap_dummy_g77_abi.c'],
       dependencies: blas,
       c_args: _args_blas_lp64,
@@ -434,7 +434,7 @@ if use_ilp64 and not cython_blas_ilp64
   blas_lp64_dep = declare_dependency(
     dependencies: [blas, cblas],
     link_with: [g77_abi_wrappers_lp64],
-    c_args: _args_blas_lp64,
+    compile_args: _args_blas_lp64,
     include_directories: ['_build_utils/src'],
   )
   lapack_lp64_dep = declare_dependency(dependencies: [lapack, blas_lp64_dep])
