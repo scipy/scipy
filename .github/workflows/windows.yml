@@ -116,7 +116,9 @@ jobs:
           architecture: "arm64"
 
       - name: Set up Flang on ARM64
-        uses: ./.github/windows_arm64_steps
+        #        uses: ./.github/windows_arm64_steps
+        run: |
+          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
 
       - name: pip-packages
         run: |
@@ -129,7 +131,7 @@ jobs:
         run: |
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
-          $env:fc = "flang-new"
+          $env:fc = "flang"
           spin build --with-scipy-openblas --setup-args="-Duse-pythran=false"
 
       - name: Test
