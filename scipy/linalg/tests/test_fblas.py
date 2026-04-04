@@ -24,7 +24,7 @@ if blas_config['cython blas ilp64']:
     pytestmark = pytest.skip(allow_module_level=True,
                              reason="LP64 _fblas wasn't built")
 
-from scipy.linalg import _fblas as fblas
+from scipy.linalg import _fblas as fblas  # noqa: E402
 
 
 # decimal accuracy to require between Python and LAPACK/BLAS calculations
