@@ -102,7 +102,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1 &&
-      (github.repository == 'scipy/scipy' || github.repository == '')
+      (github.repository == 'andyfaff/scipy' || github.repository == '')
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -115,7 +115,7 @@ jobs:
           python-version: "3.12"
           architecture: "arm64"
 
-      - name: Set up Flang and pkgconf for ARM64
+      - name: Set up Flang on ARM64
         uses: ./.github/windows_arm64_steps
 
       - name: pip-packages
