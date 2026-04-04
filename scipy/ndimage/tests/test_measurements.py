@@ -146,6 +146,29 @@ class Test_measurements_select:
             xp_assert_equal(result[1], [1, 2])
             assert result[1].dtype.kind == 'i'
 
+    @pytest.mark.parametrize("dtype, label", [
+        (np.uint8, 254),     # 254 + 2 = 0 (size-0 array)
+        (np.uint8, 255),     # 255 + 2 = 1 (size-1 array)
+        (np.int8, 126),      # 126 + 2 = -128 (negative size)
+        (np.uint16, 65534),  # 65534 + 2 = 0 (size-0 array)
+        (np.uint16, 65535),  # 65535 + 2 = 1 (size-1 array)
+        (np.int16, 32766),   # 32766 + 2 = -32768 (negative size)
+    ])
+    def test_gh24966(self, dtype, label, xp):
+        # labels.max() + 2 may overflow for integer label dtypes,
+        # when label <= len(labels), causing Value- or IndexError
+        size = label + 1
+        x = np.zeros(size)
+        x[:3] = [1, 2, 3]
+        labels = np.zeros(size, dtype=dtype)
+        labels[:3] = label
+        result = ndimage._measurements._select(
+            x, labels=labels, index=[label], find_min=True,
+            find_min_positions=True, find_max=True,
+            find_max_positions=True, find_median=True)
+        xp_assert_close(np.concatenate(result),
+                        [1.0, 0.0, 3.0, 2.0, 2.0])
+
 
 @make_xp_test_case(ndimage.label)
 def test_label01(xp):
@@ -917,6 +940,26 @@ def test_median_no_int_overflow(xp):
     assert_array_almost_equal(output, xp.asarray([67.5]))
 
 
+@pytest.mark.parametrize("dtype_name, label", [
+    ("uint8", 254),
+    ("uint8", 255),
+    ("int8", 126),
+    ("uint16", 65534),
+    ("uint16", 65535),
+    ("int16", 32766),
+])
+@make_xp_test_case(ndimage.median)
+def test_median_gh24966(dtype_name, label, xp):
+    # labels.max() + 2 may overflow for integer label dtypes,
+    # when label <= len(labels), causing Value- or IndexError
+    dtype = getattr(xp, dtype_name)
+    size = label + 1
+    x = xp.asarray([1.0, 2.0, 3.0] + [0.0] * (size - 3))
+    labels = xp.asarray([int(label)] * 3 + [0] * (size - 3), dtype=dtype)
+    xp_assert_close(ndimage.median(x, labels, xp.asarray([label])),
+                    xp.asarray([2.0]))
+
+
 @make_xp_test_case(ndimage.variance)
 def test_variance01(xp):
     with np.errstate(all='ignore'):
@@ -1309,6 +1352,31 @@ def test_extrema04(xp):
         assert_array_almost_equal(output1[1], output3)
         assert output1[2] == output4
         assert output1[3] == output5
+
+
+@pytest.mark.parametrize("dtype_name, label", [
+    ("uint8", 254),
+    ("uint8", 255),
+    ("int8", 126),
+    ("uint16", 65534),
+    ("uint16", 65535),
+    ("int16", 32766),
+])
+@make_xp_test_case(ndimage.extrema)
+def test_extrema_gh24966(dtype_name, label, xp):
+    # labels.max() + 2 may overflow for integer label dtypes,
+    # when label <= len(labels), causing Value- or IndexError
+    dtype = getattr(xp, dtype_name)
+    size = label + 1
+    x = xp.asarray([1.0, 2.0, 3.0] + [0.0] * (size - 3))
+    labels = xp.asarray([int(label)] * 3 + [0] * (size - 3), dtype=dtype)
+    index = xp.asarray([label])
+    minimums, maximums, min_positions, max_positions = ndimage.extrema(
+        x, labels, index)
+    xp_assert_close(minimums, xp.asarray([1.0]))
+    xp_assert_close(maximums, xp.asarray([3.0]))
+    assert min_positions == [(0,)]
+    assert max_positions == [(2,)]
 
 
 @make_xp_test_case(ndimage.center_of_mass)
