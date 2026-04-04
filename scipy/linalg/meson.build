@@ -127,6 +127,7 @@ if use_ilp64
         'fblas_l1.pyf.src',
         'fblas_l2.pyf.src',
         'fblas_l3.pyf.src',
+        int64_f2cmap,
       ]
   )
 
@@ -144,6 +145,18 @@ if use_ilp64
     output: ['_flapack_64module.c'],
     input: 'flapack_64.pyf.src',
     command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
+    depend_files:
+      [
+        'flapack_user.pyf.src',
+        'flapack_gen.pyf.src',
+        'flapack_gen_banded.pyf.src',
+        'flapack_gen_tri.pyf.src',
+        'flapack_sym_herm.pyf.src',
+        'flapack_pos_def.pyf.src',
+        'flapack_pos_def_tri.pyf.src',
+        'flapack_other.pyf.src',
+        int64_f2cmap,
+      ]
   )
 
   py3.extension_module('_flapack_64',
