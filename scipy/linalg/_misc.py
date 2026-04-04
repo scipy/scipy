@@ -4,9 +4,6 @@ from .blas import get_blas_funcs
 from .lapack import get_lapack_funcs
 from ._batched_linalg import _bandwidth
 
-from typing import Any
-from numpy.typing import NDArray
-
 __all__ = ['LinAlgError', 'LinAlgWarning', 'norm', 'bandwidth']
 
 
