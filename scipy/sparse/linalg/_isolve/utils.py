@@ -90,17 +90,6 @@ def make_system(A, M, x0, b, nd_support=False):
 
     b = _process_vector_input(b, A=A, N=N, xp=xp, arg_name="b")
 
-    # NOTE: unbatched column vectors are ravelled and hence are 1-D.
-    batched = A.ndim > 2 or b.ndim > 1
-    if batched and not nd_support:
-        raise ValueError(
-            f"{A.ndim}-dimensional `A` and `{b.ndim}-dimensional `b` "
-            f"is unsupported, expected 2-D `A` and 1-D `b`."
-        )
-
-    dtype = xp_result_type(A.dtype, b.dtype, force_floating=True, xp=xp)
-    b = xp.astype(b, dtype)
-
     # process preconditioner
     if M is None:
         if hasattr(A_,'psolve'):
@@ -127,9 +116,12 @@ def make_system(A, M, x0, b, nd_support=False):
         if A.shape != M.shape:
             raise ValueError('matrix and preconditioner have different shapes')
 
+    dtype = xp_result_type(A.dtype, b.dtype, force_floating=True, xp=xp)
+    b = xp.astype(b, dtype)
+
     # set initial guess
     if x0 is None:
-        x = xp.zeros((*M.shape[:-2], N), dtype=dtype)
+        x = xp.zeros(N, dtype=dtype)
     elif isinstance(x0, str):
         if x0 == 'Mb':  # use nonzero initial guess ``M @ b``
             bCopy = xp_copy(b, xp=xp)
@@ -138,9 +130,20 @@ def make_system(A, M, x0, b, nd_support=False):
             raise ValueError(f"invalid input for x0: {x0}")
     else:
         x0 = _process_vector_input(x0, A=A, N=N, xp=xp, arg_name="x0")
+        dtype = xp_result_type(dtype, x0.dtype, force_floating=True, xp=xp)
         x = xp.astype(x0, dtype, copy=True)
+        b = xp.astype(b, dtype)    
 
-    result_shape = np.broadcast_shapes(A.shape[:-1], b.shape)
+    # NOTE: unbatched column vectors are ravelled and hence are 1-D.
+    batched = A.ndim > 2 or b.ndim > 1 or x.ndim > 1
+    if batched and not nd_support:
+        raise ValueError(
+            f"{A.ndim}-dimensional `A`, `{b.ndim}-dimensional `b`, "
+            f"and {x.ndim}-dimensional `x` is unsupported, "
+            f"expected 2-D `A` and 1-D `b`."
+        )
+
+    result_shape = np.broadcast_shapes(A.shape[:-1], b.shape, x.shape)
     def _broadcast_if_needed(arr):
         if arr.shape != result_shape:
             arr = xp.broadcast_to(arr, shape=result_shape)
