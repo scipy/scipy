@@ -440,7 +440,7 @@ depends-on = "build-accelerate-lp64"
 description = "Test SciPy with accelerate (lp64)"
 
 [feature.build-accelerate-ilp64.tasks.build-accelerate-ilp64]
-cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64' -S-Dcython-blas-abi=lp64"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with accelerate (ilp64)"
 
