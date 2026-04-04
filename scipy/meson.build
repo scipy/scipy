@@ -247,6 +247,9 @@ endif
 # We are therefore certain that we're only linking to a single BLAS library.
 # Option (3) is the special case, which requires two blas_dep/lapack_dep
 # objects, with some different defines added to `compile_args`.
+# 
+# Also note that lapack_dep includes blas_dep, so there is no need to
+# explicitly depend on blas_dep if an extension module already uses lapack_dep.
 
 # MKL-specific options
 _threading_opt = get_option('mkl-threading')
@@ -277,8 +280,8 @@ if host_machine.system() == 'darwin'
 endif
 
 _args_blas_lp64 = []
+_args_blas_ilp64 = ['-DHAVE_BLAS_ILP64']
 accelerate_flag = []
-generate_blas_wrappers = false
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
@@ -286,102 +289,50 @@ if blas_name == 'accelerate'
   if cc.get_id() != 'clang'
     warning('accelerate may not be properly detected with non-native Apple compiler due to https://github.com/mesonbuild/meson/issues/13608')
   endif
-  _args_blas_lp64 += ['-DACCELERATE_NEW_LAPACK']
-  generate_blas_wrappers = true
   accelerate_flag = '--accelerate'
 endif
+uses_accelerate = blas_name.to_lower().startswith('accelerate')
 
-if not use_ilp64
-  # The LP64 only case - start LP64 library detection
-
-  if blas_name == 'openblas' or blas_name == 'auto'
-    # 'auto' is looking only for OpenBLAS for now.
-    blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
-    if blas.found()
-      blas_name = 'scipy-openblas'
-      generate_blas_wrappers = true
-    else  
-      # Try any other OpenBLAS. 
-      # pkg-config uses a lower-case name while CMake uses a capitalized name,
-      # so try that too to make the fallback detection with CMake work
-      blas = dependency(['openblas', 'OpenBLAS'])
-    endif
-  else
-    # Detect the BLAS library specified by the user with `-Dblas`
-    blas = dependency(blas_name)
+if blas_name == 'openblas' or blas_name == 'auto'
+  # 'auto' is looking only for OpenBLAS for now.
+  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
+  if blas.found()
+    blas_name = 'scipy-openblas'
+  else  
+    # Try any other OpenBLAS. 
+    # pkg-config uses a lower-case name while CMake uses a capitalized name,
+    # so try that too to make the fallback detection with CMake work
+    blas = dependency(['openblas', 'OpenBLAS'])
   endif
+else
+  # Detect the BLAS library specified by the user with `-Dblas`
+  blas = dependency(blas_name)
+endif
 
-  if blas_name == 'mkl'
-    blas = dependency('mkl',
-      modules: ['interface: lp64'] + mkl_opts,
-      required: false,  # may be required, but we need to emit a custom error message
-      version: mkl_version_req,
-    )
-    # Insert a second try with MKL, because we may be rejecting older versions
-    # or missing it because no pkg-config installed. If so, we need to retry
-    # with MKL SDL, and drop the version constraint (this always worked).
-    if not blas.found() and mkl_may_use_sdl
-      blas = dependency('mkl', modules: ['sdl: true'], required: false)
-    endif
-  endif
+if not blas.found()
+  error('No BLAS library detected! SciPy needs one, please install it.')
+endif
 
-  blas_dep = declare_dependency(
-    dependencies: blas,
-    compile_args: _args_blas_lp64,
-    include_directories: ['_build_utils/src'],
-  )
-
-  if not blas.found()
-    error('No BLAS library detected! SciPy needs one, please install it.')
-  endif
+if 'openblas' in blas_name
+  _args_blas_ilp64 += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
+elif 'mkl' in blas_name
+  _args_blas_ilp64 += [
+    '-DBLAS_SYMBOL_SUFFIX=_64',
+    '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
+  ]
+elif uses_accelerate
+  _args_blas_lp64 += ['-DACCELERATE_NEW_LAPACK']
+  _args_blas_ilp64 += ['-DACCELERATE_NEW_LAPACK']
 endif
 
 if use_ilp64
-  # The ILP64 only or ILP64 + cython_blas LP case - start ILP64 library detection
-
-  _args_blas_ilp64 = ['-DHAVE_BLAS_ILP64']
-  blas_interface = ['interface: ilp64']
-
-  if 'openblas' in blas_name
-    _args_blas_ilp64 += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
-  endif
-
-  if _blas_name_ilp64 != ''
-    blas = dependency(_blas_name_ilp64)
-    _args_blas_ilp64 += [
-      '-DBLAS_SYMBOL_SUFFIX=_64',
-      '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
-    ]
-  elif uses_mkl
-    mkl_uses_sdl = false
-    if mkl_uses_sdl
-      mkl_opts = ['sdl: true']
-    endif
-    blas = dependency('mkl', modules: ['interface: ilp64'] + mkl_opts)
-    _args_blas_ilp64 += [
-       '-DBLAS_SYMBOL_SUFFIX=_64',
-       '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
-     ]
-  elif uses_accelerate
-    blas = dependency('accelerate')
-    _args_blas_ilp64 += ['-DACCELERATE_NEW_LAPACK']
-  elif blas_name == 'scipy-openblas'
-      # scipy_openblas64, a separate library
-      blas = dependency('scipy-openblas64')
-  else
-    if blas_name == 'openblas'
-      # We cannot allow plain openblas here, that's already the LP64 library and
-      # will lead to problems (there is, as of now, no combined OpenBLAS build
-      # with 32 and 64 bit symbols)
-      blas_name = ['openblas64', 'openblas_ilp64']
-    endif
-
-    blas = dependency(blas_name, modules: blas_interface)
-  endif
-
   # Pick up the symbol suffix, it may be auto-detected by Meson and different
   # from LP64. This `'auto'` behavior requires native support in Meson (either
   # from numpy's vendored fork, or in PR meson#14773).
+  #
+  # Note that scipy-openblas32/64 is the only known library which uses a symbol
+  # *prefix*. This is handled directly by the `-DBLAS_SYMBOL_PREFIX=scipy_`
+  # in the pkg-config file of the detected scipy-openblas.
   if blas_symbol_suffix == 'auto'
     if blas_name == 'scipy-openblas'
       blas_symbol_suffix = '64_'
@@ -389,17 +340,16 @@ if use_ilp64
       blas_symbol_suffix = blas.get_variable('symbol_suffix', default_value: '')
     endif
     message(f'BLAS symbol suffix (ILP64): @blas_symbol_suffix@')
-  endif
-  if blas_symbol_suffix != ''
+  elif blas_symbol_suffix != ''
     _args_blas_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
   endif
-
-  blas_dep = declare_dependency(
-    dependencies: [blas],
-    compile_args: _args_blas_ilp64,
-    include_directories: ['_build_utils/src'],
-  )
 endif
+
+blas_dep = declare_dependency(
+  dependencies: blas,
+  compile_args: use_ilp64 ? _args_blas_ilp64 : _args_blas_lp64,
+  include_directories: ['_build_utils/src'],
+)
 
 if blas_name == 'blas'
   # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
@@ -422,15 +372,76 @@ elif lapack_name == 'openblas'
 else
   lapack = dependency(lapack_name)
 endif
+lapack_dep = declare_dependency( dependencies: [lapack, blas_dep],)
 
 if not lapack.found()
   error('No LAPACK library detected! SciPy needs one, please install it.')
 endif
 
-lapack_dep = declare_dependency(
-  dependencies: [lapack, blas_dep],
-  compile_args: _args_blas_lp64  # FIXME: ? :
-)
+# Renormalize `blas_name` (e.g., for 'auto' handling)
+blas_name = blas.name()
+lapack_name = lapack.name()
+uses_mkl = blas_name.to_lower().startswith('mkl')
+
+use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
+if use_g77_abi
+  g77_abi_wrappers = static_library(
+    'g77_abi_wrappers',
+    ['_build_utils/src/wrap_g77_abi.c'],
+    dependencies: [cblas, blas_dep],
+    gnu_symbol_visibility: 'hidden',
+  )
+else
+  g77_abi_wrappers = static_library(
+    'dummy_g77_abi_wrappers',
+    ['_build_utils/src/wrap_dummy_g77_abi.c'],
+    dependencies: blas_dep,
+    gnu_symbol_visibility: 'hidden',
+  )
+endif
+
+blas_dep = declare_dependency(dependencies: blas_dep, link_with: g77_abi_wrappers)
+lapack_dep = declare_dependency(dependencies: lapack_dep, link_with: g77_abi_wrappers)
+
+if use_ilp64 and not cython_blas_ilp64
+  # This is the special handling for build option 3: everything ILP64 except
+  # cython_blas/cython_lapack which will export an LP64 ABI. We're linking to
+  # the same shared library, what is different is:
+  #   - The g77 ABI wrappers
+  #   - Using LP64 instead of ILP64 compile args
+
+  # Build LP64 g77 ABI wrappers (this is the only thing we build twice)
+  if use_g77_abi
+    g77_abi_wrappers_lp64 = static_library(
+      'g77_abi_wrappers',
+      ['_build_utils/src/wrap_g77_abi.c'],
+      dependencies: [cblas, blas],
+      c_args: _args_blas_lp64,
+      include_directories: ['_build_utils/src'],
+      gnu_symbol_visibility: 'hidden',
+    )
+  else
+    g77_abi_wrappers_lp64 = static_library(
+      'dummy_g77_abi_wrappers',
+      ['_build_utils/src/wrap_dummy_g77_abi.c'],
+      dependencies: blas,
+      c_args: _args_blas_lp64,
+      include_directories: ['_build_utils/src'],
+      gnu_symbol_visibility: 'hidden',
+    )
+  endif
+  
+  blas_lp64_dep = declare_dependency(
+    dependencies: [blas, cblas],
+    link_with: [g77_abi_wrappers_lp64],
+    c_args: _args_blas_lp64,
+    include_directories: ['_build_utils/src'],
+  )
+  lapack_lp64_dep = declare_dependency(dependencies: [lapack, blas_lp64_dep])
+else
+  blas_lp64_dep = blas_dep
+  lapack_lp64_dep = lapack_dep
+endif
 
 # End of BLAS/LAPACK handling
 
@@ -519,8 +530,6 @@ cython_gen_cpp = generator(cython,
 )
 
 if use_pythran
-  # TODO: add argument to mark extension modules as safe to run without the GIL,
-  #       once pythran supports that.
   pythran_gen = generator(pythran,
     arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',
@@ -789,100 +798,12 @@ configure_file(
   install_tag: 'python-runtime',
 )
 
-subdir('_build_utils')
-# Update BLAS/LAPACK dependencies to include wrapper libs
-#
-# NB:
-#  - lapack_lp64_dep is LP64, which is always available
-#  - lapack_dep is ILP64 if available, and LP64 otherwise
-#
-# An extensions should declare `lapack_dep` as a dependency if it is ready to build-time
-# switch between LP64 and ILP64 variants; otherwise, it should depend on lapack_lp64_dep.
-#
-# Also note that lapack_*_dep includes blas_*dep, so there is no need to explicitly
-# depend on blas_*_dep.
-#
-# Also note that {blas,lapack}_*_dep objects do not include compile flags for Fortran.
-# This is because we expect that the need for Fortran code is limited. If desired,
-# can create the _fortran variants of the _dep objects to include
-# `compile_args: [_fflag_{lp64,ilp64}]`
-#
-
-# NB: from this point on blas_name is e.g. 'mkl-lp64-dynamic-seq'
-blas_name = blas.name()
-lapack_name = lapack.name()
-uses_mkl = blas_name.to_lower().startswith('mkl')
-uses_accelerate = blas_name.to_lower().startswith('accelerate')
-
-use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
-if use_g77_abi
-  g77_abi_wrappers = static_library(
-    'g77_abi_wrappers',
-    ['_build_utils/src/wrap_g77_abi.c'],
-    dependencies: [cblas, blas_dep],
-    c_args: use_ilp64 ? _args_blas_ilp64 : _args_blas_lp64,
-    gnu_symbol_visibility: 'hidden',
-  )
-else
-  g77_abi_wrappers = static_library(
-    'dummy_g77_abi_wrappers',
-    ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    dependencies: blas_dep,
-    c_args: use_ilp64 ? _args_blas_ilp64 : _args_blas_lp64,
-    gnu_symbol_visibility: 'hidden',
-  )
-endif
-
-blas_dep = declare_dependency(dependencies: blas_dep, link_with: g77_abi_wrappers)
-lapack_dep = declare_dependency(dependencies: lapack_dep, link_with: g77_abi_wrappers)
-
-if use_ilp64 and not cython_blas_ilp64
-  # This is the special handling for build option 3: everything ILP64 except
-  # cython_blas/cython_lapack which will export an LP64 ABI. We're linking to
-  # the same shared library, what is different is:
-  #   - The g77 ABI wrappers
-  #   - Using LP64 instead of ILP64 compile args
-  # TODO: 
-  #   1. refactor so it picks up only the lp64 c_args!
-  #   2. Build g77 wrappers with the correct flags.
-
-  # Build LP64 wrappers:
-  if use_g77_abi
-    g77_abi_wrappers_lp64 = static_library(
-      'g77_abi_wrappers',
-      ['_build_utils/src/wrap_g77_abi.c'],
-      dependencies: [cblas, blas_dep],  # FIXME: blas_dep carries `_args_blas_ilp64`
-      c_args: _args_blas_lp64,
-      gnu_symbol_visibility: 'hidden',
-    )
-  else
-    g77_abi_wrappers_lp64 = static_library(
-      'dummy_g77_abi_wrappers',
-      ['_build_utils/src/wrap_dummy_g77_abi.c'],
-      dependencies: blas_dep,
-      c_args: _args_blas_lp64,
-      gnu_symbol_visibility: 'hidden',
-    )
-  endif
-  
-  blas_lp64_dep = declare_dependency(
-    dependencies: blas_dep,
-    link_with: [g77_abi_wrappers_lp64, blas_lapack_wrapper_lib], #FIXME
-    #FIXME: add c_args,
-  )
-  lapack_lp64_dep = declare_dependency(
-    dependencies: [lapack_lp64_dep, blas_lp64_dep],
-    link_with: [g77_abi_wrappers_lp64, blas_lapack_wrapper_lib],
-  )
-else
-  blas_lp64_dep = blas_dep
-  lapack_lp64_dep = lapack_dep
-endif
-
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes a
 # little better).
+#
+subdir('_build_utils')  
 subdir('_external')
 subdir('_lib')
 subdir('linalg')
