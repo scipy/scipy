@@ -62,7 +62,7 @@ jobs:
     - name: Build with defaults (LP64)
       run: |
         pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
-        spin build -S-Dblas=mkl-dynamic-lp-seq
+        spin build -S-Dblas=mkl-dynamic-lp64-seq
 
     - name: Test
       run: spin test -j2
