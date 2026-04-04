@@ -1794,6 +1794,38 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
     morphological_laplace : ndarray
         Output
 
+    See Also
+    --------
+    grey_dilation, grey_erosion
+
+    Examples
+    --------
+    The morphological Laplacian highlights regions where the local
+    morphology changes, such as edges. Apply it to a 1-D step signal
+    with a structuring element of size 3:
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import morphological_laplace
+    >>> a = np.array([0, 0, 0, 1, 1, 1, 0, 0, 0])
+    >>> morphological_laplace(a, size=3)
+    array([ 0,  0,  1, -1,  0, -1,  1,  0,  0])
+
+    The result is nonzero only at the transitions (edges) of the signal.
+    Apply it to a 2-D binary block:
+
+    >>> b = np.zeros((5, 5))
+    >>> b[1:4, 1:4] = 1
+    >>> morphological_laplace(b, size=3)
+    array([[ 1.,  1.,  1.,  1.,  1.],
+           [ 1., -1., -1., -1.,  1.],
+           [ 1., -1.,  0., -1.,  1.],
+           [ 1., -1., -1., -1.,  1.],
+           [ 1.,  1.,  1.,  1.,  1.]])
+
+    Positive values appear outside the block (where dilation expands),
+    negative values appear at the inner boundary (where erosion shrinks),
+    and zero appears in the flat interior.
+
     """
     input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,
