@@ -20,6 +20,36 @@ std::string
 get_err_mesg(const std::string routine, const std::string func_name, int info);
 
 
+/*
+ * Minimal checks for an input array:
+ *   - ndim >= 2
+ *   - LAPACK-compatible dtype
+ *   - aligned
+ *
+ * Sets an error if any of these is violated (users to bail out immediately).
+ */
+int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
+    int typenum = PyArray_TYPE(ap_Am);
+    bool dtype_ok = (typenum == NPY_FLOAT32)
+                     || (typenum == NPY_FLOAT64)
+                     || (typenum == NPY_COMPLEX64)
+                     || (typenum == NPY_COMPLEX128);
+
+    if (!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
+        PyErr_Format(PyExc_TypeError, "scipy.linag.%s : Expected a real or complex array.", func);
+        return 0;
+    }
+
+    int ndim = PyArray_NDIM(ap_Am);
+    if (ndim < 2) {
+        PyErr_Format(PyExc_ValueError, "scipy.linalg.%s: Expected at least a 2D array.", func);
+        return 0;
+    }
+
+    return 1;
+}
+
+
 static PyObject*
 _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
@@ -36,17 +66,12 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Check for dtype compatibility & array flags
-    int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT32)
-                     || (typenum == NPY_FLOAT64)
-                     || (typenum == NPY_COMPLEX64)
-                     || (typenum == NPY_COMPLEX128);
-    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_Am, "inv")) {
         return NULL;
     }
 
+    int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];                // Slice size
@@ -127,21 +152,16 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Check for dtype compatibility & array flags
-    int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT32)
-                     || (typenum == NPY_FLOAT64)
-                     || (typenum == NPY_COMPLEX64)
-                     || (typenum == NPY_COMPLEX128);
-    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_Am, "solve")) {
         return NULL;
     }
 
     // Sanity check shapes
+    int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp* shape = PyArray_SHAPE(ap_Am);
-    if ((ndim < 2) || (shape[ndim - 1] != shape[ndim - 2])) {
+    if (shape[ndim - 1] != shape[ndim - 2]) {
         PyErr_SetString(PyExc_ValueError, "Last two dimensions of `a` must be the same.");
         return NULL;
     }
@@ -229,24 +249,14 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Check for dtype compatibility & array flags
-    int typenum = PyArray_TYPE(ap_A);
-    bool dtype_ok = (typenum == NPY_FLOAT32)
-                     || (typenum == NPY_FLOAT64)
-                     || (typenum == NPY_COMPLEX64)
-                     || (typenum == NPY_COMPLEX128);
-    if(!dtype_ok || !PyArray_ISALIGNED(ap_A)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_A, "qr")) {
         return NULL;
     }
 
-    // Sanity checks
+    int typenum = PyArray_TYPE(ap_A);
     int ndim = PyArray_NDIM(ap_A);
     npy_intp* shape = PyArray_SHAPE(ap_A);
-    if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "Matrix `a` should at least be 2D.");
-        return NULL;
-    }
 
     // -------------------------------------------------------------------
     // Conditionally allocate return objects
@@ -342,7 +352,6 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
 
-
     switch(typenum) {
         case(NPY_FLOAT32):
             info = _qr<float>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
@@ -390,6 +399,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     const char *lapack_driver = NULL;
     int compute_uv = 1;
     int full_matrices = 1;
+    int overwrite_a = 0;
     PyArrayObject *ap_S = NULL, *ap_U = NULL, *ap_Vh = NULL;
     PyObject *ret_lst;
 
@@ -397,28 +407,18 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     SliceStatusVec vec_status;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!s|pp", &PyArray_Type, (PyObject **)&ap_Am,  &lapack_driver, &compute_uv, &full_matrices)) {
+    if (!PyArg_ParseTuple(args, "O!s|ppp", &PyArray_Type, (PyObject **)&ap_Am,  &lapack_driver, &compute_uv, &full_matrices, &overwrite_a)) {
         return NULL;
     }
 
-    // Check for dtype compatibility & array flags
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_Am, "svd")) {
+        return NULL;
+    }
+
     int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT32)
-                     || (typenum == NPY_FLOAT64)
-                     || (typenum == NPY_COMPLEX64)
-                     || (typenum == NPY_COMPLEX128);
-    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
-        return NULL;
-    }
-
-    // Basic checks of array dimensions
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-    if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "Expected at least a 2D array.");
-        return NULL;
-    }
 
     npy_intp m = shape[ndim - 2];
     npy_intp n = shape[ndim - 1];
@@ -472,16 +472,16 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _svd<float>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<float>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _svd<double>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<double>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _svd<npy_complex64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<npy_complex64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _svd<npy_complex128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
+            info = _svd<npy_complex128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -522,23 +522,19 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyObject *ret_lst = NULL, *s_ret = NULL;
     double rcond;
     const char *lapack_driver = NULL;
+    int overwrite_a = 0;
+    int overwrite_b = 0;
 
     int info = 0;
     SliceStatusVec vec_status;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!O!ds", &PyArray_Type, (PyObject **)&ap_Am,  &PyArray_Type, (PyObject **)&ap_b, &rcond, &lapack_driver)) {
+    if (!PyArg_ParseTuple(args, "O!O!ds|pp", &PyArray_Type, (PyObject **)&ap_Am,  &PyArray_Type, (PyObject **)&ap_b, &rcond, &lapack_driver, &overwrite_a, &overwrite_b)) {
         return NULL;
     }
 
-    // Check for dtype compatibility & array flags
-    int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT32)
-                     || (typenum == NPY_FLOAT64)
-                     || (typenum == NPY_COMPLEX64)
-                     || (typenum == NPY_COMPLEX128);
-    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_Am, "lstsq")) {
         return NULL;
     }
 
@@ -547,13 +543,9 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Sanity checks of array dimensions
+    int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-    if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "Expected at least a 2D array.");
-        return NULL;
-    }
 
     // At the python call site,
     // 1) 1D `b` must have been converted into 2D, and
@@ -577,6 +569,8 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp m = shape[ndim - 2];
     npy_intp n = shape[ndim - 1];
     npy_intp min_mn = m < n ? m : n;
+    CBLAS_INT max_mn = m > n ? m : n;
+    CBLAS_INT ldb = max_mn > 1 ? max_mn : 1;
     npy_intp nrhs = PyArray_DIM(ap_b, ndim-1);
 
     // Allocate the output(s)
@@ -586,12 +580,17 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // x.shape = (..., N, NRHS)
-    shape_1[ndim-2] = n;
+    shape_1[ndim-2] = ldb;
     shape_1[ndim-1] = nrhs;
-    ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-    if (!ap_x) {
-        PyErr_NoMemory();
-        goto fail;
+    if (!overwrite_b) { // Will only work if m > n, python side should have caught this.
+        ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
+        if (!ap_x) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+    } else {
+        Py_INCREF(ap_b);
+        ap_x = ap_b;
     }
 
     // S array is not used by ?gelsy
@@ -619,16 +618,16 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _lstsq<float>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, vec_status);
+            info = _lstsq<float>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _lstsq<double>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, vec_status);
+            info = _lstsq<double>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _lstsq<npy_complex64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, vec_status);
+            info = _lstsq<npy_complex64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _lstsq<npy_complex128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, vec_status);
+            info = _lstsq<npy_complex128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -665,6 +664,8 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_vl = NULL;
     int compute_vl=0;
     int compute_vr=1;
+    int overwrite_a=0;
+    int overwrite_b=0;
 
     int info = 0;
     SliceStatusVec vec_status;
@@ -676,32 +677,23 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyObject *beta_ret = NULL;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!pp|O!",
+    if (!PyArg_ParseTuple(args, "O!pppp|O!",
             &PyArray_Type, (PyObject **)&ap_Am,
             &compute_vl, &compute_vr,
+            &overwrite_a, &overwrite_b,
             &PyArray_Type, (PyObject **)&ap_Bm)
     ) {
         return NULL;
     }
 
-    // Check for dtype compatibility & array flags
-    int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT32)
-                     || (typenum == NPY_FLOAT64)
-                     || (typenum == NPY_COMPLEX64)
-                     || (typenum == NPY_COMPLEX128);
-    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_Am, "eig")) {
         return NULL;
     }
 
-    // Basic checks of array dimensions
+    int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-    if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "Expected at least a 2D array.");
-        return NULL;
-    }
 
     npy_intp n = shape[ndim - 1];
 
@@ -730,6 +722,12 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     if (ap_Bm != NULL) {
+
+        // Sanity check the input array
+        if (!_check_dtype_and_flags(ap_Bm, "eig")) {
+            return NULL;
+        }
+
         ap_beta = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum);
         if (ap_beta == NULL) { PyErr_NoMemory(); goto fail; }
     }
@@ -746,16 +744,16 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -802,26 +800,15 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT32)
-                    || (typenum == NPY_FLOAT64)
-                    || (typenum == NPY_COMPLEX64)
-                    || (typenum == NPY_COMPLEX128);
-    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_Am, "cholesky")) {
         return NULL;
     }
 
-    // Basic checks of array dimensions
+    int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-    if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "Expected at least a 2D array.");
-        return NULL;
-    }
-
     npy_intp n = shape[ndim - 1];
-
     if (PyArray_DIM(ap_Am, ndim-2) != n) {
         PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
         return NULL;
@@ -926,20 +913,13 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    int typenum = PyArray_TYPE(ap_a);
-    bool dtype_ok = (
-        (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64) || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128)
-    );
-    if (!dtype_ok) {
-        PyErr_SetString(PyExc_TypeError, "scipy.linalg.lu: Input array must be of type float32, float64, complex64, or complex128.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_a, "lu")) {
         return NULL;
     }
 
+    int typenum = PyArray_TYPE(ap_a);
     int ndim = PyArray_NDIM(ap_a);
-    if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "scipy.linalg.lu: Input must be an nD-array with n >= 2.");
-        return NULL;
-    }
     if (ndim > LU_MAX_NDIM) {
         PyErr_SetString(PyExc_ValueError, "scipy.linalg.lu: Input array has too many dimensions.");
         return NULL;
@@ -1102,20 +1082,13 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    int typenum = PyArray_TYPE(ap_a);
-    bool dtype_ok = (
-        (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64) || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128)
-    );
-    if (!dtype_ok) {
-        PyErr_SetString(PyExc_TypeError, "scipy.linalg.det: Input array must be of type float32, float64, complex64, or complex128.");
+    // Sanity check the input array
+    if (!_check_dtype_and_flags(ap_a, "det")) {
         return NULL;
     }
 
+    int typenum = PyArray_TYPE(ap_a);
     int ndim = PyArray_NDIM(ap_a);
-    if (ndim < 2) {
-        PyErr_SetString(PyExc_ValueError, "scipy.linalg.det: Input must be an nD-array with n >= 2.");
-        return NULL;
-    }
     if (ndim > LU_MAX_NDIM) {
         PyErr_SetString(PyExc_ValueError, "scipy.linalg.det: Input array has too many dimensions.");
         return NULL;
