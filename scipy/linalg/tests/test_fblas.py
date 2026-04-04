@@ -9,15 +9,23 @@ from itertools import product
 import sys
 
 import numpy as np
+import pytest
 from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate
 
+from numpy.testing import (
+    assert_array_equal, assert_allclose, assert_array_almost_equal, assert_
+)
+
+import scipy
+
+blas_config = scipy.show_config(mode='dicts')['Build Dependencies']['blas']
+if blas_config['cython blas ilp64']:
+    pytestmark = pytest.skip(allow_module_level=True,
+                             reason="LP64 _fblas wasn't built")
+
 from scipy.linalg import _fblas as fblas
 
-from numpy.testing import assert_array_equal, \
-    assert_allclose, assert_array_almost_equal, assert_
-
-import pytest
 
 # decimal accuracy to require between Python and LAPACK/BLAS calculations
 accuracy = 5

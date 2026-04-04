@@ -785,10 +785,7 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach
-
 conf_data.set('BLAS_CYTHON_ILP64', cython_blas_ilp64.to_string())
-conf_data.set('BLAS_HAS_LP64', 'true')
-conf_data.set('LAPACK_HAS_LP64', 'true')
 
 configure_file(
   input: '__config__.py.in',
