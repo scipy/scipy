@@ -55,9 +55,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y gfortran
-        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
-        pip install -r requirements/dev.txt
-        pip install mkl mkl-devel
+
+        pip install -r requirements/build.txt
+        pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
 
     - name: Build with defaults (LP64)
       run: |
@@ -89,9 +89,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y gfortran
-        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
-        pip install -r requirements/dev.txt
-        pip install mkl mkl-devel
+
+        pip install -r requirements/build.txt
+        pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
 
     - name: Build with ILP64
       run: |
