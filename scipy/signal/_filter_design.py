@@ -5334,6 +5334,33 @@ def besselap(N, norm='phase', *, xp=None, device=None):
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
 
+    Examples
+    --------
+    Generate a 3rd-order Bessel filter prototype with the default
+    phase-matched normalization:
+
+    >>> import numpy as np
+    >>> from scipy.signal import besselap
+    >>> z, p, k = besselap(3)
+
+    There are no zeros and the gain is 1 for phase normalization:
+
+    >>> len(z)
+    0
+    >>> k
+    1.0
+
+    All poles lie in the left half-plane, ensuring stability:
+
+    >>> np.all(p.real < 0)
+    True
+
+    Use the 'delay' normalization for unit group delay:
+
+    >>> _, _, k_delay = besselap(3, norm='delay')
+    >>> k_delay
+    15.0
+
     """
     if xp is None:
         xp = np_compat
