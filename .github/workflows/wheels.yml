@@ -38,7 +38,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
 
     strategy:
       # Ensure that a wheel builder finishes even if another fails
@@ -50,15 +50,15 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2025, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-22.04, manylinux, x86_64, "", ""]
-        - [ubuntu-22.04, musllinux, x86_64, "", ""]
-        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
-        - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-        - [macos-15-intel, macosx, x86_64, openblas, "10.14" ]
-        - [macos-15-intel, macosx, x86_64, accelerate, "14.0" ]
-        - [macos-14, macosx, arm64, openblas, "12.3"]
-        - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2025, win, AMD64, "", ""]
+        #        - [ubuntu-22.04, manylinux, x86_64, "", ""]
+        #        - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        #        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
+        #        - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
+        #        - [macos-15-intel, macosx, x86_64, openblas, "10.14" ]
+        #        - [macos-15-intel, macosx, x86_64, accelerate, "14.0" ]
+        #        - [macos-14, macosx, arm64, openblas, "12.3"]
+        #        - [macos-14, macosx, arm64, accelerate, "14.0"]
+        #        - [windows-2025, win, AMD64, "", ""]
         - [windows-11-arm, win, ARM64, "", ""]
         python: [["cp312", "3.12"]]
         # python[0] is used to specify the python versions made by cibuildwheel
@@ -82,14 +82,11 @@ jobs:
       - name: Set environment variables for ARM64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         run: |
+            echo "C:\Program Files\LLVM\bin" >> $env:GIHUB_PATH
             echo "CC=clang-cl" >> $env:GITHUB_ENV
             echo "CXX=clang-cl" >> $env:GITHUB_ENV
             echo "FC=flang" >> $env:GITHUB_ENV
             echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
-   
-      - name: Set up Flang for ARM64
-        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
-        uses: ./.github/windows_arm64_steps
 
       - name: windows - set PKG_CONFIG_PATH
         if: ${{ matrix.buildplat[1] == 'win' }}
