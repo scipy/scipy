@@ -4128,6 +4128,35 @@ def vectorstrength(events, period):
         when we vary the "probing" frequency while keeping the spike times
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
+
+    Examples
+    --------
+    Generate events that are perfectly synchronized to a period of 1.0
+    (i.e., events at exact multiples of the period):
+
+    >>> import numpy as np
+    >>> from scipy.signal import vectorstrength
+    >>> events = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
+    >>> strength, phase = vectorstrength(events, 1.0)
+    >>> print(f"{strength:.4f}")
+    1.0000
+
+    Perfect synchronization gives a vector strength of 1. Now add some
+    jitter to the event times to reduce synchronization:
+
+    >>> rng = np.random.default_rng(0)
+    >>> jittered_events = events + rng.uniform(-0.3, 0.3, size=len(events))
+    >>> strength, phase = vectorstrength(jittered_events, 1.0)
+    >>> print(f"{strength:.4f}")
+    0.3952
+
+    Compute the resonating vector strength over multiple candidate
+    periods to identify the true period:
+
+    >>> periods = np.array([0.7, 1.0, 1.3])
+    >>> strengths, phases = vectorstrength(events, periods)
+    >>> strengths
+    array([0.08900837, 1.        , 0.14016205])
     '''
     xp = array_namespace(events, period)
 
