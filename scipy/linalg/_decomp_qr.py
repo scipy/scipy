@@ -272,6 +272,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         Whether data in c is overwritten (may improve performance).
         If this is used, c must be big enough to keep the result,
         i.e. ``c.shape[0]`` = ``a.shape[0]`` if mode is 'left'.
+        See :ref:`tutorial_linalg_overwrite` for details.
 
     Returns
     -------

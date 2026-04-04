@@ -93,6 +93,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Whether to overwrite `b`; may improve performance.  Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -342,6 +343,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Whether to overwrite data in ``b`` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     type : int, optional
         For the generalized problems, this keyword specifies the problem type
         to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
@@ -724,6 +726,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         (Default: calculate also eigenvectors)
     overwrite_a_band : bool, optional
         Discard data in a_band (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     select : {'a', 'v', 'i'}, optional
         Which eigenvalues to calculate
 
@@ -996,6 +999,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     overwrite_b : bool, optional
         Whether to overwrite data in ``b`` (may improve performance). Default
         is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     type : int, optional
         For the generalized problems, this keyword specifies the problem type
         to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
@@ -1121,6 +1125,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         Is the matrix in the lower form. (Default is upper form)
     overwrite_a_band : bool, optional
         Discard data in a_band (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     select : {'a', 'v', 'i'}, optional
         Which eigenvalues to calculate
 

@@ -306,6 +306,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         will not be referenced.
     overwrite_b : bool, optional
         Allow overwriting data in `b` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -421,8 +422,10 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         Right-hand side
     overwrite_ab : bool, optional
         Discard data in `ab` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -560,8 +563,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         Right-hand side
     overwrite_ab : bool, optional
         Discard data in `ab` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
     check_finite : bool, optional
