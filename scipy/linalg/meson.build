@@ -81,6 +81,7 @@ if not use_ilp64 or not cython_blas_ilp64
     fblas_module,
     link_args: version_link_args,
     dependencies: [lapack_lp64_dep, fortranobject_dep],
+    link_with: blas_lapack_wrapper_lib_lp64,
     install: true,
     link_language: link_language_blas_lapack,
     subdir: 'scipy/linalg'
@@ -110,6 +111,7 @@ if not use_ilp64 or not cython_blas_ilp64
     c_args: [Wno_empty_body],
     link_args: version_link_args,
     dependencies: [lapack_lp64_dep, fortranobject_dep],
+    link_with: blas_lapack_wrapper_lib_lp64,
     install: true,
     subdir: 'scipy/linalg'
   )
@@ -132,6 +134,7 @@ if use_ilp64
     fblas64_module,
     link_args: version_link_args,
     dependencies: [lapack_dep, fortranobject_dep],
+    link_with: blas_lapack_wrapper_lib_ilp64,
     install: true,
     link_language: link_language_blas_lapack,
     subdir: 'scipy/linalg'
@@ -148,6 +151,7 @@ if use_ilp64
     c_args: [Wno_empty_body],
     link_args: version_link_args,
     dependencies: [lapack_dep, fortranobject_dep],
+    link_with: blas_lapack_wrapper_lib_ilp64,
     install: true,
     link_language: link_language_blas_lapack,
     subdir: 'scipy/linalg'
