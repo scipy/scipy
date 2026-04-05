@@ -70,5 +70,5 @@ jobs:
       - name: Ccache performance
         shell: bash -l {0}
         run: |
-          ccache --evict-older-than 1d
-          ccache -s
+          pixi exec ccache --evict-older-than 1d
+          pixi exec ccache -s
