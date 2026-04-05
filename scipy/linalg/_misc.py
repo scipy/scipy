@@ -256,7 +256,7 @@ def bandwidth(a):
                         'dtype is not supported.')
 
     # Now that the problematic numeric types are tested, test for numeric or bool.
-    elif not (np.isdtype(a.dtype.type, "numeric") or np.isdtype(a.dtype.type, "bool")):
+    elif not np.isdtype(a.dtype, ("numeric", "bool")):
         raise TypeError(f'Input array must have a numeric dtype, got {a.dtype}.')
 
     # Empty array bandwidth is defined to be zero.
