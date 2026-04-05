@@ -66,3 +66,9 @@ jobs:
           for task in ${{ join(matrix.tasks, ' ') }}; do
             pixi run --skip-deps "$task" -- --durations 3 --timeout=60
           done
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s

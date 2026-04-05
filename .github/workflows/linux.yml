@@ -87,7 +87,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Check installed files
       run: |
@@ -194,7 +196,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
   #################################################################################
   python_debug:
@@ -280,7 +284,9 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Install test dependencies
         run: |
@@ -343,7 +349,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Downgrade NumPy to lowest supported
       run: |
@@ -439,7 +447,9 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Install test dependencies
         run: |
@@ -512,7 +522,9 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Run tests
         run: |
@@ -572,7 +584,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
@@ -727,4 +741,6 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
