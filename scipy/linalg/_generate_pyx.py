@@ -74,11 +74,12 @@ example, in a ``meson.build`` file when using Meson::
 ILP64 support
 -------------
 
-All integer parameters in this module use the ``blas_int`` type, which is
-a typedef for either ``int`` (LP64, the default) or ``int64_t`` (ILP64),
-depending on how SciPy was built. The build configuration can be checked
-at runtime via ``scipy.show_config()`` - look for the ``blas_cython_ilp64``
-entry.
+Integer parameters in the function signatures use ``int`` for LP64
+builds (the default) and ``int64_t`` for ILP64 builds. A convenience
+typedef ``blas_int`` (aliasing the appropriate concrete type) is also
+exported so that downstream packages can write code that works with
+both variants. The build configuration can be checked at runtime via
+``scipy.show_config(mode='dicts')['Build Dependencies']['blas']['cython blas ilp64']``.
 
 Downstream packages that want to support both LP64 and ILP64 builds of SciPy
 should follow this pattern:
@@ -114,7 +115,7 @@ With the file ``_blas_int.pxi.in`` containing the single line::
 
 Integer type:
 
-- blas_int: type alias for either ``int`` or ``int64_t``
+- blas_int: convenience typedef for either ``int`` (LP64) or ``int64_t`` (ILP64)
 
 Raw function pointers (Fortran-style pointer arguments):
 
@@ -163,11 +164,12 @@ Alignment should be checked before these wrappers are used.
 ILP64 support
 -------------
 
-All integer parameters in this module use the ``blas_int`` type, which is
-a typedef for either ``int`` (LP64, the default) or ``int64_t`` (ILP64),
-depending on how SciPy was built. The build configuration can be checked
-at runtime via ``scipy.show_config()`` - look for the ``blas_cython_ilp64``
-entry.
+Integer parameters in the function signatures use ``int`` for LP64
+builds (the default) and ``int64_t`` for ILP64 builds. A convenience
+typedef ``blas_int`` (aliasing the appropriate concrete type) is also
+exported so that downstream packages can write code that works with
+both variants. The build configuration can be checked at runtime via
+``scipy.show_config(mode='dicts')['Build Dependencies']['blas']['cython blas ilp64']``.
 
 Downstream packages that want to support both LP64 and ILP64 builds of SciPy
 should follow this pattern:
@@ -203,7 +205,7 @@ With the file ``_blas_int.pxi.in`` containing the single line::
 
 Integer type:
 
-- blas_int: type alias for either ``int`` or ``int64_t``
+- blas_int: convenience typedef for either ``int`` (LP64) or ``int64_t`` (ILP64)
 
 Raw function pointers (Fortran-style pointer arguments):
 
@@ -588,17 +590,31 @@ ctypedef int64_t blas_int
 
 """
 
-_pxd_lapack_select_typedefs = """\
+_pxd_lapack_select_typedefs_lp64 = """\
 # Function pointer type declarations for
 # gees and gges families of functions.
-ctypedef blas_int cselect1(c*)
-ctypedef blas_int cselect2(c*, c*)
-ctypedef blas_int dselect2(d*, d*)
-ctypedef blas_int dselect3(d*, d*, d*)
-ctypedef blas_int sselect2(s*, s*)
-ctypedef blas_int sselect3(s*, s*, s*)
-ctypedef blas_int zselect1(z*)
-ctypedef blas_int zselect2(z*, z*)
+ctypedef int cselect1(c*)
+ctypedef int cselect2(c*, c*)
+ctypedef int dselect2(d*, d*)
+ctypedef int dselect3(d*, d*, d*)
+ctypedef int sselect2(s*, s*)
+ctypedef int sselect3(s*, s*, s*)
+ctypedef int zselect1(z*)
+ctypedef int zselect2(z*, z*)
+
+"""
+
+_pxd_lapack_select_typedefs_ilp64 = """\
+# Function pointer type declarations for
+# gees and gges families of functions.
+ctypedef int64_t cselect1(c*)
+ctypedef int64_t cselect2(c*, c*)
+ctypedef int64_t dselect2(d*, d*)
+ctypedef int64_t dselect3(d*, d*, d*)
+ctypedef int64_t sselect2(s*, s*)
+ctypedef int64_t sselect3(s*, s*, s*)
+ctypedef int64_t zselect1(z*)
+ctypedef int64_t zselect2(z*, z*)
 
 """
 
@@ -610,7 +626,8 @@ def _get_pxd_preamble(lib_name, ilp64=False):
         suffix = ""
     else:
         comments = _pxd_lapack_comments
-        suffix = _pxd_lapack_select_typedefs
+        suffix = (_pxd_lapack_select_typedefs_ilp64 if ilp64
+                  else _pxd_lapack_select_typedefs_lp64)
     types = _pxd_types_ilp64 if ilp64 else _pxd_types_lp64
     return f"\n{comments}{types}{suffix}"
 
@@ -661,19 +678,27 @@ def generate_file_c(sigs, lib_name, accelerate, ilp64=False):
     return ''.join(content)
 
 
-def _sigs_replace_int(sigs):
-    """Replace 'int' and 'bint' types with 'blas_int' in parsed signatures.
+def _sigs_replace_int(sigs, ilp64=False):
+    """Replace integer types in parsed signatures with the concrete type.
 
-    This makes BLAS/LAPACK integer parameters use the ``blas_int`` typedef,
-    which resolves to ``int`` for LP64 and ``int64_t`` for ILP64 builds.
+    For LP64 builds (``ilp64=False``), signatures are left unchanged (they
+    already use ``int``).  For ILP64 builds, ``int`` and ``bint`` are replaced
+    with ``int64_t``.
+
+    We intentionally avoid using the ``blas_int`` typedef in function
+    signatures because Cython encodes typedef names into PyCapsule signature
+    strings (``__pyx_capi__``), which would break ABI compatibility with
+    packages compiled against a previous SciPy release.
     """
+    if not ilp64:
+        return sigs
     for sig in sigs:
         sig['argtypes'] = [
-            'blas_int' if t in ('int', 'bint') else t
+            'int64_t' if t in ('int', 'bint') else t
             for t in sig['argtypes']
         ]
         if sig['return_type'] in ('int', 'bint'):
-            sig['return_type'] = 'blas_int'
+            sig['return_type'] = 'int64_t'
     return sigs
 
 
@@ -697,11 +722,11 @@ def make_all(outdir,
     with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     blas_sigs = read_signatures(blas_sigs)
-    blas_sigs = _sigs_replace_int(blas_sigs)
+    blas_sigs = _sigs_replace_int(blas_sigs, ilp64)
     with open(lapack_signature_file) as f:
         lapack_sigs = f.readlines()
     lapack_sigs = read_signatures(lapack_sigs)
-    lapack_sigs = _sigs_replace_int(lapack_sigs)
+    lapack_sigs = _sigs_replace_int(lapack_sigs, ilp64)
     to_write = {
         dst_files[0]: generate_file_pyx(
             blas_sigs, 'BLAS', blas_header_name, accelerate, ilp64),
