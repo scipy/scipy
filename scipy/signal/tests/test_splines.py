@@ -213,8 +213,8 @@ class TestSymIIR:
             else:
                 c_precision = 1e-11
 
-        # Compute the initial conditions for a order-two symmetrical low-pass
-        # filter with r = 0.5 and omega = pi / 3 for an unit step input.
+        # Compute the initial conditions for an order-two symmetrical low-pass
+        # filter with r = 0.5 and omega = pi / 3 for a unit step input.
         r = xp.asarray(0.5, dtype=dtype)
         omega = xp.asarray(np.pi / 3.0, dtype=dtype)
         cs = 1 - 2 * r * xp.cos(omega) + r**2
