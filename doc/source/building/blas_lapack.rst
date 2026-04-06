@@ -104,7 +104,7 @@ user wants to override this autodetection mechanism for building against plain
 64-bit integer (ILP64) BLAS/LAPACK
 ----------------------------------
 
-Support for ILP64 BLAS and LAPACK, as of version 0.18.0, requires that also LP64
+Support for ILP64 BLAS and LAPACK, as of version 1.18.0, requires that also LP64
 symbols are available in the same library. Hence, ILP64 support is only available
 MKL and Accelerate. *Note: after the deprecated scipy.odr (the last Fortran
 module) is removed, this restriction will be removed and OpenBLAS and other
