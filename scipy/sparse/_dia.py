@@ -553,6 +553,23 @@ class dia_array(_dia_base, sparray):
     addition, subtraction, multiplication, division, and matrix power.
     Sparse arrays with DIAgonal storage do not support slicing.
 
+    In the ``(data, offsets)`` construction format, ``data[k, :]`` stores the
+    entries for the diagonal specified by ``offsets[k]``. The columns of
+    ``data`` correspond to columns of the resulting sparse array -- that is,
+    ``data[k, j]`` maps to position ``(j - offsets[k], j)`` when that position
+    lies within the array bounds.
+
+    As a consequence, sub-diagonals (negative offsets) are left-aligned in their
+    rows of ``data``, with unused entries at the right end. Super-diagonals
+    (positive offsets) are right-aligned, with unused entries at the left.
+    The main diagonal (offset 0) is aligned with no unused entries (for square
+    arrays).
+
+    When ``offsets`` is given in decreasing order, the ``data`` layout is
+    consistent with the `BLAS/LAPACK general band storage format
+    <https://netlib.org/lapack/lug/node124.html>`_, which allows direct use
+    with routines like ``dgbmv``.
+
     Examples
     --------
 
@@ -635,6 +652,23 @@ class dia_matrix(spmatrix, _dia_base):
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
     Sparse matrices with DIAgonal storage do not support slicing.
+
+    In the ``(data, offsets)`` construction format, ``data[k, :]`` stores the
+    entries for the diagonal specified by ``offsets[k]``. The columns of
+    ``data`` correspond to columns of the resulting sparse matrix -- that is,
+    ``data[k, j]`` maps to position ``(j - offsets[k], j)`` when that position
+    lies within the matrix bounds.
+
+    As a consequence, sub-diagonals (negative offsets) are left-aligned in their
+    rows of ``data``, with unused entries at the right end. Super-diagonals
+    (positive offsets) are right-aligned, with unused entries at the left.
+    The main diagonal (offset 0) is aligned with no unused entries (for square
+    matrices).
+
+    When ``offsets`` is given in decreasing order, the ``data`` layout is
+    consistent with the `BLAS/LAPACK general band storage format
+    <https://netlib.org/lapack/lug/node124.html>`_, which allows direct use
+    with routines like ``dgbmv``.
 
     Examples
     --------
