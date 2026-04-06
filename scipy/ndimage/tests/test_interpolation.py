@@ -652,6 +652,35 @@ class TestMapCoordinates:
         expected = xp.stack([single] * n_channels, axis=-1)
         xp_assert_close(multi, expected)
 
+    @pytest.mark.parametrize('mode', ['mirror', 'reflect', 'grid-wrap',
+                                      'grid-constant', 'nearest'])
+    def test_map_coordinates_order0_half_integer_rounding(self, mode, xp):
+        # Regression test for gh-24160: mirror mode rounded negative
+        # half-integer coordinates inconsistently (away from zero instead of
+        # toward +inf) due to the coordinate reflection flipping the
+        # fractional part before rounding.
+        data = xp.asarray([3., 2., 1.])
+        coords = xp.asarray([[-0.5, 0.5, 2.5]])
+
+        result = ndimage.map_coordinates(data, coords, order=0, mode=mode)
+
+        # At -0.5 with order=0 the nearest integer toward +inf is 0 so
+        # all modes that include index 0 in-range should return data[0].
+        # At 0.5 and 2.5 the nearest integer toward +inf is 1 and 3 and
+        # then the boundary mode then determines the final mapped index.
+        if mode == 'grid-constant':
+            expected = xp.asarray([3., 2., 0.])
+        elif mode == 'grid-wrap':
+            expected = xp.asarray([3., 2., 3.])
+        elif mode == 'nearest':
+            expected = xp.asarray([3., 2., 1.])
+        elif mode == 'reflect':
+            expected = xp.asarray([3., 2., 1.])
+        elif mode == 'mirror':
+            expected = xp.asarray([3., 2., 2.])
+
+        xp_assert_equal(result, expected)
+
 
 @make_xp_test_case(ndimage.affine_transform)
 class TestAffineTransform:

@@ -483,6 +483,9 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         for(hh = 0; hh < irank; hh++) {
             double cc = icoor[hh] + nprepad;
             if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
+                if (order == 0) {
+                    cc = floor(cc + 0.5);
+                }
                 /* if the input coordinate is outside the borders, map it: */
                 cc = map_coordinate(cc, idimensions[hh], mode);
             }
@@ -807,6 +810,9 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             }
             cc += (double)nprepad;
             if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
+                if (order == 0) {
+                    cc = floor(cc + 0.5);
+                }
                 /* if the input coordinate is outside the borders, map it: */
                 cc = map_coordinate(cc, idimensions[jj], mode);
             }
