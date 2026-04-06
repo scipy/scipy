@@ -815,8 +815,9 @@ def kron(A, B, format=None):
 
         For the case where input arrays are numpy arrays, this function is
         switching to returning a sparse array instead of sparse matrix.
-        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
         For example, kron(coo_matrix(A), B).
+        Avoid this message for sparse array output by using kron(coo_array(A), B).
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
@@ -943,8 +944,9 @@ def kronsum(A, B, format=None):
 
         For the case where input arrays are numpy arrays, this function is
         switching to returning a sparse array instead of sparse matrix.
-        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
         For example, kronsum(coo_matrix(A), B).
+        Avoid this message for sparse array output by using kronsum(coo_array(A), B).
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
@@ -1432,8 +1434,9 @@ def block_diag(mats, format=None, dtype=None):
 
         For the case where input arrays are numpy arrays, this function is
         switching to returning a sparse array instead of sparse matrix.
-        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
         For example, block_diag([coo_matrix(A), B]).
+        Avoid this message for sparse array output using block_diag([coo_array(A), B]).
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 

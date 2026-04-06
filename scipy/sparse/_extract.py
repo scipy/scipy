@@ -108,8 +108,9 @@ def tril(A, k=0, format=None):
 
         For the case where input arrays are numpy arrays, this function is
         switching to returning a sparse array instead of sparse matrix.
-        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
         For example, tril(coo_matrix(A)).
+        Avoid this message for sparse array output by using tril(coo_array(A)).
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
@@ -195,8 +196,9 @@ def triu(A, k=0, format=None):
 
         For the case where input arrays are numpy arrays, this function is
         switching to returning a sparse array instead of sparse matrix.
-        Recover the sparse matrix returns by making at least one input a sparse matrix.
+        Recover the sparse matrix return value by making one input a sparse matrix.
         For example, triu(coo_matrix(A)).
+        Avoid this message for sparse array output by using triu(coo_array(A)).
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
