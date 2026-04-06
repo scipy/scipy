@@ -4,6 +4,7 @@ from numpy.testing import assert_array_equal, assert_equal
 from scipy.stats.contingency import crosstab
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize('sparse', [False, True])
 def test_crosstab_basic(sparse):
     a = [0, 0, 9, 9, 0, 0, 9]
@@ -21,17 +22,22 @@ def test_crosstab_basic(sparse):
         assert_array_equal(count, expected_count)
 
 
-def test_crosstab_basic_1d():
+@pytest.mark.parametrize('sparse', [False, True])
+def test_crosstab_basic_1d(sparse):
     # Verify that a single input sequence works as expected.
     x = [1, 2, 3, 1, 2, 3, 3]
     expected_xvals = [1, 2, 3]
     expected_count = np.array([2, 2, 3])
-    (xvals,), count = crosstab(x)
+    (xvals,), count = crosstab(x, sparse=sparse)
     assert_array_equal(xvals, expected_xvals)
-    assert_array_equal(count, expected_count)
+    if sparse:
+        assert_array_equal(count.toarray(), expected_count)
+    else:
+        assert_array_equal(count, expected_count)
 
 
-def test_crosstab_basic_3d():
+@pytest.mark.parametrize('sparse', [False, True])
+def test_crosstab_basic_3d(sparse):
     # Verify the function for three input sequences.
     a = 'a'
     b = 'b'
@@ -45,13 +51,17 @@ def test_crosstab_basic_3d():
                                 [0, 1, 1]],
                                [[2, 0, 1],
                                 [0, 0, 1]]])
-    (xvals, yvals, zvals), count = crosstab(x, y, z)
+    (xvals, yvals, zvals), count = crosstab(x, y, z, sparse=sparse)
     assert_array_equal(xvals, expected_xvals)
     assert_array_equal(yvals, expected_yvals)
     assert_array_equal(zvals, expected_zvals)
-    assert_array_equal(count, expected_count)
+    if sparse:
+        assert_array_equal(count.toarray(), expected_count)
+    else:
+        assert_array_equal(count, expected_count)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize('sparse', [False, True])
 def test_crosstab_levels(sparse):
     a = [0, 0, 9, 9, 0, 0, 9]
@@ -70,6 +80,7 @@ def test_crosstab_levels(sparse):
         assert_array_equal(count, expected_count)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize('sparse', [False, True])
 def test_crosstab_extra_levels(sparse):
     # The pair of values (-1, 3) will be ignored, because we explicitly
@@ -98,11 +109,6 @@ def test_validation_at_least_one():
 def test_validation_same_lengths():
     with pytest.raises(ValueError, match='must have the same length'):
         crosstab([1, 2], [1, 2, 3, 4])
-
-
-def test_validation_sparse_only_two_args():
-    with pytest.raises(ValueError, match='only two input sequences'):
-        crosstab([0, 1, 1], [8, 8, 9], [1, 3, 3], sparse=True)
 
 
 def test_validation_len_levels_matches_args():

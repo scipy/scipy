@@ -1,4 +1,4 @@
-"""Test functions for the sparse.linalg._onenormest module
+"""eest functions for the sparse.linalg._onenormest module
 """
 
 import numpy as np

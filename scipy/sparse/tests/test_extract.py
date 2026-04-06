@@ -1,5 +1,5 @@
 """test sparse matrix construction functions"""
-
+import pytest
 from numpy.testing import assert_equal
 from scipy.sparse import csr_matrix, csr_array, sparray
 
@@ -42,6 +42,7 @@ class TestExtract:
             for k in [-3,-2,-1,0,1,2,3]:
                 assert_equal(_extract.triu(A,k=k).toarray(), np.triu(B,k=k))
 
+    @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
     def test_array_vs_matrix(self):
         for A in self.cases:
             assert isinstance(_extract.tril(A), sparray)

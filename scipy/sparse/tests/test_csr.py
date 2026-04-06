@@ -3,6 +3,13 @@ from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
+import warnings
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*_matrix is being replaced:DeprecationWarning",
+)
+
+warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
 
 
 def _check_csr_rowslice(i, sl, X, Xcsr):
@@ -182,6 +189,7 @@ def test_csr_hstack_int64():
     assert X_hs_32.indices.dtype == np.int32
     assert X_hs_32.indices.max() == max_int32 - 1
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
 def test_mixed_index_dtype_int_indexing(cls):
     # https://github.com/scipy/scipy/issues/20182
