@@ -925,7 +925,7 @@ enum QR_mode : Py_ssize_t
 {
     FULL = 1,
     R = 11,
-    RAW = 21,
+    RAW_MODE = 21,
     ECONOMIC = 31
 };
 

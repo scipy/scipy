@@ -287,7 +287,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
             break; // shape of `Q` irrelevant here
         }
 
-        case QR_mode::RAW:
+        case QR_mode::RAW_MODE:
         {
             shape_Q[ndim-1] = N;
             shape_R[ndim-2] = K;
@@ -318,7 +318,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         goto fail_qr;
     }
 
-    if (mode == QR_mode::RAW) {
+    if (mode == QR_mode::RAW_MODE) {
         shape_Q[ndim-2] = K; // Just reuse `shape_Q`; not used any longer.
         ap_tau = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum); // Just a vector, so `ndim-1`.
         if (!ap_tau) {
@@ -379,7 +379,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     ret_lst = convert_vec_status(vec_status);
 
     ret_Q = (mode != QR_mode::R) ? PyArray_Return(ap_Q) : Py_None;
-    ret_tau = (mode == QR_mode::RAW) ? PyArray_Return(ap_tau) : Py_None;
+    ret_tau = (mode == QR_mode::RAW_MODE) ? PyArray_Return(ap_tau) : Py_None;
     ret_jpvt = (pivoting) ? PyArray_Return(ap_jpvt): Py_None;
     return Py_BuildValue("NNNNN", ret_Q, PyArray_Return(ap_R), ret_tau, ret_jpvt, ret_lst);
 
