@@ -1794,6 +1794,40 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
     morphological_laplace : ndarray
         Output
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import ndimage
+    >>> # Create a simple 1-D signal with a step edge
+    >>> x = np.array([0, 0, 0, 0, 5, 5, 5, 5])
+    >>> ndimage.morphological_laplace(x, size=3)
+    array([ 0,  0,  0,  5, -5,  0,  0,  0])
+
+    The morphological laplace highlights regions where the local dilation
+    and erosion differ from the original value. It is computed as
+    ``dilation(input) + erosion(input) - 2 * input``.
+
+    Apply it to a 2-D array to detect edges in multiple directions:
+
+    >>> a = np.zeros((7, 7), dtype=int)
+    >>> a[2:5, 2:5] = 3
+    >>> a
+    array([[0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 3, 3, 3, 0, 0],
+           [0, 0, 3, 3, 3, 0, 0],
+           [0, 0, 3, 3, 3, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 0]])
+    >>> ndimage.morphological_laplace(a, size=3)
+    array([[ 0,  0,  0,  0,  0,  0,  0],
+           [ 0,  3,  3,  3,  3,  3,  0],
+           [ 0,  3, -3, -3, -3,  3,  0],
+           [ 0,  3, -3,  0, -3,  3,  0],
+           [ 0,  3, -3, -3, -3,  3,  0],
+           [ 0,  3,  3,  3,  3,  3,  0],
+           [ 0,  0,  0,  0,  0,  0,  0]])
+
     """
     input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,
