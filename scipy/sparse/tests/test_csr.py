@@ -227,7 +227,7 @@ def test_broadcast_to():
     with pytest.raises(ValueError, match="cannot be broadcast"):
         csr_array([0, 1, 2])._broadcast_to(shape=(3, 2))
 
-#@pytest.mark.xslow
+@pytest.mark.xslow
 def test_large_assignments():
     # When nnz grows bigger than int32 can hold, shift to int64 index arrays
 
