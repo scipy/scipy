@@ -354,6 +354,9 @@ class Radau(OdeSolver):
             if sparsity is not None:
                 if issparse(sparsity):
                     sparsity = sparsity.tocsc()
+                    # this restricts self.n to fit in int32 for group_columns
+                    indices, indptr = safely_cast_index_arrays(sparsity)
+                    sparsity.indices, sparsity.indptr = indices, indptr
                 groups = group_columns(sparsity)
                 sparsity = (sparsity, groups)
 
