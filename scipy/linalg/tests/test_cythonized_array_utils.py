@@ -10,10 +10,8 @@ def test_bandwidth_dtypes():
     n = 5
     for t in np.typecodes['All']:
         A = np.zeros([n, n], dtype=t)
-        if t in 'eUVOMm':
+        if t in 'egGSUVOMm':
             raises(TypeError, bandwidth, A)
-        elif t == 'G':  # No-op test. On win these pass on others fail.
-            pass
         else:
             _ = bandwidth(A)
 
@@ -24,7 +22,7 @@ def test_bandwidth_non2d_input():
 
 
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']
-                               if x not in 'eGUVOMmS'])
+                               if x not in 'egGUVOMmS'])
 def test_bandwidth_square_inputs(T):
     n = 20
     k = 4
@@ -50,7 +48,7 @@ def test_bandwidth_square_inputs(T):
 
 @skip_xp_invalid_arg
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']
-                               if x not in 'eGUVOMm'])
+                               if x not in 'egGSUVOMm'])
 def test_bandwidth_rect_inputs(T):
     n, m = 10, 20
     k = 5

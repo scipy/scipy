@@ -21,6 +21,10 @@
     #define CPLX_C(real, imag) (real + imag*I)
 #endif
 
+
+#include "_linalg_simd_kernels.h"
+
+
 // BLAS and LAPACK functions used
 void BLAS_FUNC(saxpy)(CBLAS_INT* n, float* sa, float* sx, CBLAS_INT* incx, float* sy, CBLAS_INT* incy);
 void BLAS_FUNC(scopy)(CBLAS_INT* n, float* dx, CBLAS_INT* incx, float* dy, CBLAS_INT* incy);
@@ -73,117 +77,6 @@ void BLAS_FUNC(zrot)(CBLAS_INT* n, SCIPY_Z* cx, CBLAS_INT* incx, SCIPY_Z* cy, CB
 void BLAS_FUNC(zdscal)(CBLAS_INT* n, double* sa, SCIPY_Z* sx, CBLAS_INT* incx);
 void BLAS_FUNC(ztrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* info);
 // void BLAS_FUNC(ztrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, double* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
-
-/**
- *  These functions are used to measure the bandwidth of an (n x m) matrix
- *  stored in row-major (C) format.
- */
-static inline void
-bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
-{
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-            if (data[r*m + c] != 0.0f) { lb = r - c; break; }
-        }
-        if (r <= lb) { break; }
-    }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-            if (data[r*m + c] != 0.0f) { ub = c - r; break; }
-        }
-        if (r + ub + 1 > m) { break; }
-    }
-    *lower_band = lb;
-    *upper_band = ub;
-}
-
-
-static inline void
-bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
-{
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-            if (data[r*m + c] != 0.0) { lb = r - c; break; }
-        }
-        if (r <= lb) { break; }
-    }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-            if (data[r*m + c] != 0.0) { ub = c - r; break; }
-        }
-        if (r + ub + 1 > m) { break; }
-    }
-    *lower_band = lb;
-    *upper_band = ub;
-}
-
-
-static inline void
-bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
-{
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { lb = r - c; break; }
-#else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { lb = r - c; break; }
-#endif
-        }
-        if (r <= lb) { break; }
-    }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { ub = c - r; break; }
-#endif
-        }
-        if (r + ub + 1 > m) { break; }
-    }
-    *lower_band = lb;
-    *upper_band = ub;
-}
-
-
-static inline void
-bandwidth_z(SCIPY_Z* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
-{
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { lb = r - c; break; }
-#else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { lb = r - c; break; }
-#endif
-        }
-        if (r <= lb) { break; }
-    }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { ub = c - r; break; }
-#endif
-        }
-        if (r + ub + 1 > m) { break; }
-    }
-    *lower_band = lb;
-    *upper_band = ub;
-}
 
 
 /*
