@@ -627,7 +627,7 @@ def isspmatrix_bsr(x):
 
        SciPy sparse is shifting from a sparse matrix interface to a sparse
        array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the that matrix
+       sparse matrix interface. For documentation of the matrix
        interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
        For guidance on converting existing code to sparse arrays, see
        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
@@ -783,7 +783,7 @@ class bsr_matrix(spmatrix, _bsr_base):
 
        SciPy sparse is shifting from a sparse matrix interface to a sparse
        array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the that matrix
+       sparse matrix interface. For documentation of the matrix
        interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
        For guidance on converting existing code to sparse arrays, see
        :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.

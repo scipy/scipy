@@ -552,8 +552,7 @@ def main(argv):
             # these now in separate docs page for spmatrix
             soon_deprecated = ['bsr_matrix', 'csr_matrix', 'csc_matrix',
                                'lil_matrix', 'coo_matrix', 'dia_matrix',
-                               'dok_matrix', 'spmatrix', 'spdiags', 'eye',
-                               'identity', 'bmat', 'rand', 'random', 'diags',
+                               'dok_matrix', 'spmatrix',
                                'isspmatrix_bsr', 'isspmatrix_coo', 'isspmatrix_csr',
                                'isspmatrix_csc', 'isspmatrix_dia', 'isspmatrix_dok',
                                'isspmatrix_lil', 'spdiags', 'eye', 'identity',
