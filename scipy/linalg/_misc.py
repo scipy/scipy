@@ -251,9 +251,8 @@ def bandwidth(a):
     if a.ndim < 2:
         raise ValueError('Input array must be at least 2D.')
 
-    if a.dtype.char in 'egG':
-        raise TypeError('Input array with float16/float128/complex256 '
-                        'dtype is not supported.')
+    if np.isdtype(a.dtype, (np.float16, np.longdouble, np.clongdouble)):
+        raise TypeError(f'Input array with {a.dtype} dtype is not supported.')
 
     # Now that the problematic numeric types are tested, test for numeric or bool.
     elif not np.isdtype(a.dtype, ("numeric", "bool")):

@@ -5,30 +5,29 @@ import pytest
 from pytest import raises
 from numpy.testing import assert_equal
 
+BANDWIDTH_DTYPES = (
+    np.bool,
+    np.int8, np.int16, np.int32, np.int64,
+    np.uint8, np.uint16, np.uint32, np.uint64,
+    np.float32, np.float64,
+    np.complex64, np.complex128,
+)
+
+
 @skip_xp_invalid_arg
 def test_bandwidth_dtypes():
     n = 5
-    for t in np.typecodes['All']:
-        A = np.zeros([n, n], dtype=t)
+    for dt in BANDWIDTH_DTYPES:
+        _ = bandwidth(np.zeros([n, n], dtype=dt))
 
-        # Skip types that are not supported
-        # e: np.float16
-        # g: np.float128,   (longdouble)
-        # G: np.complex256  (longdouble complex)
-        # S: np.bytes_,
-        # U: np.str_,
-        # V: np.void,
-        # O: np.object_,
-        # M: np.datetime64
-        # m: np.timedelta64
-        if t in 'egGSUVOMm':
-            raises(TypeError, bandwidth, A)
-        else:
-            _ = bandwidth(A)
+    unsupported_dtypes = [np.float16, np.longdouble, np.clongdouble,
+                          np.bytes_, np.str_, np.void, np.object_,
+                          np.datetime64, np.timedelta64]
+    for dt in unsupported_dtypes:
+        raises(TypeError, bandwidth, np.zeros([n, n], dtype=dt))
 
 
-@pytest.mark.parametrize('T', [x for x in np.typecodes['All']
-                               if x not in 'egGUVOMmS'])  # Skip the same types as above
+@pytest.mark.parametrize('T', BANDWIDTH_DTYPES)
 def test_bandwidth_square_inputs(T):
     n = 20
     k = 4
@@ -66,8 +65,7 @@ def test_bandwidth_square_inputs(T):
 
 
 @skip_xp_invalid_arg
-@pytest.mark.parametrize('T', [x for x in np.typecodes['All']
-                               if x not in 'egGSUVOMm'])  # Skip the same types as above
+@pytest.mark.parametrize('T', BANDWIDTH_DTYPES)
 def test_bandwidth_rect_inputs(T):
     n, m = 10, 20
     k = 5
