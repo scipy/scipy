@@ -304,7 +304,25 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
 
-    if (mode != QR_mode::R) { // Allocate Q if needed, if `mode == raw`, F-ordered array is required.
+    /*
+     * Allocation strategy:
+     *
+     * - Q: always needed except if `mode == r`. In the case that `mode == economic` or `mode == raw`
+     *      the input buffer can be re-used if `overwrite_a` is set. (Albeit that it is possible that
+     *      if M < N `Q` will have to be shrunk down at the python side to become `M x M`.)
+     *
+     *      An additional comment is that `Q` is returned with F-ordered slices for `mode == raw` as its
+     *      output is destined to be fed into LAPACK, allowing fast-paths in memory copies.
+     *
+     * - R: always needed. If `mode == raw` or `mode == economic` a new array is always allocated for this.
+     *      For the other two modes the input buffer can be re-used if `overwrite_a` is set.
+     *
+     * - tau: only allocated if `mode == raw`. Else a temporary buffer is allocated in the main loop as the
+     *        reflectors shouldn't be stored anyways.
+     *
+     * - jpvt: only allocated if `pivoting` is set.
+     */
+    if (mode != QR_mode::R) {
         if (!overwrite_a || mode == QR_mode::FULL) {
             ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
             if (!ap_Q) {
@@ -343,8 +361,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
          *
          * Dimensions other than the last two are not affected so slice computation etc. stays intact.
          *
-         * This step is bypassed if `overwrite_a` is set since this flag is only enabled when the input is 2D and F-ordered,
-         * so swapping around the strides does not make a difference then.
+         * Since `overwrite_a` is only enabled when the input has F-ordered slices, this is not necessary in that case.
          */
         if (!overwrite_a) {
             npy_intp *strides_Q = PyArray_STRIDES(ap_Q);

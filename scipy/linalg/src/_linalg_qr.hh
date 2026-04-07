@@ -91,17 +91,37 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
      * ^            ^             ^
      * work         tau_buffer    data_A
      *
-     * - `work` is the work area, size `lwork`
+     * - `work` is the work area, size `lwork`. Always allocated.
+     *
      * - `tau_buffer` contains a temporary buffer for the reflectors. If mode == RAW_MODE, they have
-     *   to be returned and hence a buffer is not needed. If needed, size = K
+     *   to be returned and hence a temporary buffer is not needed. Else it has size `K`.
+     *
      * - `data_A` contains a temporary buffer for LAPACK calls, if mode == FULL, the resulting
-     *   `Q` is `M` x `M`. However, `max_dim` is used to allocate enough space should `M` < `N`.
-     *   If `overwrite_a` is enabled this buffer is not needed. Similarly, if mode == RAW the
-     *   returned argument is also in F-order, so the intermediate buffer step can be skipped.
+     *   `Q` is `M x max_dim` to account for both `M >= N` and `M < N`. For mode == R and
+     *   mode == ECONOMIC the required buffer of size `M x N`. For mode == RAW_MODE this buffer
+     *   can be bypassed altogether due to the fact that the returned output has F-ordered slices.
+     *
+     *   When `overwrite_a` is set the buffer is also not needed for ECONOMIC and R modes. Due to the fact
+     *   that the resulting `Q` can be larger than `A` for mode == FULL a buffer is still allocated in that
+     *   case.
+     *
+     * The re-use of the input buffer when `overwrite_a` is enabled works as follows:
+     * - mode == RAW_MODE:
+     *      the factorization is performed in-place and `R` is extracted into a newly allocated array.
+     * - mode == R:
+     *      factorization performed in-place and the other triangle is zeroed out.
+     * - mode == ECONOMIC:
+     *      perform factorization in-place, extract `R` to newly allocated array and explicitly compute
+     *      `Q` in-place as well. If needed (i.e. `M < N`), the `Q` is shrunk into having `M x M` slices
+     *      at the python side.
+     * - mode == FULL:
+     *      copy data into the temporary buffer and perform factorizations there. The input array is re-used for
+     *      storing `R`. At the end `Q` is copied into a newly allocated array.
+     *      XXX: for `M < N` it is possible to circumvent the temporary buffer, but that would lead to shape-dependent codepaths.
      */
     CBLAS_INT tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
     CBLAS_INT buf_size = ((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE) ? 0 : (mode == QR_mode::FULL) ? M * max_dim : M * N;
-    T *buffer = (T *)malloc((buf_size + lwork + tau_size) * sizeof(T));
+    T *buffer = (T *)malloc((lwork + tau_size + buf_size) * sizeof(T));
     if ( buffer == NULL ) { info = -101; return int(info); }
 
     T *work = &buffer[0];
@@ -134,14 +154,14 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
         if (!(mode == QR_mode::R && overwrite_a)) {
             slice_ptr_R = compute_slice_ptr(idx, R_data, ndim, shape, strides_R);
-        } // NB. if the condition is true the relevant buffer is already in place
+        } // NB. if the condition is true the relevant buffer is already in place and no copy back is needed either.
 
         if (mode != QR_mode::R) {
             slice_ptr_Q = compute_slice_ptr(idx, Q_data, ndim, shape, strides_Q);
         }
         if (mode == QR_mode::RAW_MODE) {
             slice_ptr_tau = compute_slice_ptr(idx, tau_data, ndim, shape, strides_tau);
-        } else { // `tau` might still be required, but should not be returned, so buffer is sufficient.
+        } else { // `tau` might still be required for computation of `Q`, but should not be returned, so the temporary buffer is sufficient.
             slice_ptr_tau = tau_buffer;
         }
         if (pivoting) {
@@ -150,7 +170,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
         /*
          * Copy the buffer for processing. When `overwrite_a` is disabled the data should be handled in
-         * another buffer, so copying is necessary. When it is set, the data can be processed in place.
+         * another buffer, so copying is necessary. When the flag is set, the data can be processed in place.
          *
          * Another optimization is to process the data for mode == RAW in the return object directly as
          * the returned array is in F-order, hence bypassing the buffer avoids two redundant copies.
@@ -188,8 +208,9 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         }
 
         // `R` is always required, the correct shape is ensured by `middle_dim`.
-        if (mode == QR_mode::R && overwrite_a) {
-            zero_other_triangle('U', data_A, middle_dim, intn, intm); // Data in-place, but need to remove the other part of the factorization still
+        // NB. if a new array is allocated, it is pre-filled with zeros so only the relevant triangle should be copied.
+        if (mode == QR_mode::R && overwrite_a) { // Data in-place, but need to remove the other part of the factorization still to obtain upper-triangular matrix
+            zero_other_triangle('U', data_A, middle_dim, intn, intm);
         } else if (mode == QR_mode::FULL && overwrite_a) {
             // The `R` array should be copied back into the `A` array, which is F-ordered, so pretend the transpose got copied.
             // Then zero out the other triangle since the original input data is still in place.
@@ -197,7 +218,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             zero_other_triangle('U', slice_ptr_A, intm, intn, intm);
         } else {
             copy_triangle_to_C(slice_ptr_R, data_A, middle_dim, intn, 1, intm, 'U'); // F-ordered input to `copy_triangle`, hence `s0 == 1` and `s1 == intm`
-        } // NB. if a new array is allocated, it is pre-filled with zeros so only the relevant triangle should be copied.
+        }
 
         // Construct the Q matrix if required, same handling for both modes; dimensions are set already.
         if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
@@ -213,8 +234,8 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
                 copy_slice_F_to_C(slice_ptr_Q, data_A, intm, middle_dim);
             } // NB. else the data is already in place
         }
-        // NB. for mode == RAW the data was either processed in place (for `overwrite_a`),
-        // or was processed in the return object. Hence, Q is already in place and no additional copy is needed.
+        // NB. for mode == RAW_MODE the data was either processed in place (for `overwrite_a`) or it was processed
+        // directly in the return object. Hence, Q is already in place and no additional copy is needed.
 
     } // End of batching loop
 
