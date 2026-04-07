@@ -227,64 +227,51 @@ def test_broadcast_to():
     with pytest.raises(ValueError, match="cannot be broadcast"):
         csr_array([0, 1, 2])._broadcast_to(shape=(3, 2))
 
-@pytest.mark.xslow
-def test_large_assign_to_empty_array():
-    # compressed assignment growing over int32 index array boundary gh-24915
-    d = 47000  # d**2 > 2**31 (46340**2 fits in int32, 46341**2 does not)
-    index = np.arange(46341)
-    WMSG = "Changing the sparsity structure"
+#@pytest.mark.xslow
+def test_large_assignments():
+    # When nnz grows bigger than int32 can hold, shift to int64 index arrays
 
-    csr_a = csr_array((d, d), dtype=np.float32)
-    # was raising ValueError due to int32 n_samples but assigning at > 2**31 locations
-    assert csr_a.indices.dtype == np.int32
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
-        csr_a[index[:, None], index] = 1
-    assert csr_a.indices.dtype == np.int64
+    # parametrize puts lots of slow stuff into pytest's collection phase. So dont use it
+    def check(A_info, index, rhs):
+        if A_info is None:
+            A = csr_array((d, d), dtype=np.int32)
+        else:
+            A = csr_array(A_info, shape=(d, d))
 
-@pytest.mark.xslow
-def test_assign_to_already_large_array():
-    d = 47000  # d**2 > 2**31 (46340**2 fits in int32, 46341**2 does not)
-    WMSG = "Changing the sparsity structure"
+        # check that we start small
+        assert A.indices.dtype == np.int32
+        assert A.nnz < 2**31
+        # do the assignment
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
+            A[index[:, None], index] = rhs
+        # check that we end large
+        assert A.indices.dtype == np.int64
+        assert A.nnz > 2**31
 
-    big_ones_data = np.ones((46340, 46340), dtype=np.float32)
-    big_ones_coords = tuple(co.astype(np.int32) for co in big_ones_data.nonzero())
-    big_ones_data = big_ones_data.reshape(-1)
-    csr_c = csr_array((big_ones_data, big_ones_coords), shape=(d, d), dtype=np.float32)
-    assert csr_c.indices.dtype == np.int32
-    assert csr_c.nnz < 2**31
-    index = np.arange(46340, 46640, dtype=np.int32)
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
-        csr_c[index[:, None], index] = 1
-    assert csr_c.indices.dtype == np.int64
-    assert csr_c.nnz > 2**31
+    N = 46340  # 46340**2 fits in int32, 46341**2 does not
+    d = 47000  # d**2 > 2**31 with some extra room
+    warn_msg = "Changing the sparsity structure"
 
-@pytest.mark.xslow
-def test_growing_past_int32_index_arrays():
-    d = 47000  # d**2 > 2**31 (46340**2 fits in int32, 46341**2 does not)
-    WMSG = "Changing the sparsity structure"
+    big_data = np.ones((N, N), dtype=np.float32)
+    big_coords = tuple(co.astype(np.int32) for co in big_data.nonzero())
+    big_data = big_data.reshape(-1)
+    big_info = (big_data, big_coords)
 
-    big_ones_data = np.ones((46340, 46340), dtype=np.float32)
-    big_ones_coords = tuple(co.astype(np.int32) for co in big_ones_data.nonzero())
-    big_ones_data = big_ones_data.reshape(-1)
-    csr_a = csr_array((big_ones_data, big_ones_coords), shape=(d, d))
-    csr_b = np.arange(300 * 300, dtype=np.float32).reshape((300, 300))
-    csr_c = csr_array(csr_b)
+    index_N = np.arange(N + 1, dtype=np.int32)
+    index_300 = np.arange(N, N + 300, dtype=np.int32)
 
-    assert csr_a.indices.dtype == np.int32
-    assert csr_a.nnz < 2**31
-    index = np.arange(46340, 46640, dtype=np.int32)
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
-        csr_a[index[:, None], index] = csr_b
-    assert csr_a.nnz > 2**31
-    assert csr_a.indices.dtype == np.int64
+    rhs_300 = np.arange(300 * 300, dtype=np.float32).reshape((300, 300))
+    rhs_300_sparse = csr_array(rhs_300)
 
-    csr_a = csr_array((big_ones_data, big_ones_coords), shape=(d, d))
-    assert csr_a.nnz < 2**31
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", WMSG, sparse.SparseEfficiencyWarning)
-        csr_a[index[:, None], index] = csr_c
-    assert csr_a.indices.dtype == np.int64
-    assert csr_a.nnz > 2**31
+    # 1: see gh-24915: From empty array, assign 1 to 46341x46341 region")
+    check(None, index_N, 1)
+
+    # 2: From 46340x46340 region filled, assign 1 to new 300x300 region")
+    check(big_info, index_300, 1)
+
+    # 3: From 46340x46340 region filled, assign np.array to new 300x300 region")
+    check(big_info, index_300, rhs_300)
+
+    # 4: From 46340x46340 region filled, assign sparse to new 300x300 region")
+    check(big_info, index_300, rhs_300_sparse)
