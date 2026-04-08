@@ -122,7 +122,7 @@ jobs:
         ls -la "$RUNNER_TEMP/trapCaches/cpp" || true
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@0d579ffd059c29b07949a3cce3983f0780820c98 # v4
+      uses: github/codeql-action/analyze@820e3160e279568db735cee8ed8f8e77a6da7818 # v4.32.6
       with:
         category: "/language:${{matrix.language}}"
         output: sarif-results
