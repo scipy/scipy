@@ -4811,15 +4811,18 @@ class TestKSOneSample:
         xp_assert_equal(res.statistic_location, xp.asarray(ref_location))
         xp_assert_equal(res.statistic_sign, xp.asarray(ref_sign, dtype=xp.int8))
 
+    # Reference values from R 4.3.3 ks.test():
+    #   x <- scan("x.csv")  # samples from default_rng(594235924652)
+    #   ks.test(x, "pnorm", alternative="greater", exact=TRUE)$p.value
+    #   ks.test(x, "pnorm", alternative="greater", exact=FALSE)$p.value
+    #   ...etc
     @pytest.mark.parametrize('alternative, ref_exact, ref_asymp', [
-        ('greater', 0.8139862855140686, 0.8303635342054745),
-        ('less', 0.21308556867274125, 0.2255269474906854),
+        ('greater', 0.81398628551406649, 0.8303635342054746),
+        ('less', 0.21308556867274242, 0.22552694749068539),
     ])
     def test_method_honoured_for_one_sided(self, alternative,
                                            ref_exact, ref_asymp):
         # gh-24737: `method` was ignored for one-sided alternatives.
-        # Reference values computed via ksone.sf (exact) and
-        # exp(-2*n*d**2) (asymptotic) with n=100.
         rng = np.random.default_rng(594235924652)
         x = rng.standard_normal(100)
         res_exact = stats.ks_1samp(x, special.ndtr, alternative=alternative,
@@ -4831,12 +4834,13 @@ class TestKSOneSample:
         assert_allclose(res_asymp.pvalue, ref_asymp)
 
     @pytest.mark.parametrize('alternative, ref_exact, ref_asymp', [
-        ('greater', 0.8139862855140686, 0.8303635342054745),
-        ('less', 0.21308556867274125, 0.2255269474906854),
+        ('greater', 0.81398628551406649, 0.8303635342054746),
+        ('less', 0.21308556867274242, 0.22552694749068539),
     ])
     def test_kstest_method_honoured_for_one_sided(self, alternative,
                                                   ref_exact, ref_asymp):
         # gh-24737 point 2: kstest wrapper must also honour `method`.
+        # Reference values from R 4.3.3 ks.test() (see above).
         rng = np.random.default_rng(594235924652)
         x = rng.standard_normal(100)
         res_exact = stats.kstest(x, 'norm', alternative=alternative,
