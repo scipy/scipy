@@ -8,3 +8,5 @@ query-filters:
       id:
         - cpp/openssl-heartbleed
         - cpp/sql-injection
+        - cpp/cgi-xss
+        - cpp/external-entity-expansion
