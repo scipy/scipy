@@ -749,9 +749,10 @@ cdef int _connected_components_directed2(
     CSR sparse array (scipy.sparse.csr_array).
 
     The algorithmic complexity for a graph with E edges and V vertices
-    is O(E + V). The storage requirement is an integer array of V
-    elements, plus two stacks whose combined length never exceeds V,
-    and is much smaller in practice.
+    is O(E + V). The storage requirement is an array of V elements
+    (int32 or int64, matching the CSR index type) tracking successor
+    positions, plus two int32 stacks whose combined length never exceeds
+    V, and is much smaller in practice.
 
     The algorithm uses all improvements described by Tarjan and Zwick in
     their recent survey, plus some further trick used in the Rust
@@ -780,7 +781,8 @@ cdef int _connected_components_directed2(
     # "lead" flag is materialized in an array in Tarjan & Zwick's survey,
     # but a stack parallel to the DFS stack is sufficient.
     #
-    # succ_pos[v]: position in successor list for node v; VOID = unvisited.
+    # succ_pos[v]: position in successor list for node v (int32 or int64,
+    #     matching indptr/indices); VOID = unvisited.
     #
     # dfs_stack[]: DFS path; the sign bit encodes the "lead" flag
     #     (non-negative = candidate SCC root).
