@@ -399,7 +399,8 @@ cdef unsigned int _breadth_first_directed2(
     #                tree.  Should be initialized to NULL_IDX
     # Returns:
     #  n_nodes: the number of nodes in the breadth-first tree
-    cdef unsigned int i, pnode, cnode
+    cdef Py_ssize_t i
+    cdef unsigned int pnode, cnode
     cdef unsigned int i_nl, i_nl_end
 
     node_list[0] = head_node
@@ -452,7 +453,8 @@ cdef unsigned int _breadth_first_undirected2(
     #                tree.  Should be initialized to NULL_IDX
     # Returns:
     #  n_nodes: the number of nodes in the breadth-first tree
-    cdef unsigned int i, pnode, cnode
+    cdef Py_ssize_t i
+    cdef unsigned int pnode, cnode
     cdef unsigned int i_nl, i_nl_end
 
     node_list[0] = head_node
@@ -609,7 +611,8 @@ cdef unsigned int _depth_first_directed2(
         np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] flag) noexcept:
-    cdef unsigned int i, i_nl_end, cnode, pnode
+    cdef Py_ssize_t i
+    cdef unsigned int i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
 
@@ -671,7 +674,8 @@ cdef unsigned int _depth_first_undirected2(
         np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
         np.ndarray[ITYPE_t, ndim=1, mode='c'] flag) noexcept:
-    cdef unsigned int i, i_nl_end, cnode, pnode
+    cdef Py_ssize_t i
+    cdef unsigned int i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
 
