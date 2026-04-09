@@ -15,6 +15,7 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  CCACHE_MAXSIZE: "250M"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -86,7 +87,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Check installed files
       run: |
@@ -116,7 +119,7 @@ jobs:
       if: matrix.python-version == '3.12'
       run: |
         # Packages that are only needed for their annotations
-        python -m pip install mypy==1.10.0 types-psutil typing_extensions
+        python -m pip install mypy==1.19.1 types-psutil typing_extensions
         python -m pip install pybind11 sphinx
 
         spin mypy
@@ -193,7 +196,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
   #################################################################################
   python_debug:
@@ -279,7 +284,9 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Install test dependencies
         run: |
@@ -342,7 +349,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Downgrade NumPy to lowest supported
       run: |
@@ -438,7 +447,9 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Install test dependencies
         run: |
@@ -511,7 +522,9 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Run tests
         run: |
@@ -571,7 +584,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
@@ -726,4 +741,6 @@ jobs:
 
       - name: Ccache performance
         shell: bash -l {0}
-        run: ccache -s
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s

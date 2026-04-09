@@ -169,7 +169,8 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return x.copy()
+        # Just return x if it is a Python scalar without a copy attribute.
+        return x.copy() if hasattr(x, "copy") else x
     if is_cupy(xp):
         return x.get()
     if is_torch(xp):
@@ -347,16 +348,7 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
     return np.testing.assert_array_almost_equal_nulp(actual, desired, nulp=nulp)
 
 
-def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
-                   check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
-    __tracebackhide__ = True  # Hide traceback for py.test
-
-    actual, desired, xp = _strict_check(
-        actual, desired, xp, check_namespace=check_namespace,
-        check_dtype=check_dtype, check_shape=check_shape,
-        check_0d=check_0d
-    )
-
+def _assert_less(actual, desired, *, err_msg, verbose, xp):
     if is_cupy(xp):
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)
@@ -368,6 +360,39 @@ def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
     # JAX uses `np.testing`
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
+
+
+def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
+                   check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
+    __tracebackhide__ = True  # Hide traceback for py.test
+
+    actual, desired, xp = _strict_check(
+        actual, desired, xp, check_namespace=check_namespace,
+        check_dtype=check_dtype, check_shape=check_shape,
+        check_0d=check_0d
+    )
+
+    _assert_less(actual, desired, err_msg=err_msg, verbose=verbose, xp=xp)
+
+
+def xp_assert_less_equal(
+    actual, desired, *, check_namespace=True, check_dtype=True,
+    check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None
+):
+    __tracebackhide__ = True  # Hide traceback for py.test
+
+    actual, desired, xp = _strict_check(
+        actual, desired, xp, check_namespace=check_namespace,
+        check_dtype=check_dtype, check_shape=check_shape,
+        check_0d=check_0d
+    )
+
+    # we call `_strict_check` before `_assert_less` so that scalars are
+    # coerced to the `xp` namespace before we apply `xp.nextafter`
+    _assert_less(
+        actual, xp.nextafter(desired, desired + 1),
+        err_msg=err_msg, verbose=verbose, xp=xp
+    )
 
 
 def assert_array_almost_equal(actual, desired, decimal=6, *args, **kwds):
@@ -1035,7 +1060,7 @@ def make_xp_pytest_param(func, *args, additional_marks=None, capabilities_table=
         def test(func, verb, xp):
             # iterates on (func=f1, verb="hello")
             # and (func=f2, verb="world")
-    additional_marks : pytest.MarkDecorator | List[pytest.MarkDecorator]
+    additional_marks : pytest.MarkDecorator | list[pytest.MarkDecorator]
         Additional pytest marks to add to the parameter, e.g.
         ``pytest.mark.slow``.
 

@@ -59,11 +59,11 @@ def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
     return xp_promote(*args, force_floating=True, xp=xp)
 
 
-rotation_extra_note = (
-    """The methods ``as_davenport``, ``apply``, and ``align_vectors``
+rotation_extra_note = """The methods ``as_davenport``, ``apply``, and ``align_vectors``
     are not supported with cupy<14.*.
 
-    """)
+    """
+
 
 @xp_capabilities(
     skip_backends=[("dask.array", "missing linalg.cross/det functions")],
@@ -401,7 +401,7 @@ class Rotation:
     output formats supported, consult the individual method's examples.
 
     """
-    
+
     # generic type compatibility with scipy-stubs
     __class_getitem__ = classmethod(GenericAlias)
 
@@ -1585,7 +1585,7 @@ class Rotation:
               expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
-        ``self.as_matrix() @ vectors``.
+        ``(self.as_matrix() @ vectors[..., np.newaxis])[..., 0]``.
 
         Parameters
         ----------
@@ -1952,7 +1952,7 @@ class Rotation:
 
     def approx_equal(
         self, other: Rotation, atol: float | None = None, degrees: bool = False
-    ) -> Array:
+    ) -> Array | np.bool:
         """Determine if another rotation is approximately equal to this one.
 
         Equality is measured by calculating the smallest angle between the
@@ -1972,10 +1972,10 @@ class Rotation:
 
         Returns
         -------
-        approx_equal : ndarray or bool
-            Whether the rotations are approximately equal, bool if object
-            contains a single rotation and ndarray if object contains multiple
-            rotations.
+        approx_equal : Array or `numpy.bool`
+            Whether the rotations are approximately equal, `numpy.bool` if object
+            contains a single numpy rotation and Array if object contains multiple
+            rotations or is from another library.
 
         Examples
         --------
@@ -1989,11 +1989,16 @@ class Rotation:
         Approximate equality for a single rotation:
 
         >>> p.approx_equal(q[0])
-        False
+        np.False_
         """
         cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
         backend = select_backend(self._xp, cython_compatible=cython_compatible)
-        return backend.approx_equal(self._quat, other._quat, atol=atol, degrees=degrees)
+        approx_equal = backend.approx_equal(
+            self._quat, other._quat, atol=atol, degrees=degrees
+        )
+        if self._single and other._single:
+            return approx_equal[0]
+        return approx_equal
 
     def mean(
         self,
@@ -2744,6 +2749,7 @@ class Slerp:
            [ -88.94647804,  -49.64400082,  -65.80546984]])
 
     """
+
     def __init__(self, times: ArrayLike, rotations: Rotation):
         if not isinstance(rotations, Rotation):
             raise TypeError("`rotations` must be a `Rotation` instance.")

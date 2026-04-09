@@ -14,6 +14,7 @@ permissions:
 
 env:
   INSTALLDIR: "build-install"
+  CCACHE_MAXSIZE: "250M"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
 
 concurrency:

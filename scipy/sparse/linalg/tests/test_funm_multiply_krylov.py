@@ -56,7 +56,7 @@ class TestKrylovFunmv:
         nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
-            D = scipy.sparse.diags(rng.standard_normal(n))
+            D = scipy.sparse.diags_array(rng.standard_normal(n))
             A = scipy.sparse.random_array((n, n), density = 0.01, rng = rng) + D
             denseA = A.todense()
             b = rng.standard_normal(n)
@@ -95,7 +95,7 @@ class TestKrylovFunmv:
         nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
-            D = scipy.sparse.diags(rng.standard_normal(n))
+            D = scipy.sparse.diags_array(rng.standard_normal(n))
             A = scipy.sparse.random_array((n, n), density = 0.01, rng = rng)
             R = scipy.sparse.triu(A)
             A = R + R.T + D

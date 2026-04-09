@@ -150,7 +150,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     # basic sanity checks of the input matrix
     a1 = _asarray_validated(a, check_finite=check_finite)
 
-    overwrite_a = overwrite_a or (_datacopied(a1, a))
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
 
@@ -159,6 +158,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
     # accommodate empty matrix
     if a1.size == 0:
@@ -195,7 +197,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
                                   "Instead, either use using numpy.linalg.svd or build"
                                   "SciPy with ILP64 support.")
 
-    res = _batched_linalg._svd(a1, lapack_driver, compute_uv, full_matrices)
+    res = _batched_linalg._svd(
+        a1, lapack_driver, compute_uv, full_matrices, overwrite_a
+    )
 
     err_lst = res[-1]
     if err_lst:

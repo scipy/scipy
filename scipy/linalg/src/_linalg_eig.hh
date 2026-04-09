@@ -35,10 +35,10 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
 
 template<typename T>
 int
-_reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
+_reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
-    using npy_complex_type = typename type_traits<T>::npy_complex_type;
+    using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using npy_complex_type = typename sp_type_traits<T>::npy_complex_type;
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -69,7 +69,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
-    T tmp = numeric_limits<T>::zero;
+    T tmp = sp_numeric_limits<T>::zero;
 
     char jobvl = compute_vl ? 'V': 'N', jobvr = compute_vr ? 'V' : 'N';
     CBLAS_INT lda = n;
@@ -78,7 +78,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
     // c- and z variants: lwork query segfaults with rwork=NULL, allocate it straight away
     real_type *rwork = NULL;
-    if constexpr (type_traits<T>::is_complex) {
+    if constexpr (sp_type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(2*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
@@ -92,10 +92,26 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     lwork = _calc_lwork(tmp);
     if (lwork < 0) { free(rwork); return -102; }
 
-    // allocate
-    npy_intp bufsize = n*n + lwork + n;
-    npy_intp wi_size = type_traits<T>::is_complex ? 0 : n ;
-    bufsize += wi_size;
+    /*
+     * Allocate memory and chop the buffer into parts
+     *
+     *     lwork        n      data_size   wi_size
+     * |-----------|---------|-----------|----------|---------|-------|
+     * ^           ^         ^           ^          ^         ^
+     * work        wr        data        wi         buf_vl    buf_vr
+     *
+     * Here
+     *   - data is n*n if overwrite_a is False (and =0 otherwise)
+     *   - wr & wi are eigenvalues;
+     *     wr is always length n; wi is only used for real inputs (s- and d-geev
+     *     have both in `wr` and `wi` arguments, while c- and z-geev only have `wr`)
+     *   - `buf_vl` and `buf_vr` hold eigenvectors if requested via `compute_{vl,vr}`.
+     *
+     * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
+     */
+    npy_intp data_size = overwrite_a ? 0 : n*n;
+    npy_intp wi_size = sp_type_traits<T>::is_complex ? 0 : n;
+    npy_intp bufsize = data_size + wi_size + lwork + n;
 
     npy_intp vl_size = compute_vl ? ldvl*n : 0;
     npy_intp vr_size = compute_vr ? ldvr*n : 0;
@@ -105,18 +121,25 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     if (buf == NULL) { free(rwork); return -103; }
 
     // partition the workspace
-    T *data = &buf[0];
-    T *work = &buf[n*n];
-    T *wr = &buf[n*n + lwork];
+    T *work = &buf[0];
+    T *wr = &buf[lwork];
+
+    T *data = NULL;
+    if (overwrite_a) {
+        // work in-place (2D only, ensured at the python call site)
+        data = (T *)Am_data;
+    } else {
+        data = &buf[lwork + n];
+    }
 
     T *wi = NULL;
-    if(wi_size > 0) { wi = &buf[n*n + lwork + n]; }
+    if(wi_size > 0) { wi = &buf[lwork + n + data_size]; }
 
     T *buf_vl = NULL;
-    if(vl_size > 0) { buf_vl = &buf[n*n + lwork + n + wi_size]; }
+    if(vl_size > 0) { buf_vl = &buf[lwork + n + data_size + wi_size]; }
 
     T *buf_vr = NULL;
-    if(vr_size > 0) { buf_vr = &buf[n*n + lwork + n + wi_size + vl_size]; }
+    if(vr_size > 0) { buf_vr = &buf[lwork + n + data_size + wi_size + vl_size]; }
 
     // --------------------------------------------------------------------
     // Main loop to traverse the slices
@@ -124,9 +147,13 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         init_status(slice_status, idx, St::GENERAL);
 
-        // copy the slice to `data` in F order
-        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-        copy_slice_F(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
+        if (!overwrite_a) {
+            // copy the slice to `data` in F order
+            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            copy_slice_F(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
+        }
+        // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
+        // will need to adjust the data pointer here, too.
 
         // compute eigenvalues for the slice
         call_geev(&jobvl, &jobvr, &intn, data, &lda, wr, wi, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
@@ -140,7 +167,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
         }
 
         // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
-        if constexpr (type_traits<T>::is_complex) {
+        if constexpr (sp_type_traits<T>::is_complex) {
             memcpy(ptr_W, wr, n*sizeof(T));
             ptr_W += n;
 
@@ -181,10 +208,10 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
 template<typename T>
 int
-_gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
+_gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
-    using npy_complex_type = typename type_traits<T>::npy_complex_type;
+    using real_type = typename sp_type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using npy_complex_type = typename sp_type_traits<T>::npy_complex_type;
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -220,7 +247,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
-    T tmp = numeric_limits<T>::zero;
+    T tmp = sp_numeric_limits<T>::zero;
 
     char jobvl = compute_vl ? 'V': 'N', jobvr = compute_vr ? 'V' : 'N';
     CBLAS_INT lda = n;
@@ -230,7 +257,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
     // similar to geev, allocate rwork right away (not sure if ?ggev segfaults otherwise, too)
     real_type *rwork = NULL;
-    if constexpr (type_traits<T>::is_complex) {
+    if constexpr (sp_type_traits<T>::is_complex) {
         rwork = (real_type *)malloc(8*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
@@ -244,33 +271,63 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     lwork = _calc_lwork(tmp);
     if (lwork < 0) { free(rwork); return -102; }
 
-    // allocate
-    npy_intp bufsize = n*n + n*n + lwork + n + n;
-    npy_intp alphai_size = type_traits<T>::is_complex ? 0 : n ;
-    bufsize += alphai_size;
-
+    /*
+     * Allocate memory and chop the buffer into parts
+     *
+     *     lwork        n        n        n/0      n*n/0    n*n/0    n*n/0   n*n/0
+     * |-----------|---------|-------|----------|---------|-------|--------|--------|
+     * ^           ^         ^       ^          ^         ^       ^        ^
+     * work        alphar    beta    alphai     data_A    data_B  buf_vl   buf_vr
+     *
+     * Here
+     *   - A_size & B_size are n*n if overwrite_{a,b} is False (and =0 otherwise)
+     *   - alphar & beta are eigenvalues, size `n` (always allocated)
+     *   - alphai is the imaginary part of eigenvalues, size `n` if real, 0 otherwise
+     *     (s- and d-ggev have both in `alphar` and `alphai` arguments, while c- and
+     *     z-geev only have `alphar`)
+     *   - `buf_vl` and `buf_vr` hold eigenvectors if requested via `compute_{vl,vr}`.
+     *
+     * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
+     */
+    npy_intp alphai_size = sp_type_traits<T>::is_complex ? 0 : n ;
+    npy_intp A_size = overwrite_a ? 0 : n*n;
+    npy_intp B_size = overwrite_b ? 0 : n*n;
     npy_intp vl_size = compute_vl ? ldvl*n : 0;
     npy_intp vr_size = compute_vr ? ldvr*n : 0;
-    bufsize += vl_size + vr_size;
+
+    npy_intp bufsize = lwork + n + n + alphai_size + A_size + B_size  + vl_size + vr_size;
 
     T *buf = (T *)malloc(bufsize*sizeof(T));
     if (buf == NULL) { free(rwork); return -103; }
 
-    // partition the workspace
-    T *data_A = &buf[0];
-    T *data_B = &buf[n*n];
-    T *work = &buf[2*n*n];
-    T *alphar = &buf[2*n*n + lwork];
-    T *beta = &buf[2*n*n + lwork + n];
+    T *work = &buf[0];
+    T *alphar = &buf[lwork];
+    T *beta = &buf[lwork + n];
 
     T *alphai = NULL;
-    if(alphai_size > 0) { alphai = &buf[2*n*n + lwork + 2*n ]; }
+    if(alphai_size > 0) { alphai = &buf[lwork + 2*n]; }
+
+    T *data_A = NULL;
+    if (overwrite_a) {
+        // work in-place (2D only, ensured at the python call site)
+        data_A = (T *)Am_data;
+    } else {
+        data_A = &buf[lwork + 2*n + alphai_size];
+    }
+
+    T *data_B = NULL;
+    if (overwrite_b) {
+        // work in-place (2D only, ensured at the python call site)
+        data_B = (T *)Bm_data;
+    } else {
+        data_B = &buf[lwork + 2*n + alphai_size + A_size];
+    }
 
     T *buf_vl = NULL;
-    if(vl_size > 0) { buf_vl = &buf[2*n*n + lwork + 2*n + alphai_size]; }
+    if(vl_size > 0) { buf_vl = &buf[lwork + 2*n + alphai_size + A_size + B_size]; }
 
     T *buf_vr = NULL;
-    if(vr_size > 0) { buf_vr = &buf[2*n*n + lwork + 2*n + alphai_size + vl_size]; }
+    if(vr_size > 0) { buf_vr = &buf[lwork + 2*n + alphai_size + vl_size + A_size + B_size]; }
 
 
     // --------------------------------------------------------------------
@@ -279,12 +336,20 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         init_status(slice_status, idx, St::GENERAL);
 
-        // copy the slice to `data` in F order
-        T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides_A);
-        copy_slice_F(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1]);
+        if (!overwrite_a) {
+            // copy the slice to `data` in F order
+            T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides_A);
+            copy_slice_F(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1]);
+        }
+        // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
+        // will need to adjust the data pointer here, too.
 
-        T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
-        copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
+        if (!overwrite_b) {
+            T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
+            copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
+        }
+        // same deal as with overwrite_a
+
 
         // compute eigenvalues for the slice
         call_ggev(&jobvl, &jobvr, &intn, data_A, &lda, data_B, &ldb, alphar, alphai, beta, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
@@ -298,7 +363,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         }
 
         // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
-        if constexpr (type_traits<T>::is_complex) {
+        if constexpr (sp_type_traits<T>::is_complex) {
             // alphar and beta are complex and compatible with the W array 
             memcpy(ptr_W, alphar, n*sizeof(T));
             ptr_W += n;
@@ -346,19 +411,23 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
 template<typename T>
 int
-_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, SliceStatusVec& vec_status)
-{
+_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm,
+     PyArrayObject *ap_w, PyArrayObject *ap_beta,
+     PyArrayObject *ap_vl, PyArrayObject *ap_vr,
+     int overwrite_a, int overwrite_b,
+     SliceStatusVec& vec_status
+) {
     int info;
     if (ap_Bm == NULL) {
         // sanity check: B and beta are either both NULL or both not NULL (for a generalized eig problem) 
         if (ap_beta != NULL) { return -222; }
 
-        info = _reg_eig<T>(ap_Am, ap_w, ap_vl, ap_vr, vec_status);
+        info = _reg_eig<T>(ap_Am, ap_w, ap_vl, ap_vr, overwrite_a, vec_status);
     }
     else {
         if (ap_beta == NULL) {return -223; }
 
-        info = _gen_eig<T>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, vec_status);
+        info = _gen_eig<T>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
     }
     return info;
 }

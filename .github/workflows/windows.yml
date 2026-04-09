@@ -86,6 +86,7 @@ jobs:
 
       - name: Build
         run: |
+          $env:FORCE_PKGCONF_PYPI=1
           spin build --with-scipy-openblas
 
       - name: Test
@@ -114,20 +115,19 @@ jobs:
           python-version: "3.12"
           architecture: "arm64"
 
-      - name: Set up Flang and pkgconf for ARM64
-        uses: ./.github/windows_arm64_steps
-
       - name: pip-packages
         run: |
           # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
           pip install "numpy<2.4.3" cython pybind11 meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
           python -m pip install -r requirements/openblas.txt
+          python -m pip install -r requirements/pkgconf.txt
 
       - name: Build
         run: |
+          $env:Path = "C:\Program Files\LLVM\bin;" + $env:Path
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
-          $env:fc = "flang-new"
+          $env:fc = "flang"
           spin build --with-scipy-openblas --setup-args="-Duse-pythran=false"
 
       - name: Test

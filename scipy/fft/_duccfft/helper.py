@@ -30,7 +30,7 @@ def _iterable_of_int(x, name=None):
 
     Returns
     -------
-    y : ``List[int]``
+    y : ``list[int]``
     """
     if isinstance(x, Number):
         x = (x,)
