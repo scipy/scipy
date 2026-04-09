@@ -2,6 +2,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import array_namespace, _asarray, is_numpy, xp_capabilities
+
 from ._optimize import OptimizeResult
 from ._pava_pybind import pava
 
@@ -12,6 +15,10 @@ if TYPE_CHECKING:
 __all__ = ["isotonic_regression"]
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[("dask.array", "no nanobind support")]
+)
 def isotonic_regression(
     y: "npt.ArrayLike",
     *,
@@ -120,24 +127,27 @@ def isotonic_regression(
     input y of length 1000, the minimizer takes about 4 seconds, while
     ``isotonic_regression`` takes about 200 microseconds.
     """
-    yarr = np.atleast_1d(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
-    order = slice(None) if increasing else slice(None, None, -1)
-    x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
+    xp = array_namespace(y, weights)
+    yarr = xpx.atleast_nd(y, ndim=1, xp=xp)
+    yarr = yarr if increasing else xp.flip(yarr, axis=-1)
+    x = _asarray(yarr, order="C", dtype=xp.float64, copy=True, xp=xp)
     if weights is None:
-        wx = np.ones_like(yarr, dtype=np.float64)
+        wx = xp.ones_like(yarr, dtype=xp.float64)
     else:
-        warr = np.atleast_1d(weights)
+        warr = xpx.atleast_nd(weights, ndim=1, xp=xp)
 
         if not (yarr.ndim == warr.ndim == 1 and yarr.shape[0] == warr.shape[0]):
             raise ValueError(
                 "Input arrays y and w must have one dimension of equal length."
             )
-        if np.any(warr <= 0):
+        if xp.any(warr <= 0):
             raise ValueError("Weights w must be strictly positive.")
 
-        wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
+        warr = warr if increasing else xp.flip(warr, axis=-1)
+        wx = _asarray(warr, order="C", dtype=xp.float64, copy=True)
     n = x.shape[0]
-    r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
+    r_dtype = np.intp if is_numpy(xp) else xp.int64
+    r = xp.full(shape=n + 1, fill_value=-1, dtype=r_dtype)
     x, wx, r, b = pava(x, wx, r)
     # Now that we know the number of blocks b, we only keep the relevant part
     # of r and wx.
@@ -147,9 +157,9 @@ def isotonic_regression(
     r = r[:b + 1]  # type: ignore[assignment]
     wx = wx[:b]
     if not increasing:
-        x = x[::-1]
-        wx = wx[::-1]
-        r = r[-1] - r[::-1]
+        x = xp.flip(x, axis=-1)
+        wx = xp.flip(wx, axis=-1)
+        r = r[-1] - xp.flip(r, axis=-1)
     return OptimizeResult(
         x=x,
         weights=wx,
