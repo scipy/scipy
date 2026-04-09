@@ -33,7 +33,6 @@
 analysis."""
 
 import numpy as np
-from scipy._lib._array_api import array_namespace
 from scipy.special import gammaln as loggam
 
 
