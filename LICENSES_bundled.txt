@@ -88,9 +88,14 @@ License: BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exc
   subprojects/xsf/LICENSES_bundled.txt
 
 Name: pyduccfft
-Files: scipy/fft/_duccfft/[pyduccfft.cxx]
+Files: scipy/fft/_duccfft/pyduccfft.cxx
 License: 3-Clause BSD
   For details, see scipy/fft/_duccfft/LICENSE.md
+
+Name: ducc0
+Files: subprojects/duccfft/ducc0/*
+License: 3-Clause BSD
+  For details, see subprojects/duccfft/LICENSE.md
 
 Name: uarray
 Files: scipy/_lib/_uarray/*
