@@ -69,8 +69,9 @@ auto _as_mdspan(const std::vector<T>& vec) {
     return std::mdspan<const T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
 }
 
+// gufunc kernels which are capable of caching
 template <typename T_1d>
-struct _poisson_binom_pmf_loop {
+struct _poisson_binom_pmf_kernel {
     using T = typename T_1d::value_type;
 
     std::vector<T> dist;
@@ -89,7 +90,7 @@ struct _poisson_binom_pmf_loop {
 };
 
 template <typename T_1d>
-struct _poisson_binom_cdf_loop {
+struct _poisson_binom_cdf_kernel {
     using T = typename T_1d::value_type;
 
     std::vector<T> dist;
@@ -286,8 +287,8 @@ _gufuncs_module_exec(PyObject *module)
 
     PyObject *_poisson_binom_pmf = xsf::numpy::gufunc(
         {
-            _poisson_binom_pmf_loop<xsf::numpy::float_1d>{},
-            _poisson_binom_pmf_loop<xsf::numpy::double_1d>{}
+            _poisson_binom_pmf_kernel<xsf::numpy::float_1d>{},
+            _poisson_binom_pmf_kernel<xsf::numpy::double_1d>{}
         },
         1,
         "_poisson_binom_pmf",
@@ -299,8 +300,8 @@ _gufuncs_module_exec(PyObject *module)
 
     PyObject *_poisson_binom_cdf = xsf::numpy::gufunc(
         {
-            _poisson_binom_cdf_loop<xsf::numpy::float_1d>{},
-            _poisson_binom_cdf_loop<xsf::numpy::double_1d>{}
+            _poisson_binom_cdf_kernel<xsf::numpy::float_1d>{},
+            _poisson_binom_cdf_kernel<xsf::numpy::double_1d>{}
         },
         1,
         "_poisson_binom_cdf",
