@@ -43,19 +43,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* Copyright (C) 2020-2025 Max-Planck-Society
+/* Copyright (C) 2020-2026 Max-Planck-Society
    Author: Martin Reinecke */
 
 #ifndef DUCC0_PYBIND_UTILS_H
 #define DUCC0_PYBIND_UTILS_H
 
-#include <cstddef>
-#include <string>
-#include <array>
-#include <vector>
-#include <optional>
-#include <variant>
-#include <tuple>
+// IMPORTANT: nanobind.h/pybind11.h must be the first included header,
+// according to https://docs.python.org/3.15/c-api/intro.html#include-files
 #ifdef DUCC0_USE_NANOBIND
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
@@ -71,6 +66,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 #endif
+#include <cstddef>
+#include <string>
+#include <array>
+#include <vector>
+#include <optional>
+#include <variant>
+#include <tuple>
 
 #include "ducc0/infra/error_handling.h"
 #include "ducc0/infra/mav.h"

@@ -12,12 +12,13 @@
  *  \author Peter Bell
  */
 
-#include <optional>
-#include <complex>
-
+// Note: do not reorder, pybind_utils.h must come first (it indirectly includes Python.h)
+#include "ducc0/bindings/pybind_utils.h"
 #include "ducc0/fft/fft.h"
 #include "ducc0/fft/fftnd_impl.h"
-#include "ducc0/bindings/pybind_utils.h"
+
+#include <optional>
+#include <complex>
 
 namespace {
 
