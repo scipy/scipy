@@ -746,12 +746,12 @@ cdef int _connected_components_directed2(
     """
     Uses an iterative version of Tarjan's algorithm to find the
     strongly connected components of a directed graph represented as a
-    sparse array (scipy.sparse.csc_array or scipy.sparse.csr_array).
+    CSR sparse array (scipy.sparse.csr_array).
 
-    The algorithmic complexity is for a graph with E edges and V vertices
+    The algorithmic complexity for a graph with E edges and V vertices
     is O(E + V). The storage requirement is an integer array of V
-    elements, plus two stacks of at most V integers, which however are
-    usually smaller in practice.
+    elements, plus two stacks whose combined length never exceeds V,
+    and is much smaller in practice.
 
     The algorithm uses all improvements described by Tarjan and Zwick in
     their recent survey, plus some further trick used in the Rust
@@ -762,7 +762,7 @@ cdef int _connected_components_directed2(
     if N == 0:
         return 0
 
-    cdef int v, w, j, parent
+    cdef int v, w, j, parent, top
     cdef int NONLEAD = <int>0x80000000  # sign bit: marks stack entry as non-lead
     cdef int index = N        # timestamp counter, decreasing
     cdef int n_comp = 0       # number of emitted components
@@ -776,7 +776,7 @@ cdef int _connected_components_directed2(
     # high_link = 0, distinguished from component 0 via succ_pos == VOID.
     # labels doubles as the high_link array.
     #
-    # Decreasing timestamp make renumbering at the end unnecessary. The
+    # Decreasing timestamps make renumbering at the end unnecessary. The
     # "lead" flag is materialized in an array in Tarjan & Zwick's survey,
     # but a stack parallel to the DFS stack is sufficient.
     #
@@ -798,13 +798,13 @@ cdef int _connected_components_directed2(
 
     for v in range(N):
         if succ_pos[v] != VOID:
-            continue
+            continue                       # already visited
 
         # ---- Init: new DFS tree rooted at v ----
         root_hl = index
 
         # ---- Previsit v ----
-        dfs_stack.push_back(v) # lead = True
+        dfs_stack.push_back(v)             # lead = True (non-negative)
         labels[v] = index
         index -= 1
         succ_pos[v] = indptr[v]
@@ -819,7 +819,7 @@ cdef int _connected_components_directed2(
 
                 if succ_pos[w] == VOID:
                     # ---- Previsit w (tree arc) ----
-                    dfs_stack.push_back(w) # lead = True
+                    dfs_stack.push_back(w)             # lead = True (non-negative)
                     labels[w] = index
                     index -= 1
                     succ_pos[w] = indptr[w]
