@@ -771,6 +771,7 @@ cdef int _connected_components_directed2(
     cdef int index = N        # timestamp counter, decreasing
     cdef int n_comp = 0       # number of emitted components
     cdef int root_hl = 0      # high_link of current DFS-tree root
+    cdef bint done = False    # set True on early exit to break outer loop
 
     # Iterative Tarjan's algorithm using reverse timestamps and
     # encoding a bit stack of lead nodes in the sign bit of the DFS stack.
@@ -843,6 +844,7 @@ cdef int _connected_components_directed2(
                             n_comp += 1
                             dfs_stack.clear()
                             comp_stack.clear()
+                            done = True
                             break
             else:
                 # ---- Postvisit v ----
@@ -868,6 +870,8 @@ cdef int _connected_components_directed2(
                         if labels[parent] < labels[v]:
                             dfs_stack[dfs_stack.size() - 1] = parent | NONLEAD
                             labels[parent] = labels[v]
+        if done:
+            break
 
     return n_comp
 
