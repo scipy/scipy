@@ -750,9 +750,8 @@ cdef int _connected_components_directed2(
 
     The algorithmic complexity is for a graph with E edges and V vertices
     is O(E + V). The storage requirement is an integer array of V
-    elements, plus two stacks of integers whose combined length never
-    exceeds V, and is much smaller in typical graphs. The sign bit of
-    each DFS stack entry encodes the lead flag (candidate SCC root).
+    elements, plus two stacks of at most V integers, which however are
+    usually smaller in practice.
 
     The algorithm uses all improvements described by Tarjan and Zwick in
     their recent survey, plus some further trick used in the Rust
@@ -769,17 +768,25 @@ cdef int _connected_components_directed2(
     cdef int n_comp = 0       # number of emitted components
     cdef int root_hl = 0      # high_link of current DFS-tree root
 
-    # Iterative Tarjan's algorithm using reverse timestamps.
+    # Iterative Tarjan's algorithm using reverse timestamps and
+    # encoding a bit stack of lead nodes in the sign bit of the DFS stack.
+    #
     # Timestamps decrease from N to 1 for discovered nodes.  Component
     # numbers increase from 0 for emitted SCCs.  Unvisited nodes have
-    # high_link = 0, distinguished from component 0 via succ_pos == -1.
-    #
+    # high_link = 0, distinguished from component 0 via succ_pos == VOID.
     # labels doubles as the high_link array.
-    # succ_pos[v]: position in successor list for node v; -1 = unvisited.
-    #   Uses the same type as indptr to avoid overflow on graphs with > 2^31 edges.
+    #
+    # Decreasing timestamp make renumbering at the end unnecessary. The
+    # "lead" flag is materialized in an array in Tarjan & Zwick's survey,
+    # but a stack parallel to the DFS stack is sufficient.
+    #
+    # succ_pos[v]: position in successor list for node v; VOID = unvisited.
+    #
     # dfs_stack[]: DFS path; the sign bit encodes the "lead" flag
-    #   (non-negative = candidate SCC root).
+    #     (non-negative = candidate SCC root).
+    #
     # comp_stack[]: nodes popped from DFS but not yet assigned to an SCC.
+
     cdef vector[int32_or_int64] succ_pos
     cdef vector[int] dfs_stack
     cdef vector[int] comp_stack
@@ -791,13 +798,13 @@ cdef int _connected_components_directed2(
 
     for v in range(N):
         if succ_pos[v] != VOID:
-            continue                       # already visited
+            continue
 
         # ---- Init: new DFS tree rooted at v ----
         root_hl = index
 
         # ---- Previsit v ----
-        dfs_stack.push_back(v)             # lead = True (non-negative)
+        dfs_stack.push_back(v) # lead = True
         labels[v] = index
         index -= 1
         succ_pos[v] = indptr[v]
@@ -812,14 +819,14 @@ cdef int _connected_components_directed2(
 
                 if succ_pos[w] == VOID:
                     # ---- Previsit w (tree arc) ----
-                    dfs_stack.push_back(w)     # lead = True
+                    dfs_stack.push_back(w) # lead = True
                     labels[w] = index
                     index -= 1
                     succ_pos[w] = indptr[w]
                 else:
                     # ---- Revisit (cross / back arc) ----
                     if labels[v] < labels[w]:
-                        dfs_stack[dfs_stack.size() - 1] = v | NONLEAD  # lead = False
+                        dfs_stack[dfs_stack.size() - 1] = v | NONLEAD
                         labels[v] = labels[w]
                         # Early exit: the whole graph is one SCC
                         if labels[v] == root_hl and index == 0:
