@@ -35,10 +35,6 @@ analysis."""
 import numpy as np
 from scipy._lib._array_api import array_namespace
 from scipy.special import gammaln as loggam
-from scipy.special._gufuncs import (
-    _poisson_binom_pmf_all, _poisson_binom_cdf_all, _take_from_pmf,
-    _take_from_discrete_cdf
-)
 
 
 __all__ = ['multigammaln']
@@ -111,57 +107,3 @@ def multigammaln(a, d):
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
-
-
-def _poisson_binom_pmf(k, p):
-    """Returns pmf of Poisson Binomial distribution.
-
-    Parameters
-    ----------
-    k : array
-        Number of successes at which to evaluate pmf.
-
-    p : array
-        Success probabilities of independent Bernoulli trials.
-
-    Notes
-    -----
-    This is equivalent to a gufunc with signature ``()(i)->()``.
-    The last dimension of `p` contains success probabilities and
-    the preceding dimensions are batch dimensions. The batch
-    dimensions are broadcast against ``k``.
-
-    """
-    xp = array_namespace(k, p)
-    k, p = xp.asarray(k), xp.asarray(p)
-    n = p.shape[-1]
-    out_shape = xp.broadcast_shapes(k.shape, p.shape[:-1]) + (n + 1,)
-    pmf = xp.zeros(out_shape, dtype=p.dtype)
-    _poisson_binom_pmf_all(p, out=pmf)
-    return _take_from_pmf(pmf, k)
-
-
-def _poisson_binom_cdf(k, p):
-    """Returns cdf of Poisson Binomial distribution
-
-    Parameters
-    ----------
-    k : array
-        Number of successes at which to evaluate cdff.
-
-    p : array
-        Success probabilities of independent Bernoulli trials.
-
-    This is equivalent to a gufunc with signature ``()(i)->()``.
-    The last dimension of `p` contains success probabilities and
-    the preceding dimensions are batch dimensions. The batch
-    dimensions are broadcast against ``k``.
-
-    """
-    xp = array_namespace(k, p)
-    k, p = xp.asarray(k), xp.asarray(p)
-    n = p.shape[-1]
-    out_shape = xp.broadcast_shapes(k.shape, p.shape[:-1]) + (n + 1,)
-    cdf = xp.zeros(out_shape, dtype=p.dtype)
-    _poisson_binom_cdf_all(p, out=cdf)
-    return _take_from_discrete_cdf(cdf, k)

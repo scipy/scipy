@@ -53,14 +53,60 @@ void sph_harm_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[1] = dims[1];
 }
 
-void _poisson_binom_all_map_dims(const npy_intp *dims, npy_intp *new_dims) {
+void _poisson_binom_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[0] = dims[0];
-    new_dims[1] = dims[1];
 }
 
-void _take_from_dist_map_dims(const npy_intp *dims, npy_intp *new_dims) {
-    new_dims[0] = dims[0];
+
+// Helper to wrap a 1D std::vector in a contiguous mdspan
+template <typename T>
+auto _as_mdspan(std::vector<T>& vec) {
+    return std::mdspan<T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
 }
+
+template <typename T>
+auto _as_mdspan(const std::vector<T>& vec) {
+    return std::mdspan<const T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
+}
+
+template <typename T_1d>
+struct _poisson_binom_pmf_loop {
+    using T = typename T_1d::value_type;
+
+    std::vector<T> dist;
+    T* last_p_ptr = nullptr;
+    T operator()(long long int k, T_1d p) {
+        if (!last_p_ptr) {
+            dist.resize(p.extent(0) + 1);
+        }
+        if (p.data_handle() != last_p_ptr) {
+            xsf::poisson_binom_pmf_all(p, _as_mdspan(dist));
+            last_p_ptr = p.data_handle();
+        }
+
+        return xsf::take_from_pmf(_as_mdspan(dist), k);
+    }
+};
+
+template <typename T_1d>
+struct _poisson_binom_cdf_loop {
+    using T = typename T_1d::value_type;
+
+    std::vector<T> dist;
+    T* last_p_ptr = nullptr;
+    T operator()(long long int k, T_1d p) {
+        if (!last_p_ptr) {
+            dist.resize(p.extent(0) + 1);
+        }
+        if (p.data_handle() != last_p_ptr) {
+            xsf::poisson_binom_cdf_all(p, _as_mdspan(dist));
+            last_p_ptr = p.data_handle();
+        }
+
+        return xsf::take_from_discrete_cdf(_as_mdspan(dist), k);
+    }
+};
+
 
 static int
 _gufuncs_module_exec(PyObject *module)
@@ -238,57 +284,31 @@ _gufuncs_module_exec(PyObject *module)
                            "_rcty", rcty_doc, "()->(np1),(np1)", legendre_map_dims<2>);
     PyModule_AddObjectRef(module, "_rcty", _rcty);
 
-    PyObject *_poisson_binom_pmf_all = xsf::numpy::gufunc(
+    PyObject *_poisson_binom_pmf = xsf::numpy::gufunc(
         {
-            static_cast<xsf::numpy::f1_f1>(xsf::poisson_binom_pmf_all),
-            static_cast<xsf::numpy::d1_d1>(xsf::poisson_binom_pmf_all)
+            _poisson_binom_pmf_loop<xsf::numpy::float_1d>{},
+            _poisson_binom_pmf_loop<xsf::numpy::double_1d>{}
         },
         1,
-        "_poisson_binom_pmf_all",
+        "_poisson_binom_pmf",
         "Internal function",
-        "(i)->(j)",
-        _poisson_binom_all_map_dims
+        "(),(i)->()",
+        _poisson_binom_map_dims
     );
-    PyModule_AddObjectRef(module, "_poisson_binom_pmf_all", _poisson_binom_pmf_all);
+    PyModule_AddObjectRef(module, "_poisson_binom_pmf", _poisson_binom_pmf);
 
-    PyObject *_poisson_binom_cdf_all = xsf::numpy::gufunc(
+    PyObject *_poisson_binom_cdf = xsf::numpy::gufunc(
         {
-            static_cast<xsf::numpy::f1_f1>(xsf::poisson_binom_cdf_all),
-            static_cast<xsf::numpy::d1_d1>(xsf::poisson_binom_cdf_all)
+            _poisson_binom_cdf_loop<xsf::numpy::float_1d>{},
+            _poisson_binom_cdf_loop<xsf::numpy::double_1d>{}
         },
         1,
-        "_poisson_binom_cdf_all",
+        "_poisson_binom_cdf",
         "Internal function",
-        "(i)->(j)",
-        _poisson_binom_all_map_dims
+        "(),(i)->()",
+        _poisson_binom_map_dims
     );
-    PyModule_AddObjectRef(module, "_poisson_binom_cdf_all", _poisson_binom_cdf_all);
-
-    PyObject *_take_from_pmf = xsf::numpy::gufunc(
-        {
-            static_cast<xsf::numpy::f1q_f>(xsf::take_from_pmf),
-            static_cast<xsf::numpy::d1q_d>(xsf::take_from_pmf),
-        },
-        1,
-        "_take_from_pmf",
-        "Internal function",
-        "(i),()->()",
-        _take_from_dist_map_dims
-    );
-    PyModule_AddObjectRef(module, "_take_from_pmf", _take_from_pmf);
-
-    PyObject *_take_from_discrete_cdf = xsf::numpy::gufunc(
-        {
-            static_cast<xsf::numpy::f1q_f>(xsf::take_from_discrete_cdf),
-            static_cast<xsf::numpy::d1q_d>(xsf::take_from_discrete_cdf),
-        },
-        1,
-        "_take_from_discrete_cdf",
-        "Internal function",
-        "(i),()->()",
-        _take_from_dist_map_dims
-    );
-    PyModule_AddObjectRef(module, "_take_from_discrete_cdf", _take_from_discrete_cdf);
+    PyModule_AddObjectRef(module, "_poisson_binom_cdf", _poisson_binom_cdf);
 
     return 0;
 }
