@@ -87,6 +87,9 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     meson_compile_args = tuple()
     meson_install_args = tuple()
 
+    # Avoid byte-compiling on every rebuild/reinstall, that's very expensive
+    meson_args += ("-Dpython.bytecompile=-1",)
+
     if sys.platform == "cygwin":
         # Cygwin only has netlib lapack, but can link against
         # OpenBLAS rather than netlib blas at runtime.  There is
