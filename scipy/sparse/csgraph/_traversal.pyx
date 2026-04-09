@@ -724,6 +724,11 @@ cdef unsigned int _depth_first_undirected2(
     return i_nl_end
 
 
+cdef inline int _dfs_node(int v) noexcept nogil:
+    """Decode a DFS stack entry to a node index (clear the sign/lead bit)."""
+    return v & 0x7FFFFFFF
+
+
 # Author: Sebastiano Vigna  -- <sebastiano.vigna@gmail.com>
 def _connected_components_directed(
         np.ndarray[int32_or_int64, ndim=1, mode='c'] indices,
@@ -745,8 +750,9 @@ cdef int _connected_components_directed2(
 
     The algorithmic complexity is for a graph with E edges and V vertices
     is O(E + V). The storage requirement is an integer array of V
-    elements, plus two stacks of integers whose sum of lengths never
-    exceeds V, and is much smaller in typical graphs.
+    elements, plus two stacks of integers whose combined length never
+    exceeds V, and is much smaller in typical graphs. The sign bit of
+    each DFS stack entry encodes the lead flag (candidate SCC root).
 
     The algorithm uses all improvements described by Tarjan and Zwick in
     their recent survey, plus some further trick used in the Rust
@@ -757,7 +763,8 @@ cdef int _connected_components_directed2(
     if N == 0:
         return 0
 
-    cdef int v, w, j, node, parent, top
+    cdef int v, w, j, parent
+    cdef int NONLEAD = <int>0x80000000  # sign bit: marks stack entry as non-lead
     cdef int index = N        # timestamp counter, decreasing
     cdef int n_comp = 0       # number of emitted components
     cdef int root_hl = 0      # high_link of current DFS-tree root
@@ -780,8 +787,7 @@ cdef int _connected_components_directed2(
     dfs_stack.reserve(N)
     comp_stack.reserve(N)
 
-    for v in range(N):
-        labels[v] = 0
+    labels[:] = 0
 
     for v in range(N):
         if succ_pos[v] != VOID:
@@ -797,11 +803,7 @@ cdef int _connected_components_directed2(
         succ_pos[v] = indptr[v]
 
         while not dfs_stack.empty():
-            # Decode node (and lead flag) at the DFS top
-            if dfs_stack.back() >= 0:
-                v = dfs_stack.back()
-            else:
-                v = ~dfs_stack.back()
+            v = _dfs_node(dfs_stack.back())
 
             if succ_pos[v] < indptr[v + 1]:
                 # ---- Advance to next successor ----
@@ -817,7 +819,7 @@ cdef int _connected_components_directed2(
                 else:
                     # ---- Revisit (cross / back arc) ----
                     if labels[v] < labels[w]:
-                        dfs_stack[dfs_stack.size() - 1] = ~v  # lead = False
+                        dfs_stack[dfs_stack.size() - 1] = v | NONLEAD  # lead = False
                         labels[v] = labels[w]
                         # Early exit: the whole graph is one SCC
                         if labels[v] == root_hl and index == 0:
@@ -825,10 +827,7 @@ cdef int _connected_components_directed2(
                             for j in range(<int>comp_stack.size()):
                                 labels[comp_stack[j]] = n_comp
                             for j in range(<int>dfs_stack.size() - 1):
-                                node = dfs_stack[j]
-                                if node < 0:
-                                    node = ~node
-                                labels[node] = n_comp
+                                labels[_dfs_node(dfs_stack[j])] = n_comp
                             n_comp += 1
                             dfs_stack.clear()
                             comp_stack.clear()
@@ -853,10 +852,9 @@ cdef int _connected_components_directed2(
                     dfs_stack.pop_back()
                     comp_stack.push_back(v)
                     if not dfs_stack.empty():
-                        top = dfs_stack.back()
-                        parent = top if top >= 0 else ~top
+                        parent = _dfs_node(dfs_stack.back())
                         if labels[parent] < labels[v]:
-                            dfs_stack[dfs_stack.size() - 1] = ~parent
+                            dfs_stack[dfs_stack.size() - 1] = parent | NONLEAD
                             labels[parent] = labels[v]
 
     return n_comp
