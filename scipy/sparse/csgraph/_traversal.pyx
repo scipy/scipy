@@ -104,12 +104,11 @@ def connected_components(csgraph, directed=True, connection='weak',
                              dense_output=False)
 
     labels = np.empty(csgraph.shape[0], dtype=ITYPE)
-    labels.fill(NULL_IDX)
 
     if directed:
         n_components = _connected_components_directed(csgraph.indices,
-                                                             csgraph.indptr,
-                                                             labels)
+                                                      csgraph.indptr,
+                                                      labels)
     else:
         csgraph_T = csgraph.T.tocsr()
         n_components = _connected_components_undirected(csgraph.indices,
@@ -755,7 +754,7 @@ cdef int _connected_components_directed2(
     V, and is much smaller in practice.
 
     The algorithm uses all improvements described by Tarjan and Zwick in
-    their recent survey, plus some further trick used in the Rust
+    their recent survey, plus some further tricks used in the Rust
     implementation of the WebGraph framework.
     """
     DEF VOID = -1
@@ -782,7 +781,7 @@ cdef int _connected_components_directed2(
     # but a stack parallel to the DFS stack is sufficient.
     #
     # succ_pos[v]: position in successor list for node v (int32 or int64,
-    #     matching indptr/indices); VOID = unvisited.
+    #     matching indptr); VOID = unvisited.
     #
     # dfs_stack[]: DFS path; the sign bit encodes the "lead" flag
     #     (non-negative = candidate SCC root).
