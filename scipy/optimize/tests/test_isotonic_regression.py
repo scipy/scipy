@@ -6,7 +6,7 @@ from scipy._lib._array_api import (
     lazy_xp_function
 )
 from scipy._external import array_api_extra as xpx
-from scipy.optimize._pava_pybind import pava
+from scipy.optimize._pava import pava
 from scipy.optimize import isotonic_regression
 
 lazy_xp_function(isotonic_regression)

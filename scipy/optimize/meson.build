@@ -88,9 +88,8 @@ py3.extension_module('_moduleTNC',
   subdir: 'scipy/optimize'
 )
 
-py3.extension_module('_pava_pybind',
-  ['_pava/pava_pybind.cpp'],
-  include_directories: '_pava',
+py3.extension_module('_pava',
+  ['_pava/pava.cpp'],
   dependencies: [np_dep, nanobind_dep],
   link_args: version_link_args,
   install: true,

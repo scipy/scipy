@@ -108,7 +108,7 @@ auto pava(Array xa, Array wa, IndexArray ra) {
     return std::make_tuple(xa, wa, ra, b + 1);  // b + 1 is number of blocks
 }
 
-NB_MODULE(_pava_pybind, m) {
+NB_MODULE(_pava, m) {
     m.def(
         "pava",
         &pava,
