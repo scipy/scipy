@@ -6,7 +6,7 @@ from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import array_namespace, _asarray, is_numpy, xp_capabilities
 
 from ._optimize import OptimizeResult
-from ._pava_pybind import pava
+from ._pava import pava
 
 if TYPE_CHECKING:
     import numpy.typing as npt
