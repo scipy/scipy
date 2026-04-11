@@ -47,9 +47,8 @@ def _create_sparse_poisson2d_coo(n):
 class Bench(Benchmark):
     params = [
         [4, 6, 10, 16, 25, 40, 64, 100],
-        # ['dense', 'spsolve', 'cg', 'minres', 'gmres', 'lgmres', 'gcrotmk',
-        #  'tfqmr']
-        ['cg'],
+        ['dense', 'spsolve', 'cg', 'minres', 'gmres', 'lgmres', 'gcrotmk',
+         'tfqmr'],
         [False, True],
     ]
     mapping = {'spsolve': spsolve, 'cg': cg, 'minres': minres, 'gmres': gmres,
@@ -82,10 +81,8 @@ class Bench(Benchmark):
 
 class BatchedCGSparse(Benchmark):
     params = [
-        # [2, 4, 6, 8, 16, 32, 64],
-        # [1, 10, 100, 500, 1000, 5000, 10000],
-        [8, 16],
-        [500],
+        [2, 4, 6, 8],
+        [1, 10, 100],
         # [False, True],
         [False, True],
     ]
@@ -156,8 +153,8 @@ class BatchedCGDense(XPBenchmark):
     param_names = (*XPBenchmark.param_names, '(n,n)', 'batch_size')
     params = (
         *XPBenchmark.params,
-        [2, 4, 8, 16, 24],
-        [1, 10, 100, 500, 1000, 5000, 10000],
+        [2, 4, 8],
+        [1, 10, 100],
     )
 
     def setup(self, backend, n, batch_size):
