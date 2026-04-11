@@ -33,7 +33,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         strides_Q = PyArray_STRIDES(ap_Q);
     }
 
-    if (mode == QR_mode::RAW) {
+    if (mode == QR_mode::RAW_MODE) {
         tau_data = (T *)PyArray_DATA(ap_tau);
         strides_tau = PyArray_STRIDES(ap_tau);
     }
@@ -51,7 +51,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
     CBLAS_INT K = std::min(intn, intm), max_dim = std::max(intn, intm);
-    CBLAS_INT middle_dim = (mode == QR_mode::ECONOMIC || mode == QR_mode::RAW) ? K : intm; // Final dimension: Q is [`M` x `middle_dim`], R is [`middle_dim` x `N`]
+    CBLAS_INT middle_dim = (mode == QR_mode::ECONOMIC || mode == QR_mode::RAW_MODE) ? K : intm; // Final dimension: Q is [`M` x `middle_dim`], R is [`middle_dim` x `N`]
 
 
     // Probe both the factorization as well as `or_un_gqr` to find the optimal lwork
@@ -86,9 +86,9 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
     // If mode == FULL, the resulting Q will be `M` x `M`, however, `max_dim` is used to
     // allocate enough space for the entire `a` for `M` < `N`.
-    // If mode == RAW, the `tau` have to be returned, else a temporary buffer is sufficient.
+    // If mode == RAW_MODE, the `tau` have to be returned, else a temporary buffer is sufficient.
     CBLAS_INT buf_size = (mode == QR_mode::FULL) ? M * max_dim : M * N;
-    CBLAS_INT tau_size = (mode == QR_mode::RAW) ? 0 : K;
+    CBLAS_INT tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
     T *buffer = (T *)malloc((buf_size + lwork + tau_size) * sizeof(T));
     if ( buffer == NULL ) { info = -101; return int(info); }
 
@@ -125,7 +125,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         if (mode != QR_mode::R) {
             slice_ptr_Q = compute_slice_ptr(idx, Q_data, ndim, shape, strides_Q);
         }
-        if (mode == QR_mode::RAW) {
+        if (mode == QR_mode::RAW_MODE) {
             slice_ptr_tau = compute_slice_ptr(idx, tau_data, ndim, shape, strides_tau);
         } else { // `tau` might still be required, but should not be returned, so buffer is sufficient.
             slice_ptr_tau = tau_buffer;
@@ -178,7 +178,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
         // In the case of `raw` mode, the output of `geqrf`/`geqp3` is what is expected in `Q`.
         // Since the usecase for `mode="raw"` will mostly be to use it for other LAPACK calls, keep in F-order.
-        if (mode == QR_mode::RAW) {
+        if (mode == QR_mode::RAW_MODE) {
             memcpy(slice_ptr_Q, data_A, intm * intn * sizeof(T));
         }
 

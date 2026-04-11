@@ -1,6 +1,15 @@
 class spmatrix:
     """This class provides a base class for all sparse matrix classes.
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     This class also serves as the namespace for SciPy sparse matrix types.
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """

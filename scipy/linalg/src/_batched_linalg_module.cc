@@ -287,7 +287,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
             break; // shape of `Q` irrelevant here
         }
 
-        case QR_mode::RAW:
+        case QR_mode::RAW_MODE:
         {
             shape_Q[ndim-1] = N;
             shape_R[ndim-2] = K;
@@ -318,7 +318,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         goto fail_qr;
     }
 
-    if (mode == QR_mode::RAW) {
+    if (mode == QR_mode::RAW_MODE) {
         shape_Q[ndim-2] = K; // Just reuse `shape_Q`; not used any longer.
         ap_tau = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum); // Just a vector, so `ndim-1`.
         if (!ap_tau) {
@@ -379,7 +379,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     ret_lst = convert_vec_status(vec_status);
 
     ret_Q = (mode != QR_mode::R) ? PyArray_Return(ap_Q) : Py_None;
-    ret_tau = (mode == QR_mode::RAW) ? PyArray_Return(ap_tau) : Py_None;
+    ret_tau = (mode == QR_mode::RAW_MODE) ? PyArray_Return(ap_tau) : Py_None;
     ret_jpvt = (pivoting) ? PyArray_Return(ap_jpvt): Py_None;
     return Py_BuildValue("NNNNN", ret_Q, PyArray_Return(ap_R), ret_tau, ret_jpvt, ret_lst);
 
@@ -1191,6 +1191,196 @@ fail:
 }
 
 
+template<typename T>
+inline void
+bandwidth_strided_scalar(const void *data, int64_t offset,
+                         int64_t n, int64_t m, int64_t s0, int64_t s1,
+                         int64_t *lower_band, int64_t *upper_band)
+{
+    const T *slice = (const T *)data + offset;
+    const T zero = T(0);
+    int64_t lb = 0, ub = 0;
+
+    for (int64_t r = n - 1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
+            if (slice[r * s0 + c * s1] != zero) { lb = r - c; break; }
+        }
+        if (r <= lb) { break; }
+    }
+
+    for (int64_t r = 0; r < n - 1; r++) {
+        for (int64_t c = m - 1; c > r + ub; c--) {
+            if (slice[r * s0 + c * s1] != zero) { ub = c - r; break; }
+        }
+        if (r + ub + 1 > m) { break; }
+    }
+
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+template<typename T>
+inline void
+bandwidth_contiguous_scalar(const void *data, int64_t offset,
+                            int64_t n, int64_t m,
+                            int64_t *lower_band, int64_t *upper_band)
+{
+    const T *slice = (const T *)data + offset;
+    const T zero = T(0);
+    int64_t lb = 0, ub = 0;
+
+    for (int64_t r = n - 1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
+            if (slice[r * m + c] != zero) { lb = r - c; break; }
+        }
+        if (r <= lb) { break; }
+    }
+
+    for (int64_t r = 0; r < n - 1; r++) {
+        for (int64_t c = m - 1; c > r + ub; c--) {
+            if (slice[r * m + c] != zero) { ub = c - r; break; }
+        }
+        if (r + ub + 1 > m) { break; }
+    }
+
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+static PyObject*
+_linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_a = NULL;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, (PyObject **)&ap_a)) {
+        return NULL;
+    }
+
+    int ndim = PyArray_NDIM(ap_a);
+    if (ndim < 2) {
+        PyErr_SetString(PyExc_ValueError, "Input array must have at least 2 dimensions.");
+        return NULL;
+    }
+
+    npy_intp *shape = PyArray_SHAPE(ap_a);
+    int64_t n = shape[ndim - 2], m = shape[ndim - 1];
+
+    int typenum = PyArray_TYPE(ap_a);
+    npy_intp *byte_strides = PyArray_STRIDES(ap_a);
+    npy_intp itemsize = PyArray_ITEMSIZE(ap_a);
+
+    // longdouble/clongdouble are rejected by the Python wrapper in _misc.py
+    bool has_contiguous = (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
+                          || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128);
+
+    // Element strides for all dims
+    int64_t elem_strides[LU_MAX_NDIM];
+    for (int i = 0; i < ndim; i++) {
+        elem_strides[i] = (int64_t)(byte_strides[i] / itemsize);
+    }
+
+    // Check if the last two dimensions are C- or F-contiguous
+    // C-contiguous: inner slices are always C-contiguous (any ndim)
+    // F-contiguous: inner slices are only F-contiguous for 2D
+    bool inner_c_contig = PyArray_IS_C_CONTIGUOUS(ap_a);
+    bool inner_f_contig = (ndim == 2) && PyArray_IS_F_CONTIGUOUS(ap_a);
+    bool use_contiguous = has_contiguous && (inner_c_contig || inner_f_contig);
+
+    int64_t n_eff = inner_f_contig ? m : n;
+    int64_t m_eff = inner_f_contig ? n : m;
+
+    int batch_ndim = ndim - 2;
+    npy_intp num_slices = 1;
+    for (int i = 0; i < batch_ndim; i++) { num_slices *= shape[i]; }
+
+    PyArrayObject *ap_lb = (PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64);
+    PyArrayObject *ap_ub = (PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64);
+    if (!ap_lb || !ap_ub) {
+        Py_XDECREF(ap_lb); Py_XDECREF(ap_ub);
+        return PyErr_NoMemory();
+    }
+
+    int64_t *lb_data = (int64_t *)PyArray_DATA(ap_lb);
+    int64_t *ub_data = (int64_t *)PyArray_DATA(ap_ub);
+    const void *a_data = PyArray_DATA(ap_a);
+
+    for (npy_intp idx = 0; idx < num_slices; idx++) {
+        // Compute element offset to the idx-th 2D slice
+        int64_t offset = 0;
+        int64_t temp = idx;
+        for (int i = batch_ndim - 1; i >= 0; i--) {
+            offset += (temp % shape[i]) * elem_strides[i];
+            temp /= shape[i];
+        }
+
+        if (use_contiguous) {
+            switch (typenum) {
+                case NPY_FLOAT32:    bandwidth_contiguous_scalar<float>                (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT64:    bandwidth_contiguous_scalar<double>               (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:  bandwidth_contiguous_scalar<std::complex<float>>  (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128: bandwidth_contiguous_scalar<std::complex<double>> (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+            }
+            if (inner_f_contig) { std::swap(lb_data[idx], ub_data[idx]); }
+        } else {
+            int64_t s0 = elem_strides[ndim - 2];
+            int64_t s1 = elem_strides[ndim - 1];
+
+            // Normalize platform-dependent integer typenums to canonical
+            // case labels. On Windows sizeof(int)==sizeof(long)==4 but
+            // NPY_INT != NPY_LONG, and NPY_INT32 is only one of them.
+            // Map all integer typenums to canonical NPY_INTxx by itemsize.
+            int tn = typenum;
+            if (PyTypeNum_ISINTEGER(tn) && !PyTypeNum_ISBOOL(tn)) {
+                bool is_unsigned = PyTypeNum_ISUNSIGNED(tn);
+                switch (itemsize) {
+                    case 1: tn = is_unsigned ? NPY_UINT8  : NPY_INT8;  break;
+                    case 2: tn = is_unsigned ? NPY_UINT16 : NPY_INT16; break;
+                    case 4: tn = is_unsigned ? NPY_UINT32 : NPY_INT32; break;
+                    case 8: tn = is_unsigned ? NPY_UINT64 : NPY_INT64; break;
+                }
+            }
+
+            switch (tn) {
+                case NPY_BOOL:        bandwidth_strided_scalar<npy_bool>                  (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_INT8:        bandwidth_strided_scalar<npy_int8>                  (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_INT16:       bandwidth_strided_scalar<npy_int16>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_INT32:       bandwidth_strided_scalar<npy_int32>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_INT64:       bandwidth_strided_scalar<npy_int64>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_UINT8:       bandwidth_strided_scalar<npy_uint8>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_UINT16:      bandwidth_strided_scalar<npy_uint16>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_UINT32:      bandwidth_strided_scalar<npy_uint32>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_UINT64:      bandwidth_strided_scalar<npy_uint64>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT:       bandwidth_strided_scalar<float>                     (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_DOUBLE:      bandwidth_strided_scalar<double>                    (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:   bandwidth_strided_scalar<std::complex<float>>       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128:  bandwidth_strided_scalar<std::complex<double>>      (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                default:
+                    Py_DECREF(ap_lb); Py_DECREF(ap_ub);
+                    PyErr_SetString(PyExc_TypeError, "Unsupported dtype.");
+                    return NULL;
+            }
+        }
+    }
+
+    // 2D: return tuple of np.int64 scalars; N-d: return tuple of int64 arrays
+    if (ndim == 2) {
+        PyArray_Descr *descr = PyArray_DescrFromType(NPY_INT64);
+        PyObject *lb_obj = PyArray_Scalar(&lb_data[0], descr, NULL);
+        PyObject *ub_obj = PyArray_Scalar(&ub_data[0], descr, NULL);
+        Py_DECREF(descr);
+        Py_DECREF(ap_lb); Py_DECREF(ap_ub);
+        return Py_BuildValue("(NN)", lb_obj, ub_obj);
+    }
+
+    return Py_BuildValue("(NN)", (PyObject *)ap_lb, (PyObject *)ap_ub);
+}
+
+
 static char doc_det[] = (
     "_linalg_det(a, overwrite_a, /)\n"
     "\n"
@@ -1237,6 +1427,29 @@ static char doc_lu[] = (
     "u : (..., K, N) ndarray\n"
     "    Upper triangular factor.\n"
 );
+
+static char doc_bandwidth[] = (
+    "_bandwidth(a, /)\n"
+    "\n"
+    "Compute the lower and upper bandwidth of a 2D array.\n"
+    "\n"
+    "Scans the array for the outermost nonzero entries below and above the\n"
+    "main diagonal. For C- or F-contiguous arrays an AVX2-accelerated path\n"
+    "is used when available; non-contiguous arrays fall back to a strided\n"
+    "scalar scan.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "a : (N, M) ndarray\n"
+    "    Input array of type float32, float64, complex64, or complex128.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "lower : int\n"
+    "    Lower bandwidth. 0 means no subdiagonal entries, N-1 means full.\n"
+    "upper : int\n"
+    "    Upper bandwidth. 0 means no superdiagonal entries, M-1 means full.\n"
+);
 static char doc_inv[] = ("Compute the matrix inverse.");
 static char doc_solve[] = ("Solve the linear system of equations.");
 static char doc_svd[] = ("SVD factorization.");
@@ -1246,6 +1459,7 @@ static char doc_cholesky[] = ("Cholesky factorization.");
 static char doc_qr[] = ("Compute the qr decomposition.");
 
 static struct PyMethodDef module_methods[] = {
+  {"_bandwidth", _linalg_bandwidth, METH_VARARGS, doc_bandwidth},
   {"_det", _linalg_det, METH_VARARGS, doc_det},
   {"_lu", _linalg_lu, METH_VARARGS, doc_lu},
   {"_inv", _linalg_inv, METH_VARARGS, doc_inv},

@@ -588,12 +588,13 @@
         }
     },
     "nrdtrimn": {
-        "_cdflib_wrappers.pxd": {
-            "nrdtrimn": "ddd->d"        }
+        "xsf_wrappers.h": {
+            "special_nrdtrimn": "ddd->d"
+        }
     },
     "nrdtrisd": {
-        "_cdflib_wrappers.pxd": {
-            "nrdtrisd": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_nrdtrisd": "ddd->d"
         }
     },
     "owens_t": {
