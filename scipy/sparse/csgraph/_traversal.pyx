@@ -758,8 +758,14 @@ cdef int _connected_components_directed2(
     V, and is much smaller in practice.
 
     The algorithm uses all improvements described by Tarjan and Zwick in
-    their recent survey, plus some further tricks used in the Rust
+    their recent survey [1]_, plus some further tricks used in the Rust
     implementation of the WebGraph framework.
+
+    References
+    ----------
+    .. [1] R. E. Tarjan and U. Zwick, "Finding strong components using
+           depth-first search", European Journal of Combinatorics, 119,
+           2024, :doi:`10.1016/j.ejc.2023.103815`
     """
     DEF VOID = -1
     cdef int N = labels.shape[0]
