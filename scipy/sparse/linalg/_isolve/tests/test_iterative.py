@@ -378,8 +378,7 @@ def test_convergence(case, xp, batch_A, batch_b):
 
     if case.convergence:
         assert info == 0
-        fudge_factor = 1
-        _assert_success(A=A, x=x, b=b, xp=xp, rtol=fudge_factor * rtol)
+        _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
     else:
         assert info != 0
         _assert_success(A=A, x=x, b=b, xp=xp, rtol=1, less_equal=True)
