@@ -37,6 +37,8 @@ from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
 
+from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
+
 IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
 
@@ -129,6 +131,71 @@ class TestEigVals:
         w = eigvals(a, homogeneous_eigvals=True)
         assert w.shape == (2, 0)
         assert w.dtype == eigvals(np.eye(2, dtype=dt)).dtype
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("shape", [(4, 4), (2, 4, 4)])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite(self, overwrite_kw, overwrite_b_kw, dtype, shape, order):
+        rng = np.random.default_rng(seed=12345)
+
+        if dtype is not int:
+            if len(shape) > 2:
+                Lmbd = np.stack(
+                    [np.diag(rng.normal(size=(shape[-1],))) for _ in range(shape[0])]
+                )
+            else:
+                Lmbd = np.diag(rng.normal(size=(shape[-1],)))
+            Q_inv = rng.normal(size=shape)
+            V = rng.normal(size=shape)
+        else:
+            if len(shape) > 2:
+                Lmbd = np.stack(
+                    [
+                        np.diag(rng.integers(-100, 100, size=(shape[-1],)))
+                        for _ in range(shape[0])
+                    ]
+                )
+            else:
+                Lmbd = np.diag(rng.integers(-100, 100, size=(shape[-1],)))
+            Q_inv = rng.integers(-100, 100, size=shape)
+            V = rng.integers(-100, 100, size=shape)
+
+        a = V @ Lmbd @ Q_inv
+        b = V @ Q_inv
+
+        if order == "F": # turn into F-ordered slices
+            a = a.swapaxes(-2, -1)
+            b = b.swapaxes(-2, -1)
+
+        a_ref = np.copy(a)
+        b_ref = np.copy(b)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+
+        overwrite_a = (
+            overwrite_a and
+            (order == "F") and
+            (len(shape) == 2) and
+            (dtype is not int)
+        )
+        overwrite_b = (
+            overwrite_b and
+            (order == "F") and
+            (len(shape) == 2) and
+            (dtype is not int)
+        )
+
+        w = eigvals(a, b, **overwrite_kw, **overwrite_b_kw)
+
+        assert_allclose(
+            np.sort(w, axis=-1),
+            np.sort(np.diagonal(Lmbd, axis1=-2, axis2=-1), axis=-1)
+        )
+        assert np.all(a == a_ref) != overwrite_a
+        assert np.all(b == b_ref) != overwrite_b
 
 
 class TestEig:

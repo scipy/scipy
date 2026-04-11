@@ -858,7 +858,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-def eigvals(a, b=None, overwrite_a=False, check_finite=True,
+def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
             homogeneous_eigvals=False):
     r"""
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
@@ -877,6 +877,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
         problem. If omitted (default), identity matrix is assumed.
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
+    overwrite_b: bool, optional
+        Whether to overwrite data in b (may improve performance)
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -952,8 +954,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
            [2.+0.j, 2.+0.j, 2.+0.j]])
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
-               check_finite=check_finite,
-               homogeneous_eigvals=homogeneous_eigvals)
+                overwrite_b=overwrite_b, check_finite=check_finite,
+                homogeneous_eigvals=homogeneous_eigvals)
 
 
 @_apply_over_batch(('a', 2), ('b', 2))
@@ -1555,7 +1557,7 @@ def cdf2rdf(w, v):
     Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
     as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-    
+
     Parameters
     ----------
     w : (..., M) array_like
