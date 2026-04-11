@@ -130,7 +130,7 @@ def make_system(A, M, x0, b, nd_support=False):
             raise ValueError(f"invalid input for x0: {x0}")
     else:
         x0 = _process_vector_input(x0, A=A, N=N, xp=xp, arg_name="x0")
-        dtype = xp_result_type(dtype, x0.dtype, force_floating=True, xp=xp)
+        dtype = xp_result_type(dtype, x0.dtype, xp=xp)
         x = xp.astype(x0, dtype, copy=True)
         b = xp.astype(b, dtype)    
 
