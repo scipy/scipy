@@ -1,4 +1,4 @@
-""" FFT backend using pypocketfft """
+""" FFT backend using pyduccfft """
 
 from .basic import *
 from .realtransforms import *
