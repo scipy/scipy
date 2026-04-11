@@ -59,7 +59,7 @@ def connected_components(csgraph, directed=True, connection='weak',
 
     References
     ----------
-    .. [1] R. E. Tarjan and U. Zwick, "Finding strong components using
+    .. [1] Robert E. Tarjan and Uri Zwick, "Finding strong components using
            depth-first search", European Journal of Combinatorics, 119,
            2024, :doi:`10.1016/j.ejc.2023.103815`
 
@@ -759,13 +759,16 @@ cdef int _connected_components_directed2(
 
     The algorithm uses all improvements described by Tarjan and Zwick in
     their recent survey [1]_, plus some further tricks used in the Rust
-    implementation of the WebGraph framework.
+    implementation of the WebGraph framework [2]_.
 
     References
     ----------
-    .. [1] R. E. Tarjan and U. Zwick, "Finding strong components using
+    .. [1] Robert E. Tarjan and Uri Zwick, "Finding strong components using
            depth-first search", European Journal of Combinatorics, 119,
            2024, :doi:`10.1016/j.ejc.2023.103815`
+    .. [2] Tommaso Fontana, Sebastiano Vigna, and Stefano Zacchiroli,
+           "WebGraph: The next generation (is in Rust)", Companion
+           Proceedings of the ACM Web Conference 2024, pp. 686--689, 2024.
     """
     DEF VOID = -1
     cdef int N = labels.shape[0]
