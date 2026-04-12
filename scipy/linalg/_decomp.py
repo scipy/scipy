@@ -877,7 +877,7 @@ def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
         problem. If omitted (default), identity matrix is assumed.
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
-    overwrite_b: bool, optional
+    overwrite_b : bool, optional
         Whether to overwrite data in b (may improve performance)
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
