@@ -87,6 +87,9 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     meson_compile_args = tuple()
     meson_install_args = tuple()
 
+    # Avoid byte-compiling on every rebuild/reinstall, that's very expensive
+    meson_args += ("-Dpython.bytecompile=-1",)
+
     if sys.platform == "cygwin":
         # Cygwin only has netlib lapack, but can link against
         # OpenBLAS rather than netlib blas at runtime.  There is
@@ -661,17 +664,51 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     '--symbol-hiding', default=False, is_flag=True,
     help='Check whether symbol hiding in extension modules is correct (GCC-only)')
 @click.option(
+    '--loaded-sharedlibs', default=False, is_flag=True,
+    help='Show shared libraries loaded by numpy/scipy imports (see examples '
+         'for options)')
+@click.option(
     '--no-build', default=False, is_flag=True,
     help='Build SciPy before running checks')
 @meson.build_dir_option
+@click.argument('extra_args', nargs=-1)
 @click.pass_context
-def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=None):
+def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no_build,
+          build_dir=None, extra_args=()):
     """🔧  Run checks specific to the SciPy code base.
 
     Exactly one check can be run at once. Example:
 
       \b
-      spin check --xp-markers
+      $ spin check --xp-markers
+
+    The --loaded-sharedlibs check takes positional arguments for imports to use, and has
+    two options to expand the amount of detail shown:
+
+      \b
+      -s, --show-stdlib      Show Python stdlib extension modules (lib-dynload/)
+      -e, --show-extensions  Show numpy/scipy extension modules
+
+    Examples (see `tools/verify_loaded_sharedlibs.py` for more examples):
+
+      \b
+      $ spin check --loaded-sharedlibs numpy scipy.linalg -- -s
+      $ spin check --loaded-sharedlibs numpy scipy.linalg
+
+      \b
+      numpy pulled in:
+        <prefix>/lib/libffi.so.8.2.0
+        <prefix>/lib/libgcc_s.so.1
+        <prefix>/lib/libgfortran.so.5.0.0
+        <prefix>/lib/libopenblasp-r0.3.30.so
+        <prefix>/lib/libquadmath.so.0.0.0
+        <prefix>/lib/libstdc++.so.6.0.34
+        (4 stdlib + 2 numpy/scipy extension modules hidden)
+
+      \b
+      scipy.linalg pulled in:
+        <prefix>/lib/libcrypto.so.3
+        (12 stdlib + 23 numpy/scipy extension modules hidden)
 
     """
     # Checks are typically useful enough to run in CI or maintain a custom script for,
@@ -682,7 +719,7 @@ def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=N
     #
     # These checks, unlike the `lint` ones, are allowed (but don't have to) require
     # building or importing `scipy`.
-    options = [xp_markers, installed_files, symbol_hiding]
+    options = [xp_markers, installed_files, symbol_hiding, loaded_sharedlibs]
     if not sum(options) == 1:
         click.secho(
             f"Exactly one option to `check` should be given, found {sum(options)} - "
@@ -716,6 +753,11 @@ def check(ctx, xp_markers, installed_files, symbol_hiding, no_build, build_dir=N
         script = os.path.join(os.path.abspath('tools'),
                               'check_pyext_symbol_hiding.sh')
         util.run([script, install_dir])
+
+    if loaded_sharedlibs:
+        cmd = [sys.executable, os.path.join('tools', 'verify_loaded_sharedlibs.py')]
+        cmd.extend(extra_args)
+        util.run(cmd)
 
 
 # From scipy: benchmarks/benchmarks/common.py

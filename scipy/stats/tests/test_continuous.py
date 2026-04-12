@@ -1496,6 +1496,8 @@ class TestMakeDistribution:
         assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
+    @pytest.mark.slow  # just in case
+    @settings(max_examples=20)  # no need for more
     @given(data=strategies.data())
     def test_draw_distribution(self, data):
         # `draw_distribution_from_family` is a private function right now, but we will
@@ -1513,8 +1515,8 @@ class TestMakeDistribution:
                           's': {'endpoints': (0, np.inf), 'typical': s_typical}}
             support = {'endpoints': (-np.inf, np.inf), 'typical': x_typical}
 
-            def pdf(self, x, a, b):
-                return 1 / (x * (np.log(b) - np.log(a)))
+            def pdf(self, x, u, s):
+                return 1 / np.sqrt(2*np.pi) / s * np.exp(-((x-u)/s)**2/2)
 
         family = stats.make_distribution(MyNormal())
         proportions = (1.0, 0., 0., 0.)
@@ -1523,6 +1525,24 @@ class TestMakeDistribution:
         assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
         assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
         assert x_typical[0] < np.min(x) and np.max(x) < x_typical[1]
+
+    @pytest.mark.parametrize('p', [None, ()])
+    def test_no_parameters(self, p):
+        # To create a distribution without parameters, it is natural to try an empty
+        # dictionary (since a dictionary with entries is valid if there is only
+        # one parameterization), but that didn't work; only an empty tuple (no
+        # parameterizations) worked originally. Check that this is resolved.
+        class MyStandardNormal:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {} if p is None else p
+            support = {'endpoints': (-np.inf, np.inf)}
+
+            def pdf(self, x):
+                return 1 / np.sqrt(2*np.pi) * np.exp(-x**2/2)
+
+        StandardNormal = stats.make_distribution(MyStandardNormal())
+        X = StandardNormal()
+        assert X.support() == (-np.inf, np.inf)
 
 
 class TestTransforms:

@@ -88,6 +88,8 @@ CONFIG = _cleanup(
                 "openblas configuration": r"@BLAS_OPENBLAS_CONFIG@",
                 "pc file directory": r"@BLAS_PCFILEDIR@",
                 "has ilp64": bool(r"@BLAS_HAS_ILP64@".lower().replace('false', '')),
+                "has lp64": bool(r"@BLAS_HAS_LP64@".lower().replace('false', '')),
+                "cython blas ilp64": bool(r"@BLAS_CYTHON_ILP64@".lower().replace('false', '')),
             },
             "lapack": {
                 "name": "@LAPACK_NAME@",
@@ -99,6 +101,7 @@ CONFIG = _cleanup(
                 "openblas configuration": r"@LAPACK_OPENBLAS_CONFIG@",
                 "pc file directory": r"@LAPACK_PCFILEDIR@",
                 "has ilp64": bool(r"@LAPACK_HAS_ILP64@".lower().replace('false', '')),
+                "has lp64": bool(r"@LAPACK_HAS_LP64@".lower().replace('false', '')),
             },
             "pybind11": {
                 "name": "@PYBIND11_NAME@",

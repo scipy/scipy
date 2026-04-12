@@ -295,7 +295,7 @@ def sobol_indices(
         If a callable, its signature must be::
 
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
-            -> Tuple[np.ndarray, np.ndarray]
+            -> tuple[np.ndarray, np.ndarray]
 
         with ``f_A, f_B`` of shape ``(s, n)`` and ``f_AB`` of shape
         ``(d, s, n)``.

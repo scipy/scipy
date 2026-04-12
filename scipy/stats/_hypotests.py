@@ -104,6 +104,27 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
+    Examples
+    --------
+    Generate random samples ``x`` and ``y``.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(66326777)
+    >>> x = rng.normal(0, 1, size=100)
+    >>> y = rng.normal(5, 3, size=100)
+
+    Test the null hypothesis that ``x`` and ``y`` are sampled from the same
+    distribution.
+
+    >>> res = stats.epps_singleton_2samp(x, y)
+    >>> res.statistic
+    np.float64(316.6441136688085)
+    >>> res.pvalue
+    np.float64(2.778946959815902e-67)
+    
+    The large value of the statistic and small p-value may be taken as evidence that
+    ``x`` and ``y`` were not sampled from the same distribution. 
     """
     xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
@@ -1641,10 +1662,10 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     return p
 
 
-@xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
-                                ('dask.array', 'needs rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'needs rankdata')],
                  cpu_only=True, jax_jit=False,  # due to p-value calculation
-                 marray=True)
+                 marray=True,
+                 extra_note="Only `method='exact'` is compatible with MArray input.")
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):

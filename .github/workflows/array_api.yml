@@ -14,6 +14,7 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  CCACHE_MAXSIZE: "250M"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -54,6 +55,7 @@ jobs:
         uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Build
         run: pixi run build-cpu
@@ -64,3 +66,9 @@ jobs:
           for task in ${{ join(matrix.tasks, ' ') }}; do
             pixi run --skip-deps "$task" -- --durations 3 --timeout=60
           done
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          pixi exec ccache --evict-older-than 1d
+          pixi exec ccache -s

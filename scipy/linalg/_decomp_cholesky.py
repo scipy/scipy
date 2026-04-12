@@ -35,7 +35,8 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
 
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
-    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
+    overwrite_a = (overwrite_a and (a1.ndim == 2)
+                   and (a1.flags["F_CONTIGUOUS"] or a1.flags["C_CONTIGUOUS"]))
 
     # accomodate empty arrays
     if a1.shape[-1] == 0:

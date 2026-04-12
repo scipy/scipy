@@ -265,9 +265,12 @@ class KDTree(cKDTree):
     data : array_like, shape (n,m)
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
-        array of doubles, and so modifying this data will result in
-        bogus results. The data are also copied if the kd-tree is built
-        with copy_data=True.
+        array of doubles. The data are also copied if the kd-tree is built
+        with copy_data=True. Concurrently modifying the data while constructing
+        a KDTree is not well-defined and may lead to crashes or data
+        corruption. If no copy happens, modifying the data *after* creating
+        the KDTree may lead to data corruption or incorrect answers when
+        searching the tree.
     leafsize : positive int, optional
         The number of points at which the algorithm switches over to
         brute-force.  Default: 10.
@@ -310,6 +313,9 @@ class KDTree(cKDTree):
         The minimum value in each dimension of the n data points.
     size : int
         The number of nodes in the tree.
+    boxsize : None or ndarray, shape (m.)
+        If boxsize is passed to the initializer, this will be set to the bounds
+        of the periodic box. None if no boxsize is passed.
 
     Notes
     -----
