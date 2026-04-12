@@ -1679,7 +1679,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     input_onesided : bool, optional
         If `True`, interpret the input array as one-sided FFTs, such
         as is returned by `stft` with ``return_onesided=True`` and
-        `numpy.fft.rfft`. If `False`, interpret the input as a a
+        `numpy.fft.rfft`. If `False`, interpret the input as a
         two-sided FFT. Defaults to `True`.
     boundary : bool, optional
         Specifies whether the input signal was extended at its
