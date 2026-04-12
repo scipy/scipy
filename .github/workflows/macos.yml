@@ -87,7 +87,9 @@ jobs:
 
       - name: Test SciPy
         # mpmath tests are too slow for CI
-        run: pixi run test-${{ matrix.environment }} -m full -- -k "not mpmath"
+        run: pixi run test-${ENVIRONMENT} -m full -- -k "not mpmath"
+        env:
+          ENVIRONMENT: ${{ matrix.environment }}
 
   clang_ASAN:
     name: Test under AddressSanitizer

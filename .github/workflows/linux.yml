@@ -544,6 +544,7 @@ jobs:
 
   #################################################################################
   free-threaded:
+    name: free-threaded
     needs: get_commit_message
     strategy:
       matrix:

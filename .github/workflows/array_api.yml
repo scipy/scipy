@@ -64,9 +64,11 @@ jobs:
       - name: Test
         run: |
           export OMP_NUM_THREADS=2
-          for task in ${{ join(matrix.tasks, ' ') }}; do
+          for task in ${TASKS}; do
             pixi run --skip-deps "$task" -- --durations 3 --timeout=60
           done
+        env:
+          TASKS: ${{ join(matrix.tasks, ' ') }}
 
       - name: Ccache performance
         shell: bash -l {0}

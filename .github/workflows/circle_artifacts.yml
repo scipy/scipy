@@ -2,12 +2,16 @@ name: Redirect circleci artifacts
 
 on: [status]
 
-permissions:
-  statuses: write  # to report circleci status (scientific-python/circleci-artifacts-redirector-action)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-22.04
+    environment: circleci-redirector
     if: >
       github.repository == 'scipy/scipy'
       && github.event.context == 'ci/circleci: build_docs'
@@ -15,6 +19,8 @@ jobs:
     steps:
       - name: GitHub Action step
         uses: scientific-python/circleci-artifacts-redirector-action@5d358ff96e96429a5c64a969bb4a574555439f4f # v1.3.1
+        permissions:
+          statuses: write # needed to communicate status
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           api-token: ${{ secrets.CIRCLE_TOKEN }}
