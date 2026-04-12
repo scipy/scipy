@@ -214,6 +214,7 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
         a1 = a1.copy()
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
+    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
 
     # heavy lifting
     Q, R, tau, jpvt, err_lst = _batched_linalg._qr(a1, overwrite_a, modeFlag, pivoting)
@@ -227,10 +228,12 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
     else:
         Rj = (R,)
 
-    if mode == "raw":
+    if modeFlag == modes["raw"]:
         Q = (Q, tau)
+    elif modeFlag == modes["economic"] and M < N:
+        Q = Q[..., :, :M]
 
-    if mode == "r":
+    if modeFlag == modes["r"]:
         return Rj
     else:
         return (Q,) + Rj

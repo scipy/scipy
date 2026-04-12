@@ -2,7 +2,6 @@
  * Templated loops for `linalg.qr`
  */
 
-#include "src/_common_array_utils.hh"
 template<typename T>
 int
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
@@ -84,17 +83,50 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         return -99;
     }
 
-    // If mode == FULL, the resulting Q will be `M` x `M`, however, `max_dim` is used to
-    // allocate enough space for the entire `a` for `M` < `N`.
-    // If mode == RAW_MODE, the `tau` have to be returned, else a temporary buffer is sufficient.
-    CBLAS_INT buf_size = (mode == QR_mode::FULL) ? M * max_dim : M * N;
+    /*
+     * Allocate buffer and slice into parts
+     *
+     *     lwork        tau_size     buf_size
+     * |------------|-------------|--------------|
+     * ^            ^             ^
+     * work         tau_buffer    data_A
+     *
+     * - `work` is the work area, size `lwork`. Always allocated.
+     *
+     * - `tau_buffer` contains a temporary buffer for the reflectors. If mode == RAW_MODE, they have
+     *   to be returned and hence a temporary buffer is not needed. Else it has size `K`.
+     *
+     * - `data_A` contains a temporary buffer for LAPACK calls, if mode == FULL, the resulting
+     *   `Q` is `M x max_dim` to account for both `M >= N` and `M < N`. For mode == R and
+     *   mode == ECONOMIC the required buffer of size `M x N`. For mode == RAW_MODE this buffer
+     *   can be bypassed altogether due to the fact that the returned output has F-ordered slices.
+     *
+     *   When `overwrite_a` is set the buffer is also not needed for ECONOMIC and R modes. Due to the fact
+     *   that the resulting `Q` can be larger than `A` for mode == FULL a buffer is still allocated in that
+     *   case.
+     *
+     * The re-use of the input buffer when `overwrite_a` is enabled works as follows:
+     * - mode == RAW_MODE:
+     *      the factorization is performed in-place and `R` is extracted into a newly allocated array.
+     * - mode == R:
+     *      factorization performed in-place and the other triangle is zeroed out.
+     * - mode == ECONOMIC:
+     *      perform factorization in-place, extract `R` to newly allocated array and explicitly compute
+     *      `Q` in-place as well. If needed (i.e. `M < N`), the `Q` is shrunk into having `M x M` slices
+     *      at the python side.
+     * - mode == FULL:
+     *      copy data into the temporary buffer and perform factorizations there. The input array is re-used for
+     *      storing `R`. At the end `Q` is copied into a newly allocated array.
+     *      XXX: for `M < N` it is possible to circumvent the temporary buffer, but that would lead to shape-dependent codepaths.
+     */
     CBLAS_INT tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
-    T *buffer = (T *)malloc((buf_size + lwork + tau_size) * sizeof(T));
+    CBLAS_INT buf_size = ((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE) ? 0 : (mode == QR_mode::FULL) ? M * max_dim : M * N;
+    T *buffer = (T *)malloc((lwork + tau_size + buf_size) * sizeof(T));
     if ( buffer == NULL ) { info = -101; return int(info); }
 
-    T *data_A = &buffer[0];
-    T *work = &buffer[buf_size];
-    T *tau_buffer = &buffer[buf_size + lwork];
+    T *work = &buffer[0];
+    T *tau_buffer = &buffer[lwork];
+    T *data_A = &buffer[lwork + tau_size];
 
     // `c/zgeqp3` needs rwork
     void *rwork = NULL;
@@ -120,21 +152,37 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         // Hence, the use of `ndim` instead of `ndim-1`. Similarly, the shapes of `Q` and `R` might differ,
         // but only the batching ones are relevant, which are identical.
         slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
-        slice_ptr_R = compute_slice_ptr(idx, R_data, ndim, shape, strides_R);
+        if (!(mode == QR_mode::R && overwrite_a)) {
+            slice_ptr_R = compute_slice_ptr(idx, R_data, ndim, shape, strides_R);
+        } // NB. if the condition is true the relevant buffer is already in place and no copy back is needed either.
 
         if (mode != QR_mode::R) {
             slice_ptr_Q = compute_slice_ptr(idx, Q_data, ndim, shape, strides_Q);
         }
         if (mode == QR_mode::RAW_MODE) {
             slice_ptr_tau = compute_slice_ptr(idx, tau_data, ndim, shape, strides_tau);
-        } else { // `tau` might still be required, but should not be returned, so buffer is sufficient.
+        } else { // `tau` might still be required for computation of `Q`, but should not be returned, so the temporary buffer is sufficient.
             slice_ptr_tau = tau_buffer;
         }
         if (pivoting) {
             slice_ptr_jpvt = compute_slice_ptr(idx, jpvt_data, ndim, shape, strides_jpvt);
         }
 
-        copy_slice_F(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
+        /*
+         * Copy the buffer for processing. When `overwrite_a` is disabled the data should be handled in
+         * another buffer, so copying is necessary. When the flag is set, the data can be processed in place.
+         *
+         * Another optimization is to process the data for mode == RAW in the return object directly as
+         * the returned array is in F-order, hence bypassing the buffer avoids two redundant copies.
+         */
+        if ((!overwrite_a && mode != QR_mode::RAW_MODE) || mode == QR_mode::FULL) {
+            copy_slice_F(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
+        } else if (!overwrite_a && mode == QR_mode::RAW_MODE) {
+            copy_slice_F(slice_ptr_Q, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
+            data_A = slice_ptr_Q; // Add alias for easier to read codepaths later on.
+        } else if (overwrite_a && (mode == QR_mode::RAW_MODE || mode == QR_mode::R || mode == QR_mode::ECONOMIC)) {
+            data_A = slice_ptr_A;
+        }
 
         init_status(slice_status, idx, St::GENERAL);
 
@@ -159,9 +207,18 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             goto free_exit;
         }
 
-        // Extract useful information and continue computation if needed.
         // `R` is always required, the correct shape is ensured by `middle_dim`.
-        extract_upper_triangle(slice_ptr_R, data_A, middle_dim, intn, intm);
+        // NB. if a new array is allocated, it is pre-filled with zeros so only the relevant triangle should be copied.
+        if (mode == QR_mode::R && overwrite_a) { // Data in-place, but need to remove the other part of the factorization still to obtain upper-triangular matrix
+            zero_other_triangle('U', data_A, middle_dim, intn, intm);
+        } else if (mode == QR_mode::FULL && overwrite_a) {
+            // The `R` array should be copied back into the `A` array, which is F-ordered, so pretend the transpose got copied.
+            // Then zero out the other triangle since the original input data is still in place.
+            copy_triangle_to_C(slice_ptr_A, data_A, intn, intm, intm, 1, 'L');
+            zero_other_triangle('U', slice_ptr_A, intm, intn, intm);
+        } else {
+            copy_triangle_to_C(slice_ptr_R, data_A, middle_dim, intn, 1, intm, 'U'); // F-ordered input to `copy_triangle`, hence `s0 == 1` and `s1 == intm`
+        }
 
         // Construct the Q matrix if required, same handling for both modes; dimensions are set already.
         if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
@@ -173,14 +230,12 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
                 goto free_exit;
             }
 
-            copy_slice_F_to_C(slice_ptr_Q, data_A, intm, middle_dim);
+            if (!overwrite_a || mode == QR_mode::FULL) {
+                copy_slice_F_to_C(slice_ptr_Q, data_A, intm, middle_dim);
+            } // NB. else the data is already in place
         }
-
-        // In the case of `raw` mode, the output of `geqrf`/`geqp3` is what is expected in `Q`.
-        // Since the usecase for `mode="raw"` will mostly be to use it for other LAPACK calls, keep in F-order.
-        if (mode == QR_mode::RAW_MODE) {
-            memcpy(slice_ptr_Q, data_A, intm * intn * sizeof(T));
-        }
+        // NB. for mode == RAW_MODE the data was either processed in place (for `overwrite_a`) or it was processed
+        // directly in the return object. Hence, Q is already in place and no additional copy is needed.
 
     } // End of batching loop
 

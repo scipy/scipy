@@ -2307,7 +2307,7 @@ class TestLstsq:
         assert_equal(ranks3, np.asarray([n, n]))
 
         if driver != "gelsy":
-            assert resid3.shape == (n,) # XXX: ?
+            assert resid3.shape == (n,)
             assert_allclose(resid3, [resid]*n, atol=1e-14)
         else:
             assert resid3.shape == (2, 0)
