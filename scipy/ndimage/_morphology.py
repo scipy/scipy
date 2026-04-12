@@ -2025,7 +2025,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2264,7 +2264,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
@@ -2468,7 +2468,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of
         returning it.
-        `return_indicies` must be True.
+        `return_indices` must be True.
         Its shape must be ``(input.ndim,) + input.shape``.
 
     Returns
