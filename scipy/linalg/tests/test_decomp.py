@@ -18,8 +18,6 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           subspace_angles, hadamard, eigvalsh_tridiagonal,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
-from .test_basic import parametrize_overwrite_arg
-
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
