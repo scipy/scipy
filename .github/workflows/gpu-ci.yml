@@ -131,4 +131,4 @@ jobs:
         env:
           # Give 10% of GPU memory to each pytest worker to ensure fairness.
           XLA_PYTHON_CLIENT_MEM_FRACTION: .10
-        run: pixi run --skip-deps test-jax-cuda -v -j 4
+        run: pixi run --skip-deps test-jax-cuda -v -j 4 -- --dist worksteal
