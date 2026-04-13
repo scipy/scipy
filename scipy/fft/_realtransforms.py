@@ -712,7 +712,8 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
 
     The IDST is equivalent to a normal DST except for the normalization and
     type. DST type 1 and 4 are their own inverse and DSTs 2 and 3 are each
-    other's inverses.
+    other's inverses. For an example that demonstrates the relation between
+    the DST and ISDT, see :ref:`DST and IDST <tutorial_FFT_DST_and_IDST>`.
 
     Examples
     --------
@@ -747,6 +748,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     ``0.15``. By default, ``idst`` scales the real-space sequence by
     ``1/16`` and the resulting curves have approximate amplitudes of
     ``1``.
+
     """
     return (Dispatchable(x, np.ndarray),)
 
