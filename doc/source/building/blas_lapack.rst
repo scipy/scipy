@@ -38,7 +38,7 @@ Note that both Accelerate and ``scipy-openblas`` have flags in ``spin``
 that are easier to remember, since they're commonly used for development::
 
     $ spin build --with-accelerate
-    $ spin build --with-scipy-openblas
+    $ spin build --with-scipy-openblas=32
 
 The ``-Dlapack`` flag isn't needed for Accelerate, MKL or ``scipy-openblas``,
 since we can be sure that BLAS and LAPACK are the same for those options.

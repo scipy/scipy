@@ -87,7 +87,7 @@ jobs:
       - name: Build
         run: |
           $env:FORCE_PKGCONF_PYPI=1
-          spin build --with-scipy-openblas
+          spin build --with-scipy-openblas=32
 
       - name: Test
         run: |
@@ -128,7 +128,7 @@ jobs:
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
           $env:fc = "flang"
-          spin build --with-scipy-openblas --setup-args="-Duse-pythran=false"
+          spin build --with-scipy-openblas=32 --setup-args="-Duse-pythran=false"
 
       - name: Test
         run: |
