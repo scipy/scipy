@@ -5,11 +5,6 @@ from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
 
-# TODO:
-# 1) C code for _solve_WH_order2_fast from tests
-# 2) GCV for lamb
-# 3) 2-d, maybe even 3-d WH smoothing
-
 
 def _solveh_banded(ab, b, calc_logdet=False):
     """
