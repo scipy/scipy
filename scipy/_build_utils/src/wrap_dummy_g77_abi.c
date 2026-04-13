@@ -25,6 +25,11 @@ return values, struct complex arguments work without segfaulting.
 #include "scipy_blas_defines.h"
 #include "fortran_defs.h"
 
+#ifdef HAVE_BLAS_ILP64
+/* NB: this redefines F_FUNC */
+#include "_blas64_defines.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
