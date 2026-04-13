@@ -95,8 +95,9 @@ jobs:
 
     - name: Build with ILP64
       run: |
-        pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
-        spin build -S-Dblas=mkl-dynamic-ilp64-seq -S-Duse-ilp64=true -S-Dcython-blas-abi=lp64
+        # Note: the `lp64` in the .pc name isn't a mistake, due to cython-blas-abi=lp64
+        pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
+        spin build -S-Dblas=mkl-dynamic-lp64-seq -S-Duse-ilp64=true -S-Dcython-blas-abi=lp64
 
     - name: Test
       run: spin test -j2

@@ -263,15 +263,6 @@ blas_opts = {'mkl': mkl_opts}
 mkl_version_req = '>=2023.0'  # see gh-24824
 mkl_may_use_sdl = not use_ilp64 and _threading_opt in ['auto', 'iomp']
 
-_blas_name_ilp64 = ''
-if use_ilp64 and blas_name.contains('ilp64') and blas_name.contains('mkl')
-  # If an exact MKL .pc name with 'ilp64' is given and use-ilp64 is true,
-  # derive the LP64 .pc name by replacing 'ilp64' with 'lp64' in the name.
-  # The original ILP64 name is saved for the ILP64 detection pass below.
-  _blas_name_ilp64 = blas_name
-  blas_name = blas_name.replace('ilp64', 'lp64')
-endif
-
 macOS13_3_or_later = false
 if host_machine.system() == 'darwin'
   r = run_command('xcrun', '-sdk', 'macosx', '--show-sdk-version', check: true)

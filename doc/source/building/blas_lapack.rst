@@ -118,7 +118,9 @@ to use Accelerate on macOS::
 
 And to use MKL on x86-64::
 
-    $ python -m build --wheel -Csetup-args=-Dblas=mkl-dynamic-ilp64-seq -C-Duse-ilp64=true -Dcython-blas-abi=lp64
+    # Note the "lp64" in the `-Dblas=` argument is not a mistake; this is
+    # necessary as long as the cython_blas ABI is set to "lp64" (see next section)
+    $ python -m build --wheel -Csetup-args=-Dblas=mkl-dynamic-lp64-seq -C-Duse-ilp64=true -Dcython-blas-abi=lp64
 
 .. note::
 
