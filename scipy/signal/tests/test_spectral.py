@@ -1391,7 +1391,7 @@ class TestLombscargle:
 
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_list_input(self):
-        # Test that input can be passsed in as lists and with a numerical issue
+        # Test that input can be passed in as lists and with a numerical issue
         # https://github.com/scipy/scipy/issues/8787
 
         t = [1.98201652e+09, 1.98201752e+09, 1.98201852e+09, 1.98201952e+09,

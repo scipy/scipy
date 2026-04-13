@@ -1518,7 +1518,7 @@ class TestInv:
         with assert_raises(LinAlgError):
             inv(np.ones((2, 2)))
 
-        # batched case: If all slices are singlar, raise
+        # batched case: If all slices are singular, raise
         with assert_raises(LinAlgError):
             inv(np.ones((3, 2, 2)))
 
@@ -1725,7 +1725,7 @@ class TestInv:
         y_inv_2_u = inv(y*mask, check_finite=False, assume_a='upper triangular')
         assert_allclose(y_inv_2_u @ np.triu(y), np.eye(5), atol=1e-15)
 
-        # repeat for the lower traingular matrix
+        # repeat for the lower triangular matrix
         y_inv_0_l = inv(np.tril(y))
         assert_allclose(y_inv_0_l @ np.tril(y), np.eye(5), atol=1e-15)
 

@@ -919,7 +919,7 @@ def test_kdtree_pickle_boxsize(kdtree_type):
 def test_kdtree_copy_data(kdtree_type):
     # check if copy_data=True makes the kd-tree
     # impervious to data corruption by modification of
-    # the data arrray
+    # the data array
     np.random.seed(0)
     n = 5000
     k = 4
@@ -1193,7 +1193,7 @@ def test_kdtree_weights(kdtree_type):
             tree2, np.linspace(0, 10, 100), weights=w1)
 
 @pytest.mark.fail_slow(10)
-def test_kdtree_count_neighbous_multiple_r(kdtree_type):
+def test_kdtree_count_neighbours_multiple_r(kdtree_type):
     n = 2000
     m = 2
     np.random.seed(1234)
@@ -1485,7 +1485,7 @@ def test_kdtree_tree_access():
 @pytest.mark.thread_unsafe(reason="Spawns worker threads")
 def test_multithreaded_tree_access():
     # Test that lazily generating KDTree.tree works when tree generation
-    # is reqested from multiple threads
+    # is requested from multiple threads
     rng = np.random.RandomState(3116978525)
     points = rng.rand(100, 4)
     t = KDTree(points)

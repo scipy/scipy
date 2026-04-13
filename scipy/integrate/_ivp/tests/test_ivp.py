@@ -1282,8 +1282,8 @@ def test_tbound_respected_oscillator(method):
     assert result.success
 
 
-def test_inital_maxstep():
-    """Verify that select_inital_step respects max_step"""
+def test_initial_maxstep():
+    """Verify that select_initial_step respects max_step"""
     rtol = 1e-3
     atol = 1e-6
     y0 = np.array([1/3, 2/9])

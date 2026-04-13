@@ -1070,7 +1070,7 @@ cdef class SimpleRatioUniforms(Method):
 
     cdf_at_mode : float, optional
         CDF at the mode. It can be given to increase the performance of the
-        algorithm. The rejection constant is halfed when CDF at mode is given.
+        algorithm. The rejection constant is halved when CDF at mode is given.
         Default is ``None``.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional

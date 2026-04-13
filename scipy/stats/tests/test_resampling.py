@@ -2021,7 +2021,7 @@ class TestPermutationTest:
 
 
 def test_all_partitions_concatenated():
-    # make sure that _all_paritions_concatenated produces the correct number
+    # make sure that _all_partitions_concatenated produces the correct number
     # of partitions of the data into samples of the given sizes and that
     # all are unique
     n = np.array([3, 2, 4], dtype=int)

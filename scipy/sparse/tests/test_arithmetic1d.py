@@ -326,7 +326,7 @@ class TestArithmetic1D:
         with pytest.raises(ValueError, match='dimension mismatch|shapes.*not aligned'):
             asp.dot(f)
 
-        # elemente-wise multiplication
+        # element-wise multiplication
         assert_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
 
         assert_equal(asp.multiply(a).toarray(), np.multiply(a, a))

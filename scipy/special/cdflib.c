@@ -1851,7 +1851,7 @@ struct TupleDID cdft_which3(double p, double q, double t)
     //                Search range: [1e-100, 1E10]
     //                    DOUBLE PRECISION DF
     //
-    //     PNONC <--> Noncentrality parameter of the noncentral t-distributio
+    //     PNONC <--> Noncentrality parameter of the noncentral t-distribution
     //                Input range: [-1e6, 1E6].
     //
     //     STATUS <-- 0 if calculation completed correctly
@@ -1874,8 +1874,8 @@ struct TupleDID cdft_which3(double p, double q, double t)
     //
     //                                Method
     //
-    //     Upper tail    of  the  cumulative  noncentral t is calculated usin
-    //     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Coninuou
+    //     Upper tail  of  the  cumulative  noncentral t is calculated using
+    //     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Coninuous
     //     Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
     //
     //     Computation of other parameters involve a search for a value that
@@ -2045,7 +2045,7 @@ struct TupleDD cumbet(double x, double y, double a, double b)
     //
     //                                       References
     //
-    //         Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithim
+    //         Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithm
     //         708 Significant Digit Computation of the Incomplete Beta Function
     //         Ratios. ACM ToMS, Vol.18, No. 3, Sept. 1992, 360-373.
 
@@ -2357,7 +2357,7 @@ struct TupleDDI cumfnc(double f, double dfn, double dfd, double pnonc)
     //
     //    CUM <-- CUMULATIVE NONCENTRAL F DISTRIBUTION
     //
-    //    CCUM <-- COMPLIMENT OF CUMMULATIVE
+    //    CCUM <-- COMPLIMENT OF CUMULATIVE
     //
     //
     //                            Method
@@ -2511,7 +2511,7 @@ struct TupleDD cumgam(double x, double a)
     //                                    CUM is DOUBLE PRECISION
     //
     //    CCUM <-- Compliment of Cumulative incomplete gamma distribution.
-    //                                            CCUM is DOUBLE PRECISIO
+    //                                            CCUM is DOUBLE PRECISION
     //
     //
     //                            Method
@@ -2539,7 +2539,7 @@ struct TupleDD cumnor(double x)
     //        CCUM <-- Compliment of Cumulative normal distribution.
     //                                            CCUM is DOUBLE PRECISION
     //        Renaming of function ANORM from:
-    //        Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
+    //        Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portable FORTRAN
     //        Package of Special Function Routines and Test Drivers"
     //        acm Transactions on Mathematical Software. 19, 22-32.
     //        with slight modifications to return ccum and to deal with
@@ -2674,13 +2674,13 @@ struct TupleDD cumt(double t, double df)
     //                                                T is DOUBLE PRECISION
     //
     //    DF --> Degrees of freedom of the t-distribution.
-    //                                                DF is DOUBLE PRECISIO
+    //                                                DF is DOUBLE PRECISION
     //
     //    CUM <-- Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECIS
+    //                                                CCUM is DOUBLE PRECISION
     //
     //    CCUM <-- Compliment of Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECIS
+    //                                                CCUM is DOUBLE PRECISION
     //
     //
     //                            Method
@@ -3151,7 +3151,7 @@ void dzror(DzrorState *S)
     //                changing any of its other parameters.
     //
     //                When ZROR has finished without error, it will return
-    //                with STATUS 0.  In that case (XLO,XHI) bound the answe
+    //                with STATUS 0.  In that case (XLO,XHI) bound the answer.
     //
     //                If ZROR finds an error (which implies that F(XLO)-Y an
     //                F(XHI)-Y have the same sign, it returns STATUS -1.  In
@@ -3166,11 +3166,11 @@ void dzror(DzrorState *S)
     //                        DOUBLE PRECISION FX
     //
     //    XLO <-- When ZROR returns with STATUS = 0, XLO bounds the
-    //            inverval in X containing the solution below.
+    //            interval in X containing the solution below.
     //                        DOUBLE PRECISION XLO
     //
     //    XHI <-- When ZROR returns with STATUS = 0, XHI bounds the
-    //            inverval in X containing the solution above.
+    //            interval in X containing the solution above.
     //                        DOUBLE PRECISION XHI
     //
     //    QLEFT <-- .TRUE. if the stepping search terminated unsuccessfully

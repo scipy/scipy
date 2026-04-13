@@ -9,7 +9,7 @@ local_capabilities_table = {}
 
 # B is a child of A which inherits the method g which is array-agnostic
 # so long as the method f is supported. A.f does not support the JAX jit but
-# B.f does support the JAX jit. Test that this inheritence does not
+# B.f does support the JAX jit. Test that this inheritance does not
 # cause problems when testing with JAX jit.
 
 @xp_capabilities(

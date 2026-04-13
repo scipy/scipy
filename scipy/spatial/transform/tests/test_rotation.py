@@ -3057,7 +3057,7 @@ def test_zero_rotation_multiplication(xp):
 
 
 @make_xp_test_case((Rotation, "concatenate"))
-def test_zero_rotation_concatentation(xp):
+def test_zero_rotation_concatenation(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
     r0 = Rotation.concatenate([r, r])

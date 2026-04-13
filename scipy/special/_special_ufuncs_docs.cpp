@@ -2628,7 +2628,7 @@ const char *hankel1_doc = R"(
 
     Examples
     --------
-    For the inhomogenous Helmholtz equation in :math:`\mathbb{R}^2` subject to radiation
+    For the inhomogeneous Helmholtz equation in :math:`\mathbb{R}^2` subject to radiation
     boundary conditions, the Green's function is given by
 
     .. math::

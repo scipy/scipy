@@ -288,7 +288,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     window : str or tuple of str and parameter values, optional
         Desired window to use. Default is ``'hamming'``. The window will be symmetric,
         unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
-        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        ``'hamming_periodic'``) Consult `~scipy.signal.get_window` for a list of windows
         and required parameters.
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         Toggles the zero frequency bin (or DC gain) to be in the passband (``True``) or
@@ -608,7 +608,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     window : str or (str, float) or float, or None, optional
         Desired window to use. Default is ``'hamming'``. The window will be symmetric,
         unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
-        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        ``'hamming_periodic'``) Consult `~scipy.signal.get_window` for a list of windows
         and required parameters. If ``None``, no window function is applied.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
@@ -1428,8 +1428,8 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         circularly symmetric 2-D windows. Each element should be a string or tuple of
         string and parameter values. The generated windows will be symmetric, unless a
         suffix ``'_periodic'`` is appended to the window name (e.g.,
-        ``'hamming_perodic'``). Consult `~scipy.signal.get_window` for a list of windows
-        and required parameters.
+        ``'hamming_periodic'``). Consult `~scipy.signal.get_window` for a list of
+        windows and required parameters.
     fc : float or 1-D array_like, optional
         Cutoff frequency of the filter in the same units as `fs`. This defines
         the frequency at which the filter's gain drops to approximately -6 dB

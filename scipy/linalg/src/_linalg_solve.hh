@@ -499,7 +499,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
      * ^          ^         ^          ^      ^
      * scratch    data      data_b     work2  work
      *
-     * - scrach & data are for A (lhs)
+     * - scratch & data are for A (lhs)
      * - data_b is for b (rhs)
      * - work2 is for the tridiag solver, trcon's work array
      * - work is for all other LAPACK functions

@@ -166,7 +166,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
             goto done;
         }
 
-        // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
+        // copy-and-transpose W, VR and VL slices from temp buffers to the output;
         if constexpr (sp_type_traits<T>::is_complex) {
             memcpy(ptr_W, wr, n*sizeof(T));
             ptr_W += n;
@@ -362,7 +362,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
             goto done;
         }
 
-        // copy-and-tranpose W, VR and VL slices from temp buffers to the output;
+        // copy-and-transpose W, VR and VL slices from temp buffers to the output;
         if constexpr (sp_type_traits<T>::is_complex) {
             // alphar and beta are complex and compatible with the W array 
             memcpy(ptr_W, alphar, n*sizeof(T));

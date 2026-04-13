@@ -385,7 +385,7 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
     ...     return (x - c)**2 + 2
 
     First, we must find a valid bracket. The function is unimodal,
-    so `bracket_minium` will easily find a bracket.
+    so `bracket_minimum` will easily find a bracket.
 
     >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
@@ -771,7 +771,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     ...     return (x - c)**2 + 2
 
     First, we must find a valid bracket. The function is unimodal,
-    so `bracket_minium` will easily find a bracket.
+    so `bracket_minimum` will easily find a bracket.
 
     >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
