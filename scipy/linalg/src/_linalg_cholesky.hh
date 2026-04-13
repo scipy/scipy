@@ -1,7 +1,6 @@
 template<typename T>
 int
 _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a, int clean, SliceStatusVec &vec_status) {
-    char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     SliceStatus slice_status;
 
@@ -14,7 +13,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     npy_intp *strides = PyArray_STRIDES(ap_Am);
     npy_intp n = shape[ndim-1];
 
-    T *ret_data = (T *)PyArray_DATA(ap_Cm); // Identical shape as input, C-ordered
+    T *ret_data = (T *)PyArray_DATA(ap_Cm); // == Am_data when overwrite_a, else zero-initialized C-ordered
 
     // Determine number of slices (np.prod(dim[:-2]))
     npy_intp outer_size = 1;
@@ -27,60 +26,78 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     //--------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, info = 0;
 
+    npy_intp sz = (npy_intp)sizeof(T);
+    npy_intp s0 = strides[ndim-2] / sz;
+    npy_intp s1 = strides[ndim-1] / sz;
+    int f_contig = (s0 == 1 && s1 == n);
+
     /*
-     * Only need a buffer for `a`, but if `overwrite_a` is enabled this is not the case.
+     * LAPACK's potrf interprets data as F-ordered, but scipy's convention
+     * is to return C-ordered output. By flipping uplo, potrf's result lands
+     * in the correct C-order triangle directly without any further work:
      *
-     * No `work` buffer required for `potrf`.
+     * Examples:
+     *   - Real C-ordered, lower=True, overwrite_a=False
+     *.      1. Lower triangle of A is copied with copy_triangle_to_C
+     *.      2. This creates a lower triangular C-ordered array, which is
+     *          which is equivalent to an UPPER triangular F-ordered array.
+     *       3. potrf only reads from triangle given by uplo and assumes symmetry
+     *       4. potrf is called with uplo = "U" overwriting the upper-triangle
+     *          of the F-ordered array with U.
+     *       5. Scipy sees this as a LOWER triangular C-ordered array and returns it.
+     *
+     *.  - Complex C-ordered, lower=False, overwrite_a=False
+     *.      1. Upper triangle of A is copied with copy_triangle_to_C
+     *       2. This creates a LOWER triangular F-ordered array with values
+     *          equal to the COMPLEX CONJUGATE conj(A) of the lower triangle of the original
+     *          matrix.
+     *       3. potrf only reads from triangle given by uplo and assumes Hermitian
+     *       4. potrf is called with uplo = "L" overwriting the lower-triangle of
+     *          F-ordered array Am* with its lower Cholesky decomposition conj(L).
+     *       5. Scipy sees this as an UPPER triangular C-ordered array U = conj(L).T = L^H,
+     *          which is exactly the relation between the lower and upper Cholesky
+     *          decompositions and this can be returned directly to the user.
+     *
+     *  - Real/Complex, F-ordered, lower=True, overwrite_a=True
+     *      1. potrf is called with uplo = "L" overwriting the lower-triangle of
+     *         the F-ordered array with L* and this is returned directly to the user.
+     *     This is the only case where scipy returns F-ordered output.
      */
-    npy_intp buf_size = overwrite_a ? 0 : n * n;
-    T *buffer = (T *)malloc(buf_size * sizeof(T));
-    if (buffer == NULL) { info = -104; return info; }
+    char uplo_f = (overwrite_a && f_contig) ? (lower ? 'L' : 'U')
+                                             : (lower ? 'U' : 'L');
 
     T *data_a = NULL;
-    if (!overwrite_a) {
-        data_a = &buffer[0];
-    } else {
-        data_a = Am_data;
-    }
 
-    // Main loop to traverse the slices
+    // Main loop over batch
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
+        // Ensure data is in the correct triangle of the F-ordered input data_a
         if (!overwrite_a) {
+            data_a = &ret_data[idx * n * n];
             T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_slice_F(data_a, slice_ptr_A, n, n, strides[ndim-2], strides[ndim-1]);
+            copy_triangle_to_C(data_a, slice_ptr_A, n, n, s0, s1, lower ? 'L' : 'U');
+        } else {
+            data_a = Am_data;
         }
-        // NB. `overwrite_a` is only enabled when the input is 2D F-ordered so data is
-        // already correctly ordered in input array. If generalized to `ndim > 2` this
-        // should be updated accordingly.
+        // NB. `overwrite_a` is only enabled when the input is 2D contiguous so
+        // data is already correctly ordered in input array. If generalized to
+        // `ndim > 2` this should be updated accordingly.
 
         init_status(slice_status, idx, slice_structure);
-        call_potrf(&uplo, &intn, data_a, &intn, &info);
+        call_potrf(&uplo_f, &intn, data_a, &intn, &info);
 
         if (info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            goto done;
+            return 1;
         }
 
-        /*
-         * Only copy over relevant part of the triangle. Other part is already
-         * put to 0 by construction. For `overwrite_a` the story is a biff different
-         * since the input array should then still be cleaned after the fact.
-         *
-         * NB. this `zero_other_triangle` only works since `overwrite_a` is only enabled
-         * for 2D F-ordered arrays. Otherwise some other measures have to be taken.
-         */
-        if (!overwrite_a) {
-            copy_triangle_F_to_C(&ret_data[idx * n * n], data_a, n, uplo);
-        } else if (clean) {
-            zero_other_triangle(uplo, data_a, n);
+        if (overwrite_a && clean) {
+            zero_other_triangle(uplo_f, data_a, n);
         }
 
     } // end of batching loop
 
-done:
-    free(buffer);
     return 1;
 }

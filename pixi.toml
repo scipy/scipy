@@ -4,6 +4,38 @@ description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
+
+
+### SciPy Package Definition ###
+
+[package.build.backend]
+name = "pixi-build-python"
+version = "*"
+
+[package.build.config]
+compilers = ["c", "cxx", "fortran"]
+
+[workspace.target.win.build-variants]
+c_compiler = ["clang-cl"] 
+cxx_compiler = ["clang-cl"]
+fortran_compiler = ["flang"]
+fortran_compiler_version = ["22.*"]
+
+[package.host-dependencies]
+uv = "*"
+pkg-config = "*"
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pythran = "*"
+pybind11 = "*"
+numpy = "*"
+blas-devel = "*"
+
+[package.target.win-64.host-dependencies]
+openblas = "*"
 
 
 ### Environments ###
@@ -408,7 +440,7 @@ depends-on = "build-accelerate-lp64"
 description = "Test SciPy with accelerate (lp64)"
 
 [feature.build-accelerate-ilp64.tasks.build-accelerate-ilp64]
-cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64' -S-Dcython-blas-abi=lp64"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with accelerate (ilp64)"
 
@@ -440,7 +472,7 @@ description = "Check loaded shared libraries with MKL (LP64)"
 platforms = ["linux-64"]
 
 [feature.build-mkl-ilp64.tasks.build-mkl-ilp64]
-cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
+cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-Dcython-blas-abi=lp64"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with MKL (ILP64)"
 

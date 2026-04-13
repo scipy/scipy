@@ -1,5 +1,5 @@
 import numpy as np
-from . import pypocketfft as pfft
+from . import pyduccfft as pfft
 from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
                      _fix_shape, _fix_shape_1d, _normalization, _workers)
 import functools
@@ -13,7 +13,7 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
     ----------
     forward : bool
         Transform direction (determines type and normalisation)
-    transform : {pypocketfft.dct, pypocketfft.dst}
+    transform : {pyduccfft.dct, pyduccfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)
@@ -64,7 +64,7 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
     ----------
     forward : bool
         Transform direction (determines type and normalisation)
-    transform : {pypocketfft.dct, pypocketfft.dst}
+    transform : {pyduccfft.dct, pyduccfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)

@@ -3498,8 +3498,7 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
-                                ('cupy', 'no rankdata')],
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  marray=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
@@ -3729,7 +3728,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3875,8 +3874,7 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
-@xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
-                                ("cupy", "no rankdata")],
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata")],
                  cpu_only=True,  # null distribution is CPU only
                  marray=True,
                  extra_note=("Only ``method='asymptotic'``/``zero_method='zsplit'`` is "

@@ -925,7 +925,7 @@ enum QR_mode : Py_ssize_t
 {
     FULL = 1,
     R = 11,
-    RAW = 21,
+    RAW_MODE = 21,
     ECONOMIC = 31
 };
 
@@ -1097,48 +1097,37 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
 
 
 /*
- * Copy only a specific triangle of F-ordered `src` to C-ordered `dst`.
+ * Copy one triangle of a strided m-by-n `src` to C-ordered `dst`.
+ * Note that by specifying m and/or n smaller than the input array `src`
+ * it is possible to only copy a subset of the triangle.
  *
- * `src` is n x n, F-ordered
- * `dst` is n x n, C-ordered
+ * Only elements in the `uplo` triangle are copied;
+ * `dst` is assumed zero-initialized for the other triangle.
  *
- * `uplo` determines which triangle gets copied over,
+ * The function does not use the symmetry of `src` — it reads exactly the
+ * triangle specified by `uplo`. The caller is responsible for ensuring
+ * that the correct triangle is populated in `src`.
+ *
+ * Examples (matrix dimension m x n):
+ *   C-contiguous src (s0=n, s1=1): src[i*n + j] -> dst[i*n + j]
+ *      both sequential in the inner loop - effectively a partial memcpy.
+ *   F-contiguous src (s0=1, s2=m): src[i + j*m] -> dst[i*n + j],
+ *      column-sequential reads, row-sequential writes.
  */
 template<typename T>
-void copy_triangle_F_to_C(T *dst, const T *src, const npy_intp n, const char uplo) {
-    if (uplo == 'U') {
-        for (npy_intp i = 0; i < n; i++) {
-            for (npy_intp j = 0; j <= i; j++) {
-                dst[i + j * n] = src[i * n + j];
+void copy_triangle_to_C(T *dst, const T *src, const npy_intp m, const npy_intp n, const npy_intp s0, const npy_intp s1, const char uplo) {
+    if (uplo == 'L') {
+        for (npy_intp i = 0; i < m; i++) {
+            npy_intp stop = std::min(i + 1, n);
+            for (npy_intp j = 0; j < stop; j++) {
+                dst[i * n + j] = *(src + i * s0 + j * s1);
             }
         }
     } else {
-        for (npy_intp i = 0; i < n; i++) {
+        for (npy_intp i = 0; i < m; i++) {
             for (npy_intp j = i; j < n; j++) {
-                dst[i + j * n] = src[i * n + j];
+                dst[i * n + j] = *(src + i * s0 + j * s1);
             }
-        }
-    }
-}
-
-
-/*
- * Extract only the upper triangle of an F-ordered ldaxN `src` to a C-ordered MxN
- * `dst`. The rest is put to 0. This function is reminiscent of `zero_other_triangle`,
- * but contains copying, swapping of ordering and zeroing in one.
- *
- * It is assumed that `lda` >= M
- */
-template<typename T>
-void extract_upper_triangle(T *dst, const T* src, const npy_intp m, const npy_intp n, const npy_intp lda) {
-    for (npy_intp i = 0; i < n; i++) {
-        npy_intp stop = std::min(i + 1, m);
-        for (npy_intp j = 0; j < stop; j++) {
-            dst[j*n + i] = src[i*lda + j];
-        }
-
-        for (npy_intp j = stop; j < m; j++) {
-            dst[j*n + i] = sp_numeric_limits<T>::zero;
         }
     }
 }
@@ -1556,17 +1545,21 @@ to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T 
 
 template<typename T>
 inline void
-zero_other_triangle(char uplo, T *data, npy_intp n) {
+zero_other_triangle(char uplo, T *data, const npy_intp m, npy_intp n = -1, npy_intp lda = -1) {
+    if (n == -1) { n = m; }
+    if (lda == -1) { lda = m; }
+
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
-            for (npy_intp j=i+1; j<n; j++){
-                data[j + i*n] = sp_numeric_limits<T>::zero;
+            for (npy_intp j=i+1; j<m; j++){
+                data[j + i*lda] = sp_numeric_limits<T>::zero;
             }
         }
     } else {
         for (npy_intp i=0; i<n; i++) {
-            for (npy_intp j=0; j<i; j++){
-                data[j + i*n] = sp_numeric_limits<T>::zero;
+            npy_intp stop = std::min(i, m);
+            for (npy_intp j=0; j < stop; j++){
+                data[j + i*lda] = sp_numeric_limits<T>::zero;
             }
         }
     }
