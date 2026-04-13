@@ -51,10 +51,6 @@ New features
 
 ``scipy.signal`` improvements
 =============================
-
-
-``scipy.sparse`` improvements
-=============================
 - The new `~scipy.signal.whittaker_henderson` implements Whittaker-Henderson smoothing
   of a discrete signal. It offers different penalties to control the smoothness as well
   as automatic selection of the penalty strength via optimization of the restricted
@@ -63,6 +59,10 @@ New features
   `~scipy.signal.savgol_filter`.
   In econometrics, Whittaker-Henderson graduation of penalty order 2 is also known as
   Hodrick-Prescott filter.
+
+
+``scipy.sparse`` improvements
+=============================
 
 
 ``scipy.spatial`` improvements
