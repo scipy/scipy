@@ -722,6 +722,7 @@ or, for ``norm='ortho'``:
     y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
     \qquad 0 \le k < N,
 
+.. _tutorial_FFT_DST_and_IDST:
 
 DST and IDST
 ------------
