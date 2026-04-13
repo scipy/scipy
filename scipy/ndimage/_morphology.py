@@ -585,7 +585,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
-        current iteration; if true all pixels are considered as candidates for
+        current iteration; if True all pixels are considered as candidates for
         update, regardless of what happened in the previous iteration.
         False by default.
 
@@ -715,7 +715,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
     brute_force : bool, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
-        current iteration; if true al pixels are considered as candidates for
+        current iteration; if True all pixels are considered as candidates for
         update, regardless of what happened in the previous iteration.
         False by default.
 
