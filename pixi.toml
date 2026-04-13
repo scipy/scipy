@@ -440,7 +440,7 @@ depends-on = "build-accelerate-lp64"
 description = "Test SciPy with accelerate (lp64)"
 
 [feature.build-accelerate-ilp64.tasks.build-accelerate-ilp64]
-cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64' -S-Dcython-blas-abi=lp64"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with accelerate (ilp64)"
 
@@ -472,7 +472,7 @@ description = "Check loaded shared libraries with MKL (LP64)"
 platforms = ["linux-64"]
 
 [feature.build-mkl-ilp64.tasks.build-mkl-ilp64]
-cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
+cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-Dcython-blas-abi=lp64"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with MKL (ILP64)"
 
