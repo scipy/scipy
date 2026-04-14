@@ -123,7 +123,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements/build.txt
-        pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
+        pip install mkl mkl-devel build pytest hypothesis pytest-xdist pooch
 
     - name: Build SciPy wheel and install
       run: |
@@ -161,12 +161,12 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements/build.txt
-        pip install mkl mkl-devel build pytest hypothesis pytest-xdist pooch
+        pip install build pytest hypothesis pytest-xdist pooch
         pip install -r requirements/openblas64.txt
 
     - name: Write out scipy-openblas64.pc
       run: |
-        python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
+        python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas.pc
 
     - name: Build SciPy wheel and install
       run: |
@@ -174,6 +174,7 @@ jobs:
         # with `_without-fortran=true`. Drop this flag when `scipy.odr` gets
         # removed, keeping the rest of this job unchanged.
         python -m build -wnx \
+          -Csetup-args=-Dblas=scipy-openblas \
           -Csetup-args=-Duse-ilp64=true \
           -Csetup-args=-Dblas-symbol-suffix=64_ \
           -Csetup-args=-D_without-fortran=true
