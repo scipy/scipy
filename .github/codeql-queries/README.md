@@ -15,7 +15,7 @@ After installing the CodeQL extension:
 
 To run the query, you'll need a CodeQL database of a codebase.
 - Open the example query `example.ql`, right-click and choose "CodeQL: Run Query on Selected Database".
-- You'll see a dropdown with options to select a database. Choose "Download from GitHub" and type `scipy/scipy`. This will download the prebuilt CodeQL database, and run the query on it.
+- You'll see a dropdown with options to select a database. Choose "Download from GitHub" and type `scipy/scipy`. This will download the prebuilt CodeQL database, and run the query on it. The database is the one that was created during the latest [CodeQL workflow Actions run](https://github.com/scipy/scipy/actions/workflows/codeql.yml).
 
 To download a CodeQL database for another lanugage of the same codebase:
 - execute the command (with Ctrl/Cmd + Shift + P) "CodeQL: Download Database"
