@@ -173,6 +173,7 @@ jobs:
         # scipy-openblas64 doesn't have LP64 symbols, so we can only use it
         # with `_without-fortran=true`. Drop this flag when `scipy.odr` gets
         # removed, keeping the rest of this job unchanged.
+        export PKG_CONFIG_PATH=$PWD
         python -m build -wnx \
           -Csetup-args=-Dblas=scipy-openblas \
           -Csetup-args=-Duse-ilp64=true \
