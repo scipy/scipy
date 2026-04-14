@@ -141,8 +141,7 @@ jobs:
     - name: Build and test ILP64 downstream package
       run: |
         pip install --no-build-isolation -v scipy/linalg/tests/_cython_examples/ilp64_test_package
-        cd /tmp
-        python -m pytest --pyargs ilp64_test_package
+        python -m pytest scipy/linalg/tests/_cython_examples/ilp64_test_package/tests
 
 
   scipy-openblas-ilp64:
@@ -185,8 +184,7 @@ jobs:
     - name: Build and test ILP64 downstream package
       run: |
         pip install --no-build-isolation -v scipy/linalg/tests/_cython_examples/ilp64_test_package
-        cd /tmp
-        python -m pytest --pyargs ilp64_test_package
+        python -m pytest scipy/linalg/tests/_cython_examples/ilp64_test_package/tests
 
     - name: Test SciPy
       run: |
