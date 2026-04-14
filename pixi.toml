@@ -523,6 +523,26 @@ description = "Check loaded shared libraries with MKL (ILP64, cython-blas ILP64)
 
 
 
+[feature.build-mkl-cyilp64]
+platforms = ["linux-64"]
+
+[feature.build-mkl-cyilp64.tasks.build-mkl-cyilp64]
+cmd = "spin build --build-dir=build-mkl-cyilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-D_without-fortran=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with MKL (ILP64)"
+
+[feature.mkl-cyilp64.tasks.test-mkl-cyilp64]
+cmd = "spin test --no-build --build-dir=build-mkl-cyilp64"
+depends-on = "build-mkl-cyilp64"
+description = "Test SciPy with MKL (ILP64)"
+
+[feature.mkl-cyilp64.tasks.check-mkl-cyilp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-cyilp64 --loaded-sharedlibs"
+depends-on = "build-mkl-cyilp64"
+description = "Check loaded shared libraries with MKL (ILP64)"
+
+
+
 
 [feature.scipy-openblas.pypi-dependencies]
 scipy-openblas32 = "==0.3.31.22.0"

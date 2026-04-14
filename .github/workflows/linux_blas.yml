@@ -104,7 +104,6 @@ jobs:
     - name: Test
       run: spin test -j4
 
-
   mkl-cyilp64:
     runs-on: ubuntu-latest
     name: "MKL ILP64 (cython-blas ILP64)"
@@ -127,12 +126,24 @@ jobs:
         pip install -r requirements/build.txt
         pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
 
-    - name: Build with ILP64
+    - name: Build SciPy wheel and install
       run: |
-        spin build -S-Dblas=mkl-dynamic-ilp64-seq -S-Duse-ilp64=true -S-D_without-fortran=true
+        python -m build -wnx \
+          -Csetup-args=-Dblas=mkl-dynamic-ilp64-seq \
+          -Csetup-args=-Duse-ilp64=true \
+          -Csetup-args=-D_without-fortran=true
+        pip install dist/scipy*.whl
 
-    - name: Test
-      run: spin test -j4
+    - name: Test SciPy
+      run: |
+        cd /tmp
+        python -m pytest --pyargs scipy -n4
+
+    - name: Build and test ILP64 downstream package
+      run: |
+        pip install scipy/linalg/tests/_cython_examples/ilp64_test_package/
+        cd /tmp
+        python -m pytest --pyargs ilp64_test_package
 
 
   scipy-openblas-ilp64:
@@ -155,15 +166,32 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements/build.txt
-        pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
+        pip install mkl mkl-devel build pytest hypothesis pytest-xdist pooch
         pip install -r requirements/openblas64.txt
 
-    - name: Build with ILP64
+    - name: Write out scipy-openblas64.pc
+      run: |
+        python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
+
+    - name: Build SciPy wheel and install
       run: |
         # scipy-openblas64 doesn't have LP64 symbols, so we can only use it
         # with `_without-fortran=true`. Drop this flag when `scipy.odr` gets
         # removed, keeping the rest of this job unchanged.
-        spin build --with-scipy-openblas=64 -S-Duse-ilp64=true -S-D_without-fortran=true -S-Dblas-symbol-suffix=64_
+        python -m build -wnx \
+          -Csetup-args=-Duse-ilp64=true \
+          -Csetup-args=-Dblas-symbol-suffix=64_ \
+          -Csetup-args=-D_without-fortran=true
+        pip install dist/scipy*.whl
 
-    - name: Test
-      run: spin test -j4
+    # TODO: move to end once this works
+    - name: Build and test ILP64 downstream package
+      run: |
+        pip install scipy/linalg/tests/_cython_examples/ilp64_test_package/
+        cd /tmp
+        python -m pytest --pyargs ilp64_test_package
+
+    - name: Test SciPy
+      run: |
+        cd /tmp
+        python -m pytest --pyargs scipy -n4
