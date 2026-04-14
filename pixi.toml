@@ -819,7 +819,7 @@ clangxx = "*"
 cxx-compiler = "*"
 
 [feature.asan.activation.env]
-FC = "ccache $CONDA_PREFIX/bin/gfortran"
+FC = "ccache $FC"
 
 [feature.asan.target.osx.activation.env]
 CC = "ccache $CC"
