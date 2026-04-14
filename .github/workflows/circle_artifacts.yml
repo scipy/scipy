@@ -16,11 +16,11 @@ jobs:
       github.repository == 'scipy/scipy'
       && github.event.context == 'ci/circleci: build_docs'
     name: Run CircleCI artifacts redirector
+    permissions:
+      statuses: write # needed to communicate status
     steps:
       - name: GitHub Action step
         uses: scientific-python/circleci-artifacts-redirector-action@5d358ff96e96429a5c64a969bb4a574555439f4f # v1.3.1
-        permissions:
-          statuses: write # needed to communicate status
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           api-token: ${{ secrets.CIRCLE_TOKEN }}

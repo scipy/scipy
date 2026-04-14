@@ -83,20 +83,20 @@ jobs:
       - name: win_arm64 - set environment variables
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         env:
-          BUILDPLAT: matrix.buildplat[2]
+          BUILDPLAT: ${{ matrix.buildplat[2] }}
         run: |
             echo "C:\Program Files\LLVM\bin" >> $env:GIHUB_PATH
             echo "CC=clang-cl" >> $env:GITHUB_ENV
             echo "CXX=clang-cl" >> $env:GITHUB_ENV
             echo "FC=flang" >> $env:GITHUB_ENV
-            echo "TARGET_ARCH=${BUILDPLAT}" >> $env:GITHUB_ENV
+            echo "TARGET_ARCH=ARM64" >> $env:GITHUB_ENV
 
       - name: windows - set PKG_CONFIG_PATH
         if: ${{ matrix.buildplat[1] == 'win' }}
         env:
           WORKSPACE_DIR: ${{ github.workspace }}
         run: |
-          $CIBW = "${WORKSPACE_DIR}/.openblas"
+          $CIBW = "$env:WORKSPACE_DIR/.openblas"
           # pkgconfig needs a complete path, and not just "./openblas since the
           # build is run in a tmp dir (?)
           # It seems somewhere in the env passing, `\` is not
