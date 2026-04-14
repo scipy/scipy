@@ -25,4 +25,4 @@ For running preexising queries, like the ones in `.github/codeql-queries/scipy-c
 - execute the command (with Ctrl/Cmd + Shift + P) "CodeQL: Install Pack Dependencies"
 - right-click and choose "CodeQL: Run Query on Selected Database". Then follow the steps to choose a database as above.
 
-Note that after you have downloaded a CodeQL database once, you won't have to do that again, but if there are changes to the code upstream, you'll need to download the newest version of a CodeQL database.
+Note that after you have downloaded a CodeQL database once, you won't have to do that again, but if there are changes to the code upstream, you'll need to download the newest version of a CodeQL database. GitHub stores only the newest database, which was created in the latest CodeQL workflow Actions run.
