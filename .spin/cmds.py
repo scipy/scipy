@@ -42,9 +42,11 @@ PROJECT_MODULE = "scipy"
     '--show-build-log', default=False, is_flag=True,
     help="Show build output rather than using a log file")
 @click.option(
-    '--with-scipy-openblas', default=False, is_flag=True,
-    help=("If set, use the `scipy-openblas32` wheel installed into the "
-            "current environment as the BLAS/LAPACK to build against."))
+    "--with-scipy-openblas", type=click.Choice(["32", "64"]),
+    default=None,
+    help=("Use the pre-installed `scipy-openblas{32,64}` wheel installed into the "
+          "current environment as the BLAS/LAPACK to build against.")
+)
 @click.option(
     '--with-accelerate', default=False, is_flag=True,
     help=("If set, use `Accelerate` as the BLAS/LAPACK to build against."
@@ -130,7 +132,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         # on a mac you probably want to use accelerate over scipy_openblas
         meson_args = meson_args + ("-Dblas=accelerate", )
     elif with_scipy_openblas:
-        configure_scipy_openblas()
+        configure_scipy_openblas(with_scipy_openblas)
         os.environ['PKG_CONFIG_PATH'] = os.pathsep.join([
                 os.getcwd(),
                 os.environ.get('PKG_CONFIG_PATH', '')
@@ -959,9 +961,6 @@ def configure_scipy_openblas(blas_variant='32'):
     basedir = os.getcwd()
     pkg_config_fname = os.path.join(basedir, "scipy-openblas.pc")
 
-    if os.path.exists(pkg_config_fname):
-        return None
-
     module_name = f"scipy_openblas{blas_variant}"
     try:
         openblas = importlib.import_module(module_name)
@@ -977,6 +976,7 @@ def configure_scipy_openblas(blas_variant='32'):
 
     with open(pkg_config_fname, "w", encoding="utf8") as fid:
         fid.write(openblas.get_pkg_config())
+
 
 physical_cores_cache = None
 

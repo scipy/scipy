@@ -65,12 +65,12 @@ jobs:
         spin build -S-Dblas=mkl-dynamic-lp64-seq
 
     - name: Test
-      run: spin test -j2
+      run: spin test -j4
 
 
   mkl-ilp64:
     runs-on: ubuntu-latest
-    name: "MKL ILP64"
+    name: "MKL ILP64 (cython-blas LP64)"
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -100,42 +100,66 @@ jobs:
         spin build -S-Dblas=mkl-dynamic-lp64-seq -S-Duse-ilp64=true -S-Dcython-blas-abi=lp64
 
     - name: Test
-      run: spin test -j2
+      run: spin test -j4
 
 
-# TODO: re-enable after removing scipy.odr, should then work as ILP64-only
-# scipy-openblas-ilp64:
-#   runs-on: ubuntu-latest
-#   name: "scipy-openblas ILP64"
-#   needs: get_commit_message
-#   if: >
-#     needs.get_commit_message.outputs.message == 1
-#     && (github.repository == 'scipy/scipy' || github.repository == '')
-#   steps:
-#   - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-#     with:
-#       submodules: recursive
-#       fetch-depth: 0
-#   - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-#     with:
-#       python-version: '3.12'
-#
-#   - name: Install dependencies
-#     run: |
-#       sudo apt-get update
-#       sudo apt-get install -y gfortran
-#       pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
-#       pip install -r requirements/dev.txt
-#       pip install -r requirements/openblas64.txt
-#
-#   - name: Write out scipy-openblas64.pc
-#     run: |
-#       # spin does this for scipy-openblas32
-#       python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
-#
-#   - name: Build with ILP64
-#     run: |
-#       spin build --with-scipy-openblas -S-Duse-ilp64=true
-#
-#   - name: Test
-#     run: spin test -j2
+  mkl-cyilp64:
+    runs-on: ubuntu-latest
+    name: "MKL ILP64 (cython-blas ILP64)"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements/build.txt
+        pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
+
+    - name: Build with ILP64
+      run: |
+        spin build -S-Dblas=mkl-dynamic-ilp64-seq -S-Duse-ilp64=true -S-D_without-fortran=true
+
+    - name: Test
+      run: spin test -j4
+
+
+  scipy-openblas-ilp64:
+    runs-on: ubuntu-latest
+    name: "scipy-openblas ILP64"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.14'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements/build.txt
+        pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/openblas64.txt
+
+    - name: Build with ILP64
+      run: |
+        # scipy-openblas64 doesn't have LP64 symbols, so we can only use it
+        # with `_without-fortran=true`. Drop this flag when `scipy.odr` gets
+        # removed, keeping the rest of this job unchanged.
+        spin build --with-scipy-openblas=64 -S-Duse-ilp64=true -S-D_without-fortran=true -S-Dblas-symbol-suffix=64_
+
+    - name: Test
+      run: spin test -j4
