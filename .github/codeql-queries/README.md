@@ -1,6 +1,8 @@
 # Running custom CodeQL queries in code scanning advanced setup
 
-For running [CodeQL queries](.github/codeql-queries/scipy-c-cpp-queries/signed_shift.ql), we need CodeQL packs. CodeQL packs are used to package and version queries. There's already a CodeQL pack for C/C++ queries, so there's no need to create another one. If you'd ever want to write queries for another language, you'd need to create a CodeQL for that query.
+For running [CodeQL queries](.github/codeql-queries/scipy-c-cpp-queries), we need CodeQL packs. CodeQL packs are used to package and version queries. 
+There's already a CodeQL pack for C/C++ queries, so there's no need to create another one. 
+If you'd ever want to write queries for another language, you'd need to create a CodeQL pack for that query.
 
 [CodeQL query suites](.github/codeql-queries/scipy-code-scanning.qls) are used to specify which queries should be run, in case there are some queries you’d prefer not to run.
 
