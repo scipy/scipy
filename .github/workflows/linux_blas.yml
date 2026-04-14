@@ -18,6 +18,9 @@ on:
     branches:
       - main
       - maintenance/**
+  push:
+    branches:
+      - cyilp64-compile-test
 
 defaults:
   run:
@@ -107,10 +110,6 @@ jobs:
   mkl-cyilp64:
     runs-on: ubuntu-latest
     name: "MKL ILP64 (cython-blas ILP64)"
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
@@ -149,10 +148,6 @@ jobs:
   scipy-openblas-ilp64:
     runs-on: ubuntu-latest
     name: "scipy-openblas ILP64"
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
