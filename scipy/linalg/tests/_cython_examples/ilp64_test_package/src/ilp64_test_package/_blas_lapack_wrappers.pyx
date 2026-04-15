@@ -17,17 +17,22 @@ from scipy.linalg.cython_lapack cimport dgetrf
 
 from libc.stdlib cimport malloc, free
 
+# Pointer casts from `const double *` to `double *` below are needed because
+# SciPy's cython_blas.pxd lacks const qualifiers. This pattern is copied from
+# scikit-learn's sklearn/utils/_cython_blas.pyx.
+# See: https://github.com/scipy/scipy/issues/14262
+
 
 cdef double _ddot(int n, const double *x, int incx,
                   const double *y, int incy) noexcept nogil:
     cdef blas_int bn = n, bincx = incx, bincy = incy
-    return ddot(&bn, x, &bincx, y, &bincy)
+    return ddot(&bn, <double *>x, &bincx, <double *>y, &bincy)
 
 
 cdef void _daxpy(int n, double alpha, const double *x, int incx,
                  double *y, int incy) noexcept nogil:
     cdef blas_int bn = n, bincx = incx, bincy = incy
-    daxpy(&bn, &alpha, x, &bincx, y, &bincy)
+    daxpy(&bn, &alpha, <double *>x, &bincx, y, &bincy)
 
 
 cdef void _dgemm(char *transa, char *transb, int m, int n, int k,
@@ -37,7 +42,7 @@ cdef void _dgemm(char *transa, char *transb, int m, int n, int k,
     cdef blas_int bm = m, bn = n, bk = k
     cdef blas_int blda = lda, bldb = ldb, bldc = ldc
     dgemm(transa, transb, &bm, &bn, &bk,
-          &alpha, a, &blda, b, &bldb, &beta, c, &bldc)
+          &alpha, <double *>a, &blda, <double *>b, &bldb, &beta, c, &bldc)
 
 
 cdef int _dgetrf(int m, int n, double *a, int lda,
