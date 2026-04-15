@@ -1461,23 +1461,33 @@ def hermitenorm(n, monic=False):
     The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2/2}`.
 
+    Normalized Hermite Polynomials :math:`He_n` are always monic
+
     Examples
     --------
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.special import hermitenorm
 
-    >>> p_monic = hermitenorm(7, monic=True)
+    >>> p_monic = hermitenorm(3)
     >>> p_monic
-    poly1d([ 1.00000000e+00, -4.44089210e-16, -2.10000000e+01,  3.55271368e-15,
-        1.05000000e+02,  2.48689958e-14, -1.05000000e+02,  0.00000000e+00])
+    poly1d([ 1.,  0., -3.,  0.])
+
+    Evaluate probabilist's Hermite polynomial of degree 3 at x = 1
+
     >>> p_monic(1)
-    np.float64(-20.0)
+    np.float64(-2.0)
+
+    Plot probabilist's Hermite polynomials of degree 0 to 4
+    
     >>> x = np.linspace(-3, 3, 100)
-    >>> plt.plot(x, p_monic(x))
-    >>> plt.title("Normalized Monic Hermite polynomial of degree 7")
+    >>> fig, ax = plt.subplots()
+    >>> for i in range(5):
+    >>>     ax.plot(x, hermitenorm(i)(x), label=rf'$He_{i}$')
+    >>> plt.title(f"Probabilist's Hermite polynomials $He_n$")
     >>> plt.xlabel("x")
-    >>> plt.ylabel("$H_7(x)$")
+    >>> plt.ylabel(rf"$H_n(x)$")
+    >>> plt.legend(loc='best')
     >>> plt.show()
 
     """
