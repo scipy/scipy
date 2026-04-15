@@ -138,10 +138,14 @@ jobs:
         cd /tmp
         python -m pytest --pyargs scipy -n4
 
-    - name: Build and test ILP64 downstream package
+    - name: Install linalg ILP64 downstream test package
       run: |
         pip install --no-build-isolation -v scipy/linalg/tests/_cython_examples/ilp64_test_package
-        python -m pytest scipy/linalg/tests/_cython_examples/ilp64_test_package/tests
+
+    - name: Test linalg ILP64 downstream test package
+      run: |
+        cd scipy/linalg/tests/_cython_examples/ilp64_test_package
+        python -m pytest tests
 
 
   scipy-openblas-ilp64:
@@ -181,10 +185,14 @@ jobs:
         pip install dist/scipy*.whl
 
     # TODO: move to end once this works
-    - name: Build and test ILP64 downstream package
+    - name: Install linalg ILP64 downstream test package
       run: |
         pip install --no-build-isolation -v scipy/linalg/tests/_cython_examples/ilp64_test_package
-        python -m pytest scipy/linalg/tests/_cython_examples/ilp64_test_package/tests
+
+    - name: Test ILP64 downstream test package
+      run: |
+        cd scipy/linalg/tests/_cython_examples/ilp64_test_package
+        python -m pytest tests
 
     - name: Test SciPy
       run: |
