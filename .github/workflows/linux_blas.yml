@@ -199,4 +199,4 @@ jobs:
     - name: Test SciPy
       run: |
         cd /tmp
-        python -m pytest --pyargs scipy -n4
+        python -m pytest --pyargs scipy -n2
