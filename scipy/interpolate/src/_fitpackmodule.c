@@ -1769,7 +1769,7 @@ fitpack_sphere(PyObject* Py_UNUSED(dummy), PyObject *args)
     // _spherefit_lsq is meant for iopt=-1 workflow and hence passes tt and tp of
     // size ntest and npest respectively. However, _spherefit_smooth does not
     // and generates tt and tp as output arguments.
-    // Hence we have to accomodate for these cases here to avoid multiple wrappers
+    // Hence we have to accommodate for these cases here to avoid multiple wrappers
     // as was the case previously with the Fortran FITPACK bindings.
 
     if (iopt == -1){

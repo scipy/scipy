@@ -3538,7 +3538,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # treat the parameters as "fixed" and the quantile/percentile arguments
     # as "variable". There are a lot of advantages to this structure, and I
     # don't think the fact that a few methods reverse the fixed and variable
-    # quantities should make us question that choice. It can still accomodate
+    # quantities should make us question that choice. It can still accommodate
     # these methods reasonably efficiently.
 
 
