@@ -188,7 +188,7 @@ jobs:
     # TODO: move to end once this works
     - name: Install linalg ILP64 downstream test package
       run: |
-        pip install --no-build-isolation -v scipy/linalg/tests/_cython_examples/ilp64_test_package
+        pip install --no-build-isolation -v -Csetup-args=--werror scipy/linalg/tests/_cython_examples/ilp64_test_package
 
     - name: Test ILP64 downstream test package
       run: |
