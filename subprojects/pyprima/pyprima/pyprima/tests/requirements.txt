@@ -1,5 +1,5 @@
 numpy
 pycutest
-pytest
+pytest==9.0.3
 pytest-cov
 pytest-order
