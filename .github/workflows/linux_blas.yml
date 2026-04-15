@@ -144,8 +144,9 @@ jobs:
 
     - name: Test linalg ILP64 downstream test package
       run: |
-        cd scipy/linalg/tests/_cython_examples/ilp64_test_package
-        python -m pytest tests
+        cp -r scipy/linalg/tests/_cython_examples/ilp64_test_package/tests /tmp/ilp64_tests
+        cd /tmp
+        python -m pytest ilp64_tests
 
 
   scipy-openblas-ilp64:
@@ -191,8 +192,9 @@ jobs:
 
     - name: Test ILP64 downstream test package
       run: |
-        cd scipy/linalg/tests/_cython_examples/ilp64_test_package
-        python -m pytest tests
+        cp -r scipy/linalg/tests/_cython_examples/ilp64_test_package/tests /tmp/ilp64_tests
+        cd /tmp
+        python -m pytest ilp64_tests
 
     - name: Test SciPy
       run: |
