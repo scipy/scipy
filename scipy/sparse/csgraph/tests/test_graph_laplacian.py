@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 
 def check_int_type(mat):
     return np.issubdtype(mat.dtype, np.signedinteger) or np.issubdtype(
-        mat.dtype, np.ulong
+        mat.dtype, np.uint
     )
 
 
@@ -160,7 +160,7 @@ def _check_laplacian_dtype(
                 _assert_allclose_sparse(L, mat)
 
 
-INT_DTYPES = (np.intc, np.long, np.longlong)
+INT_DTYPES = (np.intc, np.int_, np.longlong)
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES

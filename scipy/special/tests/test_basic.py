@@ -2919,7 +2919,7 @@ class TestFactorialFunctions:
         kw = {"k": k, "exact": exact, "extend": extend}
         if exact and k in _FACTORIALK_LIMITS_64BITS.keys():
             n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
-            assert_equal(special.factorialk(n, **kw).dtype, np.long)
+            assert_equal(special.factorialk(n, **kw).dtype, np.int_)
             assert_equal(special.factorialk(n + 1, **kw).dtype, np.int64)
             # assert maximality of limits for given dtype
             assert special.factorialk(n + 1, **kw) > np.iinfo(np.int32).max

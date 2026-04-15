@@ -22,7 +22,7 @@ from scipy.sparse.linalg._special_sparse_arrays import (Sakurai,
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
-INT_DTYPES = (np.intc, np.long, np.longlong, np.uintc, np.ulong, np.ulonglong)
+INT_DTYPES = (np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong)
 # np.half is unsupported on many test systems so excluded
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
