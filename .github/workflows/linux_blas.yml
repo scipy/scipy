@@ -136,7 +136,7 @@ jobs:
     - name: Test SciPy
       run: |
         cd /tmp
-        python -m pytest --pyargs scipy -n4
+        python -m pytest --pyargs scipy -n2
 
     - name: Install linalg ILP64 downstream test package
       run: |
@@ -185,7 +185,11 @@ jobs:
           -Csetup-args=-D_without-fortran=true
         pip install dist/scipy*.whl
 
-    # TODO: move to end once this works
+    - name: Test SciPy
+      run: |
+        cd /tmp
+        python -m pytest --pyargs scipy -n2
+
     - name: Install linalg ILP64 downstream test package
       run: |
         pip install --no-build-isolation -v -Csetup-args=--werror scipy/linalg/tests/_cython_examples/ilp64_test_package
@@ -195,8 +199,3 @@ jobs:
         cp -r scipy/linalg/tests/_cython_examples/ilp64_test_package/tests /tmp/ilp64_tests
         cd /tmp
         python -m pytest ilp64_tests
-
-    - name: Test SciPy
-      run: |
-        cd /tmp
-        python -m pytest --pyargs scipy -n2
