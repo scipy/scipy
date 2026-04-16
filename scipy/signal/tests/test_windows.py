@@ -1010,20 +1010,25 @@ class TestGeneralGaussian():
 
 @make_xp_test_case(windows.cosine)
 class TestCosine():
-    def test_basic(self, xp):
-        #   Hardcoded values were computed using:
-        #   M = 8  (M+1 for sym=False, then drop last sample)
-        #   w = np.sin(np.pi / M * (np.arange(M) + .5))
-        #   For sym=True (default), M is used directly.
-        xp_assert_close(windows.cosine(6, xp=xp), xp.asarray([0.258819045, 0.707106781,
-                    0.965925826,  0.965925826,  0.707106781,  0.258819045],dtype=xp.float64 ), atol=1e-9)
-        xp_assert_close(windows.cosine(7, xp=xp), xp.asarray([0.222520934, 0.623489802,
-                    0.900968868,  1.,  0.900968868,  0.623489802, 0.222520934 ],dtype=xp.float64 ), atol=1e-9)
-        xp_assert_close(windows.cosine(7, False, xp=xp), xp.asarray([0.195090322, 0.555570233,
-                    0.831469612,  0.98078528,  0.98078528,  0.831469612, 0.555570233 ],dtype=xp.float64 ), atol=1e-9)
-        xp_assert_close(windows.cosine(4, False, xp=xp), xp.asarray([0.309016994, 0.809016994,
-                    1.,  0.809016994],dtype=xp.float64 ), atol=1e-9)
+    @pytest.mark.parametrize('M', (3, 4))
+    @pytest.mark.parametrize('sym', (True, False))
+    def test_basic(self, M, sym, xp):
+        """Verify basic parametrizations. """
+        if sym:
+            t = (xp.arange(M, dtype=xp.float64) + 0.5) / M
+        else:
+            t = (xp.arange(M+1, dtype=xp.float64) + 0.5) / (M+1)
+            t = t[:-1]
+        x_ref = xp.sin(xp.pi * t)
+        x = windows.cosine(M, sym=sym, xp=xp)
+        xp_assert_close(x, x_ref, atol=1e-12)
         
+    def test_default_func_parameter(self, xp):
+        """Verify the correctness of the default value of function parameter `sym`. """
+        x = windows.cosine(6, xp=xp)
+        x_ref = windows.cosine(6, sym=True, xp=xp)
+        xp_assert_equal(x, x_ref)       
+       
         def test_len_edge_cases(self, xp):
         """Testing that the length edge cases are handled correctly."""
         # length = 0 should return an empty array:
