@@ -409,6 +409,7 @@ ruff = "*"
 cython-lint = "*"
 packaging = "*"
 tach = "*"
+zizmor = "*"
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"
@@ -426,6 +427,10 @@ description = "Check inter-module dependencies"
 [feature.lint.tasks.tach-check-external]
 cmd = "tach check-external"
 description = "Check external dependencies"
+
+[feature.lint.tasks.zizmor]
+cmd = "zizmor .github --config=.github/zizmor.yml"
+description = "Run zizmor (GitHub actions static analysis)"
 
 
 ### BLAS/LAPACK features ###
