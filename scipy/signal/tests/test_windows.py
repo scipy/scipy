@@ -1024,10 +1024,15 @@ class TestCosine():
         xp_assert_close(windows.cosine(4, False, xp=xp), xp.asarray([0.309016994, 0.809016994,
                     1.,  0.809016994],dtype=xp.float64 ), atol=1e-9)
         
-    def test_len_edge_cases(self, xp):
-        #Testing that the length edge cases are handled correctly by the window function
-        assert len(windows.cosine(0, xp=xp)) == 0 #length = 0 should return an empty array
-        xp_assert_close(windows.cosine(1, xp=xp), xp.asarray([1.0], dtype=xp.float64)) #length = 1 should return an array of length 1 containing 1.0
+        def test_len_edge_cases(self, xp):
+        """Testing that the length edge cases are handled correctly."""
+        # length = 0 should return an empty array:
+        assert len(windows.cosine(0, xp=xp)) == 0
+
+        # length = 1 should return an array of length 1 containing 1.0:
+        xp_assert_close(windows.cosine(1, xp=xp),
+                        xp.asarray([1.0], dtype=xp.float64))
+
         with pytest.raises(ValueError):
             windows.cosine(-1, xp=xp) # negative values should return an error
 
