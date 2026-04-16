@@ -4128,6 +4128,21 @@ def vectorstrength(events, period):
         when we vary the "probing" frequency while keeping the spike times
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
+
+    Examples
+    --------
+    >>> from scipy.signal import vectorstrength
+    >>> events = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    >>> period = 1.0
+    >>> strength, phase = vectorstrength(events, period)
+    >>> print(strength)
+    1.0
+    >>> # Events are perfectly synchronized to the period
+    >>> events = [0.1, 0.15, 0.6, 0.9]
+    >>> strength, phase = vectorstrength(events, period)
+    >>> print(strength)
+    0.25
+    >>> # When events are uniformly distributed, strength approaches 0
     '''
     xp = array_namespace(events, period)
 
