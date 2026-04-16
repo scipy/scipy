@@ -1001,11 +1001,16 @@ class TestGeneralGaussian():
         assert float(xp.max(w)) < 1.0
 
     def test_len_edge_cases(self, xp):
-        # Testing that the length edge cases are handled correctly by the window function
-        assert len(windows.general_gaussian(0, 1, 1, xp=xp)) == 0  # length = 0 should return an empty array
-        xp_assert_close(windows.general_gaussian(1, 1, 1, xp=xp), xp.asarray([1.0], dtype=xp.float64))  # length = 1 should return an array of length 1 containing 1.0
-        with pytest.raises(ValueError):
-            windows.general_gaussian(-1, 1, 1, xp=xp)  # negative values should raise an error
+        """Test the length edge cases are handled correctly. """
+        # length = 0 should return an empty array:
+        assert len(windows.general_gaussian(0, 1, 1, xp=xp)) == 0
+        
+        # length = 1 should return an array of length 1 containing 1.0:
+        xp_assert_close(windows.general_gaussian(1, 1, 1, xp=xp), 
+                        xp.asarray([1.0], dtype=xp.float64))  
+        
+        with pytest.raises(ValueError):  # Negative values should raise an error:
+            windows.general_gaussian(-1, 1, 1, xp=xp)  
 
 
 @make_xp_test_case(windows.cosine)
