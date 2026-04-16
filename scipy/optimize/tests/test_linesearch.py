@@ -254,8 +254,8 @@ class TestLineSearch:
                 s, fc, gc, fv, ofv, gv = line_search_wolfe2(
                     f, fprime, x, p, g0, f0, old_f, amax=smax)
             assert_equal(self.fcount.c, fc+gc)
-            assert_fp_equal(ofv, f(x))
-            assert_fp_equal(fv, f(x + s*p))
+            assert_fp_equal(ofv, float(f(x)))
+            assert_fp_equal(fv, float(f(x + s*p)))
             if gv is not None:
                 assert_array_almost_equal(gv, fprime(x + s*p), decimal=14)
             if s < smax:
