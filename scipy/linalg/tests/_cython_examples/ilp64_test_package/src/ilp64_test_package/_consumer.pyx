@@ -9,14 +9,22 @@ cimport, which is the pattern used by scikit-learn (e.g., other Cython
 modules cimporting from sklearn.utils._cython_blas).
 """
 
+from libc.limits cimport INT_MAX
+
 from ilp64_test_package._blas_lapack_wrappers cimport (
     _ddot, _daxpy, _dnrm2, _dgemm, _dgetrf, get_blas_int_size
 )
 
 
 cpdef double consumer_ddot(double[:] x, double[:] y):
+    if x.shape[0] > INT_MAX:
+        raise ValueError("Integer overflow in consumer_ddot.")
     cdef int n = x.shape[0]
     return _ddot(n, &x[0], 1, &y[0], 1)
+
+
+# Strictly speaking, all functions should check for integer overflow of the input array
+# size. We are omitting these checks below, for brevity.
 
 
 cpdef consumer_daxpy(double alpha, double[:] x, double[:] y):
