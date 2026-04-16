@@ -187,6 +187,20 @@ The build configuration can be checked at runtime via
 ``scipy.show_config()`` — look for the ``'blas cython ilp64'`` entry.
 
 
+Using Cython BLAS/LAPACK ABI in downstream packages
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Downstream packages which consume ``cython_blas`` or ``cython_lapack`` interfaces
+should ideally directly use the ``blas_int`` integer type. Some packages, however,
+might need to continue using ``int`` types to maintain backwards compatibility.
+In these---hopefully rare---cases you will need to provide manual wrappers to map
+between ``int`` and ``blas_int`` types. We stress that this conversion limits the array
+sizes to ``< INT_MAX`` even if the LAPACK itself is ILP64 enabled.
+Consult `a worked example`_ which illustrates both approaches.
+
+.. _a worked example: https://github.com/scipy/scipy/tree/main/scipy/linalg/tests/_cython_examples/ilp64_test_package
+
+
 Work-in-progress
 ----------------
 
