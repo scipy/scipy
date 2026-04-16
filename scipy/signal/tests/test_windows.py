@@ -963,18 +963,26 @@ class TestGetWindow:
 @make_xp_test_case(windows.general_gaussian)
 class TestGeneralGaussian():
       
-    def test_basic(self, xp):
-        # Testing against hard-coded values computed using:
-        #   n = np.arange(0, M) - (M - 1.0) / 2.0
-        #   w = np.exp(-0.5 * abs(n / sigma) ** (2 * p))
-        # For sym=False, M is extended by 1 and the last sample is dropped.
-        # For sym=True (default), M is used directly.
-        xp_assert_close(windows.general_gaussian(7, 1, 1, xp=xp), xp.asarray([0.011108997, 0.135335283,
-                    0.60653066,  1.,  0.60653066,  0.135335283, 0.011108997],dtype=xp.float64 ), atol=1e-9)
-        xp_assert_close(windows.general_gaussian(6, 1.5, 2, xp=xp), xp.asarray([0.376603451, 0.809824679,
-                    0.992217938, 0.992217938, 0.809824679, 0.376603451],dtype=xp.float64 ), atol=1e-9)
-        xp_assert_close(windows.general_gaussian(6, 1.5, 2, False, xp=xp), xp.asarray([0.1849814, 0.60653066,
-                    0.939413063, 1., 0.939413063, 0.60653066],dtype=xp.float64 ), atol=1e-9)
+    @pytest.mark.parametrize('M', (6, 7))
+    @pytest.mark.parametrize('p', (1, 1.5))
+    @pytest.mark.parametrize('sig', (1., 2.))
+    @pytest.mark.parametrize('sym', (True, False))
+    def test_basic(self, M, p, sig, sym, xp):
+        """Verify basic parametrizations. """
+        if sym:
+            t = xp.arange(M, dtype=xp.float64) - (M-1) / 2
+        else:
+            t = xp.arange(M+1, dtype=xp.float64) - M / 2
+            t = t[:-1]
+        x_ref = xp.exp(-0.5 * abs(t / sig) ** (2*p))
+        x = windows.general_gaussian(M, p, sig, sym, xp=xp)
+        xp_assert_close(x, x_ref, atol=1e-12)
+
+    def test_default_func_parameter(self, xp):
+        """Verify the correctness of the default value of function parameter `sym`. """
+        x = windows.general_gaussian(6, 1, 1, xp=xp)
+        x_ref = windows.general_gaussian(6, 1, 1, sym=True, xp=xp)
+        xp_assert_equal(x, x_ref)
 
     def test_p1_equals_gaussian(self,xp):   
         #Testing that general_gaussian with p = 1 is equivalen to the normal gaussian
