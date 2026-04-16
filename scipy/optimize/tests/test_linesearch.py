@@ -8,9 +8,7 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp)
 import pytest
-from scipy._lib._array_api import (
-    xp_assert_close, xp_assert_equal, make_xp_test_case
-)
+from scipy._lib._array_api import make_xp_test_case
 
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import line_search_wolfe2
