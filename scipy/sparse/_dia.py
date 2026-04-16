@@ -534,10 +534,21 @@ class dia_array(_dia_base, sparray):
 
     Attributes
     ----------
-    data
-        DIA format data array of the array
-    offsets
-        DIA format offset array of the array
+    data : ndarray
+        DIA format data array of the array. The number of rows of ``data``
+        equals the number of diagonals (i.e., ``len(offsets)``), and the
+        number of columns equals the maximum diagonal length. For each
+        diagonal ``offsets[k]``, the entries are stored in
+        ``data[k, :]`` as follows: sub-diagonals (negative offsets) are
+        left-aligned within the row, while super-diagonals (positive
+        offsets) are right-aligned. Columns of ``data`` correspond to
+        columns of the resulting sparse array. The ``data`` format is
+        consistent with the `BLAS/LAPACK general band format
+        <https://netlib.org/lapack/lug/node124.html>`__ when ``offsets``
+        is given in decreasing order (e.g., ``[1, 0, -1, -2]``).
+    offsets : ndarray
+        DIA format offset array of the array. The i-th element of
+        ``offsets`` gives the offset of the i-th diagonal (see above).
     dtype : dtype
         Data type of the array
     shape : 2-tuple
@@ -626,10 +637,21 @@ class dia_matrix(spmatrix, _dia_base):
 
     Attributes
     ----------
-    data
-        DIA format data array of the matrix
-    offsets
-        DIA format offset array of the matrix
+    data : ndarray
+        DIA format data array of the matrix. The number of rows of ``data``
+        equals the number of diagonals (i.e., ``len(offsets)``), and the
+        number of columns equals the maximum diagonal length. For each
+        diagonal ``offsets[k]``, the entries are stored in
+        ``data[k, :]`` as follows: sub-diagonals (negative offsets) are
+        left-aligned within the row, while super-diagonals (positive
+        offsets) are right-aligned. Columns of ``data`` correspond to
+        columns of the resulting sparse matrix. The ``data`` format is
+        consistent with the `BLAS/LAPACK general band format
+        <https://netlib.org/lapack/lug/node124.html>`__ when ``offsets``
+        is given in decreasing order (e.g., ``[1, 0, -1, -2]``).
+    offsets : ndarray
+        DIA format offset array of the matrix. The i-th element of
+        ``offsets`` gives the offset of the i-th diagonal (see above).
     dtype : dtype
         Data type of the matrix
     shape : 2-tuple
