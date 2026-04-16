@@ -1,0 +1,14 @@
+rules:
+  dangerous-triggers:
+    ignore:
+      # Ideally, we would use a GitHub app for these,
+      # instead of a `pull_request_target` workflow,
+      # as that is deemed more secure: https://astral.sh/blog/open-source-security-at-astral#cicd-security.
+      # However, there is not currently a suitable app maintained by a trusted organisation,
+      # and self-hosting would be burdensome: https://astral.sh/blog/open-source-security-at-astral#automations.
+      - label-pr-on-close.yml:2
+      - label-pr-on-open.yml:2
+  misfeature:
+    ignore:
+      # We need to use CMD for intel oneAPI batch scripts
+      - windows_intel_oneAPI.yml

@@ -68,6 +68,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: true
+          persist-credentials: false
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
@@ -81,17 +82,21 @@ jobs:
 
       - name: win_arm64 - set environment variables
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
+        env:
+          BUILDPLAT: ${{ matrix.buildplat[2] }}
         run: |
             echo "C:\Program Files\LLVM\bin" >> $env:GIHUB_PATH
             echo "CC=clang-cl" >> $env:GITHUB_ENV
             echo "CXX=clang-cl" >> $env:GITHUB_ENV
             echo "FC=flang" >> $env:GITHUB_ENV
-            echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
+            echo "TARGET_ARCH=ARM64" >> $env:GITHUB_ENV
 
       - name: windows - set PKG_CONFIG_PATH
         if: ${{ matrix.buildplat[1] == 'win' }}
+        env:
+          WORKSPACE_DIR: ${{ github.workspace }}
         run: |
-          $CIBW = "${{ github.workspace }}/.openblas"
+          $CIBW = "$env:WORKSPACE_DIR/.openblas"
           # pkgconfig needs a complete path, and not just "./openblas since the
           # build is run in a tmp dir (?)
           # It seems somewhere in the env passing, `\` is not
@@ -127,14 +132,18 @@ jobs:
       #     necessitates using install_name_tool on the scipy_openblas32 dylibs.
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
+        env:
+          TARGET_ARCH: ${{ matrix.buildplat[2] }}
+          BLAS_VARIANT: ${{ matrix.buildplat[3] }}
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.buildplat[4] }}
         run: |        
-          if [[ ${{ matrix.buildplat[3] }} == "accelerate" ]]; then
+          if [[ "${BLAS_VARIANT}" == "accelerate" ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
 
             # Builds with Accelerate only target macOS>=14.0
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=MACOSX_DEPLOYMENT_TARGET=14.0 INSTALL_OPENBLAS=false"
 
-            if [[ ${{ matrix.buildplat[2] }} == "arm64" ]]; then          
+            if [[ "${TARGET_ARCH}" == "arm64" ]]; then          
               # use preinstalled gfortran for Accelerate builds
               ln -s $(which gfortran-13) gfortran
               export PATH=$PWD:$PATH
@@ -148,7 +157,7 @@ jobs:
             fi
           else
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=PKG_CONFIG_PATH=$PWD/.openblas \
-              MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }} \
+              MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET}" \
               SDKROOT=$(xcrun --sdk macosx --show-sdk-path) \
               INSTALL_GFORTRAN=true"
           fi

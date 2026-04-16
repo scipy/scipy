@@ -1,3 +1,6 @@
+
+namespace sp_linalg {
+
 template<typename T>
 int
 _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a, int clean, SliceStatusVec &vec_status) {
@@ -39,7 +42,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
      * Examples:
      *   - Real C-ordered, lower=True, overwrite_a=False
      *.      1. Lower triangle of A is copied with copy_triangle_to_C
-     *.      2. This creates a lower triangular C-ordered array, which is 
+     *.      2. This creates a lower triangular C-ordered array, which is
      *          which is equivalent to an UPPER triangular F-ordered array.
      *       3. potrf only reads from triangle given by uplo and assumes symmetry
      *       4. potrf is called with uplo = "U" overwriting the upper-triangle
@@ -52,11 +55,11 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
      *          equal to the COMPLEX CONJUGATE conj(A) of the lower triangle of the original
      *          matrix.
      *       3. potrf only reads from triangle given by uplo and assumes Hermitian
-     *       4. potrf is called with uplo = "L" overwriting the lower-triangle of 
+     *       4. potrf is called with uplo = "L" overwriting the lower-triangle of
      *          F-ordered array Am* with its lower Cholesky decomposition conj(L).
      *       5. Scipy sees this as an UPPER triangular C-ordered array U = conj(L).T = L^H,
-     *          which is exactly the relation between the lower and upper Cholesky 
-     *          decompositions and this can be returned directly to the user. 
+     *          which is exactly the relation between the lower and upper Cholesky
+     *          decompositions and this can be returned directly to the user.
      *
      *  - Real/Complex, F-ordered, lower=True, overwrite_a=True
      *      1. potrf is called with uplo = "L" overwriting the lower-triangle of
@@ -75,8 +78,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
         if (!overwrite_a) {
             data_a = &ret_data[idx * n * n];
             T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_triangle_to_C(data_a, slice_ptr_A, n, s0, s1,
-                               lower ? 'L' : 'U');
+            copy_triangle_to_C(data_a, slice_ptr_A, n, n, s0, s1, lower ? 'L' : 'U');
         } else {
             data_a = Am_data;
         }
@@ -102,3 +104,5 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
 
     return 1;
 }
+
+} // namespace sp_linalg

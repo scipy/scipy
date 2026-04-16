@@ -9,6 +9,7 @@
 #include "_common_array_utils.hh"
 #include "_linalg_lu_det.hh"
 
+using namespace sp_linalg;
 
 static PyObject* _linalg_inv_error;
 
@@ -304,18 +305,47 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
 
-    if (mode != QR_mode::R) { // Allocate Q if needed, if `mode == raw`, F-ordered array is required.
-        ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
-        if (!ap_Q) {
-            PyErr_NoMemory();
-            goto fail_qr;
+    /*
+     * Allocation strategy:
+     *
+     * - Q: always needed except if `mode == r`. In the case that `mode == economic` or `mode == raw`
+     *      the input buffer can be re-used if `overwrite_a` is set. (Albeit that it is possible that
+     *      if M < N `Q` will have to be shrunk down at the python side to become `M x M`.)
+     *
+     *      An additional comment is that `Q` is returned with F-ordered slices for `mode == raw` as its
+     *      output is destined to be fed into LAPACK, allowing fast-paths in memory copies.
+     *
+     * - R: always needed. If `mode == raw` or `mode == economic` a new array is always allocated for this.
+     *      For the other two modes the input buffer can be re-used if `overwrite_a` is set.
+     *
+     * - tau: only allocated if `mode == raw`. Else a temporary buffer is allocated in the main loop as the
+     *        reflectors shouldn't be stored anyways.
+     *
+     * - jpvt: only allocated if `pivoting` is set.
+     */
+    if (mode != QR_mode::R) {
+        if (!overwrite_a || mode == QR_mode::FULL) {
+            ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
+            if (!ap_Q) {
+                PyErr_NoMemory();
+                goto fail_qr;
+            }
+        } else {
+            Py_INCREF(ap_A);
+            ap_Q = ap_A;
         }
     }
 
-    ap_R = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_R, typenum);
-    if (!ap_R) {
-        PyErr_NoMemory();
-        goto fail_qr;
+    if (mode == QR_mode::RAW_MODE || mode == QR_mode::ECONOMIC || (!overwrite_a && (mode == QR_mode::R || mode == QR_mode::FULL))) {
+        // Return C-ordered object, hence `0` flag. Already pre-fill with zeros for efficiency.
+        ap_R = (PyArrayObject *)PyArray_ZEROS(ndim, shape_R, typenum, 0);
+        if (!ap_R) {
+            PyErr_NoMemory();
+            goto fail_qr;
+        }
+    } else {
+        Py_INCREF(ap_A);
+        ap_R = ap_A;
     }
 
     if (mode == QR_mode::RAW_MODE) {
@@ -331,14 +361,18 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
          * set the strides of `Q` to return F-ordered slices.
          *
          * Dimensions other than the last two are not affected so slice computation etc. stays intact.
+         *
+         * Since `overwrite_a` is only enabled when the input has F-ordered slices, this is not necessary in that case.
          */
-        npy_intp *strides_Q = PyArray_STRIDES(ap_Q);
-        int sizeof_T = PyArray_ITEMSIZE(ap_Q);
+        if (!overwrite_a) {
+            npy_intp *strides_Q = PyArray_STRIDES(ap_Q);
+            int sizeof_T = PyArray_ITEMSIZE(ap_Q);
 
-        strides_Q[ndim-2] = sizeof_T;
-        strides_Q[ndim-1] = M * sizeof_T;
+            strides_Q[ndim-2] = sizeof_T;
+            strides_Q[ndim-1] = M * sizeof_T;
 
-        PyArray_UpdateFlags(ap_Q, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS);
+            PyArray_UpdateFlags(ap_Q, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS);
+        }
     }
 
     // Set all elements to 0 immediately as the pivots are also used as inputs in `geqp3`.

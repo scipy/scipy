@@ -18,7 +18,6 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           subspace_angles, hadamard, eigvalsh_tridiagonal,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
-
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -35,6 +34,8 @@ from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
+
+from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
 
 IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
@@ -2207,6 +2208,98 @@ class TestQR:
         decimal = 5 if dtype in (np.float32, np.complex64) else 13
         assert_array_almost_equal(q @ r, a, decimal=decimal)
         assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]), decimal=decimal)
+
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("mode", ["raw", "r", "economic", "full"])
+    @pytest.mark.parametrize("pivoting", [True, False])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("shape", [(4, 3), (3, 4), (2, 4, 3), (2, 3, 4)])
+    def test_overwrite_args(self, dtype, overwrite_kw, mode, pivoting, order, shape):
+        rng = np.random.default_rng(seed=42)
+
+        if order == "F":
+            # ensure slices are F-ordered, which is not the case
+            # for > 2D F-ordered arrays.
+            shape = (*shape[:-2], shape[-1], shape[-2])
+            a = rng.normal(size=shape).astype(dtype)
+            a = np.swapaxes(a, -2, -1)
+        else:
+            a = rng.normal(size=shape).astype(dtype)
+
+        a_ref = np.copy(a)
+        out = qr(a, mode=mode, pivoting=pivoting, **overwrite_kw)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_a = (
+            overwrite_a and
+            (len(shape) == 2) and
+            (order == "F") and
+            dtype is not int
+        )
+
+        # Check if the result is actually correct & check overwrite behavior
+        if mode == "raw":
+            # if overwrite is enabled `a` will contain `q_raw`
+            (q_raw, tau), r, *other = out
+
+            if a_ref.ndim > 2:
+                for i in range(a_ref.shape[0]):
+                    or_un_gqr = get_lapack_funcs(
+                        ("orgqr",), (q_raw[0, :, :],), ilp64="preferred"
+                    )[0]
+                    q, _, _ = or_un_gqr(q_raw[i, :, :np.min(shape[-2:])], tau[i, :])
+
+                    if pivoting:
+                        jpvt = other[0]
+                        assert_allclose(
+                            q @ r[i, :, :], a_ref[i, :, :][:, jpvt[i, :]], atol=1e-12
+                        )
+                    else:
+                        assert_allclose(q @ r[i, :, :], a_ref[i, :, :], atol=1e-12)
+            else:
+                or_un_gqr = get_lapack_funcs(("orgqr",), (q_raw,), ilp64="preferred")[0]
+                q, _, _ = or_un_gqr(q_raw[:, :np.min(shape[-2:])], tau)
+
+                if pivoting:
+                    jpvt = other[0]
+                    assert_allclose(q @ r, a_ref[:, jpvt], atol=1e-12)
+                else:
+                    assert_allclose(q @ r, a_ref, atol=1e-12)
+
+            assert overwrite_a == np.shares_memory(a, q_raw)
+
+        elif mode == "r":
+            # `a` is identical to `r` is overwrite is enabled
+            _, r_ref, *other = qr(a_ref, mode="full", pivoting=pivoting)
+
+            assert_allclose(out[0], r_ref, atol=1e-12)
+            if pivoting:
+                assert_allclose(out[-1], other[0])
+
+            assert overwrite_a == np.shares_memory(a, out[0])
+
+        elif mode == "economic" or mode == "full":
+            # `q` is a (cropped version of) `a` if overwrite is enabled for "economic".
+            # For "full" `a` contains `r`.
+
+            if pivoting:
+                jpvt = out[-1]
+                if a_ref.ndim > 2:
+                    for i in range(a_ref.shape[0]):
+                        assert_allclose(
+                            out[0][i, :, :] @ out[1][i, :, :], a_ref[i][:, jpvt[i, :]],
+                            atol=1e-12
+                        )
+                else:
+                    assert_allclose(out[0] @ out[1], a_ref[:, jpvt], atol=1e-12)
+            else:
+                assert_allclose(out[0] @ out[1], a_ref, atol=1e-12)
+
+
+            assert overwrite_a == np.shares_memory(
+                a, out[0 if mode == "economic" else 1]
+            )
 
 
 class TestRQ:

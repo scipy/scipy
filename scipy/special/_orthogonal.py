@@ -2548,6 +2548,32 @@ def roots_sh_legendre(n, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+
+    Compute nodes and weights for a 7th-order shifted Gauss-Legendre quadrature:
+
+    >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
+    >>> x, w = roots_sh_legendre(7)
+    >>> x
+    array([0.02544604, 0.12923441, 0.29707742, 0.5, 0.70292258, 0.87076559,
+        0.97455396])
+    >>> w
+    array([0.06474248, 0.1398527, 0.19091503, 0.20897959, 0.19091503, 0.1398527,
+        0.06474248])
+
+    Verify that ``x`` are the roots of the degree-7 shifted Legendre polynomial:
+
+    >>> eval_sh_legendre(7, x)
+    array([5.55111512e-16, 1.11022302e-16,  3.33066907e-16,  0.00000000e+00,
+        -2.22044605e-16, -1.11022302e-16, -1.85962357e-15])
+
+    The sum of the weights for shifted Gauss-Legendre quadrature is always 1:
+
+    >>> x, w, mu = roots_sh_legendre(10, mu=True)
+    >>> mu 
+    1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
+
     """
     x, w = roots_legendre(n)
     x = (x + 1) / 2

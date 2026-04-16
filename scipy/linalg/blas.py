@@ -236,7 +236,9 @@ import numpy as np
 import functools
 from scipy.__config__ import CONFIG
 
-HAS_LP64 = CONFIG['Build Dependencies']['blas']['has lp64']
+# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
+# keeping `linalg.blas` as LP64.
+HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
 HAS_ILP64 = CONFIG['Build Dependencies']['blas']['has ilp64']
 del CONFIG
 

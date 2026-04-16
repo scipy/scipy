@@ -38,7 +38,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     overwrite_a = (overwrite_a and (a1.ndim == 2)
                    and (a1.flags["F_CONTIGUOUS"] or a1.flags["C_CONTIGUOUS"]))
 
-    # accomodate empty arrays
+    # accommodate empty arrays
     if a1.shape[-1] == 0:
         batch_shape = a1.shape[:-2]
         c = np.zeros(batch_shape + (0, 0), dtype=a1.dtype)

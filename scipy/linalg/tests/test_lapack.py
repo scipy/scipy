@@ -15,8 +15,9 @@ import numpy as np
 from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
-from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
-                          solve, ldl, norm, block_diag, qr, eigh, qz)
+from scipy.linalg import (
+    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz
+)
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
@@ -170,14 +171,6 @@ class TestFlapackSimple:
                         ref = np.max(np.sum(np.abs(a1), axis=1))
 
                     assert_equal(value, ref)
-
-
-class TestLapack:
-
-    def test_flapack(self):
-        if hasattr(flapack, 'empty_module'):
-            # flapack module is empty
-            pass
 
 
 class TestLeastSquaresSolvers:
