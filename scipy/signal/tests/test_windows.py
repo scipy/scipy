@@ -996,7 +996,7 @@ class TestGeneralGaussian():
         w = windows.general_gaussian(7, p=3, sig=2.0, xp=xp)
         assert float(xp.max(w)) == 1.0
 
-        #Testing that if M is even, the peak is less than 1.0
+        # Testing that if M is even, the peak is less than 1.0
         w = windows.general_gaussian(6, p=1.5, sig=2.0, xp=xp)
         assert float(xp.max(w)) < 1.0
 
