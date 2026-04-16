@@ -985,7 +985,8 @@ class TestGeneralGaussian():
         xp_assert_equal(x, x_ref)
 
     def test_p1_equals_gaussian(self,xp):   
-        #Testing that general_gaussian with p = 1 is equivalen to the normal gaussian
+        """Testing that `general_gaussian` with p = 1 is equivalent to the normal 
+        `gaussian` window. """
         w1 = windows.general_gaussian(7, p=1.0, sig=2.0, xp=xp)
         w2 = windows.gaussian(7, std=2.0, xp=xp)
         xp_assert_close(w1, w2)
