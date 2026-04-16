@@ -992,7 +992,7 @@ class TestGeneralGaussian():
         xp_assert_close(w1, w2)
     
     def test_peak_value(self, xp):
-        # Testing that if M is odd, the peak is at 1
+        """ Testing that if M is odd, the peak is at 1. """
         w = windows.general_gaussian(7, p=3, sig=2.0, xp=xp)
         assert float(xp.max(w)) == 1.0
 
