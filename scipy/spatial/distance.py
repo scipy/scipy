@@ -460,7 +460,7 @@ def minkowski(u, v, p=2, w=None):
 
     Returns
     -------
-    minkowski : double
+    minkowski : float or ndarray
         The Minkowski distance between vectors `u` and `v`.
 
     Examples
@@ -525,7 +525,7 @@ def euclidean(u, v, w=None):
 
     Returns
     -------
-    euclidean : double
+    euclidean : float or ndarray
         The Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -562,7 +562,7 @@ def sqeuclidean(u, v, w=None):
 
     Returns
     -------
-    sqeuclidean : double
+    sqeuclidean : float or ndarray
         The squared Euclidean distance between vectors `u` and `v`.
 
     Examples
