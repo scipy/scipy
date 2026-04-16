@@ -13,8 +13,9 @@ Functions
 """
 from warnings import warn
 
-from ._dcsrch import DCSRCH
 import numpy as np
+from scipy._lib._array_api import array_namespace, xp_capabilities
+from ._dcsrch import DCSRCH
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
@@ -183,6 +184,7 @@ line_search = line_search_wolfe1
 
 # Note: `line_search_wolfe2` is the public `scipy.optimize.line_search`
 
+@xp_capabilities()
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
                        extra_condition=None, maxiter=10):
@@ -277,6 +279,14 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     (1.0, 2, 1, 1.1300000000000001, 6.13, [1.6, 1.4])
 
     """
+    if gfk is None:
+        array_namespace(xk, pk)
+    else:
+        array_namespace(xk, pk, gfk)
+    if old_fval is not None:
+        old_fval = float(old_fval)
+    if old_old_fval is not None:
+        old_old_fval = float(old_old_fval)
     fc = [0]
     gc = [0]
     gval = [None]
@@ -284,7 +294,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     def phi(alpha):
         fc[0] += 1
-        return f(xk + alpha * pk, *args)
+        return float(f(xk + alpha * pk, *args))
 
     fprime = myfprime
 
@@ -292,11 +302,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gc[0] += 1
         gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
         gval_alpha[0] = alpha
-        return gval[0] @ pk
+        return float(gval[0] @ pk)
 
     if gfk is None:
         gfk = fprime(xk, *args)
-    derphi0 = gfk @ pk
+    derphi0 = float(gfk @ pk)
 
     if extra_condition is not None:
         # Add the current gradient as argument, to avoid needless
