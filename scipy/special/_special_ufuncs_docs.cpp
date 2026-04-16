@@ -6633,8 +6633,8 @@ const char *struve_h_doc = R"(
     function is defined as,
 
     .. math::
-        H_v(x) = (z/2)^{v + 1} \sum_{n=0}^\infty
-        \frac{(-1)^n (z/2)^{2n}}{\Gamma(n + \frac{3}{2}) \Gamma(n + v + \frac{3}{2})},
+        H_v(x) = (x/2)^{v + 1} \sum_{n=0}^\infty
+        \frac{(-1)^n (x/2)^{2n}}{\Gamma(n + \frac{3}{2}) \Gamma(n + v + \frac{3}{2})},
 
     where :math:`\Gamma` is the gamma function.
 
@@ -6646,7 +6646,7 @@ const char *struve_h_doc = R"(
         Argument of the Struve function (float; must be positive unless `v` is
         an integer).
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
@@ -6655,15 +6655,15 @@ const char *struve_h_doc = R"(
 
     See Also
     --------
-    modstruve: Modified Struve function
+    modstruve : Modified Struve function
 
     Notes
     -----
     Three methods discussed in [1]_ are used to evaluate the Struve function:
 
     - power series
-    - expansion in Bessel functions (if :math:`|z| < |v| + 20`)
-    - asymptotic large-z expansion (if :math:`z \geq 0.7v + 12`)
+    - expansion in Bessel functions (if :math:`|x| < |v| + 20`)
+    - asymptotic large-x expansion (if :math:`x \geq 0.7v + 12`)
 
     Rounding errors are estimated based on the largest terms in the sums, and
     the result associated with the smallest error is returned.
@@ -6697,7 +6697,7 @@ const char *struve_h_doc = R"(
     array([0.64676373, 0.80781195, 0.48811605])
 
     Compute the Struve function for several orders at several points by
-    providing arrays for `v` and `z`. The arrays have to be broadcastable
+    providing arrays for `v` and `x`. The arrays have to be broadcastable
     to the correct shapes.
 
     >>> orders = np.array([[1], [2], [3]])
@@ -6793,7 +6793,7 @@ const char *struve_l_doc = R"(
     array([  1.10275979,  23.72821578, 399.24709139])
 
     Compute the modified Struve function for several orders at several
-    points by providing arrays for `v` and `z`. The arrays have to be
+    points by providing arrays for `v` and `x`. The arrays have to be
     broadcastable to the correct shapes.
 
     >>> orders = np.array([[1], [2], [3]])
