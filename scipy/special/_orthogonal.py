@@ -1461,6 +1461,33 @@ def hermitenorm(n, monic=False):
     The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2/2}`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hermitenorm
+
+    >>> p_monic = hermitenorm(3)
+    >>> p_monic
+    poly1d([ 1.,  0., -3.,  0.])
+
+    Evaluate probabilist's Hermite polynomial of degree 3 at x = 1
+
+    >>> p_monic(1)
+    np.float64(-2.0)
+
+    Plot probabilist's Hermite polynomials of degree 0 to 4
+    
+    >>> x = np.linspace(-3, 3, 100)
+    >>> fig, ax = plt.subplots()
+    >>> for i in range(5):
+    >>>     ax.plot(x, hermitenorm(i)(x), label=rf'$He_{i}$')
+    >>> plt.title(f"Probabilist's Hermite polynomials $He_n$")
+    >>> plt.xlabel("x")
+    >>> plt.ylabel(rf"$H_n(x)$")
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
