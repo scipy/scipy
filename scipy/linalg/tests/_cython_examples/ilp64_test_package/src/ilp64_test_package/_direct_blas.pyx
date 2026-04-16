@@ -8,7 +8,7 @@ This simulates a downstream package that directly adapts to SciPy's
 blas_int type, using it throughout without int->blas_int conversion.
 """
 
-from scipy.linalg.cython_blas cimport blas_int, ddot, daxpy, dgemm
+from scipy.linalg.cython_blas cimport blas_int, ddot, daxpy, dgemm, dnrm2
 from scipy.linalg.cython_lapack cimport dgetrf
 
 from libc.stdlib cimport malloc, free
@@ -26,6 +26,14 @@ cpdef direct_daxpy(double alpha, double[:] x, double[:] y):
         blas_int n = x.shape[0]
         blas_int incx = 1, incy = 1
     daxpy(&n, &alpha, &x[0], &incx, &y[0], &incy)
+
+
+cpdef double direct_dnrm2(double[:] x):
+    cdef:
+        blas_int n = x.shape[0]
+        blas_int incx = x.strides[0] // sizeof(double)
+        double result = dnrm2(&n, &x[0], &incx)
+    return result
 
 
 cpdef direct_dgemm(double alpha, double[::1,:] a, double[::1,:] b,

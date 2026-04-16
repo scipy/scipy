@@ -9,6 +9,8 @@ cdef double _ddot(int n, const double *x, int incx,
 cdef void _daxpy(int n, double alpha, const double *x, int incx,
                  double *y, int incy) noexcept nogil
 
+cdef double _dnrm2(int n, const double *x, int incx) noexcept nogil
+
 cdef void _dgemm(char *transa, char *transb, int m, int n, int k,
                  double alpha, const double *a, int lda,
                  const double *b, int ldb,

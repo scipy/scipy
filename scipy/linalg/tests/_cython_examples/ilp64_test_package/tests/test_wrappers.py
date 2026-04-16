@@ -7,6 +7,7 @@ import scipy.linalg.cython_blas as cython_blas
 from ilp64_test_package._consumer import (
     consumer_ddot,
     consumer_daxpy,
+    consumer_dnrm2,
     consumer_dgemm,
     consumer_dgetrf,
     consumer_blas_int_size,
@@ -30,7 +31,15 @@ class TestBLASLevel1:
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([4.0, 5.0, 6.0])
         consumer_daxpy(2.0, x, y)
-        assert_allclose(y, [6.0, 9.0, 12.0])
+        assert_allclose(y, [6.0, 9.0, 12.0])     
+
+    def test_dnrm2_large_vector(self):
+        x = np.zeros(2**31, dtype=np.float64)
+        x[-1] = 1.0
+        nrm2 = consumer_dnrm2(x)
+        # LP64 answer due to blas_int->int casts in consumer_dnrm2
+        # cf a similar test in test_direct.py
+        assert_allclose(nrm2, 0.0, atol=1e-14)
 
 
 class TestBLASLevel3:

@@ -12,7 +12,7 @@ before calling the actual BLAS/LAPACK routines.
 
 include "_blas_int.pxi"
 
-from scipy.linalg.cython_blas cimport ddot, daxpy, dgemm
+from scipy.linalg.cython_blas cimport ddot, daxpy, dgemm, dnrm2
 from scipy.linalg.cython_lapack cimport dgetrf
 
 from libc.stdlib cimport malloc, free
@@ -33,6 +33,14 @@ cdef void _daxpy(int n, double alpha, const double *x, int incx,
                  double *y, int incy) noexcept nogil:
     cdef blas_int bn = n, bincx = incx, bincy = incy
     daxpy(&bn, &alpha, <double *>x, &bincx, y, &bincy)
+
+
+cdef double _dnrm2(int n, const double *x, int incx) noexcept nogil:
+    cdef:
+        blas_int bn = n
+        blas_int bincx = incx
+        double nrm2 = dnrm2(&bn, <double *>x, &bincx)
+    return nrm2
 
 
 cdef void _dgemm(char *transa, char *transb, int m, int n, int k,

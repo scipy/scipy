@@ -10,7 +10,7 @@ modules cimporting from sklearn.utils._cython_blas).
 """
 
 from ilp64_test_package._blas_lapack_wrappers cimport (
-    _ddot, _daxpy, _dgemm, _dgetrf, get_blas_int_size
+    _ddot, _daxpy, _dnrm2, _dgemm, _dgetrf, get_blas_int_size
 )
 
 
@@ -22,6 +22,14 @@ cpdef double consumer_ddot(double[:] x, double[:] y):
 cpdef consumer_daxpy(double alpha, double[:] x, double[:] y):
     cdef int n = x.shape[0]
     _daxpy(n, alpha, &x[0], 1, &y[0], 1)
+
+
+cpdef consumer_dnrm2(double[:] x):
+    cdef:
+        int n = x.shape[0]
+        int incx = x.strides[0] // sizeof(double)
+        double nrm2 = _dnrm2(n, &x[0], incx)
+    return nrm2
 
 
 cpdef consumer_dgemm(double alpha, double[::1,:] a, double[::1,:] b,
