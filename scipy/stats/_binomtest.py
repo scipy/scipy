@@ -392,13 +392,19 @@ class _SimpleBinomial:
 
     def f(self, x, fun):
         xp = self.xp
-        return xpx.lazy_apply(fun, xp.floor(x), self.n, self.p, as_numpy=True, xp=xp)
+        return xpx.lazy_apply(fun, x, self.n, self.p, as_numpy=True, xp=xp)
 
     def cdf(self, x):
-        return self.xp.where(x >= 0, self.f(x, scu._binom_cdf), 0.0)
+        return self.xp.where(x >= 0, self.f(self.xp.floor(x), scu._binom_cdf), 0.0)
 
     def sf(self, x):
-        return self.xp.where(x >= 0, self.f(x, scu._binom_sf), 1.0)
+        return self.xp.where(x >= 0, self.f(self.xp.floor(x), scu._binom_sf), 1.0)
+
+    def ppf(self, x):
+        return self.f(x, scu._binom_ppf)
+
+    def isf(self, x):
+        return self.f(x, scu._binom_isf)
 
     def pmf(self, x):
-        return self.f(x, scu._binom_pmf)
+        return self.f(self.xp.floor(x), scu._binom_pmf)

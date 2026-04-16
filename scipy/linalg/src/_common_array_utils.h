@@ -5,7 +5,7 @@
 #include "Python.h"
 #include <math.h>
 #include "numpy/arrayobject.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 #if defined(_MSC_VER)
     #include <complex.h>
@@ -20,6 +20,7 @@
     #define CPLX_Z(real, imag) (real + imag*I)
     #define CPLX_C(real, imag) (real + imag*I)
 #endif
+
 
 // BLAS and LAPACK functions used
 void BLAS_FUNC(saxpy)(CBLAS_INT* n, float* sa, float* sx, CBLAS_INT* incx, float* sy, CBLAS_INT* incy);
@@ -79,19 +80,19 @@ void BLAS_FUNC(ztrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, 
  *  stored in row-major (C) format.
  */
 static inline void
-bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_s(const float* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
             if (data[r*m + c] != 0.0f) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0f) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
@@ -102,19 +103,19 @@ bandwidth_s(float* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, 
 
 
 static inline void
-bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_d(const double* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
             if (data[r*m + c] != 0.0) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
@@ -125,28 +126,23 @@ bandwidth_d(double* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band,
 
 
 static inline void
-bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_c(const SCIPY_C* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { lb = r - c; break; }
-#else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { lb = r - c; break; }
-#endif
+    float* fdata = (float*)data;
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
+            int64_t idx = (r*m + c) * 2;
+            if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (crealf(data[r*m + c]) != 0.0f || cimagf(data[r*m + c]) != 0.0f) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_C(0.0f, 0.0f)) { ub = c - r; break; }
-#endif
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
+            int64_t idx = (r*m + c) * 2;
+            if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
     }
@@ -156,28 +152,23 @@ bandwidth_c(SCIPY_C* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band
 
 
 static inline void
-bandwidth_z(SCIPY_Z* restrict data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
+bandwidth_z(const SCIPY_Z* restrict data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-    Py_ssize_t lb = 0, ub = 0;
-    // Lower bandwidth: scan from bottom-left corner, row by row
-    for (Py_ssize_t r = n-1; r > 0; r--) {
-        for (Py_ssize_t c = 0; c < r - lb; c++) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { lb = r - c; break; }
-#else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { lb = r - c; break; }
-#endif
+    double* ddata = (double*)data;
+    int64_t lb = 0, ub = 0;
+    for (int64_t r = n-1; r > 0; r--) {
+        int64_t limit = r - lb;
+        if (limit > m) { limit = m; }
+        for (int64_t c = 0; c < limit; c++) {
+            int64_t idx = (r*m + c) * 2;
+            if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
-    // Upper bandwidth: scan from top-right corner, row by row backwards
-    for (Py_ssize_t r = 0; r < n-1; r++) {
-        for (Py_ssize_t c = m-1; c > r + ub; c--) {
-#if defined(_MSC_VER)
-            if (creal(data[r*m + c]) != 0.0 || cimag(data[r*m + c]) != 0.0) { ub = c - r; break; }
-#else
-            if (data[r*m + c] != CPLX_Z(0.0, 0.0)) { ub = c - r; break; }
-#endif
+    for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t c = m-1; c > r + ub; c--) {
+            int64_t idx = (r*m + c) * 2;
+            if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) { ub = c - r; break; }
         }
         if (r + ub + 1 > m) { break; }
     }

@@ -5,6 +5,14 @@
 #include <complex.h>
 
 
+/* Integer type for BLAS/LAPACK interface */
+#ifdef HAVE_BLAS_ILP64
+    typedef int64_t ARNAUD_INT;
+#else
+    typedef int32_t ARNAUD_INT;
+#endif
+
+
 #if defined(_MSC_VER)
     // MSVC definition
     typedef _Fcomplex ARNAUD_CPLXF_TYPE;

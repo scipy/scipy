@@ -15,7 +15,7 @@ except ImportError:
     pooch = None
 
 
-if __package__ is None or __package__ == '':
+if __spec__.parent is None or __spec__.parent == '':
     # Running as python script, use absolute import
     import _registry  # type: ignore
 else:

@@ -18,10 +18,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           subspace_angles, hadamard, eigvalsh_tridiagonal,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
-from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
-                                 dsbevd, dsbevx, zhbevd, zhbevx,
-                                 get_lapack_funcs)
-
+from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
 from scipy.stats import ortho_group
@@ -37,6 +34,8 @@ from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
+
+from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
 
 IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
@@ -471,6 +470,78 @@ class TestEig:
                 else:
                     assert_allclose(res[i, j], ref)
 
+    @pytest.mark.parametrize("dtyp", [int, float, complex])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    def test_overwrite_reg(self, dtyp, order, ndim, overwrite_a):
+        n = 3
+        a = np.arange(n*n).reshape(n, n)
+        a = a.astype(dtype=dtyp, order=order)
+
+        if ndim == 3:
+            a = np.stack([a, 2*a])
+
+        a_ref = a.copy()
+
+        w, v = eig(a, overwrite_a=overwrite_a)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and
+            (a.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace
+
+    @pytest.mark.parametrize("dtyp_a", [int, float, complex])
+    @pytest.mark.parametrize("dtyp_b", [int, float, complex])
+    @pytest.mark.parametrize("order_a", ["C", "F"])
+    @pytest.mark.parametrize("order_b", ["C", "F"])
+    @pytest.mark.parametrize("ndim_a", [2, 3])
+    @pytest.mark.parametrize("ndim_b", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("overwrite_b", [True, False])
+    def test_overwrite_gen(
+        self, dtyp_a, dtyp_b, order_a, order_b, ndim_a, ndim_b, overwrite_a, overwrite_b
+    ):
+        n = 3
+        a = np.arange(n*n).reshape(n, n)
+        a = a.astype(dtype=dtyp_a, order=order_a)
+
+        b = np.arange(n*n).reshape(n, n)
+        b = b.astype(dtype=dtyp_b, order=order_b)
+
+        if ndim_a == 3:
+            a = np.stack([a, 2*a])
+        if ndim_b == 3:
+            b = np.stack([b, 2*b])
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        w, v = eig(a, b, overwrite_a=overwrite_a, overwrite_b=overwrite_b)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and (a.dtype == np.result_type(a, b)) and
+            (a.ndim == 2) and (b.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        b_inplace = (
+            overwrite_b and
+            (b.dtype != int) and (b.dtype == np.result_type(a, b)) and
+            (a.ndim == 2) and (b.ndim == 2) and
+            b.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace, 'A'
+        assert (b == b_ref).all() != b_inplace, 'B'
+
 
 class TestEigBanded:
     def setup_method(self):
@@ -560,6 +631,8 @@ class TestEigBanded:
     def test_dsbev(self):
         """Compare dsbev eigenvalues and eigenvectors with
            the result of linalg.eig."""
+        dsbev = get_lapack_funcs('sbev', dtype=np.float64, ilp64="preferred")
+
         w, evec, info = dsbev(self.bandmat_sym, compute_v=1)
         evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
@@ -568,6 +641,8 @@ class TestEigBanded:
     def test_dsbevd(self):
         """Compare dsbevd eigenvalues and eigenvectors with
            the result of linalg.eig."""
+        dsbevd = get_lapack_funcs('sbevd', dtype=np.float64, ilp64="preferred")
+
         w, evec, info = dsbevd(self.bandmat_sym, compute_v=1)
         evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
@@ -577,6 +652,8 @@ class TestEigBanded:
         """Compare dsbevx eigenvalues and eigenvectors
            with the result of linalg.eig."""
         N, N = shape(self.sym_mat)
+        dsbevx = get_lapack_funcs('sbevx', dtype=np.float64, ilp64="preferred")
+
         # Achtung: Argumente 0.0,0.0,range?
         w, evec, num, ifail, info = dsbevx(self.bandmat_sym, 0.0, 0.0, 1, N,
                                            compute_v=1, range=2)
@@ -587,6 +664,8 @@ class TestEigBanded:
     def test_zhbevd(self):
         """Compare zhbevd eigenvalues and eigenvectors
            with the result of linalg.eig."""
+        zhbevd = get_lapack_funcs('hbevd', dtype=np.complex128, ilp64="preferred")
+
         w, evec, info = zhbevd(self.bandmat_herm, compute_v=1)
         evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_herm_lin)
@@ -596,6 +675,8 @@ class TestEigBanded:
         """Compare zhbevx eigenvalues and eigenvectors
            with the result of linalg.eig."""
         N, N = shape(self.herm_mat)
+        zhbevx = get_lapack_funcs('hbevx', dtype=np.complex128, ilp64="preferred")
+
         # Achtung: Argumente 0.0,0.0,range?
         w, evec, num, ifail, info = zhbevx(self.bandmat_herm, 0.0, 0.0, 1, N,
                                            compute_v=1, range=2)
@@ -706,6 +787,8 @@ class TestEigBanded:
     def test_dgbtrf(self):
         """Compare dgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
+        dgbtrf = get_lapack_funcs('gbtrf', dtype=np.float64, ilp64="preferred")
+
         M, N = shape(self.real_mat)
         lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
 
@@ -721,6 +804,8 @@ class TestEigBanded:
         """Compare zgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
         M, N = shape(self.comp_mat)
+        zgbtrf = get_lapack_funcs('gbtrf', dtype=np.complex128, ilp64="preferred")
+
         lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
 
         # extract matrix u from lu_symm_band
@@ -734,6 +819,9 @@ class TestEigBanded:
     def test_dgbtrs(self):
         """Compare dgbtrs  solutions for linear equation system  A*x = b
            with solutions of linalg.solve."""
+        dgbtrf, dgbtrs = get_lapack_funcs(
+            ('gbtrf', 'gbtrs'), dtype=np.float64, ilp64="preferred"
+        )
 
         lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
         y, info = dgbtrs(lu_symm_band, self.KL, self.KU, self.b, ipiv)
@@ -744,6 +832,9 @@ class TestEigBanded:
     def test_zgbtrs(self):
         """Compare zgbtrs  solutions for linear equation system  A*x = b
            with solutions of linalg.solve."""
+        zgbtrf, zgbtrs = get_lapack_funcs(
+            ('gbtrf', 'gbtrs'), dtype=np.complex128, ilp64="preferred"
+        )
 
         lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
         y, info = zgbtrs(lu_symm_band, self.KL, self.KU, self.bc, ipiv)
@@ -1241,6 +1332,52 @@ class TestSVD_GESDD:
         assert_allclose(s, np.empty((0,)))
 
         assert s.dtype == s0.dtype
+
+    @pytest.mark.parametrize("dtyp", [int, float, complex])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("full_matrices", [True, False])
+    @pytest.mark.parametrize("mn", [(3, 5), (5, 3)])
+    def test_overwrite(self, dtyp, order, ndim, overwrite_a, full_matrices, mn):
+        m, n = mn
+        a = np.arange(m*n).reshape(m, n)
+        a = a.astype(dtype=dtyp, order=order)
+
+        if ndim == 3:
+            a = np.stack([a, 2*a])
+
+        a_ref = a.copy()
+
+        u, s, vh = svd(
+            a,
+            lapack_driver=self.lapack_driver,
+            full_matrices=full_matrices,
+            overwrite_a=overwrite_a,
+            compute_uv=True
+        )
+
+        # check that the result is correct
+        if full_matrices:
+            diag_s = diagsvd(s, m, n)
+        else:
+            if ndim == 2:
+                diag_s = np.diag(s)
+            else:
+                diag_s = np.stack([np.diag(x) for x in s])
+
+        assert_allclose(u @ diag_s @ vh, a_ref, atol=1e-12)
+
+        # see if the memory was reused
+        a_inplace = (
+            overwrite_a and
+            (a.dtype != int) and
+            (a.ndim == 2) and
+            a.flags['F_CONTIGUOUS']
+        )
+
+        assert (a == a_ref).all() != a_inplace
+
 
 class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
@@ -1927,13 +2064,11 @@ class TestQR:
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
-        q_e, r_e, *other = qr(a, mode='economic', pivoting=pivoting)
-        assert_equal(q_e.shape, (m, k))
-        assert_equal(q_e.dtype, dtype)
-        assert_equal(r_e.shape, (k, n))
-        assert_equal(r_e.dtype, dtype)
-        assert_equal(q_e, q[:, :k])
-        assert_equal(r_e, r[:k, :])
+        q, r, *other = qr(a, mode='economic', pivoting=pivoting)
+        assert_equal(q.shape, (m, k))
+        assert_equal(q.dtype, dtype)
+        assert_equal(r.shape, (k, n))
+        assert_equal(r.dtype, dtype)
         assert len(other) == (1 if pivoting else 0)
         if pivoting:
             p, = other
@@ -2073,6 +2208,98 @@ class TestQR:
         decimal = 5 if dtype in (np.float32, np.complex64) else 13
         assert_array_almost_equal(q @ r, a, decimal=decimal)
         assert_array_almost_equal(np.conj(q.T) @ q, np.eye(q.shape[1]), decimal=decimal)
+
+    @parametrize_overwrite_arg
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("mode", ["raw", "r", "economic", "full"])
+    @pytest.mark.parametrize("pivoting", [True, False])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    @pytest.mark.parametrize("shape", [(4, 3), (3, 4), (2, 4, 3), (2, 3, 4)])
+    def test_overwrite_args(self, dtype, overwrite_kw, mode, pivoting, order, shape):
+        rng = np.random.default_rng(seed=42)
+
+        if order == "F":
+            # ensure slices are F-ordered, which is not the case
+            # for > 2D F-ordered arrays.
+            shape = (*shape[:-2], shape[-1], shape[-2])
+            a = rng.normal(size=shape).astype(dtype)
+            a = np.swapaxes(a, -2, -1)
+        else:
+            a = rng.normal(size=shape).astype(dtype)
+
+        a_ref = np.copy(a)
+        out = qr(a, mode=mode, pivoting=pivoting, **overwrite_kw)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_a = (
+            overwrite_a and
+            (len(shape) == 2) and
+            (order == "F") and
+            dtype is not int
+        )
+
+        # Check if the result is actually correct & check overwrite behavior
+        if mode == "raw":
+            # if overwrite is enabled `a` will contain `q_raw`
+            (q_raw, tau), r, *other = out
+
+            if a_ref.ndim > 2:
+                for i in range(a_ref.shape[0]):
+                    or_un_gqr = get_lapack_funcs(
+                        ("orgqr",), (q_raw[0, :, :],), ilp64="preferred"
+                    )[0]
+                    q, _, _ = or_un_gqr(q_raw[i, :, :np.min(shape[-2:])], tau[i, :])
+
+                    if pivoting:
+                        jpvt = other[0]
+                        assert_allclose(
+                            q @ r[i, :, :], a_ref[i, :, :][:, jpvt[i, :]], atol=1e-12
+                        )
+                    else:
+                        assert_allclose(q @ r[i, :, :], a_ref[i, :, :], atol=1e-12)
+            else:
+                or_un_gqr = get_lapack_funcs(("orgqr",), (q_raw,), ilp64="preferred")[0]
+                q, _, _ = or_un_gqr(q_raw[:, :np.min(shape[-2:])], tau)
+
+                if pivoting:
+                    jpvt = other[0]
+                    assert_allclose(q @ r, a_ref[:, jpvt], atol=1e-12)
+                else:
+                    assert_allclose(q @ r, a_ref, atol=1e-12)
+
+            assert overwrite_a == np.shares_memory(a, q_raw)
+
+        elif mode == "r":
+            # `a` is identical to `r` is overwrite is enabled
+            _, r_ref, *other = qr(a_ref, mode="full", pivoting=pivoting)
+
+            assert_allclose(out[0], r_ref, atol=1e-12)
+            if pivoting:
+                assert_allclose(out[-1], other[0])
+
+            assert overwrite_a == np.shares_memory(a, out[0])
+
+        elif mode == "economic" or mode == "full":
+            # `q` is a (cropped version of) `a` if overwrite is enabled for "economic".
+            # For "full" `a` contains `r`.
+
+            if pivoting:
+                jpvt = out[-1]
+                if a_ref.ndim > 2:
+                    for i in range(a_ref.shape[0]):
+                        assert_allclose(
+                            out[0][i, :, :] @ out[1][i, :, :], a_ref[i][:, jpvt[i, :]],
+                            atol=1e-12
+                        )
+                else:
+                    assert_allclose(out[0] @ out[1], a_ref[:, jpvt], atol=1e-12)
+            else:
+                assert_allclose(out[0] @ out[1], a_ref, atol=1e-12)
+
+
+            assert overwrite_a == np.shares_memory(
+                a, out[0 if mode == "economic" else 1]
+            )
 
 
 class TestRQ:

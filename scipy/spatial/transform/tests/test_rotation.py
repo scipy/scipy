@@ -953,7 +953,7 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
 
     seq = "".join(seq_tuple)
     if intrinsic:
-        # Extrinsic rotation (wrt to global world) at lower case
+        # Extrinsic rotation (w.r.t. global world) at lower case
         # intrinsic (WRT the object itself) lower case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
@@ -1027,7 +1027,7 @@ def test_as_euler_degenerate_asymmetric_axes(
 
     seq = "".join(seq_tuple)
     if intrinsic:
-        # Extrinsic rotation (wrt to global world) at lower case
+        # Extrinsic rotation (w.r.t. global world) at lower case
         # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles, degrees=True)
@@ -1064,7 +1064,7 @@ def test_as_euler_degenerate_symmetric_axes(
     # Rotation of the form A/B/A are rotation around symmetric axes
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
-        # Extrinsic rotation (wrt to global world) at lower case
+        # Extrinsic rotation (w.r.t. global world) at lower case
         # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles, degrees=True)
@@ -1274,6 +1274,8 @@ def test_approx_equal_single_rotation(xp):
     q = Rotation.from_quat(xp.eye(4))
     assert p.approx_equal(q[3])
     assert not p.approx_equal(q[0])
+    # Regression test for gh-24769: single approx_equal should return a bool
+    assert isinstance(p.approx_equal(q[0]), np.bool_) or not is_numpy(xp)
 
     # test passing atol and using degrees
     assert not p.approx_equal(q[3], atol=1e-10)

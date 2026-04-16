@@ -3538,7 +3538,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # treat the parameters as "fixed" and the quantile/percentile arguments
     # as "variable". There are a lot of advantages to this structure, and I
     # don't think the fact that a few methods reverse the fixed and variable
-    # quantities should make us question that choice. It can still accomodate
+    # quantities should make us question that choice. It can still accommodate
     # these methods reasonably efficiently.
 
 
@@ -4258,7 +4258,9 @@ def _make_distribution_custom(dist):
             domain = _RealInterval(**domain_info)
             param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
-        parameterizations.append(_Parameterization(*parameters) if parameters else [])
+
+        if parameters:
+            parameterizations.append(_Parameterization(*parameters))
 
     domain_info, typical = _get_domain_info(dist.support)
     _x_support = _RealInterval(**domain_info)

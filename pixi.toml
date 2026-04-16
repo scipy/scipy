@@ -4,6 +4,38 @@ description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
+
+
+### SciPy Package Definition ###
+
+[package.build.backend]
+name = "pixi-build-python"
+version = "*"
+
+[package.build.config]
+compilers = ["c", "cxx", "fortran"]
+
+[workspace.target.win.build-variants]
+c_compiler = ["clang-cl"] 
+cxx_compiler = ["clang-cl"]
+fortran_compiler = ["flang"]
+fortran_compiler_version = ["22.*"]
+
+[package.host-dependencies]
+uv = "*"
+pkg-config = "*"
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pythran = "*"
+pybind11 = "*"
+numpy = "*"
+blas-devel = "*"
+
+[package.target.win-64.host-dependencies]
+openblas = "*"
 
 
 ### Environments ###
@@ -131,6 +163,30 @@ solve-group = "accelerate-ilp64"
 features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
+[environments.build-mkl-lp64]
+features = ["build-deps", "mkl", "build-mkl-lp64"]
+solve-group = "mkl-lp64"
+
+[environments.mkl-lp64]
+features = ["run-deps", "test-deps", "mkl", "mkl-lp64"]
+solve-group = "mkl-lp64"
+
+[environments.build-mkl-ilp64]
+features = ["build-deps", "mkl", "build-mkl-ilp64"]
+solve-group = "mkl-ilp64"
+
+[environments.mkl-ilp64]
+features = ["run-deps", "test-deps", "mkl", "mkl-ilp64"]
+solve-group = "mkl-ilp64"
+
+[environments.build-mkl-cyilp64]
+features = ["build-deps", "mkl", "build-mkl-cyilp64"]
+solve-group = "mkl-ilp64"
+
+[environments.mkl-cyilp64]
+features = ["run-deps", "test-deps", "mkl", "mkl-cyilp64"]
+solve-group = "mkl-ilp64"
+
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
 features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
@@ -138,6 +194,10 @@ features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "sy
 [environments.scipy-openblas]
 # tasks: build-scipy-openblas, test-scipy-openblas
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
+
+[environments.scipy-openblas64]
+# tasks: build-scipy-openblas64, test-scipy-openblas64
+features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64"]
 
 [environments.gha-update]
 # tasks: gha-update
@@ -392,7 +452,7 @@ depends-on = "build-accelerate-lp64"
 description = "Test SciPy with accelerate (lp64)"
 
 [feature.build-accelerate-ilp64.tasks.build-accelerate-ilp64]
-cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+cmd = "spin build --build-dir=build-accelerate-ilp64 -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64' -S-Dcython-blas-abi=lp64"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with accelerate (ilp64)"
 
@@ -401,12 +461,69 @@ cmd = "spin test --no-build --build-dir=build-accelerate-ilp64"
 depends-on = "build-accelerate-ilp64"
 description = "Test SciPy with accelerate (ilp64)"
 
+[feature.build-mkl-lp64]
+platforms = ["linux-64"]
+
+# Note: we need BLAS support in Meson merged before we can simply use `-Dblas=mkl`
+[feature.build-mkl-lp64.tasks.build-mkl-lp64]
+cmd = "spin build --build-dir=build-mkl-lp64 --setup-args=-Dblas=mkl-dynamic-lp64-seq --setup-args=-Duse-g77-abi=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with MKL (LP64)"
+
+[feature.mkl-lp64.tasks.test-mkl-lp64]
+cmd = "spin test --no-build --build-dir=build-mkl-lp64"
+depends-on = "build-mkl-lp64"
+description = "Test SciPy with MKL (LP64)"
+
+[feature.mkl-lp64.tasks.check-mkl-lp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-lp64 --loaded-sharedlibs"
+depends-on = "build-mkl-lp64"
+description = "Check loaded shared libraries with MKL (LP64)"
+
+[feature.build-mkl-ilp64]
+platforms = ["linux-64"]
+
+[feature.build-mkl-ilp64.tasks.build-mkl-ilp64]
+cmd = "spin build --build-dir=build-mkl-ilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-Dcython-blas-abi=lp64"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with MKL (ILP64, cython-blas LP64)"
+
+[feature.mkl-ilp64.tasks.test-mkl-ilp64]
+cmd = "spin test --no-build --build-dir=build-mkl-ilp64"
+depends-on = "build-mkl-ilp64"
+description = "Test SciPy with MKL (ILP64, cython-blas LP64)"
+
+[feature.mkl-ilp64.tasks.check-mkl-ilp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-ilp64 --loaded-sharedlibs"
+depends-on = "build-mkl-ilp64"
+description = "Check loaded shared libraries with MKL (ILP64, cython-blas LP64)"
+
+[feature.build-mkl-cyilp64]
+platforms = ["linux-64"]
+
+[feature.build-mkl-cyilp64.tasks.build-mkl-cyilp64]
+cmd = "spin build --build-dir=build-mkl-cyilp64 --setup-args=-Duse-ilp64=true --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true --setup-args=-D_without-fortran=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with MKL (ILP64, cython-blas ILP64)"
+
+[feature.mkl-cyilp64.tasks.test-mkl-cyilp64]
+cmd = "spin test --no-build --build-dir=build-mkl-cyilp64"
+depends-on = "build-mkl-cyilp64"
+description = "Test SciPy with MKL (ILP64, cython-blas ILP64)"
+
+[feature.mkl-cyilp64.tasks.check-mkl-cyilp64-sharedlibs]
+cmd = "spin check --no-build --build-dir=build-mkl-cyilp64 --loaded-sharedlibs"
+depends-on = "build-mkl-cyilp64"
+description = "Check loaded shared libraries with MKL (ILP64, cython-blas ILP64)"
+
+
+
 
 [feature.scipy-openblas.pypi-dependencies]
 scipy-openblas32 = "==0.3.31.22.0"
 
 [feature.scipy-openblas.tasks.build-scipy-openblas]
-cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
+cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas=32"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with scipy-openblas32"
 
@@ -414,6 +531,20 @@ description = "Build SciPy with scipy-openblas32"
 cmd = "spin test --no-build --build-dir=build-scipy-openblas"
 depends-on = "build-scipy-openblas"
 description = "Test SciPy with scipy-openblas32"
+
+[feature.scipy-openblas64.pypi-dependencies]
+scipy-openblas64 = "==0.3.31.22.0"
+
+[feature.scipy-openblas64.tasks.build-scipy-openblas64]
+cmd = "spin build --build-dir=build-scipy-openblas64 --with-scipy-openblas=64 -S-Duse-ilp64=true -S-Dblas-symbol-suffix=64_ -S-D_without-fortran=true"
+env = { CC = "ccache $CC", CXX = "ccache $CXX" }
+description = "Build SciPy with scipy-openblas64"
+
+[feature.scipy-openblas64.tasks.test-scipy-openblas64]
+cmd = "spin test --no-build --build-dir=build-scipy-openblas64"
+depends-on = "build-scipy-openblas64"
+description = "Test SciPy with scipy-openblas64"
+
 
 
 ### CPU/CUDA features ###

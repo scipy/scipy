@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <complex.h>
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 
 #if defined(_MSC_VER)
