@@ -77,7 +77,7 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
     ----------
     .. [1] Jorge J. Moré and David J. Thuente. 1994. "Line search algorithms with
        guaranteed sufficient decrease". ACM Trans. Math. Softw. 20, 3 (Sept. 1994),
-       286-307. `doi:10.1145/192115.192132 <https://doi.org/10.1145/192115.192132>`_
+       286-307. doi:`10.1145/192115.192132`
 
     """
     if gfk is None:
@@ -153,7 +153,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     ----------
     .. [1] J. Nocedal and S. J. Wright. "Numerical Optimization". Springer Ser.
        Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
-       2006.  :doi:`10.1007/978-0-387-40065-5`
+       2006. :doi:`10.1007/978-0-387-40065-5`
 
     """
     _check_c1_c2(c1, c2)
@@ -267,10 +267,9 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     ----------
     .. [1] J. Nocedal and S. J. Wright. "Numerical Optimization". Springer Ser.
        Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
-       2006. `doi:10.1007/978-0-387-40065-5
-       <https://doi.org/10.1007/978-0-387-40065-5>`_.
+       2006. doi:`10.1007/978-0-387-40065-5`
     .. [2] R. Fletcher, "Practical Methods of Optimization." Wiley, May 23, 2000.
-       `doi:10.1002/9781118723203 <https://doi.org/10.1002/9781118723203>`_
+       doi:`10.1002/9781118723203`
 
     Examples
     --------
