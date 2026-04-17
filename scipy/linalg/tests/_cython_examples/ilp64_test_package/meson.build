@@ -1,4 +1,4 @@
-project('ilp64_test_package', 'c', 'cython')
+project('ilp64_test_package', 'c', 'cython', meson_version: '>=1.9.0')
 
 fs = import('fs')
 py = import('python').find_installation(pure: false)

@@ -25,7 +25,7 @@ _blas_int_pxi = configure_file(
 py.extension_module(
   '_blas_lapack_wrappers',
   '_blas_lapack_wrappers.pyx',
-  # _blas_int_pxi,
+  _blas_int_pxi,
   install: true,
   subdir: 'ilp64_test_package',
   cython_args: cython_args,
