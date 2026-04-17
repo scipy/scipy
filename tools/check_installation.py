@@ -35,8 +35,12 @@ submodule_paths = get_submodule_paths()
 # Files whose installation path will be different from original one
 changed_installed_path = {
     'scipy/_build_utils/tests/test_scipy_version.py':
-        'scipy/_lib/tests/test_scipy_version.py'
+        'scipy/_lib/tests/test_scipy_version.py',
+    'scipy/linalg/tests/_cython_examples/ilp64_test_package/tests/test_wrappers.py': '',
 }
+
+# Subdirs in the source tree which should not be installed
+exclude_paths = ['scipy/linalg/tests/_cython_examples/ilp64_test_package/',]
 
 
 def main(install_dir, no_tests):
@@ -102,8 +106,13 @@ def get_test_files(dir, ext="py"):
     test_files = dict()
     underscore = "_" if ext == "so" else ""
     for path in glob.glob(f'{dir}/**/{underscore}test_*.{ext}', recursive=True):
+
         if any(submodule_path in path for submodule_path in submodule_paths):
             continue
+
+        if any(exclude_path in path for exclude_path in exclude_paths):
+            continue
+
         suffix_path = get_suffix_path(path, 3)
         suffix_path = changed_installed_path.get(suffix_path, suffix_path)
         test_files[suffix_path] = path
