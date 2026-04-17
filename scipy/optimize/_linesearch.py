@@ -153,8 +153,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     ----------
     .. [1] J. Nocedal and S. J. Wright. "Numerical Optimization". Springer Ser.
        Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
-       2006. `doi:10.1007/978-0-387-40065-5
-       <https://doi.org/10.1007/978-0-387-40065-5>`_.
+       2006.  :doi:`10.1007/978-0-387-40065-5`
 
     """
     _check_c1_c2(c1, c2)
