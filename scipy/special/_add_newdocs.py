@@ -2243,29 +2243,38 @@ add_newdoc(
 
     Computes the inverse of the complementary error function.
 
-    In the complex domain, there is no unique complex number w satisfying
-    erfc(w)=z. This indicates a true inverse function would be multivalued.
-    When the domain restricts to the real, 0 < x < 2, there is a unique real
-    number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+    In the complex domain, there is no unique complex number :math:`w` satisfying
+    :math:`\operatorname{erfc}(w) = z`. This indicates a true inverse function
+    would be multivalued.
+    When the domain restricts to the real interval :math:`0 < x < 2`, there is
+    a unique real number satisfying
 
-    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+    .. math::
+
+        \operatorname{erfc}(\operatorname{erfcinv}(x)) = x
+
+    It is related to the inverse of the error function by
+
+    .. math::
+
+        \operatorname{erfcinv}(1 - x) = \operatorname{erfinv}(x)
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate. Domain: [0, 2]
+        Argument at which to evaluate. Domain: :math:`[0, 2]`
     out : ndarray, optional
         Optional output array for the function values
 
     Returns
     -------
     erfcinv : scalar or ndarray
-        The inverse of erfc of y, element-wise
+        The inverse of :math:`\operatorname{erfc}` of :math:`y`, element-wise
 
     See Also
     --------
-    erf : Error function of a complex argument
-    erfc : Complementary error function, ``1 - erf(x)``
+    erf : Error function
+    erfc : Complementary error function
     erfinv : Inverse of the error function
 
     Examples
