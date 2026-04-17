@@ -10,6 +10,7 @@ from ilp64_test_package._direct_blas import (
     direct_dnrm2,
     direct_dgemm,
     direct_dgetrf,
+    direct_dgetrf_2,
     get_blas_int_size,
 )
 
@@ -72,4 +73,16 @@ class TestLAPACK:
         a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64, order='F')
         ipiv = np.empty(2, dtype=np.intc)
         info = direct_dgetrf(a, ipiv)
+        assert info == 0
+
+    def test_dgetrf_2(self):
+        a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64, order='F')
+
+        # direct_dgetrf_2 receives the pivot array as `blas_int`
+        if get_blas_int_size() == np.intc().itemsize:
+            int_dtype = np.int32
+        else:
+            int_dtype = np.int64
+        ipiv = np.empty(2, dtype=int_dtype)
+        info = direct_dgetrf_2(a, ipiv)
         assert info == 0

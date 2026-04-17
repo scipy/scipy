@@ -74,6 +74,18 @@ cpdef int direct_dgetrf(double[::1,:] a, int[:] ipiv_out):
     return <int>info
 
 
+cpdef int direct_dgetrf_2(double[::1,:] a, blas_int[:] ipiv):
+    """Similar to `direct_dgetrf` but accepts `ipiv` as a `blas_int` array."""
+    cdef:
+        blas_int m = a.shape[0]
+        blas_int n = a.shape[1]
+        blas_int lda = m
+        blas_int info
+
+    dgetrf(&m, &n, &a[0, 0], &lda, &ipiv[0], &info)
+    return <int>info
+
+
 cpdef int get_blas_int_size():
     """Return sizeof(blas_int) to verify correct type at compile+runtime."""
     return sizeof(blas_int)
