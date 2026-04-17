@@ -191,11 +191,13 @@ Using Cython BLAS/LAPACK ABI in downstream packages
 """""""""""""""""""""""""""""""""""""""""""""""""""
 
 Downstream packages which consume ``cython_blas`` or ``cython_lapack`` interfaces
-should ideally directly use the ``blas_int`` integer type. Some packages, however,
-might need to continue using ``int`` types to maintain backwards compatibility.
-In these---hopefully rare---cases you will need to provide manual wrappers to map
-between ``int`` and ``blas_int`` types. We stress that this conversion limits the array
-sizes to ``< INT_MAX`` even if the LAPACK itself is ILP64 enabled.
+should ideally directly use the ``blas_int`` integer type at all call sites.
+Some packages, however, might prefer to continue using ``int`` types to maintain
+backwards compatibility. In these---hopefully rare---cases you will need to provide
+manual wrappers to map between ``int`` and ``blas_int`` types. We stress that this
+conversion limits the array sizes to ``< INT_MAX`` even if the LAPACK itself is
+ILP64 enabled. It is convenient to localize this mapping in a single internal wrapper.
+
 Consult `a worked example`_ which illustrates both approaches.
 
 .. _a worked example: https://github.com/scipy/scipy/tree/main/scipy/linalg/tests/_cython_examples/ilp64_test_package
