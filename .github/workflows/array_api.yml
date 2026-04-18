@@ -23,6 +23,8 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "250M"
+  # Needed because Pixi doesn't set mtime for compilers
+  CCACHE_COMPILERCHECK: "content"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
