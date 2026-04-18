@@ -267,14 +267,6 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.xlogy" : ['PR02', 'PR01'],
     "scipy.special.xlog1py" : ['PR02', 'PR01'],
     "scipy.special.digamma" : ['PR02', 'PR01'],
-    "scipy.special.assoc_legendre_p" : ['PR02', 'PR01'],
-    "scipy.special.legendre_p" : ['PR02', 'PR01'],
-    "scipy.special.sph_harm_y" : ['PR02', 'PR01'],
-    "scipy.special.sph_legendre_p" : ['PR02', 'PR01'],
-    "scipy.special.sph_legendre_p_all" : ["PR01"],
-    "scipy.special.sph_harm_y_all" : ["PR01"],
-    "scipy.special.legendre_p_all" : ["PR01"],
-    "scipy.special.assoc_legendre_p_all" : ["PR01"],
 }
 
 legacy_functions = [
