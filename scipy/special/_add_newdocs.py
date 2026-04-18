@@ -6559,6 +6559,26 @@ add_newdoc("rel_entr",
 
     This function is jointly convex in x and y.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import rel_entr
+
+    >>> rel_entr(0.5, 1.0)
+    -0.34657359027997264
+    >>> rel_entr(0.1, 0.2)
+    -0.06931471805599453
+    >>> rel_entr(0.0, 0.5)
+    0.0
+
+    Compute the relative entropy between two discrete probability
+    distributions:
+
+    >>> p = [0.1, 0.2, 0.3, 0.4]
+    >>> q = [0.2, 0.2, 0.2, 0.4]
+    >>> np.sum(rel_entr(p, q))  # doctest: +FLOAT_CMP
+    0.1175014...
+
     The origin of this function is in convex programming; see
     [1]_. Given two discrete probability distributions :math:`p_1,
     \ldots, p_n` and :math:`q_1, \ldots, q_n`, the definition of relative
