@@ -65,7 +65,7 @@ jobs:
         run: |
           export OMP_NUM_THREADS=2
           for task in ${TASKS}; do
-            pixi run --skip-deps "$task" -- --durations 3 --timeout=60
+            pixi run --skip-deps "$task" -j 3 -- --durations 3 --timeout=120
           done
         env:
           TASKS: ${{ join(matrix.tasks, ' ') }}
