@@ -1688,38 +1688,44 @@ const char *expi_doc = R"(
 const char *erf_doc = R"(
     erf(z, out=None)
 
-    Returns the error function of complex argument.
+    Error function of real or complex argument.
 
-    It is defined as ``2/sqrt(pi)*integral(exp(-t**2), t=0..z)``.
+    .. math::
+
+        \operatorname{erf}(z) = \frac{2}{\sqrt{\pi}} \int_0^z e^{-t^2} dt
 
     Parameters
     ----------
-    x : ndarray
+    z : ndarray
         Input array.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     res : scalar or ndarray
-        The values of the error function at the given points `x`.
+        The values of the error function at the given points `z`.
 
     See Also
     --------
-    erfc, erfinv, erfcinv, wofz, erfcx, erfi
+    erfc, erfcx, erfi, erfinv, erfcinv, wofz
 
     Notes
     -----
-    The cumulative of the unit normal distribution is given by
-    ``Phi(z) = 1/2[1 + erf(z/sqrt(2))]``.
+    The cumulative distribution function (CDF) of the standard normal distribution can 
+    be expressed in terms of the error function as
+
+    .. math::
+
+        \Phi(z) = \frac{1}{2}
+        \left[1 + \operatorname{erf} \left(\frac{z}{\sqrt{2}}\right)\right]
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Error_function
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover,
-        1972. http://www.math.sfu.ca/~cbm/aands/page_297.htm
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [3] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
 
@@ -1728,17 +1734,23 @@ const char *erf_doc = R"(
     >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erf(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erf(x)$')
+    >>> z = np.linspace(-3, 3)
+    >>> plt.plot(z, special.erf(z))
+    >>> plt.xlabel('$z$')
+    >>> plt.ylabel('$erf(z)$')
     >>> plt.show()
     )";
 
 const char *erfc_doc = R"(
     erfc(x, out=None)
 
-    Complementary error function, ``1 - erf(x)``.
+    Complementary error function.
+
+    The complementary error function is defined as
+
+    .. math::
+
+        \operatorname{erfc}(x) = 1 - \operatorname{erf}(x)
 
     Parameters
     ----------
@@ -1776,7 +1788,13 @@ const char *erfc_doc = R"(
 const char *erfi_doc = R"(
     erfi(z, out=None)
 
-    Imaginary error function, ``-i erf(i z)``.
+    Imaginary error function.
+
+    The imaginary error function is defined as
+
+    .. math::
+
+        \operatorname{erfi}(z) = -i \operatorname{erf}(i z)
 
     Parameters
     ----------
@@ -1819,7 +1837,13 @@ const char *erfi_doc = R"(
 const char *erfcx_doc = R"(
     erfcx(x, out=None)
 
-    Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+    Scaled complementary error function.
+
+    The scaled complementary error function is defined as
+
+    .. math::
+
+        \operatorname{erfcx}(x) = e^{x^2} \operatorname{erfc}(x)
 
     Parameters
     ----------
@@ -6926,9 +6950,11 @@ const char *wofz_doc = R"(
 
     Faddeeva function.
 
-    Returns the value of the Faddeeva function for complex argument::
+    Returns the value of the Faddeeva function for complex argument:
 
-        exp(-z**2) * erfc(-i*z)
+    .. math::
+
+        w(z) = e^{-z^2} \operatorname{erfc}(-i z)
 
     Parameters
     ----------
