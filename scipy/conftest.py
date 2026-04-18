@@ -653,7 +653,8 @@ if HAVE_SCPDT:
         # deprecated
         'scipy.interpolate.lagrange',
         'scipy.interpolate.approximate_taylor_polynomial',
-        'scipy.interpolate.pade'
+        'scipy.interpolate.pade',
+        'scipy.spatial.tsearch',
     ])
 
     # help pytest collection a bit: these names are either private
