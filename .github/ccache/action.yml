@@ -23,7 +23,7 @@ runs:
       # Run a restore and save if running on main
       # Note: we can't simply use restore followed by save because composite actions
       # are not capable of running post job steps.
-      if: ${{ github.ref == 'refs/heads/main' }}
+      if: ${{ true }}  # revert me
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -31,7 +31,7 @@ runs:
         restore-keys: ${{ inputs.workflow_name }}-${{ inputs.job_name }}-ccache-linux-
     - name: Setup compiler cache
       # Run just the restore if not running on main
-      if: ${{ github.ref != 'refs/heads/main' }}
+      if: ${{ false }}  # revert me
       uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
