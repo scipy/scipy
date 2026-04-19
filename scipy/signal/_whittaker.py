@@ -5,7 +5,7 @@ from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
 from scipy.sparse import eye_array, diags_array, kron
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import LinearOperator, cg
 
 
 def _solveh_banded(ab, b, calc_logdet=False):
@@ -57,7 +57,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
         method = "pbsv"
         pbsv = get_lapack_funcs(method, (a1, b1), ilp64="preferred")
         # pbsv uses Cholesky LL', returns c=L in ab-storage format
-        c, x, info = pbsv(a1, b1, lower=True, overwrite_ab=overwrite_ab,
+        c, x, info = pbsv(a1, b1, lower=True, overwrite_ab=overwrite_ab, 
                           overwrite_b=overwrite_b)
         if calc_logdet and info == 0:
             logdet = 2 * np.log(c[0, :]).sum()
@@ -220,13 +220,13 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
             raise ValueError(
                 "Penalty coefficients lambda must be non-negative."
             )
-        if np.isscalar(lamb) and lamb < 0:
+        if np.isscalar(lamb) and lamb < 0: #type: ignore
             raise ValueError(
                 "lamb argument must be non-negative."
             )
         if weights is not None:
-            weigths = np.asarray(weights)
-            if weigths.shape != signal.shape:
+            weights = np.asarray(weights)
+            if weights.shape != signal.shape:
                 raise ValueError(
                     "Input signal array must have the same shape as weights array."
                 )   
@@ -503,19 +503,26 @@ def _build_diff_array(n, order):
             f"for axis of length {n}. Axis length must be greater than order."
         )
     
-    diff_arr = diags_array([-1, 1], offsets = [0, 1], shape = (n - 1, n), dtype = "float")
+    diff_arr = diags_array([-1, 1], offsets = [0, 1], shape = (n - 1, n), dtype = "float") #type: ignore
 
     for _ in range(order - 1):
 
         n -= 1
-        diff_arr = diags_array([-1, 1], offsets = [0, 1], shape = (n - 1, n), dtype = "float") @ diff_arr
+        diff_arr = diags_array([-1, 1], offsets = [0, 1], shape = (n - 1, n), dtype = "float") @ diff_arr #type: ignore
 
     return diff_arr
 
-def _solve_WH_sparse(y, lamb, order, weights = None):
+def _solve_WH_sparse(y, lamb, order, weights = None, solver_kwargs=None):
 
     """
-    Solve the 2D Whittaker Henderson smoothing problem using sparse matrices.
+    Solve the 2D Whittaker Henderson smoothing problem using 
+    LinearOperator with CG.
+
+    Initial approach was to build explicit Kronecker products to
+    build the penalty matrix. Newer approach bypases this by 
+    expressing the matrix-vector product via reshape-based compu-
+    tation. A Jacobi (diagonal) preconditioner is used for faster
+    convergence.
 
     Parameters
     -----------
@@ -539,26 +546,61 @@ def _solve_WH_sparse(y, lamb, order, weights = None):
 
     nx, nz = y.shape
     
+    solver_kwargs = solver_kwargs or {}
+    solver_kwargs.setdefault("rtol", 1e-6)
+    solver_kwargs.setdefault("maxiter", min(nx * nz, 1000))
+
     lamb_x, lamb_z = _parse_axis_params(lamb, "lamb")
     ord_x, ord_z = _parse_axis_params(order, "ord")
 
     #Building the difference matrices using the helper function
     diff_x = _build_diff_array(nx, ord_x)
     diff_z = _build_diff_array(nz, ord_z)
+    diffT_diff_x = (diff_x.T @ diff_x)
+    diffT_diff_z = (diff_z.T @ diff_z)
 
-    pen_x = lamb_x * (kron(eye_array(nz), diff_x.T @ diff_x))
-    pen_z = lamb_z * (kron(diff_z.T @ diff_z, eye_array(nx)))
+    weights_arr = weights if weights is not None else np.ones((nx, nz), dtype = y.dtype)
+    N = nx * nz
 
-    tot_pen = pen_x + pen_z
-
-    #Flatten the input signal
-    y_flatten = y.ravel()
-
-    if weights is None:
-        weight_arr = eye_array(nx * nz)
-    else:
-        weight_arr = diags_array(weights.ravel())
-
-    x_flattened = spsolve((weight_arr + tot_pen).tocsc(), weight_arr @ y_flatten)
+    def mat_vec(v):
+        """
+        computes (W + P) @ v without forming the penalty
+        matrix explicitly
+        kron(Inz, diff_x.T @ diff_x) = diffT_diff_x @ V (row-wise)
+        kron(diff_z.T @ diff_z, Inx) = V @ diffT_diff_z (col-wise)
+        """
+        V = v.reshape(nx, nz)
+        result = lamb_x * (diffT_diff_x @ V) + lamb_z * (V @ diffT_diff_z)
+        result += weights_arr * V
+        return result.ravel()
     
-    return x_flattened.reshape(nx, nz)
+    A = LinearOperator(shape = (N, N), matvec = mat_vec, dtype = float) #type: ignore
+
+    #Preconditioner
+    #the diagnonal of (W + P) where W is the weights and P is the penalty
+    #diag(kron(Inz, diff_x.T @ diff_x)) = diag(diffT_diff_x) repeated nz times (rows)
+    #diag(kron(diff_z.T @ diff_z, Inx)) = diag(diffT_diff_z) repeated nx times (cols)
+
+    diagonal_P = lamb_x * diffT_diff_x.diagonal()[:, None] + lamb_z * diffT_diff_z.diagonal()[None, :] #type: ignore
+    diagonal_A = weights_arr + diagonal_P #type: ignore
+
+    def precondition(v):
+        zero_guard = 1e-12
+        return v / (diagonal_A.ravel() + zero_guard)
+    
+    M = LinearOperator((N, N), matvec = precondition, dtype = float) #type: ignore
+
+    rhs = (weights_arr * y).ravel() 
+    x0 = y.ravel() # start with a noisy signal
+
+    x, info = cg(A, rhs, x0 = x0, M = M, **solver_kwargs)
+
+    if info != 0:
+        warnings.warn(
+            f"CG solver did not converge (info = {info}). "
+            "Result maybe inaccurate, try different lamb.",
+            UserWarning,
+            stacklevel = 3
+        )
+
+    return x.reshape(nx, nz)
