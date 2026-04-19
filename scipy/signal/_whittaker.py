@@ -210,10 +210,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
     if signal.ndim == 2:
         if isinstance(lamb, str):
-            raise ValueError(
-                "lamb selection via REML is not yet supported for 2D signals." \
-                "Pass a numeric value for lamb."
-            )
+            raise NotImplementedError
         if not np.isscalar(lamb) and np.asarray(lamb).ndim == 1:
             lamb = tuple(lamb)
         if isinstance(lamb, tuple) and any(lam < 0 for lam in lamb):
@@ -520,9 +517,9 @@ def _solve_WH_sparse(y, lamb, order, weights = None, solver_kwargs=None):
 
     Initial approach was to build explicit Kronecker products to
     build the penalty matrix. Newer approach bypases this by 
-    expressing the matrix-vector product via reshape-based compu-
-    tation. A Jacobi (diagonal) preconditioner is used for faster
-    convergence.
+    reshaping the vector back into a 2D grid and applying the
+    linear operator along each axis separately. A Jacobi (diagonal)
+    preconditioner is used for faster convergence.
 
     Parameters
     -----------
