@@ -121,7 +121,7 @@ add_function_parentheses = False
 # Ensure all our internal links work
 nitpicky = True
 nitpick_ignore = [
-    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # This ignores errors for classes (OptimizeResults, sparse.dok_array)
     # which inherit methods from `dict`. missing references to builtins get
     # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
     # but that fix doesn't work for inherited methods.
@@ -296,7 +296,8 @@ phantom_import_file = 'dump.xml'
 # Generate plots for example sections
 numpydoc_use_plots = True
 np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
-    '__call__', '__mul__', '__getitem__', '__len__',
+    '__call__', '__mul__', '__getitem__', '__len__', '__pow__', '__matmul__',
+    '__truediv__', '__add__', '__rmul__', '__rmatmul__'
 ]
 
 # -----------------------------------------------------------------------------
@@ -352,7 +353,11 @@ plot_pre_code = """
 import warnings
 for key in (
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
-        'odr'
+        'odr',
+        'pade',
+        'lagrange',
+        'approximate_taylor_polynomial',
+        'tsearch',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

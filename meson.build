@@ -60,8 +60,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=3.0.8')
-  error('SciPy requires Cython >= 3.0.8')
+if not cy.version().version_compare('>=3.2.0')
+  error('SciPy requires Cython >= 3.2.0')
 endif
 
 _global_c_args = cc.get_supported_arguments(
@@ -86,24 +86,26 @@ if host_machine.system() == 'os400'
   add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp', 'fortran'])
 endif
 
-# Adding at project level causes many spurious -lgfortran flags.
-add_languages('fortran', native: false)
-ff = meson.get_compiler('fortran')
-if ff.get_id() == 'gcc'
-  # -std=legacy is not supported by all Fortran compilers, but very useful with
-  # gfortran since it avoids a ton of warnings that we don't care about.
-  # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
-  add_project_arguments('-std=legacy', language: 'fortran')
-endif
+if not get_option('_without-fortran')
+  # Adding at project level causes many spurious -lgfortran flags.
+  add_languages('fortran', native: false)
+  ff = meson.get_compiler('fortran')
+  if ff.get_id() == 'gcc'
+    # -std=legacy is not supported by all Fortran compilers, but very useful with
+    # gfortran since it avoids a ton of warnings that we don't care about.
+    # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
+    add_project_arguments('-std=legacy', language: 'fortran')
+  endif
 
-if ff.has_argument('-Wno-conversion')
-  add_project_arguments('-Wno-conversion', language: 'fortran')
-endif
+  if ff.has_argument('-Wno-conversion')
+    add_project_arguments('-Wno-conversion', language: 'fortran')
+  endif
 
-if ff.get_id() == 'llvm-flang'
-  add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['fortran'])
-  # -Wall warnings are visible because Meson's warning_level defaults to 1 (-Wall)
-  # LLVM tracking issue: https://github.com/llvm/llvm-project/issues/89888
+  if ff.get_id() == 'llvm-flang'
+    add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['fortran'])
+    # -Wall warnings are visible because Meson's warning_level defaults to 1 (-Wall)
+    # LLVM tracking issue: https://github.com/llvm/llvm-project/issues/89888
+  endif
 endif
 
 if cc.get_id() == 'clang-cl'
@@ -138,28 +140,31 @@ endif
 # detection logic below. You have to remove the wrong flags (only `-isystem`
 # is actually needed, everything else shouldn't be there).
 _intel_cflags = []
-_intel_fflags = []
 if cc.get_id() in ['intel', 'intel-llvm']
   _intel_cflags += cc.get_supported_arguments('-fp-model=strict')
 elif cc.get_id() in ['intel-cl', 'intel-llvm-cl']
   _intel_cflags += cc.get_supported_arguments('/fp:strict')
 endif
-if ff.get_id() in ['intel', 'intel-llvm']
-  _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
-  minus0_arg = ['-assume', 'minus0']
-  if ff.has_multi_arguments(minus0_arg)
-    _intel_fflags += minus0_arg
-  endif
-elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
-  # Intel Fortran on Windows does things differently, so deal with that
-  # (also specify dynamic linking and the right name mangling)
-  _intel_fflags = ff.get_supported_arguments(
-    '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore',
-    '/assume:minus0'
-  )
-endif
 add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
-add_global_arguments(_intel_fflags, language: 'fortran')
+
+if not get_option('_without-fortran')
+  _intel_fflags = []
+  if ff.get_id() in ['intel', 'intel-llvm']
+    _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
+    minus0_arg = ['-assume', 'minus0']
+    if ff.has_multi_arguments(minus0_arg)
+      _intel_fflags += minus0_arg
+    endif
+  elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
+    # Intel Fortran on Windows does things differently, so deal with that
+    # (also specify dynamic linking and the right name mangling)
+    _intel_fflags = ff.get_supported_arguments(
+      '/fp:strict', '/MD', '/names:lowercase', '/assume:underscore',
+      '/assume:minus0'
+    )
+  endif
+  add_global_arguments(_intel_fflags, language: 'fortran')
+endif
 
 # Hide symbols when building on Linux with GCC. For Python extension modules,
 # we only need `PyInit_*` to be public, anything else may cause problems. So we
@@ -196,9 +201,6 @@ endif
 if not fs.exists('subprojects/cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('subprojects/pocketfft/README.md')
-  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('subprojects/unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -226,14 +228,14 @@ foreach prefix, files : cobyqa_sources
   py3.install_sources(files, subdir: external_dir / prefix)
 endforeach
 
+duccfft = subproject('duccfft')
+duccfft_dep = duccfft.get_variable('duccfft_dep')
+
 pyprima = subproject('pyprima')
 pyprima_sources = pyprima.get_variable('sources')
 foreach prefix, files : pyprima_sources
   py3.install_sources(files, subdir: external_dir / prefix)
 endforeach
-
-pocketfft = subproject('pocketfft')
-pocketfft_dep = pocketfft.get_variable('pocketfft_dep')
 
 unuran = subproject('unuran')
 
@@ -251,7 +253,7 @@ if use_system_libraries.contains('none')
 elif use_system_libraries.contains('all')
   all_system_libraries = true
 elif use_system_libraries.contains('auto')
-  auto_system_libraries = true 
+  auto_system_libraries = true
 endif
 
 if all_system_libraries or use_system_libraries.contains('boost.math')

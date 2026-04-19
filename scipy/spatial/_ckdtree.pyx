@@ -14,6 +14,7 @@ from scipy._lib._util import copy_if_needed
 cimport numpy as np
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from libcpp.mutex cimport py_safe_call_once, py_safe_once_flag
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
@@ -171,7 +172,7 @@ cdef class coo_entries:
         if self.buf != NULL:
             del self.buf
 
-    # The methods ndarray, dict, coo_matrix, and dok_matrix must only
+    # The methods ndarray, dict, coo_array, and dok_array must only
     # be called after the buffer is filled with coo_entry data. This
     # is because std::vector can reallocate its internal buffer when
     # push_back is called.
@@ -218,6 +219,15 @@ cdef class coo_entries:
             return res_dict
         else:
             return {}
+
+    def coo_array(coo_entries self, m, n):
+        res_arr = self.ndarray()
+        return scipy.sparse.coo_array(
+                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
+                                       shape=(m, n))
+
+    def dok_array(coo_entries self, m, n):
+        return self.coo_array(m,n).todok()
 
     def coo_matrix(coo_entries self, m, n):
         res_arr = self.ndarray()
@@ -398,13 +408,18 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     return n
 
 
+cdef void init_pytree(void *void_tree):
+    cdef cKDTree tree = <cKDTree>void_tree
+    n = cKDTreeNode()
+    n._setup(tree, node=tree.cself.ctree, level=0)
+    tree._python_tree = n
+
+
 # Main cKDTree class
 # ==================
 
 cdef class cKDTree:
-    """
-    cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True, boxsize=None)
+    """cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True, boxsize=None)\n--
 
     kd-tree for quick nearest-neighbor lookup.
 
@@ -455,7 +470,11 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with ``copy_data=True``.
+        with ``copy_data=True``. Concurrently modifying the contents of the
+        ``data`` array while the KDTree initializer is running may lead to data
+        corruption or crashes. If the data are not copied, modifying the
+        original ``data`` array after the tree is created may lead to crashes or
+        data corruption when searching the tree.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -474,6 +493,9 @@ cdef class cKDTree:
         query functions in Python.
     size : int
         The number of nodes in the tree.
+    boxsize : None or ndarray, shape (m.)
+        If boxsize is passed to the initializer, this will be set to the bounds
+        of the periodic box. None if no boxsize is passed.
 
     Notes
     -----
@@ -511,6 +533,7 @@ cdef class cKDTree:
         readonly np.ndarray      indices
         readonly object          boxsize
         np.ndarray               boxsize_data
+        py_safe_once_flag        flag
 
     property n:
         def __get__(self): return self.cself.n
@@ -527,15 +550,11 @@ cdef class cKDTree:
     property tree:
         # make the tree viewable from Python
         def __get__(cKDTree self):
-            cdef cKDTreeNode n
-            cdef ckdtree *cself = self.cself
-            if self._python_tree is not None:
-                return self._python_tree
-            else:
-                n = cKDTreeNode()
-                n._setup(self, node=cself.ctree, level=0)
-                self._python_tree = n
-                return self._python_tree
+            # cast to void* is safe because it is either used to construct the
+            # python tree and then discarded or immediately discarded
+            cdef void *self_v = <void *>self
+            py_safe_call_once(self.flag, init_pytree, self_v)
+            return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
@@ -556,6 +575,11 @@ cdef class cKDTree:
         if not copy_data:
             copy_data = copy_if_needed
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
+
+        # read-only view so ban people modifying tree.data after the tree is
+        # constructed
+        data = data.view(np.ndarray)
+        data.flags.writeable = False
 
         if data.ndim != 2:
             raise ValueError("data must be of shape (n, m), where there are "
@@ -582,7 +606,8 @@ cdef class cKDTree:
             self.boxsize_data[:self.m] = boxsize
             self.boxsize_data[self.m:] = 0.5 * boxsize
 
-            self.boxsize = boxsize
+            self.boxsize = np.array(boxsize, copy=True)
+            self.boxsize.flags.writeable = False
             periodic_mask = self.boxsize > 0
             if ((self.data >= self.boxsize[None, :])[:, periodic_mask]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
@@ -592,10 +617,13 @@ cdef class cKDTree:
         self.maxes = np.ascontiguousarray(
             np.amax(self.data, axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.maxes.flags.writeable = False
         self.mins = np.ascontiguousarray(
             np.amin(self.data,axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.mins.flags.writeable = False
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
+        self.indices.flags.writeable = False
 
         self._pre_init()
 
@@ -1469,7 +1497,7 @@ cdef class cKDTree:
                                np.float64_t p=2.0,
                                output_type='dok_matrix'):
         """
-        sparse_distance_matrix(self, other, max_distance, p=2.0)
+        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
 
         Compute a sparse distance matrix
 
@@ -1479,24 +1507,35 @@ cdef class cKDTree:
         Parameters
         ----------
         other : cKDTree
-
+            The other `KDTree` to compute distances against.
         max_distance : positive float
-
+            Maximum distance within which neighbors are returned. Distances above this
+            value are returned as zero.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use.
             A finite large p may cause a ValueError if overflow can occur.
-
         output_type : str, optional
-            Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+            Which container to use for output data. Options: ``'dok_array'``,
+            ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
+            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
+            Default: ``'dok_matrix'``.
+
+            .. warning:: dok_matrix and coo_matrix are being replaced.
+
+               All new code using scipy sparse should use sparse array
+               types 'dok_array' or 'coo_array'. The default value of
+               `output_type` will be deprecated at v1.19 and switch from
+               'dok_matrix' to 'dok_array' in v1.21.
+               The values 'dok_matrix' and 'coo_matrix' continue
+               to work, but will go away eventually.
 
         Returns
         -------
-        result : dok_matrix, coo_matrix, dict or ndarray
+        result : dok_array, coo_array, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys"
-            format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'v' is returned,
+            format. If a dict is returned the keys are ``(i,j)`` tuples of indices.
+            If output_type is ``'ndarray'`` a record array with fields ``'i'``, ``'j'``,
+            and ``'v'`` is returned,
 
         Examples
         --------
@@ -1507,9 +1546,9 @@ cdef class cKDTree:
         >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
-        >>> kd_tree1 = cKDTree(points1)
-        >>> kd_tree2 = cKDTree(points2)
-        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> kdtree1 = cKDTree(points1)
+        >>> kdtree2 = cKDTree(points2)
+        >>> sdm = kdtree1.sparse_distance_matrix(kdtree2, 0.3, output_type="dok_array")
         >>> sdm.toarray()
         array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
            [0.        , 0.        , 0.        , 0.        , 0.        ],
@@ -1546,10 +1585,14 @@ cdef class cKDTree:
             return res.dict()
         elif output_type == 'ndarray':
             return res.ndarray()
-        elif output_type == 'coo_matrix':
-            return res.coo_matrix(self.n, other.n)
         elif output_type == 'dok_matrix':
             return res.dok_matrix(self.n, other.n)
+        elif output_type == 'dok_array':
+            return res.dok_array(self.n, other.n)
+        elif output_type == 'coo_matrix':
+            return res.coo_matrix(self.n, other.n)
+        elif output_type == 'coo_array':
+            return res.coo_array(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
 

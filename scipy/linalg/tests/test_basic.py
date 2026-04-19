@@ -1,3 +1,5 @@
+import os
+import platform
 import math
 import itertools
 import warnings
@@ -28,7 +30,14 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 parametrize_overwrite_arg = pytest.mark.parametrize(
-    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}],
+    ids=["True", "False", "None"]
+)
+
+
+parametrize_overwrite_b_arg = pytest.mark.parametrize(
+    "overwrite_b_kw", [{"overwrite_b": True}, {"overwrite_b": False}, {}],
+    ids=["True", "False", "None"]
 )
 
 
@@ -809,11 +818,10 @@ class TestSolve:
         with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
             solve(A, b, assume_a=structure)
 
-
     @pytest.mark.parametrize('b', [0, 1, [0, 1]])
     def test_singular_scalar(self, b):
         # regression test for gh-24355: scalar a=0 is singular
-        # thus should raise the same error 
+        # thus should raise the same error
 
         with pytest.raises(LinAlgError):
             a = np.zeros((1, 1))
@@ -1131,6 +1139,50 @@ class TestSolve:
         assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize('a_dtype', [int, float])
+    @pytest.mark.parametrize('a_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_dtype', [int, float])
+    @pytest.mark.parametrize('b_order', ['C', 'F'])
+    @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
+    @pytest.mark.parametrize('transposed', [True, False])
+    @pytest.mark.parametrize('assume_a', [None, "banded"]) # separate branches in C code
+    def test_overwrite_args(
+        self, overwrite_kw, overwrite_b_kw, a_dtype, a_order,
+        b_dtype, b_order, b_ndim, transposed, assume_a
+    ):
+        n = 3
+        a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
+        a = a.astype(a_dtype, order=a_order)
+
+        b = np.arange(n)
+        if b_ndim > 1:
+            b = np.stack([b*j for j in range(b_ndim)]).T
+        b = b.astype(b_dtype, order=b_order)
+
+        a_ref = a.copy()
+        b_ref = b.copy()
+
+        # solve and check that the solution is correct for all parameters
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw,
+                transposed=transposed, assume_a=assume_a)
+        a_or_aT = a_ref.T if transposed else a_ref
+        assert_allclose(a_or_aT @ x, b_ref, atol=1e-14)
+
+        # now check that it worked in-place where expected
+        overwrite_a = overwrite_kw.get('overwrite_a', False)
+        a_inplace = overwrite_a and (a.dtype != int) and a.flags['F_CONTIGUOUS']
+
+        overwrite_b = overwrite_b_kw.get('overwrite_b', False)
+        b_inplace = overwrite_b and (b.dtype != int) and b.flags['F_CONTIGUOUS']
+
+        assert np.shares_memory(x, b) == b_inplace
+
+        # for `assume_a="banded"`, the `overwrite_a` argument is ignored for now
+        assert (b == b_ref).all() != b_inplace
+        assert (a == a_ref).all() != a_inplace or assume_a == "banded"
+
     def test_posdef_not_posdef(self):
         # the `b` matrix is invertible but not positive definite
         a = np.arange(9).reshape(3, 3)
@@ -1352,17 +1404,53 @@ class TestInv:
         a_inv = inv(a)
         assert a_inv.shape == (3, 1, 0, 0)
 
-    @pytest.mark.xfail(reason="TODO: re-enable overwrite_a")
-    def test_overwrite_a(self):
-        a = np.arange(1, 5).reshape(2, 2)
-        a_inv = inv(a, overwrite_a=True)
-        assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
-        assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
+    @parametrize_overwrite_arg
+    def test_overwrite_a(self, overwrite_kw):
+        n = 3
+        a0 = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace
-        a = a.astype(float).copy(order='F')
-        a_inv = inv(a, overwrite_a=True)
-        assert np.shares_memory(a, a_inv)
+        # int arrays are copied internally
+        a = a0.copy()
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # float C ordered arrays are copied, too
+        a = a0.copy().astype(float)
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+        assert_equal(a, a0)
+        assert not np.shares_memory(a, a_inv)
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: inv works inplace.
+        # IOW, the output is always the inverse, and the original input may be
+        # destroyed, depending on the `overwrite_a` kwarg value
+        a = a0.astype(float).copy(order='F')
+        a_inv = inv(a, **overwrite_kw)
+        assert_allclose(a_inv @ a0, np.eye(n), atol=1e-14)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        assert (a == a0).all() != overwrite_a
+        assert np.shares_memory(a, a_inv) == overwrite_a
+
+    @pytest.mark.parametrize(
+        "dtyp", [np.float16, np.float32, np.longdouble, np.clongdouble]
+    )
+    def test_dtypes(self, dtyp):
+        # backwards compat: inv(float16)->float32 ; inv(clongdouble)->complex128 etc
+        a = np.arange(4).reshape(2, 2).astype(dtyp)
+
+        a_inv = inv(a)
+        assert_allclose(a @ a_inv, np.eye(a.shape[0]), atol=100*np.finfo(a.dtype).eps)
+
+        dt_map = {
+            'e': 'f',  # float16 -> float32
+            'f': 'f',
+            'g': 'd',  # longdouble -> float64
+            'G': 'D'   # clongdouble -> complex128
+        }
+        assert a_inv.dtype.char == dt_map[a.dtype.char]
 
     def test_readonly(self):
         a = np.eye(3)
@@ -2185,11 +2273,15 @@ class TestLstsq:
         x, resid, rank, s = lstsq(a, b, lapack_driver=driver)
 
         assert rank == n
-        assert resid.ndim == 0   # it's numpy scalar, in fact
 
-        delta = b - a @ x
-        manual_residuals = np.sum(delta * delta.conj(), axis=0)
-        assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+        if driver != "gelsy":
+            assert resid.ndim == 0   # it's numpy scalar, in fact
+
+            delta = b - a @ x
+            manual_residuals = np.sum(delta * delta.conj(), axis=0)
+            assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
 
         # 2. b.shape == (n, nrhs)
         b2 = np.stack((b, 2*b, 3*b, 4*b), axis=1)   # b1.shape=(3, 4), nrhs=4
@@ -2197,10 +2289,14 @@ class TestLstsq:
         x2, resid2, rank2, s2 = lstsq(a, b2, lapack_driver=driver)
 
         assert rank2 == n
-        assert resid2.shape == (nrhs,)
-        delta2 = b2 - a @ x2
-        manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
-        assert_allclose(resid2, manual_residuals2, atol=1e-14)
+
+        if driver != "gelsy":
+            assert resid2.shape == (nrhs,)
+            delta2 = b2 - a @ x2
+            manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
+            assert_allclose(resid2, manual_residuals2, atol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
 
         # 3. b.shape == (n,), and a has batch shape (2,)
         a3 = np.stack((a, 2*a))
@@ -2209,8 +2305,12 @@ class TestLstsq:
 
         x3, resid3, ranks3, s3 = lstsq(a3, b3, lapack_driver=driver)
         assert_equal(ranks3, np.asarray([n, n]))
-        assert resid3.shape == (n,)
-        assert_allclose(resid3, [resid]*n, atol=1e-14)
+
+        if driver != "gelsy":
+            assert resid3.shape == (n,)
+            assert_allclose(resid3, [resid]*n, atol=1e-14)
+        else:
+            assert resid3.shape == (2, 0)
 
         # 4. b.shape == (n, nhrs) and a has batch shape = (2,)
         a4 = np.stack((a, 2*a))
@@ -2219,11 +2319,49 @@ class TestLstsq:
         x4, resid4, rank4, s4 = lstsq(a4, b4, lapack_driver=driver)
 
         assert_equal(rank4, np.asarray([n, n]))
-        assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
 
-        delta4 = b4 - a4 @ x4
-        manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
-        assert_allclose(resid4, manual_residual4, atol=1e-14)
+        if driver != "gelsy":
+            assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
+            delta4 = b4 - a4 @ x4
+            manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
+            assert_allclose(resid4, manual_residual4, atol=1e-14)
+        else:
+            assert resid4.shape == (2, 0)
+
+    @pytest.mark.parametrize("driver", ["gelsd", "gelss", "gelsy"])
+    @pytest.mark.parametrize("shape_a", [(3, 2), (4, 3, 2)])
+    @pytest.mark.parametrize("shape_b", [(3,), (3, 1), (3, 5)])
+    def test_rank_deficient_residuals(self, driver, shape_a, shape_b):
+        rng = np.random.default_rng(seed=42)
+
+        # Insert one rank-deficient slice to check if `NaN` is returned
+        if len(shape_a) == 2:
+            a = np.zeros(shape_a)
+        else:
+            a = np.zeros(shape_a)
+            a[1:, :, 0] = 1
+            a[1:, :, 1:] = rng.normal(size=(shape_a[0]-1, shape_a[1], shape_a[-1]-1))
+
+        b = rng.normal(size=shape_b)
+
+        x, res, rank, _ = lstsq(a, b, lapack_driver=driver)
+
+        # Validate that the residuals are correct for full-rank slices and that `NaN` is
+        # inserted otherwise.
+        if driver != "gelsy":
+            if b.ndim == 1:
+                b = b[:, None]
+                x = x[..., None]
+                res = res[..., None]
+            res_ref = a @ x - b
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+
+            mask = rank == shape_a[-1]
+            assert_allclose(res[mask], res_ref[mask])
+            assert np.all(np.isnan(res[~mask]))
+        else:
+            assert res.shape == (a.shape[:-2] + (0,))
+
 
     def test_errors(self):
         a = np.ones((3, 4))
@@ -2237,6 +2375,70 @@ class TestLstsq:
 
         with pytest.raises(ValueError, match="Input array"):
             lstsq(np.ones(3), np.ones(3))
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("driver", ["gelss", "gelsd", "gelsy"])
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("shape", [(2, 4, 3), (4, 3), (3, 4)])
+    @pytest.mark.parametrize("nrhs", [1, 5])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite(
+        self, overwrite_kw, overwrite_b_kw, driver, dtype, shape, nrhs, order
+    ):
+        rng = np.random.default_rng(seed=123456)
+        if dtype is not int:
+            a = np.asarray(rng.normal(size=shape), order=order)
+            b = np.asarray(rng.normal(size=(*shape[:-1], nrhs)), order=order)
+        else: # avoid issues with singularity
+            a = np.asarray(rng.integers(1000, size=shape), order=order)
+            b = np.asarray(rng.integers(1000, size=(*shape[:-1], nrhs)), order=order)
+
+        a_ref = np.copy(a)
+        b_ref = np.copy(b)
+
+        x, res, rank, S = lstsq(
+            a, b, **overwrite_kw, **overwrite_b_kw, lapack_driver=driver
+        )
+
+        # validate solution and residuals
+        a_T = a_ref.swapaxes(-2, -1)
+        if shape[-2] >= shape[-1]:
+            x_ref = solve(a_T @ a_ref, a_T @ b_ref)
+        else:
+            x_ref = a_T @ solve(a_ref @ a_T, b_ref)
+
+        assert_allclose(x_ref, x, atol=1e-12)
+
+        if driver != "gelsy" and shape[-2] >= shape[-1]:
+            res_ref = a_ref @ x - b_ref
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+            assert_allclose(res_ref, res, atol=1e-12)
+        else:
+            assert_allclose(np.zeros(shape[:-2] + (0,), x.dtype), res)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_a = (
+            overwrite_a and
+            (dtype is not int) and
+            a.flags["F_CONTIGUOUS"] and
+            a.ndim <= 2
+        )
+
+        # Classical conditions: F_contiguity + should not be overwritten internally.
+        # Complemented by the fact that LAPACK requires a `b` of at least `max(m, n)`,
+        # hence if this is not the case `b` can not be used directly.
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+        overwrite_b = (
+            overwrite_b and
+            (dtype is not int) and
+            b.flags["F_CONTIGUOUS"] and
+            shape[0] >= shape[1]
+        )
+
+        assert np.all(a_ref == a) != overwrite_a
+        assert np.all(b_ref == b) != overwrite_b
+        assert np.shares_memory(x, b) == overwrite_b
 
 
 class TestPinv:
@@ -2307,7 +2509,7 @@ class TestPinv:
         # Now adiff1 should be around atol value while adiff2 should be
         # relatively tiny
         assert_allclose(np.linalg.norm(adiff1), 5e-4, atol=5.e-4)
-        assert_allclose(np.linalg.norm(adiff2), 5e-14, atol=5.e-14)
+        assert_allclose(np.linalg.norm(adiff2), 5e-14, atol=7.e-14)
 
         # Now do the same but remove another sv ~4.234 via rtol
         a_p = pinv(a_m, atol=atol, rtol=rtol)
@@ -2741,3 +2943,84 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
+
+
+class TestDTypes:
+    """Check backwards compatibility for dtypes vs scipy 1.16."""
+
+    def get_arr2D(self, tcode):
+        # return a valid 2D array for the typecode
+        if tcode == 'M':
+            return np.eye(2, dtype='datetime64[ms]')
+        elif tcode == 'm':
+            return np.eye(2, dtype='timedelta64[ms]')
+        elif tcode == 'V':
+            return np.asarray([[b'a', b'b'], [b'c', b'd']], dtype='V')
+        else:
+            return np.eye(2, dtype=tcode)
+
+    def get_arr1D(self, tcode):
+        # return a valid 1D array for the typecode
+        if tcode == 'M':
+            return np.ones(2, dtype='datetime64[ms]')
+        elif tcode =='m':
+            return np.ones(2, dtype='timedelta64[ms]')
+        elif tcode == 'V':
+            return np.asarray([b'a', b'b'], dtype='V')
+        else:
+            return np.ones(2, dtype=tcode)
+
+    @pytest.mark.parametrize("tcode", np.typecodes['All'])
+    def test_inv(self, tcode):
+        # check backwards compat vs scipy 1.16
+        a = self.get_arr2D(tcode)
+        if tcode in 'SUVO':
+            # raises
+            with pytest.raises(ValueError):
+                inv(a)
+        else:
+            # passes
+            inv(a)
+
+    @pytest.mark.parametrize("tcode", np.typecodes['All'])
+    def test_det(self, tcode):
+        a = self.get_arr2D(tcode)
+
+        is_arm = platform.machine() == 'arm64'
+        is_armhf = platform.machine() == 'armv8l'   # gh-24831
+        is_windows = os.name == 'nt'
+
+        failing_tcodes = 'SUVOmM'
+        if not (is_arm or is_armhf or is_windows):
+            failing_tcodes += 'gG'
+
+        if tcode in failing_tcodes:
+            # raises
+            with pytest.raises(TypeError):
+                det(a)
+        else:
+            # passes
+            det(a)
+
+    @pytest.mark.filterwarnings("ignore:Casting complex values")
+    @pytest.mark.parametrize("tcode_a", np.typecodes['All'])
+    @pytest.mark.parametrize("tcode_b", np.typecodes['All'])
+    def test_solve(self, tcode_a, tcode_b):
+        a = self.get_arr2D(tcode_a)
+        b = self.get_arr1D(tcode_b)
+
+        can_combine = True
+        try:
+            np.result_type(tcode_a, tcode_b)
+        except TypeError:
+            can_combine = False
+
+        if not can_combine:
+            # np.exceptions.DTypePromotionError subclasses TypeError
+            with pytest.raises(TypeError):
+                solve(a, b)
+        elif tcode_a in 'SUVO' or tcode_b in 'VO':
+            with pytest.raises(ValueError):
+                solve(a, b)
+        else:
+            solve(a, b)

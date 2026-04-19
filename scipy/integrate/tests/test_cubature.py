@@ -504,6 +504,7 @@ class TestCubature:
             basic_1d_integrand,
             xp.asarray([0], dtype=xp.float32),
             xp.asarray([1], dtype=xp.float32),
+            rtol=1e-7,
             points=[],
             args=(xp.asarray([1], dtype=xp.float32), xp),
         ).estimate.dtype

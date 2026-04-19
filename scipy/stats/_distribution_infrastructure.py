@@ -9,14 +9,13 @@ import numpy as np
 from numpy import inf
 
 from scipy._lib._array_api import xp_capabilities, xp_promote
-from scipy._lib._util import _rng_spawn, _RichResult
+from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy._external import array_api_extra as xpx
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
-from scipy.optimize._bracket import _bracket_root, _bracket_minimum
-from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
+from scipy.optimize import elementwise
 from scipy.stats._probability_distribution import _ProbabilityDistribution
 from scipy.stats import qmc
 
@@ -73,17 +72,10 @@ _NO_CACHE = "no_cache"
 #  compare old/new distribution timing
 #  make video
 #  add array API support
-#  why does dist.ilogcdf(-100) not converge to bound? Check solver response to inf
-#  _chandrupatla_minimize should not report xm = fm = NaN when it fails
-#  integrate `logmoment` into `moment`? (Not hard, but enough time and code
-#   complexity to wait for reviewer feedback before adding.)
-#  Eliminate bracket_root error "`min <= a < b <= max` must be True"
-#  Test repr?
 #  use `median` information to improve integration? In some cases this will
 #   speed things up. If it's not needed, it may be about twice as slow. I think
-#   it should depend on the accuracy setting.
+#   it should depend on the accuracy setting (and whether median formula is available).
 #  in tests, check reference value against that produced using np.vectorize?
-#  add `axis` to `ks_1samp`
 #  User tips for faster execution:
 #  - pass NumPy arrays
 #  - pass inputs of floating point type (not integers)
@@ -99,46 +91,9 @@ _NO_CACHE = "no_cache"
 #  Reconsider `all_inclusive`
 #  Should process_parameters update kwargs rather than returning? Should we
 #   update parameters rather than setting to what process_parameters returns?
-
-# Questions:
-# 1.  I override `__getattr__` so that distribution parameters can be read as
-#     attributes. We don't want uses to try to change them.
-#     - To prevent replacements (dist.a = b), I could override `__setattr__`.
-#     - To prevent in-place modifications, `__getattr__` could return a copy,
-#       or it could set the WRITEABLE flag of the array to false.
-#     Which should I do?
-# 2.  `cache_policy` is supported in several methods where I imagine it being
-#     useful, but it needs to be tested. Before doing that:
-#     - What should the default value be?
-#     - What should the other values be?
-#     Or should we just eliminate this policy?
-# 3.  `validation_policy` is supported in a few places, but it should be checked for
-#     consistency. I have the same questions as for `cache_policy`.
-# 4.  `tol` is currently notional. I think there needs to be way to set
-#     separate `atol` and `rtol`. Some ways I imagine it being used:
-#     - Values can be passed to iterative functions (quadrature, root-finder).
-#     - To control which "method" of a distribution function is used. For
-#       example, if `atol` is set to `1e-12`, it may be acceptable to compute
-#       the complementary CDF as 1 - CDF even when CDF is nearly 1; otherwise,
-#       a (potentially more time-consuming) method would need to be used.
-#     I'm looking for unified suggestions for the interface, not ad hoc ideas
-#     for using tolerances. Suppose the user wants to have more control over
-#     the tolerances used for each method - how do they specify it? It would
-#     probably be easiest for the user if they could pass tolerances into each
-#     method, but it's easiest for us if they can only set it as a property of
-#     the class. Perhaps a dictionary of tolerance settings?
-# 5.  I also envision that accuracy estimates should be reported to the user
-#     somehow. I think my preference would be to return a subclass of an array
-#     with an `error` attribute - yes, really. But this is unlikely to be
-#     popular, so what are other ideas? Again, we need a unified vision here,
-#     not just pointing out difficulties (not all errors are known or easy
-#     to estimate, what to do when errors could compound, etc.).
-# 6.  The term "method" is used to refer to public instance functions,
-#     private instance functions, the "method" string argument, and the means
-#     of calculating the desired quantity (represented by the string argument).
-#     For the sake of disambiguation, shall I rename the "method" string to
-#     "strategy" and refer to the means of calculating the quantity as the
-#     "strategy"?
+# `validation_policy` needs testing
+# `tol` does not offer very fine-grained control; consider improving
+# report accuracy estimates?
 
 # Originally, I planned to filter out invalid distribution parameters;
 # distribution implementation functions would always work with "compressed",
@@ -1241,45 +1196,14 @@ def _fiinfo(x):
         return np.iinfo(x)
 
 
-def _kwargs2args(f, args=None, kwargs=None):
-    # Wraps a function that accepts a primary argument `x`, secondary
-    # arguments `args`, and secondary keyward arguments `kwargs` such that the
-    # wrapper accepts only `x` and `args`. The keyword arguments are extracted
-    # from `args` passed into the wrapper, and these are passed to the
-    # underlying function as `kwargs`.
-    # This is a temporary workaround until the scalar algorithms `_tanhsinh`,
-    # `_chandrupatla`, etc., support `kwargs` or can operate with compressing
-    # arguments to the callable.
-    args = args or []
-    kwargs = kwargs or {}
-    names = list(kwargs.keys())
-    n_args = len(args)
-
-    def wrapped(x, *args):
-        return f(x, *args[:n_args], **dict(zip(names, args[n_args:])))
-
-    args = tuple(args) + tuple(kwargs.values())
-
-    return wrapped, args
-
-
 def _logexpxmexpy(x, y):
     """ Compute the log of the difference of the exponentials of two arguments.
 
     Avoids over/underflow, but does not prevent loss of precision otherwise.
     """
-    # TODO: properly avoid NaN when y is negative infinity
-    # TODO: silence warning with taking log of complex nan
-    # TODO: deal with x == y better
-    i = np.isneginf(np.real(y))
-    if np.any(i):
-        y = np.asarray(y.copy())
-        y[i] = np.finfo(y.dtype).min
-    x, y = np.broadcast_arrays(x, y)
-    res = np.asarray(special.logsumexp([x, y+np.pi*1j], axis=0))
-    i = (x == y)
-    res[i] = -np.inf
-    return res
+    return xpx.apply_where(x != y, (x, y),
+                           lambda x, y: special.logsumexp([x, y+np.pi*1j], axis=0),
+                           fill_value=-np.inf)
 
 
 def _guess_bracket(xmin, xmax):
@@ -1830,7 +1754,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ### Attributes
 
-    # `tol` attribute is just notional right now. See Question 4 above.
     @property
     def tol(self):
         r"""positive float:
@@ -2087,76 +2010,43 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ## Algorithms
 
-    def _quadrature(self, integrand, limits=None, args=None,
-                    params=None, log=False):
-        # Performs numerical integration of an integrand between limits.
-        # Much of this should be added to `_tanhsinh`.
+    def _quadrature(self, integrand, limits=None, args=(), params=None, log=False):
+        # Performs numerical integration/summation between limits or over support.
         a, b = self._support(**params) if limits is None else limits
-        a, b = np.broadcast_arrays(a, b)
-        if not a.size:
-            # maybe need to figure out result type from a, b
-            return np.empty(a.shape, dtype=self._dtype)
-        args = [] if args is None else args
-        params = {} if params is None else params
-        f, args = _kwargs2args(integrand, args=args, kwargs=params)
-        args = np.broadcast_arrays(*args)
-        # If we know the median or mean, consider breaking up the interval
         rtol = None if _isnull(self.tol) else self.tol
-        # For now, we ignore the status, but I want to return the error
-        # estimate - see question 5 at the top.
-        if isinstance(self, ContinuousDistribution):
-            res = _tanhsinh(f, a, b, args=args, log=log, rtol=rtol)
-            return res.integral
-        else:
-            res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum
-            res = np.asarray(res)
-            # The result should be nan when parameters are nan, so need to special
-            # case this.
-            cond = np.isnan(params.popitem()[1]) if params else np.True_
-            cond = np.broadcast_to(cond, a.shape)
-            res[(a > b)] = -np.inf if log else 0  # fix in nsum?
-            res[cond] = np.nan
 
-            return res[()]
+        # For now, we ignore the status, but I want to return the error estimate
+        if isinstance(self, ContinuousDistribution):
+            return _tanhsinh(integrand, a, b, args=args, kwargs=params,
+                             log=log, rtol=rtol).integral
+        else:
+            res = nsum(integrand, a, b, args=args, kwargs=params,
+                       log=log, tolerances=dict(rtol=rtol)).sum
+
+            # b > a -> sum is zero... unless the parameters are nan.
+            # (Resolving gh-22321 should fix this in nsum.)
+            cond = np.isnan(params.popitem()[1]) if params else np.True_
+            return np.where(cond, np.nan, res)[()]
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
         # Finds the argument of a function that produces the desired output.
-        # Much of this should be added to _bracket_root / _chandrupatla.
         xmin, xmax = self._support(**params) if bounds is None else bounds
-        params = {} if params is None else params
-
-        p, xmin, xmax = np.broadcast_arrays(p, xmin, xmax)
-        if not p.size:
-            # might need to figure out result type based on p
-            res = _RichResult()
-            empty = np.empty(p.shape, dtype=self._dtype)
-            res.xl, res.x, res.xr = empty, empty, empty
-            res.fl, res.fr = empty, empty
 
         def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
             return f(x, **kwargs) - _p
 
-        f3, args = _kwargs2args(f2, args=[p], kwargs=params)
-        # If we know the median or mean, should use it
-
-        # Any operations between 0d array and a scalar produces a scalar, so...
-        shape = xmin.shape
-        xmin, xmax = np.atleast_1d(xmin, xmax)
-
         xl0, xr0 = _guess_bracket(xmin, xmax)
-        xmin = xmin.reshape(shape)
-        xmax = xmax.reshape(shape)
-        xl0 = xl0.reshape(shape)
-        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
+        res = elementwise.bracket_root(f2, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
+                                       args=(p,), kwargs=params)
         # For now, we ignore the status, but I want to use the bracket width
-        # as an error estimate - see question 5 at the top.
+        # as an error estimate.
 
         xrtol = None if _isnull(self.tol) else self.tol
         xatol = None if xatol is None else xatol
         tolerances = dict(xrtol=xrtol, xatol=xatol, fatol=0, frtol=0)
-        return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, **tolerances)
+        return elementwise.find_root(f2, res.bracket, args=(p,),
+                                     kwargs=params, tolerances=tolerances)
 
     ## Other
 
@@ -2201,7 +2091,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # params - a dictionary of distribution shape parameters passed by
     #          the public method.
     # Dispatch methods accept `params` rather than relying on the state of the
-    # object because iterative algorithms like `_tanhsinh` and `_chandrupatla`
+    # object because iterative algorithms like `tanhsinh` and `find_root`
     # need their callable to follow a strict elementwise protocol: each element
     # of the output is determined solely by the values of the inputs at the
     # corresponding location. The public methods do not satisfy this protocol
@@ -2334,9 +2224,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             logpxf = self._logpxf_dispatch(x, **params)
             temp = np.asarray(pxf)
             i = (pxf != 0)  # 0 * inf -> nan; should be 0
-            temp[i] = pxf[i]*logpxf[i]
+            temp[i] = -pxf[i]*logpxf[i]
             return temp
-        return -self._quadrature(integrand, params=params)
+        return self._quadrature(integrand, params=params)
 
     @_set_invalid_nan_property
     def median(self, *, method=None):
@@ -2374,21 +2264,24 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _mode_optimization(self, xatol=None, **params):
-        if not self._size:
-            return np.empty(self._shape, dtype=self._dtype)
-
         a, b = self._support(**params)
         m = self._median_dispatch(**params)
 
-        f, args = _kwargs2args(lambda x, **params: -self._pxf_dispatch(x, **params),
-                               args=(), kwargs=params)
-        res_b = _bracket_minimum(f, m, xmin=a, xmax=b, args=args)
-        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr,
-                                     args=args, xatol=xatol)
+        def f(x, **params):
+            return -self._pxf_dispatch(x, **params)
+
+        res_b = elementwise.bracket_minimum(f, m, xmin=a, xmax=b, kwargs=params)
+        res = elementwise.find_minimum(f, res_b.bracket, kwargs=params,
+                                       tolerances=dict(xatol=xatol))
         mode = np.asarray(res.x)
+
+        # bracket_minimum fails with status == -1 if the mode is at a boundary.
+        # We have to consider this as a special case; there's no way to include
+        # this logic in find_minimum; it has to treat the bracket as invalid.
         mode_at_boundary = res_b.status == -1
-        mode_at_left = mode_at_boundary & (res_b.fl <= res_b.fm)
-        mode_at_right = mode_at_boundary & (res_b.fr < res_b.fm)
+        fl, fm, fr = res_b.bracket
+        mode_at_left = mode_at_boundary & (fl <= fm)
+        mode_at_right = mode_at_boundary & (fr < fm)
         mode[mode_at_left] = a[mode_at_left]
         mode[mode_at_right] = b[mode_at_right]
         return mode[()]
@@ -2538,8 +2431,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     @_dispatch
     def _logcdf2_dispatch(self, x, y, *, method=None, **params):
-        # dtype is complex if any x > y, else real
-        # Should revisit this logic.
         if self._overrides('_logcdf2_formula'):
             method = self._logcdf2_formula
         elif (self._overrides('_logcdf_formula')
@@ -2644,7 +2535,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     @_dispatch
     def _cdf2_dispatch(self, x, y, *, method=None, **params):
-        # Should revisit this logic.
         if self._overrides('_cdf2_formula'):
             method = self._cdf2_formula
         elif (self._overrides('_logcdf_formula')
@@ -2734,7 +2624,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._cdf_quadrature(x[mask], *params_mask)
+            out[mask] = self._cdf_quadrature(x[mask], **params_mask)
         return out[()]
 
     def _cdf_quadrature(self, x, **params):
@@ -2934,7 +2824,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._icdf_inversion(x[mask], *params_mask)
+            out[mask] = self._icdf_inversion(x[mask], **params_mask)
         return out[()]
 
     def _icdf_inversion(self, x, **params):
@@ -2992,7 +2882,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._iccdf_inversion(x[mask], *params_mask)
+            out[mask] = self._iccdf_inversion(x[mask], **params_mask)
         return out[()]
 
     def _iccdf_inversion(self, x, **params):
@@ -3026,8 +2916,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # See the note corresponding with the "Distribution Parameters" for more
     # information.
 
-    # TODO:
-    #  - should we accept a QRNG with `d != 1`?
     def sample(self, shape=(), *, method=None, rng=None):
         # needs output validation to ensure that developer returns correct
         # dtype and shape
@@ -3362,36 +3250,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
             moment_b = np.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
 
-    def _logmoment(self, order=1, *, logcenter=None, standardized=False):
-        # make this private until it is worked into moment
-        if logcenter is None or standardized is True:
-            logmean = self._logmoment_quad(self._one, -np.inf, **self._parameters)
-        else:
-            logmean = None
-
-        logcenter = logmean if logcenter is None else logcenter
-        res = self._logmoment_quad(order, logcenter, **self._parameters)
-        if standardized:
-            logvar = self._logmoment_quad(2, logmean, **self._parameters)
-            res = res - logvar * (order/2)
-        return res
-
-    def _logmoment_quad(self, order, logcenter, **params):
-        def logintegrand(x, order, logcenter, **params):
-            logpdf = self._logpxf_dispatch(x, **params)
-            return logpdf + order * _logexpxmexpy(np.log(x + 0j), logcenter)
-            ## if logx == logcenter, `_logexpxmexpy` returns (-inf + 0j)
-            ## multiplying by order produces (-inf + nan j) - bad
-            ## We're skipping logmoment tests, so we might don't need to fix
-            ## now, but if we ever do use run them, this might help:
-            # logx = np.log(x+0j)
-            # out = np.asarray(logpdf + order*_logexpxmexpy(logx, logcenter))
-            # i = (logx == logcenter)
-            # out[i] = logpdf[i]
-            # return out
-        return self._quadrature(logintegrand, args=(order, logcenter),
-                                params=params, log=True)
-
     ### L-Moments
 
     @_set_invalid_nan_property
@@ -3680,7 +3538,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # treat the parameters as "fixed" and the quantile/percentile arguments
     # as "variable". There are a lot of advantages to this structure, and I
     # don't think the fact that a few methods reverse the fixed and variable
-    # quantities should make us question that choice. It can still accomodate
+    # quantities should make us question that choice. It can still accommodate
     # these methods reasonably efficiently.
 
 
@@ -3772,41 +3630,92 @@ class DiscreteDistribution(UnivariateDistribution):
             "for continuous distributions.")
 
     def _solve_bounded_discrete(self, func, p, params, comp):
-        res = self._solve_bounded(func, p, params=params, xatol=0.9)
-        x = np.asarray(np.floor(res.xr))
+        # We're trying to solve one of these two problems:
+        # a) find the smallest integer x* within the support s.t. F(x*) >= p
+        # b) find the smallest integer x* within the support s.t. G(x*) = 1 - F(x*) <= p
+        # Our approach is to solve a continuous version of the problem that narrows the
+        # solution down to an integer x s.t. either x* = x or x* = x + 1. At the end,
+        # we'll choose between them.
 
-        # if _chandrupatla finds exact inverse, the bracket may not have been reduced
-        # enough for `np.floor(res.x)` to be the appropriate value of `x`.
-        mask = res.fun == 0
+        # First, solve func(x) == p where func is a continuous, monotone interpolant
+        # of either the monotone increasing F or monotone decreasing G.
+        res = self._solve_bounded(func, p, params=params, xatol=0.9)
+        # Here, `_solve_bounded` can terminate for one of three reasons:
+        # 1. `func(res.x) == p` (`fatol = 0` is satisfied),
+        # 2. `res.xl` and `res.xr` bracket the root and `|res.xr - res.xl| <= xatol`, or
+        # 3. There is no solution within the support.
+        # There are several possible strategies for using `res.xl`, `res.x`, and/or
+        # `res.xr` to find a solution to the original, discrete problem. Here is ours.
+
+        # Consider case 2a. Because F is an increasing function, we know
+        # that F(xr) >= p (and F(xl) <= p), so F(floor(xr) + 1) >= p.
+        # F(floor(xr)) *may* be >= p, but we can't know until we evaluate it.
+        # F(floor(xr) - 1) < p (strictly) because floor(xr) - 1 < xl and F decreases
+        # monotonically as the argument decreases. So we choose x = floor(xr), and
+        # later we'll choose between x* = x and x* = x + 1.
+        x = np.asarray(np.floor(res.bracket[-1]))
+        # This is also suitable for case 2b. Because G is a *decreasing* function, we
+        # know that G(xr) <= p (and G(xl) >= p), so G(floor(xr) + 1) <= p.
+        # G(floor(xr)) *may* be <= p, but we can't know until we evaluate it.
+        # G(floor(xr) - 1) > p (strictly) because floor(xr) - 1 < xl and G increases
+        # as the argument decreases. So we would still want to choose x = floor(xr), and
+        # later we'll choose between x* = x and x* = x + 1.
+
+        # Now we consider case 1a/b. In this case, `res.x` solved the equation
+        # *exactly*, so the algorithm may have terminated before the bracket is tight
+        # enough to rely on `res.xr`. If `res.x` happens to be integral, `res.x` is
+        # the solution to the discrete problem, and floor(res.x) == res.x, so
+        # floor(res.x) is the solution to the discrete problem. If not:
+        # a) F(floor(res.x)) < p (strictly) and F(floor(res.x) + 1) > p (strictly). So
+        #    floor(res.x) + 1 is the solution to the discrete problem.
+        # b) G(floor(res.x)) > p (strictly) and G(floor(res.x) + 1) < p (strictly). So
+        #    floor(res.x) + 1 is again the solution to the discrete problem.
+        # Either way, we can choose x = res.x, and at the end we'll choose between
+        # x* = x and x* = x + 1.
+        mask = res.f_x == 0
         x[mask] = np.floor(res.x[mask])
 
-        xmin, xmax = self._support(**params)
-        p, xmin, xmax = np.broadcast_arrays(p, xmin, xmax)
-        mask = comp(func(xmin, **params), p)
-        x[mask] = xmin[mask]
+        # For case 3, let xmin be the left endpoint of the support, and note that in
+        # general, F(xmin) > 0 and G(xmin) < 1. Therefore it is possible that:
+        # a) F(x) > p for all x in the support (e.g. because p ~ 0)
+        # a) G(x) < p for all x in the support (e.g. because p ~ 1)
+        # In these cases, `_solve_bounded` would fail to find a root of the continuous
+        # equation above, but the solution to the original, discrete problem is the left
+        # endpoint of the support.
+        # This case is handled before we get to this function; otherwise,
+        # `_solve_bounded` may spin its wheels for a long time in vain.
+
+        # Now, we choose between x* = x and x* = x + 1: if func(x) satisfies the
+        # comparison `comp` (>= for cdf, <= for ccdf), the solution is x* = x;
+        # otherwise the solution must be x* = x + 1.
+        f = func(x, **params)
+        x = np.where(comp(f, p), x, x + 1.0)
+        x[np.isnan(f)] = np.nan  # needed? why would func(x) be NaN within support?
 
         return x
 
     def _base_discrete_inversion(self, p, func, comp, /, **params):
-        # For discrete distributions, icdf(p) is defined as the minimum n
-        # such that cdf(n) >= p. iccdf(p) is defined as the minimum n such
-        # that ccdf(n) <= p, or equivalently as iccdf(p) = icdf(1 - p).
+        # For discrete distributions, icdf(p) is defined as the minimum integer x*
+        # within the support such that F(x*) >= p; iccdf(p) is the minimum integer x*
+        # within the support such that G(x*) <= p.
 
-        # First try to find where cdf(x) == p for the continuous extension of the
-        # cdf. res.xl and res.xr will be a bracket for this root. The parameter
-        # xatol in solve_bounded controls the bracket width. We thus know that
-        # know cdf(res.xr) >= p, cdf(res.xl) <= p, and |res.xr - res.xl| <= 0.9.
-        # This means the minimum integer n such that cdf(n) >= p is either floor(x)
-        # or floor(x) + 1.
-        x = self._solve_bounded_discrete(func, p, params=params, comp=comp)
-        # comp should be <= for ccdf, >= for cdf.
-        f = func(x, **params)
-        res = np.where(comp(f, p), x, x + 1.0)
-        # xr is a bracket endpoint, and will usually be a finite value even when
-        # the computed result should be nan. We need to explicitly handle this
-        # case.
-        res[np.isnan(f) | np.isnan(p)] = np.nan
-        return res[()]
+        # Identify where the solution is xmin.
+        # (See rationale in `_solve_bounded_discrete`.)
+        xmin, xmax = self._support(**params)
+        p, xmin, _ = np.broadcast_arrays(p, xmin, xmax)
+        mask = comp(func(xmin, **params), p)
+
+        # Use `apply_where` to perform the inversion only when necessary.
+        def f1(p, *args):
+            return self._solve_bounded_discrete(
+                func, p, params=dict(zip(params.keys(), args)), comp=comp)
+
+        x = xpx.apply_where(~mask, (p, *params.values()), f1, fill_value=xmin)
+
+        # x above may be a finite value even when p is NaN, so the returned value
+        # should be NaN. We need to handle this as a special case.
+        x[np.isnan(p)] = np.nan
+        return x[()]
 
     def _icdf_inversion(self, x, **params):
         return self._base_discrete_inversion(x, self._cdf_dispatch,
@@ -3949,7 +3858,6 @@ _distribution_names = {
 }
 
 
-# beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 @xp_capabilities(np_only=True)
 def make_distribution(dist):
     """Generate a `UnivariateDistribution` class from a compatible object.
@@ -4022,8 +3930,7 @@ def make_distribution(dist):
         support : dict or tuple
             A dictionary describing the support of the distribution or a tuple
             describing the endpoints of the support. This behaves identically to
-            the values of the parameters dict described above, except that the key
-            ``typical`` is ignored.
+            the values of the parameters dict described above.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -4351,11 +4258,13 @@ def _make_distribution_custom(dist):
             domain = _RealInterval(**domain_info)
             param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
-        parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    domain_info, _ = _get_domain_info(dist.support)
+        if parameters:
+            parameterizations.append(_Parameterization(*parameters))
+
+    domain_info, typical = _get_domain_info(dist.support)
     _x_support = _RealInterval(**domain_info)
-    _x_param = _RealParameter('x', domain=_x_support)
+    _x_param = _RealParameter('x', domain=_x_support, typical=typical)
     repr_str = dist.__class__.__name__
 
     class CustomDistribution(ContinuousDistribution):
@@ -4415,8 +4324,7 @@ def _make_distribution_custom(dist):
     return CustomDistribution
 
 
-# Rough sketch of how we might shift/scale distributions. The purpose of
-# making it a separate class is for
+# The purpose of making ShiftedScaledDistribution a separate class is for
 # a) simplicity of the ContinuousDistribution class and
 # b) avoiding the requirement that every distribution accept loc/scale.
 # The simplicity of ContinuousDistribution is important, because there are
@@ -4513,7 +4421,6 @@ class TransformedDistribution(ContinuousDistribution):
                 or super()._overrides(method_name))
 
     def reset_cache(self):
-        self._dist.reset_cache()
         super().reset_cache()
 
     def _update_parameters(self, *, validation_policy=None, **params):
@@ -4748,12 +4655,12 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return result
 
     # Here, we override all the `_dispatch` methods rather than the public
-    # methods or _function methods. Why not the public methods?
+    # methods or _formula methods. Why not the public methods?
     # If we were to override the public methods, then other
     # TransformedDistribution classes (which could transform a
     # ShiftedScaledDistribution) would need to call the public methods of
     # ShiftedScaledDistribution, which would run the input validation again.
-    # Why not the _function methods? For distributions that rely on the
+    # Why not the _formula methods? For distributions that rely on the
     # default implementation of methods (e.g. `quadrature`, `inversion`),
     # the implementation would "see" the location and scale like other
     # distribution parameters, so they could affect the accuracy of the
@@ -4807,7 +4714,6 @@ class ShiftedScaledDistribution(TransformedDistribution):
         pxf = self._dist._pxf_dispatch(x, *args, **params)
         return pxf / np.abs(scale)
 
-    # Sorry about the magic. This is just a draft to show the behavior.
     @_shift_scale_distribution_function
     def _logcdf_dispatch(self, x, *, method=None, **params):
         pass
@@ -4916,41 +4822,43 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
 
 class OrderStatisticDistribution(TransformedDistribution):
-    r"""Probability distribution of an order statistic
+    r"""Probability distribution of an order statistic.
 
     An instance of this class represents a random variable that follows the
-    distribution underlying the :math:`r^{\text{th}}` order statistic of a
+    distribution of the :math:`r^{\text{th}}` order statistic of a
     sample of :math:`n` observations of a random variable :math:`X`.
 
     Parameters
     ----------
     dist : `ContinuousDistribution`
-        The random variable :math:`X`
+        The random variable :math:`X`.
     n : array_like
-        The (integer) sample size :math:`n`
+        The (positive integer) sample size :math:`n`.
     r : array_like
-        The (integer) rank of the order statistic :math:`r`
+        The (positive integer) rank of the order statistic :math:`r`,
+        satisfying :math:`1 \leq r \leq n`.
 
 
     Notes
     -----
     If we make :math:`n` observations of a continuous random variable
     :math:`X` and sort them in increasing order
-    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
-    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`, then :math:`X_{(r)}`
+    is known as the :math:`r^{\text{th}}` order statistic.
 
-    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
-    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
-    math:`X_{(r)}` is given by:
+    If the PDF, CDF, and CCDF of :math:`X` are denoted by :math:`f`,
+    :math:`F`, and :math:`G = 1 - F`, respectively, then the PDF of
+    :math:`X_{(r)}` is given by:
 
     .. math::
 
-        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} G(x)^{n - r}
 
-    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
-    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
-    a standard uniform random variable, and that the order statistics of
-    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+    The CDF and other methods of the distribution of :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is a
+    standard uniform random variable, together with the fact that the order statistics
+    of i.i.d. uniform random variables follow a beta distribution
+    :math:`B(r, n - r + 1)`.
 
     References
     ----------
@@ -4959,7 +4867,7 @@ class OrderStatisticDistribution(TransformedDistribution):
     Examples
     --------
     Suppose we are interested in order statistics of samples of size five drawn
-    from the standard normal distribution. Plot the PDF underlying the fourth
+    from the standard normal distribution. Plot the PDF of the fourth
     order statistic and compare with a normalized histogram from simulation.
 
     >>> import numpy as np
@@ -4969,22 +4877,20 @@ class OrderStatisticDistribution(TransformedDistribution):
     >>>
     >>> X = stats.Normal()
     >>> data = X.sample(shape=(10000, 5))
-    >>> ranks = np.sort(data, axis=1)
+    >>> sorted_data = np.sort(data, axis=1)
     >>> Y = OrderStatisticDistribution(X, r=4, n=5)
     >>>
     >>> ax = plt.gca()
     >>> Y.plot(ax=ax)
-    >>> ax.hist(ranks[:, 3], density=True, bins=30)
+    >>> ax.hist(sorted_data[:, 3], density=True, bins=30)
     >>> plt.show()
 
     """
 
-    # These can be restricted to _IntegerInterval/_IntegerParameter in a separate
-    # PR if desired.
-    _r_domain = _RealInterval(endpoints=(1, 'n'), inclusive=(True, True))
+    _r_domain = _IntegerInterval(endpoints=(1, 'n'), inclusive=(True, True))
     _r_param = _RealParameter('r', domain=_r_domain, typical=(1, 2))
 
-    _n_domain = _RealInterval(endpoints=(1, np.inf), inclusive=(True, True))
+    _n_domain = _IntegerInterval(endpoints=(1, np.inf), inclusive=(True, True))
     _n_param = _RealParameter('n', domain=_n_domain, typical=(1, 4))
 
     _r_domain.define_parameters(_n_param)
@@ -5060,18 +4966,19 @@ class OrderStatisticDistribution(TransformedDistribution):
 def order_statistic(X, /, *, r, n):
     r"""Probability distribution of an order statistic.
 
-    Returns a random variable that follows the distribution underlying the
+    Returns a random variable that follows the distribution of the
     :math:`r^{\text{th}}` order statistic of a sample of :math:`n`
     observations of a random variable :math:`X`.
 
     Parameters
     ----------
     X : `ContinuousDistribution`
-        The random variable :math:`X`
+        The random variable :math:`X`.
     r : array_like
-        The (positive integer) rank of the order statistic :math:`r`
+        The (positive integer) rank of the order statistic :math:`r`,
+        satisfying ``1 <= r <= n``.
     n : array_like
-        The (positive integer) sample size :math:`n`
+        The (positive integer) sample size :math:`n`.
 
     Returns
     -------
@@ -5083,21 +4990,22 @@ def order_statistic(X, /, *, r, n):
     -----
     If we make :math:`n` observations of a continuous random variable
     :math:`X` and sort them in increasing order
-    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
-    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`, then :math:`X_{(r)}`
+    is known as the :math:`r^{\text{th}}` order statistic.
 
-    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
-    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
-    math:`X_{(r)}` is given by:
+    If the PDF, CDF, and CCDF of :math:`X` are denoted by :math:`f`,
+    :math:`F`, and :math:`G = 1 - F`, respectively, then the PDF of
+    :math:`X_{(r)}` is given by:
 
     .. math::
 
-        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} G(x)^{n - r}
 
-    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
-    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
-    a standard uniform random variable, and that the order statistics of
-    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+    The CDF and other methods of the distribution of :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is a
+    standard uniform random variable, together with the fact that the order statistics
+    of i.i.d. uniform random variables follow a beta distribution
+    :math:`B(r, n - r + 1)`.
 
     References
     ----------
@@ -5106,7 +5014,7 @@ def order_statistic(X, /, *, r, n):
     Examples
     --------
     Suppose we are interested in order statistics of samples of size five drawn
-    from the standard normal distribution. Plot the PDF underlying each
+    from the standard normal distribution. Plot the PDF of each
     order statistic and compare with a normalized histogram from simulation.
 
     >>> import numpy as np
@@ -5115,13 +5023,13 @@ def order_statistic(X, /, *, r, n):
     >>>
     >>> X = stats.Normal()
     >>> data = X.sample(shape=(10000, 5))
-    >>> sorted = np.sort(data, axis=1)
+    >>> sorted_data = np.sort(data, axis=1)
     >>> Y = stats.order_statistic(X, r=[1, 2, 3, 4, 5], n=5)
     >>>
     >>> ax = plt.gca()
     >>> colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     >>> for i in range(5):
-    ...     y = sorted[:, i]
+    ...     y = sorted_data[:, i]
     ...     ax.hist(y, density=True, bins=30, alpha=0.1, color=colors[i])
     >>> Y.plot(ax=ax)
     >>> plt.show()
@@ -5339,8 +5247,8 @@ class Mixture(_ProbabilityDistribution):
         self._raise_if_method(method)
         a, b = self.support()
         def f(x): return -self.pdf(x)
-        res = _bracket_minimum(f, 1., xmin=a, xmax=b)
-        res = _chandrupatla_minimize(f, res.xl, res.xm, res.xr)
+        res = elementwise.bracket_minimum(f, 1., xmin=a, xmax=b)
+        res = elementwise.find_minimum(f, res.bracket)
         return res.x
 
     def median(self, *, method=None):
@@ -5442,8 +5350,9 @@ class Mixture(_ProbabilityDistribution):
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
         xl0, xr0 = _guess_bracket(xmin, xmax)
-        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
-        return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
+        res = elementwise.bracket_root(f, xl0=xl0, xr0=xr0,
+                                       xmin=xmin, xmax=xmax, args=(p,))
+        return elementwise.find_root(f, res.bracket, args=(p,)).x
 
     def icdf(self, p, /, *, method=None):
         self._raise_if_method(method)

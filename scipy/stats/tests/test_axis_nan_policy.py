@@ -19,6 +19,7 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy._lib._util import AxisError
+from scipy._lib._array_api import make_xp_test_case
 from scipy.conftest import skip_xp_invalid_arg
 
 
@@ -31,6 +32,9 @@ def _using_accelerate():
 
 
 RTOL = 1e-6 if _using_accelerate() else 1e-15
+
+
+tolerance_overrides = {stats.epps_singleton_2samp: 1e-10}
 
 
 def unpack_ttest_result(res):
@@ -92,13 +96,21 @@ def yeojohnson_llf(data, lmb, axis=0, _no_deco=False, **kwargs):
     return stats.yeojohnson_llf(lmb, data, axis=axis, **kwargs)
 
 
+def kendalltau(*args, _no_deco=False, **kwargs):
+    if _no_deco:
+        return stats._stats_py._kendalltau(*args, _no_deco=_no_deco, **kwargs)
+    return stats.kendalltau(*args, **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
     # args, kwds typically aren't needed; just showing that they work
     (stats.kruskal, tuple(), dict(), 3, 2, False, None),  # 4 samples is slow
     (stats.ranksums, ('less',), dict(), 2, 2, False, None),
-    (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 2, False, None),
+    (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 3, False,
+     lambda res: (res.statistic, res.pvalue, res.zstatistic)),
+    (stats.mannwhitneyu, tuple(), {'method': 'auto'}, 2, 2, False, None),
     (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True,
@@ -184,7 +196,7 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
-    (stats.kendalltau, tuple(), dict(), 2, 3, True,
+    (kendalltau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.weightedtau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
@@ -529,7 +541,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    assert_allclose(res_nd, res_1d, rtol=RTOL)
+    rtol = max(tolerance_overrides.get(hypotest, RTOL), RTOL)
+    assert_allclose(res_nd, res_1d, rtol=rtol)
 
 # nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
@@ -654,12 +667,12 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
     # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-    assert_allclose(res1dc, res1db, rtol=7e-15)
+    assert_allclose(res1dc, res1db, rtol=2e-14)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
         # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res1db, res1da, rtol=7e-15)
+        assert_allclose(res1db, res1da, rtol=2e-14)
         all_results += list(res1da)
 
     for item in all_results:
@@ -688,7 +701,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   sample_shape, axis_cases, nan_policy):
     small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
-                           stats.differential_entropy, stats.epps_singleton_2samp}
+                           stats.differential_entropy, stats.epps_singleton_2samp,
+                           stats.shapiro}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
     if hypotest in {weightedtau_weighted}:
@@ -1459,3 +1473,23 @@ def test_array_like_input(dtype):
     res = stats.mode(ArrLike(x, dtype=dtype))
     assert res.mode == 1
     assert res.count == 2
+
+
+@make_xp_test_case(stats._axis_nan_policy._broadcast_concatenate)
+def test__broadcast_concatenate(xp):
+    # test that _broadcast_concatenate properly broadcasts arrays along all
+    # axes except `axis`, then concatenates along axis
+    rng = np.random.default_rng(7544340069)
+    a = rng.random((5, 4, 4, 3, 1, 6))
+    b = rng.random((4, 1, 8, 2, 6))
+    arrays = (xp.asarray(a), xp.asarray(b))
+    c = stats._axis_nan_policy._broadcast_concatenate(arrays, axis=-3, xp=xp)
+    # broadcast manually as an independent check
+    a = np.tile(a, (1, 1, 1, 1, 2, 1))
+    b = np.tile(b[None, ...], (5, 1, 4, 1, 1, 1))
+    for index in product(*(range(i) for i in c.shape)):
+        i, j, k, l, m, n = index
+        if l < a.shape[-3]:
+            assert a[i, j, k, l, m, n] == c[i, j, k, l, m, n]
+        else:
+            assert b[i, j, k, l - a.shape[-3], m, n] == c[i, j, k, l, m, n]

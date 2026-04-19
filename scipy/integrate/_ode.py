@@ -87,10 +87,13 @@ import warnings
 import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag
 
+from scipy.linalg.blas import HAS_ILP64
+
 from . import _vode
 from . import _dop
 from ._odepack import lsoda as lsoda_step
 
+_iwork_dtype = np.int64 if HAS_ILP64 else np.int32
 
 # ------------------------------------------------------------------------------
 # User interface
@@ -955,7 +958,7 @@ class vode(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), dtype=np.int32)
+        iwork = zeros((liw,), dtype=_iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1080,7 +1083,7 @@ class zvode(vode):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), np.int32)
+        iwork = zeros((liw,), _iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1333,7 +1336,7 @@ class lsoda(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), dtype=np.int32)
+        iwork = zeros((liw,), dtype=_iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:

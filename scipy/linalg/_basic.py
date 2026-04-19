@@ -5,18 +5,17 @@
 #              and Jake Vanderplas, August 2012
 
 import warnings
-from itertools import product
 import numpy as np
 from scipy._lib._util import _apply_over_batch
 from .lapack import (
-    get_lapack_funcs, _normalize_lapack_dtype,
+    get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
     _ensure_aligned_and_native, _ensure_dtype_cdsz,
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import find_det_from_lu
+from ._batched_linalg import _det as _linalg_det
 from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -157,6 +156,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     array([ True,  True,  True], dtype=bool)
 
     Batches of matrices are supported, with and without structure detection:
+    (See :ref:`linalg_batch` for further details of handling batched inputs.)
 
     >>> a = np.arange(12).reshape(3, 2, 2)   # a batch of 3 2x2 matrices
     >>> A = a.transpose(0, 2, 1) @ a    # A is a batch of 3 positive definite matrices
@@ -169,6 +169,17 @@ def solve(a, b, lower=False, overwrite_a=False,
     array([[ 1. , -0.5],
            [ 3. , -2.5],
            [ 5. , -4.5]])
+
+    Note that the structure detection runs per-slice: in the example above, each of the
+    two slices will be independently discovered as being positive definite. Setting an
+    explicit ``assume_a`` argument bypasses structure detection and uses the provided
+    value without checking:
+
+    >>> a = np.stack((np.eye(2), np.arange(1, 5).reshape(2, 2)))
+    >>> b = [1, 1]
+    >>> solve(a, b, assume_a="diagonal")
+    array([[1.  , 1.  ],
+           [1.  , 0.25]])   # the second row is incorrect
     """
     # keep the numbers in sync with C
     structure = {
@@ -233,9 +244,15 @@ def solve(a, b, lower=False, overwrite_a=False,
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
 
+    # XXX a1.ndim > 2 ; b1.ndim > 2
+    # XXX can do something if a1 C ordered & transposed==True ?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
+    overwrite_b = overwrite_b and (b1.ndim <= 2) and (b1.flags["F_CONTIGUOUS"])
+
     # heavy lifting
-    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed,
-                                        overwrite_a, overwrite_b)
+    x, err_lst = _batched_linalg._solve(
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
@@ -976,9 +993,9 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     Likewise, an explicit `assume_a='diagonal'` means that off-diagonal elements
     are not referenced.
 
-    Array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+    The `a` array argument may have additional "batch" dimensions prepended to the core
+    shape. In this case, the array is treated as a batch of lower-dimensional slices;
+    see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -1015,10 +1032,6 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     Notes
     -----
 
-    The input array ``a`` may represent a single matrix or a collection (a.k.a.
-    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
-    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
-
     This routine checks the condition number of the `a` matrix and emits a
     `LinAlgWarning` for ill-conditioned inputs.
 
@@ -1030,9 +1043,34 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     >>> linalg.inv(a)
     array([[-2. ,  1. ],
            [ 1.5, -0.5]])
-    >>> np.dot(a, linalg.inv(a))
+    >>> a @ linalg.inv(a)
     array([[ 1.,  0.],
            [ 0.,  1.]])
+
+    The input array ``a`` may represent a single matrix or a collection (a.k.a.
+    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
+    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
+    See :ref:`linalg_batch` for further details.
+    To illustrate:
+
+    >>> a = np.stack((np.eye(2), [[1, 2], [3, 4]]))
+    >>> linalg.inv(a)
+    array([[[ 1. ,  0. ],
+            [ 0. ,  1. ]],
+           [[-2. ,  1. ],
+            [ 1.5, -0.5]]])
+
+    Note that the structure detection runs per-slice: in the example above, each of the
+    two slices will be independently discovered as being diagonal. Setting an explicit
+    ``assume_a`` argument will bypass structure detection and use the provided value
+    without checking:
+
+    >>> a = np.stack((np.eye(2), [[1, 2], [3, 4]]))
+    >>> linalg.inv(a, assume_a="diagonal")
+    array([[[1.  , 0.  ],
+            [0.  , 1.  ]],
+           [[1.  , 2.  ],   # off-diagonal elements are incorrect
+            [3.  , 0.25]]])
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
 
@@ -1049,6 +1087,9 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+
+    # XXX can relax a1.ndim == 2?
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
     # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
@@ -1148,7 +1189,7 @@ def det(a, overwrite_a=False, check_finite=True):
                          f' but received shape {a1.shape}.')
 
     # Also check if dtype is LAPACK compatible
-    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _normalize_lapack_dtype1(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
@@ -1168,33 +1209,18 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
-    # Then check overwrite permission
-    if not _datacopied(a1, a):  # "a"  still alive through "a1"
-        if not overwrite_a:
-            # Data belongs to "a" so make a copy
-            a1 = a1.copy(order='C')
-        #  else: Do nothing we'll use "a" if possible
-    # else:  a1 has its own data thus free to scratch
+    det = _linalg_det(a1, overwrite_a)
 
-    # Then layout checks, might happen that overwrite is allowed but original
-    # array was read-only or non-C-contiguous.
-    if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
-        a1 = a1.copy(order='C')
-
-    if a1.ndim == 2:
-        det = find_det_from_lu(a1)
-        # Convert float, complex to NumPy scalars
-        return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
-
-    # loop over the stacked array, and avoid overflows for single precision
+    # Promote single precision to double to prevent overflows
     # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    dtype_char = a1.dtype.char
-    if dtype_char in 'fF':
-        dtype_char = 'd' if dtype_char.islower() else 'D'
+    if det.dtype.char == 'f':
+        det = det.astype(np.float64)
+    elif det.dtype.char == 'F':
+        det = det.astype(np.complex128)
 
-    det = np.empty(a1.shape[:-2], dtype=dtype_char)
-    for ind in product(*[range(x) for x in a1.shape[:-2]]):
-        det[ind] = find_det_from_lu(a1[ind])
+    # Return scalar for 2D input
+    if det.ndim == 0:
+        return det[()]
     return det
 
 
@@ -1240,8 +1266,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     x : (N,) or (..., N, K) ndarray
         Least-squares solution.
     residues : (K,) ndarray or float
-        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` (returns a
-        scalar if ``b`` is 1-D). Otherwise a (0,)-shaped array is returned.
+        If `lapack_driver` is ``'gelss'`` or ``'gelsd'`` this contains the square of
+        the 2-norm for each column in ``b - a x`` if ``M > N`` and ``rank == N``. If
+        the rank condition is violated, ``NaN`` is returned instead. If `lapack_driver`
+        if ``'gelsy'`` or ``M <= N`` a (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
     s : (min(M, N),) ndarray or None
@@ -1263,6 +1291,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     Notes
     -----
     When ``'gelsy'`` is used as a driver, `s` is always ``None``.
+
+    Array arguments of this function, `a` and `b`, may have additional "batch"
+    dimensions prepended to the core shape. In this case, the array is treated as a
+    batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Examples
     --------
@@ -1309,6 +1341,28 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     >>> plt.grid(alpha=0.25)
     >>> plt.show()
 
+    As an illustration of the "batching" feature (see :ref:`linalg_batch` for details),
+    suppose that we want to compare least-squares fits of the given data with two
+    models: a quadratic model above, and one with an additional linear term,
+    ``y = a + b*x**2 + c*x``.
+    To this end, we construct the design matrix for ``y = a + b*x**2 + c*x``, and
+    extend ``M`` to have three columns:
+
+    >>> M1 = np.hstack((M, np.zeros((7, 1))))
+    >>> M2 = x[:, np.newaxis] ** [0, 2, 1]
+    >>> MM = np.stack((M1, M2))
+    >>> x, res, rnk, s = lstsq(MM, y)
+    >>> x
+    array([[0.20925829, 0.12013861, 0.        ],
+           [0.0578403 , 0.11262261, 0.07701453]])
+    >>> rnk
+    array([2, 3])
+
+    Note that the rows of the ``x`` solution are equivalent to using ``M1`` and ``M2``,
+    respectively.
+    In a similar vein, to simulate an effect of random noise on ``y``, you can turn
+    it into an array with multiple columns, where each column corresponds to a specific
+    realization of the noise.
     """
 
     driver = lapack_driver
@@ -1354,34 +1408,46 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
     b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
+    overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
+    overwrite_b = (
+        overwrite_b and (b1.ndim == 2) and b1.flags["F_CONTIGUOUS"] and m >= n
+    ) # Only overwrite when overdetermined system, otherwise ldb will be > m
+
     if cond is None:
         cond = np.finfo(a1.dtype).eps
     else:
         cond = float(cond)
 
-    x, rank, S, err_lst = _batched_linalg._lstsq(a1, b1, cond, driver)
+    x, rank, S, err_lst = _batched_linalg._lstsq(
+        a1, b1, cond, driver, overwrite_a, overwrite_b
+    )
 
     if err_lst:
         _format_emit_errors_warnings(err_lst)
 
-    residuals = np.asarray([], dtype=x.dtype)
-    if m > n:
-        # can get the residuals from the GELSS/GELSD output instead, if _really_ wanted
-        res = b1 - a1 @ x
-        residuals = np.sum(res * res.conj(), axis=len(batch_shape))
+    x1 = x[..., :n, :]
+    if m > n and lapack_driver != "gelsy":
+        residuals = np.sum(x[..., n:, :] * x[..., n:, :].conj(), axis=-2)
+
+        # LAPACK makes no promises about residuals for non full-column rank, set to NaN
+        residuals[rank < n, :] = np.nan
+    else:
+        residuals = np.zeros(batch_shape + (0,), dtype=x.dtype)
 
     if b_is_1D:
-        x = x[..., 0]
-        if residuals.size > 0:
+        x1 = x1[..., 0]
+        if residuals.size > 0 and lapack_driver != "gelsy":
             residuals = residuals[..., 0]
 
-    return x, residuals, rank, S
+    if m <= n: # residuals are empty for under- and exactly determined problems
+        residuals = np.zeros(batch_shape + (0,), dtype=residuals.dtype)
+
+    return x1, residuals, rank, S
 
 
 lstsq.default_lapack_driver = 'gelsd'
 
 
-@_apply_over_batch(('a', 2))
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1395,9 +1461,13 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     significance cut-off value is determined by ``atol + rtol * s``. Any
     singular value below this value is assumed insignificant.
 
+    The `a` array argument may have additional "batch" dimensions prepended to the core
+    shape. In this case, the array is treated as a batch of lower-dimensional slices;
+    see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Matrix to be pseudo-inverted.
     atol : float, optional
         Absolute threshold term, default value is 0.
@@ -1419,7 +1489,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
 
     Returns
     -------
-    B : (N, M) ndarray
+    B : (..., N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix. Returned if `return_rank` is True.
@@ -1480,24 +1550,35 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     >>> np.allclose((B @ A).conj().T, B @ A)  # Condition 4
     True
 
+    If the input array has more than two dimensions, it is interpreted as a batch of
+    two-dimensional slices:
+
+    >>> a = np.stack((np.zeros((3, 3)), np.eye(3)))
+    >>> p, ranks = linalg.pinv(a, return_rank=True)
+    >>> p.shape
+    (2, 3, 3)
+    >>> ranks
+    array([0, 3])
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
-    t = u.dtype.char.lower()
-    maxS = np.max(s, initial=0.)
+    u, s, vh = _decomp_svd.svd(a.conj(), full_matrices=False, check_finite=False)
 
     atol = 0. if atol is None else atol
-    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
-
+    rtol = max(a.shape[-2:]) * np.finfo(u.dtype).eps if (rtol is None) else rtol
     if (atol < 0.) or (rtol < 0.):
         raise ValueError("atol and rtol values must be positive.")
 
+    maxS = np.max(s, axis=-1, initial=0., keepdims=True)
     val = atol + maxS * rtol
-    rank = np.sum(s > val)
 
-    u = u[:, :rank]
-    u /= s[:rank]
-    B = (u @ vh[:rank]).conj().T
+    large = s > val
+    rank = np.sum(large, axis=-1)
+
+    # zero out small singular values, 1/s large singular values
+    np.divide(1, s, where=large, out=s)
+    s[~large] = 0
+
+    B = vh.mT @ (s[..., None] * u.mT)
 
     if return_rank:
         return B, rank

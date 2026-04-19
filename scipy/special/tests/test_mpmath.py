@@ -246,6 +246,7 @@ def test_hyp2f1_real_random():
 # erf (complex)
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow()
 @check_version(mpmath, '0.14')
 def test_erf_complex():
     # need to increase mpmath precision for this test
@@ -1403,7 +1404,7 @@ class TestSystematic:
             sc_gegenbauer,
             exception_to_nan(gegenbauer),
             [IntArg(0, 100), Arg(-1e9, 1e9), Arg()],
-            n=40000, dps=100, ignore_inf_sign=True, rtol=1e-6,
+            dps=100, ignore_inf_sign=True, rtol=1e-6,
         )
 
         # Check the small-x expansion

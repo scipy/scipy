@@ -5,7 +5,8 @@
  * via its hardcoded F_FUNC define.
  *
  * For ILP64 variants, we need a more flexible naming scheme, to potentially include
- * the _64 or 64_ suffixes. This is what the `BLAS_FUNC` macro from `npy_cblas.h` does.
+ * the _64 or 64_ suffixes. This is what the `BLAS_FUNC` macro from
+ * `scipy_blas_defines.h` does.
  *
  * We therefore inject the define into the f2py-generated sources.
  *
@@ -44,19 +45,41 @@
 #undef F_FUNC
 #endif
 
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #define F_FUNC(f, F) BLAS_FUNC(f)
 
-// https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/Missing-cspr-64-symbol-in-ILP64-MKL/td-p/1703471
-#ifdef FIX_MKL_2025_ILP64_MISSING_SYMBOL
-#define cspr_64_ cspr_64
-#define sgetc2_64_ sgetc2_64
-#define dgetc2_64_ dgetc2_64
-#define cgetc2_64_ cgetc2_64
-#define zgetc2_64_ zgetc2_64
-#define slasd4_64_ slasd4_64
-#define dlasd4_64_ dlasd4_64
+#include "_mkl_ilp64_fixes.h"
+
+/*
+ * Define F_INT to match the type that the f2cmap selects for `integer`:
+ * prefer `long` if it's 64-bit (LP64: Linux, macOS), fall back to
+ * `long long` (LLP64: Windows).  This avoids pointer-type mismatch
+ * warnings between f2py-generated local variables and F_INT* prototypes.
+ *
+ * Note that the below looks a little awkward, that's because of f2py limitations.
+ * We can't simply add `int64_t` in the f2cmap, because that mapping mechanism
+ * only accepts a given set of types and int64_t isn't part of that set.
+ * The `abs` redefinition then follows from the F_INT one.
+ *
+ * Note that this code will go away once we can free ourselves of f2py
+ * completely (which is planned).
+ */
+#include <limits.h>
+#if LONG_MAX >= 0x7FFFFFFFFFFFFFFF
+#define F_INT long
+#else
+#define F_INT long long
 #endif
 
-#define F_INT npy_int64
+/*
+ * f2py translates abs() from pyf expressions directly into C abs(),
+ * which takes int. With ILP64, F_INT is long or long long, so we
+ * need the matching absolute-value function to avoid truncation.
+ */
+#undef abs
+#if LONG_MAX >= 0x7FFFFFFFFFFFFFFF
+#define abs labs
+#else
+#define abs llabs
+#endif
 

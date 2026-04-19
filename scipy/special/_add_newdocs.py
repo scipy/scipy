@@ -2146,6 +2146,19 @@ add_newdoc("entr",
            Cambridge University Press, 2004.
            :doi:`10.1017/CBO9780511804441`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import entr
+
+    Calculate the entropy (in nats) of a 3-outcome probability distribution
+
+    >>> p = np.array([0.2, 0.5, 0.3])
+    >>> entr(p)
+    array([0.32188758, 0.34657359, 0.36119184])
+    >>> entr(p).sum()
+    1.0296530140645737
+
     """)
 
 add_newdoc(
@@ -2230,29 +2243,38 @@ add_newdoc(
 
     Computes the inverse of the complementary error function.
 
-    In the complex domain, there is no unique complex number w satisfying
-    erfc(w)=z. This indicates a true inverse function would be multivalued.
-    When the domain restricts to the real, 0 < x < 2, there is a unique real
-    number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+    In the complex domain, there is no unique complex number :math:`w` satisfying
+    :math:`\\operatorname{erfc}(w) = z`. This indicates a true inverse function
+    would be multivalued.
+    When the domain restricts to the real interval :math:`0 < x < 2`, there is
+    a unique real number satisfying
 
-    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+    .. math::
+
+        \\operatorname{erfc}(\\operatorname{erfcinv}(x)) = x
+
+    It is related to the inverse of the error function by
+
+    .. math::
+
+        \\operatorname{erfcinv}(1 - x) = \\operatorname{erfinv}(x)
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate. Domain: [0, 2]
+        Argument at which to evaluate. Domain: :math:`[0, 2]`
     out : ndarray, optional
         Optional output array for the function values
 
     Returns
     -------
     erfcinv : scalar or ndarray
-        The inverse of erfc of y, element-wise
+        The inverse of :math:`\\operatorname{erfc}` of :math:`y`, element-wise
 
     See Also
     --------
-    erf : Error function of a complex argument
-    erfc : Complementary error function, ``1 - erf(x)``
+    erf : Error function
+    erfc : Complementary error function
     erfinv : Inverse of the error function
 
     Examples
@@ -2294,7 +2316,7 @@ add_newdoc("eval_jacobi",
     .. math::
 
         P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2)
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - x)/2)
 
     where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree
@@ -2307,18 +2329,18 @@ add_newdoc("eval_jacobi",
         determined via the relation to the Gauss hypergeometric
         function.
     alpha : array_like
-        Parameter
+        Parameter.
     beta : array_like
-        Parameter
+        Parameter.
     x : array_like
-        Points at which to evaluate the polynomial
+        Points at which to evaluate the polynomial.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     P : scalar or ndarray
-        Values of the Jacobi polynomial
+        Values of the Jacobi polynomial.
 
     See Also
     --------
@@ -2390,17 +2412,18 @@ add_newdoc("eval_gegenbauer",
     r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
-    Evaluate Gegenbauer polynomial at a point.
+    Evaluate Gegenbauer (ultraspherical) polynomial at a point.
 
     The Gegenbauer polynomials can be defined via the Gauss
     hypergeometric function :math:`{}_2F_1` as
 
     .. math::
 
-        C_n^{(\alpha)} = \frac{(2\alpha)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
+        C_n^{(\alpha)}(x) = \frac{(2\alpha)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - x)/2).
 
-    When :math:`n` is an integer the result is a polynomial of degree
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
     :math:`n`. See 22.5.46 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
@@ -2410,16 +2433,16 @@ add_newdoc("eval_gegenbauer",
         determined via the relation to the Gauss hypergeometric
         function.
     alpha : array_like
-        Parameter
+        Parameter.
     x : array_like
-        Points at which to evaluate the Gegenbauer polynomial
+        Points at which to evaluate the Gegenbauer polynomial.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     C : scalar or ndarray
-        Values of the Gegenbauer polynomial
+        Values of the Gegenbauer polynomial.
 
     See Also
     --------
@@ -5192,30 +5215,11 @@ add_newdoc("nbdtrik",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
-
-    Formula 26.5.26 of [2]_ or [3]_,
-
-    .. math::
-        \sum_{j=k + 1}^\infty {{n + j - 1}
-        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
-
-    is used to reduce calculation of the cumulative distribution function to
-    that of a regularized incomplete beta :math:`I`.
-
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `k`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [3] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.E24
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -5299,7 +5303,7 @@ add_newdoc("nbdtrin",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     Formula 26.5.26 of [2]_ or [3]_,
 
@@ -5315,9 +5319,7 @@ add_newdoc("nbdtrin",
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -5339,7 +5341,7 @@ add_newdoc("nbdtrin",
     point accuracy.
 
     >>> nbdtrin(k, cdf_value, p)
-    1.999999999998137
+    2.0
     """)
 
 add_newdoc("ncfdtr",
@@ -6006,36 +6008,36 @@ add_newdoc("nrdtrisd",
 
 add_newdoc("ndtri",
     """
-    ndtri(y, out=None)
+    ndtri(p, out=None)
 
-    Inverse of `ndtr` vs x.
+    Inverse of `ndtr`.
 
-    Returns the argument x for which the area under the standard normal
-    probability density function (integrated from minus infinity to `x`)
-    is equal to y.
+    Returns the quantile `x` such that the cumulative distribution function of the
+    standard normal distribution evaluated at `x` equals `p`, that is, ``ndtr(x) == p``.
 
     Parameters
     ----------
     p : array_like
-        Probability
+        Probability values.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
     x : scalar or ndarray
-        Value of x such that ``ndtr(x) == p``.
+        Quantile(s) corresponding to the probabilitie(s) in `p`.
 
     See Also
     --------
-    ndtr : Standard normal cumulative probability distribution
+    ndtr : Standard normal cumulative distribution function
     ndtri_exp : Inverse of log_ndtr
 
     Examples
     --------
-    `ndtri` is the percentile function of the standard normal distribution.
-    This means it returns the inverse of the cumulative density `ndtr`. First,
-    let us compute a cumulative density value.
+    `ndtri` is the percentile (quantile) function of the standard normal distribution,
+    i.e., the inverse of the cumulative distribution function `ndtr`.
+
+    First, compute a cumulative distribution value:
 
     >>> import numpy as np
     >>> from scipy.special import ndtri, ndtr
@@ -6043,18 +6045,17 @@ add_newdoc("ndtri",
     >>> cdf_val
     0.9772498680518208
 
-    Verify that `ndtri` yields the original value for `x` up to floating point
-    errors.
+    Verify that `ndtri` yields the original value for `x` up to floating point errors.
 
     >>> ndtri(cdf_val)
     2.0000000000000004
 
-    Plot the function. For that purpose, we provide a NumPy array as argument.
+    Plot the percentile function over a range of probabilities.
 
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0.01, 1, 200)
+    >>> p = np.linspace(1e-3, 1 - 1e-3, 201)
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, ndtri(x))
+    >>> ax.plot(p, ndtri(p))
     >>> ax.set_title("Standard normal percentile function")
     >>> plt.show()
     """)

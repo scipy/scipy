@@ -6,10 +6,12 @@
 #include <vector>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
 
+
+namespace sp_linalg {
 
 // Dense array inversion with getrf, gecon and getri
 template<typename T>
@@ -17,7 +19,7 @@ void invert_slice_general(
     CBLAS_INT N, T *data, CBLAS_INT *ipiv, void *irwork, T *work, CBLAS_INT lwork,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     char norm = '1';
@@ -33,7 +35,7 @@ void invert_slice_general(
 
         status.rcond = (double)rcond;
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, invert
             call_getri(&N, data, &N, ipiv, work, &lwork, &info);
@@ -55,7 +57,7 @@ void invert_slice_cholesky(
     char uplo, CBLAS_INT N, T *data, T* work, void *irwork,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
@@ -71,7 +73,7 @@ void invert_slice_cholesky(
 
         if (info >= 0) {
             status.rcond = (double)rcond;
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, invert
             call_potri(&uplo, &N, data, &N, &info);
@@ -91,7 +93,7 @@ void invert_slice_sym_herm(
     bool is_symm_not_herm, 
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     real_type rcond;
@@ -114,7 +116,7 @@ void invert_slice_sym_herm(
 
         if (info >= 0) {
             status.rcond = (double)rcond;
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, invert
             if (is_symm_not_herm) {
@@ -138,7 +140,7 @@ void invert_slice_triangular(
     char uplo, char diag, CBLAS_INT N, T *data, T *work, void *irwork,
     SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
+    using real_type = typename detail::type_traits<T>::real_type;
 
     CBLAS_INT info;
     char norm = '1';
@@ -152,7 +154,7 @@ void invert_slice_triangular(
 
         call_trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
         if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
             status.rcond = (double)rcond;
         }
     }
@@ -164,8 +166,8 @@ template<typename T>
 inline void invert_slice_diagonal(
     CBLAS_INT N, T *data, SliceStatus& status
 ) {
-    using real_type = typename type_traits<T>::real_type;
-    using value_type = typename type_traits<T>::value_type;
+    using real_type = typename detail::type_traits<T>::real_type;
+    using value_type = typename detail::type_traits<T>::value_type;
     value_type *pdata = reinterpret_cast<value_type *>(data);
 
     value_type zero(0.), one(1.);
@@ -189,7 +191,7 @@ inline void invert_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ numeric_limits<real_type>::eps;
+    status.is_ill_conditioned = maxa * maxinva > 1./ detail::numeric_limits<real_type>::eps;
     status.rcond = maxa * maxinva;
 }
 
@@ -198,7 +200,7 @@ template<typename T>
 int
 _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
@@ -225,8 +227,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    T tmp = numeric_limits<T>::zero;
-    T tmp1 = numeric_limits<T>::zero;
+    T tmp = detail::numeric_limits<T>::zero;
+    T tmp1 = detail::numeric_limits<T>::zero;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
     call_getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
@@ -257,14 +259,47 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     lwork = (4*n > lwork ? 4*n : lwork);
 
-    // Finally, can start allocating memory
-    T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
+    /*
+     * Finally, we can start allocating memory.
+     *
+     * The key point is that LAPACK always operates on F-ordered arrays.
+     * The memory strategy thus depends on the `overwrite_a` value.
+     *
+     * For `overwrite_a=False` (default), we:
+     *   - allocate a temp buffer (`scratch` and `data` below) once
+     *   - for each slice, we
+     *       - copy-and-transpose the slice into the temp buffer,
+     *       - feed the buffer to LAPACK
+     *       - copy-and-transpose the result back to the C-ordered result array
+     *
+     * For `overwrite_a=True`, we assume that
+     *   - `ret_data` may point to the same memory as `ap_Am` array
+     *   - the caller had ensured that the input array is Fortran-ordered
+     *   - the caller wants to get the result also Fortran ordered
+     *
+     * It's a caller's responsibility to make sure that these pre-conditions are met,
+     * none of them is checked here.
+     * Therefore, if `overwrite_a = True`, we skip the copy-and-transpose steps above,
+     * and `ret_data` will simply contain the result from the LAPACK call.
+     *
+     */
+    CBLAS_INT buf_size = overwrite_a ? lwork : 2*n*n + lwork;
+
+    T* buffer = (T *)malloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
-    // Chop buffer into parts, one for data and one for work
-    T* data = &buffer[0];
-    T* scratch = &buffer[n*n];
-    T* work = &buffer[2*n*n];
+    T *data=NULL, *scratch=NULL, *work=NULL;
+    if (overwrite_a) {
+        // work in-place 
+        data = ret_data;
+        work = &buffer[0];
+    }
+    else {
+        // Chop buffer into parts, one for data and one for work
+        data = &buffer[0];
+        scratch = &buffer[n*n];
+        work = &buffer[2*n*n];
+    }
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
@@ -275,7 +310,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
-    if constexpr(type_traits<T>::is_complex) {
+    if constexpr(detail::type_traits<T>::is_complex) {
         irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
@@ -287,7 +322,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         return (int)info;
     }
 
-    // normalize the structure detection inputs
+    /*
+     * Normalize the structure detection inputs.
+     */
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
     }
@@ -304,12 +341,16 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         uplo = 'U';
     }
 
-    // Main loop to traverse the slices
+    /*
+     * Main loop to traverse the slices.
+     */
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
 
-        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-        swap_cf(scratch, data, n, n, n);
+        if (!overwrite_a) {
+            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+            swap_cf(scratch, data, n, n, n);
+        }
 
         // detect the structure if not given
         slice_structure = structure;
@@ -330,7 +371,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 // Check if symmetric/hermitian
                 std::tie(is_symm, is_herm) = is_sym_or_herm(data, n);
 
-                if constexpr (!type_traits<T>::is_complex) {
+                if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real: is_symm and is_herm are always equal
                     if (is_symm) {
                         // try Cholesky first, fall back to sytrf if it fails
@@ -360,6 +401,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
         init_status(slice_status, idx, slice_structure);
 
+        // Use the appropriate LAPACK function for the `slice_structure`.
         switch(slice_structure) {
             case St::DIAGONAL:
             {
@@ -413,7 +455,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
             case St::SYM:     // NB: if POS_DEF failed, fall-through to here
             case St::HER:
             {
-                if constexpr (!type_traits<T>::is_complex) {
+                if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real: always use sytrf/sytri
                     invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, true, slice_status);
                 }
@@ -426,7 +468,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     goto free_exit;
                 }
 
-                if constexpr (!type_traits<T>::is_complex) {
+                if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real symmetric
                     fill_other_triangle_noconj(uplo, data, intn);
                 }
@@ -450,11 +492,13 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     goto free_exit;
                 }
             }
-        }
+        } // end of `switch(slice_structure)`
 
-        // Swap back to original order
-        swap_cf(data, &ret_data[idx*n*n], n, n, n);
-    }
+        if (!overwrite_a) {
+            // Swap back to original order
+            swap_cf(data, &ret_data[idx*n*n], n, n, n);
+        }
+    } // end of `for(idx=...)`
 
 free_exit:
     free(buffer);
@@ -462,4 +506,6 @@ free_exit:
     free(ipiv);
     return 1;
 }
+
+} // namespace sp_linalg
 

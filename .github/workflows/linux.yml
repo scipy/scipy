@@ -3,6 +3,7 @@ name: Linux tests
 on:
   push:
     branches:
+      - main
       - maintenance/**
   pull_request:
     branches:
@@ -14,6 +15,7 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  CCACHE_MAXSIZE: "250M"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -43,12 +45,13 @@ jobs:
             python-version: '3.14-dev'
 
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
+        persist-credentials: false
 
     - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python-version }}
         allow-prereleases: true
@@ -73,30 +76,11 @@ jobs:
         # Disable Meson master testing until upstream option handling is fixed, see scipy#22534
         # python -m pip install git+https://github.com/mesonbuild/meson.git
 
-    - name:  Prepare compiler cache
-      id:    prep-ccache
-      shell: bash
-      run: |
-        mkdir -p "${CCACHE_DIR}"
-        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
-        NOW=$(date -u +"%F-%T")
-        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
-
-    - name: Setup compiler cache
-      uses:  actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-      id:    cache-ccache
-      # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
-      # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
-      # (even if the same workflow is run multiple times). The restore keys are not unique and for a partial match, they will
-      # return the most recently created cache entry, according to the GitHub Action Docs.
+    - name: Set up ccache
+      uses: ./.github/ccache
       with:
-        path: ${{ steps.prep-ccache.outputs.dir }}
-        # Restores ccache from either a previous build on this branch or on main
-        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `Linux Tests-3.12-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
-        # need to be updated to be unique so that the cache is not restored from a different job altogether.
-        restore-keys: |
-          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
+        workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}-${{ matrix.python-version }}
 
     - name: Setup build and install scipy
       run: |
@@ -104,7 +88,9 @@ jobs:
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Check installed files
       run: |
@@ -134,7 +120,7 @@ jobs:
       if: matrix.python-version == '3.12'
       run: |
         # Packages that are only needed for their annotations
-        python -m pip install mypy==1.10.0 types-psutil typing_extensions
+        python -m pip install mypy==1.19.1 types-psutil typing_extensions
         python -m pip install pybind11 sphinx
 
         spin mypy
@@ -153,9 +139,10 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
+        persist-credentials: false
 
     - name: Install Ubuntu dependencies
       run: |
@@ -163,7 +150,14 @@ jobs:
         # into a venv is working, so leave out optional dependencies. That's
         # also why we can get away with an old version of OpenBLAS from Ubuntu
         sudo apt-get update
-        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran
+        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran \
+          ccache
+
+    - name: Set up ccache
+      uses: ./.github/ccache
+      with:
+        workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: Create venv, install SciPy
       run: |
@@ -202,6 +196,12 @@ jobs:
         python -c "import scipy.linalg"
         python -c "from scipy import cluster; cluster.test()"
 
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
+
   #################################################################################
   python_debug:
     # also uses the vcs->sdist->wheel route.
@@ -212,21 +212,26 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04  # provides python3.12-dbg
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
-          
+          persist-credentials: false
+
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libmpc-dev
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev \
+            gfortran libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
+          # Note: we are testing installion via sdist, so can't use `ccache` in this job
           python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
+
       - name: Testing SciPy
         run: |
           cd doc
@@ -243,12 +248,13 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
@@ -257,11 +263,18 @@ jobs:
           sudo apt-get -y update
           sudo apt install -y g++-9 gcc-9 gfortran-9
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
-            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev ccache
 
       - name: Setup Python build deps
         run: |
-          pip install build meson-python ninja pythran pybind11 cython numpy
+          pip install meson-python ninja pythran pybind11 cython numpy
+
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Build wheel and install
         run: |
@@ -269,8 +282,15 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
-          python -m pip install dist/scipy*.whl
+          CC="ccache gcc-9" CXX="ccache g++-9" FC="ccache gfortran-9" python -m pip install . -v \
+              --no-build-isolation -Cbuild-dir=build \
+              -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Install test dependencies
         run: |
@@ -299,19 +319,21 @@ jobs:
         python-version: ['3.12']
 
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
+        persist-credentials: false
 
     - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran lcov
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran \
+          lcov ccache
 
     - name: Install Python packages
       run: |
@@ -320,32 +342,21 @@ jobs:
         python -m pip install -r requirements/openblas.txt
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
-    - name:  Prepare compiler cache
-      id:    prep-ccache
-      shell: bash
-      run: |
-        mkdir -p "${CCACHE_DIR}"
-        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
-        NOW=$(date -u +"%F-%T")
-        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
-
-    - name: Setup compiler cache
-      uses:  actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-      id:    cache-ccache
+    - name: Set up ccache
+      uses: ./.github/ccache
       with:
-        path: ${{ steps.prep-ccache.outputs.dir }}
-        # Restores ccache from either a previous build on this branch or on main
-        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-${{ steps.prep-ccache.outputs.timestamp }}
-        restore-keys: |
-          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-
+        workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: Build and install SciPy
       run: |
-        spin build --gcov --with-scipy-openblas --release
+        spin build --gcov --with-scipy-openblas=32 --release
 
     - name: Ccache performance
       shell: bash -l {0}
-      run: ccache -s
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Downgrade NumPy to lowest supported
       run: |
@@ -369,13 +380,15 @@ jobs:
     # entries. Unfortunately at this time options: does not seem to listen to
     # --platform linux/i386.
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
+        persist-credentials: false
 
-    - name: build + test
+    - name: build + test in i686 container
       run: |
         set -exuo pipefail
+        # Note: `ccache` not used because it isn't available on i686 CentOS 7
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
@@ -392,9 +405,10 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==2.0.0 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==2.0.0 -Cbuild-dir=numpy-builddir && \
+        python -m pip install cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
-        spin build --with-scipy-openblas && \
+        spin build --with-scipy-openblas=32 && \
         spin test"
 
   #################################################################################
@@ -409,9 +423,10 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup system dependencies
         run: |
@@ -419,7 +434,14 @@ jobs:
           sudo apt install software-properties-common
           sudo add-apt-repository ppa:deadsnakes/ppa
           sudo apt update -y
-          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
+          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev \
+            liblapack-dev ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Setup Python build deps
         run: |
@@ -429,6 +451,12 @@ jobs:
         run: |
           python3.12 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3.12 -m pip install dist/*.whl
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
 
       - name: Install test dependencies
         run: |
@@ -450,27 +478,36 @@ jobs:
     # (i.e., we're using it as a binary). This isn't a normal setup, but it's
     # sometimes being used that way - see gh-20535 and gh-24406
     name: build with global meson
+    needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           fetch-tags: true
+          persist-credentials: false
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gfortran pkg-config libopenblas-dev liblapack-dev
+          sudo apt-get install -y gfortran pkg-config libopenblas-dev liblapack-dev \
+            ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
 
       - name: Install global meson
         run: |
           python -m pip install meson --break-system-packages
 
       - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.14"
 
@@ -491,6 +528,12 @@ jobs:
           python -m build -wnx
           python -m pip install dist/*.whl
 
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+
       - name: Run tests
         run: |
           # Just a small subset of tests; this will be fine if the build
@@ -501,6 +544,7 @@ jobs:
 
   #################################################################################
   free-threaded:
+    name: free-threaded
     needs: get_commit_message
     strategy:
       matrix:
@@ -511,19 +555,26 @@ jobs:
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
         fetch-tags: true
+        persist-credentials: false
 
-    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3.14t-dev'
 
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gfortran
+        sudo apt-get install -y gfortran ccache
+
+    - name: Set up ccache
+      uses: ./.github/ccache
+      with:
+        workflow_name: ${{ github.workflow }}
+        job_name: ${{ github.job }}
 
     - name: Install Python dependencies
       run: |
@@ -539,7 +590,13 @@ jobs:
 
     - name: Build SciPy
       run: |
-        spin build --with-scipy-openblas
+        spin build --with-scipy-openblas=32
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: |
+        ccache --evict-older-than 1d
+        ccache -s
 
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
@@ -579,31 +636,29 @@ jobs:
         spin test -t $TEST_SUBMODULES -- --parallel-threads=4 --skip-thread-unsafe=true
 
   #################################################################################
-  clang-17-build-only:
+  clang-18-build-only:
     # Purpose is to check for warnings in builds with latest clang.
     # We do not run the test suite here.
-    name: Clang-17 build-only (-Werror)
+    name: Clang-18 build-only (-Werror)
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          wget https://apt.llvm.org/llvm.sh
-          chmod u+x llvm.sh
-          sudo ./llvm.sh 17
           sudo apt install -y libopenblas-dev liblapack-dev
 
       - name: Setup Python build deps
@@ -613,8 +668,10 @@ jobs:
 
       - name: Build wheel, check for compiler warnings
         run: |
+          # if clang-18 isn't installed this should fail
+          clang-18 --version
           # specify which compilers to use using environment variables
-          CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
+          CC=clang-18 CXX=clang++-18 FC=gfortran python -m build -wnx -Csetup-args=--werror
 
   #################################################################################
   test_aarch64:
@@ -625,19 +682,21 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04-arm
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
+        persist-credentials: false
 
     - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3.12'
 
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev \
+          gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
       run: |
@@ -656,3 +715,45 @@ jobs:
         export OMP_NUM_THREADS=2
         cd ..
         pytest --pyargs scipy -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0
+
+  #################################################################################
+  test_without_fortran:
+    name: No Fortran, fast, py3.14/npAny, spin
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
+        with:
+          pixi-version: v0.63.2
+          cache: false
+
+      - name: Install Ubuntu dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache
+
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+
+      - name: Build SciPy
+        run: pixi run build --setup-args=-D_without-fortran=true
+
+      - name: Test SciPy
+        run: pixi run test
+
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s

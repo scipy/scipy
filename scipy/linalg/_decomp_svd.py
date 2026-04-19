@@ -92,6 +92,12 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     svdvals : Compute singular values of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
 
+    Notes
+    -----
+    The array argument of this function, `a`, may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Examples
     --------
     >>> import numpy as np
@@ -126,6 +132,14 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> np.allclose(s, s2)
     True
 
+    If the input matrix has more than two dimensions, it is interpreted as a batch of
+    two-dimensional matrices:
+
+    >>> aa = np.stack((a, 2*a))
+    >>> linalg.svdvals(aa)[0] == linalg.svdvals(a)
+    array([ True,  True,  True,  True,  True,  True])
+    >>> linalg.svdvals(aa)[1] == 2 * linalg.svdvals(a)
+    array([ True,  True,  True,  True,  True,  True])
     """
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
@@ -136,7 +150,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     # basic sanity checks of the input matrix
     a1 = _asarray_validated(a, check_finite=check_finite)
 
-    overwrite_a = overwrite_a or (_datacopied(a1, a))
     if a1.ndim < 2:
         raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
 
@@ -145,6 +158,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
     # accommodate empty matrix
     if a1.size == 0:
@@ -181,7 +197,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
                                   "Instead, either use using numpy.linalg.svd or build"
                                   "SciPy with ILP64 support.")
 
-    res = _batched_linalg._svd(a1, lapack_driver, compute_uv, full_matrices)
+    res = _batched_linalg._svd(
+        a1, lapack_driver, compute_uv, full_matrices, overwrite_a
+    )
 
     err_lst = res[-1]
     if err_lst:
@@ -224,6 +242,12 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     svd : Compute the full singular value decomposition of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
 
+    Notes
+    -----
+    Array argument of this function, `a`, may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Examples
     --------
     >>> import numpy as np
@@ -235,6 +259,14 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     ...               [1.0, 0.0]])
     >>> svdvals(m)
     array([ 4.28091555,  1.63516424])
+
+    If the input matrix has more than two dimensions, it is interpreted as a batch of
+    two-dimensional matrices:
+
+    >>> mm = np.stack((m, 2*m))
+    >>> svdvals(mm)
+    array([[4.28091555, 1.63516424],
+           [8.56183109, 3.27032847]])
 
     We can verify the maximum singular value of `m` by computing the maximum
     length of `m @ u` over all the unit vectors `u` in the (x,y) plane.
@@ -263,7 +295,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     >>> orth = ortho_group.rvs(4)
     >>> svdvals(orth)
     array([ 1.,  1.,  1.,  1.])
-
     """
     return svd(a, compute_uv=0, overwrite_a=overwrite_a,
                check_finite=check_finite)

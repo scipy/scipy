@@ -565,6 +565,16 @@ class TestSqrtM:
         A_negpos_copy = A[:, ::-1, :].copy()
         assert_allclose(sqrtm(A_negpos_orig), sqrtm(A_negpos_copy))
 
+    @pytest.mark.parametrize('dtyp', [np.float32, np.float64,
+                                      np.complex64, np.complex128])
+    def test_gh24508(self, dtyp):
+        # Check that sqrtm raises a warning when the input is singular
+        # And for this example, the top row is filled with infs.
+        a = np.array([[0, 2, 2], [0, 0, 0], [0, 0, 0]], dtype=dtyp)
+        with pytest.warns(LinAlgWarning, match="Matrix is singular."):
+            res = sqrtm(a)
+            assert np.isinf(res[0, 1:]).all()
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):

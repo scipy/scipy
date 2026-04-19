@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
@@ -21,6 +22,7 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
     return atol, rtol
 
 
+@xp_capabilities(np_only=True)
 def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the BIConjugate Gradient method.
@@ -155,6 +157,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
              callback=None):
     """
@@ -304,6 +307,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
@@ -426,6 +430,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
     Solve ``Ax = b`` with the Conjugate Gradient Squared method.
@@ -584,6 +589,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         return x, maxiter
 
 
+@xp_capabilities(np_only=True)
 def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=None,
           callback=None, callback_type=None):
     """
@@ -846,6 +852,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     return x, info
 
 
+@xp_capabilities(np_only=True)
 def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         callback=None):
     """

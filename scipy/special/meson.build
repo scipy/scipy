@@ -1,5 +1,3 @@
-# TODO: 64-bit BLAS and LAPACK
-
 _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_agm.pxd'),
@@ -100,12 +98,14 @@ _cython_tree += fs.copyfile('__init__.pxd')
 uf_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, cython_special[0]])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, cython_special[0],
+             cython_lapack_pxd])
 
 uf_cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, cython_special[0]])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, cython_special[0],
+             cython_lapack_pxd])
 
 py3.extension_module('_ufuncs',
   [
@@ -117,8 +117,6 @@ py3.extension_module('_ufuncs',
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
     xsf_dep,
-    lapack_lp64_dep,
-    npymath_lib,
     np_dep,
   ],
   link_args: version_link_args,
@@ -169,7 +167,7 @@ py3.extension_module('_ellip_harm_2',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, lapack_lp64_dep, np_dep],
+  dependencies: [xsf_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
 )
@@ -186,7 +184,7 @@ py3.extension_module('cython_special',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep, npymath_lib, lapack_lp64_dep],
+  dependencies: [xsf_dep, np_dep],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',

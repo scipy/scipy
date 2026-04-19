@@ -136,6 +136,12 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
+    Notes
+    -----
+    Array arguments of this function, `a` and `b`, may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Examples
     --------
     >>> import numpy as np
@@ -209,11 +215,12 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             f"Expected a square matrix or a batch of square matrices. Got {a.shape = }"
         )
 
-    overwrite_a = overwrite_a or (_datacopied(a1, a))
-
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
     a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
+    overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
     # accommodate empty arrays
     if a1.shape[-1] == 0 or a1.shape[-2] == 0:
@@ -231,10 +238,20 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             return w, vl
         return w, vr
 
-    if b is not None:
+    if b is None:
+        # regular eigenvalue problem
+        w, beta, vl, vr, err_lst  = _batched_linalg._eig(
+            a1, left, right, overwrite_a, False
+        )
+
+        if err_lst:
+            _check_format_errors_warnings("geev", err_lst)
+
+    else:
+        # b is not None: generalized eigenvalue problem
+
         b1 = _asarray_validated(b, check_finite=check_finite)
         a1, b1 = _ensure_dtype_cdsz(a1, b1)  # NB: makes a1.dtype == b1.dtype, if needed
-        overwrite_b = overwrite_b or (_datacopied(b1, b))
         b1, overwrite_b = _ensure_aligned_and_native(b1, overwrite_b)
 
         if len(b1.shape) < 2 or b1.shape[-1] != b1.shape[-2]:
@@ -248,7 +265,15 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
         b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
-        w, beta, vl, vr, err_lst = _batched_linalg._eig(a1, left, right, b1)
+        # check if we can work in-place (a1 might have been broadcast by b1)
+        overwrite_a = overwrite_a and (a1.ndim == 2)
+
+        overwrite_b = overwrite_b or (_datacopied(b1, b))
+        overwrite_b = overwrite_b and (b1.ndim == 2) and (b1.flags["F_CONTIGUOUS"])
+
+        w, beta, vl, vr, err_lst = _batched_linalg._eig(
+            a1, left, right, overwrite_a, overwrite_b, b1
+        )
 
         if err_lst:
             _check_format_errors_warnings("ggev", err_lst)
@@ -258,12 +283,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             vr /= np.linalg.vector_norm(vr, axis=-2, keepdims=True)
         if left:
             vl /= np.linalg.vector_norm(vl, axis=-2, keepdims=True)
-
-    else:
-        w, beta, vl, vr, err_lst  = _batched_linalg._eig(a1, left, right)
-
-        if err_lst:
-            _check_format_errors_warnings("geev", err_lst)
 
     w = _make_eigvals(w, beta, homogeneous_eigvals)
 
@@ -839,7 +858,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-def eigvals(a, b=None, overwrite_a=False, check_finite=True,
+def eigvals(a, b=None, overwrite_a=False, overwrite_b=False, check_finite=True,
             homogeneous_eigvals=False):
     r"""
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
@@ -858,6 +877,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
         problem. If omitted (default), identity matrix is assumed.
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
+    overwrite_b : bool, optional
+        Whether to overwrite data in b (may improve performance)
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -933,8 +954,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
            [2.+0.j, 2.+0.j, 2.+0.j]])
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
-               check_finite=check_finite,
-               homogeneous_eigvals=homogeneous_eigvals)
+                overwrite_b=overwrite_b, check_finite=check_finite,
+                homogeneous_eigvals=homogeneous_eigvals)
 
 
 @_apply_over_batch(('a', 2), ('b', 2))
@@ -1536,7 +1557,7 @@ def cdf2rdf(w, v):
     Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
     as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-    
+
     Parameters
     ----------
     w : (..., M) array_like

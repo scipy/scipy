@@ -1568,12 +1568,12 @@ def roots_gegenbauer(n, alpha, mu=False):
 def gegenbauer(n, alpha, monic=False):
     r"""Gegenbauer (ultraspherical) polynomial.
 
-    Defined to be the solution of
+    Defined to be the solution of the second-order linear ordinary differential equation
 
     .. math::
-        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}
-          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}
-          + n(n + 2\alpha)C_n^{(\alpha)} = 0
+        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}(x)
+          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}(x)
+          + n(n + 2\alpha)C_n^{(\alpha)}(x) = 0
 
     for :math:`\alpha > -1/2`; :math:`C_n^{(\alpha)}` is a polynomial
     of degree :math:`n`.
@@ -1595,8 +1595,8 @@ def gegenbauer(n, alpha, monic=False):
 
     Notes
     -----
-    The polynomials :math:`C_n^{(\alpha)}` are orthogonal over
-    :math:`[-1,1]` with weight function :math:`(1 - x^2)^{(\alpha -
+    The polynomials :math:`C_n^{(\alpha)}` are orthogonal on
+    :math:`[-1,1]` with respect to the weight function :math:`(1 - x^2)^{(\alpha -
     1/2)}`.
 
     Examples
@@ -2547,6 +2547,32 @@ def roots_sh_legendre(n, mu=False):
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+
+    Compute nodes and weights for a 7th-order shifted Gauss-Legendre quadrature:
+
+    >>> from scipy.special import roots_sh_legendre, eval_sh_legendre
+    >>> x, w = roots_sh_legendre(7)
+    >>> x
+    array([0.02544604, 0.12923441, 0.29707742, 0.5, 0.70292258, 0.87076559,
+        0.97455396])
+    >>> w
+    array([0.06474248, 0.1398527, 0.19091503, 0.20897959, 0.19091503, 0.1398527,
+        0.06474248])
+
+    Verify that ``x`` are the roots of the degree-7 shifted Legendre polynomial:
+
+    >>> eval_sh_legendre(7, x)
+    array([5.55111512e-16, 1.11022302e-16,  3.33066907e-16,  0.00000000e+00,
+        -2.22044605e-16, -1.11022302e-16, -1.85962357e-15])
+
+    The sum of the weights for shifted Gauss-Legendre quadrature is always 1:
+
+    >>> x, w, mu = roots_sh_legendre(10, mu=True)
+    >>> mu 
+    1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
 
     """
     x, w = roots_legendre(n)
