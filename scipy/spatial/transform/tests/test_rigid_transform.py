@@ -734,7 +734,8 @@ def test_apply_array_like():
 
 
 def test_apply_matrix_equivalence():
-    """Test documented equivalence for single transform: apply(vector) == translation + vector @ rotation.as_matrix().T."""
+    """Test documented equivalence for single transform:
+    `apply(vector) == translation + vector @ rotation.as_matrix().T.`"""
     t = np.array([1.0, 2.0, 3.0])
     r = Rotation.from_rotvec([0, 0, 1])
     tf = RigidTransform.from_components(t, r)
