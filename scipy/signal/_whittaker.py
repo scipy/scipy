@@ -4,6 +4,8 @@ from scipy._lib._util import _RichResult, _validate_int
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
+from scipy.sparse import eye_array, diags_array, kron
+from scipy.sparse.linalg import spsolve
 
 
 def _solveh_banded(ab, b, calc_logdet=False):
@@ -205,8 +207,36 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     order = _validate_int(order, name="order", minimum=1)
 
     signal = np.asarray(signal)
-    if signal.ndim != 1:
-        msg = f"Input array signal must be of shape (n,); got {signal.shape}"
+
+    if signal.ndim == 2:
+        if isinstance(lamb, str):
+            raise ValueError(
+                "lamb selection via REML is not yet supported for 2D signals." \
+                "Pass a numeric value for lamb."
+            )
+        if not np.isscalar(lamb) and np.asarray(lamb).ndim == 1:
+            lamb = tuple(lamb)
+        if isinstance(lamb, tuple) and any(lam < 0 for lam in lamb):
+            raise ValueError(
+                "Penalty coefficients lambda must be non-negative."
+            )
+        if np.isscalar(lamb) and lamb < 0:
+            raise ValueError(
+                "lamb argument must be non-negative."
+            )
+        if weights is not None:
+            weigths = np.asarray(weights)
+            if weigths.shape != signal.shape:
+                raise ValueError(
+                    "Input signal array must have the same shape as weights array."
+                )   
+        if lamb == 0.0 or lamb == (0.0, 0.0):
+            return _RichResult(x = np.array(signal).copy(), lamb = lamb)
+        x = _solve_WH_sparse(signal, lamb = lamb, order = order, weights = weights)
+        return _RichResult(x = x, lamb = lamb)
+
+    elif signal.ndim != 1:
+        msg = f"Input array signal must be of 1D or 2D; got {signal.shape}"
         raise ValueError(msg)
 
     n = signal.shape[0]
@@ -449,3 +479,86 @@ def _reml(lamb, y, order, weights=None):
     reml += logdet  # +log|W + lambda D'D|
     reml *= -0.5
     return reml
+
+def _parse_axis_params(param, name):
+    """
+    Helper function that parses a scalar or 2-tuple parameter into
+    (x, z)
+    """
+
+    if np.isscalar(param):
+        return param, param
+    param = tuple(param)
+    if len(param) != 2:
+        raise ValueError(f"{name} must be a scalar or a 2 element tuple, got {param}")
+    return param[0], param[1]
+
+def _build_diff_array(n, order):
+    """
+    Builds a sparse difference matrix of shape ((n - order), n)
+    """
+    if n <= order:
+        raise ValueError(
+            f"Cannot build sparse matrix of order {order} "
+            f"for axis of length {n}. Axis length must be greater than order."
+        )
+    
+    diff_arr = diags_array([-1, 1], offsets = [0, 1], shape = (n - 1, n), dtype = "float")
+
+    for _ in range(order - 1):
+
+        n -= 1
+        diff_arr = diags_array([-1, 1], offsets = [0, 1], shape = (n - 1, n), dtype = "float") @ diff_arr
+
+    return diff_arr
+
+def _solve_WH_sparse(y, lamb, order, weights = None):
+
+    """
+    Solve the 2D Whittaker Henderson smoothing problem using sparse matrices.
+
+    Parameters
+    -----------
+    y: np.ndarray, shape (nx, nz)
+        This is the 2D input signal
+    lamb: float/tuple (float, float)
+        Strength of penalty applied. If scalar, the same value
+        is applied to both axes. If tuple, difference penalties
+        are applied per axis.
+    order: int/tuple (int, int), default: 2
+        Order of difference. If scalar, same order is used for
+        both axes. If tuple, order is applied per axis.
+    weights: np.ndarray, shape (nx, nz) or None, optional
+        Case weights. None is equivalent to an array of all 1s.
+
+    Returns
+    ----------
+    x: np.ndarray, shape (nx, nz)
+        the smoothed signal
+    """
+
+    nx, nz = y.shape
+    
+    lamb_x, lamb_z = _parse_axis_params(lamb, "lamb")
+    ord_x, ord_z = _parse_axis_params(order, "ord")
+
+    #Building the difference matrices using the helper function
+    diff_x = _build_diff_array(nx, ord_x)
+    diff_z = _build_diff_array(nz, ord_z)
+
+    pen_x = lamb_x * (kron(eye_array(nz), diff_x.T @ diff_x))
+    pen_z = lamb_z * (kron(diff_z.T @ diff_z, eye_array(nx)))
+
+    tot_pen = pen_x + pen_z
+
+    #Flatten the input signal
+    y_flatten = y.ravel()
+
+    if weights is None:
+        weight_arr = eye_array(nx * nz)
+    else:
+        weight_arr = diags_array(weights.ravel())
+
+    x_flattened = spsolve((weight_arr + tot_pen).tocsc(), weight_arr @ y_flatten)
+    
+    return x_flattened.reshape(nx, nz)
