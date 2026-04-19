@@ -8,6 +8,14 @@ on:
     branches:
       - main
       - maintenance/**
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │  ┌───────────── day of the month (1 - 31)
+  #        │  │  │  ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │  │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │  │  │ │
+  - cron: "47 11 2/2 * *"
 
 permissions:
   contents: read # to fetch code (actions/checkout)
@@ -15,6 +23,10 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "250M"
+  # Needed because Pixi doesn't set mtime for compilers
+  CCACHE_COMPILERCHECK: "content"
+  JAX_COMPILATION_CACHE_DIR: "${{ github.workspace }}/.cache/scipy_jax_cache"
+  JAX_PERSISTENT_CACHE_MIN_COMPILE_TIME_SECS: "0"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -65,7 +77,7 @@ jobs:
         run: |
           export OMP_NUM_THREADS=2
           for task in ${TASKS}; do
-            pixi run --skip-deps "$task" -- --durations 3 --timeout=60
+            pixi run --skip-deps "$task" -j 3 -- --durations 3 --timeout=120 --dist worksteal
           done
         env:
           TASKS: ${{ join(matrix.tasks, ' ') }}
