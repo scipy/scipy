@@ -223,6 +223,9 @@ def make_flat_capabilities_table(
     if isinstance(modules, str):
         modules = [modules]
 
+    if capabilities_table is None:
+        capabilities_table = xp_capabilities_table
+
     output = []
 
     for module_name in modules:
@@ -236,7 +239,7 @@ def make_flat_capabilities_table(
             thing = getattr(module, name)
             if is_inherently_out_of_scope(thing):
                 continue
-            entry = xp_capabilities_table.get(thing, None)
+            entry = capabilities_table.get(thing, None)
             capabilities = _process_capabilities_table_entry(entry)[backend_type]
             row: dict[str, Any] = {"module": module_name}
             row.update({"function": name})
