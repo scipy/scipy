@@ -1487,9 +1487,6 @@ def toms748(f, a, b, args=(), k=1,
                            "toms748")
 
 
-# Validated SciPy-compliant code
-# To be appended to scipy/optimize/_zeros_py.py
-
 def mpbf(f, a, b, args=(), xtol=2e-12, rtol=8.881784197001252e-16,
          maxiter=100, full_output=False, disp=True):
     """
