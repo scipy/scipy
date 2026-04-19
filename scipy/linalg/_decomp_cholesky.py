@@ -1,53 +1,58 @@
 """Cholesky decomposition functions."""
 
 import numpy as np
-from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
+from numpy import asarray_chkfinite, asarray, empty_like
 
 # Local imports
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import LinAlgError, _datacopied
-from .lapack import get_lapack_funcs
+from .lapack import (
+    get_lapack_funcs, _normalize_lapack_dtype, _ensure_aligned_and_native
+)
+from . import _batched_linalg
 
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
            'cho_solve_banded']
+
+
+def _check_format_errors_warnings(routine_name, err_lst):
+    msg = (
+        f"Internal {routine_name} return info = {[e['lapack_info'] for e in err_lst]} "
+        f"for slices {[e['num'] for e in err_lst]}."
+    )
+    raise LinAlgError(msg)
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
               check_finite=True):
     """Common code for cholesky() and cho_factor()."""
 
-    a1 = asarray_chkfinite(a) if check_finite else asarray(a)
-    a1 = atleast_2d(a1)
+    # sanity checks
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    a1 = np.atleast_2d(a1)
+    if a1.shape[-1] != a1.shape[-2]:
+        raise ValueError(f"Expected a square matrix or batch thereof, got {a1.shape=}")
 
-    # Dimension check
-    if a1.ndim != 2:
-        raise ValueError(f'Input array needs to be 2D but received a {a1.ndim}d-array.')
-    # Squareness check
-    if a1.shape[0] != a1.shape[1]:
-        raise ValueError('Input array is expected to be square but has '
-                         f'the shape: {a1.shape}.')
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
+    overwrite_a = (overwrite_a and (a1.ndim == 2)
+                   and (a1.flags["F_CONTIGUOUS"] or a1.flags["C_CONTIGUOUS"]))
 
-    # Quick return for square empty array
-    if a1.size == 0:
-        dt = cholesky(np.eye(1, dtype=a1.dtype)).dtype
-        return empty_like(a1, dtype=dt), lower
+    # accommodate empty arrays
+    if a1.shape[-1] == 0:
+        batch_shape = a1.shape[:-2]
+        c = np.zeros(batch_shape + (0, 0), dtype=a1.dtype)
+        return c
 
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    potrf, = get_lapack_funcs(('potrf',), (a1,))
-    c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
-    if info > 0:
-        raise LinAlgError(
-            f"{info}-th leading minor of the array is not positive definite"
-        )
-    if info < 0:
-        raise ValueError(
-            f'LAPACK reported an illegal value in {-info}-th argument '
-            f'on entry to "POTRF".'
-        )
-    return c, lower
+    # Heavy lifting
+    c, err_lst = _batched_linalg._cholesky(a1, lower, overwrite_a, clean)
+
+    if err_lst:
+        _check_format_errors_warnings("potrf", err_lst)
+
+    return c
 
 
-@_apply_over_batch(('a', 2))
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix.
@@ -57,7 +62,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : (M, M) array_like
+    a : (..., M, M) array_like
         Matrix to be decomposed
     lower : bool, optional
         Whether to compute the upper- or lower-triangular Cholesky
@@ -72,12 +77,17 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    c : (M, M) ndarray
+    c : (..., M, M) ndarray
         Upper- or lower-triangular Cholesky factor of `a`.
 
     Raises
     ------
     LinAlgError : if decomposition fails.
+
+    See Also
+    --------
+    cho_factor : Compute the Cholesky decomposition without explicitly setting
+                    the other triangle to 0.
 
     Notes
     -----
@@ -103,12 +113,12 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                         check_finite=check_finite)
+    # `clean = True` represents setting other triangle to 0.
+    c = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
+                check_finite=check_finite)
     return c
 
 
-@_apply_over_batch(("a", 2))
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix, to use in cho_solve.
@@ -118,13 +128,15 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     The return value can be directly used as the first parameter to cho_solve.
 
     .. warning::
-        The returned matrix also contains random data in the entries not
-        used by the Cholesky decomposition. If you need to zero these
-        entries, use the function `cholesky` instead.
+        If `overwrite_a` is disabled, this function matches `cholesky` and
+        zeros the other triangle. If it is enabled, the returned matrix may
+        contain random data in the entries not used by the Cholesky
+        decomposition, saving out on the explicit putting to 0 done by
+        `cholesky`.
 
     Parameters
     ----------
-    a : (M, M) array_like
+    a : (..., M, M) array_like
         Matrix to be decomposed
     lower : bool, optional
         Whether to compute the upper or lower triangular Cholesky factorization.
@@ -139,10 +151,10 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    c : (M, M) ndarray
+    c : (..., M, M) ndarray
         Matrix whose upper or lower triangle contains the Cholesky factor
         of `a`. Other parts of the matrix contain random data.
-    lower : bool
+    lower : ndarray, bool
         Flag indicating whether the factor is in the lower or upper triangle
 
     Raises
@@ -152,6 +164,8 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 
     See Also
     --------
+    cholesky : Compute the Cholesky decomposition and explicitly put the
+                other triangle to 0.
     cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
 
@@ -169,20 +183,36 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     --------
     >>> import numpy as np
     >>> from scipy.linalg import cho_factor
-    >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]])
+    >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]],
+    ...             dtype=float, order="F")
+    >>> A_ref = np.copy(A)
     >>> c, low = cho_factor(A)
+    >>> c
+    array([[3.        , 1.        , 0.33333333, 1.66666667],
+           [0.        , 2.44948974, 1.90515869, -0.27216553],
+           [0.        , 0.        , 2.29330749, 0.8559528 ],
+           [0.        , 0.        , 0.        , 1.55418563]])
+    >>> np.allclose(c.T @ c - A, np.zeros((4, 4)))
+    True
+    >>> c, low = cho_factor(A, overwrite_a=True)
     >>> c
     array([[3.        , 1.        , 0.33333333, 1.66666667],
            [3.        , 2.44948974, 1.90515869, -0.27216553],
            [1.        , 5.        , 2.29330749, 0.8559528 ],
            [5.        , 1.        , 2.        , 1.55418563]])
-    >>> np.allclose(np.triu(c).T @ np. triu(c) - A, np.zeros((4, 4)))
+    >>> np.allclose(np.triu(c).T @ np.triu(c) - A_ref, np.zeros((4, 4)))
     True
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
-                         check_finite=check_finite)
-    return c, lower
+    # `clean=False` to represent that it is not necessary to set other triangle to 0.
+    c = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
+                    check_finite=check_finite)
+
+    # broadcast `lower` argument for backwards compat
+    batch_shape = a.shape[:-2]
+    ret_lower = np.tile(lower, reps=batch_shape)
+
+    return c, ret_lower
 
 
 def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):

@@ -26,7 +26,7 @@ at the top-level directory.
 
 
 #if ( DEBUGlevel>=1 )           /* Debug malloc/free. */
-int_t superlu_malloc_total = 0;
+int64_t superlu_malloc_total = 0;
 
 #define PAD_FACTOR  2
 #define DWORD  (sizeof(double)) /* Be sure it's no smaller than double. */
@@ -116,8 +116,8 @@ SetIWork(int m, int n, int panel_size, int *iworkptr, int **segrep,
     // *marker = *xprune + n;
     *marker = *panel_lsub + panel_size * m;
     
-    ifill (*repfnz, m * panel_size, EMPTY);
-    ifill (*panel_lsub, m * panel_size, EMPTY);
+    ifill (*repfnz, m * panel_size, SLU_EMPTY);
+    ifill (*panel_lsub, m * panel_size, SLU_EMPTY);
     
     *xplore = intMalloc(m); /* can be 64 bit */
     *xprune = intMalloc(n);

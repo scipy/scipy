@@ -2243,29 +2243,38 @@ add_newdoc(
 
     Computes the inverse of the complementary error function.
 
-    In the complex domain, there is no unique complex number w satisfying
-    erfc(w)=z. This indicates a true inverse function would be multivalued.
-    When the domain restricts to the real, 0 < x < 2, there is a unique real
-    number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+    In the complex domain, there is no unique complex number :math:`w` satisfying
+    :math:`\\operatorname{erfc}(w) = z`. This indicates a true inverse function
+    would be multivalued.
+    When the domain restricts to the real interval :math:`0 < x < 2`, there is
+    a unique real number satisfying
 
-    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+    .. math::
+
+        \\operatorname{erfc}(\\operatorname{erfcinv}(x)) = x
+
+    It is related to the inverse of the error function by
+
+    .. math::
+
+        \\operatorname{erfcinv}(1 - x) = \\operatorname{erfinv}(x)
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate. Domain: [0, 2]
+        Argument at which to evaluate. Domain: :math:`[0, 2]`
     out : ndarray, optional
         Optional output array for the function values
 
     Returns
     -------
     erfcinv : scalar or ndarray
-        The inverse of erfc of y, element-wise
+        The inverse of :math:`\\operatorname{erfc}` of :math:`y`, element-wise
 
     See Also
     --------
-    erf : Error function of a complex argument
-    erfc : Complementary error function, ``1 - erf(x)``
+    erf : Error function
+    erfc : Complementary error function
     erfinv : Inverse of the error function
 
     Examples
@@ -5206,30 +5215,11 @@ add_newdoc("nbdtrik",
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
-
-    Formula 26.5.26 of [2]_ or [3]_,
-
-    .. math::
-        \sum_{j=k + 1}^\infty {{n + j - 1}
-        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
-
-    is used to reduce calculation of the cumulative distribution function to
-    that of a regularized incomplete beta :math:`I`.
-
-    Computation of `k` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `k`.
+    This function wraps routines from the Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [3] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.E24
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

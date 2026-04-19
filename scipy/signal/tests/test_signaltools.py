@@ -2790,7 +2790,9 @@ class TestLFilterZI:
         assert_array_almost_equal(zi, zi_expected)
 
         y = lfilter(b, a, xp.ones(9), zi=zi)[0]  # test for constant filter response
-        y_expected = xp.full_like(y, fill_value=sum(b)/sum(a))
+
+        fill_value = xp.sum(b) / xp.sum(a)
+        y_expected = xp.full_like(y, fill_value=float(fill_value))
         assert_array_almost_equal(y, y_expected)
 
     def test_scale_invariance(self, xp):

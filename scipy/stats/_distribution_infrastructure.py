@@ -2624,7 +2624,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._cdf_quadrature(x[mask], *params_mask)
+            out[mask] = self._cdf_quadrature(x[mask], **params_mask)
         return out[()]
 
     def _cdf_quadrature(self, x, **params):
@@ -2824,7 +2824,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._icdf_inversion(x[mask], *params_mask)
+            out[mask] = self._icdf_inversion(x[mask], **params_mask)
         return out[()]
 
     def _icdf_inversion(self, x, **params):
@@ -2882,7 +2882,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._iccdf_inversion(x[mask], *params_mask)
+            out[mask] = self._iccdf_inversion(x[mask], **params_mask)
         return out[()]
 
     def _iccdf_inversion(self, x, **params):
@@ -3538,7 +3538,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # treat the parameters as "fixed" and the quantile/percentile arguments
     # as "variable". There are a lot of advantages to this structure, and I
     # don't think the fact that a few methods reverse the fixed and variable
-    # quantities should make us question that choice. It can still accomodate
+    # quantities should make us question that choice. It can still accommodate
     # these methods reasonably efficiently.
 
 
@@ -3858,7 +3858,6 @@ _distribution_names = {
 }
 
 
-# beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 @xp_capabilities(np_only=True)
 def make_distribution(dist):
     """Generate a `UnivariateDistribution` class from a compatible object.
@@ -3931,8 +3930,7 @@ def make_distribution(dist):
         support : dict or tuple
             A dictionary describing the support of the distribution or a tuple
             describing the endpoints of the support. This behaves identically to
-            the values of the parameters dict described above, except that the key
-            ``typical`` is ignored.
+            the values of the parameters dict described above.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -4260,11 +4258,13 @@ def _make_distribution_custom(dist):
             domain = _RealInterval(**domain_info)
             param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
-        parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    domain_info, _ = _get_domain_info(dist.support)
+        if parameters:
+            parameterizations.append(_Parameterization(*parameters))
+
+    domain_info, typical = _get_domain_info(dist.support)
     _x_support = _RealInterval(**domain_info)
-    _x_param = _RealParameter('x', domain=_x_support)
+    _x_param = _RealParameter('x', domain=_x_support, typical=typical)
     repr_str = dist.__class__.__name__
 
     class CustomDistribution(ContinuousDistribution):

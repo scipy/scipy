@@ -17,8 +17,6 @@ from scipy._lib._array_api import (
 )
 import scipy._external.array_api_extra as xpx
 
-lazy_xp_modules = [RigidTransform]
-
 
 def rotation_to_xp(r: Rotation, xp):
     dtype = xpx.default_dtype(xp)
@@ -30,7 +28,7 @@ def rigid_transform_to_xp(r: RigidTransform, xp):
     return RigidTransform.from_matrix(xp.asarray(r.as_matrix(), dtype=dtype))
 
 
-@make_xp_test_case(RigidTransform.as_matrix)
+@make_xp_test_case((RigidTransform, "as_matrix"))
 def test_repr(xp):
     actual = repr(RigidTransform.from_matrix(xp.eye(4)))
     expected = """\
@@ -61,7 +59,7 @@ RigidTransform.from_matrix(array([[[1., 0., 0., 0.],
         assert actual.startswith("RigidTransform.from_matrix(")
 
 
-@make_xp_test_case(RigidTransform.from_rotation)
+@make_xp_test_case((RigidTransform, "from_rotation"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_rotation(xp, ndim: int):
     atol = 1e-12
@@ -76,7 +74,7 @@ def test_from_rotation(xp, ndim: int):
     assert tf.single == (ndim == 1)
 
 
-@make_xp_test_case(RigidTransform.from_translation)
+@make_xp_test_case((RigidTransform, "from_translation"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_translation(xp, ndim: int):
     shape = (ndim,) * (ndim - 1)
@@ -106,7 +104,7 @@ def test_from_translation_array_like():
     assert not tf.single
 
 
-@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.as_matrix)
+@make_xp_test_case((RigidTransform, "from_matrix"), (RigidTransform, "as_matrix"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_matrix(xp, ndim: int):
     atol = 1e-12
@@ -173,7 +171,7 @@ def test_from_matrix_array_like():
     assert not tf.single
 
 
-@make_xp_test_case(RigidTransform.from_components)
+@make_xp_test_case((RigidTransform, "from_components"))
 @pytest.mark.parametrize("r_ndim", range(1, 3))
 @pytest.mark.parametrize("t_ndim", range(1, 3))
 def test_from_components(xp, r_ndim: int, t_ndim: int):
@@ -216,7 +214,7 @@ def test_from_components_array_like():
     assert not tf.single
 
 
-@make_xp_test_case(RigidTransform.as_components)
+@make_xp_test_case((RigidTransform, "as_components"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_as_components(xp, ndim):
     dtype = xpx.default_dtype(xp)
@@ -231,7 +229,7 @@ def test_as_components(xp, ndim):
     xp_assert_close(new_t, t, atol=atol)
 
 
-@make_xp_test_case(RigidTransform.from_exp_coords)
+@make_xp_test_case((RigidTransform, "from_exp_coords"))
 @pytest.mark.parametrize("dim", range(1, 4))
 def test_from_exp_coords(xp, dim: int):
     shape = (dim,) * (dim - 1)
@@ -346,7 +344,7 @@ def test_from_exp_coords_array_like():
     xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
 
 
-@make_xp_test_case(RigidTransform.as_exp_coords)
+@make_xp_test_case((RigidTransform, "as_exp_coords"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_as_exp_coords(xp, ndim: int):
     shape = (ndim,) * (ndim - 1)
@@ -373,7 +371,7 @@ def test_as_exp_coords(xp, ndim: int):
     xp_assert_close(exp_coords[..., 3:], translation, atol=1e-15)
 
 
-@make_xp_test_case(RigidTransform.from_dual_quat)
+@make_xp_test_case((RigidTransform, "from_dual_quat"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_dual_quat(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
@@ -574,7 +572,7 @@ def test_from_dual_quat_array_like():
     xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
 
 
-@make_xp_test_case(RigidTransform.as_dual_quat)
+@make_xp_test_case((RigidTransform, "as_dual_quat"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_as_dual_quat(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
@@ -627,10 +625,12 @@ def test_as_dual_quat(xp, ndim: int):
         xp_assert_close(actual, expected, atol=1e-12)
 
 
-@make_xp_test_case(RigidTransform.from_components, RigidTransform.as_components,
-                   RigidTransform.from_exp_coords, RigidTransform.as_exp_coords,
-                   RigidTransform.from_matrix, RigidTransform.as_matrix,
-                   RigidTransform.from_dual_quat, RigidTransform.as_dual_quat)
+@make_xp_test_case(
+    (RigidTransform, "from_components"), (RigidTransform, "as_components"),
+    (RigidTransform, "from_exp_coords"), (RigidTransform, "as_exp_coords"),
+    (RigidTransform, "from_matrix"), (RigidTransform, "as_matrix"),
+    (RigidTransform, "from_dual_quat"), (RigidTransform, "as_dual_quat")
+)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_as_internal_consistency(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
@@ -692,7 +692,7 @@ def test_identity():
         RigidTransform.identity(shape="invalid")
 
 
-@make_xp_test_case(RigidTransform.apply)
+@make_xp_test_case((RigidTransform, "apply"))
 def test_apply(xp):
     atol = 1e-12
     # Broadcast shape: (6, 5, 4, 2) ( + (3,) for vectors, + (4,) for rotations)
@@ -746,7 +746,7 @@ def test_apply_matrix_equivalence():
     xp_assert_close(tf.apply(arr), t + arr @ r.as_matrix().T)
 
 
-@make_xp_test_case(RigidTransform.apply)
+@make_xp_test_case((RigidTransform, "apply"))
 def test_inverse_apply(xp):
     atol = 1e-12
     # Broadcast shape: (6, 5, 4, 2) ( + (3,) for vectors, + (4,) for rotations)
@@ -768,7 +768,7 @@ def test_inverse_apply(xp):
         xp_assert_close(res, expected, atol=atol)
 
 
-@make_xp_test_case(RigidTransform.apply)
+@make_xp_test_case((RigidTransform, "apply"))
 def test_rotation_alone(xp):
     atol = 1e-12
 
@@ -779,7 +779,7 @@ def test_rotation_alone(xp):
     xp_assert_close(tf.apply(vec), expected, atol=atol)
 
 
-@make_xp_test_case(RigidTransform.apply)
+@make_xp_test_case((RigidTransform, "apply"))
 def test_translation_alone(xp):
     atol = 1e-12
     t = xp.asarray([1.0, 2, 3])
@@ -789,7 +789,7 @@ def test_translation_alone(xp):
     xp_assert_close(tf.apply(vec), expected, atol=atol)
 
 
-@make_xp_test_case(RigidTransform.apply, RigidTransform.__mul__)
+@make_xp_test_case((RigidTransform, "apply"), (RigidTransform, "__mul__"))
 def test_composition(xp):
     atol = 1e-12
     tf_shapes = [(), (1,), (2,), (1, 2), (4, 2), (5, 4, 2)]
@@ -820,7 +820,7 @@ def test_composition(xp):
         assert composed.single == (tf1.single and tf2.single)
 
 
-@make_xp_test_case(RigidTransform.__pow__, RigidTransform.__mul__)
+@make_xp_test_case((RigidTransform, "__pow__"), (RigidTransform, "__mul__"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_pow(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
@@ -866,7 +866,7 @@ def test_pow(xp, ndim: int):
     xp_assert_close(tf.as_matrix(), xp.eye(4), atol=atol)
 
 
-@make_xp_test_case(RigidTransform.__pow__)
+@make_xp_test_case((RigidTransform, "__pow__"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_pow_equivalence_with_rotation(xp, ndim: int):
     atol = 1e-12
@@ -881,7 +881,7 @@ def test_pow_equivalence_with_rotation(xp, ndim: int):
         xp_assert_close((p**n).rotation.as_matrix(), (r**n).as_matrix(), atol=atol)
 
 
-@make_xp_test_case(RigidTransform.inv, RigidTransform.__mul__)
+@make_xp_test_case((RigidTransform, "inv"), (RigidTransform, "__mul__"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_inverse(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
@@ -901,7 +901,7 @@ def test_inverse(xp, ndim: int):
     xp_assert_close(composed.as_matrix(), expected, atol=atol)
 
 
-@make_xp_test_case(RigidTransform.as_matrix)
+@make_xp_test_case((RigidTransform, "as_matrix"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_properties(xp, ndim: int):
     atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-6
@@ -923,7 +923,7 @@ def test_properties(xp, ndim: int):
     assert tf.single == (shape == ())
 
 
-@make_xp_test_case(RigidTransform.__getitem__)
+@make_xp_test_case((RigidTransform, "__getitem__"))
 def test_indexing(xp):
     atol = 1e-12
 
@@ -976,7 +976,7 @@ def test_indexing_array_like():
     assert len(tf_masked) == 0
 
 
-@make_xp_test_case(RigidTransform.concatenate)
+@make_xp_test_case((RigidTransform, "concatenate"))
 def test_concatenate(xp):
     atol = 1e-12
 
@@ -1008,7 +1008,7 @@ def test_concatenate(xp):
     xp_assert_close(concatenated3.as_matrix()[3:, ...], tf4.as_matrix(), atol=atol)
 
 
-@make_xp_test_case(RigidTransform.from_matrix)
+@make_xp_test_case((RigidTransform, "from_matrix"))
 def test_input_validation(xp):
     # Test invalid matrix shapes
     inputs = [xp.eye(3), xp.zeros((4, 3)), []]
@@ -1045,7 +1045,7 @@ def test_input_validation(xp):
         RigidTransform.from_rotation(xp.eye(3))
 
 
-@make_xp_test_case(RigidTransform.mean)
+@make_xp_test_case((RigidTransform, "mean"))
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_mean(xp, ndim: int):
     atol = 1e-12
@@ -1085,7 +1085,7 @@ def test_mean(xp, ndim: int):
 
 
 @make_xp_test_case(
-    RigidTransform.from_rotation, RigidTransform.mean, Rotation.magnitude
+    (RigidTransform, "from_rotation"), (RigidTransform, "mean"), (Rotation, "magnitude")
 )
 @pytest.mark.parametrize("ndim", range(1, 5))
 def test_mean_axis(xp, ndim: int):
@@ -1112,7 +1112,7 @@ def test_mean_axis(xp, ndim: int):
     xp_assert_close(tf_mean.as_matrix(), tf.as_matrix(), atol=atol)
 
 
-@make_xp_test_case(RigidTransform.mean, Rotation.magnitude)
+@make_xp_test_case((RigidTransform, "mean"), (Rotation, "magnitude"))
 def test_mean_compare_axis(xp):
     # Create a random set of transforms and compare the mean over an axis with
     # the mean without axis of the sliced transform
@@ -1150,7 +1150,7 @@ def test_mean_compare_axis(xp):
         )
 
 
-@make_xp_test_case(RigidTransform.mean)
+@make_xp_test_case((RigidTransform, "mean"))
 def test_mean_invalid_weights(xp):
     tf = RigidTransform.from_matrix(xp.tile(xp.eye(4), (4, 1, 1)))
     if is_lazy_array(tf.as_matrix()):
@@ -1169,7 +1169,7 @@ def test_mean_invalid_weights(xp):
         tf.mean(weights=xp.ones((2, 1)))
 
 
-@make_xp_test_case(RigidTransform.from_translation)
+@make_xp_test_case((RigidTransform, "from_translation"))
 def test_translation_validation(xp):
     # Test invalid translation shapes
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
@@ -1179,7 +1179,7 @@ def test_translation_validation(xp):
         RigidTransform.from_translation(xp.zeros((2, 2)))
 
 
-@make_xp_test_case(RigidTransform.apply)
+@make_xp_test_case((RigidTransform, "apply"))
 def test_vector_validation(xp):
     tf = rigid_transform_to_xp(RigidTransform.identity(2), xp=xp)
 
@@ -1194,7 +1194,7 @@ def test_vector_validation(xp):
         tf.apply(xp.zeros((1, 4, 3)))
 
 
-@make_xp_test_case(RigidTransform.__getitem__)
+@make_xp_test_case((RigidTransform, "__getitem__"))
 def test_indexing_validation(xp):
     tf = RigidTransform.from_matrix(xp.eye(4))
 
@@ -1210,7 +1210,7 @@ def test_indexing_validation(xp):
         len(tf)
 
 
-@make_xp_test_case(RigidTransform.__mul__)
+@make_xp_test_case((RigidTransform, "__mul__"))
 def test_composition_validation(xp):
     tf2 = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6]]))
     tf3 = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
@@ -1225,7 +1225,7 @@ def test_composition_validation(xp):
         tf2 * tf4
 
 
-@make_xp_test_case(RigidTransform.__mul__, RigidTransform.__rmul__)
+@make_xp_test_case((RigidTransform, "__mul__"), (RigidTransform, "__rmul__"))
 def test_rotation_promotion(xp):
     """Test that Rotation is promoted to RigidTransform in composition."""
     atol = 1e-12
@@ -1250,7 +1250,7 @@ def test_rotation_promotion(xp):
     xp_assert_close(result.as_matrix(), expected.as_matrix(), atol=atol)
 
 
-@make_xp_test_case(RigidTransform.concatenate)
+@make_xp_test_case((RigidTransform, "concatenate"))
 def test_concatenate_validation(xp):
     tf = RigidTransform.from_matrix(xp.eye(4))
 
@@ -1266,7 +1266,7 @@ def test_concatenate_validation(xp):
         RigidTransform.concatenate([tf, tf2])
 
 
-@make_xp_test_case(RigidTransform.__setitem__)
+@make_xp_test_case((RigidTransform, "__setitem__"))
 def test_setitem(xp):
     tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
     single = RigidTransform.from_translation(xp.asarray([1, 1, 1]))
@@ -1296,7 +1296,7 @@ def test_setitem(xp):
     xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
 
 
-@make_xp_test_case(RigidTransform.__setitem__)
+@make_xp_test_case((RigidTransform, "__setitem__"))
 @pytest.mark.skip_xp_backends("array_api_strict",
                               reason="doesn't support fancy indexing __setitem__")
 def test_setitem_fancy_indexing(xp):
@@ -1307,7 +1307,7 @@ def test_setitem_fancy_indexing(xp):
     xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
 
 
-@make_xp_test_case(RigidTransform.__setitem__)
+@make_xp_test_case((RigidTransform, "__setitem__"))
 def test_setitem_validation(xp):
     tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6]]))
     single = RigidTransform.from_matrix(xp.eye(4))
@@ -1323,7 +1323,7 @@ def test_setitem_validation(xp):
 
 @pytest.mark.skip_xp_backends("jax.numpy",
                               reason="JAX does not support memory sharing")
-@make_xp_test_case(RigidTransform.as_matrix)
+@make_xp_test_case((RigidTransform, "as_matrix"))
 def test_copy_flag(xp):
     # Test that copy=True creates new memory
     matrix = xp.eye(4)
@@ -1362,9 +1362,11 @@ def test_normalize_dual_quaternion(xp, ndim: int):
     xp_assert_close(vecdot, expected, atol=atol)
 
 
-@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.from_rotation,
-                   RigidTransform.from_translation, RigidTransform.from_components,
-                   RigidTransform.from_exp_coords, RigidTransform.from_dual_quat)
+@make_xp_test_case(
+    (RigidTransform, "from_matrix"), (RigidTransform, "from_rotation"),
+    (RigidTransform, "from_translation"), (RigidTransform, "from_components"),
+    (RigidTransform, "from_exp_coords"), (RigidTransform, "from_dual_quat")
+)
 def test_empty_transform_construction(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf) == 0
@@ -1396,8 +1398,8 @@ def test_empty_transform_construction(xp):
     assert not tf.single
 
 
-@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.as_components,
-                   RigidTransform.as_exp_coords, RigidTransform.as_dual_quat)
+@make_xp_test_case((RigidTransform, "from_matrix"), (RigidTransform, "as_components"),
+                   (RigidTransform, "as_exp_coords"), (RigidTransform, "as_dual_quat"))
 def test_empty_transform_representation(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
 
@@ -1413,7 +1415,7 @@ def test_empty_transform_representation(xp):
     assert tf.as_dual_quat().shape == (0, 8)
 
 
-@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.apply)
+@make_xp_test_case((RigidTransform, "from_matrix"), (RigidTransform, "apply"))
 def test_empty_transform_application(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
 
@@ -1424,7 +1426,7 @@ def test_empty_transform_application(xp):
         tf.apply(xp.zeros((2, 3)))
 
 
-@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.__mul__)
+@make_xp_test_case((RigidTransform, "from_matrix"), (RigidTransform, "__mul__"))
 def test_empty_transform_composition(xp):
     tf_empty = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     tf_single = RigidTransform.from_matrix(xp.eye(4))
@@ -1441,7 +1443,7 @@ def test_empty_transform_composition(xp):
         tf_empty * tf_many
 
 
-@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.concatenate)
+@make_xp_test_case((RigidTransform, "from_matrix"), (RigidTransform, "concatenate"))
 def test_empty_transform_concatenation(xp):
     tf_empty = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     tf_single = RigidTransform.from_matrix(xp.eye(4))
@@ -1455,8 +1457,8 @@ def test_empty_transform_concatenation(xp):
     assert len(RigidTransform.concatenate([tf_many, tf_empty, tf_single])) == 3
 
 
-@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.inv,
-                   RigidTransform.__pow__)
+@make_xp_test_case((RigidTransform, "from_matrix"), (RigidTransform, "inv"),
+                   (RigidTransform, "__pow__"))
 def test_empty_transform_inv_and_pow(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf.inv()) == 0
@@ -1466,7 +1468,7 @@ def test_empty_transform_inv_and_pow(xp):
     assert len(tf ** 0.5) == 0
 
 
-@make_xp_test_case(RigidTransform.__getitem__)
+@make_xp_test_case((RigidTransform, "__getitem__"))
 def test_empty_transform_indexing(xp):
     tf_many = rigid_transform_to_xp(RigidTransform.identity(3), xp=xp)
     tf_zero = tf_many[xp.asarray([], dtype=xp.int32)]
@@ -1486,7 +1488,7 @@ def test_empty_transform_indexing(xp):
         tf_zero[xp.asarray([False, True])]
 
 
-@make_xp_test_case(RigidTransform.from_matrix)
+@make_xp_test_case((RigidTransform, "from_matrix"))
 @pytest.mark.skip_xp_backends("array_api_strict",
                               reason="array API doesn't support pickling")
 def test_pickling(xp):
@@ -1501,9 +1503,9 @@ def test_pickling(xp):
 
 
 @make_xp_test_case(
-    RigidTransform.as_matrix,
-    RigidTransform.__iter__,
-    RigidTransform.identity,
+    (RigidTransform, "as_matrix"),
+    (RigidTransform, "__iter__"),
+    (RigidTransform, "identity"),
 )
 def test_rigid_transform_iter(xp):
     r = rigid_transform_to_xp(RigidTransform.identity(3), xp)
@@ -1514,7 +1516,7 @@ def test_rigid_transform_iter(xp):
             raise RuntimeError("Iteration exceeded length of transforms")
 
 
-@make_xp_test_case(RigidTransform.from_translation)
+@make_xp_test_case((RigidTransform, "from_translation"))
 @pytest.mark.parametrize("dim", range(1, 5))
 def test_shape_property(xp, dim: int):
     shape = (dim,) * (dim - 1)

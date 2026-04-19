@@ -1,7 +1,6 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import annotations  # Provides typing union operator `|` in Python 3.9
 import operator
 import math
 from math import prod as _prod
@@ -3788,7 +3787,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     `resample_poly` (``padtype='wrap'``) on the other hand produces significant
     deviations. This is caused by the disconiuity at the beginning of the signal, for
     which the default filter of `resample_poly` is not suited well. This example
-    illustrates that for some use cases, adpating the `resample_poly` parameters may
+    illustrates that for some use cases, adapting the `resample_poly` parameters may
     be beneficial. `resample` has a big advantage in this regard: It uses the ideal
     antialiasing filter with the maximum bandwidth by default.
 

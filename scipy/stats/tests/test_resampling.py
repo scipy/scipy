@@ -1634,7 +1634,6 @@ class TestPermutationTest:
         xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
         xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
-    @skip_xp_backends('cupy', reason='needs kruskal')
     @skip_xp_backends(eager_only=True)  # kruskal does input validation
     @pytest.mark.parametrize('axis', (-1, 2))
     def test_vectorized_nsamp_ptype_both(self, axis, xp):

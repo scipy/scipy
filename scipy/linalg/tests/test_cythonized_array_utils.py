@@ -3,28 +3,31 @@ from scipy.linalg import bandwidth, issymmetric, ishermitian
 from scipy.conftest import skip_xp_invalid_arg
 import pytest
 from pytest import raises
+from numpy.testing import assert_equal
+
+BANDWIDTH_DTYPES = (
+    np.bool,
+    np.int8, np.int16, np.int32, np.int64,
+    np.uint8, np.uint16, np.uint32, np.uint64,
+    np.float32, np.float64,
+    np.complex64, np.complex128,
+)
 
 
 @skip_xp_invalid_arg
 def test_bandwidth_dtypes():
     n = 5
-    for t in np.typecodes['All']:
-        A = np.zeros([n, n], dtype=t)
-        if t in 'eUVOMm':
-            raises(TypeError, bandwidth, A)
-        elif t == 'G':  # No-op test. On win these pass on others fail.
-            pass
-        else:
-            _ = bandwidth(A)
+    for dt in BANDWIDTH_DTYPES:
+        _ = bandwidth(np.zeros([n, n], dtype=dt))
+
+    unsupported_dtypes = [np.float16, np.longdouble, np.clongdouble,
+                          np.bytes_, np.str_, np.void, np.object_,
+                          np.datetime64, np.timedelta64]
+    for dt in unsupported_dtypes:
+        raises(TypeError, bandwidth, np.zeros([n, n], dtype=dt))
 
 
-def test_bandwidth_non2d_input():
-    A = np.array([1, 2, 3])
-    raises(ValueError, bandwidth, A)
-
-
-@pytest.mark.parametrize('T', [x for x in np.typecodes['All']
-                               if x not in 'eGUVOMmS'])
+@pytest.mark.parametrize('T', BANDWIDTH_DTYPES)
 def test_bandwidth_square_inputs(T):
     n = 20
     k = 4
@@ -47,10 +50,22 @@ def test_bandwidth_square_inputs(T):
     ])
     assert bandwidth(A) == (2, 2)
 
+    A = np.array(
+        [
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]],  # diagonal
+            [[0, 0, 1], [0, 0, 0], [0, 0, 0]],  # upper triangular
+            [[0, 0, 0], [0, 0, 0], [1, 0, 0]],  # lower triangular
+            [[0, 0, 1], [0, 0, 0], [1, 0, 0]],  # full
+            [[0, 0, 1], [0, 0, 0], [0, 1, 0.]],  # upper hessenberg
+        ]
+    )
+    lo, hi = bandwidth(A)
+    assert_equal(lo, [0, 0, 2, 2, 1])
+    assert_equal(hi, [0, 2, 0, 2, 2])
+
 
 @skip_xp_invalid_arg
-@pytest.mark.parametrize('T', [x for x in np.typecodes['All']
-                               if x not in 'eGUVOMm'])
+@pytest.mark.parametrize('T', BANDWIDTH_DTYPES)
 def test_bandwidth_rect_inputs(T):
     n, m = 10, 20
     k = 5
@@ -61,6 +76,16 @@ def test_bandwidth_rect_inputs(T):
     R[[x for x in range(1, n)], [x for x in range(n-1)]] = 1
     R[[x for x in range(k, n)], [x for x in range(n-k)]] = 1
     assert bandwidth(R) == (k, k)
+
+    R2 = np.tril(np.ones((2, 10, 2), dtype=T))
+    lo, hi = bandwidth(R2)
+    assert_equal(lo, [9, 9])
+    assert_equal(hi, [0, 0])
+
+    R3 = np.triu(np.ones((2, 10, 2), dtype=T))
+    lo, hi = bandwidth(R3)
+    assert_equal(lo, [0, 0])
+    assert_equal(hi, [1, 1])
 
 
 @skip_xp_invalid_arg

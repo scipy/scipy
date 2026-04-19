@@ -3398,6 +3398,7 @@ class genextreme_gen(rv_continuous):
         return [_ShapeInfo("c", False, (-np.inf, np.inf), (False, False))]
 
     def _get_support(self, c):
+        c = np.asarray(c)
         _b = np.where(c > 0, 1.0 / np.maximum(c, _XMIN), np.inf)
         _a = np.where(c < 0, 1.0 / np.minimum(c, -_XMIN), -np.inf)
         return _a, _b
@@ -3514,6 +3515,7 @@ class genextreme_gen(rv_continuous):
 
     def _munp(self, n, c):
         k = np.arange(0, n+1)
+        k = np.reshape(k, (-1,) + (1,)*c.ndim)
         vals = 1.0/c**n * np.sum(
             sc.comb(n, k) * (-1)**k * sc.gamma(c*k + 1),
             axis=0)
@@ -5489,6 +5491,23 @@ class geninvgauss_gen(rv_continuous):
 geninvgauss = geninvgauss_gen(a=0.0, name="geninvgauss")
 
 
+@np.vectorize(otypes=[np.float64])
+def _norminvgauss_quadrature(x, y, a, b):
+    # gh-23196 reported that the norminvgauss CDF would drop to zero in the far right
+    # tail. The SF had a similar problem, dropping to zero at the far left.
+    # This fixes the bug by using 1 - SF to compute the CDF in the right tail and
+    # 1 - CDF to compute the SF in the left tail. The mean is guaranteed to be beyond
+    # the median, so there is no loss of precision due to subtractive cancellation.
+    mean = b / np.sqrt((a + b) * (a - b))
+    if np.isneginf(x) and y > abs(mean):
+        return 1 - integrate.quad(norminvgauss._pdf, y, np.inf, args=(a, b))[0]
+    if np.isposinf(y) and x < -abs(mean):
+        return 1 - integrate.quad(norminvgauss._pdf, -np.inf, x, args=(a, b))[0]
+    else:
+        res = integrate.quad(norminvgauss._pdf, x, y, args=(a, b))[0]
+    return np.clip(res, 0, 1)
+
+
 class norminvgauss_gen(rv_continuous):
     r"""A Normal Inverse Gaussian continuous random variable.
 
@@ -5559,23 +5578,16 @@ class norminvgauss_gen(rv_continuous):
         return super()._fitstart(data, args=(1, 0.5))
 
     def _pdf(self, x, a, b):
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt((a + b) * (a - b))
         fac1 = a / np.pi
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
+    def _cdf(self, x, a, b):
+        return _norminvgauss_quadrature(-np.inf, x, a, b)
+
     def _sf(self, x, a, b):
-        if np.isscalar(x):
-            # If x is a scalar, then so are a and b.
-            return integrate.quad(self._pdf, x, np.inf, args=(a, b))[0]
-        else:
-            a = np.atleast_1d(a)
-            b = np.atleast_1d(b)
-            result = []
-            for (x0, a0, b0) in zip(x, a, b):
-                result.append(integrate.quad(self._pdf, x0, np.inf,
-                                             args=(a0, b0))[0])
-            return np.array(result)
+        return _norminvgauss_quadrature(x, np.inf, a, b)
 
     def _isf(self, q, a, b):
         def _isf_scalar(q, a, b):
@@ -5622,13 +5634,13 @@ class norminvgauss_gen(rv_continuous):
     def _rvs(self, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
         # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt((a + b) * (a - b))
         ig = invgauss.rvs(mu=1/gamma, size=size, random_state=random_state)
         return b * ig + np.sqrt(ig) * norm.rvs(size=size,
                                                random_state=random_state)
 
     def _stats(self, a, b):
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt((a + b) * (a - b))
         mean = b / gamma
         variance = a**2 / gamma**3
         skewness = 3.0 * b / (a * np.sqrt(gamma))
@@ -5971,6 +5983,10 @@ class landau_gen(rv_continuous):
     r"""A Landau continuous random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    :ref:`landau_energy_loss` : Extended example in a particle physics context.
 
     Notes
     -----
@@ -6932,7 +6948,7 @@ class lognorm_gen(rv_continuous):
         estimation of the log-normal shape and scale parameters, so the
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
         If the location is free, a likelihood maximum is found by
-        setting its partial derivative wrt to location to 0, and
+        setting its partial derivative w.r.t. location to 0, and
         solving by substituting the analytical expressions of shape
         and scale (or provided parameters).
         See, e.g., equation 3.1 in
@@ -8092,8 +8108,6 @@ class t_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
-        if df == np.inf:
-            return norm._entropy()
 
         def regular(df):
             half = df/2
@@ -8296,7 +8310,7 @@ class pareto_gen(rv_continuous):
 
             def fun_to_solve(scale):
                 # optimize the scale by setting the partial derivatives
-                # w.r.t. to location and scale equal and solving.
+                # w.r.t. location and scale equal and solving.
                 location = np.min(data) - scale
                 shape = fshape or get_shape(scale, location)
                 return dL_dLocation(shape, location) - dL_dScale(shape, scale)
@@ -8835,7 +8849,7 @@ class powerlaw_gen(rv_continuous):
 
         def fun_to_solve(loc):
             # optimize the location by setting the partial derivatives
-            # w.r.t. to location and scale equal and solving.
+            # w.r.t. location and scale equal and solving.
             scale = np.nextafter(get_scale(data, loc), -np.inf)
             shape = fshape or get_shape(data, loc, scale)
             return (dL_dScale(data, shape, scale)
@@ -10888,9 +10902,12 @@ class tukeylambda_gen(rv_continuous):
         return 0, _tlvar(lam), 0, _tlkurt(lam)
 
     def _entropy(self, lam):
-        def integ(p):
-            return np.log(pow(p, lam-1)+pow(1-p, lam-1))
-        return integrate.quad(integ, 0, 1)[0]
+        @np.vectorize
+        def entropy_1d(lam):
+            def integ(p):
+                return np.log(pow(p, lam - 1) + pow(1 - p, lam - 1))
+            return integrate.quad(integ, 0, 1)[0]
+        return entropy_1d(lam)
 
 
 tukeylambda = tukeylambda_gen(name='tukeylambda')

@@ -2183,7 +2183,7 @@ class MonteCarloMethod(ResamplingMethod):
     hypothesis test functions to perform a Monte Carlo version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of Monte Carlo samples to draw. Default is 9999.
@@ -2253,7 +2253,7 @@ class PermutationMethod(ResamplingMethod):
     hypothesis test functions to perform a permutation version of the
     hypothesis tests.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.
@@ -2338,7 +2338,7 @@ class BootstrapMethod(ResamplingMethod):
     Instances of this class can be passed into the `method` parameter of some
     confidence interval methods to generate a bootstrap confidence interval.
 
-    Attributes
+    Parameters
     ----------
     n_resamples : int, optional
         The number of resamples to perform. Default is 9999.

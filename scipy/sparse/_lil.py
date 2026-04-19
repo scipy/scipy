@@ -133,6 +133,11 @@ class _lil_base(_spbase, IndexMixin):
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
 
+        Parameters
+        ----------
+        i : int
+            Row to return view of.
+
         Returns
         -------
         lil_array or lil_matrix
@@ -145,6 +150,11 @@ class _lil_base(_spbase, IndexMixin):
 
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
+
+        Parameters
+        ----------
+        i : int
+            Row to return a copy of.
 
         Returns
         -------
@@ -480,6 +490,15 @@ def _prepare_index_for_memoryview(i, j, x=None):
 def isspmatrix_lil(x):
     """Is `x` of lil_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -544,6 +563,8 @@ class lil_array(_lil_base, sparray):
         Number of values stored in the array
     T : lil_array
         The transpose of the array
+    mT : lil_array
+        The matrix transpose of the array
 
     Notes
     -----
@@ -571,7 +592,7 @@ class lil_array(_lil_base, sparray):
         - The corresponding nonzero values are stored in similar
           fashion in ``self.data``.
 
-    """
+    """  # numpydoc ignore=PR01
 
 
 class lil_matrix(spmatrix, _lil_base):
@@ -582,6 +603,15 @@ class lil_matrix(spmatrix, _lil_base):
     Note that inserting a single item can take linear time in the worst case;
     to construct the matrix efficiently, make sure the items are pre-sorted by
     index, per row.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         lil_matrix(D)
@@ -613,6 +643,8 @@ class lil_matrix(spmatrix, _lil_base):
     size : int
         Number of values stored in the matrix
     T : lil_matrix
+        The transpose of the matrix
+    mT : lil_array
         The transpose of the matrix
 
     Notes
