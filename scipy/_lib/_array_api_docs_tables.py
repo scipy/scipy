@@ -188,7 +188,7 @@ def make_flat_capabilities_table(
         backend_type: str,
         /,
         *,
-        capabilities_table: list[str] | None = None,
+        capabilities_table: dict | None = None,
 ) -> list[dict[str, str | int]]:
     """Generate full table of array api capabilities across public functions.
 
@@ -200,7 +200,7 @@ def make_flat_capabilities_table(
 
     backend_type : {'cpu', 'gpu', 'jit', 'lazy'}
 
-    capabilities_table : Optional[list[str]]
+    capabilities_table : dict | None
         Table in the form of `scipy._lib._array_api.xp_capabilities_table`.
         If None, uses `scipy._lib._array_api.xp_capabilities_table`.
         Default: None.
