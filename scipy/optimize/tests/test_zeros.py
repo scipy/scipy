@@ -993,9 +993,6 @@ def test_bisect_special_parameter(method):
        method(f, -1e8, 1e7, args=args, xtol=1e-6, rtol=rtolbad)
 
 
-# Validated SciPy-compliant tests
-# To be appended to scipy/optimize/tests/test_zeros.py
-
 class TestMultiPhaseBracketing:
     """Tests for multi-phase hybrid bracketing algorithms."""
 
