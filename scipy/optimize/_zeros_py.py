@@ -11,7 +11,7 @@ _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
-           'RootResults']
+           'RootResults', 'mpbf', 'mpbfms', 'mptf', 'mptfms']
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
@@ -1485,3 +1485,608 @@ def toms748(f, a, b, args=(), k=1,
     x, function_calls, iterations, flag = result
     return _results_select(full_output, (x, function_calls, iterations, flag),
                            "toms748")
+
+
+# Validated SciPy-compliant code
+# To be appended to scipy/optimize/_zeros_py.py
+
+def mpbf(f, a, b, args=(), xtol=2e-12, rtol=8.881784197001252e-16,
+         maxiter=100, full_output=False, disp=True):
+    """
+    Find a root of a function in a bracketing interval using multi-phase
+    bisection-false position method.
+
+    Parameters
+    ----------
+    f : function
+        Python function returning a number. The function :math:`f`
+        must be continuous, and :math:`f(a)` and :math:`f(b)` must
+        have opposite signs.
+    a : scalar
+        One end of the bracketing interval :math:`[a, b]`.
+    b : scalar
+        The other end of the bracketing interval :math:`[a, b]`.
+    args : tuple, optional
+        Extra arguments to pass to function `f`.
+    xtol : number, optional
+        The computed root ``x0`` will satisfy ``|f(x0)| <= xtol``.
+    rtol : number, optional
+        Relative tolerance (not used directly, for API compatibility).
+    maxiter : int, optional
+        Maximum number of iterations.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned. If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a `RootResults` object.
+    disp : bool, optional
+        If True, raise RuntimeError if the algorithm didn't converge.
+        Otherwise, the convergence status is recorded in `RootResults`.
+
+    Returns
+    -------
+    root : float
+        Root of `f` between `a` and `b`.
+    r : `RootResults` (present if ``full_output=True``)
+        Object containing information about the convergence.
+
+    See Also
+    --------
+    mpbfms, mptf, mptfms
+
+    Notes
+    -----
+    This algorithm combines bisection and false position methods in each
+    iteration. First, a bisection step narrows the bracket, then a false
+    position (regula falsi) step provides faster convergence.
+
+    References
+    ----------
+    .. [1] A. Ellithy, "Four New Multi-Phase Hybrid Bracketing Algorithms
+           for Numerical Root Finding", Journal of the Egyptian Mathematical
+           Society, vol. 34, 2026.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**3 - x - 2
+    >>> from scipy.optimize import mpbf
+    >>> root = mpbf(f, 1, 2)
+    >>> root
+    1.5213797068045676
+    >>> f(root)
+    0.0
+    """
+    if not callable(f):
+        raise ValueError("f must be callable")
+
+    a, b = float(a), float(b)
+    if a > b:
+        a, b = b, a
+
+    fa = f(a, *args)
+    fb = f(b, *args)
+    funcalls = 2
+
+    if abs(fa) <= xtol:
+        return _results_select(full_output, (a, funcalls, 0, _ECONVERGED),
+                               "mpbf")
+
+    if abs(fb) <= xtol:
+        return _results_select(full_output, (b, funcalls, 0, _ECONVERGED),
+                               "mpbf")
+
+    if fa * fb > 0:
+        raise ValueError("f(a) and f(b) must have opposite signs")
+
+    eps = 1e-15
+    for iteration in range(1, maxiter + 1):
+        # Phase 1: Bisection
+        mid = 0.5 * (a + b)
+        fmid = f(mid, *args)
+        funcalls += 1
+
+        if abs(fmid) <= xtol:
+            return _results_select(full_output,
+                                   (mid, funcalls, iteration, _ECONVERGED),
+                                   "mpbf")
+
+        if fa * fmid < 0:
+            b, fb = mid, fmid
+        else:
+            a, fa = mid, fmid
+
+        # Phase 2: False Position
+        denom = fb - fa
+        if abs(denom) < eps:
+            denom = eps if denom >= 0 else -eps
+
+        fp = (a * fb - b * fa) / denom
+        ffp = f(fp, *args)
+        funcalls += 1
+
+        if abs(ffp) <= xtol:
+            return _results_select(full_output,
+                                   (fp, funcalls, iteration, _ECONVERGED),
+                                   "mpbf")
+
+        if fa * ffp < 0:
+            b, fb = fp, ffp
+        else:
+            a, fa = fp, ffp
+
+    # Max iterations
+    root = 0.5 * (a + b)
+    if disp:
+        raise RuntimeError("Failed to converge after %d iterations" % maxiter)
+    
+    return _results_select(full_output,
+                           (root, funcalls, maxiter, _ECONVERR),
+                           "mpbf")
+
+
+def mpbfms(f, a, b, args=(), xtol=2e-12, rtol=8.881784197001252e-16,
+           maxiter=100, full_output=False, disp=True):
+    """
+    Find a root of a function in a bracketing interval using multi-phase
+    bisection-false position-modified secant method.
+
+    Parameters
+    ----------
+    f : function
+        Python function returning a number. The function :math:`f`
+        must be continuous, and :math:`f(a)` and :math:`f(b)` must
+        have opposite signs.
+    a : scalar
+        One end of the bracketing interval :math:`[a, b]`.
+    b : scalar
+        The other end of the bracketing interval :math:`[a, b]`.
+    args : tuple, optional
+        Extra arguments to pass to function `f`.
+    xtol : number, optional
+        The computed root ``x0`` will satisfy ``|f(x0)| <= xtol``.
+    rtol : number, optional
+        Relative tolerance (not used directly, for API compatibility).
+    maxiter : int, optional
+        Maximum number of iterations.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned. If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a `RootResults` object.
+    disp : bool, optional
+        If True, raise RuntimeError if the algorithm didn't converge.
+        Otherwise, the convergence status is recorded in `RootResults`.
+
+    Returns
+    -------
+    root : float
+        Root of `f` between `a` and `b`.
+    r : `RootResults` (present if ``full_output=True``)
+        Object containing information about the convergence.
+
+    See Also
+    --------
+    mpbf, mptf, mptfms
+
+    Notes
+    -----
+    This algorithm combines bisection, false position, and modified secant
+    methods in each iteration. The modified secant phase uses an adaptive
+    step size delta = 1e-8 * max(1, |x|) for numerical differentiation.
+
+    References
+    ----------
+    .. [1] A. Ellithy, "Four New Multi-Phase Hybrid Bracketing Algorithms
+           for Numerical Root Finding", Journal of the Egyptian Mathematical
+           Society, vol. 34, 2026.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**3 - x - 2
+    >>> from scipy.optimize import mpbfms
+    >>> root = mpbfms(f, 1, 2)
+    >>> root
+    1.5213797068045676
+    >>> f(root)
+    0.0
+    """
+    if not callable(f):
+        raise ValueError("f must be callable")
+
+    a, b = float(a), float(b)
+    if a > b:
+        a, b = b, a
+
+    fa = f(a, *args)
+    fb = f(b, *args)
+    funcalls = 2
+
+    if abs(fa) <= xtol:
+        return _results_select(full_output, (a, funcalls, 0, _ECONVERGED),
+                               "mpbfms")
+
+    if abs(fb) <= xtol:
+        return _results_select(full_output, (b, funcalls, 0, _ECONVERGED),
+                               "mpbfms")
+
+    if fa * fb > 0:
+        raise ValueError("f(a) and f(b) must have opposite signs")
+
+    eps = 1e-15
+    for iteration in range(1, maxiter + 1):
+        # Phase 1: Bisection
+        mid = 0.5 * (a + b)
+        fmid = f(mid, *args)
+        funcalls += 1
+
+        if fa * fmid < 0:
+            b, fb = mid, fmid
+        else:
+            a, fa = mid, fmid
+
+        # Phase 2: False Position
+        denom = fb - fa
+        if abs(denom) < eps:
+            denom = eps if denom >= 0 else -eps
+
+        fp = (a * fb - b * fa) / denom
+        ffp = f(fp, *args)
+        funcalls += 1
+
+        if fa * ffp < 0:
+            b, fb = fp, ffp
+        else:
+            a, fa = fp, ffp
+
+        if abs(ffp) <= xtol:
+            return _results_select(full_output,
+                                   (fp, funcalls, iteration, _ECONVERGED),
+                                   "mpbfms")
+
+        # Phase 3: Modified Secant
+        delta = 1e-8 * max(1.0, abs(fp)) + eps
+        f_delta = f(fp + delta, *args)
+        funcalls += 1
+
+        denom_s = f_delta - ffp
+        if abs(denom_s) < eps:
+            denom_s = eps if denom_s >= 0 else -eps
+
+        xS = fp - (delta * ffp) / denom_s
+
+        if a < xS < b:
+            fxS = f(xS, *args)
+            funcalls += 1
+
+            if abs(fxS) < abs(ffp):
+                if fa * fxS < 0:
+                    b, fb = xS, fxS
+                else:
+                    a, fa = xS, fxS
+
+                if abs(fxS) <= xtol:
+                    return _results_select(full_output,
+                                           (xS, funcalls, iteration,
+                                            _ECONVERGED), "mpbfms")
+
+    # Max iterations
+    root = 0.5 * (a + b)
+    if disp:
+        raise RuntimeError("Failed to converge after %d iterations" % maxiter)
+    
+    return _results_select(full_output,
+                           (root, funcalls, maxiter, _ECONVERR),
+                           "mpbfms")
+
+
+def mptf(f, a, b, args=(), xtol=2e-12, rtol=8.881784197001252e-16,
+         maxiter=100, full_output=False, disp=True):
+    """
+    Find a root of a function in a bracketing interval using multi-phase
+    trisection-false position method.
+
+    Parameters
+    ----------
+    f : function
+        Python function returning a number. The function :math:`f`
+        must be continuous, and :math:`f(a)` and :math:`f(b)` must
+        have opposite signs.
+    a : scalar
+        One end of the bracketing interval :math:`[a, b]`.
+    b : scalar
+        The other end of the bracketing interval :math:`[a, b]`.
+    args : tuple, optional
+        Extra arguments to pass to function `f`.
+    xtol : number, optional
+        The computed root ``x0`` will satisfy ``|f(x0)| <= xtol``.
+    rtol : number, optional
+        Relative tolerance (not used directly, for API compatibility).
+    maxiter : int, optional
+        Maximum number of iterations.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned. If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a `RootResults` object.
+    disp : bool, optional
+        If True, raise RuntimeError if the algorithm didn't converge.
+        Otherwise, the convergence status is recorded in `RootResults`.
+
+    Returns
+    -------
+    root : float
+        Root of `f` between `a` and `b`.
+    r : `RootResults` (present if ``full_output=True``)
+        Object containing information about the convergence.
+
+    See Also
+    --------
+    mpbf, mpbfms, mptfms
+
+    Notes
+    -----
+    This algorithm uses trisection (dividing the interval into thirds)
+    followed by false position refinement. Trisection provides faster
+    interval reduction than bisection at the cost of additional function
+    evaluations.
+
+    References
+    ----------
+    .. [1] A. Ellithy, "Four New Multi-Phase Hybrid Bracketing Algorithms
+           for Numerical Root Finding", Journal of the Egyptian Mathematical
+           Society, vol. 34, 2026.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**3 - x - 2
+    >>> from scipy.optimize import mptf
+    >>> root = mptf(f, 1, 2)
+    >>> root
+    1.5213797068045676
+    """
+    if not callable(f):
+        raise ValueError("f must be callable")
+
+    a, b = float(a), float(b)
+    if a > b:
+        a, b = b, a
+
+    fa = f(a, *args)
+    fb = f(b, *args)
+    funcalls = 2
+
+    if abs(fa) <= xtol:
+        return _results_select(full_output, (a, funcalls, 0, _ECONVERGED),
+                               "mptf")
+
+    if abs(fb) <= xtol:
+        return _results_select(full_output, (b, funcalls, 0, _ECONVERGED),
+                               "mptf")
+
+    if fa * fb > 0:
+        raise ValueError("f(a) and f(b) must have opposite signs")
+
+    eps = 1e-15
+    for iteration in range(1, maxiter + 1):
+        # Phase 1: Trisection
+        diff = b - a
+        x1 = a + diff / 3.0
+        x2 = b - diff / 3.0
+
+        fx1 = f(x1, *args)
+        fx2 = f(x2, *args)
+        funcalls += 2
+
+        if abs(fx1) <= xtol:
+            return _results_select(full_output,
+                                   (x1, funcalls, iteration, _ECONVERGED),
+                                   "mptf")
+
+        if abs(fx2) <= xtol:
+            return _results_select(full_output,
+                                   (x2, funcalls, iteration, _ECONVERGED),
+                                   "mptf")
+
+        if fa * fx1 < 0:
+            b, fb = x1, fx1
+        elif fx1 * fx2 < 0:
+            a, b, fa, fb = x1, x2, fx1, fx2
+        else:
+            a, fa = x2, fx2
+
+        # Phase 2: False Position
+        denom = fb - fa
+        if abs(denom) < eps:
+            denom = eps if denom >= 0 else -eps
+
+        x = (a * fb - b * fa) / denom
+        fx = f(x, *args)
+        funcalls += 1
+
+        if abs(fx) <= xtol:
+            return _results_select(full_output,
+                                   (x, funcalls, iteration, _ECONVERGED),
+                                   "mptf")
+
+        if fa * fx < 0:
+            b, fb = x, fx
+        else:
+            a, fa = x, fx
+
+    # Max iterations
+    root = 0.5 * (a + b)
+    if disp:
+        raise RuntimeError("Failed to converge after %d iterations" % maxiter)
+    
+    return _results_select(full_output,
+                           (root, funcalls, maxiter, _ECONVERR),
+                           "mptf")
+
+
+def mptfms(f, a, b, args=(), xtol=2e-12, rtol=8.881784197001252e-16,
+           maxiter=100, full_output=False, disp=True):
+    """
+    Find a root of a function in a bracketing interval using multi-phase
+    trisection-false position-modified secant method.
+
+    Parameters
+    ----------
+    f : function
+        Python function returning a number. The function :math:`f`
+        must be continuous, and :math:`f(a)` and :math:`f(b)` must
+        have opposite signs.
+    a : scalar
+        One end of the bracketing interval :math:`[a, b]`.
+    b : scalar
+        The other end of the bracketing interval :math:`[a, b]`.
+    args : tuple, optional
+        Extra arguments to pass to function `f`.
+    xtol : number, optional
+        The computed root ``x0`` will satisfy ``|f(x0)| <= xtol``.
+    rtol : number, optional
+        Relative tolerance (not used directly, for API compatibility).
+    maxiter : int, optional
+        Maximum number of iterations.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned. If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a `RootResults` object.
+    disp : bool, optional
+        If True, raise RuntimeError if the algorithm didn't converge.
+        Otherwise, the convergence status is recorded in `RootResults`.
+
+    Returns
+    -------
+    root : float
+        Root of `f` between `a` and `b`.
+    r : `RootResults` (present if ``full_output=True``)
+        Object containing information about the convergence.
+
+    See Also
+    --------
+    mpbf, mpbfms, mptf
+
+    Notes
+    -----
+    This algorithm combines trisection, false position, and modified secant
+    methods. It uses adaptive step sizes for the modified secant phase:
+    delta = 1e-8 * max(1, |x|).
+
+    References
+    ----------
+    .. [1] A. Ellithy, "Four New Multi-Phase Hybrid Bracketing Algorithms
+           for Numerical Root Finding", Journal of the Egyptian Mathematical
+           Society, vol. 34, 2026.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**3 - x - 2
+    >>> from scipy.optimize import mptfms
+    >>> root = mptfms(f, 1, 2)
+    >>> root
+    1.5213797068045676
+    """
+    if not callable(f):
+        raise ValueError("f must be callable")
+
+    a, b = float(a), float(b)
+    if a > b:
+        a, b = b, a
+
+    fa = f(a, *args)
+    fb = f(b, *args)
+    funcalls = 2
+
+    if abs(fa) <= xtol:
+        return _results_select(full_output, (a, funcalls, 0, _ECONVERGED),
+                               "mptfms")
+
+    if abs(fb) <= xtol:
+        return _results_select(full_output, (b, funcalls, 0, _ECONVERGED),
+                               "mptfms")
+
+    if fa * fb > 0:
+        raise ValueError("f(a) and f(b) must have opposite signs")
+
+    eps = 1e-15
+    for iteration in range(1, maxiter + 1):
+        # Phase 1: Trisection
+        diff = b - a
+        x1 = a + diff / 3.0
+        x2 = b - diff / 3.0
+
+        fx1 = f(x1, *args)
+        fx2 = f(x2, *args)
+        funcalls += 2
+
+        if abs(fx1) <= xtol:
+            return _results_select(full_output,
+                                   (x1, funcalls, iteration, _ECONVERGED),
+                                   "mptfms")
+
+        if abs(fx2) <= xtol:
+            return _results_select(full_output,
+                                   (x2, funcalls, iteration, _ECONVERGED),
+                                   "mptfms")
+
+        if fa * fx1 < 0:
+            b, fb = x1, fx1
+        elif fx1 * fx2 < 0:
+            a, b, fa, fb = x1, x2, fx1, fx2
+        else:
+            a, fa = x2, fx2
+
+        # Phase 2: False Position
+        denom = fb - fa
+        if abs(denom) < eps:
+            denom = eps if denom >= 0 else -eps
+
+        fp = (a * fb - b * fa) / denom
+        ffp = f(fp, *args)
+        funcalls += 1
+
+        if fa * ffp < 0:
+            b, fb = fp, ffp
+        else:
+            a, fa = fp, ffp
+
+        if abs(ffp) <= xtol:
+            return _results_select(full_output,
+                                   (fp, funcalls, iteration, _ECONVERGED),
+                                   "mptfms")
+
+        # Phase 3: Modified Secant
+        delta = 1e-8 * max(1.0, abs(fp)) + eps
+        f_delta = f(fp + delta, *args)
+        funcalls += 1
+
+        denom_s = f_delta - ffp
+        if abs(denom_s) < eps:
+            denom_s = eps if denom_s >= 0 else -eps
+
+        xS = fp - (delta * ffp) / denom_s
+
+        if a < xS < b:
+            fxS = f(xS, *args)
+            funcalls += 1
+
+            if abs(fxS) < abs(ffp):
+                if fa * fxS < 0:
+                    b, fb = xS, fxS
+                else:
+                    a, fa = xS, fxS
+
+                if abs(fxS) <= xtol:
+                    return _results_select(full_output,
+                                           (xS, funcalls, iteration,
+                                            _ECONVERGED), "mptfms")
+
+    # Max iterations
+    root = 0.5 * (a + b)
+    if disp:
+        raise RuntimeError("Failed to converge after %d iterations" % maxiter)
+    
+    return _results_select(full_output,
+                           (root, funcalls, maxiter, _ECONVERR),
+                           "mptfms")

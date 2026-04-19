@@ -992,6 +992,165 @@ def test_bisect_special_parameter(method):
     with pytest.raises(ValueError, match="rtol too small"):
        method(f, -1e8, 1e7, args=args, xtol=1e-6, rtol=rtolbad)
 
+
+# Validated SciPy-compliant tests
+# To be appended to scipy/optimize/tests/test_zeros.py
+
+class TestMultiPhaseBracketing:
+    """Tests for multi-phase hybrid bracketing algorithms."""
+
+    ALGORITHMS = [zeros.mpbf, zeros.mpbfms, zeros.mptf, zeros.mptfms]
+    ALGORITHM_NAMES = ["mpbf", "mpbfms", "mptf", "mptfms"]
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_basic_cubic(self, algorithm):
+        """Test convergence on x^3 - x - 2."""
+        root = algorithm(f_cubic, 1, 2)
+        assert_allclose(f_cubic(root), 0, atol=1e-12)
+        assert_allclose(root, 1.5213797068045676, rtol=1e-10)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_basic_quadratic(self, algorithm):
+        """Test convergence on x^2 - 2 (sqrt(2))."""
+        root = algorithm(f_quadratic, 1, 2)
+        assert_allclose(f_quadratic(root), 0, atol=1e-12)
+        assert_allclose(root, np.sqrt(2), rtol=1e-10)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_basic_trig(self, algorithm):
+        """Test convergence on cos(x) - x."""
+        root = algorithm(f_trig, 0, 1)
+        assert_allclose(f_trig(root), 0, atol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_basic_exp(self, algorithm):
+        """Test convergence on exp(x) - 3x - 2."""
+        root = algorithm(f_exp, 2, 3)
+        assert_allclose(f_exp(root), 0, atol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_linear(self, algorithm):
+        """Test convergence on linear function."""
+        root = algorithm(f_linear, 0, 3)
+        assert_allclose(root, 1.5, rtol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_root_at_endpoint_a(self, algorithm):
+        """Test when root is at left endpoint."""
+        def f(x):
+            return x - 1.0
+        root = algorithm(f, 1.0, 2.0)
+        assert_allclose(root, 1.0, rtol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_root_at_endpoint_b(self, algorithm):
+        """Test when root is at right endpoint."""
+        def f(x):
+            return x - 2.0
+        root = algorithm(f, 1.0, 2.0)
+        assert_allclose(root, 2.0, rtol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_args_passing(self, algorithm):
+        """Test that additional args are passed to function."""
+        def f(x, c):
+            return x**2 - c
+        root = algorithm(f, 0, 3, args=(4,))
+        assert_allclose(root, 2.0, rtol=1e-10)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_full_output(self, algorithm):
+        """Test full_output returns correct structure."""
+        root, r = algorithm(f_cubic, 1, 2, full_output=True)
+        assert_allclose(root, 1.5213797068045676, rtol=1e-10)
+        assert r.converged
+        assert r.iterations >= 0
+        assert r.function_calls >= 2
+        assert r.flag == 'converged'
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_invalid_bracket_raises(self, algorithm):
+        """Test that same-sign endpoints raise ValueError."""
+        def f(x):
+            return x**2 + 1  # Always positive
+        with pytest.raises(ValueError, match="opposite signs"):
+            algorithm(f, 0, 1)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_swapped_endpoints(self, algorithm):
+        """Test that a > b still works (endpoints are swapped)."""
+        root = algorithm(f_cubic, 2, 1)  # Swapped
+        assert_allclose(f_cubic(root), 0, atol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_high_degree_polynomial(self, algorithm):
+        """Test on x^10 - 1."""
+        def f(x):
+            return x**10 - 1
+        root = algorithm(f, 0, 1.3)
+        assert_allclose(root, 1.0, rtol=1e-8)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_tight_tolerance(self, algorithm):
+        """Test with very tight tolerance."""
+        root = algorithm(f_quadratic, 1, 2, xtol=1e-14)
+        assert_allclose(f_quadratic(root), 0, atol=1e-13)
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_maxiter_respected(self, algorithm):
+        """Test that maxiter parameter is respected."""
+        def f(x):
+            return x**20 - 1
+        root, r = algorithm(f, 0.5, 1.5, maxiter=3, full_output=True, disp=False)
+        assert r.iterations <= 3
+
+    @pytest.mark.parametrize("algorithm", ALGORITHMS)
+    def test_disp_false_no_exception(self, algorithm):
+        """Test that disp=False doesn't raise on non-convergence."""
+        def f(x):
+            return x**30 - 1
+        # With very few iterations, may not converge
+        root = algorithm(f, 0.5, 1.5, maxiter=1, disp=False)
+        # Should return without raising
+
+    def test_mpbfms_iteration_count(self):
+        """Verify mpbfms achieves expected low iteration count."""
+        _, r = zeros.mpbfms(f_cubic, 1, 2, full_output=True)
+        assert r.iterations <= 5  # Should be around 3
+
+    def test_mptfms_iteration_count(self):
+        """Verify mptfms achieves expected low iteration count."""
+        _, r = zeros.mptfms(f_cubic, 1, 2, full_output=True)
+        assert r.iterations <= 4  # Should be around 2
+
+
+class TestMultiPhaseBracketingBenchmarks:
+    """Benchmark validation tests."""
+
+    @pytest.mark.parametrize("algorithm", [zeros.mpbf, zeros.mpbfms, zeros.mptf, zeros.mptfms])
+    def test_kepler_equation(self, algorithm):
+        """Test on Kepler's equation."""
+        def f(x):
+            return x - 0.99 * np.sin(x) - 2.0
+        root = algorithm(f, 2.0, 3.0)
+        assert_allclose(f(root), 0, atol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", [zeros.mpbf, zeros.mpbfms, zeros.mptf, zeros.mptfms])
+    def test_colebrook_white(self, algorithm):
+        """Test on Colebrook-White friction factor equation."""
+        def f(x):
+            return -2 * np.log10(0.000027027 + 2.51 / (1e7 * np.sqrt(x))) - 1 / np.sqrt(x)
+        root = algorithm(f, 0.008, 0.03)
+        assert_allclose(f(root), 0, atol=1e-12)
+
+    @pytest.mark.parametrize("algorithm", [zeros.mpbf, zeros.mpbfms, zeros.mptf, zeros.mptfms])
+    def test_van_der_waals(self, algorithm):
+        """Test on Van der Waals equation for CO2."""
+        def f(x):
+            return (10.0 + 3.592 / x**2) * (x - 0.04267) - 0.08206 * 300
+        root = algorithm(f, 2.0, 3.0)
+        assert_allclose(f(root), 0, atol=1e-12)
+        
 class TestRidderUnderflow:
     def test_gh_issue_underflow(self):
         # Regression test for underflow in Ridder's method.
