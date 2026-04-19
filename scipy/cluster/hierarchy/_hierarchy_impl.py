@@ -40,7 +40,7 @@ import bisect
 from collections import deque
 
 import numpy as np
-from . import _hierarchy, _optimal_leaf_ordering
+from . import _hierarchy, _optimal_leaf_ordering  # type:ignore[attr-defined]
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
                                    is_lazy_array, xp_capabilities, xp_copy)
@@ -2933,13 +2933,13 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         Ellipse = matplotlib.patches.Ellipse
         for (x, y) in contraction_marks:
             if orientation in ('left', 'right'):
-                e = Ellipse((y, x), width=dvw / 100, height=1.0)
+                ell = Ellipse((y, x), width=dvw / 100, height=1.0)
             else:
-                e = Ellipse((x, y), width=1.0, height=dvw / 100)
-            ax.add_artist(e)
-            e.set_clip_box(ax.bbox)
-            e.set_alpha(0.5)
-            e.set_facecolor('k')
+                ell = Ellipse((x, y), width=1.0, height=dvw / 100)
+            ax.add_artist(ell)
+            ell.set_clip_box(ax.bbox)
+            ell.set_alpha(0.5)
+            ell.set_facecolor('k')
 
     if trigger_redraw:
         matplotlib.pylab.draw_if_interactive()

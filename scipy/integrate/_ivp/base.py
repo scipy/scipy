@@ -130,7 +130,7 @@ class OdeSolver:
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, fun, t0, y0, t_bound, vectorized,
                  support_complex=False):
@@ -255,7 +255,7 @@ class DenseOutput:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, t_old, t):
         self.t_old = t_old

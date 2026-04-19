@@ -197,7 +197,7 @@ class LinearOperator:
     __array_ufunc__ = None
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     ndim: int
 

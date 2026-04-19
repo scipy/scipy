@@ -198,7 +198,7 @@ def test_ttests(f, alternative, axis, xp):
      make_xp_pytest_param(stats.kurtosistest, tuple()),
      make_xp_pytest_param(stats.normaltest, tuple()),
      make_xp_pytest_param(stats.jarque_bera, tuple()),
-     make_xp_pytest_param(stats.cramervonmises, (stats.norm.cdf,)),
+     make_xp_pytest_param(stats.cramervonmises, (stats.norm.cdf,)),  # type:ignore[attr-defined]
 ])
 @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
 @pytest.mark.parametrize('axis', [0, 1, None])

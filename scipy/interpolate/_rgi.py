@@ -283,7 +283,7 @@ class RegularGridInterpolator:
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, *, solver=None, solver_args=None):
