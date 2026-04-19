@@ -546,6 +546,34 @@ by increasing the number of taps.
 Note that the functions :func:`firwin`, :func:`firwin2` and :func:`freqz` use different
 default sampling frequencies.
 
+Example: Applying an FIR Filter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following example demonstrates how to design and apply a simple
+low-pass FIR filter to a noisy signal.
+
+>>> import numpy as np
+>>> from scipy import signal
+>>> import matplotlib.pyplot as plt
+
+>>> # Create a signal with mixed frequencies
+>>> t = np.linspace(0, 1, 1000, endpoint=False)
+>>> x = np.sin(2*np.pi*5*t) + 0.5*np.sin(2*np.pi*50*t)
+
+>>> # Design a low-pass FIR filter
+>>> b = signal.firwin(numtaps=101, cutoff=10, fs=1000)
+
+>>> # Apply the filter
+>>> y = signal.lfilter(b, [1.0], x)
+
+>>> # Plot results
+>>> plt.figure()
+>>> plt.plot(t, x, label='Original Signal')
+>>> plt.plot(t, y, label='Filtered Signal')
+>>> plt.legend()
+>>> plt.title('FIR Filter Example')
+>>> plt.show()
+
 
 IIR Filter
 """"""""""
