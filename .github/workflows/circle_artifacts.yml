@@ -11,7 +11,9 @@ permissions: {}
 jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-22.04
-    environment: circleci-redirector
+    environment:
+      name: circleci-redirector
+      deployment: false
     if: >
       github.repository == 'scipy/scipy'
       && github.event.context == 'ci/circleci: build_docs'
