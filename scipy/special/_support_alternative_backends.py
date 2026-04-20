@@ -52,7 +52,9 @@ class _FuncInfo:
     # arguments, the ith entry in the tuple controls positive_only for
     # the ith argument. To make backend specific choices for positive_only,
     # pass in a dict mapping backend names to bool or tuple[bool, ...].
-    positive_only: bool | tuple[bool, ...] | Mapping[str, bool | tuple[bool, ...]] = False
+    positive_only: (
+        bool | tuple[bool, ...] | Mapping[str, bool | tuple[bool, ...]]
+    ) = False
     # Some special functions are not ufuncs and ufunc-specific tests
     # should not be applied to these.
     is_ufunc: bool = True

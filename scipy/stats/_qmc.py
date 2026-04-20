@@ -2405,7 +2405,9 @@ class MultivariateNormalQMC:
             # from being passed via `rng`.
             kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
             kwargs = {kwarg: rng}
-            self.engine: QMCEngine = Sobol(d=engine_dim, scramble=True, bits=30, **kwargs)
+            self.engine: QMCEngine = Sobol(
+                d=engine_dim, scramble=True, bits=30, **kwargs
+            )
         elif isinstance(engine, QMCEngine):
             if engine.d != engine_dim:
                 raise ValueError("Dimension of `engine` must be consistent"
