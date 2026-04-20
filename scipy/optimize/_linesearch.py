@@ -256,7 +256,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     -----
     Uses the line search algorithm to enforce strong Wolfe conditions. See algorithms
     3.5 and 3.6 on pp. 60-61 in [1]_ (first edition, algorithms 3.2 and 3.3 on
-    pp. 59-61), se also [2]_.
+    pp. 59-61), see also [2]_.
 
     The search direction `pk` must be a descent direction (e.g.
     ``-myfprime(xk)``) to find a step length that satisfies the strong Wolfe
