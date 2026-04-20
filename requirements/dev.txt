@@ -3,6 +3,7 @@
 click<8.3.0
 spin
 mypy==1.19.1
+pyrefly==0.61.1
 typing_extensions
 types-psutil
 pycodestyle
