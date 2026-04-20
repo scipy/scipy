@@ -64,18 +64,21 @@ ignore-missing-imports = [
 replace-imports-with-any = [
     "scipy.sparse.linalg._propack.*",
 ]
+
+# for compatibility with mypy
 check-unannotated-defs = false
 infer-return-types = "never"
+errors = {"redundant-cast" = "error", "bad-override-mutable-attribute" = "ignore" }
 
-[errors]
-bad-override-mutable-attribute = "ignore"
-redundant-cast = "error"
-
+# there are currently 960 `bad-override` errors in `scipy/stats/**`, most of which
+# are caused by violations of Liskov's substitution principle in the distributions
 [[sub-config]]
 matches = "scipy/stats/**/*.py"
 check-unannotated-defs = false
 errors = { "bad-override" = "ignore" }
 
+# there are currently 55 `missing-attribute` errors in `scipy/optimize/_tstutils.py`, 
+# which are caused by accessing attributes on functions.
 [[sub-config]]
 matches = "scipy/optimize/_tstutils.py"
 errors = { "missing-attribute" = "ignore" }
