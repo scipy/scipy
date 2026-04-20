@@ -929,10 +929,9 @@ def pow(quat: Array, n: float | Array) -> Array:
     # If n is an array, we sanitize it to a scalar and promote quat and n to
     # the same dtype.
     if is_array_api_obj(n):
-        assert not isinstance(n, float)
-        if n.shape == (1,):
-            n = n[0]
-        elif n.ndim != 0:
+        if n.shape == (1,):  # pyrefly:ignore[missing-attribute]
+            n = n[0]  # pyrefly:ignore[bad-index]
+        elif n.ndim != 0:  # pyrefly:ignore[missing-attribute]
             raise ValueError("Array exponent must be a scalar")
         quat, n = xp_promote(quat, n, force_floating=True, xp=xp)
 

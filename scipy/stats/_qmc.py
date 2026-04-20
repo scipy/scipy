@@ -1811,12 +1811,11 @@ class Sobol(QMCEngine):
 
     def _scramble(self) -> None:
         """Scramble the sequence using LMS+shift."""
-        assert self.bits is not None
         # Generate shift vector
         self._shift = np.dot(
             rng_integers(self.rng, 2, size=(self.d, self.bits),
                          dtype=self.dtype_i),
-            2 ** np.arange(self.bits, dtype=self.dtype_i),
+            2 ** np.arange(self.bits, dtype=self.dtype_i),  # pyrefly:ignore[no-matching-overload]
         )
         # Generate lower triangular matrices (stacked across dimensions)
         ltm = np.tril(rng_integers(self.rng, 2,
