@@ -1815,7 +1815,8 @@ class Sobol(QMCEngine):
         self._shift = np.dot(
             rng_integers(self.rng, 2, size=(self.d, self.bits),
                          dtype=self.dtype_i),
-            2 ** np.arange(self.bits, dtype=self.dtype_i),  # pyrefly:ignore[no-matching-overload]
+            # pyrefly:ignore[no-matching-overload]
+            2 ** np.arange(self.bits, dtype=self.dtype_i),
         )
         # Generate lower triangular matrices (stacked across dimensions)
         ltm = np.tril(rng_integers(self.rng, 2,
