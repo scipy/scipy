@@ -4,8 +4,11 @@ from cpython.pycapsule cimport (
     PyCapsule_CheckExact, PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetName, PyCapsule_GetPointer,
     PyCapsule_GetContext
 )
+from cpython.pythread cimport (
+    PyThread_type_lock, PyThread_allocate_lock, PyThread_acquire_lock, PyThread_release_lock
+)
 from cpython.long cimport PyLong_AsVoidPtr
-from libc.stdlib cimport free
+from libc.stdlib cimport free, malloc
 from libc.string cimport strdup
 from libc.math cimport sin
 
@@ -17,10 +20,84 @@ from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCAL
 # PyCapsule helpers
 #
 
+# Keep ownership of duplicated signature strings off mutable capsule fields.
+ctypedef struct raw_capsule_name_entry:
+    void *capsule
+    char *name
+    raw_capsule_name_entry *next
+
+
+cdef raw_capsule_name_entry *raw_capsule_name_entries = NULL
+cdef PyThread_type_lock raw_capsule_name_entries_lock = NULL
+
+
+raw_capsule_name_entries_lock = PyThread_allocate_lock()
+if raw_capsule_name_entries_lock == NULL:
+    raise MemoryError("thread lock allocation failed")
+
+
+cdef void raw_capsule_acquire_lock() noexcept:
+    if not PyThread_acquire_lock(raw_capsule_name_entries_lock, 0):
+        PyThread_acquire_lock(raw_capsule_name_entries_lock, 1)
+
+
+cdef void raw_capsule_release_lock() noexcept:
+    PyThread_release_lock(raw_capsule_name_entries_lock)
+
+
+cdef int raw_capsule_register_name(object capsule, char *name) except -1:
+    global raw_capsule_name_entries
+    cdef raw_capsule_name_entry *entry
+
+    entry = <raw_capsule_name_entry *>malloc(sizeof(raw_capsule_name_entry))
+    if entry == NULL:
+        raise MemoryError()
+
+    raw_capsule_acquire_lock()
+    entry.capsule = <void *>capsule
+    entry.name = name
+    entry.next = raw_capsule_name_entries
+    raw_capsule_name_entries = entry
+    raw_capsule_release_lock()
+    return 0
+
+
+cdef char *raw_capsule_pop_name(object capsule) noexcept:
+    global raw_capsule_name_entries
+    cdef raw_capsule_name_entry *entry
+    cdef raw_capsule_name_entry *prev = NULL
+    cdef raw_capsule_name_entry *next_entry
+    cdef void *capsule_ptr = <void *>capsule
+    cdef char *name = NULL
+
+    raw_capsule_acquire_lock()
+    entry = raw_capsule_name_entries
+    while entry != NULL:
+        if entry.capsule == capsule_ptr:
+            name = entry.name
+            next_entry = entry.next
+
+            if prev == NULL:
+                raw_capsule_name_entries = next_entry
+            else:
+                prev.next = next_entry
+
+            free(entry)
+            raw_capsule_release_lock()
+            return name
+
+        prev = entry
+        entry = entry.next
+
+    raw_capsule_release_lock()
+    return NULL
+
 cdef void raw_capsule_destructor(object capsule) noexcept:
-    cdef const char *name
-    name = PyCapsule_GetName(capsule)
-    free(<char*>name)
+    cdef char *name
+
+    name = raw_capsule_pop_name(capsule)
+    if name != NULL:
+        free(name)
 
 
 def get_raw_capsule(func_obj, name_obj, context_obj):
@@ -45,7 +122,8 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
         void *context
         const char *capsule_name
         const char *name
-        const char *name_copy
+        char *name_copy
+        object capsule
 
     if name_obj is None:
         name = NULL
@@ -76,11 +154,27 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
         func = PyLong_AsVoidPtr(int(func_obj))
 
     if name == NULL:
-        name_copy = name
+        name_copy = NULL
     else:
         name_copy = strdup(name)
+        if name_copy == NULL:
+            raise MemoryError()
 
-    capsule = PyCapsule_New(func, name_copy, &raw_capsule_destructor)
+    try:
+        capsule = PyCapsule_New(func, name_copy, &raw_capsule_destructor)
+    except:
+        if name_copy != NULL:
+            free(name_copy)
+        raise
+
+    if name_copy != NULL:
+        try:
+            raw_capsule_register_name(capsule, name_copy)
+        except:
+            capsule = None
+            free(name_copy)
+            raise
+
     if context != NULL:
         PyCapsule_SetContext(capsule, context)
     return capsule

@@ -1,10 +1,13 @@
 from numpy.testing import assert_equal, assert_
 from pytest import raises as assert_raises
 
-import time
-import pytest
 import ctypes
+import subprocess
+import sys
 import threading
+import time
+
+import pytest
 from scipy._lib import _ccallback_c as _test_ccallback_cython
 from scipy._lib import _test_ccallback
 from scipy._lib._ccallback import LowLevelCallable
@@ -194,3 +197,41 @@ def test_threadsafety():
 
     for caller in CALLERS.keys():
         check(caller)
+
+
+def test_capsule_name_mutation_does_not_crash():
+    # A pre-fix regression aborts the interpreter, so exercise teardown in a child.
+    code = r"""
+import ctypes
+import gc
+
+from scipy._lib import _test_ccallback
+from scipy._lib._ccallback import LowLevelCallable
+
+set_name = ctypes.pythonapi.PyCapsule_SetName
+set_name.restype = ctypes.c_int
+set_name.argtypes = [ctypes.py_object, ctypes.c_char_p]
+
+llcallable = LowLevelCallable(_test_ccallback.test_get_plus1_capsule())
+capsule = tuple.__getitem__(llcallable, 0)
+name = ctypes.create_string_buffer(b"double (double, int *, void *)")
+
+if set_name(capsule, ctypes.cast(name, ctypes.c_char_p)) != 0:
+    raise RuntimeError("PyCapsule_SetName failed")
+
+assert _test_ccallback.test_call_simple(llcallable, 1.0) == 2.0
+
+capsule = None
+llcallable = None
+gc.collect()
+print("ok")
+"""
+    proc = subprocess.run(
+        [sys.executable, "-X", "faulthandler", "-c", code],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "ok"
