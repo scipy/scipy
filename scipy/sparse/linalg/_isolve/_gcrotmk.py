@@ -3,7 +3,8 @@
 
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy.linalg import get_blas_funcs, qr, solve, svd, qr_insert, lstsq  # pyrefly:ignore[missing-module-attribute]
+# pyrefly:ignore[missing-module-attribute]
+from scipy.linalg import get_blas_funcs, qr, solve, svd, qr_insert, lstsq
 from .iterative import _get_atol_rtol
 from scipy.sparse.linalg._isolve.utils import make_system
 from scipy._lib._array_api import xp_capabilities
