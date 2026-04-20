@@ -333,7 +333,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     return np.int32
 
 
-def get_sum_dtype(dtype: np.dtype) -> np.dtype:
+def get_sum_dtype(dtype: np.dtype) -> np.dtype | type[np.generic]:
     """Mimic numpy's casting for np.sum"""
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint

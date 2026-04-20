@@ -1872,6 +1872,8 @@ class rv_continuous(rv_generic):
 
     """
 
+    _support: tuple[float | str, float | str]  # not required
+
     def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
                  badvalue=None, name=None, longname=None,
                  shapes=None, seed=None):

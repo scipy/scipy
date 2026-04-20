@@ -802,12 +802,12 @@ class IntegratorBase:
         raise NotImplementedError('all integrators must define '
                                   'run(f, jac, t0, t1, y0, f_params, jac_params)')
 
-    def step(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def step(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Make one integration step and return (y1,t1)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support step() method')
 
-    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support run_relax() method')

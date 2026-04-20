@@ -46,14 +46,14 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
 
 
 dct = functools.partial(_r2r, True, pfft.dct)
-dct.__name__ = 'dct'
+dct.__name__ = 'dct'  # pyrefly:ignore[missing-attribute]
 idct = functools.partial(_r2r, False, pfft.dct)
-idct.__name__ = 'idct'
+idct.__name__ = 'idct'  # pyrefly:ignore[missing-attribute]
 
 dst = functools.partial(_r2r, True, pfft.dst)
-dst.__name__ = 'dst'
+dst.__name__ = 'dst'  # pyrefly:ignore[missing-attribute]
 idst = functools.partial(_r2r, False, pfft.dst)
-idst.__name__ = 'idst'
+idst.__name__ = 'idst'  # pyrefly:ignore[missing-attribute]
 
 
 def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
@@ -99,11 +99,11 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
 
 
 dctn = functools.partial(_r2rn, True, pfft.dct)
-dctn.__name__ = 'dctn'
+dctn.__name__ = 'dctn'  # pyrefly:ignore[missing-attribute]
 idctn = functools.partial(_r2rn, False, pfft.dct)
-idctn.__name__ = 'idctn'
+idctn.__name__ = 'idctn'  # pyrefly:ignore[missing-attribute]
 
 dstn = functools.partial(_r2rn, True, pfft.dst)
-dstn.__name__ = 'dstn'
+dstn.__name__ = 'dstn'  # pyrefly:ignore[missing-attribute]
 idstn = functools.partial(_r2rn, False, pfft.dst)
-idstn.__name__ = 'idstn'
+idstn.__name__ = 'idstn'  # pyrefly:ignore[missing-attribute]

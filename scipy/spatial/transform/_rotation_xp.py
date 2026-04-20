@@ -403,7 +403,7 @@ def as_euler(
 
 def as_davenport(
     quat: Array,
-    axes: ArrayLike,
+    axes: Array,
     order: str,
     degrees: bool = False,
     *,
@@ -929,6 +929,7 @@ def pow(quat: Array, n: float | Array) -> Array:
     # If n is an array, we sanitize it to a scalar and promote quat and n to
     # the same dtype.
     if is_array_api_obj(n):
+        assert not isinstance(n, float)
         if n.shape == (1,):
             n = n[0]
         elif n.ndim != 0:

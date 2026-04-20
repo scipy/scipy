@@ -3,6 +3,7 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
+from types import MethodType
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
@@ -1599,6 +1600,11 @@ class poisson_binom_gen(rv_discrete):
     %(example)s
 
     """  # noqa: E501
+
+    _parse_args_rvs: MethodType
+    _parse_args_stats: MethodType
+    _parse_args: MethodType
+
     def _shape_info(self):
         # message = 'Fitting is not implemented for this distribution."
         # raise NotImplementedError(message)

@@ -644,7 +644,7 @@ def primes_from_2_to(n: int) -> np.ndarray:
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
-def n_primes(n: IntNumber) -> list[int]:
+def n_primes(n: IntNumber) -> list[int] | np.ndarray:
     """List of the n-first prime numbers.
 
     Parameters
@@ -1550,8 +1550,7 @@ class LatinHypercube(QMCEngine):
         else:
             samples = self.rng.uniform(size=(n, self.d))
 
-        perms = np.tile(np.arange(1, n + 1),
-                        (self.d, 1))  # type: ignore[arg-type]
+        perms = np.tile(np.arange(1, n + 1), (int(self.d), 1))
         for i in range(self.d):
             self.rng.shuffle(perms[i, :])
         perms = perms.T
@@ -1812,6 +1811,7 @@ class Sobol(QMCEngine):
 
     def _scramble(self) -> None:
         """Scramble the sequence using LMS+shift."""
+        assert self.bits is not None
         # Generate shift vector
         self._shift = np.dot(
             rng_integers(self.rng, 2, size=(self.d, self.bits),
@@ -2292,9 +2292,7 @@ class PoissonDisk(QMCEngine):
         x = self.rng.standard_normal(size=(candidates, self.d))
         ssq = np.sum(x**2, axis=1)
         fr = radius * gammainc(self.d/2, ssq/2)**(1/self.d) / np.sqrt(ssq)
-        fr_tiled = np.tile(
-            fr.reshape(-1, 1), (1, self.d)  # type: ignore[arg-type]
-        )
+        fr_tiled = np.tile(fr.reshape(-1, 1), (1, int(self.d)))
         p = center + np.multiply(x, fr_tiled)
         return p
 
@@ -2407,9 +2405,7 @@ class MultivariateNormalQMC:
             # from being passed via `rng`.
             kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
             kwargs = {kwarg: rng}
-            self.engine = Sobol(
-                d=engine_dim, scramble=True, bits=30, **kwargs
-            )  # type: QMCEngine
+            self.engine: QMCEngine = Sobol(d=engine_dim, scramble=True, bits=30, **kwargs)
         elif isinstance(engine, QMCEngine):
             if engine.d != engine_dim:
                 raise ValueError("Dimension of `engine` must be consistent"
@@ -2557,9 +2553,7 @@ class MultinomialQMC:
             # from being passed via `rng`.
             kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
             kwargs = {kwarg: rng}
-            self.engine = Sobol(
-                d=1, scramble=True, bits=30, **kwargs
-            )  # type: QMCEngine
+            self.engine: QMCEngine = Sobol(d=1, scramble=True, bits=30, **kwargs)
         elif isinstance(engine, QMCEngine):
             if engine.d != 1:
                 raise ValueError("Dimension of `engine` must be 1.")
@@ -2605,8 +2599,7 @@ def _select_optimizer(
     optimizer: partial | None
     if optimization is not None:
         try:
-            optimization = optimization.lower()  # type: ignore[assignment]
-            optimizer_ = optimization_method[optimization]
+            optimizer_ = optimization_method[optimization.lower()]
         except KeyError as exc:
             message = (f"{optimization!r} is not a valid optimization"
                        f" method. It must be one of"
@@ -2926,7 +2919,7 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
 
 def _validate_bounds(
     l_bounds: "npt.ArrayLike", u_bounds: "npt.ArrayLike", d: int
-) -> "tuple[npt.NDArray[np.generic], npt.NDArray[np.generic]]":
+) -> tuple[np.ndarray, np.ndarray]:
     """Bounds input validation.
 
     Parameters

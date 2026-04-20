@@ -1456,7 +1456,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     return x1, residuals, rank, S
 
 
-lstsq.default_lapack_driver = 'gelsd'
+lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):

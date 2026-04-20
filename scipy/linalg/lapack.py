@@ -936,9 +936,9 @@ def backtickrepl(m):
         return f"with bounds ``{m.group('b')}``\n"
 
 
-for routine in [ssyevr, dsyevr, cheevr, zheevr,
-                ssyevx, dsyevx, cheevx, zheevx,
-                ssygvd, dsygvd, chegvd, zhegvd]:
+for routine in [ssyevr, dsyevr, cheevr, zheevr,  # pyrefly:ignore[unknown-name]
+                ssyevx, dsyevx, cheevx, zheevx,  # pyrefly:ignore[unknown-name]
+                ssygvd, dsygvd, chegvd, zhegvd]:  # pyrefly:ignore[unknown-name]
     if routine.__doc__:
         routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
         routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
