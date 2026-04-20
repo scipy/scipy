@@ -1586,6 +1586,8 @@ class Rotation:
 
         In terms of rotation matrices, this application is the same as
         ``(self.as_matrix() @ vectors[..., np.newaxis])[..., 0]``.
+        For a single rotation, this is the same as
+        ``vectors @ self.as_matrix().T``.
 
         Parameters
         ----------

@@ -1753,9 +1753,13 @@ class RigidTransform:
               components are expressed in the original frame before and after
               the transformation.
 
-        In terms of rotation matrices and translation vectors, this application
-        is the same as
-        ``self.translation + self.rotation.as_matrix() @ vector``.
+        In terms of the rotation matrix and translation,
+        this application is the same as
+        ``self.translation + (mat @ vector[..., np.newaxis])[..., 0]``,
+        where ``mat = self.rotation.as_matrix()``.
+
+        For a single transform, this is the same as
+        ``self.translation + vector @ self.rotation.as_matrix().T``.
 
         Parameters
         ----------
