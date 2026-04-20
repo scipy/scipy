@@ -270,7 +270,7 @@ add_newdoc("bdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     """)
 
@@ -322,7 +322,7 @@ add_newdoc("bdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     """)
 
@@ -370,7 +370,7 @@ add_newdoc("bdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     """)
 
 add_newdoc("bdtrik",
@@ -3647,7 +3647,7 @@ add_newdoc("gdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -3766,7 +3766,7 @@ add_newdoc("gdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -3944,7 +3944,7 @@ add_newdoc("gdtrib",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     .. [2] Chandrupatla, Tirupathi R.
            "A new hybrid quadratic/bisection algorithm for finding the zero of a
            nonlinear function without using derivatives".
@@ -4167,7 +4167,7 @@ add_newdoc("hyp0f1",
     References
     ----------
     .. [1] Wolfram MathWorld, "Confluent Hypergeometric Limit Function",
-           http://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
+           https://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
 
     Examples
     --------
@@ -4444,7 +4444,7 @@ add_newdoc("kn",
     ----------
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/
+           https://netlib.org/amos/
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265.
@@ -4882,7 +4882,7 @@ add_newdoc("nbdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -5008,7 +5008,7 @@ add_newdoc("nbdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -5120,7 +5120,7 @@ add_newdoc(
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
@@ -6685,10 +6685,10 @@ add_newdoc("shichi",
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/6.2.E15 and https://dlmf.nist.gov/6.2.E16
     .. [3] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
-           arithmetic" (Version 0.19) http://mpmath.org/
+           arithmetic" (Version 0.19) https://mpmath.org/
 
     Examples
     --------
@@ -6798,10 +6798,10 @@ add_newdoc("sici",
            https://dlmf.nist.gov/6.2.E9, https://dlmf.nist.gov/6.2.E12,
            and https://dlmf.nist.gov/6.2.E13
     .. [3] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
     .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
-           arithmetic" (Version 0.19) http://mpmath.org/
+           arithmetic" (Version 0.19) https://mpmath.org/
 
     Examples
     --------
@@ -7184,7 +7184,7 @@ add_newdoc(
 
     References
     ----------
-    .. [1] Boost C++ Libraries, http://www.boost.org/
+    .. [1] Boost C++ Libraries, https://www.boost.org/
 
     Examples
     --------
@@ -7329,7 +7329,7 @@ add_newdoc("stdtrit",
 
     References
     ----------
-    .. [1] Boost C++ Libraries, http://www.boost.org/
+    .. [1] Boost C++ Libraries, https://www.boost.org/
 
     Examples
     --------
@@ -7548,7 +7548,7 @@ add_newdoc("yn",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+           https://netlib.org/cephes/
 
     Examples
     --------
