@@ -4,8 +4,9 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import (is_array_api_strict, make_xp_test_case,
-                                   xp_default_dtype, xp_device)
+from scipy._lib._array_api import (is_array_api_strict, is_dask, is_jax,
+                                   make_xp_test_case, xp_default_dtype,
+                                   xp_device)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -507,8 +508,12 @@ class TestSoftmax:
         dtype = getattr(xp, dtype)
         rtol = 1e-6 if dtype == xp.float32 else 1e-13
         x = xp.asarray(xp_input, dtype=dtype)
-        with pytest.warns(RuntimeWarning, match=warning):
+        # JAX and Dask do not emit value-dependent Python warnings.
+        if is_jax(xp) or is_dask(xp):
             result = softmax(x, axis=axis)
+        else:
+            with pytest.warns(RuntimeWarning, match=warning):
+                result = softmax(x, axis=axis)
         xp_assert_close(result, xp.asarray(expected, dtype=dtype), rtol=rtol)
 
 
