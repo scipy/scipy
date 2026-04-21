@@ -1,7 +1,7 @@
 #ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
 
-#include <complex.h>
+#include "scipy_complex_support.h"
 #include "scipy_blas_defines.h"
 
 #if defined(_MSC_VER)
@@ -12,7 +12,7 @@
 #else
     // C99 compliant compilers
     typedef double complex ZVODE_CPLX_TYPE;
-    #define ZVODE_cplx(real, imag) ((real) + (imag)*I)
+    #define ZVODE_cplx(real, imag) CMPLX(real, imag)
 #endif
 
 
