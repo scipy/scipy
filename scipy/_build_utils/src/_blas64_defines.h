@@ -50,13 +50,36 @@
 
 #include "_mkl_ilp64_fixes.h"
 
-#define F_INT npy_int64
+/*
+ * Define F_INT to match the type that the f2cmap selects for `integer`:
+ * prefer `long` if it's 64-bit (LP64: Linux, macOS), fall back to
+ * `long long` (LLP64: Windows).  This avoids pointer-type mismatch
+ * warnings between f2py-generated local variables and F_INT* prototypes.
+ *
+ * Note that the below looks a little awkward, that's because of f2py limitations.
+ * We can't simply add `int64_t` in the f2cmap, because that mapping mechanism
+ * only accepts a given set of types and int64_t isn't part of that set.
+ * The `abs` redefinition then follows from the F_INT one.
+ *
+ * Note that this code will go away once we can free ourselves of f2py
+ * completely (which is planned).
+ */
+#include <limits.h>
+#if LONG_MAX >= 0x7FFFFFFFFFFFFFFF
+#define F_INT long
+#else
+#define F_INT long long
+#endif
 
 /*
  * f2py translates abs() from pyf expressions directly into C abs(),
- * which takes int. With ILP64, F_INT is npy_int64 (long), so we
- * need labs() to avoid truncation warnings.
+ * which takes int. With ILP64, F_INT is long or long long, so we
+ * need the matching absolute-value function to avoid truncation.
  */
 #undef abs
+#if LONG_MAX >= 0x7FFFFFFFFFFFFFFF
 #define abs labs
+#else
+#define abs llabs
+#endif
 

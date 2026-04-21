@@ -12,6 +12,7 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+import warnings
 
 import numpy as np
 cimport numpy as np
@@ -28,6 +29,7 @@ from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
 from scipy.linalg.cython_lapack cimport blas_int, dgetrf, dgetrs, dgecon
+from scipy._lib._array_api import xp_capabilities
 
 np.import_array()
 
@@ -2201,12 +2203,17 @@ class Delaunay(_QhullUser):
         return z
 
 
+@xp_capabilities(out_of_scope=True)
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
 
     Find simplices containing the given points. This function does the
     same thing as `Delaunay.find_simplex`.
+
+    .. deprecated:: 1.18.0
+        `tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be removed
+        in SciPy 1.22.0.
 
     Parameters
     ----------
@@ -2251,6 +2258,9 @@ def tsearch(tri, xi):
     >>> plt.show()
 
     """
+    msg = ("`tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be "
+           "removed in SciPy 1.22.0.")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return tri.find_simplex(xi)
 
 # Set docstring for foo to docstring of bar, working around change in Cython 0.28

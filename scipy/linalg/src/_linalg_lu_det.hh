@@ -4,6 +4,9 @@
 #include <type_traits>
 #include "scipy_blas_defines.h"
 
+namespace sp_linalg {
+
+
 constexpr int LU_MAX_NDIM = 64;
 
 
@@ -378,3 +381,6 @@ int det_dispatch(LU_Context &ctx, T *a_dat, T *det_out, T *scratch, CBLAS_INT *s
 
     return 0;
 }
+
+
+} // namespace sp_linalg

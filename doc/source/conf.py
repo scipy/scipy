@@ -357,6 +357,7 @@ for key in (
         'pade',
         'lagrange',
         'approximate_taylor_polynomial',
+        'tsearch',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

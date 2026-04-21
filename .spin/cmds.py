@@ -42,9 +42,11 @@ PROJECT_MODULE = "scipy"
     '--show-build-log', default=False, is_flag=True,
     help="Show build output rather than using a log file")
 @click.option(
-    '--with-scipy-openblas', default=False, is_flag=True,
-    help=("If set, use the `scipy-openblas32` wheel installed into the "
-            "current environment as the BLAS/LAPACK to build against."))
+    "--with-scipy-openblas", type=click.Choice(["32", "64"]),
+    default=None,
+    help=("Use the pre-installed `scipy-openblas{32,64}` wheel installed into the "
+          "current environment as the BLAS/LAPACK to build against.")
+)
 @click.option(
     '--with-accelerate', default=False, is_flag=True,
     help=("If set, use `Accelerate` as the BLAS/LAPACK to build against."
@@ -130,7 +132,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         # on a mac you probably want to use accelerate over scipy_openblas
         meson_args = meson_args + ("-Dblas=accelerate", )
     elif with_scipy_openblas:
-        configure_scipy_openblas()
+        configure_scipy_openblas(with_scipy_openblas)
         os.environ['PKG_CONFIG_PATH'] = os.pathsep.join([
                 os.getcwd(),
                 os.environ.get('PKG_CONFIG_PATH', '')
@@ -369,7 +371,7 @@ def working_dir(new_dir):
 @click.command(context_settings={"ignore_unknown_options": True})
 @meson.build_dir_option
 @click.pass_context
-def mypy(ctx, build_dir=None):
+def mypy(ctx, build_dir):
     """🦆 Run Mypy tests for SciPy
     """
     if is_editable_install():
@@ -390,7 +392,7 @@ def mypy(ctx, build_dir=None):
     except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
-            "pip install -r mypy_requirements.txt from the repo root"
+            "pip install -r requirements/dev.txt from the repo root"
         ) from e
 
     build_dir = os.path.abspath(build_dir)
@@ -410,6 +412,8 @@ def mypy(ctx, build_dir=None):
         ])
     print(report, end='')
     print(errors, end='', file=sys.stderr)
+    if status:
+        raise SystemExit(status)
 
 @spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
@@ -480,7 +484,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     help="Submodule whose tests to run (cluster, constants, ...)")
 @meson.build_dir_option
 @click.pass_context
-def refguide_check(ctx, build_dir=None, *args, **kwargs):
+def refguide_check(ctx, build_dir, *args, **kwargs):
     """🔧 Run refguide check."""
     click.secho(
             "Invoking `build` prior to running refguide-check:",
@@ -674,7 +678,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
 @click.argument('extra_args', nargs=-1)
 @click.pass_context
 def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no_build,
-          build_dir=None, extra_args=()):
+          build_dir, extra_args=()):
     """🔧  Run checks specific to the SciPy code base.
 
     Exactly one check can be run at once. Example:
@@ -868,7 +872,7 @@ def _dirty_git_working_dir():
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, build, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build, build_dir, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -959,9 +963,6 @@ def configure_scipy_openblas(blas_variant='32'):
     basedir = os.getcwd()
     pkg_config_fname = os.path.join(basedir, "scipy-openblas.pc")
 
-    if os.path.exists(pkg_config_fname):
-        return None
-
     module_name = f"scipy_openblas{blas_variant}"
     try:
         openblas = importlib.import_module(module_name)
@@ -977,6 +978,7 @@ def configure_scipy_openblas(blas_variant='32'):
 
     with open(pkg_config_fname, "w", encoding="utf8") as fid:
         fid.write(openblas.get_pkg_config())
+
 
 physical_cores_cache = None
 

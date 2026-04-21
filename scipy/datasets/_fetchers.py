@@ -11,11 +11,11 @@ except ImportError:
     pooch = None
     data_fetcher = None
 else:
-    data_fetcher = pooch.create(
+    data_fetcher = pooch.create(  # type:ignore[union-attr]
         # Use the default cache folder for the operating system
         # Pooch uses appdirs (https://github.com/ActiveState/appdirs) to
         # select an appropriate directory for the cache on each platform.
-        path=pooch.os_cache("scipy-data"),
+        path=pooch.os_cache("scipy-data"),  # type:ignore[union-attr]
 
         # The remote data is on Github
         # base_url is a required param, even though we override this

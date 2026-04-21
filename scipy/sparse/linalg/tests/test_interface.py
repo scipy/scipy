@@ -514,7 +514,7 @@ class TestDotTests:
 
         shape = batch_shape + args.shape
         dtype = getattr(xp, args.op_dtype)
-        op = interface.LinearOperator(
+        op = interface.LinearOperator(  # type:ignore[call-arg]
             shape=shape, dtype=dtype,
             matvec=identity, rmatvec=identity, xp=xp,
         )
@@ -564,7 +564,7 @@ class TestDotTests:
 
         shape = batch_shape + args.shape
         dtype = getattr(xp, args.op_dtype)
-        op = interface.LinearOperator(
+        op = interface.LinearOperator(  # type:ignore[call-arg]
             shape=shape, dtype=dtype, matvec=mv, rmatvec=rmv, xp=xp
         )
         
@@ -590,7 +590,7 @@ class TestDotTests:
 
         shape = batch_shape + args.shape
         dtype = getattr(xp, args.op_dtype)
-        op = interface.LinearOperator(
+        op = interface.LinearOperator(  # type:ignore[call-arg]
             shape=shape, dtype=dtype, matvec=scale, rmatvec=r_scale, xp=xp
         )
         self.check_matvec(xp, op, data_dtype=args.data_dtype, complex_data=args.complex)
