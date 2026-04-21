@@ -1471,7 +1471,7 @@ def hermitenorm(n, monic=False):
     >>> p_monic
     poly1d([ 1.,  0., -3.,  0.])
 
-    Evaluate probabilist's Hermite polynomial of degree 3 at x = 1
+    Evaluate the probabilist's Hermite polynomial of degree 3 at x = 1:
 
     >>> p_monic(1)
     np.float64(-2.0)
