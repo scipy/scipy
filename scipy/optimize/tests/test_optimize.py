@@ -3531,11 +3531,11 @@ class TestAnnotations:
     ])
     def test_callable_annotations(self, method):
         kwds = {'jac': None, 'hess': None, 'callback': callable_annotated}
-        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg', 
+        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg',
                       'trust-ncg', 'trust-krylov', 'trust-exact', 'trust-constr']:
             #  methods that require a callable jac
             kwds['jac'] = rosen_der_annotated
-        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact', 
+        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact',
                       'trust-krylov', 'trust-constr']:
             kwds['hess'] = rosen_hess_annotated
         optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)
@@ -3601,3 +3601,59 @@ def test_multiprocessing_too_many_open_files_23080():
             _minimize_bfgs(rosen, x0, workers=p.map)
         del p
         del pool_obj
+
+
+@pytest.mark.parametrize('method', MINIMIZE_METHODS)
+def test_optimize_32bit_input(method):
+    # examines whether methods work with a 32-bit x0
+    x0 = np.ones(2, dtype=np.float32)
+
+    def fun(p):
+        x, y = p
+        return (x ** 2 + y - 11.) ** 2 + (x + y ** 2 - 7.) ** 2
+
+    def jac(p):
+        x, y = p
+        return [
+            4 * (x**3 + x*y) - 42*x + 2*y**2 - 14,
+            -26*y + 2*x**2 - 22 + 4*y**3 + 4*x*y
+        ]
+
+    opts = {}
+    if method in ['BFGS', 'CG', 'L-BFGS-B']:
+        opts['gtol'] = 1e-3
+
+    if method in ['slsqp', 'tnc']:
+        # code requires 64 bit inputs
+        pytest.skip(f"{method} requires 64 bit inputs for native code")
+
+    if method in ['trust-krylov', 'trust-ncg', 'trust-exact', 'dogleg']:
+        pytest.skip(f"{method} requires hessian, skipping")
+    elif method in ['newton-cg']:
+        pytest.skip(f"{method} needs more work before it can be used with 32-bit")
+    else:
+        result = optimize.minimize(fun, x0, method=method, options=opts)
+    assert_allclose(result.x, [3, 2], rtol=1e-3)
+
+
+@pytest.mark.parametrize('method', ['BFGS', 'CG', 'L-BFGS-B', 'nelder-mead'])
+@pytest.mark.parametrize('_dtype', [np.float32, np.float64])
+def test_minimize_float_precision(method, _dtype):
+    # examines minimize methods to check they work in different precisions.
+    # we're looking for an output the same dtype as that being supplied by x0.
+    # uses an example from gh22865
+    def fun(x):
+        return x**4 - x
+
+    def grad(x):
+        return (4*x**3 - 1)
+
+    options = {}
+    if method in ['BFGS', 'CG']:
+        options['gtol'] = 1e-3
+
+    xx = np.array([2.], dtype=_dtype)**(-2/3)
+    for x0 in np.linspace(-1., 1, 91, dtype=_dtype):
+        res = optimize.minimize(fun, [x0], method=method, options=options)
+        assert res.x.dtype == _dtype
+        assert_allclose(res.fun, fun(xx), rtol=2e-3)
