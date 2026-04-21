@@ -371,7 +371,7 @@ def working_dir(new_dir):
 @click.command(context_settings={"ignore_unknown_options": True})
 @meson.build_dir_option
 @click.pass_context
-def mypy(ctx, build_dir=None):
+def mypy(ctx, build_dir):
     """🦆 Run Mypy tests for SciPy
     """
     if is_editable_install():
@@ -392,7 +392,7 @@ def mypy(ctx, build_dir=None):
     except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
-            "pip install -r mypy_requirements.txt from the repo root"
+            "pip install -r requirements/dev.txt from the repo root"
         ) from e
 
     build_dir = os.path.abspath(build_dir)
@@ -412,6 +412,8 @@ def mypy(ctx, build_dir=None):
         ])
     print(report, end='')
     print(errors, end='', file=sys.stderr)
+    if status:
+        raise SystemExit(status)
 
 @spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
@@ -482,7 +484,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     help="Submodule whose tests to run (cluster, constants, ...)")
 @meson.build_dir_option
 @click.pass_context
-def refguide_check(ctx, build_dir=None, *args, **kwargs):
+def refguide_check(ctx, build_dir, *args, **kwargs):
     """🔧 Run refguide check."""
     click.secho(
             "Invoking `build` prior to running refguide-check:",
@@ -676,7 +678,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
 @click.argument('extra_args', nargs=-1)
 @click.pass_context
 def check(ctx, xp_markers, installed_files, symbol_hiding, loaded_sharedlibs, no_build,
-          build_dir=None, extra_args=()):
+          build_dir, extra_args=()):
     """🔧  Run checks specific to the SciPy code base.
 
     Exactly one check can be run at once. Example:
@@ -870,7 +872,7 @@ def _dirty_git_working_dir():
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, array_api_backend, build, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build, build_dir, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b

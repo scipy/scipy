@@ -1262,7 +1262,7 @@ class TestBinomTest:
         n = xp.asarray(11, dtype=dtype)
         p = xp.asarray(0.4, dtype=dtype)
         if is_jax(xp) and alternative=='two-sided':
-            message = "`alternative='two-sided' is incompatible with JAX arrays."
+            message = "`alternative='two-sided'` is incompatible with JAX arrays."
             with pytest.raises(ValueError, match=message):
                 stats.binomtest(k, n, p)
             return
@@ -1295,7 +1295,7 @@ class TestBinomTest:
         p = rng.uniform(-0.1, 1.1, size=shape)
 
         if is_jax(xp) and alternative=='two-sided':
-            pytest.skip("`alternative='two-sided' is incompatible with JAX arrays.")
+            pytest.skip("`alternative='two-sided'` is incompatible with JAX arrays.")
 
         res = stats.binomtest(xp.asarray(k), xp.asarray(n), xp.asarray(p),
                               alternative=alternative)

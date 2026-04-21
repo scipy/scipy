@@ -1810,7 +1810,7 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
         l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`N` is the number of data points :math:`x`=``data`` and
+    where :math:`N` is the number of data points :math:`x` = ``data`` and
     :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
     input data :math:`x`.
     This corresponds to the *profile log-likelihood* of the original data :math:`x`
