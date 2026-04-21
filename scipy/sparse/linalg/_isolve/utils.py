@@ -53,7 +53,7 @@ def make_system(A, M, x0, b, nd_support=False):
         right hand side
     nd_support: bool, optional
         Whether or not the calling algorithm supports n-dimensional
-        batchesfor input `A` and `b`. Default: ``False``.
+        batches for input `A` and `b`. Default: ``False``.
 
     Returns
     -------
@@ -140,7 +140,7 @@ def make_system(A, M, x0, b, nd_support=False):
         raise ValueError(
             f"{A.ndim}-dimensional `A`, `{b.ndim}-dimensional `b`, "
             f"and {x.ndim}-dimensional `x` is unsupported, "
-            f"expected 2-D `A` and 1-D `b`."
+            f"expected 2-D `A`, 1-D `b`, and 1-D `x`."
         )
 
     result_shape = np.broadcast_shapes(A.shape[:-1], b.shape, x.shape)

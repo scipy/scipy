@@ -21,7 +21,7 @@ with safe_import():
 def _create_sparse_poisson1d(n):
     # Make Gilbert Strang's favorite matrix
     # http://www-math.mit.edu/~gs/PIX/cupcakematrix.jpg
-    P1d = sparse.diags(
+    P1d = sparse.diags_array(
         [[-1]*(n-1), [2]*n, [-1]*(n-1)],
         offsets=[-1, 0, 1],
         dtype=np.float64,
