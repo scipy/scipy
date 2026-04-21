@@ -1887,7 +1887,7 @@ const char *erfcx_doc = R"(
 const char *expit_doc = R"(
     expit(x, out=None)
 
-    Expit (a.k.a. logistic sigmoid) ufunc for ndarrays.
+    Expit (also known as logistic sigmoid) ufunc for ndarrays.
 
     The expit function, also known as the logistic sigmoid function, is
     defined as ``expit(x) = 1/(1+exp(-x))``.  It is the inverse of the
