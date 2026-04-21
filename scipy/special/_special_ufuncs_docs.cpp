@@ -684,8 +684,8 @@ const char *ber_doc = R"(
 
     See Also
     --------
-    bei : the corresponding real part
-    berp : the derivative of bei
+    bei : the corresponding imaginary part
+    berp : the derivative of ber
     jv : Bessel function of the first kind
 
     References
@@ -726,7 +726,7 @@ const char *berp_doc = R"(
 
     See Also
     --------
-    ber
+    ber : Kelvin function ber
 
     References
     ----------
