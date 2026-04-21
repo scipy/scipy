@@ -997,13 +997,13 @@ For most functions, an in-place operation requires that all of the following con
 are true:
 
 - the dtype of the input array is LAPACK-compatible: only single and double precision
-  float (``float{32, 64}``) and complex (``complex{64,128}``) arrays are compatible;
+  float (``float{32,64}``) and complex (``complex{64,128}``) arrays are compatible;
 - the array is Fortran-ordered;
 - currently only two-dimensional arrays, ``ndim == 2``, are compatible; batched arrays
   use an internal buffer of the size of the core shaped array. This however may change
   in a future SciPy version. 
 
-If any of these conditions is violated, a copy is made under the hood, regardless of
+If any of these conditions are violated, a copy is made under the hood, regardless of
 whether `overwrite_a` is ``True`` or ``False``.
 
 Some functions may relax some of these requirements or impose additional constraints
