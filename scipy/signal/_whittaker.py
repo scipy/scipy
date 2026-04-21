@@ -240,7 +240,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
             raise ValueError(
                 "Penalty coefficients lambda must be non-negative."
             )
-        if np.isscalar(lamb) and lamb < 0:  # type: ignore
+        if np.isscalar(lamb) and lamb < 0:
             raise ValueError(
                 f"Expected non-negative lamb; got lamb={lamb}"
             )
@@ -620,9 +620,9 @@ def _solve_WH_sparse(y, lamb, order, weights=None):
         V = v.reshape(nx, nz)
         result = np.zeros_like(V)
         if x_pen:
-            result += lamb_x * (diff_x.T @ (diff_x @ V))  # type: ignore
+            result += lamb_x * (diff_x.T @ (diff_x @ V))
         if z_pen:
-            result += lamb_z * (diff_z.T @ (diff_z @ V.T)).T  # type: ignore
+            result += lamb_z * (diff_z.T @ (diff_z @ V.T)).T
         result += weights_arr * V
         return result.ravel()
 
@@ -631,7 +631,7 @@ def _solve_WH_sparse(y, lamb, order, weights=None):
     # P is also PSD as sum of PSD matrices is PSD
     # This makes A SPD when at least one weight in W is positive
     # and lamb > 0
-    A = LinearOperator(shape=(N, N), matvec=mat_vec, dtype=y.dtype)  # type: ignore
+    A = LinearOperator(shape=(N, N), matvec=mat_vec, dtype=y.dtype)
 
     # Preconditioner
     # the diagnonal of (W + P) where W is the weights and P is the penalty
@@ -639,16 +639,16 @@ def _solve_WH_sparse(y, lamb, order, weights=None):
     # diag(kron(diff_z.T @ diff_z, Inx)) = diag(diffT_diff_z) repeated nx times (cols)
     diagonal_P = np.zeros((nx, nz), dtype=y.dtype)
     if x_pen:
-        diagonal_P += lamb_x * diag_DtDx[:, None]  # type: ignore
+        diagonal_P += lamb_x * diag_DtDx[:, None]
     if z_pen:
-        diagonal_P += lamb_z * diag_DtDz[None, :]  # type: ignore
-    diagonal_A = weights_arr + diagonal_P  # type: ignore
+        diagonal_P += lamb_z * diag_DtDz[None, :]
+    diagonal_A = weights_arr + diagonal_P
 
     def precondition(v):
         # add a small value to avoid division by 0
         return v / (diagonal_A.ravel() + 1e-12)
 
-    M = LinearOperator((N, N), matvec=precondition, dtype=y.dtype)  # type: ignore
+    M = LinearOperator((N, N), matvec=precondition, dtype=y.dtype)
     rhs = (weights_arr * y).ravel()
     x0 = y.ravel()  # start with a noisy signal
 
