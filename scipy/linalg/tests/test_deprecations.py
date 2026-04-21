@@ -4,7 +4,7 @@ import numpy as np
 import scipy.linalg as linalg
 import pytest
 
-from scipy._lib._array_api_override import SCIPY_ARRAY_API
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 #
 # When the deprecation expires
