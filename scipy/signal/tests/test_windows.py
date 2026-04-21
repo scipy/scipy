@@ -1034,7 +1034,7 @@ class TestCosine():
         x_ref = windows.cosine(6, sym=True, xp=xp)
         xp_assert_equal(x, x_ref)       
        
-        def test_len_edge_cases(self, xp):
+    def test_len_edge_cases(self, xp):
         """Testing that the length edge cases are handled correctly."""
         # length = 0 should return an empty array:
         assert len(windows.cosine(0, xp=xp)) == 0
