@@ -1003,7 +1003,7 @@ class TestGeneralGaussian():
     def test_len_edge_cases(self, xp):
         """Test the length edge cases are handled correctly. """
         # length = 0 should return an empty array:
-        assert len(windows.general_gaussian(0, 1, 1, xp=xp)) == 0
+        assert windows.general_gaussian(0, 1, 1, xp=xp).shape[0] == 0
         
         # length = 1 should return an array of length 1 containing 1.0:
         xp_assert_close(windows.general_gaussian(1, 1, 1, xp=xp), 
@@ -1037,7 +1037,7 @@ class TestCosine():
     def test_len_edge_cases(self, xp):
         """Testing that the length edge cases are handled correctly."""
         # length = 0 should return an empty array:
-        assert len(windows.cosine(0, xp=xp)) == 0
+        assert windows.cosine(0, xp=xp).shape[0] == 0
 
         # length = 1 should return an array of length 1 containing 1.0:
         xp_assert_close(windows.cosine(1, xp=xp),
