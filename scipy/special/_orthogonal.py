@@ -1476,7 +1476,7 @@ def hermitenorm(n, monic=False):
     >>> p_monic(1)
     np.float64(-2.0)
 
-    Plot probabilist's Hermite polynomials of degree 0 to 4
+    Plot probabilist's Hermite polynomials of degree 0 to 4:
     
     >>> x = np.linspace(-3, 3, 100)
     >>> fig, ax = plt.subplots()
