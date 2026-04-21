@@ -1485,7 +1485,7 @@ def hermitenorm(n, monic=False):
     >>> plt.title(f"Probabilist's Hermite polynomials $He_n$")
     >>> plt.xlabel("x")
     >>> plt.ylabel(rf"$He_n(x)$")
-    >>> plt.legend(loc='best')
+    >>> plt.legend(loc="best")
     >>> plt.show()
 
     """
