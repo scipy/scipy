@@ -7,13 +7,8 @@
 #include "numpy/arrayobject.h"
 #include "arnaud/include/arnaud/arnaud.h"
 
-#if defined(_MSC_VER)
-    #define ARNAUD_cplx(real, imag) ((_Dcomplex){real, imag})
-    #define ARNAUD_cplxf(real, imag) ((_Fcomplex){real, imag})
-#else
-    #define ARNAUD_cplx(real, imag) ((real) + (imag)*I)
-    #define ARNAUD_cplxf(real, imag) ((real) + (imag)*I)
-#endif
+/* ARNAUD_cplx/ARNAUD_cplxf are now defined in arnaud/types.h
+   (included via arnaud.h) using CMPLX/CMPLXF to handle NaN correctly. */
 
 #ifdef HAVE_BLAS_ILP64
     #define ARNAUD_PyLong_As(obj)   (ARNAUD_INT)PyLong_AsLongLong(obj)

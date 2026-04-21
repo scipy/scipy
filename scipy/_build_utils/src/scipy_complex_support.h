@@ -1,22 +1,27 @@
-#ifndef ARNAUD_TYPES_H
-#define ARNAUD_TYPES_H
-
-#include <stdint.h>
-#include <complex.h>
-
 /*
- * Portable CMPLX / CMPLXF fallbacks.
+ * Portable CMPLX / CMPLXF macros for constructing complex numbers without
+ * the NaN-corrupting  real + imag * I  pattern.
  *
  * The C11 standard provides CMPLX/CMPLXF, but not all compilers expose
- * them (notably MSVC).  The  real + imag * I  pattern corrupts the real
- * part when imag is NaN.
+ * them (notably MSVC).  This header provides fallback definitions so
+ * that every translation unit can simply write  CMPLX(re, im)  and get
+ * correct behaviour with NaN / Inf arguments on every platform.
  *
- * Fallback priority:
+ * This header includes <complex.h> itself.
+ *
+ * Priority order for the fallback:
  *   1. Compiler-provided CMPLX / CMPLXF  (C11, already defined)
  *   2. MSVC intrinsics  (_Cbuild / _FCbuild)
- *   3. __builtin_complex  (GCC >= 4.7, Clang)
- *   4. Union type-pun     (portable last resort)
+ *   3. __builtin_complex  (GCC ≥ 4.7, Clang)
+ *   4. Union type-pun     (portable, avoids  real + imag*I)
  */
+
+#ifndef SCIPY_COMPLEX_SUPPORT_H
+#define SCIPY_COMPLEX_SUPPORT_H
+
+#include <complex.h>
+
+/* ---- CMPLX (double complex) ------------------------------------------- */
 #ifndef CMPLX
     #if defined(_MSC_VER)
         #define CMPLX(x, y) _Cbuild(x, y)
@@ -31,6 +36,7 @@
     #endif
 #endif
 
+/* ---- CMPLXF (float complex) ------------------------------------------- */
 #ifndef CMPLXF
     #if defined(_MSC_VER)
         #define CMPLXF(x, y) _FCbuild(x, y)
@@ -45,28 +51,4 @@
     #endif
 #endif
 
-
-/* Integer type for BLAS/LAPACK interface */
-#ifdef HAVE_BLAS_ILP64
-    typedef int64_t ARNAUD_INT;
-#else
-    typedef int32_t ARNAUD_INT;
-#endif
-
-
-#if defined(_MSC_VER)
-    // MSVC definition
-    typedef _Fcomplex ARNAUD_CPLXF_TYPE;
-    typedef _Dcomplex ARNAUD_CPLX_TYPE;
-    #define ARNAUD_cplxf(real, imag) ((_Fcomplex){real, imag})
-    #define ARNAUD_cplx(real, imag) ((_Dcomplex){real, imag})
-#else
-    // C99 compliant compilers
-    typedef float complex ARNAUD_CPLXF_TYPE;
-    typedef double complex ARNAUD_CPLX_TYPE;
-    #define ARNAUD_cplxf(real, imag) CMPLXF(real, imag)
-    #define ARNAUD_cplx(real, imag) CMPLX(real, imag)
-#endif
-
-
-#endif
+#endif /* SCIPY_COMPLEX_SUPPORT_H */
