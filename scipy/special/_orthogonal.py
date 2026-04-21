@@ -1481,7 +1481,7 @@ def hermitenorm(n, monic=False):
     >>> x = np.linspace(-3, 3, 100)
     >>> fig, ax = plt.subplots()
     >>> for i in range(5):
-    >>>     ax.plot(x, hermitenorm(i)(x), label=rf'$He_{i}$')
+    ...     ax.plot(x, hermitenorm(i)(x), label=rf'$He_{i}$')
     >>> plt.title(f"Probabilist's Hermite polynomials $He_n$")
     >>> plt.xlabel("x")
     >>> plt.ylabel(rf"$H_n(x)$")
