@@ -404,7 +404,7 @@ class _BSpline:
         for _ in range(m):
             tt, cc = _insert(x, tt, cc, self.k, self.extrapolate == "periodic")
         return self.construct_fast(tt, cc, self.k, self.extrapolate, self.axis)
-        
+
 
 @functools.lru_cache(16)
 def _get_xp_bspline_cls(xp):
@@ -2348,10 +2348,11 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         -----
         Criteria is computed from the formula (1.3.2) [3]:
 
-        .. math:
+        .. math::
 
-        GCV(\lambda) = \dfrac{1}{n} \sum\limits_{k = 1}^{n} \dfrac{ \left(
-        y_k - f_{\lambda}(x_k) \right)^2}{\left( 1 - \Tr{A}/n\right)^2}$.
+            GCV(\lambda) = \dfrac{1}{n} \sum\limits_{k = 1}^{n} \dfrac{ \left(
+            y_k - f_{\lambda}(x_k) \right)^2}{\left( 1 - \Tr{A}/n\right)^2}
+
         The criteria is discussed in section 1.3 [3].
 
         The numerator is computed using (2.2.4) [3] and the denominator is

@@ -62,7 +62,7 @@ class OdeSolver:
     9. By convention, the function evaluations used to compute a finite
        difference approximation of the Jacobian should not be counted in
        `nfev`, thus use ``fun_single(self, t, y)`` or
-       ```fun_vectorized(self, t, y)`` when computing a finite difference
+       ``fun_vectorized(self, t, y)`` when computing a finite difference
        approximation of the Jacobian.
 
     Parameters
