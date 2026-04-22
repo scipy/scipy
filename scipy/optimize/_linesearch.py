@@ -279,10 +279,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     (1.0, 2, 1, 1.1300000000000001, 6.13, [1.6, 1.4])
 
     """
-    if gfk is None:
-        array_namespace(xk, pk)
-    else:
-        array_namespace(xk, pk, gfk)
+    array_namespace(xk, pk, gfk)
     if old_fval is not None:
         old_fval = float(old_fval)
     if old_old_fval is not None:
