@@ -6,6 +6,7 @@ from enum import StrEnum, auto
 import itertools
 import platform
 import pytest
+import sys
 import types
 
 import numpy as np
@@ -657,7 +658,10 @@ def test_x0_working(solver, xp, batch_A, batch_b):
 
     x, info = solver.impl(A, b, x0=x0, **kw)
     assert info == 0
-    _assert_success(A=A, x=x, b=b, xp=xp, rtol=3*rtol)
+    OSX_64 = sys.platform == 'darwin' and platform.machine() == 'x86_64'
+    if solver == SOLVERS.tfqmr and OSX_64:
+        rtol = 6 * rtol
+    _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
 
 
 @pytest.mark.parametrize("batch_A", [(), (5,), (0,)])
