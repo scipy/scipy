@@ -694,7 +694,7 @@ class DifferentialEvolutionSolver:
         user's responsibility to ensure that the polishing function obeys
         bounds, any constraints (including integrality constraints), and that
         appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
-        ```x``, ``nfev``, ``jac``.
+        ``x``, ``nfev``, ``jac``.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
