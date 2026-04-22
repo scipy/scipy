@@ -33,7 +33,8 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     a : (M, N) array_like
         Matrix to decompose
     overwrite_a : bool, optional
-        Whether to overwrite data in A (may increase performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -157,6 +158,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         =====  =========
     overwrite_b : bool, optional
         Whether to overwrite data in b (may increase performance)
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -237,7 +239,8 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     permute_l : bool, optional
         Perform the multiplication P*L (Default: do not permute)
     overwrite_a : bool, optional
-        Whether to overwrite data in a (may improve performance)
+        Whether to overwrite data in a (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems

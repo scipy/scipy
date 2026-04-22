@@ -404,7 +404,7 @@ class _BSpline:
         for _ in range(m):
             tt, cc = _insert(x, tt, cc, self.k, self.extrapolate == "periodic")
         return self.construct_fast(tt, cc, self.k, self.extrapolate, self.axis)
-        
+
 
 @functools.lru_cache(16)
 def _get_xp_bspline_cls(xp):
@@ -435,7 +435,7 @@ def _get_xp_bspline_cls(xp):
 
 _bspline_extra_note = (
     """The methods ``design_matrix`` and ``from_power_basis`` are currently
-    NumPy only. `insert_knot`` is currently not supported with CuPy.
+    NumPy only. ``insert_knot`` is currently not supported with CuPy.
 
     If the spline is called on an array ``x`` with namespace different from the
     namespace ``xp`` of the knots ``t`` and coefficients ``c``, an attempt will
@@ -606,7 +606,7 @@ class BSpline:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
 
     def __init__(self, t, c, k, extrapolate=True, axis=0):
@@ -2348,10 +2348,11 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         -----
         Criteria is computed from the formula (1.3.2) [3]:
 
-        .. math:
+        .. math::
 
-        GCV(\lambda) = \dfrac{1}{n} \sum\limits_{k = 1}^{n} \dfrac{ \left(
-        y_k - f_{\lambda}(x_k) \right)^2}{\left( 1 - \Tr{A}/n\right)^2}$.
+            GCV(\lambda) = \dfrac{1}{n} \sum\limits_{k = 1}^{n} \dfrac{ \left(
+            y_k - f_{\lambda}(x_k) \right)^2}{\left( 1 - \Tr{A}/n\right)^2}
+
         The criteria is discussed in section 1.3 [3].
 
         The numerator is computed using (2.2.4) [3] and the denominator is

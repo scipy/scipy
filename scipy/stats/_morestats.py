@@ -930,7 +930,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
         If this is set to True, the axes which are reduced are left
         in the result as dimensions with size one. With this option,
         the result will broadcast correctly against the input array.
-    nan_policy : {'propagate', 'omit', 'raise'
+    nan_policy : {'propagate', 'omit', 'raise'}
         Defines how to handle input NaNs.
 
         - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
@@ -1810,7 +1810,7 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
         l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`N` is the number of data points :math:`x`=``data`` and
+    where :math:`N` is the number of data points :math:`x` = ``data`` and
     :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
     input data :math:`x`.
     This corresponds to the *profile log-likelihood* of the original data :math:`x`

@@ -38,7 +38,7 @@ Note that both Accelerate and ``scipy-openblas`` have flags in ``spin``
 that are easier to remember, since they're commonly used for development::
 
     $ spin build --with-accelerate
-    $ spin build --with-scipy-openblas
+    $ spin build --with-scipy-openblas=32
 
 The ``-Dlapack`` flag isn't needed for Accelerate, MKL or ``scipy-openblas``,
 since we can be sure that BLAS and LAPACK are the same for those options.
@@ -185,6 +185,24 @@ not yet support 64-bit integers in their Cython BLAS/LAPACK calls.
 
 The build configuration can be checked at runtime via
 ``scipy.show_config()`` — look for the ``'blas cython ilp64'`` entry.
+
+
+Using Cython BLAS/LAPACK ABI in downstream packages
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Downstream packages which consume ``cython_blas`` or ``cython_lapack`` interfaces
+should ideally directly use the ``blas_int`` integer type at all call sites.
+
+Some packages, however, might prefer to continue using ``int`` types, and manually
+map between ``int`` and ``blas_int`` types (It is convenient to localize this mapping
+in a single internal wrapper which converts ``int`` inputs to ``blas_int`` before
+calling a LAPACK function, and then converts its ``blas_int`` outputs back to ``int``).
+We stress that doing this limits the array sizes to ``< INT_MAX`` even if the
+LAPACK itself is ILP64 enabled.
+
+Consult `a worked example`_ which illustrates both approaches.
+
+.. _a worked example: https://github.com/scipy/scipy/tree/main/scipy/linalg/tests/_cython_examples/ilp64_test_package
 
 
 Work-in-progress

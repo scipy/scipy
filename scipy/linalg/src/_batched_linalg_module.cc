@@ -9,6 +9,7 @@
 #include "_common_array_utils.hh"
 #include "_linalg_lu_det.hh"
 
+using namespace sp_linalg;
 
 static PyObject* _linalg_inv_error;
 

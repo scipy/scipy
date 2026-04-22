@@ -2,7 +2,7 @@
 #define PROPACK_TYPES_H
 
 #include <stdint.h>
-#include <complex.h>
+#include "scipy_complex_support.h"
 #include "scipy_blas_defines.h"
 
 
@@ -16,8 +16,8 @@
     // C99 compliant compilers
     typedef float complex PROPACK_CPLXF_TYPE;
     typedef double complex PROPACK_CPLX_TYPE;
-    #define PROPACK_cplxf(real, imag) ((real) + (imag)*I)
-    #define PROPACK_cplx(real, imag) ((real) + (imag)*I)
+    #define PROPACK_cplxf(real, imag) CMPLXF(real, imag)
+    #define PROPACK_cplx(real, imag) CMPLX(real, imag)
 #endif
 
 

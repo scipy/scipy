@@ -35,7 +35,7 @@ from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.__config__ import CONFIG
 
-from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
+from .test_basic import parametrize_overwrite_arg
 
 IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 

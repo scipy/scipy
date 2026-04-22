@@ -15,6 +15,7 @@ from . import types
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
+# mypy: disable-error-code=attr-defined
 
 class TestNdimageMorphology:
 

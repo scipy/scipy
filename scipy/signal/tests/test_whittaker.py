@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy.signal import whittaker_henderson
+from scipy.signal import whittaker_henderson  # type: ignore[attr-defined]
 from scipy.signal._whittaker import (
     _logdet_difference_matrix, _polynomial_fit, _reml, _solveh_banded, _solve_WH_banded,
 )

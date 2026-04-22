@@ -1,3 +1,6 @@
+
+namespace sp_linalg {
+
 template<typename T>
 int
 _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a, int clean, SliceStatusVec &vec_status) {
@@ -101,3 +104,5 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
 
     return 1;
 }
+
+} // namespace sp_linalg

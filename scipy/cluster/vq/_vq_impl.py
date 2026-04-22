@@ -9,7 +9,7 @@ from scipy._lib.deprecation import _deprecated
 from scipy._external import array_api_extra as xpx
 from scipy.spatial.distance import cdist
 
-from . import _vq
+from . import _vq  # type:ignore[attr-defined]
 
 __all__ = ['ClusterError', 'kmeans', 'kmeans2', 'py_vq', 'vq', 'whiten']
 

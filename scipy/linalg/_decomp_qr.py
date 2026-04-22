@@ -42,9 +42,8 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
     a : (..., M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
-        Whether data in `a` is overwritten (may improve performance if
-        `overwrite_a` is set to True by reusing the existing input data
-        structure rather than creating a new one.)
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
@@ -267,11 +266,13 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         Whether Q should be complex-conjugated. This might be faster
         than explicit conjugation.
     overwrite_a : bool, optional
-        Whether data in a is overwritten (may improve performance)
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     overwrite_c : bool, optional
         Whether data in c is overwritten (may improve performance).
         If this is used, c must be big enough to keep the result,
         i.e. ``c.shape[0]`` = ``a.shape[0]`` if mode is 'left'.
+        See :ref:`tutorial_linalg_overwrite` for details.
 
     Returns
     -------
@@ -405,7 +406,8 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     a : (M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
-        Whether data in a is overwritten (may improve performance)
+        Whether to overwrite data in `a` (may improve performance). Default is False.
+        See :ref:`tutorial_linalg_overwrite` for details.
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
