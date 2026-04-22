@@ -992,28 +992,32 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
     if find_positions:
         positions = positions.ravel()[order]
 
+    # Compute size using Python int to avoid overflow when labels dtype
+    # has limited range (e.g., uint8 max=254 + 2 wraps to 0, gh-24966)
+    n = int(labels.max()) + 2
+
     result = []
     if find_min:
-        mins = np.zeros(labels.max() + 2, input.dtype)
+        mins = np.zeros(n, input.dtype)
         mins[labels[::-1]] = input[::-1]
         result += [mins[idxs]]
     if find_min_positions:
-        minpos = np.zeros(labels.max() + 2, int)
+        minpos = np.zeros(n, int)
         minpos[labels[::-1]] = positions[::-1]
         result += [minpos[idxs]]
     if find_max:
-        maxs = np.zeros(labels.max() + 2, input.dtype)
+        maxs = np.zeros(n, input.dtype)
         maxs[labels] = input
         result += [maxs[idxs]]
     if find_max_positions:
-        maxpos = np.zeros(labels.max() + 2, int)
+        maxpos = np.zeros(n, int)
         maxpos[labels] = positions
         result += [maxpos[idxs]]
     if find_median:
         locs = np.arange(len(labels))
-        lo = np.zeros(labels.max() + 2, np.int_)
+        lo = np.zeros(n, np.int_)
         lo[labels[::-1]] = locs[::-1]
-        hi = np.zeros(labels.max() + 2, np.int_)
+        hi = np.zeros(n, np.int_)
         hi[labels] = locs
         lo = lo[idxs]
         hi = hi[idxs]
