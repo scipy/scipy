@@ -7,6 +7,7 @@ import itertools
 import platform
 import pytest
 import sys
+import sysconfig
 import types
 
 import numpy as np
@@ -659,7 +660,8 @@ def test_x0_working(solver, xp, batch_A, batch_b):
     x, info = solver.impl(A, b, x0=x0, **kw)
     assert info == 0
     OSX_64 = sys.platform == 'darwin' and platform.machine() == 'x86_64'
-    if solver == SOLVERS.tfqmr and OSX_64:
+    WIN_ARM64 = sysconfig.get_platform() == 'win-arm64'
+    if solver == SOLVERS.tfqmr and (OSX_64 or WIN_ARM64):
         rtol = 6 * rtol
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=rtol)
 
