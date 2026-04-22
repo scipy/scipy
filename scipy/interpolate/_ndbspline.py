@@ -460,7 +460,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
         Used to solve the sparse linear system
         ``design_matrix @ coefficients = rhs`` for the coefficients.
         Default is `scipy.sparse.linalg.gcrotmk`
-    solver_args : dict, optional
+    **solver_args : dict, optional
         Additional arguments for the solver. The call signature is
         ``solver(csr_array, rhs_vector, **solver_args)``
 

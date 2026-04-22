@@ -2269,7 +2269,7 @@ def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp)
 
     Parameters
     ----------
-    args : tuples of (Array, str)
+    *args : tuples of (Array, str)
         The first element of each tuple must be a 0-dimensional Array
         that evaluates to bool; the second element must be the message to convey
         if the  first element evaluates to True.

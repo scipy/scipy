@@ -6,7 +6,7 @@ from pytest import raises
 from numpy.testing import assert_equal
 
 BANDWIDTH_DTYPES = (
-    np.bool,
+    bool,
     np.int8, np.int16, np.int32, np.int64,
     np.uint8, np.uint16, np.uint32, np.uint64,
     np.float32, np.float64,

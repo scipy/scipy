@@ -235,7 +235,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         derivatives (`fun`, `jac` functions).
     bounds : sequence, optional
         Bounds on variables. 'new-style' bounds are required.
-    eps : float or ndarray
+    epsilon : float or ndarray
         If ``jac is None`` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     finite_diff_rel_step : None or array_like, optional
@@ -3420,10 +3420,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
 
     Parameters
     ----------
-    fun : callable
+    func : callable
         The objective function to be minimized::
 
-            fun(x, *args) -> float
+            func(x, *args) -> float
 
         where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
@@ -3433,7 +3433,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         where ``n`` is the number of independent variables.
     args : tuple, optional
         Extra arguments passed to the objective function and its
-        derivatives (`fun`, `jac` and `hess` functions).
+        derivatives (`func`, `jac` and `hess` functions).
     method : str or callable, optional
         The present documentation is specific to ``method='powell'``, but other
         options are available. See documentation for `scipy.optimize.minimize`.

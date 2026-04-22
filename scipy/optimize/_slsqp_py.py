@@ -46,7 +46,7 @@ def approx_jacobian(x, func, epsilon, *args):
         The vector-valued function.
     epsilon : float
         The perturbation used to determine the partial derivatives.
-    args : sequence
+    *args : sequence
         Additional arguments passed to func.
 
     Returns

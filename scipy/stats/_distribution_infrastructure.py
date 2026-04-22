@@ -342,7 +342,7 @@ class _Interval(_Domain):
             - NaN ('nan').
         min, max : ndarray
             The endpoints of the domain.
-        squeezed_based_shape : tuple of ints
+        squeezed_base_shape : tuple of ints
             See _RealParameter.draw.
         rng : np.Generator
             The Generator used for drawing random values.
@@ -372,7 +372,7 @@ class _Interval(_Domain):
             z[~i] = max
 
         elif type_ == 'out':
-            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitary; we just want
+            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitrary; we just want
             zr = max_nn + uniform(1, 5, size=shape)  # some numbers outside domain
             i = rng.random(size=n) < 0.5
             z[i] = zr[i]
@@ -819,7 +819,7 @@ class _Parameterization:
         ----------
         sizes : iterable of shape tuples
             The size of the array to be generated for each parameter in the
-            parameterization. Note that the order of sizes is arbitary; the
+            parameterization. Note that the order of sizes is arbitrary; the
             size of the array generated for a specific parameter is not
             controlled individually as written.
         rng : NumPy Generator

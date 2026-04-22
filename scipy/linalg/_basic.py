@@ -1893,7 +1893,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
     dtype: numpy datatype
         ``dtype`` stores the datatype of ``r``, ``c`` and ``b``. If any of
         ``r``, ``c`` or ``b`` are complex, ``dtype`` is ``np.complex128``,
-        otherwise, it is ``np.float``.
+        otherwise, it is ``np.float64``.
     b_shape: tuple
         Shape of ``b`` after passing it through ``_asarray_validated``.
 

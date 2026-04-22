@@ -394,8 +394,9 @@ def _reml(lamb, y, order, weights=None):
     Parameters
     ----------
     lamb : penalty
+        Regularization parameter controlling the smoothness of the result.
     y : signal
-    x : smoothed signal
+        The signal to be smoothed.
     order : order of the difference penalty.
     weights : case weights
 
