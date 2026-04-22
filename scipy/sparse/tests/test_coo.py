@@ -1405,3 +1405,31 @@ def test_bool_set():
     A, D = A_orig.copy(), D_orig.copy()
     D[idxnp] = A[idxnp] = -88
     assert_equal(A.toarray(), D)
+
+
+def test_sum_dtype_with_duplicates():
+    # gh-24989: coo_matrix.sum(dtype=) should cast before accumulating
+    # duplicates, matching numpy's cast-before-accumulate behaviour.
+    from scipy.sparse import coo_matrix
+
+    row = np.array([0, 0, 1])
+    col = np.array([0, 0, 1])
+    data = np.array([0.6, 0.6, 1.2])
+    m = coo_matrix((data, (row, col)), shape=(3, 2))
+
+    # Without dtype: floating-point sum, 0.6+0.6=1.2 at [0,0]
+    result_float = m.sum(axis=0)
+    assert_allclose(result_float, [[1.2, 1.2]])
+
+    # With dtype=int: numpy casts 0.6->0 first, so 0+0=0 at [0,0]
+    result_int = m.sum(axis=0, dtype=int)
+    expected = np.array([[0, 1]])
+    assert_equal(result_int, expected), (
+        f"Expected {expected}, got {result_int}. "
+        "dtype should be cast before accumulating duplicate entries."
+    )
+
+    # Same check for coo_array
+    m_arr = coo_array((data, (row, col)), shape=(3, 2))
+    result_arr = m_arr.sum(axis=0, dtype=int)
+    assert_equal(np.asarray(result_arr), np.array([[0, 1]]))
