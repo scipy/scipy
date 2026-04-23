@@ -1307,7 +1307,7 @@ class TestPPoly:
             vals = f(xnew)
             assert np.isfinite(vals).all()
 
-    def test_descending(self):
+    def test_descending(self, xp):
         def binom_matrix(power):
             n = np.arange(power + 1).reshape(-1, 1)
             k = np.arange(power + 1)
@@ -1328,10 +1328,11 @@ class TestPPoly:
             cdp = np.dot(B.T, cap)
             cd = cdp / h_powers
 
+            ca, cd, x = map(xp.asarray, (ca, cd, x))
             pa = PPoly(ca, x, extrapolate=True)
             pd = PPoly(cd[:, ::-1], x[::-1], extrapolate=True)
 
-            x_test = rng.uniform(-10, 20, 100)
+            x_test = xp.asarray(rng.uniform(-10, 20, 100))
             xp_assert_close(pa(x_test), pd(x_test), rtol=1e-13)
             xp_assert_close(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
 
@@ -1346,6 +1347,7 @@ class TestPPoly:
             pa_i = pa.antiderivative()
             pd_i = pd.antiderivative()
             for a, b in rng.uniform(-10, 20, (5, 2)):
+                a, b = map(xp.asarray, (a, b))
                 int_a = pa.integrate(a, b)
                 int_d = pd.integrate(a, b)
                 xp_assert_close(int_a, int_d, rtol=1e-13)
@@ -1354,7 +1356,7 @@ class TestPPoly:
 
             roots_d = pd.roots()
             roots_a = pa.roots()
-            xp_assert_close(roots_a, np.sort(roots_d), rtol=1e-12)
+            xp_assert_close(roots_a, xp.sort(roots_d), rtol=1e-12)
 
     def test_multi_shape(self, xp):
         c = np.random.rand(6, 2, 1, 2, 3)
@@ -1372,46 +1374,49 @@ class TestPPoly:
         ip = p.antiderivative()
         assert ip.c.shape == (7, 2, 1, 2, 3)
 
-    def test_construct_fast(self):
+    def test_construct_fast(self, xp):
         np.random.seed(1234)
         c = np.array([[1, 4], [2, 5], [3, 6]], dtype=float)
         x = np.array([0, 0.5, 1])
-        p = PPoly.construct_fast(c, x)
-        xp_assert_close(p(0.3), np.asarray(1*0.3**2 + 2*0.3 + 3))
-        xp_assert_close(p(0.7), np.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6))
+        p = PPoly.construct_fast(xp.asarray(c), xp.asarray(x))
+        xp_assert_close(p(0.3), xp.asarray(1*0.3**2 + 2*0.3 + 3))
+        xp_assert_close(p(0.7), xp.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6))
 
-    def test_vs_alternative_implementations(self):
+    def test_vs_alternative_implementations(self, xp):
         rng = np.random.RandomState(1234)
-        c = rng.rand(3, 12, 22)
-        x = np.sort(np.r_[0, rng.rand(11), 1])
+        c_np = rng.rand(3, 12, 22)
+        x_np = np.sort(np.r_[0, rng.rand(11), 1])
+        x_p_np = np.r_[0.3, 0.5, 0.33, 0.6]
+
+        c, x, x_p = map(xp.asarray, (c_np, x_np, x_p_np))
 
         p = PPoly(c, x)
 
-        xp = np.r_[0.3, 0.5, 0.33, 0.6]
-        expected = _ppoly_eval_1(c, x, xp)
-        xp_assert_close(p(xp), expected)
+        expected = xp.asarray(_ppoly_eval_1(c_np, x_np, x_p_np))
+        xp_assert_close(p(x_p), expected)
 
-        expected = _ppoly_eval_2(c[:,:,0], x, xp)
-        xp_assert_close(p(xp)[:, 0], expected)
+        expected = xp.asarray(_ppoly_eval_2(c_np[:, :, 0], x_np, x_p_np))
+        xp_assert_close(p(x_p)[:, 0], expected)
 
-    def test_from_spline(self):
+    def test_from_spline(self, xp):
         rng = np.random.RandomState(1234)
         x = np.sort(np.r_[0, rng.rand(11), 1])
         y = rng.rand(len(x))
 
-        spl = splrep(x, y, s=0)
-        pp = PPoly.from_spline(spl)
+        t_np, c_np, k = splrep(x, y, s=0)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
-        xi = np.linspace(0, 1, 200)
-        xp_assert_close(pp(xi), splev(xi, spl))
+        xi_np = np.linspace(0, 1, 200)
+        xi = xp.asarray(xi_np)
+        xp_assert_close(pp(xi), xp.asarray(splev(xi_np, (t_np, c_np, k))))
 
         # make sure .from_spline accepts BSpline objects
-        b = BSpline(*spl)
+        b = BSpline(t, c, k)
         ppp = PPoly.from_spline(b)
         xp_assert_close(ppp(xi), b(xi))
 
         # BSpline's extrapolate attribute propagates unless overridden
-        t, c, k = spl
         for extrap in (None, True, False):
             b = BSpline(t, c, k, extrapolate=extrap)
             p = PPoly.from_spline(b)
@@ -1443,17 +1448,19 @@ class TestPPoly:
         xp_assert_close(pp.derivative().c, dpp.c)
         xp_assert_close(pp.derivative(2).c, ddpp.c)
 
-    def test_derivative_eval(self):
+    def test_derivative_eval(self, xp):
         rng = np.random.RandomState(1234)
         x = np.sort(np.r_[0, rng.rand(11), 1])
         y = rng.rand(len(x))
 
-        spl = splrep(x, y, s=0)
-        pp = PPoly.from_spline(spl)
+        t_np, c_np, k = splrep(x, y, s=0)
+        t, c = xp.asarray(t_np), xp.asarray(c_np)
+        pp = PPoly.from_spline((t, c, k))
 
-        xi = np.linspace(0, 1, 200)
+        xi_np = np.linspace(0, 1, 200)
+        xi = xp.asarray(xi_np)
         for dx in range(0, 3):
-            xp_assert_close(pp(xi, dx), splev(xi, spl, dx))
+            xp_assert_close(pp(xi, dx), xp.asarray(splev(xi_np, (t_np, c_np, k), dx)))
 
     def test_derivative(self):
         rng = np.random.RandomState(1234)
