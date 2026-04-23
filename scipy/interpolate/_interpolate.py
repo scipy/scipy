@@ -1295,7 +1295,25 @@ def _get_xp_bpoly_cls(xp):
     skip_backends=[
         ("dask.array",
          "https://github.com/scipy/scipy/issues/24205")
-    ]
+    ],
+    method_capabilities={
+        "roots": dict(
+            cpu_only=True,
+            jax_jit=False,
+            skip_backends=[
+                ("dask.array",
+                 "https://github.com/scipy/scipy/issues/24205")
+            ],
+        ),
+        "solve": dict(
+            cpu_only=True,
+            jax_jit=False,
+            skip_backends=[
+                ("dask.array",
+                 "https://github.com/scipy/scipy/issues/24205")
+            ],
+        ),
+    }
 )
 class PPoly:
     """Piecewise polynomial in the power basis.
