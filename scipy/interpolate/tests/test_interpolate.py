@@ -1062,10 +1062,10 @@ class TestPPolyCommon:
         assert_raises(ValueError, PPoly, c, x)
         assert_raises(ValueError, BPoly, c, x)
 
-    def test_ctor_c(self):
+    def test_ctor_c(self, xp):
         # wrong shape: `c` must be at least 2D
         with assert_raises(ValueError):
-            PPoly([1, 2], [0, 1])
+            PPoly(xp.asarray([1, 2]), xp.asarray([0, 1]))
 
     def test_extend(self, xp):
         # Test adding new points to the piecewise polynomial
@@ -1139,16 +1139,20 @@ class TestPPolyCommon:
             xp_assert_equal(p2.c, p.c)
             xp_assert_equal(p2.x, p.x)
 
-    def test_shape(self):
+    def test_shape(self, xp):
+        np.random.seed(1234)
+        c = xp.asarray(np.random.rand(8, 12, 5, 6, 7))
+        x = xp.asarray(np.sort(np.random.rand(13)))
+        x_p = xp.asarray(np.random.rand(3, 4))
+        for cls in (PPoly, BPoly):
+            p = cls(c, x)
+            assert p(x_p).shape == (3, 4, 5, 6, 7)
+
+    def test_shape_scalars(self):
         np.random.seed(1234)
         c = np.random.rand(8, 12, 5, 6, 7)
         x = np.sort(np.random.rand(13))
-        xp = np.random.rand(3, 4)
-        for cls in (PPoly, BPoly):
-            p = cls(c, x)
-            assert p(xp).shape == (3, 4, 5, 6, 7)
 
-        # 'scalars'
         for cls in (PPoly, BPoly):
             p = cls(c[..., 0, 0, 0], x)
 
@@ -1173,17 +1177,17 @@ class TestPPolyCommon:
 
             _run_concurrent_barrier(10, worker_fn, interp, xpp)
 
-    def test_complex_coef(self):
+    def test_complex_coef(self, xp):
         np.random.seed(12345)
-        x = np.sort(np.random.random(13))
-        c = np.random.random((8, 12)) * (1. + 0.3j)
-        c_re, c_im = c.real, c.imag
-        xp = np.random.random(5)
+        x = xp.asarray(np.sort(np.random.random(13)))
+        c = xp.asarray(np.random.random((8, 12)) * (1. + 0.3j))
+        c_re, c_im = xp.real(c), xp.imag(c)
+        x_p = xp.asarray(np.random.random(5))
         for cls in (PPoly, BPoly):
             p, p_re, p_im = cls(c, x), cls(c_re, x), cls(c_im, x)
             for nu in [0, 1, 2]:
-                xp_assert_close(p(xp, nu).real, p_re(xp, nu))
-                xp_assert_close(p(xp, nu).imag, p_im(xp, nu))
+                xp_assert_close(xp.real(p(x_p, nu)), p_re(x_p, nu))
+                xp_assert_close(xp.imag(p(x_p, nu)), p_im(x_p, nu))
 
     def test_axis(self, xp):
         np.random.seed(12345)
