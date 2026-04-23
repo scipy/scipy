@@ -1331,7 +1331,7 @@ class TestPPoly:
 
             ca, cd, x = map(xp.asarray, (ca, cd, x))
             pa = PPoly(ca, x, extrapolate=True)
-            pd = PPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+            pd = PPoly(xp.flip(cd, axis=-1), xp.flip(x, axis=-1), extrapolate=True)
 
             x_test = xp.asarray(rng.uniform(-10, 20, 100))
             xp_assert_close(pa(x_test), pd(x_test), rtol=1e-13)
