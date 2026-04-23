@@ -1307,6 +1307,7 @@ class TestPPoly:
             vals = f(xnew)
             assert np.isfinite(vals).all()
 
+    @make_xp_test_case((PPoly, "roots"))
     def test_descending(self, xp):
         def binom_matrix(power):
             n = np.arange(power + 1).reshape(-1, 1)
