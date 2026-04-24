@@ -1896,20 +1896,22 @@ class TestBPoly:
         xp_assert_close(bp(3.4, 1), xp.asarray(-6 * 0.6, dtype=xp.float64))
         xp_assert_close(bp(-1.3, 1), xp.asarray(2 * (0.7/2), dtype=xp.float64))
 
-    def test_descending(self):
+    def test_descending(self, xp):
         rng = np.random.RandomState(0)
 
         power = 3
         for m in [10, 20, 30]:
-            x = np.sort(rng.uniform(0, 10, m + 1))
-            ca = rng.uniform(-0.1, 0.1, size=(power + 1, m))
+            x_np = np.sort(rng.uniform(0, 10, m + 1))
+            ca_np = rng.uniform(-0.1, 0.1, size=(power + 1, m))
             # We need only to flip coefficients to get it right!
-            cd = ca[::-1].copy()
+            cd_np = ca_np[::-1].copy()
+
+            x, ca, cd = map(xp.asarray, (x_np, ca_np, cd_np))
 
             pa = BPoly(ca, x, extrapolate=True)
-            pd = BPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+            pd = BPoly(xp.flip(cd, axis=-1), xp.flip(x, axis=-1), extrapolate=True)
 
-            x_test = rng.uniform(-10, 20, 100)
+            x_test = xp.asarray(rng.uniform(-10, 20, 100))
             xp_assert_close(pa(x_test), pd(x_test), rtol=1e-13)
             xp_assert_close(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
 
@@ -1930,10 +1932,11 @@ class TestBPoly:
                 xp_assert_close(pa_i(b) - pa_i(a), pd_i(b) - pd_i(a),
                                 rtol=1e-12)
 
-    def test_multi_shape(self):
+    def test_multi_shape(self, xp):
         rng = np.random.RandomState(1234)
-        c = rng.rand(6, 2, 1, 2, 3)
-        x = np.array([0, 0.5, 1])
+        c_np = rng.rand(6, 2, 1, 2, 3)
+        x_np = np.array([0, 0.5, 1])
+        c, x = xp.asarray(c_np), xp.asarray(x_np)
         p = BPoly(c, x)
         assert p.x.shape == x.shape
         assert p.c.shape == c.shape
@@ -1962,20 +1965,20 @@ class TestBPoly:
         xp_assert_close(bp(0.4), xp.asarray(3 * 0.6*0.6, dtype=xp.float64))
         xp_assert_close(bp(1.7), xp.asarray(2 * (0.7/2)**2, dtype=xp.float64))
 
-    def test_extrapolate_attr(self):
-        x = [0, 2]
-        c = [[3], [1], [4]]
+    def test_extrapolate_attr(self, xp):
+        x = xp.asarray([0, 2], dtype=xp.float64)
+        c = xp.asarray([[3], [1], [4]], dtype=xp.float64)
         bp = BPoly(c, x)
 
         for extrapolate in (True, False, None):
             bp = BPoly(c, x, extrapolate=extrapolate)
             bp_d = bp.derivative()
             if extrapolate is False:
-                assert np.isnan(bp([-0.1, 2.1])).all()
-                assert np.isnan(bp_d([-0.1, 2.1])).all()
+                assert xp.all(xp.isnan(bp(xp.asarray([-0.1, 2.1]))))
+                assert xp.all(xp.isnan(bp_d(xp.asarray([-0.1, 2.1]))))
             else:
-                assert not np.isnan(bp([-0.1, 2.1])).any()
-                assert not np.isnan(bp_d([-0.1, 2.1])).any()
+                assert not xp.any(xp.isnan(bp(xp.asarray([-0.1, 2.1]))))
+                assert not xp.any(xp.isnan(bp_d(xp.asarray([-0.1, 2.1]))))
 
 
 @make_xp_test_case(BPoly)
