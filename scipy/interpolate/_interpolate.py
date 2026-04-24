@@ -2176,7 +2176,10 @@ class BPoly:
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        xp = array_namespace(xi, *yi)
+        if isinstance(yi, list):
+            xp = array_namespace(xi, *yi)
+        else:
+            xp = array_namespace(xi, yi)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
         xi = xp_internal.asarray(xi)
         if isinstance(yi, list):
