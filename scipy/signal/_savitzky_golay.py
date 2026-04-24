@@ -153,16 +153,29 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
         # Reverse so that result can be used in a convolution.
         x = xp.flip(x)
 
+    # Normalize x to [-1, 1] to improve the numerical conditioning of the
+    # Vandermonde matrix. For large polyorder and/or window_length the
+    # original x values produce a Vandermonde matrix that is extremely
+    # ill-conditioned, causing _lstsq to discard important singular
+    # values and return incorrect coefficients. See gh-20825.
+    x_abs_max = max(float(-pos), float(window_length - pos - 1))
+    scale = max(abs(x_abs_max), 1.0)
+    x_norm = x / scale
+
     order = xp.reshape(
         xp.arange(polyorder + 1, dtype=xp.float64, device=device), (-1, 1)
     )
-    A = x ** order
+    A = x_norm ** order
 
     # y determines which order derivative is returned.
     y = xp.zeros(polyorder + 1, dtype=xp.float64, device=device)
     # The coefficient assigned to y[deriv] scales the result to take into
     # account the order of the derivative and the sample spacing.
-    y = xpx.at(y, deriv).set(float_factorial(deriv) / (delta ** deriv))
+    # Dividing by scale**deriv accounts for the normalization of x
+    # (x_norm = x / scale), which rescales the rows of A.
+    y = xpx.at(y, deriv).set(
+        float_factorial(deriv) / (delta ** deriv) / (scale ** deriv)
+    )
 
     # Find the least-squares solution of A*c = y
     coeffs, _, _, _ = _pu._lstsq(A, y, xp=xp)
