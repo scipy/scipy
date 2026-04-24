@@ -111,6 +111,16 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     if polyorder >= window_length:
         raise ValueError("polyorder must be less than window_length.")
 
+    if window_length % 2 == 0:
+        import warnings
+        warnings.warn(
+            "Even-valued window_length is not recommended. Savitzky-Golay "
+            "filters with even window lengths evaluate at half-integer "
+            "positions, which may produce incorrect results when used with "
+            "convolve1d. Use an odd window_length instead.",
+            stacklevel=2
+        )
+
     halflen, rem = divmod(window_length, 2)
 
     if pos is None:
@@ -273,6 +283,9 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         before filtering.
     window_length : int
         The length of the filter window (i.e., the number of coefficients).
+        Must be odd for correct evaluation. Even window lengths are not
+        supported because the filter would evaluate at half-integer
+        positions, yielding incorrect results.
         If `mode` is 'interp', `window_length` must be less than or equal
         to the size of `x`.
     polyorder : int
@@ -363,6 +376,14 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     if mode not in ["mirror", "constant", "nearest", "interp", "wrap"]:
         raise ValueError("mode must be 'mirror', 'constant', 'nearest' "
                          "'wrap' or 'interp'.")
+
+    if window_length % 2 == 0:
+        raise ValueError(
+            "window_length must be odd. Even window lengths are not "
+            "supported because the Savitzky-Golay filter would evaluate "
+            "at half-integer positions, producing incorrect results. "
+            "Use an odd window_length instead."
+        )
 
     xp = array_namespace(x)
     x = xp.asarray(x)
