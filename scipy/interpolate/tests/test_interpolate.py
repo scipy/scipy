@@ -1830,8 +1830,8 @@ class TestPPoly:
                     pp([-0.1, 1.1]),
                     xp.asarray([1-0.1**2, 1-1.1**2], dtype=xp.float64),
                 )
-                assert not xp.all(xp.isnan(pp_i(xp.asarray([-0.1, 1.1]))))
-                assert not xp.all(xp.isnan(pp_d(xp.asarray([-0.1, 1.1]))))
+                assert not xp.any(xp.isnan(pp_i(xp.asarray([-0.1, 1.1]))))
+                assert not xp.any(xp.isnan(pp_d(xp.asarray([-0.1, 1.1]))))
                 if not is_cupy(xp):
                     xp_assert_close(
                         pp.roots(), xp.asarray([1.0, -1.0], dtype=xp.float64)
