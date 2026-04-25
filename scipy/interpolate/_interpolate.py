@@ -13,8 +13,7 @@ from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from scipy._lib._array_api import (
-    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy,
-    is_array_api_obj
+    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy
 )
 
 from . import _fitpack_py
