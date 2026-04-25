@@ -1,6 +1,10 @@
+import warnings
+
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace,
+    is_dask,
+    is_jax,
     xp_capabilities,
     xp_device,
     xp_size,
@@ -285,6 +289,10 @@ def softmax(x, axis=None):
     The implementation uses shifting to avoid overflow. See [1]_ for more
     details.
 
+    If exactly one ``+inf`` is present along the reduction axis, the output is 1 at that
+    position and 0 elsewhere. If multiple ``+inf`` values are present, or if all values
+    are ``-inf`` along the reduction axis, the output is ``NaN`` along that slice.
+
     .. versionadded:: 1.2.0
 
     References
@@ -341,10 +349,39 @@ def softmax(x, axis=None):
 
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
+    x = xp_promote(x, force_floating=True, xp=xp)
+
+    pos_inf = x == xp.inf
+    n_pos_inf = xp.sum(xp.astype(pos_inf, x.dtype), axis=axis, keepdims=True)
+    all_neginf = xp.all(x == -xp.inf, axis=axis, keepdims=True)
+
+    if not (is_jax(xp) or is_dask(xp)):
+        if xp.any(n_pos_inf > 1):
+            warnings.warn("multiple +inf in input", RuntimeWarning, stacklevel=2)
+        if xp.any(all_neginf):
+            warnings.warn("all values are -inf", RuntimeWarning, stacklevel=2)
+
+    # Standard softmax with +inf replaced by a large finite value. Leave -inf
+    # unchanged; replacing it by -finfo.max can overflow in the subsequent
+    # subtraction when the reduction contains +inf.
+    x = xp.where(pos_inf, xp.finfo(x.dtype).max, x)
     x_max = xp.max(x, axis=axis, keepdims=True)
-    exp_x_shifted = xp.exp(x - x_max)
-    return exp_x_shifted / xp.sum(exp_x_shifted, axis=axis, keepdims=True)
+    x_max = xp.where(all_neginf, xp.zeros_like(x_max), x_max)
+    with np.errstate(over="ignore", under="ignore"):
+        exp_x_shifted = xp.exp(x - x_max)
+    denominator = xp.sum(exp_x_shifted, axis=axis, keepdims=True)
+    denominator = xp.where(all_neginf, xp.ones_like(denominator), denominator)
+    out = exp_x_shifted / denominator
+
+    # If one single +inf, return 1 there and 0 elsewhere
+    # If multiple +inf or all -inf, return NaN there
+    out = xp.where(
+        n_pos_inf == 1, xp.where(pos_inf, xp.ones_like(out), xp.zeros_like(out)), out
+    )
+    out = xp.where((n_pos_inf > 1) | all_neginf, xp.full_like(out, xp.nan), out)
+    if out.ndim == 0:
+        out = out[()]
+    return out
 
 
 @xp_capabilities()

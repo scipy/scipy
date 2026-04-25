@@ -4,8 +4,9 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import (is_array_api_strict, make_xp_test_case,
-                                   xp_default_dtype, xp_device)
+from scipy._lib._array_api import (is_array_api_strict, is_dask, is_jax,
+                                   make_xp_test_case, xp_default_dtype,
+                                   xp_device)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -384,7 +385,6 @@ class TestSoftmax:
         xp_assert_close(softmax(x3d, axis=(1, 2)),
                         xp.reshape(expected, (2, 2, 2)), rtol=1e-13)
 
-    @pytest.mark.xfail_xp_backends("array_api_strict", reason="int->float promotion")
     def test_softmax_int_array(self, xp):
         xp_assert_close(softmax(xp.asarray([1000, 0, 0, 0])),
                         xp.asarray([1., 0., 0., 0.]), rtol=1e-13)
@@ -395,6 +395,126 @@ class TestSoftmax:
     def test_softmax_array_like(self):
         xp_assert_close(softmax([1000, 0, 0, 0]),
                         np.asarray([1., 0., 0., 0.]), rtol=1e-13)
+
+    @pytest.mark.parametrize(
+        "xp_input, expected, axis",
+        [
+            ([-1.0, 3.0, np.inf], [0.0, 0.0, 1.0], None),
+            ([-np.inf, np.inf], [0.0, 1.0], None),
+            ([np.inf], [1.0], None),
+            ([-np.inf, 1.0, 2.0], [0.0, 0.26894142136999512, 0.7310585786300049], None),
+            ([[1.0, np.inf], [2.0, 3.0]], [[0.0, 1.0], [0.0, 0.0]], None),
+            (
+                [
+                    [2.0, -3.0, np.inf],
+                    [-np.inf, np.inf, 0.0],
+                ],
+                [
+                    [1.0, 0.0, 1.0],
+                    [0.0, 1.0, 0.0],
+                ],
+                0,
+            ),
+            (
+                [
+                    [2.0, -3.0, np.inf],
+                    [-np.inf, np.inf, 0.0],
+                ],
+                [
+                    [0.0, 0.0, 1.0],
+                    [0.0, 1.0, 0.0],
+                ],
+                1,
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_softmax_inf_inputs(self, xp_input, expected, axis, dtype, xp):
+        dtype = getattr(xp, dtype)
+        rtol = 1e-6 if dtype == xp.float32 else 1e-13
+        # If exactly one +inf is present along the reduction axis, the output is 1
+        # at that position and 0 elsewhere - see gh-23225
+        xp_assert_close(
+            softmax(xp.asarray(xp_input, dtype=dtype), axis=axis),
+            xp.asarray(expected, dtype=dtype),
+            rtol=rtol,
+        )
+
+    @pytest.mark.parametrize(
+        "xp_input, axis, warning, expected",
+        [
+            ([1.0, np.inf, np.inf], None, r"multiple \+inf", [np.nan, np.nan, np.nan]),
+            (
+                [np.inf, np.inf, np.inf],
+                None,
+                r"multiple \+inf",
+                [np.nan, np.nan, np.nan],
+            ),
+            ([-np.inf], None, r"all values are \-inf", [np.nan]),
+            ([-np.inf, -np.inf], None, r"all values are \-inf", [np.nan, np.nan]),
+            (
+                [[1.0, np.inf, np.inf], [0.0, 1.0, 2.0]],
+                1,
+                r"multiple \+inf",
+                [
+                    [np.nan, np.nan, np.nan],
+                    [0.09003057317038046, 0.24472847105479764, 0.6652409557748219],
+                ],
+            ),
+            (
+                [
+                    [np.inf, 1.0],
+                    [np.inf, np.inf],
+                ],
+                1,
+                r"multiple \+inf",
+                [
+                    [1.0, 0.0],
+                    [np.nan, np.nan],
+                ],
+            ),
+            (
+                [
+                    [-np.inf, -np.inf],
+                    [1.0, 2.0],
+                ],
+                1,
+                r"all values are \-inf",
+                [
+                    [np.nan, np.nan],
+                    [0.26894142136999512, 0.7310585786300049],
+                ],
+            ),
+            (
+                [
+                    [np.inf, 1.0],
+                    [np.inf, 2.0],
+                ],
+                0,
+                r"multiple \+inf",
+                [
+                    [np.nan, 0.26894142136999512],
+                    [np.nan, 0.7310585786300049],
+                ],
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_softmax_inf_indeterminate(
+        self, xp_input, axis, warning, expected, dtype, xp
+    ):
+        # If multiple +inf values are present, or if all values are -inf along the
+        # reduction axis, the output is NaN along that slice - see gh-23225
+        dtype = getattr(xp, dtype)
+        rtol = 1e-6 if dtype == xp.float32 else 1e-13
+        x = xp.asarray(xp_input, dtype=dtype)
+        # JAX and Dask do not emit value-dependent Python warnings.
+        if is_jax(xp) or is_dask(xp):
+            result = softmax(x, axis=axis)
+        else:
+            with pytest.warns(RuntimeWarning, match=warning):
+                result = softmax(x, axis=axis)
+        xp_assert_close(result, xp.asarray(expected, dtype=dtype), rtol=rtol)
 
 
 @make_xp_test_case(log_softmax)
