@@ -69,14 +69,14 @@ jobs:
           persist-credentials: false
 
       - name: Cache pixi
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.PIXI_CACHE_DIR }}
           # Cache hit if lock file did not change. Otherwise, redownload packages.
           key: ${{ runner.os }}-gpu-pixi-1-${{ hashFiles('pixi.lock') }}
 
       - name: Setup compiler cache
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.CCACHE_DIR }}
           # Make primary key unique by using `run_id`, this ensures the cache
@@ -92,7 +92,7 @@ jobs:
           echo "CUPY_CACHE_DIR=$HOME/.cupy/kernel_cache" >> $GITHUB_ENV
 
       - name: Cache CuPy kernels
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.CUPY_CACHE_DIR }}
           # Same as for ccache above
@@ -101,7 +101,7 @@ jobs:
             ${{ runner.os }}-gpu-cupy
 
       - name: Cache JAX kernels
-        uses: cirruslabs/cache@1251dca905f872d6420b06b8d7f9e7fc85589448 # v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.JAX_COMPILATION_CACHE_DIR }}
           # Same as for cupy above
