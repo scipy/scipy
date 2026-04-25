@@ -71,9 +71,17 @@ def sawtooth(t, width=1.):
     y = xpx.at(y, mask2).set(tmod[mask2]/(xp.pi*w[mask2]) - 1)
 
     # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
+    # Avoid division by zero when w is extremely close to 0 or 1:
+    # when w ≈ 1, use the rising ramp formula for the remaining points
+    # when w ≈ 0, use the falling ramp formula for the remaining points
     mask3 = ~(mask1 | mask2)
-    y = xpx.at(y, mask3).set(
-        (xp.pi*(w[mask3] + 1) - tmod[mask3])/(xp.pi*(1 - w[mask3]))
+    mask_w1 = mask3 & (xp.abs(w - 1) < 1e-15)
+    mask_w0 = mask3 & (xp.abs(w) < 1e-15)
+    y = xpx.at(y, mask_w1).set(tmod[mask_w1]/xp.pi - 1)
+    y = xpx.at(y, mask_w0).set(1 - tmod[mask_w0]/xp.pi)
+    mask3_rest = mask3 & ~(mask_w1 | mask_w0)
+    y = xpx.at(y, mask3_rest).set(
+        (xp.pi*(w[mask3_rest] + 1) - tmod[mask3_rest])/(xp.pi*(1 - w[mask3_rest]))
     )
     return y
 
