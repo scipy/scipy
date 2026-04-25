@@ -2,6 +2,7 @@ from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal,
     make_xp_test_case, is_cupy, _xp_copy_to_numpy
 )
+from scipy._external import array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
 
@@ -2195,114 +2196,143 @@ class TestPolyConversions:
             BPoly.from_power_basis(bp)
 
 
+@make_xp_test_case(BPoly)
 class TestBPolyFromDerivatives:
-    def test_make_poly_1(self):
-        c1 = BPoly._construct_from_derivatives(0, 1, [2], [3])
-        xp_assert_close(c1, [2., 3.])
+    def test_make_poly_1(self, xp):
+        c1 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([2], dtype=xp.float64), xp.asarray([3], dtype=xp.float64)
+        )
+        xp_assert_close(c1, xp.asarray([2., 3.], dtype=xp.float64))
 
-    def test_make_poly_2(self):
-        c1 = BPoly._construct_from_derivatives(0, 1, [1, 0], [1])
-        xp_assert_close(c1, [1., 1., 1.])
+    def test_make_poly_2(self, xp):
+        c1 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1, 0], dtype=xp.float64),
+            xp.asarray([1], dtype=xp.float64)
+        )
+        xp_assert_close(c1, xp.asarray([1., 1., 1.], dtype=xp.float64))
 
         # f'(0) = 3
-        c2 = BPoly._construct_from_derivatives(0, 1, [2, 3], [1])
-        xp_assert_close(c2, [2., 7./2, 1.])
+        c2 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([2, 3], dtype=xp.float64),
+            xp.asarray([1], dtype=xp.float64)
+        )
+        xp_assert_close(c2, xp.asarray([2., 7./2, 1.], dtype=xp.float64))
 
         # f'(1) = 3
-        c3 = BPoly._construct_from_derivatives(0, 1, [2], [1, 3])
-        xp_assert_close(c3, [2., -0.5, 1.])
+        c3 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([2], dtype=xp.float64),
+            xp.asarray([1, 3], dtype=xp.float64)
+        )
+        xp_assert_close(c3, xp.asarray([2., -0.5, 1.], dtype=xp.float64))
 
-    def test_make_poly_3(self):
+    def test_make_poly_3(self, xp):
         # f'(0)=2, f''(0)=3
-        c1 = BPoly._construct_from_derivatives(0, 1, [1, 2, 3], [4])
-        xp_assert_close(c1, [1., 5./3, 17./6, 4.])
+        c1 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1, 2, 3], dtype=xp.float64),
+            xp.asarray([4], dtype=xp.float64)
+        )
+        xp_assert_close(c1, xp.asarray([1., 5./3, 17./6, 4.], dtype=xp.float64))
 
         # f'(1)=2, f''(1)=3
-        c2 = BPoly._construct_from_derivatives(0, 1, [1], [4, 2, 3])
-        xp_assert_close(c2, [1., 19./6, 10./3, 4.])
+        c2 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1], dtype=xp.float64),
+            xp.asarray([4, 2, 3], dtype=xp.float64),
+        )
+        xp_assert_close(c2, xp.asarray([1., 19./6, 10./3, 4.], dtype=xp.float64))
 
         # f'(0)=2, f'(1)=3
-        c3 = BPoly._construct_from_derivatives(0, 1, [1, 2], [4, 3])
-        xp_assert_close(c3, [1., 5./3, 3., 4.])
+        c3 = BPoly._construct_from_derivatives(
+            0, 1, xp.asarray([1, 2], dtype=xp.float64),
+            xp.asarray([4, 3], dtype=xp.float64),
+        )
+        xp_assert_close(c3, xp.asarray([1., 5./3, 3., 4.], dtype=xp.float64))
 
-    def test_make_poly_12(self):
+    def test_make_poly_12(self, xp):
         rng = np.random.RandomState(12345)
-        ya = np.r_[0, rng.random(5)]
-        yb = np.r_[0, rng.random(5)]
+        ya = xp.asarray(np.r_[0, rng.random(5)])
+        yb = xp.asarray(np.r_[0, rng.random(5)])
 
         c = BPoly._construct_from_derivatives(0, 1, ya, yb)
-        pp = BPoly(c[:, None], [0, 1])
+        pp = BPoly(c[:, None], xp.asarray([0, 1], dtype=xp.float64))
         for j in range(6):
             xp_assert_close(pp(0.), ya[j], check_0d=False)
             xp_assert_close(pp(1.), yb[j], check_0d=False)
             pp = pp.derivative()
 
-    def test_raise_degree(self):
+    def test_raise_degree(self, xp):
         rng = np.random.RandomState(12345)
-        x = [0, 1]
+        x = xp.asarray([0, 1], dtype=xp.float64)
         k, d = 8, 5
-        c = rng.random((k, 1, 2, 3, 4))
+        c = xp.asarray(rng.random((k, 1, 2, 3, 4)), dtype=xp.float64)
         bp = BPoly(c, x)
 
         c1 = BPoly._raise_degree(c, d)
         bp1 = BPoly(c1, x)
 
-        xp = np.linspace(0, 1, 11)
+        xp = xp.linspace(0, 1, 11)
         xp_assert_close(bp(xp), bp1(xp))
 
-    def test_xi_yi(self):
-        assert_raises(ValueError, BPoly.from_derivatives, [0, 1], [0])
+    def test_xi_yi(self, xp):
+        assert_raises(
+            ValueError, BPoly.from_derivatives,
+            xp.asarray([0, 1], dtype=xp.float64), xp.asarray([0], dtype=xp.float64)
+        )
 
-    def test_coords_order(self):
-        xi = [0, 0, 1]
-        yi = [[0], [0], [0]]
+    def test_coords_order(self, xp):
+        xi = xp.asarray([0, 0, 1], dtype=xp.float64)
+        yi = xp.asarray([[0], [0], [0]], dtype=xp.float64)
         assert_raises(ValueError, BPoly.from_derivatives, xi, yi)
 
-    def test_zeros(self):
-        xi = [0, 1, 2, 3]
-        yi = [[0, 0], [0], [0, 0], [0, 0]]  # NB: will have to raise the degree
+    def test_zeros(self, xp):
+        xi = xp.asarray([0, 1, 2, 3], dtype=xp.float64)
+        # NB: will have to raise the degree
+        yi = list(
+            map(
+                lambda x: xp.asarray(x, dtype=xp.float64),
+                [[0, 0], [0], [0, 0], [0, 0]],
+            )
+        )
         pp = BPoly.from_derivatives(xi, yi)
         assert pp.c.shape == (4, 3)
 
         ppd = pp.derivative()
-        for xp in [0., 0.1, 1., 1.1, 1.9, 2., 2.5]:
-            xp_assert_close(pp(xp), np.asarray(0.0))
-            xp_assert_close(ppd(xp), np.asarray(0.0))
+        for x_p in [0., 0.1, 1., 1.1, 1.9, 2., 2.5]:
+            xp_assert_close(pp(x_p), xp.asarray(0.0, dtype=xp.float64))
+            xp_assert_close(ppd(x_p), xp.asarray(0.0, dtype=xp.float64))
 
-
-    def _make_random_mk(self, m, k):
+    def _make_random_mk(self, m, k, xp):
         # k derivatives at each breakpoint
         rng = np.random.RandomState(1234)
-        xi = np.asarray([1. * j**2 for j in range(m+1)])
-        yi = [rng.random(k) for j in range(m+1)]
+        xi = xp.asarray([1. * j**2 for j in range(m+1)], dtype=xp.float64)
+        yi = [xp.asarray(rng.random(k)) for j in range(m+1)]
         return xi, yi
 
-    def test_random_12(self):
+    def test_random_12(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
         pp = BPoly.from_derivatives(xi, yi)
 
         for order in range(k//2):
-            xp_assert_close(pp(xi), [yy[order] for yy in yi])
+            xp_assert_close(pp(xi), xp.stack([yy[order] for yy in yi]))
             pp = pp.derivative()
 
-    def test_order_zero(self):
+    def test_order_zero(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
         assert_raises(ValueError, BPoly.from_derivatives,
                 **dict(xi=xi, yi=yi, orders=0))
 
-    def test_orders_too_high(self):
+    def test_orders_too_high(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
 
         BPoly.from_derivatives(xi, yi, orders=2*k-1)   # this is still ok
         assert_raises(ValueError, BPoly.from_derivatives,   # but this is not
                 **dict(xi=xi, yi=yi, orders=2*k))
 
-    def test_orders_global(self):
+    def test_orders_global(self, xp):
         m, k = 5, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
 
         # ok, this is confusing. Local polynomials will be of the order 5
         # which means that up to the 2nd derivatives will be used at each point
@@ -2312,7 +2342,7 @@ class TestBPolyFromDerivatives:
         for j in range(order//2+1):
             xp_assert_close(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
             pp = pp.derivative()
-        assert not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
+        assert not xp.all(xpx.isclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
 
         # now repeat with `order` being even: on each interval, it uses
         # order//2 'derivatives' @ the right-hand endpoint and
@@ -2322,11 +2352,11 @@ class TestBPolyFromDerivatives:
         for j in range(order//2):
             xp_assert_close(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
             pp = pp.derivative()
-        assert not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
+        assert not xp.all(xpx.isclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
 
-    def test_orders_local(self):
+    def test_orders_local(self, xp):
         m, k = 7, 12
-        xi, yi = self._make_random_mk(m, k)
+        xi, yi = self._make_random_mk(m, k, xp)
 
         orders = [o + 1 for o in range(m)]
         for i, x in enumerate(xi[1:-1]):
@@ -2334,13 +2364,13 @@ class TestBPolyFromDerivatives:
             for j in range(orders[i] // 2 + 1):
                 xp_assert_close(pp(x - 1e-12), pp(x + 1e-12))
                 pp = pp.derivative()
-            assert not np.allclose(pp(x - 1e-12), pp(x + 1e-12))
+            assert not xp.all(xpx.isclose(pp(x - 1e-12), pp(x + 1e-12)))
 
-    def test_yi_trailing_dims(self):
+    def test_yi_trailing_dims(self, xp):
         rng = np.random.RandomState(1234)
         m, k = 7, 5
-        xi = np.sort(rng.random(m+1))
-        yi = rng.random((m+1, k, 6, 7, 8))
+        xi = xp.asarray(np.sort(rng.random(m+1)))
+        yi = xp.asarray(rng.random((m+1, k, 6, 7, 8)))
         pp = BPoly.from_derivatives(xi, yi)
         assert pp.c.shape == (2*k, m, 6, 7, 8)
 
