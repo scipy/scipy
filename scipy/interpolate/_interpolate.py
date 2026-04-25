@@ -1802,7 +1802,7 @@ class PPoly:
     ]
 )
 class BPoly:
-    """Piecewise polynomial in the Bernstein basis
+    """Piecewise polynomial in the Bernstein basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     Bernstein polynomial basis::
