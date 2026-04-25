@@ -1289,6 +1289,15 @@ def _get_xp_bpoly_cls(xp):
     return _BPoly, np
 
 
+_ppoly_extra_note = (
+    """The methods ``solve`` and ``roots`` are currently not supported
+    with CuPy. ``solve`` and ``roots`` with ``c.ndim > 2`` are currently
+    only supported with NumPy.
+
+    """
+)
+
+
 @xp_capabilities(
     cpu_only=True, jax_jit=False,
     exceptions=["cupy"],
@@ -1313,7 +1322,8 @@ def _get_xp_bpoly_cls(xp):
                  "https://github.com/scipy/scipy/issues/24205")
             ],
         ),
-    }
+    },
+    extra_note=_ppoly_extra_note,
 )
 class PPoly:
     """Piecewise polynomial in the power basis.
@@ -1783,7 +1793,6 @@ class PPoly:
         xp_cls, _ = _get_xp_ppoly_cls(xp)
         pp = xp_cls.from_bernstein_basis(bp._delegate_to, extrapolate=extrapolate)
         return cls._construct_from_xp(pp, xp_external=xp)
-
 
 @xp_capabilities(
     cpu_only=True, jax_jit=False,
