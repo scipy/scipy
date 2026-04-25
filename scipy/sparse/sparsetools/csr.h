@@ -10,15 +10,6 @@
 #include "util.h"
 #include "dense.h"
 
-template <class I, class T>
-struct csr_array {
-    const I n_row;
-    const I n_col;
-    I *indptr;
-    I *indices;
-    T *data;
-};
-
 /*
  * Extract k-th diagonal of CSR matrix A
  *
