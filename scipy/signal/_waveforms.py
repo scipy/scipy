@@ -68,6 +68,10 @@ def sawtooth(t, width=1.):
 
     # on the interval 0 to width*2*pi function is tmod / (pi*w) - 1
     mask2 = ~mask1 & (tmod < w*2*xp.pi)
+    # Fix: for width=1, tmod values at exactly 2*pi (due to floating-point modulo)
+    # belong to the rising ramp (mask2), not the falling branch (would cause div-by-zero).
+    mask2_width1_edge = ~mask1 & (w == 1) & (tmod >= 2*xp.pi - 1e-14)
+    mask2 = mask2 | mask2_width1_edge
     y = xpx.at(y, mask2).set(tmod[mask2]/(xp.pi*w[mask2]) - 1)
 
     # on the interval width*2*pi to 2*pi function is (pi*(w+1)-tmod) / (pi*(1-w))
