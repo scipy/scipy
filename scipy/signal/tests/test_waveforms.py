@@ -420,6 +420,23 @@ class TestSawtoothWaveform:
         xp_assert_close(y, xp.flip(y))
         xp_assert_close(sawtooth(-t, 0.)[1:-1], sawtooth(t)[1:-1])
 
+    def test_width_one_no_nan(self, xp):
+        # gh-22940: floating-point modulo can produce exactly 2*pi
+        # (e.g. for t = -1e-16), causing width=1 to produce NaN via
+        # division by (1 - width) = 0.
+        t = xp.asarray(-1e-16, dtype=xp.float64)
+        y = sawtooth(t, width=xp.asarray(1.0, dtype=xp.float64))
+        assert not xp.any(xp.isnan(y)), "sawtooth(-1e-16, width=1) should not be NaN"
+        # Also test with equal spacing
+        t = xp.linspace(-xp.pi, xp.pi, 50, dtype=xp.float64)
+        y = sawtooth(t, width=xp.asarray(1.0, dtype=xp.float64))
+        assert not xp.any(xp.isnan(y)), "sawtooth with width=1 should never produce NaN"
+        # Test with array width that includes 1.0
+        w_arr = xp.asarray([1.0, 0.5, 0.0], dtype=xp.float64)
+        t_arr = xp.asarray([1.0, 2.0, 3.0], dtype=xp.float64)
+        y = sawtooth(t_arr, width=w_arr)
+        assert not xp.any(xp.isnan(y)), "sawtooth with array width containing 1.0 should not produce NaN"
+
 
 @make_xp_test_case(square)
 class TestSquareWaveform:
