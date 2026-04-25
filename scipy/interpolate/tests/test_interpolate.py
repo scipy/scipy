@@ -1381,8 +1381,10 @@ class TestPPoly:
         c = np.array([[1, 4], [2, 5], [3, 6]], dtype=float)
         x = np.array([0, 0.5, 1])
         p = PPoly.construct_fast(xp.asarray(c), xp.asarray(x))
-        xp_assert_close(p(0.3), xp.asarray(1*0.3**2 + 2*0.3 + 3))
-        xp_assert_close(p(0.7), xp.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6))
+        xp_assert_close(p(0.3), xp.asarray(1*0.3**2 + 2*0.3 + 3, dtype=xp.float64))
+        xp_assert_close(
+            p(0.7), xp.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6, dtype=xp.float64)
+        )
 
     def test_vs_alternative_implementations(self, xp):
         rng = np.random.RandomState(1234)
@@ -1493,11 +1495,11 @@ class TestPPoly:
         # https://github.com/scipy/scipy/issues/4355
         p = PPoly(xp.asarray([[1., 0.5]]), xp.asarray([0, 1, 2]))
         q = p.antiderivative()
-        xp_assert_equal(q.c, xp.asarray([[1, 0.5], [0, 1]]))
-        xp_assert_equal(q.x, xp.asarray([0.0, 1, 2]))
-        xp_assert_close(p.integrate(0, 2), xp.asarray(1.5))
+        xp_assert_equal(q.c, xp.asarray([[1, 0.5], [0, 1]], dtype=xp.float64))
+        xp_assert_equal(q.x, xp.asarray([0.0, 1, 2], dtype=xp.float64))
+        xp_assert_close(p.integrate(0, 2), xp.asarray(1.5, dtype=xp.float64))
         xp_assert_close(xp.asarray(q(2) - q(0)),
-                        xp.asarray(1.5))
+                        xp.asarray(1.5, dtype=xp.float64))
 
     def test_antiderivative_simple(self, xp):
         # [ p1(x) = 3*x**2 + 2*x + 1,
@@ -1595,7 +1597,10 @@ class TestPPoly:
 
         ipp = pp.antiderivative()
         xp_assert_close(ig, ipp(b) - ipp(a), check_0d=False)
-        xp_assert_close(ig, xp.asarray(splint(a, b, (t_np, c_np, k))), check_0d=False)
+        xp_assert_close(
+            ig, xp.asarray(splint(a, b, (t_np, c_np, k)), dtype=xp.float64),
+            check_0d=False
+        )
 
         a, b = -0.3, 0.9
         ig = pp.integrate(a, b, extrapolate=True)
