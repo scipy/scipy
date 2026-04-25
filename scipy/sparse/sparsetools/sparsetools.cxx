@@ -51,9 +51,23 @@ static const int supported_T_typenums[] = {NPY_BOOL,
                                            NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE};
 static const int n_supported_T_typenums = sizeof(supported_T_typenums) / sizeof(int);
 
+/* handle csr_array struct functions */
+static void *allocate_csr_array(int I_tnum, int T_tnum, void* c[]);
+static void free_csr_array(int I_tnum, int T_tnum, void *p);
+
+/* handle std_vector functions */
 static PyObject *array_from_std_vector_and_free(int typenum, void *p);
 static void *allocate_std_vector_typenum(int typenum);
 static void free_std_vector_typenum(int typenum, void *p);
+
+/* handle np.ndarrays: typenums and casting */
+#define best_I_typenum(pyarg, typenum) \
+    best_typenum(pyarg, typenum, n_supported_I_typenums, supported_I_typenums);
+#define best_T_typenum(pyarg, typenum) \
+    best_typenum(pyarg, typenum, n_supported_T_typenums, supported_T_typenums);
+static int best_typenum(PyObject *pyarg, const int cur_typenum,
+                          const int n_supported_types, const int *supported_types);
+static PyObject *_cast_arrays(PyObject *pyarg, const int typenum, const int output);
 static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
 
 
@@ -99,12 +113,13 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     int is_output[MAX_ARGS];
     PyObject *return_value = NULL;
     int I_typenum = NPY_INT32;
+    bool I_is_int64 = 0;
     int T_typenum = -1;
     int VW_count = 0;
     int I_in_arglist = 0;
     int T_in_arglist = 0;
     int next_is_output = 0;
-    int j, k, arg_j;
+    int j, arg_j;
     const char *p;
     PY_LONG_LONG ret;
     Py_ssize_t max_array_size = 0;
@@ -129,9 +144,6 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     arg_j = 0;
     j = 0;
     for (p = spec; *p != '\0'; ++p, ++j, ++arg_j) {
-        const int *supported_typenums;
-        int n_supported_typenums;
-        int cur_typenum;
         PyObject *arg;
 
         if (j >= MAX_ARGS) {
@@ -156,32 +168,95 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             if (arg == NULL) {
                 goto fail;
             }
-            Py_INCREF(arg);
             arg_arrays[j] = arg;
             continue;
         case 'I':
             /* Integer arrays */
-            supported_typenums = supported_I_typenums;
-            n_supported_typenums = n_supported_I_typenums;
-            cur_typenum = I_typenum;
             I_in_arglist = 1;
-            break;
+            arg = PyTuple_GetItem(args, arg_j);
+            if (arg == NULL) goto fail;
+            arg_arrays[j] = c_array_from_object(arg, -1, is_output[j]);
+            if (arg_arrays[j] == NULL) goto fail;
+
+            I_typenum = best_I_typenum(arg_arrays[j], I_typenum);
+            if (I_typenum == -1) goto fail;
+
+            /* Find maximum array size */
+            if (PyArray_SIZE((PyArrayObject *)arg_arrays[j]) > max_array_size) {
+                max_array_size = PyArray_SIZE((PyArrayObject *)arg_arrays[j]);
+            }
+            continue;
         case 'T':
             /* Data arrays */
-            supported_typenums = supported_T_typenums;
-            n_supported_typenums = n_supported_T_typenums;
-            cur_typenum = T_typenum;
             T_in_arglist = 1;
-            break;
+            arg = PyTuple_GetItem(args, arg_j);
+            if (arg == NULL) goto fail;
+            arg_arrays[j] = c_array_from_object(arg, -1, is_output[j]);
+            if (arg_arrays[j] == NULL) goto fail;
+
+            T_typenum = best_T_typenum(arg_arrays[j], T_typenum);
+            if (T_typenum == -1) goto fail;
+
+            /* Find maximum array size */
+            if (PyArray_SIZE((PyArrayObject *)arg_arrays[j]) > max_array_size) {
+                max_array_size = PyArray_SIZE((PyArrayObject *)arg_arrays[j]);
+            }
+            continue;
+        case 'C': {
+            PyObject* csr[5];
+            /* csr_struct */
+            arg = PyTuple_GetItem(args, arg_j);
+            if (arg == NULL)  goto fail;
+            if (!PyTuple_Check(arg)) {
+                PyErr_SetString(PyExc_ValueError, "CSR/CSC info is not a tuple");
+                return NULL;
+            }
+            /* setup for tuples -- TODO allow passing of python sparse arrays */
+            if (PyTuple_Size(arg) != 5) {
+                PyErr_SetString(PyExc_ValueError, "CSR/CSC tuple must have 5 items");
+                return NULL;
+            }
+            for (int i = 0; i < 5; i++) {
+                csr[i] = PyTuple_GetItem(arg, i);
+                if (csr[i] == NULL) goto fail;
+            }
+
+            /* load csr parts into arg_arrays -- csr_struct has 5 parts: iiIIT */
+            for (int i = 0; i < 2; i++, j++) {
+                arg_arrays[j] = csr[i];
+            }
+            /* now load arrays */
+            for (int i = 2; i < 5; i++) {
+                arg_arrays[j] = c_array_from_object(csr[i], -1, is_output[j]);
+                if (arg_arrays[j] == NULL) goto fail;
+
+                /* Find maximum array size */
+                if (PyArray_SIZE((PyArrayObject *)arg_arrays[j]) > max_array_size) {
+                    max_array_size = PyArray_SIZE((PyArrayObject *)arg_arrays[j]);
+                }
+
+                if (i < 4) {
+                    I_typenum = best_I_typenum(arg_arrays[j], I_typenum);
+                    if (I_typenum == -1) goto fail;
+                    j++;
+                } else {
+                    T_typenum = best_T_typenum(arg_arrays[j], T_typenum);
+                    if (T_typenum == -1) goto fail;
+                    /* no j++ because outer loop over spec does that */
+                }
+            }
+            continue;
+        }
         case 'B':
             /* Boolean arrays */
             arg = PyTuple_GetItem(args, arg_j);
-            if (arg == NULL) {
-                goto fail;
-            }
+            if (arg == NULL) goto fail;
             arg_arrays[j] = c_array_from_object(arg, NPY_BOOL, is_output[j]);
-            if (arg_arrays[j] == NULL) {
-                goto fail;
+            if (arg_arrays[j] == NULL) goto fail;
+
+            /* Find maximum array size */
+            if (PyArray_SIZE((PyArrayObject *)arg_arrays[j]) > max_array_size) {
+                max_array_size = PyArray_SIZE((PyArrayObject *)arg_arrays[j]);
             }
             continue;
         case 'V':
@@ -199,40 +274,9 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         default:
             PyErr_SetString(PyExc_ValueError, "unknown character in spec");
             goto fail;
-        }
+        }  // End of switch
+    }  // end of loop over spec
 
-        arg = PyTuple_GetItem(args, arg_j);
-        if (arg == NULL) {
-            goto fail;
-        }
-        arg_arrays[j] = c_array_from_object(arg, -1, is_output[j]);
-        if (arg_arrays[j] == NULL) {
-            goto fail;
-        }
-
-        /* Find a compatible supported data type */
-
-        for (k = 0; k < n_supported_typenums; ++k) {
-            if (PyArray_CanCastSafely(PyArray_TYPE((PyArrayObject *)arg_arrays[j]), supported_typenums[k]) &&
-                (cur_typenum == -1 || PyArray_CanCastSafely(cur_typenum, supported_typenums[k])))
-            {
-                cur_typenum = supported_typenums[k];
-                break;
-            }
-        }
-        if (k == n_supported_typenums) {
-            PyErr_SetString(PyExc_ValueError,
-                            "unsupported data types in input");
-            goto fail;
-        }
-
-        if (*p == 'I') {
-            I_typenum = cur_typenum;
-        }
-        else {
-            T_typenum = cur_typenum;
-        }
-    }
 
     if (arg_j != PyTuple_Size(args)) {
         PyErr_SetString(PyExc_ValueError, "too many arguments");
@@ -246,102 +290,117 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         goto fail;
     }
 
+    I_is_int64 = PyArray_EquivTypenums(I_typenum, NPY_INT64);
+
 
     /*
      * Cast and extract argument arrays
      */
     j = 0;
-    for (p = spec; *p != '\0'; ++p, ++j) {
-        PyObject *arg;
-        int cur_typenum;
+    arg_j = 0;
+    for (p = spec; *p != '\0'; ++p, ++j, ++arg_j) {
 
-        if (*p == '*') {
+      switch (*p) {
+        case '*':
             --j;
+            --arg_j;
             continue;
-        }
-        else if (*p == 'i' || *p == 'l') {
+        case 'i':
+        case 'l': {
             /* Integer scalars */
-            PY_LONG_LONG value;
+            PY_LONG_LONG value = PyLong_AsLongLong(arg_arrays[j]);
+            if (PyErr_Occurred()) goto fail;
 
-            value = PyLong_AsLongLong(arg_arrays[j]);
-            if (PyErr_Occurred()) {
-                goto fail;
-            }
-
-            if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
-                    && value == (npy_int64)value) {
-                arg_list[j] = std::malloc(sizeof(npy_int64));
-                if (arg_list[j] == NULL) {
+            if ((*p == 'l' || I_is_int64) && value == (npy_int64)value) {
+                arg_list[arg_j] = std::malloc(sizeof(npy_int64));
+                if (arg_list[arg_j] == NULL) {
                     PyErr_NoMemory();
                     goto fail;
                 }
-                *(npy_int64*)arg_list[j] = (npy_int64)value;
-            }
-            else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
-                     && value == (npy_int32)value) {
-                arg_list[j] = std::malloc(sizeof(npy_int32));
-                if (arg_list[j] == NULL) {
+                *(npy_int64*)arg_list[arg_j] = (npy_int64)value;
+            } else if (*p == 'i' && !I_is_int64 && value == (npy_int32)value) {
+                arg_list[arg_j] = std::malloc(sizeof(npy_int32));
+                if (arg_list[arg_j] == NULL) {
                     PyErr_NoMemory();
                     goto fail;
                 }
-                *(npy_int32*)arg_list[j] = (npy_int32)value;
-            }
-            else {
-                PyErr_SetString(PyExc_ValueError,
-                                "could not convert integer scalar");
+                *(npy_int32*)arg_list[arg_j] = (npy_int32)value;
+            } else {
+                PyErr_SetString(PyExc_ValueError, "could not convert integer scalar");
                 goto fail;
             }
             continue;
         }
-        else if (*p == 'B') {
+        case 'I':
+            arg_arrays[j] = _cast_arrays(arg_arrays[j], I_typenum, is_output[j]);
+            if (arg_arrays[j] == NULL) goto fail;
+            arg_list[arg_j] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
+            if (arg_list[arg_j] == NULL) goto fail;
+            continue;
+        case 'T':
+            arg_arrays[j] = _cast_arrays(arg_arrays[j], T_typenum, is_output[j]);
+            if (arg_arrays[j] == NULL) goto fail;
+            arg_list[arg_j] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
+            if (arg_list[arg_j] == NULL) goto fail;
+            continue;
+        case 'C': {
+            void* csr[5];
+            // csr_struct has 5 parts: iiIIT
+            /* cast two shape integers */
+            PY_LONG_LONG M = PyLong_AsLongLong(arg_arrays[j++]);
+            if (PyErr_Occurred()) goto fail;
+            PY_LONG_LONG N = PyLong_AsLongLong(arg_arrays[j++]);
+            if (PyErr_Occurred()) goto fail;
+
+            // verify the integers fit in I type
+            if ((I_is_int64 && (M != (npy_int64) M || N != (npy_int64) N)) ||
+                   (!I_is_int64 && (M != (npy_int32) M || N != (npy_int32) N)))  {
+                PyErr_SetString(PyExc_ValueError, "could not convert integer scalar");
+                goto fail;
+            }
+            /* scope of M, N lost after values are copied into csr_array */
+            csr[0] = (void *)&M;
+            csr[1] = (void *)&N;
+
+            /* cast two index arrays */
+            arg_arrays[j] = _cast_arrays(arg_arrays[j], I_typenum, is_output[j]);
+            if (arg_arrays[j] == NULL) goto fail;
+            csr[2] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
+            if (csr[2] == NULL) goto fail;
+            j++;
+
+            arg_arrays[j] = _cast_arrays(arg_arrays[j], I_typenum, is_output[j]);
+            if (arg_arrays[j] == NULL) goto fail;
+            csr[3] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
+            if (csr[3] == NULL) goto fail;
+            j++;
+
+            arg_arrays[j] = _cast_arrays(arg_arrays[j], T_typenum, is_output[j]);
+            if (arg_arrays[j] == NULL) goto fail;
+            csr[4] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
+            if (csr[4] == NULL) goto fail;
+            /* j++ done in for loop */
+
+            /* combine into a csr_array struct */
+            arg_list[arg_j] = allocate_csr_array(I_typenum, T_typenum, csr);
+            if (arg_list[arg_j] == NULL) goto fail;
+            continue;
+        }
+        case 'B':
             /* Boolean arrays already cast */
-        }
-        else if (*p == 'V') {
-            arg_list[j] = allocate_std_vector_typenum(I_typenum);
-            if (arg_list[j] == NULL) {
-                goto fail;
-            }
+            arg_list[arg_j] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
+            if (arg_list[arg_j] == NULL) goto fail;
             continue;
-        }
-        else if (*p == 'W') {
-            arg_list[j] = allocate_std_vector_typenum(T_typenum);
-            if (arg_list[j] == NULL) {
-                goto fail;
-            }
+        case 'V':
+            arg_list[arg_j] = allocate_std_vector_typenum(I_typenum);
+            if (arg_list[arg_j] == NULL) goto fail;
             continue;
-        }
-        else {
-            cur_typenum = (*p == 'I' || *p == 'i') ? I_typenum : T_typenum;
-
-            /* Cast if necessary */
-            arg = arg_arrays[j];
-            if (PyArray_EquivTypenums(PyArray_TYPE((PyArrayObject *)arg), cur_typenum)) {
-                /* No cast needed. */
-            }
-            else if (!is_output[j] || PyArray_CanCastSafely(cur_typenum, PyArray_TYPE((PyArrayObject *)arg))) {
-                /* Cast needed. Output arrays require safe cast back. */
-                arg_arrays[j] = c_array_from_object(arg, cur_typenum, is_output[j]);
-                Py_DECREF(arg);
-                if (arg_arrays[j] == NULL) {
-                    goto fail;
-                }
-            }
-            else {
-                /* Cast back into output array was not safe. */
-                PyErr_SetString(PyExc_ValueError,
-                                "Output dtype not compatible with inputs.");
-                goto fail;
-            }
-        }
-
-        /* Grab value */
-        arg_list[j] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
-
-        /* Find maximum array size */
-        if (PyArray_SIZE((PyArrayObject *)arg_arrays[j]) > max_array_size) {
-            max_array_size = PyArray_SIZE((PyArrayObject *)arg_arrays[j]);
-        }
-    }
+        case 'W':
+            arg_list[arg_j] = allocate_std_vector_typenum(T_typenum);
+            if (arg_list[arg_j] == NULL) goto fail;
+            continue;
+      }  // End of switch
+    }  // End of loop over spec
 
 
     /*
@@ -440,26 +499,93 @@ fail:
     /*
      * Cleanup
      */
-    for (j = 0, p = spec; *p != '\0'; ++p, ++j) {
+    for (arg_j = 0, j = 0, p = spec; *p != '\0'; ++p, ++j, ++arg_j) {
         if (*p == '*') {
             --j;
+            --arg_j;
             continue;
         }
-        if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
-            PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]);
+        if ((*p == 'i' || *p == 'l') && arg_list[arg_j] != NULL) {
+            std::free(arg_list[arg_j]);
         }
-        Py_XDECREF(arg_arrays[j]);
-        if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
-            std::free(arg_list[j]);
+        else if ((*p == 'I' || *p == 'T') && arg_arrays[j] != NULL){
+            if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
+                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]);
+            }
+            Py_XDECREF(arg_arrays[j]);
         }
-        else if (*p == 'V' && arg_list[j] != NULL) {
-            free_std_vector_typenum(I_typenum, arg_list[j]);
+        else if (*p == 'C' && arg_list[arg_j] != NULL) {
+            // two integers: Borrowed reference. no DECREF
+            j++; j++;
+            // three arrays: DECREF the Python objects in arg_arrays. No alloc in c++
+            for (int i = 0; i < 3; i++, j++) {
+                if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
+                    PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]);
+                }
+                Py_XDECREF(arg_arrays[j]);
+            }
+            j--; // undo last increment of j. it will be done by loop over spec
+            // delete struct memory
+            free_csr_array(I_typenum, T_typenum, arg_list[arg_j]);
         }
-        else if (*p == 'W' && arg_list[j] != NULL) {
-            free_std_vector_typenum(T_typenum, arg_list[j]);
+        else if (*p == 'V' && arg_list[arg_j] != NULL) {
+            free_std_vector_typenum(I_typenum, arg_list[arg_j]);
+        }
+        else if (*p == 'W' && arg_list[arg_j] != NULL) {
+            free_std_vector_typenum(T_typenum, arg_list[arg_j]);
         }
     }
     return return_value;
+}
+
+
+/*
+ * Helper functions for dealing with csr_array struct instantiation.
+ */
+
+static void *allocate_csr_array(int I_tnum, int T_tnum, void* c[]) {
+#define PROCESS(dtypenum, dtype)                                        \
+    if (PyArray_EquivTypenums(T_tnum, dtypenum)) {                      \
+        if (PyArray_EquivTypenums(I_tnum, NPY_INT32)) {             \
+            return (void *)(new csr_array<npy_int32, dtype>{        \
+                *(npy_int32*) c[0], *(npy_int32*) c[1],               \
+                (npy_int32*) c[2], (npy_int32*) c[3], (dtype*) c[4] \
+            });                                                     \
+        } else {                                                    \
+            return (void *)(new csr_array<npy_int64, dtype>{        \
+                *(npy_int64*) c[0], *(npy_int64*) c[1],               \
+                (npy_int64*) c[2], (npy_int64*) c[3], (dtype*) c[4] \
+            });                                                     \
+        }                                                           \
+    }
+
+    try {
+        SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
+    } catch (std::exception &e) {
+        /* failed */
+    }
+
+#undef PROCESS
+
+    PyErr_SetString(PyExc_RuntimeError,
+                    "failed to allocate struct csr_array");
+    return NULL;
+}
+
+static void free_csr_array(int I_tnum, int T_tnum, void *p) {
+#define PROCESS(dtypenum, dtype)                            \
+    if (PyArray_EquivTypenums(T_tnum, dtypenum)) {          \
+        if (PyArray_EquivTypenums(I_tnum, NPY_INT32)) { \
+            delete ((csr_array<npy_int32, dtype>*)p);   \
+        } else {                                        \
+            delete ((csr_array<npy_int64, dtype>*)p);   \
+        }                                               \
+        return;                                         \
+    }
+
+    SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
+
+#undef PROCESS
 }
 
 
@@ -525,22 +651,59 @@ static PyObject *array_from_std_vector_and_free(int typenum, void *p)
     return NULL;
 }
 
+
+/*
+ * Helper functions for handling typenum discovery and casting
+ */
+
+static int best_typenum(PyObject *pyarg, const int cur_typenum,
+                      const int n_supported_types, const int *supported_types)
+{
+    int arg_typenum = PyArray_TYPE((PyArrayObject *)pyarg);
+    if (arg_typenum == cur_typenum) return cur_typenum;
+
+    /* Find a compatible supported data type */
+    int k;
+    for (k = 0; k < n_supported_types; ++k) {
+        if (PyArray_CanCastSafely(arg_typenum, supported_types[k]) &&
+            (cur_typenum == -1 || PyArray_CanCastSafely(cur_typenum, supported_types[k]))) {
+            return supported_types[k];
+        }
+    }
+    PyErr_SetString(PyExc_ValueError, "unsupported data types in input");
+    return -1;
+}
+
+static PyObject * _cast_arrays(PyObject *pyarg, const int typenum, const int output)
+{
+    /* Cast to the given typenum */
+    int atypenum = PyArray_TYPE((PyArrayObject *)pyarg);
+    if (PyArray_EquivTypenums(atypenum, typenum)) return pyarg;
+
+    if (output && !PyArray_CanCastSafely(typenum, atypenum)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Output dtype not compatible with inputs.");
+        return NULL;
+    }
+    /* Cast needed and safe */
+    PyObject* arg = c_array_from_object(pyarg, typenum, output);
+    Py_DECREF(pyarg);
+    return arg; /* if (arg == NULL) return NULL */
+}
+
 static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 {
     if (!is_output) {
         if (typenum == -1) {
             return PyArray_FROM_OF(obj, NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_NOTSWAPPED);
-        }
-        else {
+        } else {
             return PyArray_FROM_OTF(obj, typenum, NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_NOTSWAPPED);
         }
-    }
-    else {
+    } else {
         int flags = NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_WRITEABLE|NPY_ARRAY_WRITEBACKIFCOPY|NPY_ARRAY_NOTSWAPPED;
         if (typenum == -1) {
             return PyArray_FROM_OF(obj, flags);
-        }
-        else {
+        } else {
             return PyArray_FROM_OTF(obj, typenum, flags);
         }
     }
