@@ -1,0 +1,8 @@
+runners:
+  - name: gpu-runner
+    cloud: aws
+    instance_type: g4dn.xlarge
+    machine_image: ami-014cf2391cb36896e
+    region: eu-west-1
+    labels:
+      - cirun-aws-gpu
