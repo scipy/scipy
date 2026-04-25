@@ -6,3 +6,11 @@ runners:
     region: eu-west-1
     labels:
       - cirun-aws-gpu
+    extra_config:
+      cache: true
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          VolumeType: gp3
+          VolumeSize: 100
+          Iops: 6000
+          Throughput: 1000
