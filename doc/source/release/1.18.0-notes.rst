@@ -76,6 +76,8 @@ New features
 ``scipy.stats`` improvements
 ============================
 
+- `scipy.stats.contingency.margins` and `scipy.stats.contingency.expected_freq`
+  now support the array API standard.
 
 
 *******************
