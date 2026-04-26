@@ -165,7 +165,7 @@ trlib_int_t trlib_tri_factor_min(
                     TRLIB_DCOPY(&nm0, offdiag, &inc, offdiag_fac0, &inc) // offdiag_fac <-- offdiag
                     TRLIB_DPTTRF(&n0, diag_fac0, offdiag_fac0, &info_fac) // compute factorization
                     if(info_fac == 0) {
-                        pert_up = lam_pert; // as this ensures a factorization, it provides a upper bound
+                        pert_up = lam_pert; // as this ensures a factorization, it provides an upper bound
                         TRLIB_DCOPY(&n0, neglin, &inc, sol0, &inc) // sol0 <-- neglin
                         TRLIB_DPTTRS(&n0, &inc, diag_fac0, offdiag_fac0, sol0, &n0, &info_fac) // sol0 <-- T0^-1 sol0
                         if (info_fac != 0) { TRLIB_PRINTLN_2("Failure on computing h\u2080 in safeguarded initialization iteration") TRLIB_RETURN(TRLIB_TTR_FAIL_LINSOLVE) }

@@ -209,7 +209,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         Returns
         -------
         dict_items
-            A view object displaying a list of a array's key-value tuple pairs.
+            A view object displaying a list of an array's key-value tuple pairs.
         """
         return self._dict.items()
 

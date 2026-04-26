@@ -187,7 +187,7 @@
 /* |            as described by Jones et.al. (0) or use our modification(1)| */
 /* | logfile -- File-Handle for the logfile. DIRECT expects this file to be| */
 /* |            opened and closed by the user outside of DIRECT. We moved  | */
-/* |            this to the outside so the user can add extra informations | */
+/* |            this to the outside so the user can add extra information | */
 /* |            to this file before and after the call to DIRECT.          | */
 /* | fglobal -- Function value of the global optimum. If this value is not | */
 /* |            known (that is, we solve a real problem, not a testproblem)| */

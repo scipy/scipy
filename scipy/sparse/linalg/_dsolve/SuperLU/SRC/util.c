@@ -462,7 +462,7 @@ LUSolveFlops(SuperLUStat_t *stat)
 
 /*! \brief Fills an integer array with a given value.
  *
- * \param[in,out] a Integer array that is filled.
+ * \param[in,out] a An integer array that is filled.
  * \param[in]     alen Length of integer array \a a.
  * \param[in]     ival Value to be filled in every element of \a a.
  */

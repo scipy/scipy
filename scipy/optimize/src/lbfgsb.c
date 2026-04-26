@@ -2888,7 +2888,7 @@ void subsm(CBLAS_INT n, CBLAS_INT m, CBLAS_INT nsub, CBLAS_INT* ind,
     //       On entry u is the upper bound of x.
     //       On exit u is unchanged.
     //
-    //     nbd is a integer array of dimension n.
+    //     nbd is an integer array of dimension n.
     //       On entry nbd represents the type of bounds imposed on the
     //         variables, and must be specified as follows:
     //         nbd(i)=0 if x(i) is unbounded,

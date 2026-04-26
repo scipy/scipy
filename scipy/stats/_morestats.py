@@ -4148,7 +4148,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     """
-    # replace approx by asymptotic to ensure backwards compatability
+    # replace approx by asymptotic to ensure backwards compatibility
     if method == "approx":
         method = "asymptotic"
     return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative,

@@ -31,7 +31,7 @@
 
 /** Computes smallest eigenvalue of symmetric tridiagonal matrix
  *  :math:`T \in \mathbb R^{n\times n}`,
- *  using a iteration based on last-pivot function of Parlett and Reid.
+ *  using an iteration based on last-pivot function of Parlett and Reid.
  *
  *  Let :math:`T = \begin{pmatrix} T_1 & & \\ & \ddots & \\ & & T_\ell \end{pmatrix}`
  *  be composed into irreducible blocks :math:`T_i`.
@@ -102,7 +102,7 @@ trlib_int_t trlib_leftmost(
 
 /** Computes smallest eigenvalue of irreducible symmetric tridiagonal matrix
  *  :math:`T \in \mathbb R^{n\times n}`,
- *  using a iteration based on last-pivot function of Parlett and Reid.
+ *  using an iteration based on last-pivot function of Parlett and Reid.
  *  
  *  Method is sketched on p. 516 in [Gould1999]_.
  *

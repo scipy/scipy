@@ -162,7 +162,7 @@
  *  :math:`s` once :math:`q_j` has been computed as :math:`s \leftarrow h_j q_j`
  *  with initialization :math:`s \leftarrow 0`.
  *
- *  Furthermore the user has to provide a integer and floating point workspace, details
+ *  Furthermore the user has to provide an integer and floating point workspace, details
  *  are described in :c:data:`iwork` and :c:data:`fwork`.
  *
  *  **Resolves**
