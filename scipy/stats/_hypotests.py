@@ -539,11 +539,12 @@ def _cdf_cvm(x, n=None, *, xp=None):
     else:
         # support of the test statistic is [12/n, n/3], see 1.1 in [2]
         y = xp.zeros_like(x, dtype=x.dtype)
+        n = xp.broadcast_to(xp.asarray(n, dtype=y.dtype), y.shape)
         sup = (1./(12*n) < x) & (x < n/3.)
         # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
         # therefore, we need to add it here
-        y = xpx.at(y)[sup].set(_cdf_cvm_inf(x[sup], xp=xp) * (1 + 1./(12*n))
-                               + _psi1_mod(x[sup], xp=xp) / n)
+        y = xpx.at(y)[sup].set(_cdf_cvm_inf(x[sup], xp=xp) * (1 + 1./(12*n[sup]))
+                               + _psi1_mod(x[sup], xp=xp) / n[sup])
         y = xpx.at(y)[x >= n/3].set(1.)
 
     return y[()] if y.ndim == 0 else y
@@ -1831,7 +1832,8 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
         if is_marray(xp):
             u, count_x, count_y = u.data, count_x.data, count_y.data
         p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
-        p = xp.asarray(p, dtype=dtype)
+        mask = {'mask': t.mask} if is_marray(xp) else {}
+        p = xp.asarray(p, dtype=dtype, **mask)
     else:
         p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 
