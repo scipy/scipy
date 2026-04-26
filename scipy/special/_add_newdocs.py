@@ -4516,47 +4516,68 @@ add_newdoc("kolmogi",
 
 add_newdoc("kolmogorov",
     r"""
-    kolmogorov(y, out=None)
+    kolmogorov(x, out=None)
 
-    Complementary cumulative distribution (Survival Function) function of
+    Complementary cumulative distribution function (survival function) of the 
     Kolmogorov distribution.
 
     Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` as n goes to infinity)
-    of a two-sided test for equality between an empirical and a theoretical
-    distribution. It is equal to the (limit as n->infinity of the)
-    probability that ``sqrt(n) * max absolute deviation > y``.
+    Kolmogorov's limiting distribution, which is the distribution of
+    :math:`D_n \sqrt{n}` as :math:`n \to \infty`, where :math:`D_n` is the maximum absolute difference between an empirical cumulative 
+    distribution function (ECDF) and a theoretical CDF in a two-sided
+    Kolmogorov-Smirnov test:
+    
+    .. math::
+
+        D_n = \max_{x} |F_n(x) - F(x)|
+
+    where :math:`F_n(x)` is the empirical CDF and :math:`F(x)` is the theoretical CDF.
+    The function computes:
+    .. math::
+
+        P(D_n \sqrt{n} > x)
 
     Parameters
     ----------
-    y : float array_like
-      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
-      multiplied by sqrt(n).
+    x : array_like
+        Scaled test statistic from a Kolmogorov-Smirnov test, computed as
+        :math:`\sqrt{n} \max(|\mathrm{ECDF} - \mathrm{CDF}|)`, where `n` is the 
+        sample size. Must be non-negative. Typical values range from 0 to ~2.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array to store the result. 
 
     Returns
     -------
     scalar or ndarray
-        The value(s) of kolmogorov(y)
+        The probability that the test statistic exceeds `x`.
+        Values are in the range :math:`[0, 1]`.
 
     See Also
     --------
-    kolmogi : The Inverse Survival Function for the distribution
-    scipy.stats.kstwobign : Provides the functionality as a continuous distribution
-    smirnov, smirnovi : Functions for the one-sided distribution
+    kolmogi : Inverse survival function (quantile function) of the Kolmogorov distribution
+    scipy.stats.kstwobign : Recommended interface via the continuous distribution object
+    smirnov, smirnovi : Functions for the one-sided Kolmogorov-Smirnov test
 
     Notes
     -----
-    `kolmogorov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
-    function is exposed in `scpy.special`, but the recommended way to achieve
-    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distribution.
+    `kolmogorov` is used by `scipy.stats.kstest` for the Kolmogorov-Smirnov 
+    goodness-of-fit test in its asymptotic approximation. For historical reasons, 
+    this function is exposed in `scipy.special`, but the recommended way to achieve
+    the most accurate computations is to use the `scipy.stats.kstwobign` distribution
+    object, which provides CDF, SF, PDF, PPF, and ISF methods.
+
+    This function wraps the implementation from the XSF (extended special functions)
+    library.
+
+    References
+    ----------
+    .. [1] Marsaglia, G., Tsang, W. W., & Wang, J. (2003). "Evaluating Kolmogorov's distribution." 
+       Journal of statistical software, 8(18), 1-4.
+    .. [2] Kolmogorov-Smirnov test. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
 
     Examples
     --------
-    Show the probability of a gap at least as big as 0, 0.5 and 1.0.
+    Show the probability of a gap at least as big as 0, 0.5, and 1.0:
 
     >>> import numpy as np
     >>> from scipy.special import kolmogorov
@@ -4575,11 +4596,11 @@ add_newdoc("kolmogorov",
     >>> np.mean(x), np.std(x)
     (-0.05841730131499543, 1.3968109101997568)
 
-    Construct the Empirical CDF and the K-S statistic Dn.
+    Construct the ECDF and compute the K-S statistic:
 
-    >>> target = norm(0,1)  # Normal mean 0, stddev 1
+    >>> target = norm(0, 1)  # Normal mean 0, stddev 1
     >>> cdfs = target.cdf(x)
-    >>> ecdfs = np.arange(n+1, dtype=float)/n
+    >>> ecdfs = np.arange(n + 1, dtype=float) / n
     >>> gaps = np.column_stack([cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
@@ -4605,7 +4626,7 @@ add_newdoc("kolmogorov",
     >>> iminus, iplus = np.argmax(gaps, axis=0)
     >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus],
     ...            color='r', linestyle='dashed', lw=4)
-    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1],
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus + 1],
     ...            color='r', linestyle='dashed', lw=4)
     >>> plt.show()
     """)
