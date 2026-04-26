@@ -7,6 +7,7 @@ from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
 from .iterative import _get_atol_rtol
 from scipy.sparse.linalg._isolve.utils import make_system
 from scipy._lib._array_api import xp_capabilities
+from scipy._lib._util import (_validate_int)
 
 
 __all__ = ['gcrotmk']
@@ -277,6 +278,8 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     """
     A,M,x,b = make_system(A,M,x0,b)
 
+    # Check maxiter
+    _validate_int(maxiter, 'maxiter', minimum=1)
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
 
