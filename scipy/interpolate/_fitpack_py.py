@@ -196,7 +196,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
 
         If ``task==1`` find ``t`` and ``c`` for another value of the smoothing factor,
         `s`. There must have been a previous call with ``task=0`` or ``task=1`` for
-        the same set of data (``t`` will be stored an used internally)
+        the same set of data (``t`` will be stored and used internally)
 
         If ``task=-1`` find the weighted least square spline for a given set of
         knots, ``t``. These should be interior knots as knots on the ends will be

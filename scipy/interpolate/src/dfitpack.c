@@ -2772,7 +2772,7 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
         mvv = mv + nv8;
     }
     // we first determine the matrices (auu) and (qq). then we reduce the
-    // matrix (auu) to an unit upper triangular form (ru) using givens
+    // matrix (auu) to a unit upper triangular form (ru) using givens
     // rotations without square roots. we apply the same transformations to
     // the rows of matrix qq to obtain the mv x nuu matrix g.
     // we store matrix (ru) into au and g into q.
@@ -2981,7 +2981,7 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
         }
         return;
     }
-    // we determine the matrix (avv) and then we reduce her to an unit
+    // we determine the matrix (avv) and then we reduce her to a unit
     // upper triangular form (rv) using givens rotations without square
     // roots. we apply the same transformations to the columns of matrix
     // g to obtain the (nv-7) x (nu-6-iop0-iop1) matrix h.
@@ -3631,7 +3631,7 @@ fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const dou
         number = number + 2;
     }
     if (number == 0) { return; }
-    // the sum of squared residulas sq is a quadratic polynomial in the
+    // the sum of squared residuals sq is a quadratic polynomial in the
     // parameters g(j). we determine the unknown coefficients of this
     // polymomial by calculating (number+1)*(number+2)/2 different splines
     // according to specific values for g(j).

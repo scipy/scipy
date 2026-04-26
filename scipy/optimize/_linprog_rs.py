@@ -144,7 +144,7 @@ def _generate_auxiliary_problem(A, b, x0, tol):
     with each of these new columns, and generating a cost vector that is all
     zeros except for ones corresponding with each of the new variables.
 
-    A initial basic feasible solution is trivial: all variables are zero
+    An initial basic feasible solution is trivial: all variables are zero
     except for the artificial variables, which are set equal to the
     corresponding element of the right hand side `b`.
 
