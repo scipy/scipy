@@ -661,7 +661,7 @@ class TestDotTests:
 
 class TestAsLinearOperator:
     def make_cases(self, original, dtype, xp=None):
-        cases = []
+        cases = [] # list: (LinOp, reference as ndarray, testR as bool for whether at least one of rmatvec/rmatmat is present)
 
         # Test default implementations of _adjoint and _rmatvec, which
         # refer to each other.
@@ -674,72 +674,70 @@ class TestAsLinearOperator:
 
         def rmv(x):
             return _xp.conj(original.T) @ x
-
-        class BaseMatlike(interface.LinearOperator):
+        
+        def mm(x):
+            return original @ x
+        
+        def rmm(x):
+            return _xp.conj(original.T) @ x
+        
+        class _Base:
             args = ()
-
             def __init__(self, dtype):
-                super().__init__(
-                    dtype=dtype,
-                    shape=original.shape,
-                    xp=xp,
-                )
+                self.dtype = np.dtype(dtype)
+                self.shape = original.shape       
 
-            def _matvec(self, x):
+        class Matvec(_Base):
+            def matvec(self, x):
                 return mv(x)
-
-        class HasRmatvec(BaseMatlike):
-            args = ()
-
-            def _rmatvec(self,x):
+        class Rmatvec(_Base):
+            def rmatvec(self,x):
                 return rmv(x)
-
-        class HasAdjoint(BaseMatlike):
-            args = ()
-
-            def _adjoint(self):
-                shape = self.shape[1], self.shape[0]
-                matvec = partial(rmv)
-                rmatvec = partial(mv)
-                return interface.LinearOperator(matvec=matvec,
-                                                rmatvec=rmatvec,
-                                                dtype=dtype,
-                                                shape=shape,
-                                                xp=xp,)
-
-        class HasRmatmat(HasRmatvec):
-            def _matmat(self, x):
-                return original @ x
-
-            def _rmatmat(self, x):
-                return _xp.conj(original.T) @ x
+        class Matmat(_Base):
+            def matmat(self, x):
+                return mm(x)
+        class Rmatmat(_Base):
+            def rmatmat(self, x):
+                return rmm(x)
+            
+        class MatvecMatmat(Matvec, Matmat): pass
+        class RmatvecRmatmat(Rmatvec, Rmatmat): pass
 
         if xp:
-            cases.append((original, original))
+            cases.append((original, original, True))
+            cases.append((interface.MatrixLinearOperator(original), original, True))
 
-            cases.append((HasRmatvec(dtype), original))
-            cases.append((HasAdjoint(dtype), original))
-            cases.append((HasRmatmat(dtype), original))
+            for Mat in [Matvec, Matmat, MatvecMatmat]:
+                cases.append((Mat(dtype), original, False))
+                for Rmat in [Rmatvec, Rmatmat, RmatvecRmatmat]:
+                    class MatRmat(Mat, Rmat): pass
+                    cases.append((MatRmat(dtype), original, True))
             
-            cases.append((interface.aslinearoperator(original.T).T, original))
+            cases.append((interface.aslinearoperator(original.T).T, original, True))
             cases.append((
                 interface.aslinearoperator(original.T).H,
                 xp.conj(original),
+                True,
             ))
             cases.append((
                 interface.aslinearoperator(original.T).adjoint(),
-                xp.conj(original)),
-            )
+                xp.conj(original),
+                True,
+            ))
 
             return cases
         
-        cases.append((matrix(original, dtype=dtype), original))
-        cases.append((np.array(original, dtype=dtype), original))
-        cases.append((sparse.csr_array(original, dtype=dtype), original))
+        cases.append((matrix(original, dtype=dtype), original, True))
+        cases.append((np.array(original, dtype=dtype), original, True))
+        cases.append((sparse.csr_array(original, dtype=dtype), original, True))
+        cases.append((interface.MatrixLinearOperator(original), original, True))
 
-        cases.append((HasRmatvec(dtype), original))
-        cases.append((HasAdjoint(dtype), original))
-        cases.append((HasRmatmat(dtype), original))
+        for Mat in [Matvec, Matmat, MatvecMatmat]:
+            cases.append((Mat(dtype), original, False))
+            for Rmat in [Rmatvec, Rmatmat, RmatvecRmatmat]:
+                class MatRmat(Mat, Rmat): pass
+                cases.append((MatRmat(dtype), original, True))
+
         return cases
     
     def setup_method(self):
@@ -749,26 +747,26 @@ class TestAsLinearOperator:
         self.cases += make_cases(original, np.int32)
         self.cases += make_cases(original, np.float32)
         self.cases += make_cases(original, np.float64)
-        self.cases += [(interface.aslinearoperator(M).T, A.T)
-                       for M, A in make_cases(original.T, np.float64)]
-        self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
-                       for M, A in make_cases(original.T, np.float64)]
-        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj())
-                       for M, A in make_cases(original.T, np.float64)]
+        self.cases += [(interface.aslinearoperator(M).T, A.T, testR)
+                       for M, A, testR in make_cases(original.T, np.float64) if testR]
+        self.cases += [(interface.aslinearoperator(M).H, A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.float64) if testR]
+        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.float64) if testR]
 
         original = np.array([[1, 2j, 3j], [4j, 5j, 6]])
         self.cases += make_cases(original, np.complex128)
-        self.cases += [(interface.aslinearoperator(M).T, A.T)
-                       for M, A in make_cases(original.T, np.complex128)]
-        self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
-                       for M, A in make_cases(original.T, np.complex128)]
-        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj())
-                       for M, A in make_cases(original.T, np.complex128)]
+        self.cases += [(interface.aslinearoperator(M).T, A.T, testR)
+                       for M, A, testR in make_cases(original.T, np.complex128) if testR]
+        self.cases += [(interface.aslinearoperator(M).H, A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.complex128) if testR]
+        self.cases += [(interface.aslinearoperator(M).adjoint(), A.T.conj(), testR)
+                       for M, A, testR in make_cases(original.T, np.complex128) if testR]
 
     @pytest.mark.skip_xp_backends(np_only=True)
     def test_basic(self, xp):
 
-        for M, A_array in self.cases:
+        for M, A_array, testR in self.cases:
             A = interface.aslinearoperator(M)
 
             xs = [np.array([1, 2, 3]),
@@ -796,25 +794,26 @@ class TestAsLinearOperator:
             assert_equal(A.matmat(x2), A_array.dot(x2))
             assert_equal(A @ x2, A_array.dot(x2))
 
-            for y in ys:
-                ctx = (
-                    pytest.warns(FutureWarning, match="column vectors")
-                    if y.shape[-1] == 1
-                    else contextlib.nullcontext()
-                )
-                with ctx:
-                    assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
-                    assert_equal(A.T.matvec(y), A_array.T.dot(y))
-                    assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
-                    assert_equal(A.adjoint().matvec(y), A_array.T.conj().dot(y))
+            if testR:
+                for y in ys:
+                    ctx = (
+                        pytest.warns(FutureWarning, match="column vectors")
+                        if y.shape[-1] == 1
+                        else contextlib.nullcontext()
+                    )
+                    with ctx:
+                        assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
+                        assert_equal(A.T.matvec(y), A_array.T.dot(y))
+                        assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
+                        assert_equal(A.adjoint().matvec(y), A_array.T.conj().dot(y))
 
-            for y in ys:
-                if y.ndim < 2:
-                    continue
-                assert_equal(A.rmatmat(y), A_array.T.conj().dot(y))
-                assert_equal(A.T.matmat(y), A_array.T.dot(y))
-                assert_equal(A.H.matmat(y), A_array.T.conj().dot(y))
-                assert_equal(A.adjoint().matmat(y), A_array.T.conj().dot(y))
+                for y in ys:
+                    if y.ndim < 2:
+                        continue
+                    assert_equal(A.rmatmat(y), A_array.T.conj().dot(y))
+                    assert_equal(A.T.matmat(y), A_array.T.dot(y))
+                    assert_equal(A.H.matmat(y), A_array.T.conj().dot(y))
+                    assert_equal(A.adjoint().matmat(y), A_array.T.conj().dot(y))
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)
@@ -824,7 +823,7 @@ class TestAsLinearOperator:
     @pytest.mark.skip_xp_backends(np_only=True)
     def test_dot(self, xp):
 
-        for M, A_array in self.cases:
+        for M, A_array, _ in self.cases:
             A = interface.aslinearoperator(M)
 
             x0 = np.array([1, 2, 3])
@@ -841,7 +840,7 @@ class TestAsLinearOperator:
             pytest.skip("\"addmm_cuda\" not implemented for 'Long'")
         dtype = getattr(xp, dtype)
         original = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
-        for M, A_array in self.make_cases(original, dtype, xp=xp):
+        for M, A_array, _ in self.make_cases(original, dtype, xp=xp):
             A = interface.aslinearoperator(M)
 
             xs = [xp.asarray([1, 2, 3]),
