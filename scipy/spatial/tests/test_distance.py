@@ -2106,7 +2106,29 @@ def test_jensenshannon():
                         [0.1954288, 0.1447697, 0.1138377, 0.0927636])
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
+    
+def test_gh_20083():
+    # This is the ticket case in the original issue report gh-20083
+    c1 = np.array([0.027501475, 0.055202297], dtype=np.float32)
+    c2 = np.array([0.027537677, 0.055334348], dtype=np.float32)
+    d = jensenshannon(c1, c2)
+    assert_(np.isfinite(d))
 
+@pytest.mark.parametrize(
+    "dtype, atol",
+    [(np.float64, 1e-12), (np.float32, 1e-6)],
+)
+@pytest.mark.parametrize(
+    "n, a, b",
+    [(10, 0.34, 0.42), (3, 0.10, 0.32), (21, 0.29, 0.09)],
+)
+def test_gh_20083_proportional_vectors(dtype, atol, n, a, b):
+    # This is the enhanced test case for proportional vectors with different precisions
+    p = np.full(n, a, dtype=dtype)
+    q = np.full(n, b, dtype=dtype)
+    d = jensenshannon(p, q)
+    assert_(np.isfinite(d))
+    assert_allclose(d, 0.0, atol=atol, rtol=0)
 
 def test_gh_17703():
     arr_1 = np.array([1, 0, 0])
