@@ -968,3 +968,39 @@ class TestFindPeaksCwt:
         found_locs = find_peaks_cwt(test_data, widths)
 
         np.testing.assert_equal(found_locs, 32)
+
+
+def test_cwt_snr_max_ridge():
+    """Regression test for gh-23604.
+
+    find_peaks_cwt with SNR-based filtering should use the maximum CWT
+    coefficient along each ridge, not the value at the ridge endpoint.
+    The endpoint value can be much lower, causing peaks to be incorrectly
+    discarded at moderate SNR thresholds.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed=50)
+    x = np.arange(500)
+    noise = rng.standard_normal(500) * 0.01
+
+    def lorentz(x, h, w, loc):
+        return h / (1 + ((x - loc) / w) ** 2)
+
+    signal = (
+        lorentz(x, 0.1, 10, 100)
+        + lorentz(x, 1.0, 15, 250)
+        + lorentz(x, 0.5, 5, 400)
+        + noise
+    )
+
+    scales = np.geomspace(1, 20, 16)
+    peaks = find_peaks_cwt(
+        signal, scales, min_snr=50, noise_perc=90
+    )
+
+    assert len(peaks) > 0, (
+        f"No peaks detected at min_snr=50. "
+        f"This indicates the old SNR calculation (endpoint value) "
+        f"is discarding peaks that the fixed code (max along ridge) finds."
+    )
