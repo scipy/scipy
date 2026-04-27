@@ -639,7 +639,7 @@ add_newdoc(
     Returns
     -------
     scalar or ndarray
-        Value of the complement of the regularized incomplete beta function.
+        Value of the regularized incomplete beta function.
 
     See Also
     --------
@@ -740,17 +740,17 @@ add_newdoc(
     Parameters
     ----------
     a, b : array_like
-           Positive, real-valued parameters
+           Positive, real-valued parameters.
     x : array_like
         Real-valued such that :math:`0 \leq x \leq 1`,
-        the upper limit of integration
+        the upper limit of integration.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     scalar or ndarray
-        Value of the regularized incomplete beta function
+        Value of the complement of the regularized incomplete beta function.
 
     See Also
     --------
