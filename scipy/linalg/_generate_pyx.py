@@ -575,6 +575,7 @@ ctypedef float complex c
 ctypedef double complex z
 
 ctypedef int blas_int
+ctypedef bint blas_bint
 
 """
 
@@ -587,6 +588,7 @@ ctypedef float complex c
 ctypedef double complex z
 
 ctypedef int64_t blas_int
+ctypedef int64_t blas_bint
 
 """
 
