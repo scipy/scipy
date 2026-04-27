@@ -1189,7 +1189,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     def filt_func(line):
         if len(line[0]) < min_length:
             return False
-        snr = abs(cwt[line[0][0], line[1][0]] / noises[line[1][0]])
+        snr = abs(max(cwt[line[0], line[1]]) / noises[line[1][0]])
         if snr < min_snr:
             return False
         return True
