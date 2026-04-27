@@ -1237,7 +1237,7 @@ class _BPoly(_PPolyBase):
 
 @functools.lru_cache(16)
 def _get_xp_ppoly_cls(xp):
-    """Returns bspline class to delegate to for xp along with internal array namespace.
+    """Returns ppoly class to delegate to for xp along with internal array namespace.
 
     Parameters
     ----------
@@ -1262,6 +1262,7 @@ def _get_xp_ppoly_cls(xp):
     return _PPoly, np
 
 
+@functools.lru_cache(16)
 def _get_xp_bpoly_cls(xp):
     """Returns bpoly class to delegate to for xp along with internal array namespace.
 
