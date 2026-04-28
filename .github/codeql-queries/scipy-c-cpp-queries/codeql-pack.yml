@@ -1,0 +1,7 @@
+---
+library: false
+warnOnImplicitThis: false
+name: scipy/scipy-codeql-queries-cpp
+version: 1.0.0
+dependencies:
+  codeql/cpp-all: ^8.0.1

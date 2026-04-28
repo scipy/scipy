@@ -1,0 +1,12 @@
+name: "SciPy CodeQL config"
+
+queries:
+    - uses: ./.github/codeql-queries/scipy-code-scanning.qls
+    - uses: ./.github/codeql-queries/scipy-c-cpp-queries
+query-filters:
+  - exclude:
+      id:
+        - cpp/openssl-heartbleed
+        - cpp/sql-injection
+        - cpp/cgi-xss
+        - cpp/external-entity-expansion
