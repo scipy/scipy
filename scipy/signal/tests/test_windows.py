@@ -763,6 +763,156 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, -1, 1, 3, xp=xp)  # negative M
 
 
+# Representative (M, hop) pairs, chosen to cover both branches of the
+# dpss_size rule: hops that divide M (dpss_size == M) and hops that do not
+# (dpss_size == M - hop). Kept small — the full cartesian product is
+# unnecessary once each branch and overlap regime is represented.
+dpss_cola_hops_by_M = {
+    16: [4, 8],
+    64: [16, 32, 43],
+    81: [27, 40],
+    99: [33, 50],
+    128: [32, 43, 64, 96],
+    129: [43, 64],
+    189: [63, 80],
+    243: [81, 100],
+    255: [85, 100],
+    256: [64, 92, 128, 192],
+    261: [87, 130],
+    512: [128, 171, 256, 384],
+    513: [171, 200],
+    1024: [256, 341, 512],
+}
+
+dpss_cola_params = [
+    (M, hop, NW)
+    for M, hops in dpss_cola_hops_by_M.items()
+    for hop in hops
+    for NW in [None, 4.0]
+    if NW is None or 0 < NW < (M - hop) / 2
+]
+
+
+@make_xp_test_case(windows.dpss_cola)
+class TestDPSSCola:
+
+    def test_basic(self, xp):
+        xp_assert_close(
+            windows.dpss_cola(16, 8, xp=xp),
+            xp.asarray(
+                [
+                    0.04708165, 0.13415675, 0.2608477, 
+                    0.41670505, 0.58329495, 0.7391523,
+                    0.86584325, 0.95291835, 0.95291835, 
+                    0.86584325, 0.7391523, 0.58329495,
+                    0.41670505, 0.2608477, 0.13415675, 
+                    0.04708165
+                ],
+                dtype=xp.float64),
+            rtol=1e-13, atol=1e-8)
+
+    def test_hop_equals_M(self, xp):
+        # At hop == M the only COLA-compatible window is the rectangular one.
+        xp_assert_equal(windows.dpss_cola(16, 16, 4.0, xp=xp),
+                        xp.ones(16, dtype=xp.float64))
+
+    def test_default_hop(self, xp):
+        # Default hop is (M + 1) // 2.
+        for M in (64, 65):
+            w1 = windows.dpss_cola(M, NW=4.0, xp=xp)
+            w2 = windows.dpss_cola(M, (M + 1) // 2, 4.0, xp=xp)
+            xp_assert_close(w1, w2, atol=1e-15, rtol=0)
+
+    @pytest.mark.parametrize("M,hop,NW", dpss_cola_params)
+    def test_cola_and_symmetry(self, M, hop, NW, xp):
+        w = windows.dpss_cola(M, hop, NW, xp=xp)
+        xp_assert_close(w, xp.flip(w), atol=1e-12, rtol=0)
+        # Scale n_frames so the interior slice stays ~M samples wide
+        # even when hop is much smaller than M.
+        n_frames = max(64, 10 * M // hop + 2)
+        total_len = (n_frames - 1) * hop + M
+        ola = xp.zeros(total_len, dtype=xp.float64)
+        for i in range(n_frames):
+            ola[i*hop:i*hop+M] += w
+        interior = ola[4*M:total_len - 4*M]
+        xp_assert_close(interior, xp.ones_like(interior),
+                        atol=1e-10, rtol=0)
+
+    def test_sqrt(self, xp):
+        # sqrt=True is defined as the element-wise sqrt of the sqrt=False
+        # window; Princen-Bradley then follows from test_cola_and_symmetry.
+        w = windows.dpss_cola(128, 32, 4.0, xp=xp)
+        w_sqrt = windows.dpss_cola(128, 32, 4.0, sqrt=True, xp=xp)
+        xp_assert_close(w_sqrt * w_sqrt, w, atol=1e-10, rtol=0)
+
+    @pytest.mark.parametrize("M,hop,NW", dpss_cola_params)
+    def test_nonnegative(self, M, hop, NW, xp):
+        # dpss_cola must be non-negative: sqrt=True requires it to be
+        # real-valued, and analysis/synthesis use cases assume a
+        # non-negative envelope.
+        w = windows.dpss_cola(M, hop, NW, xp=xp)
+        xp_assert_close(xp.minimum(w, xp.zeros_like(w)),
+                        xp.zeros_like(w), atol=0, rtol=0)
+        w_sqrt = windows.dpss_cola(M, hop, NW, sqrt=True, xp=xp)
+        xp_assert_close(xp.minimum(w_sqrt, xp.zeros_like(w_sqrt)),
+                        xp.zeros_like(w_sqrt), atol=0, rtol=0)
+
+    def test_degenerate(self, xp):
+        assert_raises(ValueError, windows.dpss_cola, -1, xp=xp)
+        assert_raises(ValueError, windows.dpss_cola, 512, 0, 4.0, xp=xp)
+        assert_raises(ValueError, windows.dpss_cola, 512, 513, 4.0, xp=xp)
+        assert_raises(ValueError, windows.dpss_cola, 512, 1.5, 4.0, xp=xp)
+        assert_raises(ValueError, windows.dpss_cola, 512, 256, 0, xp=xp)
+        assert_raises(ValueError, windows.dpss_cola, 512, 256, -1.0, xp=xp)
+        assert_raises(ValueError, windows.dpss_cola, 512, 256, 1000.0, xp=xp)
+
+    def test_edge_cases(self, xp):
+        xp_assert_equal(windows.dpss_cola(0, NW=4.0, xp=xp),
+                        xp.asarray([], dtype=xp.float64))
+        xp_assert_equal(windows.dpss_cola(1, NW=4.0, xp=xp),
+                        xp.asarray([1.0], dtype=xp.float64))
+        # hop == M collapses to the rectangular window regardless of NW.
+        xp_assert_equal(windows.dpss_cola(2, 2, 0.4, xp=xp),
+                        xp.ones(2, dtype=xp.float64))
+
+    @pytest.mark.parametrize("M,hop,NW", dpss_cola_params)
+    def test_sym_false_matches_shifted_symmetric(self, M, hop, NW, xp):
+        # Periodic form is a leading zero followed by the length-(M-1)
+        # symmetric window. The COLA normalization at hop `hop` is invariant
+        # under the unit shift, so the trailing M-1 samples agree exactly.
+        w_periodic = windows.dpss_cola(M, hop, NW, sym=False, xp=xp)
+        w_sym = windows.dpss_cola(M - 1, hop, NW, sym=True, xp=xp)
+        xp_assert_close(w_periodic[1:], w_sym, atol=1e-15, rtol=0)
+        xp_assert_equal(w_periodic[:1], xp.zeros(1, dtype=xp.float64))
+
+    def test_sym_false_sqrt(self, xp):
+        # sqrt=True composes with sym=False the same way it does with sym=True.
+        w = windows.dpss_cola(128, 32, 4.0, sym=False, xp=xp)
+        w_sqrt = windows.dpss_cola(128, 32, 4.0, sqrt=True, sym=False, xp=xp)
+        xp_assert_close(w_sqrt * w_sqrt, w, atol=1e-10, rtol=0)
+
+    def test_sym_false_edge_cases(self, xp):
+        # Length guards short-circuit before _extend, matching other windows.
+        xp_assert_equal(windows.dpss_cola(0, NW=4.0, sym=False, xp=xp),
+                        xp.asarray([], dtype=xp.float64))
+        xp_assert_equal(windows.dpss_cola(1, NW=4.0, sym=False, xp=xp),
+                        xp.asarray([1.0], dtype=xp.float64))
+
+    def test_get_window(self, xp):
+        w1 = windows.get_window(('dpss_cola', 128, 4.0), 512,
+                                fftbins=False, xp=xp)
+        w2 = windows.dpss_cola(512, 128, 4.0, xp=xp)
+        xp_assert_close(w1, w2)
+
+        w3 = windows.get_window(('dpss_cola', 128), 512, fftbins=False, xp=xp)
+        w4 = windows.dpss_cola(512, 128, xp=xp)
+        xp_assert_close(w3, w4)
+
+        assert_raises(ValueError, windows.get_window, 'dpss_cola', 512, xp=xp)
+        assert_raises(ValueError, windows.get_window,
+                      ('dpss_cola', 128, 4.0, False, 0), 512, xp=xp)
+
+
 @make_xp_test_case(windows.lanczos)
 class TestLanczos:
 
