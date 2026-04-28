@@ -629,17 +629,17 @@ add_newdoc(
     Parameters
     ----------
     a, b : array_like
-           Positive, real-valued parameters
+           Positive, real-valued parameters.
     x : array_like
         Real-valued such that :math:`0 \leq x \leq 1`,
-        the upper limit of integration
+        the upper limit of integration.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     scalar or ndarray
-        Value of the regularized incomplete beta function
+        Value of the regularized incomplete beta function.
 
     See Also
     --------
@@ -740,17 +740,17 @@ add_newdoc(
     Parameters
     ----------
     a, b : array_like
-           Positive, real-valued parameters
+           Positive, real-valued parameters.
     x : array_like
         Real-valued such that :math:`0 \leq x \leq 1`,
-        the upper limit of integration
+        the upper limit of integration.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
     scalar or ndarray
-        Value of the regularized incomplete beta function
+        Value of the complement of the regularized incomplete beta function.
 
     See Also
     --------
@@ -1302,7 +1302,7 @@ add_newdoc("chdtriv",
     >>> sc.chdtr(sc.chdtriv(p, x), x)
     0.5000000000000003
     >>> v = 1
-    >>> sc.chdtriv(sc.chdtr(v, x), v)
+    >>> sc.chdtriv(sc.chdtr(v, x), x)
     1.0
 
     """)
@@ -1311,34 +1311,38 @@ add_newdoc("chndtr",
     r"""
     chndtr(x, df, nc, out=None)
 
-    Non-central chi square cumulative distribution function.
+    Non-central chi-squared cumulative distribution function.
 
-    The cumulative distribution function is given by:
+    The cumulative distribution function is given by
 
     .. math::
 
-        P(\chi^{\prime 2} \vert \nu, \lambda) =\sum_{j=0}^{\infty}
-        e^{-\lambda /2}
-        \frac{(\lambda /2)^j}{j!} P(\chi^{\prime 2} \vert \nu + 2j),
+        F_{\nu,\lambda}(x)
+        = \sum_{j=0}^{\infty}
+          e^{-\lambda / 2}
+          \frac{(\lambda / 2)^j}{j!}
+          F_{\chi^2_{\nu + 2j}}(x),
 
-    where :math:`\nu > 0` is the degrees of freedom (``df``) and
-    :math:`\lambda \geq 0` is the non-centrality parameter (``nc``).
+    where :math:`\nu > 0` is the degrees of freedom (``df``), :math:`\lambda \geq 0`
+    is the non-centrality parameter (``nc``), and :math:`F_{\chi^2_{\nu + 2j}}` is the
+    CDF of the central chi-squared distribution with :math:`\nu + 2j` degrees of
+    freedom.
 
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral; must satisfy ``x >= 0``
+        Upper bound of the integral; must satisfy ``x >= 0``.
     df : array_like
-        Degrees of freedom; must satisfy ``df > 0``
+        Degrees of freedom; must satisfy ``df > 0``.
     nc : array_like
-        Non-centrality parameter; must satisfy ``nc >= 0``
+        Non-centrality parameter; must satisfy ``nc >= 0``.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
-    x : scalar or ndarray
-        Value of the non-central chi square cumulative distribution function.
+    cdf : scalar or ndarray
+        Value of the non-central chi-squared cumulative distribution function.
 
     See Also
     --------
@@ -1505,32 +1509,35 @@ add_newdoc("chndtrinc",
     """
     chndtrinc(x, df, p, out=None)
 
-    Inverse to `chndtr` vs `nc`.
+    Inverse of `chndtr` with respect to `nc`.
 
-    Calculated using a search to find a value for `df` that produces the
-    desired value of `p`.
+    Finds the non-centrality parameter `nc` such that
+
+    .. math::
+
+        \\operatorname{chndtr}(x, df, nc) = p.
 
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral; must satisfy ``x >= 0``
+        Upper bound of the integral; must satisfy ``x >= 0``.
     df : array_like
-        Degrees of freedom; must satisfy ``df > 0``
+        Degrees of freedom; must satisfy ``df > 0``.
     p : array_like
-        Probability; must satisfy ``0 <= p < 1``
+        Probability; must satisfy ``0 <= p < 1``.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
     nc : scalar or ndarray
-        Non-centrality
+        Non-centrality parameter.
 
     See Also
     --------
     chndtr : Noncentral chi-squared distribution CDF
-    chndtridf : inverse of `chndtr` with respect to `df`
-    chndtrinc : inverse of `chndtr` with respect to `nc`
+    chndtridf : Inverse of `chndtr` with respect to `df`
+    chndtrinc : Inverse of `chndtr` with respect to `nc`
     scipy.stats.ncx2 : Non-central chi-squared distribution
 
     Notes
@@ -5130,8 +5137,8 @@ add_newdoc(
 
     >>> import numpy as np
     >>> from scipy.special import nbdtri, nbdtr
-    >>> k, n, y = 5, 10, 0.2
-    >>> cdf_val = nbdtr(k, n, y)
+    >>> k, n, p = 5, 10, 0.2
+    >>> cdf_val = nbdtr(k, n, p)
     >>> nbdtri(k, n, cdf_val)
     0.20000000000000004
 
@@ -6170,32 +6177,32 @@ add_newdoc("pdtri",
     """
     pdtri(k, y, out=None)
 
-    Inverse to `pdtr` vs m.
+    Inverse of `pdtr` with respect to `m`.
 
     Returns the Poisson variable `m` such that the sum from 0 to `k` of
     the Poisson density is equal to the given probability `y`:
-    calculated by ``gammaincinv(k + 1, y)``. `k` must be a nonnegative
+    calculated by ``gammainccinv(k + 1, y)``. `k` must be a nonnegative
     integer and `y` between 0 and 1.
 
     Parameters
     ----------
     k : array_like
-        Number of occurrences (nonnegative, real)
+        Number of occurrences (nonnegative, real).
     y : array_like
-        Probability
+        Probability.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
     scalar or ndarray
-        Values of the shape parameter `m` such that ``pdtr(k, m) = p``
+        Values of the shape parameter `m` such that ``pdtr(k, m) = y``.
 
     See Also
     --------
     pdtr : Poisson cumulative distribution function
     pdtrc : Poisson survival function
-    pdtrik : inverse of `pdtr` with respect to `k`
+    pdtrik : Inverse of `pdtr` with respect to `k`
 
     Examples
     --------
@@ -6203,15 +6210,23 @@ add_newdoc("pdtri",
 
     Compute the CDF for several values of `m`:
 
+    >>> k = 1
     >>> m = [0.5, 1, 1.5]
-    >>> p = sc.pdtr(1, m)
+    >>> p = sc.pdtr(k, m)
     >>> p
     array([0.90979599, 0.73575888, 0.5578254 ])
 
-    Compute the inverse. We recover the values of `m`, as expected:
+    Invert the CDF with respect to the Poisson mean. We recover the values
+    of `m`, as expected:
 
-    >>> sc.pdtri(1, p)
+    >>> sc.pdtri(k, p)
     array([0.5, 1. , 1.5])
+
+    Verify the relation with `gammainccinv`:
+
+    >>> sc.gammainccinv(k + 1, p)
+    array([0.5, 1. , 1.5])
+
 
     """)
 
@@ -6219,7 +6234,7 @@ add_newdoc("pdtrik",
     """
     pdtrik(p, m, out=None)
 
-    Inverse to `pdtr` vs `k`.
+    Inverse of `pdtr` with respect to `k`.
 
     Parameters
     ----------
@@ -8830,7 +8845,7 @@ add_newdoc(
     """
     _hypergeom_variance(r, N, M)
 
-    Mean of hypergeometric distribution.
+    Variance of hypergeometric distribution.
 
     Parameters
     ----------
