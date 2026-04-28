@@ -1480,11 +1480,15 @@ class _spbase(SparseABC):
         res_dtype = get_sum_dtype(self.dtype)
 
         if dtype is not None:
-            # Before casting to the requested dtype, canonicalize duplicates and zeros.
-            if hasattr(self, 'sum_duplicates'):
-                self.sum_duplicates()
-            temp = self.astype(dtype, copy=False).sum(axis=axis, dtype=None, out=out)
-            return temp.astype(dtype, copy=False)
+            # Cast to the requested dtype first so that duplicate accumulation
+            # uses the target dtype, matching numpy's cast-before-accumulate
+            # behaviour. Previously sum_duplicates used the original dtype,
+            # causing incorrect results for COO matrices with duplicate entries.
+            # See gh-24989.
+            temp = self.astype(dtype, copy=False)
+            if hasattr(temp, 'sum_duplicates'):
+                temp.sum_duplicates()
+            return temp.sum(axis=axis, dtype=None, out=out)
 
         # Note: all valid 1D axis values are canonically `None`.
         if axis is None:
