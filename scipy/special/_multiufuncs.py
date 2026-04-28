@@ -54,6 +54,7 @@ class MultiUFunc:
         self._key = None
         self._ufunc_default_args = lambda *args, **kwargs: ()
         self._ufunc_default_kwargs = lambda *args, **kwargs: {}
+        self.__text_signature__ = doc.split("\n\n")[0] if doc else None
 
     @property
     def __doc__(self):
@@ -149,19 +150,19 @@ sph_legendre_p = MultiUFunc(
 
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the spherical Legendre polynomial. Must have ``n >= 0``.
-    m : ArrayLike[int]
+    m : array_like of ints
         Order of the spherical Legendre polynomial.
-    theta : ArrayLike[float]
+    theta : array_like
         Input value.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``. Default is 0.
+        to order `diff_n`. Default is 0.
 
     Returns
     -------
-    p : ndarray or tuple[ndarray]
+    ndarray or tuple of ndarray
         Spherical Legendre polynomial with ``diff_n`` derivatives.
 
     Notes
@@ -201,13 +202,28 @@ sph_legendre_p_all = MultiUFunc(
     """sph_legendre_p_all(n, m, theta, *, diff_n=0)
 
     All spherical Legendre polynomials of the first kind up to the
-    specified degree ``n``, order ``m``, and all derivatives up
-    to order ``diff_n``.
+    specified degree `n`, order `m`, and all derivatives up
+    to order `diff_n`.
 
-    Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
-    ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
-    order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
-    ``-m <= k <= m``.
+    Parameters
+    ----------
+    n : array_like of ints
+        Degree of the spherical Legendre polynomials. Must have ``n >= 0``.
+    m : array_like of ints
+        Order of the spherical Legendre polynomials.
+    theta : array_like
+        Input value.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order `diff_n`. Default is 0.
+
+    Returns
+    -------
+    ndarray
+        Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+        ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+        order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+        ``-m <= k <= m``.
 
     See Also
     --------
@@ -254,26 +270,26 @@ assoc_legendre_p = MultiUFunc(
 
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the associated Legendre polynomial. Must have ``n >= 0``.
-    m : ArrayLike[int]
-        order of the associated Legendre polynomial.
-    z : ArrayLike[float | complex]
+    m : array_like of ints
+        Order of the associated Legendre polynomial.
+    z : array_like
         Input value.
-    branch_cut : Optional[ArrayLike[int]]
+    branch_cut : array_like of ints, optional
         Selects branch cut. Must be 2 (default) or 3.
         2: cut on the real axis ``|z| > 1``
         3: cut on the real axis ``-1 < z < 1``
-    norm : Optional[bool]
+    norm : bool, optional
         If ``True``, compute the normalized associated Legendre polynomial.
         Default is ``False``.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
         to order ``diff_n``. Default is 0.
 
     Returns
     -------
-    p : ndarray or tuple[ndarray]
+    ndarray or tuple of ndarray
         Associated Legendre polynomial with ``diff_n`` derivatives.
 
     Notes
@@ -315,13 +331,35 @@ assoc_legendre_p_all = MultiUFunc(
     """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     All associated Legendre polynomials of the first kind up to the
-    specified degree ``n``, order ``m``, and all derivatives up
-    to order ``diff_n``.
+    specified degree `n`, order `m`, and all derivatives up
+    to order `diff_n`.
 
-    Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
-    ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
-    order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
-    ``-m <= k <= m``.
+    Parameters
+    ----------
+    n : array_like of ints
+        Degree of the associated Legendre polynomials. Must have ``n >= 0``.
+    m : array_like of ints
+        Order of the associated Legendre polynomials.
+    z : array_like
+        Input value.
+    branch_cut : array_like of ints, optional
+        Selects branch cut. Must be 2 (default) or 3.
+        2: cut on the real axis ``|z| > 1``
+        3: cut on the real axis ``-1 < z < 1``
+    norm : bool, optional
+        If ``True``, compute the normalized associated Legendre polynomials.
+        Default is ``False``.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``. Default is 0.
+
+    Returns
+    -------
+    ndarray
+        Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+        ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+        order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+        ``-m <= k <= m``.
 
     See Also
     --------
@@ -382,17 +420,17 @@ legendre_p = MultiUFunc(
 
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the Legendre polynomial. Must have ``n >= 0``.
-    z : ArrayLike[float]
+    z : array_like
         Input value.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
         to order ``diff_n``. Default is 0.
 
     Returns
     -------
-    p : ndarray or tuple[ndarray]
+    p : ndarray or tuple of ndarray
         Legendre polynomial with ``diff_n`` derivatives.
 
     See Also
@@ -433,11 +471,24 @@ legendre_p_all = MultiUFunc(
     """legendre_p_all(n, z, *, diff_n=0)
 
     All Legendre polynomials of the first kind up to the specified degree
-    ``n`` and all derivatives up to order ``diff_n``.
+    `n` and all derivatives up to order `diff_n`.
 
-    Output shape is ``(diff_n + 1, n + 1, ...)``. The entry at ``(i, j)``
-    corresponds to the ``i``-th derivative and degree ``j`` for all
-    ``0 <= i <= diff_n`` and ``0 <= j <= n``.
+    Parameters
+    ----------
+    n : array_like of ints
+        Degree of the Legendre polynomials. Must have ``n >= 0``.
+    z : array_like
+        Input value.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order ``diff_n``. Default is 0.
+
+    Returns
+    -------
+    ndarray
+        Output shape is ``(diff_n + 1, n + 1, ...)``. The entry at ``(i, j)``
+        corresponds to the ``i``-th derivative and degree ``j`` for all
+        ``0 <= i <= diff_n`` and ``0 <= j <= n``.
 
     See Also
     --------
@@ -492,24 +543,24 @@ sph_harm_y = MultiUFunc(
 
     Parameters
     ----------
-    n : ArrayLike[int]
+    n : array_like of ints
         Degree of the harmonic. Must have ``n >= 0``. This is
         often denoted by ``l`` (lower case L) in descriptions of
         spherical harmonics.
-    m : ArrayLike[int]
+    m : array_like of ints
         Order of the harmonic.
-    theta : ArrayLike[float]
+    theta : array_like
         Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
-    phi : ArrayLike[float]
+    phi : array_like
         Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
-    diff_n : Optional[int]
+    diff_n : int, optional
         A non-negative integer. Compute and return all derivatives up
-        to order ``diff_n``. Default is 0.
+        to order `diff_n`. Default is 0.
 
     Returns
     -------
-    y : ndarray[complex] or tuple[ndarray[complex]]
-       Spherical harmonics with ``diff_n`` derivatives.
+    ndarray or tuple of ndarray
+       Spherical harmonics with `diff_n` derivatives.
 
     Notes
     -----
@@ -573,16 +624,35 @@ sph_harm_y_all = MultiUFunc(
     "sph_harm_y_all",
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
 
-    All spherical harmonics up to the specified degree ``n``, order ``m``,
-    and all derivatives up to order ``diff_n``.
+    All spherical harmonics up to the specified degree `n`, order `m`,
+    and all derivatives up to order `diff_n`.
 
-    Returns a tuple of length ``diff_n + 1`` (if ``diff_n > 0``). The first
-    entry corresponds to the spherical harmonics, the second entry
-    (if ``diff_n >= 1``) to the gradient, and the third entry
-    (if ``diff_n >= 2``)  to the Hessian matrix. Each entry is an array of
-    shape ``(n + 1, 2 * m + 1, ...)``, where the entry at ``(i, j)``
-    corresponds to degree ``i`` and order ``j`` for all ``0 <= i <= n``
-    and ``-m <= j <= m``.
+    Parameters
+    ----------
+    n : array_like of ints
+        Degree of the harmonics. Must have ``n >= 0``. This is
+        often denoted by ``l`` (lower case L) in descriptions of
+        spherical harmonics.
+    m : array_like of ints
+        Order of the harmonics.
+    theta : array_like
+        Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
+    phi : array_like
+        Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
+    diff_n : int, optional
+        A non-negative integer. Compute and return all derivatives up
+        to order `diff_n`. Default is 0.
+
+    Returns
+    -------
+    ndarray or tuple of ndarray
+        Returns a tuple of length ``diff_n + 1`` (if ``diff_n > 0``). The first
+        entry corresponds to the spherical harmonics, the second entry
+        (if ``diff_n >= 1``) to the gradient, and the third entry
+        (if ``diff_n >= 2``)  to the Hessian matrix. Each entry is an array of
+        shape ``(n + 1, 2 * m + 1, ...)``, where the entry at ``(i, j)``
+        corresponds to degree ``i`` and order ``j`` for all ``0 <= i <= n``
+        and ``-m <= j <= m``.
 
     See Also
     --------
