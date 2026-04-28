@@ -13,8 +13,9 @@ Functions
 """
 from warnings import warn
 
-from ._dcsrch import DCSRCH
 import numpy as np
+from scipy._lib._array_api import array_namespace, xp_capabilities
+from ._dcsrch import DCSRCH
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
@@ -94,9 +95,9 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
     def derphi(s):
         gval[0] = fprime(xk + s*pk, *args)
         gc[0] += 1
-        return np.dot(gval[0], pk)
+        return gval[0] @ pk
 
-    derphi0 = np.dot(gfk, pk)
+    derphi0 = gfk @ pk
 
     stp, fval, old_fval = scalar_search_wolfe1(
             phi, derphi, old_fval, old_old_fval, derphi0,
@@ -189,6 +190,7 @@ line_search = line_search_wolfe1
 
 # Note: `line_search_wolfe2` is the public `scipy.optimize.line_search`
 
+@xp_capabilities()
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
                        extra_condition=None, maxiter=10):
@@ -291,6 +293,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     (1.0, 2, 1, 1.1300000000000001, 6.13, [1.6, 1.4])
 
     """
+    array_namespace(xk, pk, gfk)
+    if old_fval is not None:
+        old_fval = float(old_fval)
+    if old_old_fval is not None:
+        old_old_fval = float(old_old_fval)
     fc = [0]
     gc = [0]
     gval = [None]
@@ -298,7 +305,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     def phi(alpha):
         fc[0] += 1
-        return f(xk + alpha * pk, *args)
+        return float(f(xk + alpha * pk, *args))
 
     fprime = myfprime
 
@@ -306,11 +313,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gc[0] += 1
         gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
         gval_alpha[0] = alpha
-        return np.dot(gval[0], pk)
+        return float(gval[0] @ pk)
 
     if gfk is None:
         gfk = fprime(xk, *args)
-    derphi0 = np.dot(gfk, pk)
+    derphi0 = float(gfk @ pk)
 
     if extra_condition is not None:
         # Add the current gradient as argument, to avoid needless
@@ -509,8 +516,7 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             d1[0, 1] = -db ** 2
             d1[1, 0] = -dc ** 3
             d1[1, 1] = db ** 3
-            [A, B] = np.dot(d1, np.asarray([fb - fa - C * db,
-                                            fc - fa - C * dc]).flatten())
+            [A, B] = d1 @ np.asarray([fb - fa - C * db, fc - fa - C * dc])
             A /= denom
             B /= denom
             radical = B * B - 3 * A * C
@@ -519,7 +525,7 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             return None
     if not np.isfinite(xmin):
         return None
-    return xmin
+    return float(xmin)
 
 
 def _quadmin(a, fa, fpa, b, fb):
@@ -540,7 +546,7 @@ def _quadmin(a, fa, fpa, b, fb):
             return None
     if not np.isfinite(xmin):
         return None
-    return xmin
+    return float(xmin)
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
@@ -668,7 +674,6 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     Wright and Nocedal in 'Numerical Optimization', 1999, pp. 56-57
 
     """
-    xk = np.atleast_1d(xk)
     fc = [0]
 
     def phi(alpha1):
@@ -680,7 +685,7 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     else:
         phi0 = old_fval  # compute f(xk) -- done in past loop
 
-    derphi0 = np.dot(gfk, pk)
+    derphi0 = gfk @ pk
     alpha, phi1 = scalar_search_armijo(phi, phi0, derphi0, c1=c1,
                                        alpha0=alpha0)
     return alpha, fc[0], phi1
