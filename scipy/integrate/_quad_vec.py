@@ -22,7 +22,7 @@ class LRUDict(collections.OrderedDict):
         elif len(self) > self.__max_size:
             self.popitem(last=False)
 
-    def update(self, other):
+    def update(self, other, /, **kwargs):
         # Not needed below
         raise NotImplementedError()
 
@@ -490,8 +490,8 @@ def _quadrature_trapezoid(x1, x2, f, norm_func):
     return s2, err, round_err
 
 
-_quadrature_trapezoid.cache_size = 3 * 3
-_quadrature_trapezoid.num_eval = 3
+_quadrature_trapezoid.cache_size = 3 * 3  # pyrefly:ignore[missing-attribute]
+_quadrature_trapezoid.num_eval = 3  # pyrefly:ignore[missing-attribute]
 
 
 def _quadrature_gk(a, b, f, norm_func, x, w, v):
@@ -610,7 +610,7 @@ def _quadrature_gk21(a, b, f, norm_func):
     return _quadrature_gk(a, b, f, norm_func, x, w, v)
 
 
-_quadrature_gk21.num_eval = 21
+_quadrature_gk21.num_eval = 21  # pyrefly:ignore[missing-attribute]
 
 
 def _quadrature_gk15(a, b, f, norm_func):
@@ -663,4 +663,4 @@ def _quadrature_gk15(a, b, f, norm_func):
     return _quadrature_gk(a, b, f, norm_func, x, w, v)
 
 
-_quadrature_gk15.num_eval = 15
+_quadrature_gk15.num_eval = 15  # pyrefly:ignore[missing-attribute]

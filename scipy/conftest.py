@@ -526,7 +526,7 @@ if hypothesis_available:
     # Following the approach of NumPy's conftest.py...
     # Use a known and persistent tmpdir for hypothesis' caches, which
     # can be automatically cleared by the OS or user.
-    hypothesis.configuration.set_hypothesis_home_dir(
+    hypothesis.configuration.set_hypothesis_home_dir(  # pyrefly:ignore[unbound-name]
         os.path.join(tempfile.gettempdir(), ".hypothesis")
     )
 
@@ -632,7 +632,7 @@ if HAVE_SCPDT:
                     warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
-    dt_config.user_context_mgr = warnings_errors_and_rng
+    dt_config.user_context_mgr = warnings_errors_and_rng  # pyrefly:ignore[unbound-name]
     dt_config.skiplist = set([
         'scipy.linalg.LinAlgError',     # comes from numpy
         'scipy.fftpack.fftshift',       # fftpack stuff is also from numpy

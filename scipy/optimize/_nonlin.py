@@ -449,13 +449,13 @@ class Jacobian:
     def aspreconditioner(self):
         return InverseJacobian(self)
 
-    def solve(self, v, tol=0):
+    def solve(self, v, /, tol=0):
         raise NotImplementedError
 
-    def update(self, x, F):
+    def update(self, x, F, /):
         pass
 
-    def setup(self, x, F, func):
+    def setup(self, x, F, func, /):
         self.func = func
         self.shape = (F.size, x.size)
         self.dtype = F.dtype
@@ -607,7 +607,7 @@ class GenericBroyden(Jacobian):
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
-    def setup(self, x0, f0, func):
+    def setup(self, x0, f0, func, /):
         Jacobian.setup(self, x0, f0, func)
         self.last_f = f0
         self.last_x = x0
