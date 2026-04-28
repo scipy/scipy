@@ -960,6 +960,97 @@ class TestGetWindow:
             assert not isinstance(win, np.ndarray)
 
 
+@make_xp_test_case(windows.general_gaussian)
+class TestGeneralGaussian():
+      
+    @pytest.mark.parametrize('M', (6, 7))
+    @pytest.mark.parametrize('p', (1, 1.5))
+    @pytest.mark.parametrize('sig', (1., 2.))
+    @pytest.mark.parametrize('sym', (True, False))
+    def test_basic(self, M, p, sig, sym, xp):
+        """Verify basic parametrizations. """
+        if sym:
+            t = xp.arange(M, dtype=xp.float64) - (M-1) / 2
+        else:
+            t = xp.arange(M+1, dtype=xp.float64) - M / 2
+            t = t[:-1]
+        x_ref = xp.exp(-0.5 * abs(t / sig) ** (2*p))
+        x = windows.general_gaussian(M, p, sig, sym, xp=xp)
+        xp_assert_close(x, x_ref, atol=1e-12)
+
+    def test_default_func_parameter(self, xp):
+        """Verify the correctness of the default value of function parameter `sym`. """
+        x = windows.general_gaussian(6, 1, 1, xp=xp)
+        x_ref = windows.general_gaussian(6, 1, 1, sym=True, xp=xp)
+        xp_assert_equal(x, x_ref)
+
+    def test_p1_equals_gaussian(self,xp):   
+        """Testing that `general_gaussian` with p = 1 is equivalent to the normal 
+        `gaussian` window. """
+        w1 = windows.general_gaussian(7, p=1.0, sig=2.0, xp=xp)
+        w2 = windows.gaussian(7, std=2.0, xp=xp)
+        xp_assert_close(w1, w2)
+    
+    def test_peak_value(self, xp):
+        """ Testing that if M is odd, the peak is at 1. """
+        w = windows.general_gaussian(7, p=3, sig=2.0, xp=xp)
+        assert float(xp.max(w)) == 1.0
+
+        # Testing that if M is even, the peak is less than 1.0
+        w = windows.general_gaussian(6, p=1.5, sig=2.0, xp=xp)
+        assert float(xp.max(w)) < 1.0
+
+    def test_len_edge_cases(self, xp):
+        """Test the length edge cases are handled correctly. """
+        # length = 0 should return an empty array:
+        assert windows.general_gaussian(0, 1, 1, xp=xp).shape[0] == 0
+        
+        # length = 1 should return an array of length 1 containing 1.0:
+        xp_assert_close(windows.general_gaussian(1, 1, 1, xp=xp), 
+                        xp.asarray([1.0], dtype=xp.float64))  
+        
+        with pytest.raises(ValueError):  # Negative values should raise an error:
+            windows.general_gaussian(-1, 1, 1, xp=xp)  
+
+
+@make_xp_test_case(windows.cosine)
+class TestCosine():
+    @pytest.mark.parametrize('M', (3, 4))
+    @pytest.mark.parametrize('sym', (True, False))
+    def test_basic(self, M, sym, xp):
+        """Verify basic parametrizations. """
+        if sym:
+            t = (xp.arange(M, dtype=xp.float64) + 0.5) / M
+        else:
+            t = (xp.arange(M+1, dtype=xp.float64) + 0.5) / (M+1)
+            t = t[:-1]
+        x_ref = xp.sin(xp.pi * t)
+        x = windows.cosine(M, sym=sym, xp=xp)
+        xp_assert_close(x, x_ref, atol=1e-12)
+        
+    def test_default_func_parameter(self, xp):
+        """Verify the correctness of the default value of function parameter `sym`. """
+        x = windows.cosine(6, xp=xp)
+        x_ref = windows.cosine(6, sym=True, xp=xp)
+        xp_assert_equal(x, x_ref)       
+       
+    def test_len_edge_cases(self, xp):
+        """Testing that the length edge cases are handled correctly."""
+        # length = 0 should return an empty array:
+        assert windows.cosine(0, xp=xp).shape[0] == 0
+
+        # length = 1 should return an array of length 1 containing 1.0:
+        xp_assert_close(windows.cosine(1, xp=xp),
+                        xp.asarray([1.0], dtype=xp.float64))
+
+        with pytest.raises(ValueError):
+            windows.cosine(-1, xp=xp) # negative values should return an error
+
+
+
+
+
+
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")
 @pytest.mark.parametrize(
     "window,window_name,params",
