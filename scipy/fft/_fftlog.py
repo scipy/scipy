@@ -111,6 +111,41 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     Examples
     --------
+    **Identify Bessel component in signal data**
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import fft
+    >>> from scipy.special import jv
+
+    Generate sample signal data.
+
+    >>> r = np.logspace(-1, 1, 400)
+    >>> dln = np.log(r[1]/r[0])
+    >>> ord = 2
+    >>> f = 10*jv(ord, 4*r)*r
+
+    Calculate the Hankel transform ``F`` of the signal data.
+
+    >>> F = fft.fht(f, dln, mu=ord)
+
+    Calculate the evaluation points for the transformed data ``F``.
+    Since ``fht`` returns the transformed data in ascending order of
+    evaluation points, flip ``r`` in the evaluation points equation.
+
+
+    >>> k = 1/np.flip(r)
+
+    Plot ``F`` versus ``k``.
+
+    >>> plt.plot(k, F)
+    >>> plt.show()
+
+    The plotted Hankel transform shows that the signal contains a
+    second order Bessel component corresponding to ``k=4`` and a
+    coefficient of approximately ``30``.
+
+    **Evaluate integral equation**
 
     This example is the adapted version of ``fftlogtest.f`` which is provided
     in [2]_. It evaluates the integral
@@ -130,7 +165,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     >>> r = np.logspace(-7, 1, 128)  # Input evaluation points
     >>> dln = np.log(r[1]/r[0])      # Step size
     >>> offset = fft.fhtoffset(dln, initial=-6*np.log(10), mu=mu)
-    >>> k = np.exp(offset)/r[::-1]   # Output evaluation points
+    >>> k = np.exp(offset)/np.flip(r)   # Output evaluation points
 
     Define the analytical function.
 
@@ -223,5 +258,42 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     mathematical inverse Hankel transform is commonly defined using :math:`k \, dk`.
 
     See `fht` for further details.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import fft
+    >>> from scipy.special import jv
+
+    Generate sample data ``A`` and evaluation points ``k`` for the
+    Hankel transform of a signal.
+
+    >>> k = np.logspace(-1, 1, 300)
+    >>> A = np.zeros(300)
+    >>> A[240] = 20
+
+    Calculate the logarithmic spacing of the elements in ``A`` and
+    perform a second order inverse Hankel transform on the sample
+    data.
+
+    >>> dln = np.log(k[1]/k[0])
+    >>> a = fft.ifht(A, dln, mu=2)
+
+    Calculate the evaluation points for the transformed data ``a``.
+    Since ``ifht`` returns the transformed data in ascending order of
+    evaluation points, flip ``k`` in the evaluation points equation.
+
+    >>> r = 1/np.flip(k)
+
+    Compare ``a`` with the kernel function corresponding to ``k=240``.
+
+    >>> a_f = jv(2, k[240]*r)*r
+    >>> plt.plot(r, a)
+    >>> plt.plot(r, a_f)
+    >>> plt.show()
+
+    The plot shows that, for larger values of ``r``, the inverse Hankel transform
+    follows the kernel function closely.
     """
     return (Dispatchable(A, np.ndarray),)
