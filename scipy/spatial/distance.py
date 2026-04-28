@@ -480,8 +480,8 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    u = np.asarray(u)
-    v = np.asarray(v)
+    u = _asarray(u, order='C')
+    v = _asarray(v, order='C')
     if p <= 0:
         raise ValueError("p must be greater than 0")
     u_v = u - v
@@ -582,8 +582,8 @@ def sqeuclidean(u, v, w=None):
     if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
         vtype = np.float64
 
-    u = np.asarray(u, dtype=utype)
-    v = np.asarray(v, dtype=vtype)
+    u = _asarray(u, dtype=utype, order='C')
+    v = _asarray(v, dtype=vtype, order='C')
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
