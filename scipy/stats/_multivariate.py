@@ -5000,7 +5000,7 @@ class symplectic_group_gen(multi_rv_generic):
     r"""
     A matrix-valued USp(2N) random variable.
 
-    Return a random symplectic matrix.
+    Return a random unitary symplectic matrix.
 
     The `dim` keyword specifies the dimension 2N.
 
@@ -5101,7 +5101,7 @@ class symplectic_group_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def __call__(self, dim=None, seed=None):
-        """Create a frozen (USp(N)) 2n-dimensional symplectic matrix distribution.
+        """Create a frozen (USp(N)) 2n-dimensional unitary symplectic matrix distribution.
 
         See `unitary_group_frozen` for more information.
         """
@@ -5244,7 +5244,7 @@ class symplectic_group_frozen(multi_rv_frozen):
     __class_getitem__ = None
 
     def __init__(self, dim=None, seed=None):
-        """Create a frozen (USp(2N)) 2n-dimensional symplectic matrix distribution.
+        """Create a frozen (USp(2N)) 2n-dimensional unitary symplectic matrix distribution.
 
         Parameters
         ----------

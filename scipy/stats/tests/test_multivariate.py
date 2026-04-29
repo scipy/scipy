@@ -3366,6 +3366,15 @@ class TestSymplecticGroup:
                 x = symplectic_group.rvs(dim)
                 assert_allclose(x.T @ J @ x, J, atol=1e-13)
 
+    def test_unitarity(self):
+        xs = [symplectic_group.rvs(dim)
+              for dim in range(2,12)
+              for i in range(3)]
+
+        # Test that these are unitary matrices
+        for x in xs:
+            assert_allclose(np.dot(x, x.conj().T), np.eye(x.shape[0]), atol=1e-13)
+
 
     def test_dimensions(self):
         assert_equal(symplectic_group.rvs(1, size=3).shape, (3, 2, 2))
