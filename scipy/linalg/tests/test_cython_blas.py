@@ -17,6 +17,13 @@ class TestBlasInt:
         else:
             assert size == 4, f"LP64 build but blas_int is {size} bytes"
 
+        # also verify blas_bint size
+        bint_sizes = blas._blas_bint_bint_sizes()  # (sizeof(blas_bint), sizeof(bint))
+        if cython_blas_ilp64:
+            assert bint_sizes == (8, 4)
+        else:
+            assert bint_sizes == (4, 4)
+
     def test_dgemm_with_blas_int_dimensions(self):
         """Test dgemm works correctly - exercises blas_int for dimensions."""
         a = np.eye(3, dtype=np.float64)

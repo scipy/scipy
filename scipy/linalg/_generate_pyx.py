@@ -445,6 +445,10 @@ cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) noe
 def _blas_int_size():
     # Return the size of blas_int in bytes.
     return sizeof(blas_int)
+
+def _blas_bint_bint_sizes():
+    "Return a tuple of (size of blas_bint in bytes, size of bint in bytes)."
+    return sizeof(blas_bint), sizeof(bint)
 """
 
 lapack_py_wrappers = """
@@ -472,6 +476,14 @@ cpdef double complex _test_zladiv(double complex zx, double complex zy) noexcept
 
 cpdef float complex _test_cladiv(float complex cx, float complex cy) noexcept nogil:
     return cladiv(&cx, &cy)
+
+def _blas_int_size():
+    # Return the size of blas_int in bytes.
+    return sizeof(blas_int)
+
+def _blas_bint_bint_sizes():
+    "Return a tuple of (size of blas_bint in bytes, size of bint in bytes)."
+    return sizeof(blas_bint), sizeof(bint)
 """
 
 
