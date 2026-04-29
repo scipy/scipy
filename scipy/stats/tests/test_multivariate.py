@@ -22,7 +22,7 @@ from scipy.stats._multivariate import (_PSD,
                                        multivariate_normal_frozen)
 from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          matrix_normal, special_ortho_group, ortho_group,
-                         random_correlation, unitary_group, dirichlet,
+                         random_correlation, unitary_group, symplectic_group, dirichlet,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
@@ -3314,6 +3314,62 @@ class TestUnitaryGroup:
 
     def test_zero_by_zero(self):
         assert_equal(unitary_group.rvs(0, size=4).shape, (4, 0, 0))
+
+class TestSymplecticGroup:
+    def test_reproducibility(self):
+        rng = np.random.RandomState(42)
+        x = symplectic_group.rvs(2, random_state=rng)
+        x2 = symplectic_group.rvs(2, random_state=42)
+
+        expected = np.array(
+            [[ 0.19212674-0.09056944j, -0.13520352+0.1024695j,
+              -0.18159052+0.09358989j, 0.28934827-0.8947893j ],
+            [ 0.25052293+0.61083221j, 0.0521564 +0.04520213j, 
+             -0.17924782-0.66719023j, -0.25673756-0.12716915j],
+            [ 0.18159052+0.09358989j, -0.28934827-0.8947893j, 
+             0.19212674+0.09056944j, -0.13520352-0.1024695j ],
+            [ 0.17924782-0.66719023j, 0.25673756-0.12716915j,
+              0.25052293-0.61083221j, 0.0521564 -0.04520213j]]
+        )
+
+        assert_array_almost_equal(x, expected)
+        assert_array_almost_equal(x2, expected)
+
+    def test_invalid_dim(self):
+        assert_raises(ValueError, symplectic_group.rvs, None)
+        assert_raises(ValueError, symplectic_group.rvs, (2, 2))
+        assert_raises(ValueError, symplectic_group.rvs, -1)
+        assert_raises(ValueError, symplectic_group.rvs, 2.5)
+
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = symplectic_group(dim)
+        frozen_seed = symplectic_group(dim, seed=1729)
+
+        rvs1 = frozen.rvs(random_state=1729)
+        rvs2 = symplectic_group.rvs(dim, random_state=1729)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
+    def test_symplectic(self):
+
+        for dim in range(2, 12):
+            # create skew symmetric J matrix
+            J = np.zeros((2*dim, 2*dim))
+            J[0:dim, dim:2*dim] = np.eye(dim)
+            J[dim:2*dim, 0:dim] = -np.eye(dim)
+            
+            # Test that these are symplectic matrices
+            for i in range(3):
+                x = symplectic_group.rvs(dim)
+                assert_allclose(x.T @ J @ x, J, atol=1e-13)
+
+
+    def test_dimensions(self):
+        assert_equal(symplectic_group.rvs(1, size=3).shape, (3, 2, 2))
+        assert_equal(symplectic_group.rvs(0, size=4).shape, (4, 0, 0))
 
 
 class TestMultivariateT:
