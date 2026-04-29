@@ -6215,6 +6215,29 @@ add_newdoc("pdtri",
 
     """)
 
+add_newdoc("_poisson_ppf",
+    """
+    _poisson_ppf(p, m, out=None)
+
+    Private function for the Poisson distribution percent point function (inverse CDF).
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+    m : array_like
+        Shape parameter (nonnegative, real)
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        The number of occurrences `k` such that ``pdtr(k, m) = p``
+    """
+)
+
+
 add_newdoc("pdtrik",
     """
     pdtrik(p, m, out=None)

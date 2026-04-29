@@ -2491,9 +2491,9 @@ chdtriv_double(double p, double x)
     return chdtriv_wrap(p, x);
 }
 
-template<typename Real>
+template<typename Real, typename Policy>
 Real
-poisson_ppf_wrap(const Real p, const Real n)
+poisson_ppf_wrap(const Real p, const Real n, const Policy& policy_)
 {
     if (std::isnan(p) || std::isnan(n)) {
         return NAN;
@@ -2515,7 +2515,8 @@ poisson_ppf_wrap(const Real p, const Real n)
     }
     Real y;
     try {
-        y = boost::math::gamma_q_inva<Real>(n, p, SpecialPolicy()) - 1;
+        y = boost::math::quantile(
+            boost::math::poisson_distribution<Real, Policy>(n), p);
     } catch (const std::domain_error&) {
         sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
         y = NAN;
@@ -2530,17 +2531,10 @@ poisson_ppf_wrap(const Real p, const Real n)
         y = NAN;
     }
     // In the unlikely case that the computation becomes smaller
-    // than -1, we return NAN. This should never happen.
-    if (y < -1) {
+    // than 0, we return NAN. This should never happen.
+    if (y < 0) {
         sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
         return NAN;
-    }
-    // For small p, the direct formula yields values
-    // between -1 and 0. 
-    // For the Poisson distribution though, the bottom limit is 0,
-    // so we return 0 in that case.
-    if (y < 0) {
-        return 0.0;
     }
     return y;
 }
@@ -2548,13 +2542,25 @@ poisson_ppf_wrap(const Real p, const Real n)
 float
 pdtrik_float(float p, float x)
 {
-    return poisson_ppf_wrap(p, x);
+    return poisson_ppf_wrap(p, x, SpecialPolicy());
 }
 
 double
 pdtrik_double(double p, double x)
 {
-    return poisson_ppf_wrap(p, x);
+    return poisson_ppf_wrap(p, x, SpecialPolicy());
+}
+
+float
+poisson_ppf_float(float p, float n)
+{
+    return poisson_ppf_wrap(p, n, StatsPolicy());
+}
+
+double
+poisson_ppf_double(double p, double n)
+{
+    return poisson_ppf_wrap(p, n, StatsPolicy());
 }
 
 #endif
