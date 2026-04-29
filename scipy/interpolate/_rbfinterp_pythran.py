@@ -1,51 +1,55 @@
 import numpy as np
 
-
+# pythran export capsule linear(float)
 def linear(r):
     return -r
 
-
+# pythran export capsule thin_plate_spline(float)
 def thin_plate_spline(r):
     if r == 0:
         return 0.0
     else:
         return r**2*np.log(r)
 
-
+# pythran export capsule cubic(float)
 def cubic(r):
     return r**3
 
-
+# pythran export capsule quintic(float)
 def quintic(r):
     return -r**5
 
-
+# pythran export capsule multiquadric(float)
 def multiquadric(r):
     return -np.sqrt(r**2 + 1)
 
-
+# pythran export capsule inverse_multiquadric(float)
 def inverse_multiquadric(r):
     return 1/np.sqrt(r**2 + 1)
 
-
+# pythran export capsule inverse_quadratic(float)
 def inverse_quadratic(r):
     return 1/(r**2 + 1)
 
-
+# pythran export capsule gaussian(float)
 def gaussian(r):
     return np.exp(-r**2)
 
+# pythran export capsule matern1_2(float)
+def matern1_2(r):
+    return np.exp(-r)
 
-NAME_TO_FUNC = {
-   "linear": linear,
-   "thin_plate_spline": thin_plate_spline,
-   "cubic": cubic,
-   "quintic": quintic,
-   "multiquadric": multiquadric,
-   "inverse_multiquadric": inverse_multiquadric,
-   "inverse_quadratic": inverse_quadratic,
-   "gaussian": gaussian
-   }
+
+# pythran export capsule matern3_2(float)
+def matern3_2(r):
+    term = np.sqrt(3.0) * r
+    return (1.0 + term) * np.exp(-term)
+
+
+# pythran export capsule matern5_2(float)
+def matern5_2(r):
+    term = np.sqrt(5.0) * r
+    return (1.0 + term + 5.0 * r**2 / 3.0) * np.exp(-term)
 
 
 def kernel_vector(x, y, kernel_func, out):
@@ -75,11 +79,10 @@ def polynomial_matrix(x, powers, out):
             out[i, j] = np.prod(x[i]**powers[j])
 
 
-# pythran export _kernel_matrix(float[:, :], str)
-def _kernel_matrix(x, kernel):
+# pythran export _kernel_matrix(float[:, :], float(float))
+def _kernel_matrix(x, kernel_func):
     """Return RBFs, with centers at `x`, evaluated at `x`."""
     out = np.empty((x.shape[0], x.shape[0]), dtype=float)
-    kernel_func = NAME_TO_FUNC[kernel]
     kernel_matrix(x, kernel_func, out)
     return out
 
@@ -92,13 +95,13 @@ def _polynomial_matrix(x, powers):
     return out
 
 
-# pythran export _build_system(float[:, :],
-#                              float[:, :],
-#                              float[:],
-#                              str,
-#                              float,
-#                              int64[:, :])
-def _build_system(y, d, smoothing, kernel, epsilon, powers):
+# pythran export _build_system_with_kernel(float[:, :],
+#                                          float[:, :],
+#                                          float[:],
+#                                          float64(float64),
+#                                          float,
+#                                          int64[:, :])
+def _build_system_with_kernel(y, d, smoothing, kernel_func, epsilon, powers):
     """Build the system used to solve for the RBF interpolant coefficients.
 
     Parameters
@@ -109,8 +112,8 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
         Data values at `y`.
     smoothing : (P,) float ndarray
         Smoothing parameter for each data point.
-    kernel : str
-        Name of the RBF.
+    kernel_func : float(float) capsule
+        Compiled RBF kernel: maps scalar distance r to scalar value.
     epsilon : float
         Shape parameter.
     powers : (R, N) int ndarray
@@ -126,25 +129,23 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
         Domain shift used to create the polynomial matrix.
     scale : (N,) float ndarray
         Domain scaling used to create the polynomial matrix.
-
     """
     p = d.shape[0]
     s = d.shape[1]
     r = powers.shape[0]
-    kernel_func = NAME_TO_FUNC[kernel]
 
     # Shift and scale the polynomial domain to be between -1 and 1
     mins = np.min(y, axis=0)
     maxs = np.max(y, axis=0)
-    shift = (maxs + mins)/2
-    scale = (maxs - mins)/2
+    shift = (maxs + mins) / 2
+    scale = (maxs - mins) / 2
     # The scale may be zero if there is a single point or all the points have
     # the same value for some dimension. Avoid division by zero by replacing
     # zeros with ones.
     scale[scale == 0.0] = 1.0
 
-    yeps = y*epsilon
-    yhat = (y - shift)/scale
+    yeps = y * epsilon
+    yhat = (y - shift) / scale
 
     # Transpose to make the array fortran contiguous. This is required for
     # dgesv to not make a copy of lhs.
@@ -156,7 +157,6 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     for i in range(p):
         lhs[i, i] += smoothing[i]
 
-    # Transpose to make the array fortran contiguous.
     rhs = np.empty((s, p + r), dtype=float).T
     rhs[:p] = d
     rhs[p:] = 0.0
@@ -164,17 +164,17 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     return lhs, rhs, shift, scale
 
 
-# pythran export _build_evaluation_coefficients(float[:, :],
-#                          float[:, :],
-#                          str,
-#                          float,
-#                          int64[:, :],
-#                          float[:],
-#                          float[:])
-def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
-                                   shift, scale):
-    """Construct the coefficients needed to evaluate
-    the RBF.
+# pythran export _build_evaluation_coefficients_with_kernel(float[:, :],
+#                                                           float[:, :],
+#                                                           float64(float64),
+#                                                           float,
+#                                                           int64[:, :],
+#                                                           float[:],
+#                                                           float[:])
+def _build_evaluation_coefficients_with_kernel(x, y, kernel_func, epsilon,
+                                               powers, shift, scale):
+    """
+    Construct the coefficients needed to evaluate the RBF.
 
     Parameters
     ----------
@@ -182,8 +182,8 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
         Evaluation point coordinates.
     y : (P, N) float ndarray
         Data point coordinates.
-    kernel : str
-        Name of the RBF.
+    kernel_func : float(float) capsule
+        Compiled RBF kernel: maps scalar distance r to scalar value.
     epsilon : float
         Shape parameter.
     powers : (R, N) int ndarray
@@ -196,16 +196,14 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
     Returns
     -------
     (Q, P + R) float ndarray
-
     """
     q = x.shape[0]
     p = y.shape[0]
     r = powers.shape[0]
-    kernel_func = NAME_TO_FUNC[kernel]
 
-    yeps = y*epsilon
-    xeps = x*epsilon
-    xhat = (x - shift)/scale
+    yeps = y * epsilon
+    xeps = x * epsilon
+    xhat = (x - shift) / scale
 
     vec = np.empty((q, p + r), dtype=float)
     for i in range(q):
@@ -213,4 +211,3 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
         polynomial_vector(xhat[i], powers, vec[i, p:])
 
     return vec
-
