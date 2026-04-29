@@ -81,10 +81,15 @@ exported so that downstream packages can write code that works with
 both variants. The build configuration can be checked at runtime via
 ``scipy.show_config(mode='dicts')['Build Dependencies']['blas']['cython blas ilp64']``.
 
+Boolean (Fortran ``logical``) parameters in the function signatures use ``bint`` for
+LP64 builds and ``int64_t`` for ILP64 builds. A convenience typedef ``blas_bint`` is
+exported in a similar way to ``blas_int``.
+
 Downstream packages that want to support both LP64 and ILP64 builds of SciPy
 should follow this pattern:
 
-1. Use ``blas_int`` for all integer variables passed to BLAS functions.
+1. Use ``blas_int`` for all integer variables passed to BLAS functions. For boolean
+   variables, use ``blas_bint``.
 2. For backwards compatibility with scipy <=1.17.0 (if desired), perform a
    **build-time check** for whether ``blas_int`` is available, and typedef
    it as ``int`` otherwise. Example for Meson:
@@ -95,8 +100,10 @@ should follow this pattern:
     _blas_int_conf = configuration_data()
     if cython.compiles('from scipy.linalg.cython_blas cimport blas_int')
       _blas_int_conf.set('BLAS_INT_DEF', 'from scipy.linalg.cython_blas cimport blas_int')
+      _blas_int_conf.set('BLAS_BINT_DEF', 'from scipy.linalg.cython_blas cimport blas_bint')
     else
       _blas_int_conf.set('BLAS_INT_DEF', 'ctypedef int blas_int')
+      _blas_int_conf.set('BLAS_BINT_DEF', 'ctypedef bint blas_bint')
     endif
 
     _blas_int_pxi = configure_file(
@@ -105,17 +112,19 @@ should follow this pattern:
       configuration: _blas_int_conf,
     )
 
-With the file ``_blas_int.pxi.in`` containing the single line::
+With the file ``_blas_int.pxi.in`` containing two lines::
 
     @BLAS_INT_DEF@
+    @BLAS_BINT_DEF@
 
 
 ``cython_blas`` API
 -------------------
 
-Integer type:
+Integer types:
 
 - blas_int: convenience typedef for either ``int`` (LP64) or ``int64_t`` (ILP64)
+- blas_bint: convenience typedef for either ``bint`` (LP64) or ``int64_t`` (ILP64)
 
 Raw function pointers (Fortran-style pointer arguments):
 
@@ -171,10 +180,15 @@ exported so that downstream packages can write code that works with
 both variants. The build configuration can be checked at runtime via
 ``scipy.show_config(mode='dicts')['Build Dependencies']['blas']['cython blas ilp64']``.
 
+Boolean (Fortran ``logical``) parameters in the function signatures use ``bint`` for
+LP64 builds and ``int64_t`` for ILP64 builds. A convenience typedef ``blas_bint`` is
+exported in a similar way to ``blas_int``.
+
 Downstream packages that want to support both LP64 and ILP64 builds of SciPy
 should follow this pattern:
 
-1. Use ``blas_int`` for all integer variables passed to LAPACK functions.
+1. Use ``blas_int`` for all integer variables passed to LAPACK functions. For boolean
+   variables, use ``blas_bint``.
 2. For backwards compatibility with scipy <=1.17.0 (if desired), perform a
    **build-time check** for whether ``blas_int`` is available, and typedef
    it as ``int`` otherwise. Example for Meson:
@@ -185,8 +199,10 @@ should follow this pattern:
     _blas_int_conf = configuration_data()
     if cython.compiles('from scipy.linalg.cython_lapack cimport blas_int')
       _blas_int_conf.set('BLAS_INT_DEF', 'from scipy.linalg.cython_lapack cimport blas_int')
+      _blas_int_conf.set('BLAS_BINT_DEF', 'from scipy.linalg.cython_lapack cimport blas_bint')
     else
       _blas_int_conf.set('BLAS_INT_DEF', 'ctypedef int blas_int')
+      _blas_int_conf.set('BLAS_BINT_DEF', 'ctypedef bint blas_bint')
     endif
 
     _blas_int_pxi = configure_file(
@@ -195,17 +211,19 @@ should follow this pattern:
       configuration: _blas_int_conf,
     )
 
-With the file ``_blas_int.pxi.in`` containing the single line::
+With the file ``_blas_int.pxi.in`` containing two lines::
 
     @BLAS_INT_DEF@
+    @BLAS_BINT_DEF@
 
 
 ``cython_lapack`` API
 ---------------------
 
-Integer type:
+Integer types:
 
 - blas_int: convenience typedef for either ``int`` (LP64) or ``int64_t`` (ILP64)
+- blas_bint: convenience typedef for either ``bint`` (LP64) or ``int64_t`` (ILP64)
 
 Raw function pointers (Fortran-style pointer arguments):
 
