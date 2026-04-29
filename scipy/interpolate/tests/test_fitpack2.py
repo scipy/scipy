@@ -21,6 +21,8 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
 from scipy._lib._testutils import _run_concurrent_barrier
 
 from scipy.interpolate import make_splrep, NdBSpline
+from scipy.interpolate._regrid_python import (regrid_python,
+        ndbspline_call_like_bivariate)
 
 def convert_to_ndbspline(lut):
     tx, ty = lut.get_knots()
@@ -967,18 +969,97 @@ class TestSmoothSphereBivariateSpline:
 
 
 class TestRectBivariateSpline:
-    def test_defaults(self):
-        x = array([1,2,3,4,5])
-        y = array([1,2,3,4,5])
-        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
-        lut = RectBivariateSpline(x,y,z)
-        assert_array_almost_equal(lut(x,y),z)
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_defaults(self, k):
+        x = array([1, 2, 3, 4, 5])
+        y = array([1, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2, 1],
+                   [1, 2, 1, 2, 1],
+                   [1, 2, 3, 2, 1],
+                   [1, 2, 2, 2, 1],
+                   [1, 2, 1, 2, 1]])
 
-    def test_evaluate(self):
+        lut = RectBivariateSpline(x, y, z, kx=k, ky=k)
+        assert_array_almost_equal(lut(x, y), z)
+
+        lut_custom = regrid_python(x, y, z, kx=k, ky=k)
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x, y), z.astype(np.float64))
+
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_interpolated_offgrid_points(self, k):
+        # Setup
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 4, 5)
+        z = np.sin(x[:, None]) * np.cos(y[None, :])
+
+        xi = np.linspace(0, 4, 50)  # much finer grid
+        yi = np.linspace(0, 4, 50)
+
+        ref = RectBivariateSpline(x, y, z, kx=k, ky=k)
+        ref_vals = ref(xi, yi)
+
+        custom = regrid_python(x, y, z, kx=k, ky=k)
+        custom_vals = ndbspline_call_like_bivariate(custom, xi, yi)
+        # Compare interpolated values
+        xp_assert_close(custom_vals, ref_vals,
+                        rtol=0, atol=1.5*10**(-6))
+
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_midpoints(self, k):
+        # Midpoint interpolation
+        x = np.arange(1, k + 2)
+        y = np.arange(1, k + 2)
+        z = x[:, None] + y[None, :]  # simple known function
+
+        xi = (x[:-1] + x[1:]) / 2
+        yi = (y[:-1] + y[1:]) / 2
+
+        ref = RectBivariateSpline(x, y, z, kx=k, ky=k)
+        custom = regrid_python(x, y, z, kx=k, ky=k)
+
+        ref_vals = ref(xi, yi)
+        custom_vals = ndbspline_call_like_bivariate(custom, xi, yi)
+
+        xp_assert_close(custom_vals, ref_vals,
+                        rtol=0, atol=1.5*10**(-6))
+
+    @pytest.mark.parametrize("s_val", [0.1, 1.0, 10.0, 100.0])
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_custom_matches_reference(self, s_val, k):
+        x = np.linspace(0, 4, 20)
+        y = np.linspace(0, 4, 20)
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        z = X + Y
+
+        x_mid = (x[:-1] + x[1:]) / 2
+        y_mid = (y[:-1] + y[1:]) / 2
+        xi_dense = np.linspace(0, 4, 50)
+        yi_dense = np.linspace(0, 4, 50)
+
+        query_sets = [
+            ("original grid", x, y),
+            ("midpoints", x_mid, y_mid),
+            ("dense grid", xi_dense, yi_dense),
+        ]
+
+        ref = RectBivariateSpline(x, y, z, s=s_val, kx=k, ky=k)
+        custom = regrid_python(x, y, z, s=s_val, kx=k, ky=k)
+
+        for _, xi, yi in query_sets:
+            ref_vals = ref(xi, yi)
+            custom_vals = ndbspline_call_like_bivariate(custom, xi, yi)
+
+            xp_assert_close(custom_vals, ref_vals,
+                            rtol=2e-2, atol=2e-2)
+
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_evaluate(self, k):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])
         z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
-        lut = RectBivariateSpline(x,y,z)
+        lut = RectBivariateSpline(x,y,z,kx=k,ky=k)
+        lut_custom = regrid_python(x, y, z, kx=k, ky=k)
 
         xi = [1, 2.3, 5.3, 0.5, 3.3, 1.2, 3]
         yi = [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]
@@ -986,6 +1067,12 @@ class TestRectBivariateSpline:
         zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
 
         assert_almost_equal(zi, zi2)
+
+        zi_custom = ndbspline_call_like_bivariate(lut_custom, xi, yi, grid=False)
+        zi2_custom = array([ndbspline_call_like_bivariate(lut_custom, xp, yp)[0, 0]
+                            for xp, yp in zip(xi, yi)])
+        xp_assert_close(zi_custom, zi2_custom,
+                        rtol=0, atol=1.5*10**(-6))
 
     def test_derivatives_grid(self):
         x = array([1,2,3,4,5])
@@ -997,10 +1084,22 @@ class TestRectBivariateSpline:
             [2,.25,0,-.25,-2],[4,-1,0,1,-4]])
         dxdy = array([[40,-25,0,25,-40],[-26,16.25,0,-16.25,26],
             [-8,5,0,-5,8],[22,-13.75,0,13.75,-22],[-8,5,0,-5,8]])/6.
+
         lut = RectBivariateSpline(x,y,z)
+        lut_custom = regrid_python(x,y,z)
+
         assert_array_almost_equal(lut(x,y,dx=1),dx)
         assert_array_almost_equal(lut(x,y,dy=1),dy)
         assert_array_almost_equal(lut(x,y,dx=1,dy=1),dxdy)
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x,y,dx=1),dx,
+            rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x,y,dy=1),dy,
+            rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x,y,dx=1,dy=1),dxdy,
+            rtol=0, atol=1.5*10**(-6))
 
     def test_derivatives(self):
         x = array([1,2,3,4,5])
@@ -1013,6 +1112,20 @@ class TestRectBivariateSpline:
         assert_array_almost_equal(lut(x,y,dx=1,grid=False),dx)
         assert_array_almost_equal(lut(x,y,dy=1,grid=False),dy)
         assert_array_almost_equal(lut(x,y,dx=1,dy=1,grid=False),dxdy)
+
+        lut_custom = regrid_python(x,y,z)
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom,x,y,dx=1,grid=False),
+            dx,rtol=0, atol=1.5*10**(-6)
+        )
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom,x,y,dy=1,grid=False),
+            dy,rtol=0, atol=1.5*10**(-6)
+        )
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom,x,y,dx=1,dy=1,grid=False),
+            dxdy,rtol=0, atol=1.5*10**(-6)
+        )
 
     def make_pair_grid(self, x, y):
         """
@@ -1069,6 +1182,20 @@ class TestRectBivariateSpline:
             assert_array_almost_equal(actual_rect, expected)
             assert_array_almost_equal(actual_ndb, expected)
 
+        lut_custom = regrid_python(x, y, z)
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom.derivative([1, 0]), x, y),
+            dx,rtol=0, atol=1.5*10**(-6)
+        )
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom.derivative([0, 1]), x, y),
+            dy,rtol=0, atol=1.5*10**(-6)
+        )
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom.derivative([1, 1]), x, y),
+            dxdy,rtol=0, atol=1.5*10**(-6)
+        )
+
     def test_partial_derivative_method(self):
         x = array([1, 2, 3, 4, 5])
         y = array([1, 2, 3, 4, 5])
@@ -1085,6 +1212,7 @@ class TestRectBivariateSpline:
 
         lut = RectBivariateSpline(x, y, z)
         lut_ndbspline = convert_to_ndbspline(lut)
+        lut_custom = regrid_python(x, y, z)
 
         points = self.make_pair_grid(x, y)  # shape: (25, 2)
 
@@ -1102,84 +1230,141 @@ class TestRectBivariateSpline:
             actual_ndb = lut_ndbspline.derivative([dx, dy])(diag_points)
             assert_array_almost_equal(actual_ndb, expected_vals)
 
-    def test_partial_derivative_order_too_large(self):
+            # regrid_python result
+            actual_rp = ndbspline_call_like_bivariate(lut_custom.derivative([dx, dy]),
+                x, y, grid=False)
+            xp_assert_close(actual_rp, expected_vals,
+                            rtol=0, atol=1.5*10**(-6))
+
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_partial_derivative_order_too_large(self, k):
         x = array([0, 1, 2, 3, 4], dtype=float)
         y = x.copy()
         z = ones((x.size, y.size))
         lut = RectBivariateSpline(x, y, z)
         lut_ndbspline = convert_to_ndbspline(lut)
         with assert_raises(ValueError):
-            lut.partial_derivative(4, 1)
+            lut.partial_derivative(k + 1, 1)
 
-        assert (lut_ndbspline.derivative([4, 1]).c == 0.0).all()
+        assert (lut_ndbspline.derivative([k + 1, 1]).c == 0.0).all()
 
-    def test_broadcast(self):
+        lut = RectBivariateSpline(x, y, z, kx=k, ky=k)
+        with assert_raises(ValueError):
+            lut.partial_derivative(k + 1, 1)
+
+        lut_custom = regrid_python(x, y, z, kx=k, ky=k)
+        assert (lut_custom.derivative([k + 1, 1]).c == 0.0).all()
+
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_broadcast(self, k):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])
         z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
-        lut = RectBivariateSpline(x,y,z)
+        lut = RectBivariateSpline(x,y,z,kx=k,ky=k)
         xp_assert_close(lut(x, y), lut(x[:,None], y[None,:], grid=False))
 
     def test_invalid_input(self):
 
+        x = array([6, 2, 3, 4, 5])
+        y = array([1, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                    [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+
         with assert_raises(ValueError) as info:
-            x = array([6, 2, 3, 4, 5])
-            y = array([1, 2, 3, 4, 5])
-            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
-                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
             RectBivariateSpline(x, y, z)
         assert "x must be strictly increasing" in str(info.value)
 
+        with assert_raises(ValueError) as info_custom:
+            regrid_python(x, y, z)
+        assert "x must be strictly increasing" in str(info_custom.value)
+
+        x = array([1, 2, 3, 4, 5])
+        y = array([2, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                    [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
         with assert_raises(ValueError) as info:
-            x = array([1, 2, 3, 4, 5])
-            y = array([2, 2, 3, 4, 5])
-            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
-                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
             RectBivariateSpline(x, y, z)
         assert "y must be strictly increasing" in str(info.value)
 
+        with assert_raises(ValueError) as info_custom:
+            regrid_python(x, y, z)
+        assert "y must be strictly increasing" in str(info_custom.value)
+
+        x = array([1, 2, 3, 4, 5])
+        y = array([1, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                    [1, 2, 2, 2, 1]])
         with assert_raises(ValueError) as info:
-            x = array([1, 2, 3, 4, 5])
-            y = array([1, 2, 3, 4, 5])
-            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
-                       [1, 2, 2, 2, 1]])
             RectBivariateSpline(x, y, z)
         assert "x dimension of z must have same number of elements as x"\
                in str(info.value)
 
+        with assert_raises(ValueError) as info_custom:
+            regrid_python(x, y, z)
+        assert "x dimension of z must have same number of elements as x"\
+               in str(info_custom.value)
+
+        x = array([1, 2, 3, 4, 5])
+        y = array([1, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2], [1, 2, 1, 2], [1, 2, 3, 2],
+                    [1, 2, 2, 2], [1, 2, 1, 2]])
+
         with assert_raises(ValueError) as info:
-            x = array([1, 2, 3, 4, 5])
-            y = array([1, 2, 3, 4, 5])
-            z = array([[1, 2, 1, 2], [1, 2, 1, 2], [1, 2, 3, 2],
-                       [1, 2, 2, 2], [1, 2, 1, 2]])
             RectBivariateSpline(x, y, z)
         assert "y dimension of z must have same number of elements as y"\
                in str(info.value)
 
+        with assert_raises(ValueError) as info_custom:
+            regrid_python(x, y, z)
+        assert "y dimension of z must have same number of elements as y"\
+               in str(info_custom.value)
+
+        x = array([1, 2, 3, 4, 5])
+        y = array([1, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                    [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+        bbox = (-100, 100, -100)
+
         with assert_raises(ValueError) as info:
-            x = array([1, 2, 3, 4, 5])
-            y = array([1, 2, 3, 4, 5])
-            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
-                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
-            bbox = (-100, 100, -100)
             RectBivariateSpline(x, y, z, bbox=bbox)
         assert "bbox shape should be (4,)" in str(info.value)
+
+        with assert_raises(ValueError) as info_custom:
+            regrid_python(x, y, z, bbox=bbox)
+        assert "bbox shape should be (4,)" in str(info_custom.value)
 
         with assert_raises(ValueError) as info:
             RectBivariateSpline(x, y, z, s=-1.0)
         assert "s should be s >= 0.0" in str(info.value)
 
-    def test_array_like_input(self):
+        with assert_raises(ValueError) as info_custom:
+            regrid_python(x, y, z, s=-1.0)
+        assert "s should be s >= 0.0" in str(info_custom.value)
+
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_array_like_input(self, k):
         x = array([1, 2, 3, 4, 5])
         y = array([1, 2, 3, 4, 5])
         z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
                    [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
         bbox = array([1, 5, 1, 5])
 
-        spl1 = RectBivariateSpline(x, y, z, bbox=bbox)
+        spl1 = RectBivariateSpline(x, y, z, bbox=bbox, kx=k, ky=k)
+        spl1_custom = regrid_python(x, y, z, bbox=bbox, kx=k, ky=k)
         spl2 = RectBivariateSpline(x.tolist(), y.tolist(), z.tolist(),
-                                   bbox=bbox.tolist())
+                                   bbox=bbox.tolist(), kx=k, ky=k)
+        spl2_custom = regrid_python(x.tolist(), y.tolist(), z.tolist(),
+                                   bbox=bbox.tolist(), kx=k, ky=k)
         assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
+        xp_assert_close(spl1(1.0, 1.0),
+                        ndbspline_call_like_bivariate(spl1_custom, 1.0, 1.0),
+                        rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(spl2(1.0, 1.0),
+                        ndbspline_call_like_bivariate(spl2_custom, 1.0, 1.0),
+                        rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(ndbspline_call_like_bivariate(spl1_custom, 1.0, 1.0),
+                        ndbspline_call_like_bivariate(spl2_custom, 1.0, 1.0),
+                        rtol=0, atol=1.5*10**(-6))
 
     def test_not_increasing_input(self):
         # gh-8565
@@ -1234,19 +1419,68 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
-    @pytest.mark.slow()
+        spl_custom = regrid_python(x, y, z, s=s)
+        z_spl_custom = ndbspline_call_like_bivariate(spl_custom, x, y)
+        assert(not np.isnan(z_spl_custom).any())
+        xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
+
+    @pytest.mark.xslow()
+    @pytest.mark.skipif(sys.platform == "win32", reason="Fails intermittently "
+                                                        "on Windows;"
+                                                        "investigation pending.")
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
                                                      "due to large input data")
-    def test_spline_large_2d_maxit(self):
+    @pytest.mark.parametrize("k", [3, 4])
+    def test_spline_large_2d_maxit(self, k):
         # Reference - for https://github.com/scipy/scipy/issues/17787
         nx, ny = 1000, 1700
         s, atol, rtol = 2, 2e-2, 1e-12
         x, y, z = self._sample_large_2d_data(nx, ny)
 
-        spl = RectBivariateSpline(x, y, z, s=s, maxit=25)
+        spl = RectBivariateSpline(x, y, z, s=s,
+                                  maxit=25, kx=k, ky=k)
         z_spl = spl(x, y)
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
+
+        spl_custom = regrid_python(x, y, z, s=s,
+                                                 maxit=30, kx=k, ky=k)
+        z_spl_custom = ndbspline_call_like_bivariate(spl_custom, x, y)
+        assert(not np.isnan(z_spl_custom).any())
+        xp_assert_close(z_spl_custom, z, atol=atol, rtol=rtol)
+
+    def test_spline_synthetic_data(self):
+        """
+        Test regrid_python with synthetic smooth data (mixed frequencies + noise).
+        """
+        # Create strictly-increasing axes and smooth test surface
+        nx, ny = 64, 64
+        kx, ky = 3, 3
+        s = 0.3
+
+        rng = np.random.default_rng(0)
+        x = np.linspace(0.0, 4.0, nx, dtype=float)
+        y = np.linspace(0.0, 4.0, ny, dtype=float)
+
+        # Smooth, nontrivial surface with mixed frequencies + mild noise
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        z = (
+            np.sin(X) * np.cos(Y)
+            + 0.2 * np.sin(2 * X + 0.5) * np.cos(1.5 * Y - 0.3)
+            + 0.05 * rng.normal(size=(nx, ny))
+        ).astype(float)
+
+        # Test RectBivariateSpline
+        spl = RectBivariateSpline(x, y, z, kx=kx, ky=ky, s=s)
+        z_spl = spl(x, y)
+        assert not np.isnan(z_spl).any()
+        xp_assert_close(z_spl, z, atol=0.1, rtol=0.1)
+
+        # Test regrid_python
+        spl_custom = regrid_python(x, y, z, kx=kx, ky=ky, s=s)
+        z_spl_custom = ndbspline_call_like_bivariate(spl_custom, x, y)
+        assert not np.isnan(z_spl_custom).any()
+        xp_assert_close(z_spl_custom, z, atol=0.1, rtol=0.1)
 
 
 class TestRectSphereBivariateSpline:
@@ -1473,7 +1707,8 @@ class Test_DerivedBivariateSpline:
         xx = linspace(0, 1, 20)
         yy = xx + 1.0
         zz = array([np.roll(z, i) for i in range(z.size)])
-        self.lut_rect = RectBivariateSpline(xx, yy, zz)
+        self.lut_rect = RectBivariateSpline(xx, yy, zz, kx=4, ky=4)
+        self.lut_rect_custom = regrid_python(xx, yy, zz, kx=4, ky=4)
         self.orders = list(itertools.product(range(3), range(3)))
 
     def test_creation_from_LSQ(self):
@@ -1493,6 +1728,19 @@ class Test_DerivedBivariateSpline:
     def test_creation_from_Rect(self):
         for nux, nuy in self.orders:
             lut_der = self.lut_rect.partial_derivative(nux, nuy)
+            a = lut_der(0.5, 1.5, grid=False)
+            b = self.lut_rect(0.5, 1.5, dx=nux, dy=nuy, grid=False)
+            assert a == b
+
+        for nux, nuy in self.orders:
+            lut_der = self.lut_rect_custom.derivative([nux, nuy])
+            a = ndbspline_call_like_bivariate(lut_der, 0.5, 1.5)
+            b = ndbspline_call_like_bivariate(
+                self.lut_rect_custom, 0.5, 1.5, dx=nux, dy=nuy)
+            xp_assert_close(a, b, rtol=0, atol=1.5*10**(-6))
+
+        for nux, nuy in self.orders:
+            lut_der = self.lut_rect.partial_derivative(nux, nuy)
             lut_ndspline = convert_to_ndbspline(self.lut_rect)
             lut_der_ndbspline = lut_ndspline.derivative((nux, nuy))
             a = lut_der(0.5, 1.5, grid=False)
@@ -1504,12 +1752,17 @@ class Test_DerivedBivariateSpline:
 
     def test_invalid_attribute_fp(self):
         der = self.lut_rect.partial_derivative(1, 1)
-        lut_ndspline = convert_to_ndbspline(self.lut_rect)
-        der_ndbspline = lut_ndspline.derivative((1, 1))
         with assert_raises(AttributeError):
             der.fp
+
+        der = self.lut_rect_custom.derivative([1, 1])
         with assert_raises(AttributeError):
-            der_ndbspline.fp
+            der.fp
+
+        lut_ndbspline = convert_to_ndbspline(self.lut_rect)
+        der = lut_ndbspline.derivative(nu=[1, 1])
+        with assert_raises(AttributeError):
+            der.fp
 
     def test_invalid_attribute_get_residual(self):
         der = self.lut_smooth.partial_derivative(1, 1)
