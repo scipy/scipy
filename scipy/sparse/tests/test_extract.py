@@ -1,5 +1,7 @@
 """test sparse matrix construction functions"""
 
+import pytest
+
 from numpy.testing import assert_equal
 from scipy.sparse import csr_matrix, csr_array, sparray
 
@@ -49,3 +51,11 @@ class TestExtract:
             M = csr_matrix(A)
             assert not isinstance(_extract.tril(M), sparray)
             assert not isinstance(_extract.triu(M), sparray)
+
+
+def test_deprecated_warnings_output_defaults_switch_from_spmatrix():
+    A = np.array([[1, 2], [3, 0]])
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        _extract.tril(A)
+    with pytest.deprecated_call(match=".*switching.*sparse array int"):
+        _extract.triu(A)
