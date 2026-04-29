@@ -5101,7 +5101,8 @@ class symplectic_group_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def __call__(self, dim=None, seed=None):
-        """Create a frozen (USp(N)) 2n-dimensional unitary symplectic matrix distribution.
+        """Create a frozen (USp(N)) 2n-dimensional unitary 
+        symplectic matrix distribution.
 
         See `unitary_group_frozen` for more information.
         """
