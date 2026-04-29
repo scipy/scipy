@@ -5142,10 +5142,10 @@ class symplectic_group_gen(multi_rv_generic):
 
         rvs = []
 
-        # build random quaternion matrix:
-        # in form a + bi + cj + dk
-
         for i in range(size):
+
+            # build random quaternion matrix:
+            # in form a + bi + cj + dk
 
             a = random_state.normal(size=(dim, dim))
             b = random_state.normal(size=(dim, dim))
@@ -5154,12 +5154,15 @@ class symplectic_group_gen(multi_rv_generic):
 
             basis = []
 
+            # perform Gram Schmidt with inner product on H
+
             for j in range(dim):
                 v_0, v_1, v_2, v_3 = (
                     a[:, j].copy(), b[:, j].copy(), 
                     c[:, j].copy(), d[:, j].copy()
                 )
                 for (u_0, u_1, u_2, u_3) in basis:
+                    
                     # conjugate of u0 + u1i + u2j + u3k is
                     # u0 - u1i - u2j - u3k
 
