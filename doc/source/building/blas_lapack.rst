@@ -186,6 +186,11 @@ not yet support 64-bit integers in their Cython BLAS/LAPACK calls.
 The build configuration can be checked at runtime via
 ``scipy.show_config()`` — look for the ``'blas cython ilp64'`` entry.
 
+Some LAPACK functions use boolean variables (Fortran ``logical``). For booleans,
+``cython_lapack`` uses the ``blas_bint`` type: when ``blas_int`` resolves to C ``int``,
+``blas_bint`` resolves to Cython's ``bint`` type; when ``blas_int`` resolves to
+``int64_t``, so does ``blas_bint``.
+
 
 Using Cython BLAS/LAPACK ABI in downstream packages
 """""""""""""""""""""""""""""""""""""""""""""""""""
