@@ -41,7 +41,7 @@ def run_test(filename, funcs, args=[0]):  # noqa: B006
 
     if nargs > 1:
         f = funcs[0]
-        x = [data[args[i]] for i in nargs]
+        x = [data[args[i]] for i in range(nargs)]
         return f(*x)
     else:
         y = [f(data[:, 0]) - data[:, idx + 1] for idx, f in enumerate(funcs)]

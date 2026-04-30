@@ -14,7 +14,7 @@ __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'broadcast_shapes']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
-                    np.uintc, np.long, np.ulong, np.longlong, np.ulonglong,
+                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong,
                     np.float32, np.float64, np.longdouble,
                     np.complex64, np.complex128, np.clongdouble]
 
