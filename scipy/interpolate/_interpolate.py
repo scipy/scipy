@@ -13,7 +13,7 @@ from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from scipy._lib._array_api import (
-    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy, is_array_api_obj
+    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy
 )
 
 from . import _fitpack_py
@@ -2185,11 +2185,9 @@ class BPoly:
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        if not is_array_api_obj(yi):
+        if isinstance(yi, (list, tuple)):
             # yi is documented as accepting arrays or lists of
-            # arrays. Technically, from_derivatives should work for any
-            # indexable Sequence of arrays, so we just check if it's not an
-            # array api object. The following line with star unpacking will not
+            # arrays.  The following line with star unpacking will not
             # work for array ``yi`` for some backends because some are
             # stricting than others about whether arrays can be iterated over.
             xp = array_namespace(xi, *yi)
@@ -2197,9 +2195,9 @@ class BPoly:
             xp = array_namespace(xi, yi)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
         xi = xp_internal.asarray(xi)
-        if not is_array_api_obj(yi):
-            # If ``yi`` is not an array, it is hopefully an indexable Sequence
-            # of arrays. Apply asarray to each element separately.
+        if isinstance(yi, (list, tuple)):
+            # If yi is a ragged list or tuple of arrays, then need to apply
+            # xp_internal.asarray separately over each element.
             yi = list(map(xp_internal.asarray, yi))
         else:
             yi = xp_internal.asarray(yi)
