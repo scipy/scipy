@@ -1296,10 +1296,10 @@ _ppoly_extra_note = (
 
     If a ppoly object is called on an input array ``x`` with namespace
     different from the namespace ``xp`` of the breakpoints and coefficients
-    with which it was instantiated, an attempt will be made to coerce ``x`` to
-    the ``xp`` namespace. If the conversion succeeds, the output will be an
-    array from the ``xp`` namespace. Mixing namespaces in this way is not
-    recommended.
+    with which the ppoly object was instantiated, an attempt will be made to
+    coerce ``x`` to the ``xp`` namespace. If the conversion succeeds, the
+    output will be an array from the ``xp`` namespace. Mixing namespaces in
+    this way is not recommended.
 
     """
 )
@@ -1805,10 +1805,10 @@ class PPoly:
 _bpoly_extra_note = (
     """If a bpoly object is called on an input array ``x`` with namespace
     different from the namespace ``xp`` of the breakpoints and coefficients
-    with which it was instantiated, an attempt will be made to coerce ``x`` to
-    the ``xp`` namespace. If the conversion succeeds, the output will be an
-    array from the ``xp`` namespace. Mixing namespaces in this way is not
-    recommended.
+    with which the bpoly object was instantiated, an attempt will be made to
+    coerce ``x`` to the ``xp`` namespace. If the conversion succeeds, the
+    output will be an array from the ``xp`` namespace. Mixing namespaces in
+    this way is not recommended.
 
     """
 )
