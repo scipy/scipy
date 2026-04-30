@@ -1294,6 +1294,13 @@ _ppoly_extra_note = (
     with CuPy. ``solve`` and ``roots`` with ``c.ndim > 2`` are currently
     only supported with NumPy.
 
+    If a ppoly object is called on an input array ``x`` with namespace
+    different from the namespace ``xp`` of the breakpoints and coefficients
+    with which it was instantiated, an attempt will be made to coerce ``x`` to
+    the ``xp`` namespace. If the conversion succeeds, the output will be an
+    array from the ``xp`` namespace. Mixing namespaces in this way is not
+    recommended.
+
     """
 )
 
@@ -1794,13 +1801,27 @@ class PPoly:
         pp = xp_cls.from_bernstein_basis(bp._delegate_to, extrapolate=extrapolate)
         return cls._construct_from_xp(pp, xp_external=xp)
 
+
+_bpoly_extra_note = (
+    """If a bpoly object is called on an input array ``x`` with namespace
+    different from the namespace ``xp`` of the breakpoints and coefficients
+    with which it was instantiated, an attempt will be made to coerce ``x`` to
+    the ``xp`` namespace. If the conversion succeeds, the output will be an
+    array from the ``xp`` namespace. Mixing namespaces in this way is not
+    recommended.
+
+    """
+)
+
+
 @xp_capabilities(
     cpu_only=True, jax_jit=False,
     exceptions=["cupy"],
     skip_backends=[
         ("dask.array",
          "https://github.com/scipy/scipy/issues/24205")
-    ]
+    ],
+    extra_note=_bpoly_extra_note,
 )
 class BPoly:
     """Piecewise polynomial in the Bernstein basis.
