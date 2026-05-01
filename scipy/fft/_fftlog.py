@@ -289,8 +289,12 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     Compare ``a`` with the kernel function corresponding to ``k[240]``.
 
     >>> a_f = jv(2, k[240]*r)*r
-    >>> plt.plot(r, a)
-    >>> plt.plot(r, a_f)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(r, a, label="ifht")
+    >>> ax.plot(r, a_f, "--", label=r"$r J_2(k_{240} r)$")
+    >>> ax.set_xlabel(r"$r$")
+    >>> ax.set_ylabel("amplitude")
+    >>> ax.legend()
     >>> plt.show()
 
     The plot shows that, for larger values of ``r``, the inverse Hankel transform
