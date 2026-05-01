@@ -270,7 +270,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     Hankel transform of a signal.
 
     >>> k = np.logspace(-1, 1, 300)
-    >>> A = np.zeros(300)
+    >>> A = np.zeros_like(k)
     >>> A[240] = 20
 
     Calculate the logarithmic spacing of the elements in ``A`` and
