@@ -1497,9 +1497,9 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.0,
-                               output_type=_NoValue):
+                               output_type="dok_array"):
         """
-        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
+        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_array')
 
         Compute a sparse distance matrix
 
@@ -1520,7 +1520,7 @@ cdef class cKDTree:
             Which container to use for output data. Options: ``'dok_array'``,
             ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
             Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
-            Default: ``'dok_matrix'``.
+            Default: ``'dok_array'``.
 
             .. warning:: dok_matrix and coo_matrix are being replaced.
 

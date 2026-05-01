@@ -888,7 +888,7 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2.0, output_type=_NoValue):
+            self, other, max_distance, p=2.0, output_type="dok_array"):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
@@ -908,7 +908,7 @@ class KDTree(cKDTree):
             Which container to use for output data. Options: ``'dok_array'``,
             ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
             Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
-            Default: ``'dok_matrix'``.
+            Default: ``'dok_array'``.
 
             .. warning:: dok_matrix and coo_matrix are being replaced.
 
@@ -959,14 +959,6 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        def_msg = """The default value for `output_type` will become `dok_array` in v2.2
-             That means the default return type will become a sparse array.
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             To silence this message, set `output_type="dok_array"`.
-             """
         dok_msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
              The intended replacement is output_type="dok_array".
              Unless you use * instead of @, ** for matrix power, or you depend
@@ -986,10 +978,6 @@ class KDTree(cKDTree):
              return in coo_matrix().
              """
         prefixes = (os.path.dirname(__file__),)
-        if output_type == _NoValue:
-            warnings.warn(def_msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            warnings.warn(dok_msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            output_type = "caught_dok_matrix"
         elif output_type == "dok_matrix":
             warnings.warn(dok_msg, DeprecationWarning, skip_file_prefixes=prefixes)
             output_type = "caught_dok_matrix"
