@@ -3,6 +3,7 @@
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
 from .distance import minkowski
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -860,7 +861,7 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2.0, output_type='dok_matrix'):
+            self, other, max_distance, p=2.0, output_type=_NoValue):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
