@@ -2,18 +2,17 @@ import warnings
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
 from scipy._lib._testutils import check_free_memory
-from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
+from scipy.sparse import csr_array, csc_array, coo_array, hstack
 from scipy import sparse
 import pytest
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_csr_rowslice():
     N = 10
     np.random.seed(0)
     X = np.random.random((N, N))
     X[X > 0.7] = 0
-    Xcsr = csr_matrix(X)
+    Xcsr = csr_array(X)
 
     slices = [slice(None, None, None),
               slice(None, None, -1),
@@ -24,46 +23,27 @@ def test_csr_rowslice():
         for sl in slices:
             np_slice = X[i, sl]
             csr_slice = Xcsr[i, sl]
-            assert_array_almost_equal(np_slice, csr_slice.toarray()[0])
-            assert_(type(csr_slice) is csr_matrix)
+            assert_array_almost_equal(np_slice, csr_slice.toarray())
+            assert_(type(csr_slice) is coo_array)
 
-
-@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
-def test_csr_getrow():
-    N = 10
-    np.random.seed(0)
-    X = np.random.random((N, N))
-    X[X > 0.7] = 0
-    Xcsr = csr_matrix(X)
-
-    for i in range(N):
-        arr_row = X[i:i + 1, :]
-        csr_row = Xcsr.getrow(i)
-
-        assert_array_almost_equal(arr_row, csr_row.toarray())
-        assert_(type(csr_row) is csr_matrix)
-
-
-@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
-def test_csr_getcol():
-    N = 10
-    np.random.seed(0)
-    X = np.random.random((N, N))
-    X[X > 0.7] = 0
-    Xcsr = csr_matrix(X)
-
-    for i in range(N):
-        arr_col = X[:, i:i + 1]
-        csr_col = Xcsr.getcol(i)
-
-        assert_array_almost_equal(arr_col, csr_col.toarray())
-        assert_(type(csr_col) is csr_matrix)
 
 @pytest.mark.parametrize("matrix_input, axis, expected_shape",
-        [(csr_array([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 0, (0, 4)),
-         (csr_array([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 1, (3, 0)),
-         (csr_array([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 'both', (0, 0)),
-         (csr_array([[0, 1, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 2, 3, 0]]), 0, (0, 5))])
+    [(csr_array([[1, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 2, 3, 0]]),
+      0, (0, 4)),
+     (csr_array([[1, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 2, 3, 0]]),
+      1, (3, 0)),
+     (csr_array([[1, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 2, 3, 0]]),
+      'both', (0, 0)),
+     (csr_array([[0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 2, 3, 0]]),
+      0, (0, 5))])
 def test_csr_empty_slices(matrix_input, axis, expected_shape):
     # see gh-11127 for related discussion
     slice_1 = matrix_input.toarray().shape[0] - 1
@@ -107,7 +87,7 @@ def test_csr_bool_indexing():
 @pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 @pytest.mark.xfail_on_32bit("Can't create large array for test")
 @pytest.mark.timeout(2)  # only slow when broken (conversion to 2d index arrays)
-@pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
+@pytest.mark.parametrize("cls", [csr_array, csc_array])
 def test_fancy_indexing_broadcasts_without_making_dense_2d(cls):
     # Fixes Issue gh-24339
     J = np.arange(100_000)
@@ -175,11 +155,11 @@ def test_csr_hstack_int64():
     assert X_hs_32.indices.max() == max_int32 - 1
 
 @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
-@pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
+@pytest.mark.parametrize("cls", [csr_array, csc_array])
 def test_mixed_index_dtype_int_indexing(cls):
     # https://github.com/scipy/scipy/issues/20182
     rng = np.random.default_rng(0)
-    base_mtx = cls(sparse.random(50, 50, random_state=rng, density=0.1))
+    base_mtx = cls(sparse.random_array((50, 50), random_state=rng, density=0.1))
     indptr_64bit = base_mtx.copy()
     indices_64bit = base_mtx.copy()
     indptr_64bit.indptr = base_mtx.indptr.astype(np.int64)
