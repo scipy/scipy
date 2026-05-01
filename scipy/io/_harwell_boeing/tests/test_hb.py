@@ -54,7 +54,7 @@ class TestHBReader:
         assert issparse(m) and not isinstance(m, sparray)
         with pytest.deprecated_call(match="The default value for `spmatrix"):
             m = hb_read(StringIO(SIMPLE))  # default
-            assert issparse(m) and not isinstance(m, sparray)
+            assert issparse(m) and isinstance(m, sparray)
 
 
 class TestHBReadWrite:
