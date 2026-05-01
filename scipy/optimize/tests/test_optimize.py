@@ -3408,8 +3408,7 @@ def test_gh12513_trustregion_exact_infinite_loop():
 
 @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
-@pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
-                                         coo_array, csr_array, csc_array])
+@pytest.mark.parametrize('sparse_type', [coo_array, csr_array, csc_array])
 def test_sparse_hessian(method, sparse_type):
     # gh-8792 reported an error for minimization with `newton_cg` when `hess`
     # returns a sparse array. Check that results are the same whether `hess`
