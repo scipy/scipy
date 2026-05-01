@@ -47,39 +47,33 @@ parametrize_eig_sparrays = pytest.mark.parametrize(
 
 @parametrize_sparrays
 def test_sum(A):
-    assert not isinstance(A.sum(axis=0), np.matrix), \
-        "Expected array, got matrix"
+    assert isinstance(A.sum(axis=0), np.ndarray), "Expected ndarray"
     assert A.sum(axis=0).shape == (4,)
     assert A.sum(axis=1).shape == (3,)
 
 
 @parametrize_sparrays
 def test_mean(A):
-    assert not isinstance(A.mean(axis=1), np.matrix), \
-        "Expected array, got matrix"
+    assert isinstance(A.mean(axis=1), np.ndarray), "Expected ndarray"
 
 
 @parametrize_sparrays
 def test_min_max(A):
     # Some formats don't support min/max operations, so we skip those here.
     if hasattr(A, 'min'):
-        assert not isinstance(A.min(axis=1), np.matrix), \
-            "Expected array, got matrix"
+        assert isinstance(A.min(axis=1), scipy.sparse.sparray), "Expected sparray min"
     if hasattr(A, 'max'):
-        assert not isinstance(A.max(axis=1), np.matrix), \
-            "Expected array, got matrix"
+        assert isinstance(A.max(axis=1), scipy.sparse.sparray), "Expected sparray max"
     if hasattr(A, 'argmin'):
-        assert not isinstance(A.argmin(axis=1), np.matrix), \
-            "Expected array, got matrix"
+        assert isinstance(A.argmin(axis=1), np.ndarray), "Expected ndarray argmin"
     if hasattr(A, 'argmax'):
-        assert not isinstance(A.argmax(axis=1), np.matrix), \
-            "Expected array, got matrix"
+        assert isinstance(A.argmax(axis=1), np.ndarray), "Expected ndarray argmax"
 
 
 @parametrize_sparrays
 def test_todense(A):
-    assert not isinstance(A.todense(), np.matrix), \
-        "Expected array, got matrix"
+    assert isinstance(A.todense(), np.ndarray), "Expected ndarray"
+    assert isinstance(A.toarray(), np.ndarray), "Expected ndarray"
 
 
 @parametrize_sparrays
@@ -107,12 +101,12 @@ def test_indexing(A):
 @parametrize_sparrays
 def test_dense_addition(A):
     X = np.random.random(A.shape)
-    assert not isinstance(A + X, np.matrix), "Expected array, got matrix"
+    assert isinstance(A + X, np.ndarray), "Expected ndarray"
 
 
 @parametrize_sparrays
 def test_sparse_addition(A):
-    assert isinstance((A + A), scipy.sparse.sparray), "Expected array, got matrix"
+    assert isinstance((A + A), scipy.sparse.sparray), "Expected sparray"
 
 
 @parametrize_sparrays
@@ -201,21 +195,16 @@ def test_inv(B):
     npt.assert_allclose(C.todense(), np.linalg.inv(B.todense()))
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @parametrize_square_sparrays
 def test_expm(B):
     if B.__class__.__name__[:3] != 'csc':
         return
 
-    Bmat = scipy.sparse.csc_matrix(B)
-
+    Bmat = scipy.sparse.csc_array(B)
     C = spla.expm(B)
 
     assert isinstance(C, scipy.sparse.sparray)
-    npt.assert_allclose(
-        C.todense(),
-        spla.expm(Bmat).todense()
-    )
+    npt.assert_allclose(C.todense(), spla.expm(Bmat).todense())
 
 
 @parametrize_square_sparrays
@@ -223,10 +212,7 @@ def test_expm_multiply(B):
     if B.__class__.__name__[:3] != 'csc':
         return
 
-    npt.assert_allclose(
-        spla.expm_multiply(B, np.array([1, 2])),
-        spla.expm(B) @ [1, 2]
-    )
+    npt.assert_allclose(spla.expm_multiply(B, np.array([1, 2])), spla.expm(B) @ [1, 2])
 
 
 @parametrize_sparrays
@@ -417,95 +403,79 @@ def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
             assert getattr(result, attr).dtype == expected_dtype
 
 
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_diags():
-    m = scipy.sparse.diags([0.0, 1.0, 2.0])
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert not hasattr(scipy.sparse, "diags")
+    m = scipy.sparse.diags_array([0.0, 1.0, 2.0])
+    assert isinstance(m, scipy.sparse.sparray)
 
 
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_eye():
-    m = scipy.sparse.eye(3)
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert not hasattr(scipy.sparse, "eye")
+    m = scipy.sparse.eye_array(3)
+    assert isinstance(m, scipy.sparse.sparray)
 
 
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
-def test_default_is_matrix_spdiags():
-    m = scipy.sparse.spdiags([1.0, 2.0, 3.0], 0, 3, 3)
-    assert not isinstance(m, scipy.sparse.sparray)
-
-
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_identity():
-    m = scipy.sparse.identity(3)
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert not hasattr(scipy.sparse, "identity")
+    m = scipy.sparse.eye_array(3)
+    assert isinstance(m, scipy.sparse.sparray)
 
 
 @pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_kron_dense():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]])
     )
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.sparray)
 
 
 @pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_kron_sparse():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]])
     )
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.sparray)
 
 
 @pytest.mark.filterwarnings("ignore:.*switching.*sparse array int:DeprecationWarning")
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_kronsum():
     m = scipy.sparse.kronsum(
         np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]])
     )
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.sparray)
 
 
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_random():
-    m = scipy.sparse.random(3, 3)
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert not hasattr(scipy.sparse, "random")
+    m = scipy.sparse.random_array((3, 3))
+    assert isinstance(m, scipy.sparse.sparray)
 
-
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
-def test_default_is_matrix_rand():
-    m = scipy.sparse.rand(3, 3)
-    assert not isinstance(m, scipy.sparse.sparray)
 
 
 @pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_default_is_matrix_stacks(fn):
     """Same idea as `test_default_construction_fn_matrices`, but for the
     stacking creation functions."""
-    A = scipy.sparse.coo_matrix(np.eye(2))
-    B = scipy.sparse.coo_matrix([[0, 1], [1, 0]])
+    A = scipy.sparse.coo_array(np.eye(2))
+    B = scipy.sparse.coo_array([[0, 1], [1, 0]])
     m = fn([A, B])
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.sparray)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_blocks_default_construction_fn_matrices():
     """Same idea as `test_default_construction_fn_matrices`, but for the block
     creation function"""
-    A = scipy.sparse.coo_matrix(np.eye(2))
-    B = scipy.sparse.coo_matrix([[2], [0]])
-    C = scipy.sparse.coo_matrix([[3]])
+    A = scipy.sparse.coo_array(np.eye(2))
+    B = scipy.sparse.coo_array([[2], [0]])
+    C = scipy.sparse.coo_array([[3]])
 
     # block diag
     m = scipy.sparse.block_diag((A, B, C))
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.sparray)
 
-    # bmat
-    m = scipy.sparse.bmat([[A, None], [None, C]])
-    assert not isinstance(m, scipy.sparse.sparray)
+    # block_array
+    m = scipy.sparse.block_array([[A, None], [None, C]])
+    assert isinstance(m, scipy.sparse.sparray)
 
 
 def test_format_property():
@@ -518,62 +488,8 @@ def test_format_property():
             M.format = "qqq"
 
 
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_issparse():
-    m = scipy.sparse.eye(3)
-    a = scipy.sparse.csr_array(m)
-    assert not isinstance(m, scipy.sparse.sparray)
+    a = scipy.sparse.eye_array(3)
     assert isinstance(a, scipy.sparse.sparray)
-
-    # Both sparse arrays and sparse matrices should be sparse
     assert scipy.sparse.issparse(a)
-    assert scipy.sparse.issparse(m)
-
-    # ndarray and array_likes are not sparse
     assert not scipy.sparse.issparse(a.todense())
-    assert not scipy.sparse.issparse(m.todense())
-
-
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
-def test_isspmatrix():
-    m = scipy.sparse.eye(3)
-    a = scipy.sparse.csr_array(m)
-    assert not isinstance(m, scipy.sparse.sparray)
-    assert isinstance(a, scipy.sparse.sparray)
-
-    # Should only be true for sparse matrices, not sparse arrays
-    assert not scipy.sparse.isspmatrix(a)
-    assert scipy.sparse.isspmatrix(m)
-
-    # ndarray and array_likes are not sparse
-    assert not scipy.sparse.isspmatrix(a.todense())
-    assert not scipy.sparse.isspmatrix(m.todense())
-
-
-@pytest.mark.parametrize(
-    ("fmt", "fn"),
-    (
-        ("bsr", scipy.sparse.isspmatrix_bsr),
-        ("coo", scipy.sparse.isspmatrix_coo),
-        ("csc", scipy.sparse.isspmatrix_csc),
-        ("csr", scipy.sparse.isspmatrix_csr),
-        ("dia", scipy.sparse.isspmatrix_dia),
-        ("dok", scipy.sparse.isspmatrix_dok),
-        ("lil", scipy.sparse.isspmatrix_lil),
-    ),
-)
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
-@pytest.mark.filterwarnings("ignore:.*spmatrix:DeprecationWarning")
-def test_isspmatrix_format(fmt, fn):
-    m = scipy.sparse.eye(3, format=fmt)
-    a = scipy.sparse.csr_array(m).asformat(fmt)
-    assert not isinstance(m, scipy.sparse.sparray)
-    assert isinstance(a, scipy.sparse.sparray)
-
-    # Should only be true for sparse matrices, not sparse arrays
-    assert not fn(a)
-    assert fn(m)
-
-    # ndarray and array_likes are not sparse
-    assert not fn(a.todense())
-    assert not fn(m.todense())
