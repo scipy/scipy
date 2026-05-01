@@ -22,7 +22,6 @@ import os
 import warnings
 
 import numpy as np
-from scipy._lib.deprecation import _NoValue
 from scipy.sparse import csc_array, csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
@@ -463,7 +462,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file, *, spmatrix=_NoValue):
+def hb_read(path_or_open_file, *, spmatrix=False):
     """Read HB-format file.
 
     Parameters
@@ -471,7 +470,7 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
-    spmatrix : bool, optional (default: True)
+    spmatrix : bool, optional (default: False)
         If ``True``, return sparse matrix. Otherwise return sparse array.
 
         .. deprecated:: 1.18.0
@@ -525,18 +524,7 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
         with open(path_or_open_file) as f:
             data = _get_matrix(f)
 
-    if spmatrix is _NoValue:
-        msg = """The default value for `spmatrix` is changing to `False` in v2.1.
-            That means the default return type will be a sparse array.
-            Unless you use * instead of @, ** for matrix power, or you depend
-            on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-            See the spmatrix to sparray migration guide for details.
-            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-            """
-        prefixes = (os.path.dirname(__file__),)
-        warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
-        spmatrix = True
-    elif spmatrix is True:
+    if spmatrix:
         msg = """The value `spmatrix=True` will no longer be supported in v2.2.
          The spmatrix classes are deprecated and will be removed then.
          The return value will always be a sparse array.
@@ -546,8 +534,6 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
          """
         prefixes = (os.path.dirname(__file__),)
         warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
-
-    if spmatrix:
         return csc_matrix(data)
     return data
 
