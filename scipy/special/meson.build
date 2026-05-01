@@ -275,7 +275,9 @@ python_sources = [
   'orthogonal.py',
   'sf_error.py',
   'specfun.py',
-  'spfun_stats.py'
+  'spfun_stats.py',
+  '_ufunc_tools.py'
+  
 ]
 
 py3.install_sources(
