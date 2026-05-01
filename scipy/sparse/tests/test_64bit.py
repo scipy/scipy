@@ -3,7 +3,6 @@ import pytest
 import numpy as np
 from scipy.sparse import (
     bsr_array, coo_array, csc_array, csr_array, dia_array,
-    bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix,
 )
 
 # rename to avoid pytest collecting them in this module
@@ -15,13 +14,6 @@ from .test_base import (
     TestDIA as _TestDIA,
     TestDOK as _TestDOK,
     TestLIL as _TestLIL,
-    TestBSRMatrix as _TestBSRMatrix,
-    TestCOOMatrix as _TestCOOMatrix,
-    TestCSCMatrix as _TestCSCMatrix,
-    TestCSRMatrix as _TestCSRMatrix,
-    TestDIAMatrix as _TestDIAMatrix,
-    TestDOKMatrix as _TestDOKMatrix,
-    TestLILMatrix as _TestLILMatrix,
     with_64bit_maxval_limit,
 )
 
@@ -56,12 +48,6 @@ def cases_64bit(sp_api):
         # use get_index_dtype within the class. That means many of
         # these tests are superfluous, but it's hard to pick which
         TEST_CLASSES = [_TestDOK, _TestLIL]
-    elif sp_api == "spmatrix":
-        TEST_CLASSES = [_TestBSRMatrix, _TestCOOMatrix, _TestCSCMatrix,
-                        _TestCSRMatrix, _TestDIAMatrix]
-    elif sp_api == "spmatrix-extra":
-        # lil/dok->other conversion operations use get_index_dtype
-        TEST_CLASSES = [_TestDOKMatrix, _TestLILMatrix]
     else:
         raise ValueError(f"parameter {sp_api=} is not valid")
 
@@ -125,37 +111,6 @@ class Test64BitArray(RunAll64Bit):
         self._check_resiliency(cls, method_name)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class Test64BitMatrix(RunAll64Bit):
-    # assert_32bit=True only for spmatrix cuz sparray does not check index content
-    @pytest.mark.fail_slow(5)
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
-    def test_no_64(self, cls, method_name):
-        self._check_resiliency(cls, method_name, assert_32bit=True)
-
-
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class Test64BitMatrixSameAsArray(RunAll64Bit):
-    # inheritance of pytest test classes does not separate marks for subclasses.
-    # So we define these functions in both Array and Matrix versions.
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
-    def test_resiliency_limit_10(self, cls, method_name):
-        self._check_resiliency(cls, method_name, maxval_limit=10)
-
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
-    def test_resiliency_all_32(self, cls, method_name):
-        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
-
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
-    def test_resiliency_all_64(self, cls, method_name):
-        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
-
-    @pytest.mark.fail_slow(2)
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
-    def test_resiliency_random(self, cls, method_name):
-        # Resiliency check that sparse deals with varying index data types.
-        self._check_resiliency(cls, method_name)
-
 # Extra: LIL and DOK classes. no direct get_index_dtype, but convert to classes that do
 @pytest.mark.xslow
 class Test64BitArrayExtra(RunAll64Bit):
@@ -180,43 +135,10 @@ class Test64BitArrayExtra(RunAll64Bit):
         self._check_resiliency(cls, method_name)
 
 
-# Extra: LIL and DOK classes. no direct get_index_dtype, but convert to classes that do
-@pytest.mark.xslow
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class Test64BitMatrixExtra(RunAll64Bit):
-    # assert_32bit=True only for spmatrix cuz sparray does not check index content
-    @pytest.mark.fail_slow(5)
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix-extra"))
-    def test_no_64(self, cls, method_name):
-        self._check_resiliency(cls, method_name, assert_32bit=True)
-
-    # inheritance of pytest test classes does not separate marks for subclasses.
-    # So we define these functions in both Array and Matrix versions.
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix-extra"))
-    def test_resiliency_limit_10(self, cls, method_name):
-        self._check_resiliency(cls, method_name, maxval_limit=10)
-
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix-extra"))
-    def test_resiliency_all_32(self, cls, method_name):
-        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
-
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix-extra"))
-    def test_resiliency_all_64(self, cls, method_name):
-        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
-
-    @pytest.mark.fail_slow(2)
-    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix-extra"))
-    def test_resiliency_random(self, cls, method_name):
-        # Resiliency check that sparse deals with varying index data types.
-        self._check_resiliency(cls, method_name)
-
-
 @pytest.mark.thread_unsafe(reason="Fails in parallel for unknown reasons")
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class Test64BitTools:
     # classes that use get_index_dtype
     MAT_CLASSES = [
-        bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix,
         bsr_array, coo_array, csc_array, csr_array, dia_array,
     ]
 
@@ -303,5 +225,3 @@ class Test64BitTools:
 
         check_limited(csc_array, csr_array, coo_array)
         check_unlimited(csc_array, csr_array, coo_array)
-        check_limited(csc_matrix, csr_matrix, coo_matrix)
-        check_unlimited(csc_matrix, csr_matrix, coo_matrix)
