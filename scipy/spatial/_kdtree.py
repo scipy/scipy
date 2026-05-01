@@ -8,8 +8,6 @@ from ._ckdtree import cKDTree, cKDTreeNode
 from .distance import minkowski
 from scipy._lib._array_api import xp_capabilities
 
-from scipy._lib.deprecation import _NoValue
-
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
            'Rectangle', 'KDTree']
