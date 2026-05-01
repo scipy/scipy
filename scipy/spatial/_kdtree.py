@@ -2,7 +2,7 @@
 # Released under the scipy license
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
-from .distance import minkowski as distance_minkowski
+from .distance import minkowski
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -188,7 +188,7 @@ class Rectangle:
             Minimum distance.
         """
         delta = np.maximum(0, np.maximum(self.mins - x, x - self.maxes))
-        return distance_minkowski(np.zeros_like(delta), delta, p)
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_point(self, x, p=2.0):
         """
@@ -207,7 +207,7 @@ class Rectangle:
             Maximum distance.
         """
         delta = np.maximum(self.maxes - x, x - self.mins)
-        return distance_minkowski(np.zeros_like(delta), delta, p)
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def min_distance_rectangle(self, other, p=2.0):
         """
@@ -227,7 +227,7 @@ class Rectangle:
         """
         delta = np.maximum(0, np.maximum(self.mins - other.maxes,
                                          other.mins - self.maxes))
-        return distance_minkowski(np.zeros_like(delta), delta, p)
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_rectangle(self, other, p=2.0):
         """
@@ -246,7 +246,7 @@ class Rectangle:
             Maximum distance between the two hyperrectangles.
         """
         delta = np.maximum(self.maxes - other.mins, other.maxes - self.mins)
-        return distance_minkowski(np.zeros_like(delta), delta, p)
+        return minkowski(np.zeros_like(delta), delta, p)
 
 
 class KDTree(cKDTree):
