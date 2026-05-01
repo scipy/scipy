@@ -15,7 +15,7 @@ from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
 from scipy.spatial.distance import cdist, minkowski
-from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
+from scipy.sparse import dok_array, coo_array
 
 
 @pytest.fixture(params=[KDTree, cKDTree])
