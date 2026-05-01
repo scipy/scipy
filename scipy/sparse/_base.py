@@ -10,7 +10,6 @@ from ._sputils import (asmatrix, check_shape,
                        matrix, validateaxis, getdtype, is_pydata_spmatrix)
 from scipy._lib._sparse import SparseABC, issparse
 
-from ._matrix import spmatrix
 
 __all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -1777,4 +1776,4 @@ def isspmatrix(x):
     >>> isspmatrix(5)
     False
     """
-    return isinstance(x, spmatrix)
+    return False
