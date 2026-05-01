@@ -3,9 +3,6 @@ Module for reading and writing matlab (TM) .mat files
 """
 # Authors: Travis Oliphant, Matthew Brett
 
-import os
-import warnings
-
 from contextlib import contextmanager
 
 from ._miobase import _get_matfile_version, docfiller
