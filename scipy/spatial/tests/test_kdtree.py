@@ -15,7 +15,7 @@ from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance, minkowski_distance_p
 from scipy.spatial.distance import cdist, minkowski
-from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
+from scipy.sparse import dok_array, coo_array
 
 
 @pytest.fixture(params=[KDTree, cKDTree])
@@ -699,7 +699,6 @@ class sparse_distance_matrix_consistency:
             tree.sparse_distance_matrix(tree, 3, output_type="coo_matrix")
         tree.sparse_distance_matrix(tree, 3)
 
-    @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
     def test_ckdtree_return_types(self):
         # brute-force reference
         ref = np.zeros((self.n, self.n))
