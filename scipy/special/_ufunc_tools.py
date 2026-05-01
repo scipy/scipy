@@ -12,11 +12,24 @@ def _parse_core_ndims(signature: str) -> tuple[int]:
     return tuple(0 if not g.strip() else g.count(',') + 1 for g in groups)
 
 
-def _with_cache_optimization(ufunc, cache_arg_indices):
+def _with_cache_optimization(
+        *,
+        name,
+        arg_names,
+        docstring,
+        ufunc,
+        cache_arg_indices,
+):
     """Helper to ensure optimal iteration order for ufuncs that use caching
 
     Parameters
     ----------
+    name : str
+    arg_names : list[str]
+        The function name and arg names are passed in so that the wrapper
+        can be generated with the create name and argument names, improving
+        documentation and autocomplete.
+    docstring : str
     ufunc : numpy.ufunc
     cache_arg_indices : list[int]
        Arguments to ufunc which are used in the kernel to compute an output
@@ -62,7 +75,7 @@ def _with_cache_optimization(ufunc, cache_arg_indices):
         else (0,)*ufunc.nin
     )
 
-    def wrapper(*args):
+    def _wrapper(*args):
         args = [np.asarray(arg) for arg in args]
 
         # Fast path for when the arguments which are used in the cached
@@ -123,4 +136,15 @@ def _with_cache_optimization(ufunc, cache_arg_indices):
         # This avoids having non-contiguous output.
         ufunc(*args_t, out=out_t, order='C')
         return out_final
+
+    arg_str = ", ".join(arg_names)
+    code = (
+        f"""def {name}({arg_str}):
+            return _wrapper({arg_str})
+        """
+        )
+    namespace = {"_wrapper": _wrapper}
+    exec(code, namespace)
+    wrapper = namespace[name]
+    wrapper.__doc__ = docstring
     return wrapper
