@@ -29,3 +29,9 @@
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
 	url = https://github.com/scipy/xsf.git
+[submodule "subprojects/riccaticpp"]
+	path = subprojects/riccaticpp
+	url = https://github.com/SteveBronder/riccaticpp.git
+[submodule "subprojects/eigen"]
+	path = subprojects/eigen
+	url = https://gitlab.com/libeigen/eigen.git
