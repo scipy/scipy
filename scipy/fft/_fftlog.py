@@ -286,7 +286,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
 
     >>> r = 1/np.flip(k)
 
-    Compare ``a`` with the kernel function corresponding to ``k=240``.
+    Compare ``a`` with the kernel function corresponding to ``k[240]``.
 
     >>> a_f = jv(2, k[240]*r)*r
     >>> plt.plot(r, a)
