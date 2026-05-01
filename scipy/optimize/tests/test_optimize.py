@@ -39,8 +39,7 @@ from scipy.optimize._optimize import (
 )
 from scipy.optimize import rosen, rosen_der, rosen_hess
 
-from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
-                          csr_array, csc_array)
+from scipy.sparse import coo_array, csr_array, csc_array
 from scipy._lib._array_api_no_0d import xp_assert_equal
 from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._util import MapWrapper
