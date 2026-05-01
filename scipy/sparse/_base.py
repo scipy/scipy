@@ -1788,6 +1788,4 @@ def isspmatrix(x):
     >>> isspmatrix(5)
     False
     """
-    from ._matrix import spmatrix
-
-    return isinstance(x, spmatrix)
+    return False
