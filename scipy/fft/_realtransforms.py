@@ -717,37 +717,41 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
 
     Examples
     --------
+    The following example calculates the signal from a spectrum `X` where only the first
+    bin has a non-zero value. The signal for all four DST types is plotted:
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.fft import idst
-
-    Create frequency data.
-
-    >>> N = 16
-    >>> X = np.array([0, N])
-
-    For each type of discrete sine transform, perform the inverse
-    transform on ``X``. Specifying the length of the transform to be
-    greater than that of ``X`` pads the input data with zeros. Plot the
-    resulting real-spaace sequences together.
-
+    ...
+    >>> N = 15
+    >>> X = np.array([0, N])  # the last `N-2` bin zero-valued bins are not needed
+    ...
     >>> _, ax = plt.subplots()
     >>> ax.set(title=f"Inverse of one component DST ({N} samples)",
     ...        xlim=(0, N), xlabel="k", ylabel="x[k]")
     >>> for t_ in range(1, 5):
-    ...     x = idst(X, type=t_, n=N)
+    ...     x = idst(X, type=t_, n=N)  # parameter `n` pads `X` to length `N`.
     ...     ax.plot(x, '.-', alpha=0.5, label=f"Type {t_}")
     >>> ax.grid(True)
     >>> ax.legend()
     >>> plt.show()
 
-    The boundary conditions corresponding to each DST type
-    determine the shape of their corresponding curves. The respective
-    periods for types 1 to 5 are ``17.0``, ``16.0``, ``21.33``, and
-    ``21.33``, and their phases are ``0.37``, ``0.20``, ``0.29``, and
-    ``0.15``. By default, ``idst`` scales the real-space sequence by
-    ``1/16`` and the resulting curves have approximate amplitudes of
-    ``1``.
+    The resulting signals are sines with their period and their phase determined by the
+    used DST type. The following table shows those, with `N` being the number of signal
+    samples and `n` is the index of the non-zero bin (here: ``N, n = 15, 1``):
+
+    +------+------------------------------+------------------------+
+    | Type | period in samples            | phase shift in samples |
+    +======+==============================+========================+
+    |  1   | :math:`2 (N+1) / (n+1) = 16` | :math:`-1`             |
+    +------+------------------------------+------------------------+
+    |  2   | :math:`2 N / (n+1) = 15`     | :math:`-1/2`           |
+    +------+------------------------------+------------------------+
+    |  3   | :math:`2 N / (n+1/2) = 20`   | :math:`-1`             |
+    +------+------------------------------+------------------------+
+    |  4   | :math:`2 N / (n+1/2) = 20`   | :math:`-1/2`           |
+    +------+------------------------------+------------------------+
 
     """
     return (Dispatchable(x, np.ndarray),)
