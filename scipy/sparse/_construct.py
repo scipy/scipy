@@ -25,7 +25,7 @@ from ._csc import csc_array
 from ._csr import csr_array
 from ._dia import dia_array
 
-from ._base import issparse, sparray
+from ._base import issparse
 
 
 def expand_dims(A, /, *, axis=0):
@@ -636,7 +636,7 @@ def kronsum(A, B, format=None):
     return (L + R).asformat(format)
 
 
-def _compressed_sparse_stack(blocks, axis, return_spmatrix):
+def _compressed_sparse_stack(blocks, axis):
     """
     Stacking fast path for CSR/CSC matrices or arrays
     (i) vstack for CSR, (ii) hstack for CSC.
@@ -662,15 +662,6 @@ def _compressed_sparse_stack(blocks, axis, return_spmatrix):
         sum_dim += b._shape_as_2d[axis]
         last_indptr += b.indptr[-1]
     indptr[-1] = last_indptr
-    # TODO remove this if-structure when sparse matrices removed
-    if return_spmatrix:
-        if axis == 0:
-            return csr_matrix((data, indices, indptr),
-                              shape=(sum_dim, constant_dim))
-        else:
-            return csc_matrix((data, indices, indptr),
-                              shape=(constant_dim, sum_dim))
-
     if axis == 0:
         return csr_array((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
@@ -776,10 +767,7 @@ def hstack(blocks, format=None, dtype=None):
 
     """
     blocks = np.asarray(blocks, dtype='object')
-    if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block([blocks], format, dtype)
-    else:
-        return _block([blocks], format, dtype, return_spmatrix=True)
+    return block_array([blocks], format=format, dtype=dtype)
 
 
 def vstack(blocks, format=None, dtype=None):
@@ -824,10 +812,7 @@ def vstack(blocks, format=None, dtype=None):
 
     """
     blocks = np.asarray(blocks, dtype='object')
-    if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block([[b] for b in blocks], format, dtype)
-    else:
-        return _block([[b] for b in blocks], format, dtype, return_spmatrix=True)
+    return block_array([[b] for b in blocks], format=format, dtype=dtype)
 
 
 def block_array(blocks, *, format=None, dtype=None):
@@ -891,7 +876,7 @@ def block_array(blocks, *, format=None, dtype=None):
             blocks = np.asarray(blocks, dtype='object')
 
         # stack along rows (axis 0):
-        A = _compressed_sparse_stack(blocks[:, 0], 0, return_spmatrix)
+        A = _compressed_sparse_stack(blocks[:, 0], 0)
         if dtype is not None:
             A = A.astype(dtype, copy=False)
         return A
@@ -904,7 +889,7 @@ def block_array(blocks, *, format=None, dtype=None):
             blocks = np.asarray(blocks, dtype='object')
 
         # stack along columns (axis 1):
-        A = _compressed_sparse_stack(blocks[0, :], 1, return_spmatrix)
+        A = _compressed_sparse_stack(blocks[0, :], 1)
         if dtype is not None:
             A = A.astype(dtype, copy=False)
         return A
@@ -964,8 +949,6 @@ def block_array(blocks, *, format=None, dtype=None):
         np.add(B.col, col_offsets[j], out=col[idx], dtype=idx_dtype)
         nnz += B.nnz
 
-    if return_spmatrix:
-        return coo_matrix((data, (row, col)), shape=shape).asformat(format)
     return coo_array((data, (row, col)), shape=shape).asformat(format)
 
 
@@ -1013,25 +996,6 @@ def block_diag(mats, format=None, dtype=None):
            [0, 0, 6, 0],
            [0, 0, 0, 7]])
     """
-    if any(isinstance(a, sparray) for a in mats):
-        container = coo_array
-    elif all(isinstance(a, np.ndarray) for a in mats):  # use default
-        msg = """`block_diag` is switching to the sparse array interface.
-
-        For the case where input arrays are numpy arrays, this function is
-        switching to returning a sparse array instead of sparse matrix.
-        For more information, see the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        This function will be changed no earlier than v1.20.
-        """
-        prefixes = (os.path.dirname(__file__),)
-        warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-
-        container = coo_matrix
-    else:
-        container = coo_matrix
-
     row = []
     col = []
     data = []
@@ -1063,7 +1027,7 @@ def block_diag(mats, format=None, dtype=None):
     data = np.concatenate(data)
     new_shape = (r_idx, c_idx)
 
-    return container((data, (row, col)), shape=new_shape, dtype=dtype).asformat(format)
+    return coo_array((data, (row, col)), shape=new_shape, dtype=dtype).asformat(format)
 
 
 @_transition_to_rng("random_state")
