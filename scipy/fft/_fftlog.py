@@ -274,7 +274,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     >>> A[240] = 20
 
     Calculate the logarithmic spacing of the elements in ``A`` and
-    perform a second order inverse Hankel transform on the sample
+    perform a second-order inverse Hankel transform on the sample
     data.
 
     >>> dln = np.log(k[1]/k[0])
