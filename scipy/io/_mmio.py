@@ -18,7 +18,6 @@ from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
 from scipy.sparse import coo_array, issparse, coo_matrix
-from scipy._lib.deprecation import _NoValue
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
@@ -83,7 +82,7 @@ def mminfo(source):
 # -----------------------------------------------------------------------------
 
 
-def mmread(source, *, spmatrix=_NoValue):
+def mmread(source, *, spmatrix=False):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -92,12 +91,12 @@ def mmread(source, *, spmatrix=_NoValue):
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
-    spmatrix : bool, optional (default: True)
+    spmatrix : bool, optional (default: False)
         If ``True``, return sparse matrix. Otherwise return sparse array.
 
         .. deprecated:: 1.18.0
-            The default value for `spmatrix` is changing to False in v1.20.
-            That means the default return value will be a sparse array.
+            The default value for `spmatrix` changed to False in v1.20.
+            That means the default return value is a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
@@ -566,7 +565,7 @@ class MMFile:
         self._init_attrs(**kwargs)
 
     # -------------------------------------------------------------------------
-    def read(self, source, *, spmatrix=_NoValue):
+    def read(self, source, *, spmatrix=False):
         """
         Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -579,7 +578,7 @@ class MMFile:
             If ``True``, return sparse matrix. Otherwise return sparse array.
 
             .. deprecated:: 1.18.0
-                The default value for `spmatrix` is changing to False in v1.20.
+                The default value for `spmatrix` changed to False in v1.20.
                 That means the default return value will be a sparse array.
                 Unless you use * instead of @, ** for matrix power, or you depend
                 on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
@@ -600,18 +599,6 @@ class MMFile:
         finally:
             if close_it:
                 stream.close()
-
-        if spmatrix is _NoValue:
-            msg = """The default value for `spmatrix` is changing to `False` in v1.20.
-             That means the default return type will be a sparse array.
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             """
-            prefixes = (os.path.dirname(__file__),)
-            warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
-            spmatrix = True
 
         if spmatrix and isinstance(data, coo_array):
             data = coo_matrix(data)

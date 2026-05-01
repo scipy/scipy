@@ -286,7 +286,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
 
         with pytest.deprecated_call(match="The default value"):
             b = mmread(self.fn)  # chk default
-            assert not isinstance(b, scipy.sparse.sparray)
+            assert isinstance(b, scipy.sparse.sparray)
 
     def test_gh13634_non_skew_symmetric_int(self):
         a = scipy.sparse.csr_array([[1, 2], [-2, 99]], dtype=np.int32)
