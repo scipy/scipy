@@ -36,15 +36,14 @@ from types import GenericAlias
 import scipy.linalg
 
 import scipy.sparse as sparse
-from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
-        coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
-        csc_array, csr_array, dok_array,
-        coo_array, lil_array, dia_array, bsr_array,
-        eye_array, issparse, SparseEfficiencyWarning, sparray, spmatrix,
-        matrix_transpose,)
+from scipy.sparse import (csc_array, csr_array, dok_array,
+                          coo_array, lil_array, dia_array, bsr_array,
+                          eye_array, issparse, SparseEfficiencyWarning,
+                          sparray, matrix_transpose,
+                         )
 from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
-                                   get_index_dtype, asmatrix, matrix)
+                                   get_index_dtype, matrix)
 from scipy.sparse.linalg import splu, expm, inv
 
 IS_COLAB = ('google.colab' in sys.modules)
@@ -267,38 +266,6 @@ class ComparisonTester:
 #------------------------------------------------------------------------------
 # Generic tests
 #------------------------------------------------------------------------------
-
-
-class _MatrixMixin:
-    """mixin to easily allow tests of both sparray and spmatrix"""
-    bsr_container = bsr_matrix
-    coo_container = coo_matrix
-    csc_container = csc_matrix
-    csr_container = csr_matrix
-    dia_container = dia_matrix
-    dok_container = dok_matrix
-    lil_container = lil_matrix
-    asdense = staticmethod(asmatrix)
-
-    def test_getrow(self):
-        assert_array_equal(self.datsp.getrow(1).toarray(), self.dat[[1], :])
-        assert_array_equal(self.datsp.getrow(-1).toarray(), self.dat[[-1], :])
-
-    def test_getcol(self):
-        assert_array_equal(self.datsp.getcol(1).toarray(), self.dat[:, [1]])
-        assert_array_equal(self.datsp.getcol(-1).toarray(), self.dat[:, [-1]])
-
-    def test_asfptype(self):
-        A = self.spcreator(arange(6,dtype='int32').reshape(2,3))
-
-        assert_equal(A.asfptype().dtype, np.dtype('float64'))
-        assert_equal(A.asfptype().format, A.format)
-        assert_equal(A.astype('int16').asfptype().dtype, np.dtype('float32'))
-        assert_equal(A.astype('complex128').asfptype().dtype, np.dtype('complex128'))
-
-        B = A.asfptype()
-        C = B.asfptype()
-        assert_(B is C)
 
 
 # TODO test prune
@@ -3973,7 +3940,7 @@ class _TestMinMax:
                      [-6, 7, 9]])
         datsp = self.spcreator(dat)
         matrix_or_array = ndarray if self.is_array_test else np.matrix
-        spmatrix_or_sparray = sparray if self.is_array_test else spmatrix
+        spmatrix_or_sparray = sparray if self.is_array_test else None
 
         assert isscalarlike(datsp.min())
         assert isinstance(datsp.min(axis=0), spmatrix_or_sparray)
@@ -4592,26 +4559,6 @@ class TestCSR(_CompressedMixin, sparse_test_class()):
 TestCSR.init_class()
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class TestCSRMatrix(_MatrixMixin, TestCSR):
-    @classmethod
-    def spcreator(cls, *args, **kwargs):
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
-            return csr_matrix(*args, **kwargs)
-
-def test_spmatrix_subscriptable():
-    result = csr_matrix[np.int8]
-    assert isinstance(result, GenericAlias)
-    assert result.__origin__ is csr_matrix
-    assert result.__args__ == (np.int8,)
-
-
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-    TestCSRMatrix.init_class()
-
-
 class TestCSC(_CompressedMixin, sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
@@ -4762,20 +4709,6 @@ class TestCSC(_CompressedMixin, sparse_test_class()):
 TestCSC.init_class()
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class TestCSCMatrix(_MatrixMixin, TestCSC):
-    @classmethod
-    def spcreator(cls, *args, **kwargs):
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
-            return csc_matrix(*args, **kwargs)
-
-
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-    TestCSCMatrix.init_class()
-
-
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spcreator = dok_array
     math_dtypes = [np.int_, np.float64, np.complex128]
@@ -4874,15 +4807,7 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         assert_(len(b.keys()) == 0, "Unexpected entries in keys")
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class TestDOKMatrix(_MatrixMixin, TestDOK):
-    spcreator = dok_matrix
-
-
 TestDOK.init_class()
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-    TestDOKMatrix.init_class()
 
 
 class TestLIL(sparse_test_class(minmax=False)):
@@ -4997,15 +4922,7 @@ class TestLIL(sparse_test_class(minmax=False)):
         a[0, :] = 0
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class TestLILMatrix(_MatrixMixin, TestLIL):
-    spcreator = lil_matrix
-
-
 TestLIL.init_class()
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-    TestLILMatrix.init_class()
 
 
 class BaseTestCOO:
@@ -5187,25 +5104,12 @@ class BaseTestCOO:
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
     
+
 class TestCOO(BaseTestCOO,
               sparse_test_class(getset=True,
                                 slicing=True, slicing_assign=True,
                                 fancy_indexing=True, fancy_assign=True)):
     spcreator = coo_array
-
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class TestCOOMatrix(_MatrixMixin,
-                    BaseTestCOO,
-                    sparse_test_class(getset=False,
-                                      slicing=False, slicing_assign=False,
-                                      fancy_indexing=False, fancy_assign=False)):
-    spcreator = coo_matrix
-
-
-TestCOO.init_class()
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-    TestCOOMatrix.init_class()
 
 
 def test_sparray_subscriptable():
@@ -5218,6 +5122,9 @@ def test_sparray_subscriptable():
     assert isinstance(result, GenericAlias)
     assert result.__origin__ is coo_array
     assert result.__args__ == (np.int8,)
+
+
+TestCOO.init_class()
 
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
@@ -5436,15 +5343,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                       [27., 6., 14.]])
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class TestDIAMatrix(_MatrixMixin, TestDIA):
-    spcreator = dia_matrix
-
-
 TestDIA.init_class()
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-    TestDIAMatrix.init_class()
 
 
 class TestBSR(sparse_test_class(getset=False,
@@ -5737,15 +5636,7 @@ class TestBSR(sparse_test_class(getset=False,
             x + x
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
-class TestBSRMatrix(_MatrixMixin, TestBSR):
-    spcreator = bsr_matrix
-
-
 TestBSR.init_class()
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", ".*_matrix is being repl", DeprecationWarning)
-    TestBSRMatrix.init_class()
 
 
 #------------------------------------------------------------------------------
@@ -5904,15 +5795,7 @@ class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
     pass
 
 
-class TestCSRNonCanonicalMatrix(TestCSRNonCanonical, TestCSRMatrix):
-    pass
-
-
 class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
-    pass
-
-
-class TestCSCNonCanonicalMatrix(TestCSCNonCanonical, TestCSCMatrix):
     pass
 
 
@@ -5929,10 +5812,6 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     @pytest.mark.xfail(run=False, reason='expm broken with non-canonical BSR')
     def test_expm(self):
         pass
-
-
-class TestBSRNonCanonicalMatrix(TestBSRNonCanonical, TestBSRMatrix):
-    pass
 
 
 class COONonCanonicalMixin(_NonCanonicalMixin):
@@ -5959,11 +5838,7 @@ class TestCOONonCanonical(COONonCanonicalMixin, TestCOO):
     pass
 
 
-class TestCOONonCanonicalMatrix(COONonCanonicalMixin, TestCOOMatrix):
-    pass
-
-
-@pytest.mark.parametrize("container", [csc_array, csr_array, csc_matrix, csr_matrix])
+@pytest.mark.parametrize("container", [csc_array, csr_array])
 def test_broadcast_to(container):
     a = np.array([[1, 0, 2]])
     b = np.array([[1], [0], [2]])
@@ -5972,25 +5847,21 @@ def test_broadcast_to(container):
     e = np.array([[0]])
     f = np.array([[0,0,0,0]])
 
-    if not issubclass(container, sparray):
-        msg = ".*_matrix is being replaced"
-        warnings.filterwarnings("ignore", msg, DeprecationWarning)
+    res_a = container(a)._broadcast_to((2,3))
+    res_b = container(b)._broadcast_to((3,4))
+    res_c = container(c)._broadcast_to((2,3))
+    res_d = container(d)._broadcast_to((4,4))
+    res_e = container(e)._broadcast_to((5,6))
+    res_f = container(f)._broadcast_to((2,4))
+    assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
+    assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
+    assert_array_equal(res_c.toarray(), c)
+    assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
+    assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
+    assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
 
-        res_a = container(a)._broadcast_to((2,3))
-        res_b = container(b)._broadcast_to((3,4))
-        res_c = container(c)._broadcast_to((2,3))
-        res_d = container(d)._broadcast_to((4,4))
-        res_e = container(e)._broadcast_to((5,6))
-        res_f = container(f)._broadcast_to((2,4))
-        assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
-        assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
-        assert_array_equal(res_c.toarray(), c)
-        assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
-        assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
-        assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        container([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
 
-        with pytest.raises(ValueError, match="cannot be broadcast"):
-            container([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
-
-        with pytest.raises(ValueError, match="cannot be broadcast"):
-            container([[0, 1, 2]])._broadcast_to(shape=(3, 2))
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        container([[0, 1, 2]])._broadcast_to(shape=(3, 2))
