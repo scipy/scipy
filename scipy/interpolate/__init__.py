@@ -80,6 +80,7 @@ Multivariate interpolation
 
    make_lsq_spline
    make_smoothing_spline
+   compute_gcv_parameter
    make_splrep
    make_splprep
    generate_knots
