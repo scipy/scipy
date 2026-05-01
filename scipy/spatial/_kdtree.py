@@ -2,6 +2,7 @@
 # Released under the scipy license
 import numpy as np
 from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
+from .distance import minkowski
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -186,10 +187,8 @@ class Rectangle:
         dist : ndarray
             Minimum distance.
         """
-        return minkowski_distance(
-            0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
-            p
-        )
+        delta = np.maximum(0, np.maximum(self.mins - x, x - self.maxes))
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_point(self, x, p=2.0):
         """
@@ -207,7 +206,8 @@ class Rectangle:
         dist : ndarray
             Maximum distance.
         """
-        return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
+        delta = np.maximum(self.maxes - x, x - self.mins)
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def min_distance_rectangle(self, other, p=2.0):
         """
@@ -225,12 +225,9 @@ class Rectangle:
         dist : float
             Minimum distance between the two hyperrectangles.
         """
-        return minkowski_distance(
-            0,
-            np.maximum(0, np.maximum(self.mins-other.maxes,
-                                     other.mins-self.maxes)),
-            p
-        )
+        delta = np.maximum(0, np.maximum(self.mins - other.maxes,
+                                         other.mins - self.maxes))
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_rectangle(self, other, p=2.0):
         """
@@ -248,8 +245,8 @@ class Rectangle:
         dist : float
             Maximum distance between the two hyperrectangles.
         """
-        return minkowski_distance(
-            0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
+        delta = np.maximum(self.maxes - other.mins, other.maxes - self.mins)
+        return minkowski(np.zeros_like(delta), delta, p)
 
 
 class KDTree(cKDTree):

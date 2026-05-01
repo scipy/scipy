@@ -14,6 +14,7 @@ from scipy._lib._testutils import _run_concurrent_barrier
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
+from scipy.spatial.distance import cdist, minkowski
 from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
 
 
@@ -46,12 +47,12 @@ def distance_box(a, b, p, boxsize):
     diff = a - b
     diff[diff > 0.5 * boxsize] -= boxsize
     diff[diff < -0.5 * boxsize] += boxsize
-    d = minkowski_distance(diff, 0, p)
+    d = minkowski(diff, 0, p)
     return d
 
 class ConsistencyTests:
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski(a, b, p)
 
     def test_nearest(self):
         x = self.x
@@ -277,7 +278,7 @@ class ball_consistency:
     tol = 0.0
 
     def distance(self, a, b, p):
-        return minkowski_distance(a * 1.0, b * 1.0, p)
+        return minkowski(a * 1.0, b * 1.0, p)
 
     def test_in_ball(self):
         x = np.atleast_2d(self.x)
@@ -479,7 +480,7 @@ def test_query_ball_point_multithreaded_explicit(kdtree_type):
 class two_trees_consistency:
 
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski(a, b, p)
 
     def test_all_in_ball(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
@@ -645,7 +646,7 @@ class _Test_count_neighbors(count_neighbors_consistency):
 class sparse_distance_matrix_consistency:
 
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski(a, b, p)
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dok_array')
@@ -667,7 +668,7 @@ class sparse_distance_matrix_consistency:
     def test_consistency(self):
         # Test consistency with a distance_matrix
         M1 = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dok_array')
-        expected = distance_matrix(self.T1.data, self.T2.data)
+        expected = cdist(self.T1.data, self.T2.data)
         expected[expected > self.r] = 0
         assert_array_almost_equal(M1.toarray(), expected, decimal=14)
 

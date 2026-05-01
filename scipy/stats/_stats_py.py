@@ -37,7 +37,7 @@ import numpy as np
 from numpy import array, asarray, ma
 
 from scipy import sparse
-from scipy.spatial import distance_matrix
+from scipy.spatial.distance import cdist
 
 from scipy.optimize import milp, LinearConstraint
 from scipy.optimize.elementwise import find_root
@@ -9902,7 +9902,7 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     A = sparse.coo_array(A)
 
     # get cost matrix
-    D = distance_matrix(u_values, v_values, p=2)
+    D = cdist(u_values, v_values)
     cost = D.ravel()
 
     # create the minimization target
