@@ -18,7 +18,6 @@ features are:
 # having reusable facilities to efficiently read/write fortran-formatted files
 # would be useful outside this module.
 
-import os
 import warnings
 
 import numpy as np

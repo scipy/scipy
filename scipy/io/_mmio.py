@@ -11,7 +11,6 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
-from warnings import warn
 
 import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
