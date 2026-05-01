@@ -2,7 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
+__all__ = ['dok_array']
 
 import itertools
 import numpy as np
@@ -637,52 +637,6 @@ class _dok_base(_spbase, IndexMixin, dict):
     astype.__doc__ = _spbase.astype.__doc__
 
 
-def isspmatrix_dok(x):
-    """Is `x` of dok_array type?
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    Parameters
-    ----------
-    x
-        object to check for being a dok matrix
-
-    Returns
-    -------
-    bool
-        True if `x` is a dok matrix, False otherwise
-
-    Examples
-    --------
-    >>> from scipy.sparse import dok_array, dok_matrix, coo_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(dok_matrix([[5]]))  # doctest: +SKIP
-    True
-    >>> isspmatrix_dok(dok_array([[5]]))  # doctest: +SKIP
-    False
-    >>> isspmatrix_dok(coo_matrix([[5]]))  # doctest: +SKIP
-    False
-    """
-    msg = """`isspmatrix_dok` is being replaced by `self.format == "dok" and issparse`.
-
-        All sparse matrix classes (*_matrix) are being deprecated in favor of
-        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
-        is elementwise multiplication. See the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        The isspmatrix_dok function will be removed no earlier than v1.20.
-        """
-    prefixes = (os.path.dirname(__file__),)
-    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-    return isinstance(x, dok_matrix)
-
-
 # This namespace class separates array from matrix with isinstance
 class dok_array(_dok_base, sparray):
     """
@@ -741,101 +695,3 @@ class dok_array(_dok_base, sparray):
     ...         S[i, j] = i + j    # Update element
 
     """  # numpydoc ignore=PR01
-
-
-class dok_matrix(spmatrix, _dok_base):
-    """
-    Dictionary Of Keys based sparse matrix.
-
-    This is an efficient structure for constructing sparse
-    matrices incrementally.
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    This can be instantiated in several ways:
-        dok_matrix(D)
-            where D is a 2-D ndarray
-
-        dok_matrix(S)
-            with another sparse array or matrix S (equivalent to S.todok())
-
-        dok_matrix((M,N), [dtype])
-            create the matrix with initial shape (M,N)
-            dtype is optional, defaulting to dtype='d'
-
-    Attributes
-    ----------
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    format : str
-        Three letter code for the format of the matrix storage, e.g. 'dok'
-    nnz : int
-        Number of values stored in the matrix
-    size : int
-        Number of values stored in the matrix
-    T : dok_matrix
-        The transpose of the matrix
-    mT : dok_matrix
-        The matrix transpose
-
-    Notes
-    -----
-
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    - Allows for efficient O(1) access of individual elements.
-    - Duplicates are not allowed.
-    - Can be efficiently converted to a coo_matrix once constructed.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import dok_matrix
-    >>> S = dok_matrix((5, 5), dtype=np.float32)
-    >>> for i in range(5):
-    ...     for j in range(5):
-    ...         S[i, j] = i + j    # Update element
-
-    """
-
-    def set_shape(self, shape):
-        new_matrix = self.reshape(shape, copy=False).asformat(self.format)
-        self.__dict__ = new_matrix.__dict__
-
-    def get_shape(self):
-        """Get shape of a sparse matrix."""
-        return self._shape
-
-    shape = property(fget=get_shape, fset=set_shape)
-
-    def __reversed__(self):
-        return self._dict.__reversed__()
-
-    def __or__(self, other):
-        if isinstance(other, _dok_base):
-            return self._dict | other._dict
-        return self._dict | other
-
-    def __ror__(self, other):
-        if isinstance(other, _dok_base):
-            return self._dict | other._dict
-        return self._dict | other
-
-    def __ior__(self, other):
-        if isinstance(other, _dok_base):
-            self._dict |= other._dict
-        else:
-            self._dict |= other
-        return self

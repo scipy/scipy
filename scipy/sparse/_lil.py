@@ -3,7 +3,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
+__all__ = ['lil_array']
 
 from bisect import bisect_left
 
@@ -489,52 +489,6 @@ def _prepare_index_for_memoryview(i, j, x=None):
         return i, j
 
 
-def isspmatrix_lil(x):
-    """Is `x` of lil_matrix type?
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    Parameters
-    ----------
-    x
-        object to check for being a lil matrix
-
-    Returns
-    -------
-    bool
-        True if `x` is a lil matrix, False otherwise
-
-    Examples
-    --------
-    >>> from scipy.sparse import lil_array, lil_matrix, coo_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(lil_matrix([[5]]))  # doctest: +SKIP
-    True
-    >>> isspmatrix_lil(lil_array([[5]]))  # doctest: +SKIP
-    False
-    >>> isspmatrix_lil(coo_matrix([[5]]))  # doctest: +SKIP
-    False
-    """
-    msg = """`isspmatrix_lil` is being replaced by `self.format == "lil" and issparse`.
-
-        All sparse matrix classes (*_matrix) are being deprecated in favor of
-        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
-        is elementwise multiplication. See the spmatrix to sparray migration guide
-        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-
-        The isspmatrix_lil function will be removed no earlier than v1.20.
-        """
-    prefixes = (os.path.dirname(__file__),)
-    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
-    return isinstance(x, lil_matrix)
-
-
 # This namespace class separates array from matrix with isinstance
 class lil_array(_lil_base, sparray):
     """
@@ -606,84 +560,3 @@ class lil_array(_lil_base, sparray):
           fashion in ``self.data``.
 
     """  # numpydoc ignore=PR01
-
-
-class lil_matrix(spmatrix, _lil_base):
-    """
-    Row-based LIst of Lists sparse matrix.
-
-    This is a structure for constructing sparse matrices incrementally.
-    Note that inserting a single item can take linear time in the worst case;
-    to construct the matrix efficiently, make sure the items are pre-sorted by
-    index, per row.
-
-    .. warning::
-
-       SciPy sparse is shifting from a sparse matrix interface to a sparse
-       array interface. In the next few releases we expect to deprecate the
-       sparse matrix interface. For documentation of the matrix
-       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
-       For guidance on converting existing code to sparse arrays, see
-       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-
-    This can be instantiated in several ways:
-        lil_matrix(D)
-            where D is a 2-D ndarray
-
-        lil_matrix(S)
-            with another sparse array or matrix S (equivalent to S.tolil())
-
-        lil_matrix((M, N), [dtype])
-            to construct an empty matrix with shape (M, N)
-            dtype is optional, defaulting to dtype='d'.
-
-    Attributes
-    ----------
-    data : ndarray
-        LIL format data array of the matrix
-    rows : ndarray
-        LIL format row index array of the matrix
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    format : str
-        Three letter code for the format of the matrix storage, e.g. 'lil'
-    nnz : int
-        Number of values stored in the matrix
-    size : int
-        Number of values stored in the matrix
-    T : lil_matrix
-        The transpose of the matrix
-    mT : lil_array
-        The transpose of the matrix
-
-    Notes
-    -----
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    Advantages of the LIL format
-        - supports flexible slicing
-        - changes to the matrix sparsity structure are efficient
-
-    Disadvantages of the LIL format
-        - arithmetic operations LIL + LIL are slow (consider CSR or CSC)
-        - slow column slicing (consider CSC)
-        - slow matrix vector products (consider CSR or CSC)
-
-    Intended Usage
-        - LIL is a convenient format for constructing sparse matrices
-        - once a matrix has been constructed, convert to CSR or
-          CSC format for fast arithmetic and matrix vector operations
-        - consider using the COO format when constructing large matrices
-
-    Data Structure
-        - An array (``self.rows``) of rows, each of which is a sorted
-          list of column indices of non-zero elements.
-        - The corresponding nonzero values are stored in similar
-          fashion in ``self.data``.
-
-    """
