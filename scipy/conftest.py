@@ -425,7 +425,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             if condition:
                 reason = marker.kwargs.get("reason")
                 # reason overrides the ones from cpu_only, np_only, and eager_only.
-                # This is regardless of order of appearence of the markers.
+                # This is regardless of order of appearance of the markers.
                 reasons[backend].insert(0, reason)
 
             for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):

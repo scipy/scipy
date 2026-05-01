@@ -508,8 +508,6 @@ class TestNdimageFilters:
         reason="multiple modes work in CuPy 14"
     )
     def test_correlate_mode_sequence(self, xp):
-        if is_cupy(xp) and CUPY_VERSION and CUPY_VERSION >= "14":
-            pytest.xfail("multiple modes work in CuPy 14")
 
         kernel = xp.ones((2, 2))
         array = xp.ones((3, 3), dtype=xp.float64)
@@ -1724,8 +1722,6 @@ class TestNdimageFilters:
         reason="multiple modes work in CuPy 14"
     )
     def test_minimum_filter07(self, xp):
-        if is_cupy(xp) and CUPY_VERSION and CUPY_VERSION >= "14":
-            pytest.xfail("multiple modes work in CuPy 14")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1823,8 +1819,6 @@ class TestNdimageFilters:
         reason="multiple modes work in CuPy 14"
     )
     def test_maximum_filter07(self, xp):
-        if is_cupy(xp) and CUPY_VERSION and CUPY_VERSION >= "14":
-            pytest.xfail("multiple modes work in CuPy 14")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2641,7 +2635,6 @@ def test_multiple_modes_sequentially(xp):
 def test_multiple_modes_prewitt(xp):
     # Test prewitt filter for multiple extrapolation modes
     if is_cupy(xp):
-        pytest.xfail("https://github.com/cupy/cupy/issues/9760")
 
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
@@ -2665,7 +2658,6 @@ def test_multiple_modes_prewitt(xp):
 def test_multiple_modes_sobel(xp):
     # Test sobel filter for multiple extrapolation modes
     if is_cupy(xp):
-        pytest.xfail("https://github.com/cupy/cupy/issues/9760")
 
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
