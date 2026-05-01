@@ -2634,7 +2634,6 @@ def test_multiple_modes_sequentially(xp):
 )
 def test_multiple_modes_prewitt(xp):
     # Test prewitt filter for multiple extrapolation modes
-    if is_cupy(xp):
 
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
@@ -2657,7 +2656,6 @@ def test_multiple_modes_prewitt(xp):
 )
 def test_multiple_modes_sobel(xp):
     # Test sobel filter for multiple extrapolation modes
-    if is_cupy(xp):
 
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
