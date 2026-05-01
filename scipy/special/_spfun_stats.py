@@ -129,6 +129,9 @@ _poisson_binom_pmf_doc = (
     the preceding dimensions are batch dimensions. The batch
     dimensions are broadcast against ``k``.
 
+    The output will be C contiguous regardless of the contiguity of
+    `k` and `p`.
+
     """
 )
 
@@ -159,6 +162,9 @@ _poisson_binom_cdf_doc = (
     The last dimension of `p` contains success probabilities and
     the preceding dimensions are batch dimensions. The batch
     dimensions are broadcast against ``k``.
+
+    The output will be C contiguous regardless of the contiguity of
+    `k` and `p`.
 
     """
 )
