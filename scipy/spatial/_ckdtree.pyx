@@ -1519,17 +1519,7 @@ cdef class cKDTree:
         output_type : str, optional
             Which container to use for output data. Options: ``'dok_array'``,
             ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
-            Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
             Default: ``'dok_array'``.
-
-            .. warning:: dok_matrix and coo_matrix are being replaced.
-
-               All new code using scipy sparse should use sparse array
-               types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v2.0 and switch from
-               'dok_matrix' to 'dok_array' in v2.2.
-               The values 'dok_matrix' and 'coo_matrix' continue
-               to work now, but will go away too.
 
         Returns
         -------
@@ -1583,36 +1573,6 @@ cdef class cKDTree:
             sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
 
-        # handle default and already warned from KDTree (workaround stacklevel issues)
-        if output_type == _NoValue:
-            msg = """The default value for `output_type` will become `dok_array` in v2.2
-             That means the default return type will become a sparse array.
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             To silence this message, set `output_type="dok_array"`.
-             """
-            warnings.warn(msg, DeprecationWarning, stacklevel=1)
-            msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
-             The intended replacement is output_type="dok_array".
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             To silence this message, set to "dok_array" and, if needed, wrap the
-             return in dok_matrix().
-             """
-            warnings.warn(msg, DeprecationWarning, stacklevel=1)
-            warnings.filterwarnings("ignore", "dok_matrix is being repl")
-            return res.dok_matrix(self.n, other.n)
-        elif output_type == 'caught_dok_matrix':
-            warnings.filterwarnings("ignore", "dok_matrix is being repl")
-            return res.dok_matrix(self.n, other.n)
-        elif output_type == 'caught_coo_matrix':
-            warnings.filterwarnings("ignore", "coo_matrix is being repl")
-            return res.coo_matrix(self.n, other.n)
-
         if output_type == 'dict':
             return res.dict()
         elif output_type == 'ndarray':
@@ -1621,34 +1581,8 @@ cdef class cKDTree:
             return res.dok_array(self.n, other.n)
         elif output_type == 'coo_array':
             return res.coo_array(self.n, other.n)
-        elif output_type == 'dok_matrix':
-            msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
-             The intended replacement is output_type="dok_array".
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             To silence this message, set to "dok_array" and, if needed, wrap the
-             return in dok_matrix().
-             """
-            warnings.warn(msg, DeprecationWarning, stacklevel=1)
-            warnings.filterwarnings("ignore", "dok_matrix is being repl")
-            return res.dok_matrix(self.n, other.n)
-        elif output_type == 'coo_matrix':
-            msg = """The keyword output_type="coo_matrix" will not be supported in v2.2
-             The intended replacement is output_type="coo_array".
-             Unless you use * instead of @, ** for matrix power, or you depend
-             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
-             See the spmatrix to sparray migration guide for details.
-             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-             To silence this message, set to "coo_array" and, if needed, wrap the
-             return in coo_matrix().
-             """
-            warnings.warn(msg, DeprecationWarning, stacklevel=1)
-            warnings.filterwarnings("ignore", "coo_matrix is being repl")
-            return res.coo_matrix(self.n, other.n)
         else:
-            raise ValueError('Invalid output type')
+            raise ValueError('Invalid output type; Use dok_array or coo_array')
 
 
     # ----------------------
