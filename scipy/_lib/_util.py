@@ -1056,7 +1056,7 @@ def _deprecate_dtypes(func_name, *arrays):
                     "one of np.float{32,64} or np.complex{64,128} manually."
             )
             import warnings
-            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
             return
 
 
