@@ -33,7 +33,10 @@
 analysis."""
 
 import numpy as np
+
+import scipy.special._gufuncs as _gufuncs
 from scipy.special import gammaln as loggam
+from scipy.special._gufunc_tools import _with_cache_optimization
 
 
 __all__ = ['multigammaln']
@@ -106,3 +109,7 @@ def multigammaln(a, d):
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
+
+
+_poisson_binom_pmf = _with_cache_optimization(_gufuncs._poisson_binom_pmf, (1,))
+_poisson_binom_cdf = _with_cache_optimization(_gufuncs._poisson_binom_cdf, (1,))
