@@ -884,7 +884,7 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2.0, output_type=_NoValue):
+            self, other, max_distance, p=2.0, output_type="dok_array"):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
@@ -904,7 +904,7 @@ class KDTree(cKDTree):
             Which container to use for output data. Options: ``'dok_array'``,
             ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
             Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
-            Default: ``'dok_matrix'``.
+            Default: ``'dok_array'``.
 
             .. warning:: dok_matrix and coo_matrix are being replaced.
 

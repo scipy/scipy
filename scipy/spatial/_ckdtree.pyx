@@ -10,7 +10,6 @@
 import numpy as np
 import scipy.sparse
 from scipy._lib._util import copy_if_needed
-from scipy._lib.deprecation import _NoValue
 
 cimport numpy as np
 
@@ -24,7 +23,6 @@ cimport cython
 import os
 import threading
 import operator
-from warnings import warn
 
 np.import_array()
 
@@ -1497,9 +1495,9 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.0,
-                               output_type=_NoValue):
+                               output_type="dok_array"):
         """
-        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
+        sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_array')
 
         Compute a sparse distance matrix
 
@@ -1520,7 +1518,7 @@ cdef class cKDTree:
             Which container to use for output data. Options: ``'dok_array'``,
             ``'coo_array'``, ``'dict'``, or ``'ndarray'``.
             Legacy options ``'dok_matrix'`` and ``'coo_matrix'`` are still available.
-            Default: ``'dok_matrix'``.
+            Default: ``'dok_array'``.
 
             .. warning:: dok_matrix and coo_matrix are being replaced.
 
@@ -1588,20 +1586,6 @@ cdef class cKDTree:
         elif output_type == 'ndarray':
             return res.ndarray()
         elif output_type == 'dok_matrix':
-            return res.dok_matrix(self.n, other.n)
-        elif output_type == _NoValue:
-            msg = f"""output_types dok_matrix and coo_matrix are being replaced.
-
-            All new code using scipy sparse should use sparse array
-            types 'dok_array' or 'coo_array'. The default value of
-            `output_type` will be deprecated at v1.19 and switch from
-            'dok_matrix' to 'dok_array' in v1.21. Sparse arrays (*_array) have
-            a NumPy-compatible API, e.g. `*` is elementwise multiplication.
-            See the spmatrix to sparray migration guide for more information
-            https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
-            """
-            prefixes = (os.path.dirname(__file__),)
-            warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
             return res.dok_matrix(self.n, other.n)
         elif output_type == 'dok_array':
             return res.dok_array(self.n, other.n)
