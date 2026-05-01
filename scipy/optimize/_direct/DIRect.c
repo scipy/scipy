@@ -823,6 +823,17 @@ L100:
 /* +-----------------------------------------------------------------------+ */
 
  cleanup:
+    /* If we are returning NULL (a goto cleanup error path) and no Python
+       exception has been set yet, raise one now so callers don't see a NULL
+       return without a corresponding exception. The most common case is OOM
+       from one of the malloc()s above. */
+    if (ret == NULL && !PyErr_Occurred()) {
+        if (*ierror == DIRECT_OUT_OF_MEMORY)
+            PyErr_NoMemory();
+        else
+            PyErr_Format(PyExc_RuntimeError,
+                "DIRECT optimization failed (code %d)", (int) *ierror);
+    }
     if (c__)
         free(c__);
     if (f)
